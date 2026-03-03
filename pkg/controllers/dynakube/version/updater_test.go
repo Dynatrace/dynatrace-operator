@@ -1,13 +1,9 @@
 package version
 
 import (
-	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -16,11 +12,7 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	ctx := context.Background()
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
+	testImage := "some.registry.com:1.2.3.4-5"
 	timeProvider := timeprovider.New().Freeze()
 
 	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
@@ -28,12 +20,12 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newCustomImageUpdater(t, target, testImage.String())
-		err := versionReconciler.run(ctx, updater)
+		updater := newCustomImageUpdater(t, target, testImage)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
-		assert.Equal(t, testImage.String(), target.ImageID)
+		assert.Equal(t, testImage, target.ImageID)
 		assert.Equal(t, string(status.CustomImageVersionSource), target.Version)
 	})
 
@@ -43,7 +35,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newCustomImageUpdater(t, target, "incorrect-uri")
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
@@ -57,25 +49,25 @@ func TestRun(t *testing.T) {
 		updater := newDefaultUpdater(t, target, false)
 
 		// 1. call => status empty => should run
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
-		err = versionReconciler.run(ctx, updater)
+		err = versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 
 		// 3. call => source is different => should run
 		target.Source = status.CustomImageVersionSource
-		err = versionReconciler.run(ctx, updater)
+		err = versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 
 		// 4. call => source is NOT different => should NOT run
-		err = versionReconciler.run(ctx, updater)
+		err = versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 	})
@@ -88,56 +80,17 @@ func TestRun(t *testing.T) {
 		updater := newCustomVersionUpdater(t, target, "123", false)
 
 		// 1. call => status empty => should run
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
 
 		// 2. call => it is custom version => should run
-		err = versionReconciler.run(ctx, updater)
+		err = versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
-	})
-	t.Run("public registry", func(t *testing.T) {
-		target := &status.VersionStatus{
-			Source: status.TenantRegistryVersionSource,
-		}
-
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
-		updater := newPublicRegistryUpdater(t, target, &testImage, false)
-		updater.On("CheckForDowngrade", mock.AnythingOfType("string")).Return(false, nil)
-
-		err := versionReconciler.run(ctx, updater)
-		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
-		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
-		assert.Equal(t, testImage.String(), target.ImageID)
-		assert.Equal(t, testImage.Tag, target.Version)
-		assert.NotEmpty(t, target.Version)
-	})
-
-	t.Run("public registry, no downgrade allowed", func(t *testing.T) {
-		target := &status.VersionStatus{
-			Source: status.TenantRegistryVersionSource,
-		}
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
-		updater := newPublicRegistryUpdater(t, target, &testImage, false)
-		updater.On("CheckForDowngrade", mock.AnythingOfType("string")).Return(true, nil)
-
-		err := versionReconciler.run(ctx, updater)
-		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
-		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
-		assert.Empty(t, target.Version)
-		assert.Empty(t, target.ImageID)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored", func(t *testing.T) {
 		target := &status.VersionStatus{
@@ -150,9 +103,8 @@ func TestRun(t *testing.T) {
 		updater.On("CustomImage").Return("")
 		updater.On("CustomVersion").Return("")
 
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 		assert.Empty(t, target.Version)
@@ -165,11 +117,10 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newClassicFullStackUpdater(t, target, false)
-		updater.On("CustomImage").Return(testImage.String())
+		updater.On("CustomImage").Return(testImage)
 
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 	})
@@ -190,12 +141,6 @@ func TestDetermineSource(t *testing.T) {
 		assert.Equal(t, status.CustomVersionVersionSource, source)
 	})
 
-	t.Run("public-registry", func(t *testing.T) {
-		updater := newPublicRegistryUpdater(t, nil, nil, false)
-		source := determineSource(updater)
-		assert.Equal(t, status.PublicRegistryVersionSource, source)
-	})
-
 	t.Run("default", func(t *testing.T) {
 		updater := newDefaultUpdater(t, nil, true)
 		source := determineSource(updater)
@@ -211,31 +156,12 @@ func TestDetermineSource(t *testing.T) {
 	})
 
 	t.Run("classicfullstack ignores public registry feature flag and sets custom image if set", func(t *testing.T) {
-		testImage := dtclient.LatestImageInfo{
-			Source: "some.registry.com",
-			Tag:    "1.2.3.4-5",
-		}
+		customVersion := "1.2.3.4-5"
 		updater := newClassicFullStackUpdater(t, nil, false)
 		updater.On("CustomImage").Return("")
-		updater.On("CustomVersion").Return(testImage.Tag)
+		updater.On("CustomVersion").Return(customVersion)
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomVersionVersionSource, source)
-	})
-}
-
-func TestUpdateVersionStatus(t *testing.T) {
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
-
-	t.Run("set status", func(t *testing.T) {
-		target := status.VersionStatus{}
-
-		setImageFromImageInfo(&target, testImage)
-
-		assert.Equal(t, testImage.String(), target.ImageID)
-		assert.Equal(t, testImage.Tag, target.Version)
 	})
 }
 
@@ -295,16 +221,6 @@ func TestGetTagFromImageID(t *testing.T) {
 	})
 }
 
-func enablePublicRegistry(dk *dynakube.DynaKube) *dynakube.DynaKube {
-	if dk.Annotations == nil {
-		dk.Annotations = make(map[string]string)
-	}
-
-	dk.Annotations[exp.PublicRegistryKey] = "true"
-
-	return dk
-}
-
 func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image string) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, true)
 	updater.On("CustomImage").Maybe().Return(image)
@@ -315,7 +231,7 @@ func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image str
 func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version string, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsPublicRegistryEnabled").Maybe().Maybe().Return(false)
+	updater.On("IsAutoRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return(version)
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
 
@@ -325,7 +241,7 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, true)
 	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
+	updater.On("IsAutoRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return("")
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(errors.New("BOOM"))
 
@@ -335,25 +251,16 @@ func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUp
 func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
+	updater.On("IsAutoRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return("")
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
 
 	return updater
 }
 
-func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, imageInfo *dtclient.LatestImageInfo, autoUpdate bool) *MockStatusUpdater {
-	updater := newBaseUpdater(t, target, autoUpdate)
-	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsPublicRegistryEnabled").Maybe().Return(true)
-	updater.On("LatestImageInfo", mock.AnythingOfType("context.backgroundCtx")).Maybe().Return(imageInfo, nil)
-
-	return updater
-}
-
 func newClassicFullStackUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
-	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
+	updater.On("IsAutoRegistryEnabled").Maybe().Return(false)
 
 	return updater
 }

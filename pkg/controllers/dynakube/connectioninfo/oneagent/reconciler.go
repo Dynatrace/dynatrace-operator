@@ -138,7 +138,7 @@ func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.OneAgentConnectio
 }
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
-	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo)
+	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}

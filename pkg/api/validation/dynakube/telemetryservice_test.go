@@ -52,7 +52,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{},
+						Protocols: []otelcgen.Protocol{},
 					},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
@@ -74,9 +74,9 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
+						Protocols: []otelcgen.Protocol{
+							otelcgen.ZipkinProtocol,
+							otelcgen.OtlpProtocol,
 							"unknown",
 						},
 					},
@@ -92,9 +92,9 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
+						Protocols: []otelcgen.Protocol{
+							otelcgen.ZipkinProtocol,
+							otelcgen.OtlpProtocol,
 							"unknown1",
 							"unknown2",
 						},
@@ -111,10 +111,10 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
-							string(otelcgen.OtlpProtocol),
+						Protocols: []otelcgen.Protocol{
+							otelcgen.ZipkinProtocol,
+							otelcgen.OtlpProtocol,
+							otelcgen.OtlpProtocol,
 						},
 					},
 				},
@@ -129,12 +129,12 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
-							string(otelcgen.OtlpProtocol),
-							string(otelcgen.JaegerProtocol),
+						Protocols: []otelcgen.Protocol{
+							otelcgen.ZipkinProtocol,
+							otelcgen.ZipkinProtocol,
+							otelcgen.OtlpProtocol,
+							otelcgen.OtlpProtocol,
+							otelcgen.JaegerProtocol,
 						},
 					},
 				},

@@ -57,7 +57,9 @@ spec:
             - operator
           # Replace this with the built image name
           image: {{ include "dynatrace-operator.image" . }}
-          imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+          {{- with .Values.imageRef.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
           env:
             - name: POD_NAMESPACE
               valueFrom:

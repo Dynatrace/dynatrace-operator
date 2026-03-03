@@ -33,7 +33,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	// TODO: Remove as part of DAQ-18375
+	// TODO: Remove as part of ICP-1086
 	meta.RemoveStatusCondition(r.dk.Conditions(), "ExtensionsControllerStatefulSet")
 
 	if ext := r.dk.Extensions(); !ext.IsAnyEnabled() {

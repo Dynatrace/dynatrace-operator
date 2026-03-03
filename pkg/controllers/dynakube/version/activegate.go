@@ -70,26 +70,12 @@ func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
 	return !updater.dk.FF().IsActiveGateUpdatesDisabled()
 }
 
-func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FF().IsPublicRegistry() && !updater.dk.OneAgent().IsClassicFullStackMode()
-	if isPublicRegistry {
-		setVerifiedCondition(updater.dk.Conditions(), activeGateVersionConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
-	}
-
-	return isPublicRegistry
-}
-
-func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imageInfo, err := updater.dtClient.GetLatestActiveGateImage(ctx)
-	if err != nil {
-		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
-	}
-
-	return imageInfo, err
-}
-
 func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
 	return false, nil
+}
+
+func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
+	return updater.dk.FF().IsAutomaticRegistry()
 }
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {

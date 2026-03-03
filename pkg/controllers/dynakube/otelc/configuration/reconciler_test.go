@@ -37,7 +37,7 @@ func TestConfigurationConfigMap(t *testing.T) {
 	t.Run("create configmap if it does not exist", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		configMap := &corev1.ConfigMap{}

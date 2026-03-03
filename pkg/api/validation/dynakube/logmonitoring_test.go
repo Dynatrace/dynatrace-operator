@@ -198,7 +198,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 			})
 	})
 
-	t.Run("kspm enabled and only image repository tag", func(t *testing.T) {
+	t.Run("standalone log monitoring and only image tag is set", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorLogMonitoringMissingImage},
 			&dynakube.DynaKube{
