@@ -172,7 +172,6 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	// TODO: Fix this monster, this is not ok
 	testAgentVersionGetLatestAgentVersion(t, dtc)
 	testActiveGateVersionGetLatestActiveGateVersion(t, dtc)
-	testSendEvent(t, dtc)
 	testGetTokenScopes(t, dtc)
 
 	testServerErrors(t)
@@ -204,8 +203,6 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 		handleAvailableAgentVersions(request, writer)
 	case "/v1/deployment/installer/agent/connectioninfo":
 		handleOACommunicationEndpoints(request, writer)
-	case "/v1/events":
-		handleSendEvent(request, writer)
 	case "/v2/apiTokens/lookup":
 		handleTokenScopes(request, writer)
 	default:

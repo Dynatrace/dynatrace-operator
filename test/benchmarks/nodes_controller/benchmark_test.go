@@ -65,11 +65,8 @@ func runBenchmarkReconcile(b *testing.B, config benchmarkConfig) {
 }
 
 func BenchmarkNodesController_OnDelete(b *testing.B) {
-	runBenchmarkOnDelete(b, getBenchmarkConfig(b))
-}
+	config := getBenchmarkConfig(b)
 
-func runBenchmarkOnDelete(b *testing.B, config benchmarkConfig) {
-	b.Helper()
 	b.Setenv("RUN_LOCAL", "true")
 	b.Setenv(k8senv.PodNamespace, testNamespace)
 
