@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,19 +19,19 @@ import (
 
 var (
 	flavorURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		OsUnix, InstallerTypePaaS, arch.FlavorMultidistro+"a", arch.Arch)
+		installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro+"a", arch.Arch)
 	flavourURIResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null}]}}`
 
 	archURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, arch.Arch+"a")
+		installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, arch.Arch+"a")
 	archURIResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
 
 	flavorArchURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		OsUnix, InstallerTypePaaS, arch.FlavorMultidistro+"a", arch.Arch+"a")
+		installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro+"a", arch.Arch+"a")
 	flavourArchURIResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null},{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
 
 	oaLatestMetainfoURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		"aix", InstallerTypePaaS, arch.FlavorMultidistro, arch.Arch)
+		"aix", installer.TypePaaS, arch.FlavorMultidistro, arch.Arch)
 	oaLatestMetainfoURIResponse = `{"error":{"code":404,"message":"non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>"}}`
 )
 
@@ -170,8 +171,6 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	require.NotNil(t, dtc)
 
 	// TODO: Fix this monster, this is not ok
-	testAgentVersionGetLatestAgentVersion(t, dtc)
-	testActiveGateVersionGetLatestActiveGateVersion(t, dtc)
 	testGetTokenScopes(t, dtc)
 
 	testServerErrors(t)
@@ -190,15 +189,9 @@ func dynatraceServerHandler(t *testing.T) http.HandlerFunc {
 }
 
 func handleRequest(request *http.Request, writer http.ResponseWriter) {
-	latestAgentVersion := fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo", OsUnix, InstallerTypePaaS)
-	latestActiveGateVersion := fmt.Sprintf("/v1/deployment/installer/gateway/%s/latest/metainfo", OsUnix)
-	agentVersions := fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", OsUnix, InstallerTypePaaS)
+	agentVersions := fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", installer.OsUnix, installer.TypePaaS)
 
 	switch request.URL.Path {
-	case latestAgentVersion:
-		handleLatestAgentVersion(request, writer)
-	case latestActiveGateVersion:
-		handleLatestActiveGateVersion(request, writer)
 	case agentVersions:
 		handleAvailableAgentVersions(request, writer)
 	case "/v1/deployment/installer/agent/connectioninfo":

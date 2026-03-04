@@ -12,12 +12,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 )
 
 type ClientV2 struct {
 	Settings   settings.APIClient
 	ActiveGate activegate.APIClient
 	HostEvent  hostevent.APIClient
+	Version    version.APIClient
 }
 
 type ConfigV2 struct {
@@ -158,6 +160,7 @@ func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		Settings:   settings.NewClient(apiClient),
 		ActiveGate: activegate.NewClient(apiClient),
 		HostEvent:  hostevent.NewClient(apiClient, config.NetworkZone),
+		Version:    version.NewClient(apiClient),
 	}, nil
 }
 

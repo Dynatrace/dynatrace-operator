@@ -35,7 +35,7 @@ func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvid
 }
 
 func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
-	updater := newCodeModulesUpdater(dk, r.dtClient)
+	updater := newCodeModulesUpdater(dk, r.dtClient.AsV2().Version)
 	if r.needsUpdate(updater, dk) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
@@ -44,7 +44,7 @@ func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 }
 
 func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error {
-	updater := newOneAgentUpdater(dk, r.apiReader, r.dtClient)
+	updater := newOneAgentUpdater(dk, r.apiReader, r.dtClient.AsV2().Version)
 	if r.needsUpdate(updater, dk) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
@@ -53,7 +53,7 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
-	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient)
+	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient.AsV2().Version)
 	if r.needsUpdate(updater, dk) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
 

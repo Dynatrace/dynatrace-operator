@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/move"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper/download"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -79,8 +79,8 @@ func run(cmd *cobra.Command, _ []string) error {
 		inputDir, _ := cmd.Flags().GetString(configure.InputFolderFlag)
 
 		props := url.Properties{
-			Os:            dtclient.OsUnix,
-			Type:          dtclient.InstallerTypePaaS,
+			Os:            installer.OsUnix,
+			Type:          installer.TypePaaS,
 			Flavor:        flavor,
 			Arch:          arch.Arch,
 			Technologies:  technologies,
