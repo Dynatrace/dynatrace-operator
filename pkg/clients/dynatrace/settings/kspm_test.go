@@ -22,13 +22,13 @@ func TestGetKSPMSettings(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().Execute(new(GetSettingsResponse)).Run(injectResponse(GetSettingsResponse{TotalCount: 3})).Return(nil).Once()
+		request.EXPECT().Execute(new(KSPMSettingsResponse)).Run(injectResponse(KSPMSettingsResponse{TotalCount: 3})).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
 		resp, err := client.GetKSPMSettings(ctx, "entity-1")
 		require.NoError(t, err)
-		assert.Equal(t, GetSettingsResponse{TotalCount: 3}, resp)
+		assert.Equal(t, KSPMSettingsResponse{TotalCount: 3}, resp)
 	})
 
 	t.Run("empty monitoredEntity", func(t *testing.T) {
@@ -36,7 +36,7 @@ func TestGetKSPMSettings(t *testing.T) {
 		client := NewClient(apiClient)
 		resp, err := client.GetKSPMSettings(ctx, "")
 		require.NoError(t, err)
-		assert.Equal(t, GetSettingsResponse{TotalCount: 0}, resp)
+		assert.Equal(t, KSPMSettingsResponse{TotalCount: 0}, resp)
 	})
 }
 
@@ -44,7 +44,7 @@ func TestCreateKSPMSetting(t *testing.T) {
 	ctx := t.Context()
 
 	matchBody := func() any {
-		return matchJSONBody[kspmSettingsValue](kspmSettingsSchemaID, kspmSettingsSchemaVersion)
+		return matchJSONBody[KSPMSettingsValue](kspmSettingsSchemaID, kspmSettingsSchemaVersion)
 	}
 
 	t.Run("no ME", func(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
+	componentKspm "github.com/Dynatrace/dynatrace-operator/test/helpers/components/kspm"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -17,6 +18,8 @@ func Feature(t *testing.T) features.Feature {
 	builder := features.New("kspm-components-rollout")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	builder.Setup(componentKspm.DeleteKSPMSettingsFromTenant(secretConfig))
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -33,6 +36,8 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
+	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, &testDynakube))
+
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
@@ -40,6 +45,9 @@ func Feature(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
+// OptionalScopes verifies that the operator handles missing settings scopes gracefully without creating KSPM settings on the tenant.
+//
+// Note: When settings scopes are missing on the token, the KSPM settings reconciler should skip the creation.
 func OptionalScopes(t *testing.T) features.Feature {
 	builder := features.New("kspm-optional-scopes")
 
@@ -47,6 +55,8 @@ func OptionalScopes(t *testing.T) features.Feature {
 	if secretConfig.APITokenNoSettings == "" {
 		t.Skip("skipping test. no token with missing settings scopes provided")
 	}
+
+	builder.Setup(componentKspm.DeleteKSPMSettingsFromTenant(secretConfig))
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
@@ -32,7 +33,11 @@ const (
 	ObjectsPath = "/v2/settings/objects"
 )
 
-var errMissingKubeSystemUUID = errors.New("no kube-system namespace UUID given")
+var (
+	errMissingKubeSystemUUID = errors.New("no kube-system namespace UUID given")
+	errDeleteSettings        = errors.New("delete monitored entity settings failed")
+	errNoSettingsIDProvided  = errors.New("no settings ID provided")
+)
 
 type APIClient interface {
 	// GetK8sClusterME returns the Kubernetes Cluster Monitored Entity for the give kubernetes cluster.
@@ -43,10 +48,10 @@ type APIClient interface {
 	//
 	// In case 0 settings are found, so no Kubernetes Cluster Monitored Entity exists, we return an empty object, without an error.
 	GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error)
-	// GetSettingsForMonitoredEntity returns the settings response with the number of settings objects.
-	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (GetSettingsResponse, error)
-	// GetSettingsForLogModule returns the settings response with the number of settings objects.
-	GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (GetSettingsResponse, error)
+	// GetSettingsForMonitoredEntity returns the settings response with the number of settings objects and their values.
+	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (TotalCountSettingsResponse, error)
+	// GetSettingsForLogModule returns the settings response with the number of settings objects and their values.
+	GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (TotalCountSettingsResponse, error)
 	// GetRules returns metadata enrichment rules with the number of settings objects.
 	GetRules(ctx context.Context, kubeSystemUUID string, entityID string) ([]metadataenrichment.Rule, error)
 	// CreateOrUpdateKubernetesSetting returns the object ID of the created k8s settings.
@@ -55,10 +60,12 @@ type APIClient interface {
 	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
 	// CreateLogMonitoringSetting returns the object ID of the created logmonitoring settings.
 	CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error)
-	// GetKSPMSettings returns the settings response with the number of settings objects.
-	GetKSPMSettings(ctx context.Context, monitoredEntity string) (GetSettingsResponse, error)
+	// GetKSPMSettings returns the settings response with the number of settings objects and their values.
+	GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error)
 	// CreateKSPMSetting returns the object ID of the created kspm settings.
 	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
+	// DeleteSettings deletes the settings for a monitored entity.
+	DeleteSettings(ctx context.Context, settingsID string) error
 }
 
 // K8sClusterME is representing the relevant info for a Kubernetes Cluster Monitored Entity
@@ -67,7 +74,7 @@ type K8sClusterME struct {
 	Name string
 }
 
-type GetSettingsResponse struct {
+type TotalCountSettingsResponse struct {
 	TotalCount int `json:"totalCount"`
 }
 
@@ -183,12 +190,12 @@ func (c *Client) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8
 }
 
 // GetSettingsForMonitoredEntity returns the settings response with the number of settings objects.
-func (c *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (GetSettingsResponse, error) {
+func (c *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (TotalCountSettingsResponse, error) {
 	if monitoredEntity.ID == "" {
-		return GetSettingsResponse{}, nil
+		return TotalCountSettingsResponse{}, nil
 	}
 
-	var response GetSettingsResponse
+	var response TotalCountSettingsResponse
 
 	err := c.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
@@ -198,8 +205,23 @@ func (c *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEnt
 		}).
 		Execute(&response)
 	if err != nil {
-		return GetSettingsResponse{}, fmt.Errorf("get monitored entity settings: %w", err)
+		return TotalCountSettingsResponse{}, fmt.Errorf("get monitored entity settings: %w", err)
 	}
 
 	return response, nil
+}
+
+// DeleteSettings deletes the settings using the settings object ID.
+func (c *Client) DeleteSettings(ctx context.Context, objectID string) error {
+	if objectID == "" {
+		return errNoSettingsIDProvided
+	}
+
+	err := c.apiClient.DELETE(ctx, path.Join(ObjectsPath, objectID)).
+		Execute(nil)
+	if err != nil {
+		return fmt.Errorf("%w: %w", errDeleteSettings, err)
+	}
+
+	return nil
 }
