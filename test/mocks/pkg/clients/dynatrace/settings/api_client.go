@@ -598,22 +598,22 @@ func (_c *APIClient_GetRules_Call) RunAndReturn(run func(ctx context.Context, ku
 }
 
 // GetSettingsForLogModule provides a mock function for the type APIClient
-func (_mock *APIClient) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (settings.SimpleSettingsResponse, error) {
+func (_mock *APIClient) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (settings.TotalCountSettingsResponse, error) {
 	ret := _mock.Called(ctx, monitoredEntity)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSettingsForLogModule")
 	}
 
-	var r0 settings.SimpleSettingsResponse
+	var r0 settings.TotalCountSettingsResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (settings.SimpleSettingsResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (settings.TotalCountSettingsResponse, error)); ok {
 		return returnFunc(ctx, monitoredEntity)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) settings.SimpleSettingsResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) settings.TotalCountSettingsResponse); ok {
 		r0 = returnFunc(ctx, monitoredEntity)
 	} else {
-		r0 = ret.Get(0).(settings.SimpleSettingsResponse)
+		r0 = ret.Get(0).(settings.TotalCountSettingsResponse)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = returnFunc(ctx, monitoredEntity)
@@ -653,33 +653,33 @@ func (_c *APIClient_GetSettingsForLogModule_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *APIClient_GetSettingsForLogModule_Call) Return(simpleSettingsResponse settings.SimpleSettingsResponse, err error) *APIClient_GetSettingsForLogModule_Call {
-	_c.Call.Return(simpleSettingsResponse, err)
+func (_c *APIClient_GetSettingsForLogModule_Call) Return(totalCountSettingsResponse settings.TotalCountSettingsResponse, err error) *APIClient_GetSettingsForLogModule_Call {
+	_c.Call.Return(totalCountSettingsResponse, err)
 	return _c
 }
 
-func (_c *APIClient_GetSettingsForLogModule_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (settings.SimpleSettingsResponse, error)) *APIClient_GetSettingsForLogModule_Call {
+func (_c *APIClient_GetSettingsForLogModule_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (settings.TotalCountSettingsResponse, error)) *APIClient_GetSettingsForLogModule_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetSettingsForMonitoredEntity provides a mock function for the type APIClient
-func (_mock *APIClient) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity settings.K8sClusterME, schemaID string) (settings.SimpleSettingsResponse, error) {
+func (_mock *APIClient) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity settings.K8sClusterME, schemaID string) (settings.TotalCountSettingsResponse, error) {
 	ret := _mock.Called(ctx, monitoredEntity, schemaID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSettingsForMonitoredEntity")
 	}
 
-	var r0 settings.SimpleSettingsResponse
+	var r0 settings.TotalCountSettingsResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterME, string) (settings.SimpleSettingsResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterME, string) (settings.TotalCountSettingsResponse, error)); ok {
 		return returnFunc(ctx, monitoredEntity, schemaID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterME, string) settings.SimpleSettingsResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterME, string) settings.TotalCountSettingsResponse); ok {
 		r0 = returnFunc(ctx, monitoredEntity, schemaID)
 	} else {
-		r0 = ret.Get(0).(settings.SimpleSettingsResponse)
+		r0 = ret.Get(0).(settings.TotalCountSettingsResponse)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterME, string) error); ok {
 		r1 = returnFunc(ctx, monitoredEntity, schemaID)
@@ -725,12 +725,12 @@ func (_c *APIClient_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context
 	return _c
 }
 
-func (_c *APIClient_GetSettingsForMonitoredEntity_Call) Return(simpleSettingsResponse settings.SimpleSettingsResponse, err error) *APIClient_GetSettingsForMonitoredEntity_Call {
-	_c.Call.Return(simpleSettingsResponse, err)
+func (_c *APIClient_GetSettingsForMonitoredEntity_Call) Return(totalCountSettingsResponse settings.TotalCountSettingsResponse, err error) *APIClient_GetSettingsForMonitoredEntity_Call {
+	_c.Call.Return(totalCountSettingsResponse, err)
 	return _c
 }
 
-func (_c *APIClient_GetSettingsForMonitoredEntity_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity settings.K8sClusterME, schemaID string) (settings.SimpleSettingsResponse, error)) *APIClient_GetSettingsForMonitoredEntity_Call {
+func (_c *APIClient_GetSettingsForMonitoredEntity_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity settings.K8sClusterME, schemaID string) (settings.TotalCountSettingsResponse, error)) *APIClient_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Return(run)
 	return _c
 }

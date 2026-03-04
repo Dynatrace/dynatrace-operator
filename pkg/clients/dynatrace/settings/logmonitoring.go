@@ -26,12 +26,12 @@ type ingestRuleMatchers struct {
 }
 
 // GetSettingsForLogModule returns the settings response with the number of settings objects and their values.
-func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (SimpleSettingsResponse, error) {
+func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (TotalCountSettingsResponse, error) {
 	if monitoredEntity == "" {
-		return SimpleSettingsResponse{}, nil
+		return TotalCountSettingsResponse{}, nil
 	}
 
-	var resp SimpleSettingsResponse
+	var resp TotalCountSettingsResponse
 
 	err := c.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
@@ -41,7 +41,7 @@ func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity st
 		}).
 		Execute(&resp)
 	if err != nil {
-		return SimpleSettingsResponse{}, fmt.Errorf("get logmonitoring settings: %w", err)
+		return TotalCountSettingsResponse{}, fmt.Errorf("get logmonitoring settings: %w", err)
 	}
 
 	return resp, nil
