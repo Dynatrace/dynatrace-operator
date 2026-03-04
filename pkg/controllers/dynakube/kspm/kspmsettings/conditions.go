@@ -23,7 +23,7 @@ func setExistsCondition(conditions *[]metav1.Condition) {
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setErrorCondition(conditions *[]metav1.Condition, _ error) {
+func setErrorCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,

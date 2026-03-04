@@ -129,7 +129,7 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	}
 
 	if err != nil {
-		setVerificationFailedReasonCondition(updater.dk.Conditions(), oaConditionType, err)
+		setVerificationFailedReasonCondition(updater.dk.Conditions(), oaConditionType)
 	}
 
 	return downgrade, err

@@ -1,27 +1,41 @@
 package dynakube
 
 import (
+	"errors"
+	"fmt"
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	TokenReadyConditionMessage             = "Token ready"
-	TokenWithoutDataIngestConditionMessage = "Token ready, DataIngest token not provided"
-	TokenVerificationConditionMessage      = "Token verification failed"
-	TokenNotFoundConditionMessage          = "Token secret not found"
+	TokenWithoutDataIngestConditionMessage  = "Token ready, DataIngest token not provided"
+	TokenVerificationFailedConditionMessage = "Token verification failed"
+	TokenScopesMissingConditionMessage      = "The following required scopes are missing: %s."
 )
 
 func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
-	var msg string
+	msg := TokenVerificationFailedConditionMessage
 
-	switch {
-	case k8serrors.IsNotFound(err):
-		msg = TokenNotFoundConditionMessage
-	default:
-		msg = TokenVerificationConditionMessage
+	var e token.VerificationError
+	if errors.As(err, &e) {
+		if len(e.Errs) > 0 {
+			missingScopes := make([]string, 0)
+			for _, scopeErr := range e.Errs {
+				var se token.ScopeError
+				if errors.As(scopeErr, &se) {
+					missingScopes = append(missingScopes, se.MissingScopes...)
+				}
+			}
+
+			if len(missingScopes) > 0 {
+				msg = fmt.Sprintf(TokenScopesMissingConditionMessage, strings.Join(missingScopes, ", "))
+			}
+		}
 	}
 
 	tokenErrorCondition := metav1.Condition{

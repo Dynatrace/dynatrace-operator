@@ -86,7 +86,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 
 	kspmSettings, err := dtc.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
 	if err != nil {
-		setErrorCondition(dk.Conditions(), err)
+		setErrorCondition(dk.Conditions())
 
 		return errors.WithMessage(err, "error trying to check if setting exists")
 	}
@@ -103,7 +103,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 
 	objectID, err := dtc.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, datasetPipelineEnabled)
 	if err != nil {
-		setErrorCondition(dk.Conditions(), err)
+		setErrorCondition(dk.Conditions())
 
 		return err
 	}
