@@ -22,16 +22,6 @@ const (
 
 // Client is the interface for the Dynatrace REST API client.
 type Client interface {
-	// GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
-	// Returns the version as received from the server on success.
-	//
-	// Returns an error for the following conditions:
-	//  - os or installerType is empty
-	//  - IO error or unexpected response
-	//  - error response from the server (e.g. authentication failure)
-	//  - the agent version is not set or empty
-	GetLatestAgentVersion(ctx context.Context, os, installerType string) (string, error)
-
 	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
 	GetLatestAgent(ctx context.Context, os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error
 
@@ -49,48 +39,12 @@ type Client interface {
 
 	GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error)
 
-	// SendEvent posts events to dynatrace API
-	SendEvent(ctx context.Context, eventData *EventData) error
-
-	// GetHostEntityIDForIP returns the host entity id for a given IP address.
-	// Returns an error in case the lookup failed.
-	GetHostEntityIDForIP(ctx context.Context, ip string) (string, error)
-
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(ctx context.Context, token string) (TokenScopes, error)
-
-	// GetActiveGateConnectionInfo returns AgentTenantInfo for ActiveGate that holds UUID, Tenant Token and Endpoints
-	GetActiveGateConnectionInfo(ctx context.Context) (ActiveGateConnectionInfo, error)
-
-	GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error)
-
-	GetLatestOneAgentImage(ctx context.Context) (*LatestImageInfo, error)
-
-	GetLatestCodeModulesImage(ctx context.Context) (*LatestImageInfo, error)
-
-	GetLatestActiveGateImage(ctx context.Context) (*LatestImageInfo, error)
-
-	// GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch.
-	// Returns the version as received from the server on success.
-	GetLatestActiveGateVersion(ctx context.Context, os string) (string, error)
 
 	// AsV2 is a temporary adapter to gradually migrate to the v2 client.
 	AsV2() *ClientV2
 }
-
-const (
-	OsUnix = "unix"
-	// Commented for linter, left for further reference
-	// OsWindows = "windows"
-	// OsAix     = "aix"
-	// OsSolaris = "solaris"
-)
-
-// Relevant installer types.
-const (
-	InstallerTypeDefault = "default"
-	InstallerTypePaaS    = "paas"
-)
 
 // Relevant token scopes
 const (

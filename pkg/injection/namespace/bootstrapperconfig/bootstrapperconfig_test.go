@@ -2,6 +2,7 @@ package bootstrapperconfig
 
 import (
 	"context"
+	goerrors "errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
@@ -27,16 +28,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 const (
-	testPaasToken       = "test-paas-token"
-	testAPIToken        = "test-api-token"
-	testDataIngestToken = "test-ingest-token"
+	testPaasToken = "test-paas-token"
+	testAPIToken  = "test-api-token"
 
-	testUUID                  = "test-uuid"
-	testTenantToken           = "abcd"
-	testCommunicationEndpoint = "https://tenant.dev.dynatracelabs.com:443"
+	testUUID        = "test-uuid"
+	testTenantToken = "abcd"
 
 	testHost = "test-host"
 
@@ -50,6 +50,11 @@ const (
 
 	oldCertValue = "old-cert-value"
 	oldTrustedCa = "old-trusted-ca"
+)
+
+var (
+	errBootstrapperConfigSecret = goerrors.New("failed to create bootstrapper config secret")
+	errBootstrapperCertsSecret  = goerrors.New("failed to create bootstrapper certs secret")
 )
 
 func TestNewSecretGenerator(t *testing.T) {
@@ -347,6 +352,137 @@ func TestGenerateForDynakube(t *testing.T) {
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionFalse, c.Status)
 	})
+	t.Run("continue if error occurs while generating secret for dynakube", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+				Annotations: map[string]string{
+					exp.OAInitialConnectRetryKey: "6500",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:     testAPIurl,
+				TrustedCAs: "test-trusted-ca",
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: ptr.To(true),
+				},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+					TLSSecretName: "test-tls-secret-name",
+				},
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+		failClient := createFailClient(
+			dk,
+			namespace,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				dtclient.APIToken:  []byte(testAPIToken),
+				dtclient.PaasToken: []byte(testPaasToken),
+			}),
+			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
+				dynakube.ServerCertKey: []byte("test-cert-value"),
+			}),
+			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+				"tenant-token": []byte(testTenantToken),
+			}),
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-trusted-ca",
+					Namespace: testNamespaceDynatrace,
+				},
+				Data: map[string]string{
+					dynakube.TrustedCAKey: "test-trusted-ca-value",
+				},
+			},
+		)
+
+		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+
+		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
+		require.Error(t, err)
+
+		for _, e := range []error{errBootstrapperConfigSecret, errBootstrapperCertsSecret} {
+			assert.ErrorIs(t, err, e)
+		}
+	})
+	t.Run("successfully generate bootstrapper certs secret even if config creation fails", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+				Annotations: map[string]string{
+					exp.OAInitialConnectRetryKey: "6500",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:     testAPIurl,
+				TrustedCAs: "test-trusted-ca",
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: ptr.To(true),
+				},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+					TLSSecretName: "test-tls-secret-name",
+				},
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
+		failClient := createConfigFailClient(dk,
+			namespace,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				dtclient.APIToken:  []byte(testAPIToken),
+				dtclient.PaasToken: []byte(testPaasToken),
+			}),
+			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
+				dynakube.ServerCertKey: []byte("test-cert-value"),
+			}),
+			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+				"tenant-token": []byte(testTenantToken),
+			}),
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-trusted-ca",
+					Namespace: testNamespaceDynatrace,
+				},
+				Data: map[string]string{
+					dynakube.TrustedCAKey: "test-trusted-ca-value",
+				},
+			})
+
+		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+
+		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
+		require.Error(t, err)
+		require.ErrorIs(t, err, errBootstrapperConfigSecret)
+
+		var secretConfig corev1.Secret
+		err = failClient.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secretConfig)
+		require.Error(t, err)
+
+		var secretCerts corev1.Secret
+		err = failClient.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: testNamespace}, &secretCerts)
+		require.NoError(t, err)
+		assert.NotEmpty(t, secretCerts.Data)
+	})
 }
 
 func TestCleanup(t *testing.T) {
@@ -444,4 +580,48 @@ func clientInjectedNamespace(namespaceName string, dynakubeName string) *corev1.
 			},
 		},
 	}
+}
+
+func createFailClient(objs ...client.Object) client.Client {
+	return fake.NewClientWithInterceptorsAndIndex(interceptor.Funcs{
+		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+			if obj.GetName() == consts.BootstrapperInitSecretName {
+				return errBootstrapperConfigSecret
+			}
+			if obj.GetName() == consts.BootstrapperInitCertsSecretName {
+				return errBootstrapperCertsSecret
+			}
+
+			return client.Create(ctx, obj, opts...)
+		},
+		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+			if obj.GetName() == consts.BootstrapperInitSecretName {
+				return errBootstrapperConfigSecret
+			}
+			if obj.GetName() == consts.BootstrapperInitCertsSecretName {
+				return errBootstrapperCertsSecret
+			}
+
+			return client.Update(ctx, obj, opts...)
+		},
+	}, objs...)
+}
+
+func createConfigFailClient(objs ...client.Object) client.Client {
+	return fake.NewClientWithInterceptorsAndIndex(interceptor.Funcs{
+		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+			if obj.GetName() == consts.BootstrapperInitSecretName {
+				return errBootstrapperConfigSecret
+			}
+
+			return client.Create(ctx, obj, opts...)
+		},
+		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+			if obj.GetName() == consts.BootstrapperInitSecretName {
+				return errBootstrapperConfigSecret
+			}
+
+			return client.Update(ctx, obj, opts...)
+		},
+	}, objs...)
 }

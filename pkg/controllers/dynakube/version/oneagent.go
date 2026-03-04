@@ -5,7 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -17,20 +18,20 @@ const (
 )
 
 type oneAgentUpdater struct {
-	dk        *dynakube.DynaKube
-	apiReader client.Reader
-	dtClient  dtclient.Client
+	dk            *dynakube.DynaKube
+	apiReader     client.Reader
+	versionClient version.APIClient
 }
 
 func newOneAgentUpdater(
 	dk *dynakube.DynaKube,
 	apiReader client.Reader,
-	dtClient dtclient.Client,
+	versionClient version.APIClient,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
-		dk:        dk,
-		apiReader: apiReader,
-		dtClient:  dtClient,
+		dk:            dk,
+		apiReader:     apiReader,
+		versionClient: versionClient,
 	}
 }
 
@@ -71,22 +72,8 @@ func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
 	return updater.dk.OneAgent().IsAutoUpdateEnabled()
 }
 
-func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FF().IsPublicRegistry() && !updater.dk.OneAgent().IsClassicFullStackMode()
-	if isPublicRegistry {
-		setVerifiedCondition(updater.dk.Conditions(), oaConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
-	}
-
-	return isPublicRegistry
-}
-
-func (updater oneAgentUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imageInfo, err := updater.dtClient.GetLatestOneAgentImage(ctx)
-	if err != nil {
-		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
-	}
-
-	return imageInfo, err
+func (updater oneAgentUpdater) IsAutoRegistryEnabled() bool {
+	return updater.dk.FF().IsAutomaticRegistry()
 }
 
 func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
@@ -96,7 +83,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	latestVersion := updater.CustomVersion()
 
 	if latestVersion == "" {
-		latestVersion, err = updater.dtClient.GetLatestAgentVersion(ctx, dtclient.OsUnix, dtclient.InstallerTypeDefault)
+		latestVersion, err = updater.versionClient.GetLatestAgentVersion(ctx, installer.OsUnix, installer.TypeDefault)
 		if err != nil {
 			log.Info("failed to determine image version")
 			k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
@@ -132,16 +119,8 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 
 	var err error
 
-	switch updater.Target().Source {
-	case status.TenantRegistryVersionSource:
-		previousVersion = updater.Target().Version
-	case status.PublicRegistryVersionSource:
-		previousVersion, err = getTagFromImageID(imageID)
-		if err != nil {
-			setVerificationFailedReasonCondition(updater.dk.Conditions(), oaConditionType, err)
-
-			return false, err
-		}
+	if updater.Target().Source == status.TenantRegistryVersionSource {
+		previousVersion = updater.Target().Version //nolint:staticcheck
 	}
 
 	downgrade, err := isDowngrade(updater.Name(), previousVersion, latestVersion)

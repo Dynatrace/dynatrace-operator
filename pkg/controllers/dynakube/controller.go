@@ -85,19 +85,19 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
 
-		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
-		activeGateReconcilerBuilder:         activegate.NewReconciler,
-		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
-		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
-		injectionReconcilerBuilder:          injection.NewReconciler,
-		istioReconcilerBuilder:              istio.NewReconciler,
-		otelcReconcilerBuilder:              otelc.NewReconciler,
-		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
-		proxyReconcilerBuilder:              proxy.NewReconciler,
+		activeGateReconcilerBuilder:    activegate.NewReconciler,
+		oneAgentReconcilerBuilder:      oneagent.NewReconciler,
+		injectionReconcilerBuilder:     injection.NewReconciler,
+		istioReconcilerBuilder:         istio.NewReconciler,
+		logMonitoringReconcilerBuilder: logmonitoring.NewReconciler,
 
-		extensionReconciler: extension.NewReconciler(kubeClient, apiReader),
-		kspmReconciler:      kspm.NewReconciler(kubeClient, apiReader),
-		k8sEntityReconciler: k8sentity.NewReconciler(),
+		apiMonitoringReconciler:      apimonitoring.NewReconciler(),
+		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
+		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
+		k8sEntityReconciler:          k8sentity.NewReconciler(),
+		otelcReconciler:              otelc.NewReconciler(kubeClient, apiReader),
+		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
+		deploymentMetadataReconciler: deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
 	}
 }
 
@@ -113,7 +113,11 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(controller)
 }
 
-type extensionReconciler interface {
+type apiMonitoringReconciler interface {
+	Reconcile(ctx context.Context, dtc settings.APIClient, clusterLabel string, dk *dynakube.DynaKube) error
+}
+
+type dynakubeReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
@@ -130,23 +134,23 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder record.EventRecorder
 
-	extensionReconciler extensionReconciler
-	k8sEntityReconciler dtSettingReconciler
-	kspmReconciler      dtSettingReconciler
+	apiMonitoringReconciler      apiMonitoringReconciler
+	extensionReconciler          dynakubeReconciler
+	k8sEntityReconciler          dtSettingReconciler
+	kspmReconciler               dtSettingReconciler
+	otelcReconciler              dynakubeReconciler
+	proxyReconciler              dynakubeReconciler
+	deploymentMetadataReconciler dynakubeReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
 	istioClientBuilder     istio.ClientBuilder
 
-	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
-	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
-	oneAgentReconcilerBuilder           oneagent.ReconcilerBuilder
-	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
-	injectionReconcilerBuilder          injection.ReconcilerBuilder
-	istioReconcilerBuilder              istio.ReconcilerBuilder
-	otelcReconcilerBuilder              otelc.ReconcilerBuilder
-	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
-	proxyReconcilerBuilder              proxy.ReconcilerBuilder
+	activeGateReconcilerBuilder    activegate.ReconcilerBuilder
+	oneAgentReconcilerBuilder      oneagent.ReconcilerBuilder
+	injectionReconcilerBuilder     injection.ReconcilerBuilder
+	istioReconcilerBuilder         istio.ReconcilerBuilder
+	logMonitoringReconcilerBuilder logmonitoring.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -297,15 +301,14 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 
 	log.Info("start reconciling deployment meta data")
 
-	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, *dk, controller.clusterID).Reconcile(ctx)
+	err = controller.deploymentMetadataReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	proxyReconciler := controller.proxyReconcilerBuilder(controller.client, controller.apiReader, dk)
+	if err := controller.proxyReconciler.Reconcile(ctx, dk); err != nil {
+		log.Info("could not reconcile proxy resources")
 
-	err = proxyReconciler.Reconcile(ctx)
-	if err != nil {
 		return err
 	}
 
@@ -387,10 +390,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling otel-collector")
 
-	otelcReconciler := controller.otelcReconcilerBuilder(controller.client, controller.apiReader, dk)
-
-	err = otelcReconciler.Reconcile(ctx)
-	if err != nil {
+	if err := controller.otelcReconciler.Reconcile(ctx, dk); err != nil {
 		log.Info("could not reconcile otelc")
 
 		componentErrors = append(componentErrors, err)

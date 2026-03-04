@@ -64,7 +64,9 @@ spec:
             # OLM mounts the certificates here, so we reuse it for simplicity
             - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
           image: {{ include "dynatrace-operator.image" . }}
-          imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+          {{- with .Values.imageRef.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
           env:
             - name: POD_NAMESPACE
               valueFrom:

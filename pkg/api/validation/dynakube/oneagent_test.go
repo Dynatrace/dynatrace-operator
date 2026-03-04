@@ -468,6 +468,27 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 		})
 	})
 
+	t.Run("is allowed when spec with cloudNative, csi driver and node image pull enabled and image not set and automatic-registry ff is enabled", func(t *testing.T) {
+		assertAllowed(t, &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.OANodeImagePullKey:   "true",
+					exp.AutomaticRegistryKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{},
+					},
+				},
+			},
+		})
+	})
+
 	t.Run("spec with appmon enabled, csi driver and node image pull enabled and image not set", func(t *testing.T) {
 		assertDenied(t, []string{errorImagePullRequiresCodeModulesImage}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -659,14 +680,14 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 	}
 
 	for _, validVersion := range validVersions {
-		dk.OneAgent().ClassicFullStack.Version = validVersion
+		dk.OneAgent().ClassicFullStack.Version = validVersion //nolint:staticcheck
 		t.Run(fmt.Sprintf("OneAgent custom version %s is allowed", validVersion), func(t *testing.T) {
 			assertAllowed(t, &dk)
 		})
 	}
 
 	for _, invalidVersion := range invalidVersions {
-		dk.OneAgent().ClassicFullStack.Version = invalidVersion
+		dk.OneAgent().ClassicFullStack.Version = invalidVersion //nolint:staticcheck
 		t.Run(fmt.Sprintf("OneAgent custom version %s is not allowed", invalidVersion), func(t *testing.T) {
 			assertDenied(t, []string{versionInvalidMessage}, &dk)
 		})
@@ -1011,6 +1032,71 @@ func TestDeprecatedOneAgentAutoUpdate(t *testing.T) {
 			checkWarnings(t, warnings)
 
 			assertUpdateAllowedWithoutWarnings(t, deprecatedDK, validDK)
+		})
+	}
+}
+
+func TestDeprecatedOneAgentVersion(t *testing.T) {
+	baseDK := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL:   testAPIURL,
+			OneAgent: oneagent.Spec{},
+		},
+	}
+
+	testcases := []struct {
+		name            string
+		valid           oneagent.Spec
+		expectedWarning string
+	}{
+		{
+			"classic fullstack",
+			oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
+				Version: "1.0.0.20240101-000000", //nolint:staticcheck
+			}},
+			fmt.Sprintf(warningDeprecatedVersion, "image"),
+		},
+		{
+			"host monitoring",
+			oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
+				Version: "1.0.0.20240101-000000", //nolint:staticcheck
+			}},
+			fmt.Sprintf(warningDeprecatedVersion, "image"),
+		},
+		{
+			"cloudnative fullstack",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+				HostInjectSpec: oneagent.HostInjectSpec{
+					Version: "1.0.0.20240101-000000", //nolint:staticcheck
+				},
+			}},
+			fmt.Sprintf(warningDeprecatedVersion, "image and/or codeModulesImage"),
+		},
+		{
+			"app monitoring",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+				Version: "1.0.0.20240101-000000", //nolint:staticcheck
+			}},
+			fmt.Sprintf(warningDeprecatedVersion, "codeModulesImage"),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			validDK := baseDK.DeepCopy()
+			validDK.Spec.OneAgent = tc.valid
+
+			deprecatedDK := baseDK.DeepCopy()
+			deprecatedDK.Spec.OneAgent = tc.valid
+
+			warnings, err := assertAllowed(t, deprecatedDK)
+			require.NoError(t, err, "creation")
+			require.Len(t, warnings, 1)
+			assert.Equal(t, tc.expectedWarning, warnings[0])
 		})
 	}
 }

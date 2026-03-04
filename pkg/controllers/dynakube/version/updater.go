@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -20,10 +19,9 @@ type StatusUpdater interface {
 	CustomImage() string
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
-	IsPublicRegistryEnabled() bool
+	IsAutoRegistryEnabled() bool
 	CheckForDowngrade(latestVersion string) (bool, error)
 	ValidateStatus() error
-	LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error)
 
 	UseTenantRegistry(context.Context) error
 }
@@ -59,8 +57,8 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		}
 	}
 
-	if updater.IsPublicRegistryEnabled() {
-		err = r.processPublicRegistry(ctx, updater)
+	if updater.IsAutoRegistryEnabled() {
+		err = r.processAutoRegistry(ctx, updater)
 		if err != nil {
 			return err
 		}
@@ -78,26 +76,10 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	return updater.ValidateStatus()
 }
 
-func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
+func (r *reconciler) processAutoRegistry(_ context.Context, updater StatusUpdater) error {
 	log.Info("updating version status according to public registry", "updater", updater.Name())
-
-	var publicImage *dtclient.LatestImageInfo
-
-	publicImage, err := updater.LatestImageInfo(ctx)
-	if err != nil {
-		log.Info("could not get public image", "updater", updater.Name())
-
-		return err
-	}
-
-	isDowngrade, err := updater.CheckForDowngrade(publicImage.Tag)
-	if err != nil || isDowngrade {
-		return err
-	}
-
-	setImageFromImageInfo(updater.Target(), *publicImage)
-
-	return nil
+	// TODO: implement in ICP-1077
+	return errors.New("auto registry is not yet supported")
 }
 
 func determineSource(updater StatusUpdater) status.VersionSource {
@@ -105,8 +87,8 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 		return status.CustomImageVersionSource
 	}
 
-	if updater.IsPublicRegistryEnabled() {
-		return status.PublicRegistryVersionSource
+	if updater.IsAutoRegistryEnabled() {
+		return status.AutomaticRegistryVersionSource
 	}
 
 	if updater.CustomVersion() != "" {
@@ -126,22 +108,6 @@ func setImageIDToCustomImage(
 
 	target.ImageID = imageURI
 	target.Version = string(status.CustomImageVersionSource)
-
-	log.Info("updated image version info",
-		"newImageID", target.ImageID)
-}
-
-func setImageFromImageInfo(
-	target *status.VersionStatus,
-	imageInfo dtclient.LatestImageInfo,
-) {
-	imageURI := imageInfo.String()
-	log.Info("updating image version info",
-		"image", imageInfo.String(),
-		"oldImageID", target.ImageID)
-
-	target.Version = imageInfo.Tag
-	target.ImageID = imageURI
 
 	log.Info("updated image version info",
 		"newImageID", target.ImageID)

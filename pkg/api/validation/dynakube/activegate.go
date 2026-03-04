@@ -14,32 +14,10 @@ const (
 Make sure you correctly specify the ActiveGate capabilities in your custom resource.
 `
 
-	errorDuplicateActiveGateCapability = `The DynaKube's specification tries to specify duplicate capabilities in the ActiveGate section, duplicate capability=%s.
-Make sure you don't duplicate an Activegate capability in your custom resource.
-`
 	errorActiveGateInvalidPVCConfiguration = ` DynaKube specifies a PVC for the ActiveGate while ephemeral volume is also enabled. These settings are mutually exclusive, please choose only one.`
 
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
 )
-
-func duplicateActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.ActiveGate().IsEnabled() {
-		capabilities := dk.Spec.ActiveGate.Capabilities
-		duplicateChecker := map[activegate.CapabilityDisplayName]bool{}
-
-		for _, capability := range capabilities {
-			if duplicateChecker[capability] {
-				log.Info("requested dynakube has duplicates in the active gate capabilities section", "name", dk.Name, "namespace", dk.Namespace)
-
-				return fmt.Sprintf(errorDuplicateActiveGateCapability, capability)
-			}
-
-			duplicateChecker[capability] = true
-		}
-	}
-
-	return ""
-}
 
 func invalidActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.ActiveGate().IsEnabled() {

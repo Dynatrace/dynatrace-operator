@@ -63,38 +63,6 @@ func unknownTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dynaku
 	return ""
 }
 
-func duplicatedTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.TelemetryIngest().IsEnabled() {
-		return ""
-	}
-
-	protocolsOccurrences := map[otelcgen.Protocol]int{}
-
-	for _, protocol := range dk.TelemetryIngest().GetProtocols() {
-		if _, ok := protocolsOccurrences[protocol]; !ok {
-			protocolsOccurrences[protocol] = 1
-		} else {
-			protocolsOccurrences[protocol] += 1
-		}
-	}
-
-	var duplicatedProtocols []string
-
-	for protocol, count := range protocolsOccurrences {
-		if count > 1 {
-			duplicatedProtocols = append(duplicatedProtocols, string(protocol))
-		}
-	}
-
-	if len(duplicatedProtocols) > 0 {
-		log.Info("requested dynakube specify duplicated TelemetryIngest protocol(s)", "protocols", strings.Join(duplicatedProtocols, ","))
-
-		return errorTelemetryIngestDuplicatedProtocols
-	}
-
-	return ""
-}
-
 func invalidTelemetryIngestName(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""

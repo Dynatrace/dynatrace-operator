@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,29 +53,6 @@ const (
 	versionsResponse       = `{ "availableVersions": [ "1.123.1", "1.123.2", "1.123.3", "1.123.4" ] }`
 )
 
-func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client) {
-	ctx := context.Background()
-
-	t.Run("os field is required", func(t *testing.T) {
-		_, err := dynatraceClient.GetLatestAgentVersion(ctx, "", InstallerTypeDefault)
-
-		require.Error(t, err, "empty OS")
-	})
-
-	t.Run("installer field is required", func(t *testing.T) {
-		_, err := dynatraceClient.GetLatestAgentVersion(ctx, OsUnix, "")
-
-		require.Error(t, err, "empty installer type")
-	})
-
-	t.Run("happy path", func(t *testing.T) {
-		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(ctx, OsUnix, InstallerTypePaaS)
-
-		require.NoError(t, err)
-		assert.Equal(t, "1.242.0.20220429-180918", latestAgentVersion, "latest agent version equals expected version")
-	})
-}
-
 func TestGetLatestAgent(t *testing.T) {
 	ctx := context.Background()
 
@@ -92,7 +70,7 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(ctx, OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
+		err = dtc.GetLatestAgent(ctx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
 		require.NoError(t, err)
 
 		resp, err := os.ReadFile(file.Name())
@@ -104,7 +82,7 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(ctx, OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "invalid", nil, false, file)
+		err = dtc.GetLatestAgent(ctx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, "invalid", nil, false, file)
 		require.Error(t, err)
 	})
 }
@@ -117,7 +95,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		readWriter := bytes.NewBuffer([]byte{})
-		err := dtc.GetAgent(ctx, OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
+		err := dtc.GetAgent(ctx, installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, readWriter)
 
 		require.NoError(t, err)
 		assert.Equal(t, versionedAgentResponse, readWriter.String())
@@ -127,7 +105,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		readWriter := bytes.NewBuffer([]byte{})
-		err := dtc.GetAgent(ctx, OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
+		err := dtc.GetAgent(ctx, installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, readWriter)
 
 		require.EqualError(t, err, "dynatrace server error 400: test-error")
 	})
@@ -140,7 +118,7 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, versionsRequestHandler)
 		defer dynatraceServer.Close()
 
-		availableVersions, err := dtc.GetAgentVersions(ctx, OsUnix, InstallerTypePaaS, "")
+		availableVersions, err := dtc.GetAgentVersions(ctx, installer.OsUnix, installer.TypePaaS, "")
 
 		require.NoError(t, err)
 		assert.Len(t, availableVersions, 4)
@@ -153,7 +131,7 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 
-		availableVersions, err := dtc.GetAgentVersions(ctx, OsUnix, InstallerTypePaaS, "")
+		availableVersions, err := dtc.GetAgentVersions(ctx, installer.OsUnix, installer.TypePaaS, "")
 
 		require.EqualError(t, err, "dynatrace server error 400: test-error")
 		assert.Empty(t, availableVersions)
@@ -212,18 +190,6 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 		}
 
 		_, _ = writer.Write(resp)
-	default:
-		writeError(writer, http.StatusMethodNotAllowed)
-	}
-}
-
-func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter) {
-	switch request.Method {
-	case http.MethodGet:
-		writer.WriteHeader(http.StatusOK)
-
-		out, _ := json.Marshal(map[string]string{"latestAgentVersion": "1.242.0.20220429-180918"})
-		_, _ = writer.Write(out)
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)
 	}

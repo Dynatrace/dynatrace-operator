@@ -3,8 +3,6 @@ package dynatrace
 import (
 	"fmt"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 type serverErrorResponse struct {
@@ -41,12 +39,4 @@ func (e ServerError) Error() string {
 	}
 
 	return sb.String()
-}
-
-func hasServerErrorCode(err error, status int) bool {
-	var serverErr ServerError
-
-	ok := errors.As(err, &serverErr)
-
-	return ok && serverErr.Code == status
 }

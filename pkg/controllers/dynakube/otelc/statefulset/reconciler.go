@@ -36,38 +36,34 @@ const (
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dk        *dynakube.DynaKube
 }
 
-func NewReconciler(clt client.Client,
-	apiReader client.Reader,
-	dk *dynakube.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,
-		dk:        dk,
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.Extensions().IsPrometheusEnabled() || r.dk.TelemetryIngest().IsEnabled() {
-		return r.createOrUpdateStatefulset(ctx)
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
+		return r.createOrUpdateStatefulset(ctx, dk)
 	} else { // do cleanup or
-		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
+		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+		defer meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 
-		sts, err := k8sstatefulset.Build(r.dk, r.dk.OtelCollectorStatefulsetName(), corev1.Container{})
+		sts, err := k8sstatefulset.Build(dk, dk.OtelCollectorStatefulsetName(), corev1.Container{})
 		if err != nil {
-			log.Error(err, "could not build "+r.dk.OtelCollectorStatefulsetName()+" during cleanup")
+			log.Error(err, "could not build "+dk.OtelCollectorStatefulsetName()+" during cleanup")
 
 			return err
 		}
 
 		err = k8sstatefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
 		if err != nil {
-			log.Error(err, "failed to clean up "+r.dk.OtelCollectorStatefulsetName()+" statufulset")
+			log.Error(err, "failed to clean up "+dk.OtelCollectorStatefulsetName()+" statufulset")
 
 			return nil
 		}
@@ -76,11 +72,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 }
 
-func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
-	if r.dk.TelemetryIngest().IsEnabled() {
-		if !r.checkDataIngestTokenExists(ctx) {
+func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
+	if dk.TelemetryIngest().IsEnabled() {
+		if !r.checkDataIngestTokenExists(ctx, dk) {
 			msg := "data ingest token is missing, but it's required for telemetery ingest"
-			k8sconditions.SetDataIngestTokenMissing(r.dk.Conditions(), dynakube.TokenConditionType, msg)
+			k8sconditions.SetDataIngestTokenMissing(dk.Conditions(), dynakube.TokenConditionType, msg)
 
 			log.Error(errors.New(msg), "could not create or update statefulset")
 
@@ -88,60 +84,60 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		}
 	}
 
-	appLabels := buildAppLabels(r.dk.Name)
+	appLabels := buildAppLabels(dk.Name)
 
-	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
+	templateAnnotations, err := r.buildTemplateAnnotations(ctx, dk)
 	if err != nil {
 		return err
 	}
 
 	topologySpreadConstraints := k8stopology.MaxOnePerNode(appLabels)
-	if len(r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints) > 0 {
-		topologySpreadConstraints = r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
+	if len(dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints) > 0 {
+		topologySpreadConstraints = dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
 	}
 
-	sts, err := k8sstatefulset.Build(r.dk, r.dk.OtelCollectorStatefulsetName(), getContainer(r.dk),
-		k8sstatefulset.SetReplicas(getReplicas(r.dk)),
+	sts, err := k8sstatefulset.Build(dk, dk.OtelCollectorStatefulsetName(), getContainer(dk),
+		k8sstatefulset.SetReplicas(getReplicas(dk)),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
-		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
+		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.OpenTelemetryCollector.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, templateAnnotations),
 		k8sstatefulset.SetAffinity(buildAffinity()),
 		k8sstatefulset.SetServiceAccount(serviceAccountName),
-		k8sstatefulset.SetTolerations(r.dk.Spec.Templates.OpenTelemetryCollector.Tolerations),
+		k8sstatefulset.SetTolerations(dk.Spec.Templates.OpenTelemetryCollector.Tolerations),
 		k8sstatefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
 		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
 		k8sstatefulset.SetRollingUpdateStrategyType(),
-		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
-		setVolumes(r.dk),
+		setImagePullSecrets(dk.ImagePullSecretReferences()),
+		setVolumes(dk),
 	)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
-	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, sts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
-		log.Info("failed to create/update " + r.dk.OtelCollectorStatefulsetName() + " statefulset")
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		log.Info("failed to create/update " + dk.OtelCollectorStatefulsetName() + " statefulset")
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
-	k8sconditions.SetStatefulSetCreated(r.dk.Conditions(), conditionType, sts.Name)
+	k8sconditions.SetStatefulSetCreated(dk.Conditions(), conditionType, sts.Name)
 
 	return nil
 }
 
-func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
+func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	templateAnnotations := map[string]string{}
 
-	if r.dk.Extensions().IsPrometheusEnabled() {
-		if r.dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
-			templateAnnotations = r.dk.Spec.Templates.OpenTelemetryCollector.Annotations
+	if dk.Extensions().IsPrometheusEnabled() {
+		if dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
+			templateAnnotations = dk.Spec.Templates.OpenTelemetryCollector.Annotations
 		}
 
-		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.Extensions().GetTLSSecretName())
+		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.Extensions().GetTLSSecretName(), dk.Namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -149,8 +145,8 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
 	}
 
-	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().TLSRefName != "" {
-		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.TelemetryIngest().TLSRefName)
+	if dk.TelemetryIngest().IsEnabled() && dk.TelemetryIngest().TLSRefName != "" {
+		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.TelemetryIngest().TLSRefName, dk.Namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -158,8 +154,8 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations[annotationTelemetryIngestSecretHash] = tlsSecretHash
 	}
 
-	if r.dk.TelemetryIngest().IsEnabled() {
-		configConfigMapHash, err := r.calculateConfigMapHash(ctx, configuration.GetConfigMapName(r.dk.Name))
+	if dk.TelemetryIngest().IsEnabled() {
+		configConfigMapHash, err := r.calculateConfigMapHash(ctx, configuration.GetConfigMapName(dk.Name), dk.Namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -170,12 +166,12 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 	return templateAnnotations, nil
 }
 
-func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string) (string, error) {
+func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string, namespace string) (string, error) {
 	secrets := k8ssecret.Query(r.client, r.client, log)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      secretName,
-		Namespace: r.dk.Namespace,
+		Namespace: namespace,
 	})
 	if err != nil {
 		return "", err
@@ -189,12 +185,12 @@ func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string)
 	return tlsSecretHash, nil
 }
 
-func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName string) (string, error) {
+func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName string, namespace string) (string, error) {
 	query := k8sconfigmap.Query(r.client, r.client, log)
 
 	configConfigMap, err := query.Get(ctx, types.NamespacedName{
 		Name:      configMapName,
-		Namespace: r.dk.Namespace,
+		Namespace: namespace,
 	})
 	if err != nil {
 		return "", err
@@ -208,8 +204,8 @@ func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName s
 	return configConfigMaptHash, nil
 }
 
-func (r *Reconciler) checkDataIngestTokenExists(ctx context.Context) bool {
-	tokenReader := token.NewReader(r.apiReader, r.dk)
+func (r *Reconciler) checkDataIngestTokenExists(ctx context.Context, dk *dynakube.DynaKube) bool {
+	tokenReader := token.NewReader(r.apiReader, dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)
 	if err != nil {

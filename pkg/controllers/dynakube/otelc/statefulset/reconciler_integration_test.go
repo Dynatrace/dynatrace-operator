@@ -21,12 +21,12 @@ func TestStatefulSet(t *testing.T) {
 	integrationtests.CreateDynakube(t, ctx, clt, dk)
 	mockTLSSecret(t, clt, dk)
 
-	reconciler := NewReconciler(clt, clt, dk)
-	err := reconciler.Reconcile(ctx)
+	reconciler := NewReconciler(clt, clt)
+	err := reconciler.Reconcile(ctx, dk)
 	require.NoError(t, err)
 
 	// enable telemetryIngest
 	dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-	err = reconciler.Reconcile(ctx)
+	err = reconciler.Reconcile(ctx, dk)
 	require.NoError(t, err)
 }

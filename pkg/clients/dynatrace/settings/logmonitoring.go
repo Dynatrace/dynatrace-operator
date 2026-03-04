@@ -25,13 +25,13 @@ type ingestRuleMatchers struct {
 	Values    []string `json:"values,omitempty"`
 }
 
-// GetSettingsForLogModule returns the settings response with the number of settings objects.
-func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (GetSettingsResponse, error) {
+// GetSettingsForLogModule returns the settings response with the number of settings objects and their values.
+func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (TotalCountSettingsResponse, error) {
 	if monitoredEntity == "" {
-		return GetSettingsResponse{}, nil
+		return TotalCountSettingsResponse{}, nil
 	}
 
-	var resp GetSettingsResponse
+	var resp TotalCountSettingsResponse
 
 	err := c.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
@@ -41,7 +41,7 @@ func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity st
 		}).
 		Execute(&resp)
 	if err != nil {
-		return GetSettingsResponse{}, fmt.Errorf("get logmonitoring settings: %w", err)
+		return TotalCountSettingsResponse{}, fmt.Errorf("get logmonitoring settings: %w", err)
 	}
 
 	return resp, nil

@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/codemodules"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sjob"
@@ -22,8 +23,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const (
-	bootstrapperImage = "ghcr.io/dynatrace/dynatrace-bootstrapper:snapshot"
+var (
+	bootstrapperImage = helpers.EnvOrDefault(consts.CodeModulesImageEnvVar, consts.DefaultCodeModulesImage)
 )
 
 func InstallWithCSI(t *testing.T) features.Feature {

@@ -84,8 +84,8 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 			schemaIDsQueryParam:    "schema-1",
 			scopesQueryParam:       "entity-1",
 		}).Return(request).Once()
-		request.EXPECT().Execute(new(GetSettingsResponse)).Run(func(obj any) {
-			target := obj.(*GetSettingsResponse)
+		request.EXPECT().Execute(new(TotalCountSettingsResponse)).Run(func(obj any) {
+			target := obj.(*TotalCountSettingsResponse)
 			target.TotalCount = 2
 		}).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request)
@@ -93,7 +93,7 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{ID: "entity-1"}, "schema-1")
 		require.NoError(t, err)
-		assert.Equal(t, GetSettingsResponse{TotalCount: 2}, resp)
+		assert.Equal(t, TotalCountSettingsResponse{TotalCount: 2}, resp)
 	})
 
 	t.Run("empty monitoredEntity.ID", func(t *testing.T) {
@@ -101,7 +101,43 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{}, "schema-1")
 		require.NoError(t, err)
-		assert.Equal(t, GetSettingsResponse{TotalCount: 0}, resp)
+		assert.Equal(t, TotalCountSettingsResponse{TotalCount: 0}, resp)
+	})
+}
+
+func TestDeleteSettings(t *testing.T) {
+	ctx := t.Context()
+	objectID := "settings-object-123"
+
+	t.Run("success", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+		request := coremock.NewAPIRequest(t)
+		request.EXPECT().Execute(nil).Return(nil).Once()
+		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
+
+		client := NewClient(apiClient)
+		err := client.DeleteSettings(ctx, objectID)
+		require.NoError(t, err)
+	})
+
+	t.Run("error from API", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+		request := coremock.NewAPIRequest(t)
+		request.EXPECT().Execute(nil).Return(errors.New("api error")).Once()
+		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
+
+		client := NewClient(apiClient)
+		err := client.DeleteSettings(ctx, objectID)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, errDeleteSettings)
+	})
+
+	t.Run("empty objectID", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+		client := NewClient(apiClient)
+		err := client.DeleteSettings(ctx, "")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, errNoSettingsIDProvided)
 	})
 }
 

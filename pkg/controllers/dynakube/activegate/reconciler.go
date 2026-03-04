@@ -64,9 +64,9 @@ func NewReconciler(clt client.Client, //nolint
 		istioReconciler = istio.NewReconciler(istioClient)
 	}
 
-	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, dk, dtc)
+	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, dk, dtc.AsV2().ActiveGate)
 	versionReconciler := version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
-	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc, dk)
+	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc.AsV2().ActiveGate, dk)
 	pullSecretReconciler := dtpullsecret.NewReconciler(clt, apiReader, dk, tokens)
 
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *value.Source) controllers.Reconciler {

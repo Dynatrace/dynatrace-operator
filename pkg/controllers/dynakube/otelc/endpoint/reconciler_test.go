@@ -43,9 +43,9 @@ func TestConfigMapCreation(t *testing.T) {
 
 		clt := fake.NewFakeClient(testConfigMap)
 
-		r := NewReconciler(clt, clt, &dk)
+		r := NewReconciler(clt, clt)
 
-		err = r.reconcileConfigMap(ctx)
+		err = r.reconcileConfigMap(ctx, &dk)
 		require.NoError(t, err)
 
 		var apiEndpointConfigMap corev1.ConfigMap
@@ -70,9 +70,9 @@ func TestConfigMapCreation(t *testing.T) {
 		}
 
 		clt := schemeFake.NewClient(objs...)
-		r := NewReconciler(clt, clt, &dk)
+		r := NewReconciler(clt, clt)
 
-		err := r.Reconcile(ctx)
+		err := r.Reconcile(ctx, &dk)
 		require.NoError(t, err)
 
 		var apiEndpointConfigmap corev1.ConfigMap
@@ -131,9 +131,9 @@ func Test_generateData(t *testing.T) {
 			}
 
 			clt := schemeFake.NewClient(objs...)
-			r := NewReconciler(clt, clt, &dk)
+			r := NewReconciler(clt, clt)
 
-			data, err := r.generateData()
+			data, err := r.generateData(&dk)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedData, data)
 		})
