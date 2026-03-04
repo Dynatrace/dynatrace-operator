@@ -67,6 +67,7 @@ jobs:
       id-token: write
       packages: write
       attestations: write
+      artifact-metadata: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -101,7 +102,7 @@ jobs:
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Add build provenance attestation
-        uses: ./.github/actions/attest-image
+        uses: ./.github/actions/attest-artifact
         with:
           subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ needs.build-push.outputs.digest }}
@@ -114,6 +115,8 @@ jobs:
     permissions:
       id-token: write
       packages: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-24.04
     env:
       HELM_PACKAGE_VERSION: 0.0.0-${{ needs.prepare.outputs.version_without_prefix }}

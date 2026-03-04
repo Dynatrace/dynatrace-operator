@@ -53,6 +53,11 @@ runs:
       image: "${{ inputs.registry-url }}/${{ inputs.registry-namespace }}/${{ inputs.helm-repository-name }}:${{ inputs.image-tag-prefix }}${{ inputs.version }}@${{ steps.push-helm-chart-to-registry.outputs.digest }}"
       signing-key: ${{ inputs.cosign-private-key }}
       signing-password: ${{ inputs.cosign-password }}
+  - name: Add build provenance attestation
+    uses: ./.github/actions/attest-artifact
+    with:
+      subject-name: ${{ inputs.registry-url }}/${{ inputs.registry-namespace }}/${{ inputs.helm-repository-name }}
+      subject-digest: ${{ steps.push-helm-chart-to-registry.outputs.digest }}
   - name: Create mutable nightly tag
     env:
       MANIFEST_DIGEST: ${{ steps.push-helm-chart-to-registry.outputs.digest }}
