@@ -49,16 +49,8 @@ func (dtc *dynatraceClient) getOneAgentConnectionInfoURL() string {
 	return dtc.url + "/v1/deployment/installer/agent/connectioninfo"
 }
 
-func (dtc *dynatraceClient) getHostsURL() string {
-	return dtc.url + "/v1/entity/infrastructure/hosts?relativeTime=30mins&includeDetails=false"
-}
-
 func (dtc *dynatraceClient) getProcessModuleConfigURL() string {
 	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig?sections=general,agentType"
-}
-
-func (dtc *dynatraceClient) getEventsURL() string {
-	return dtc.url + "/v1/events"
 }
 
 func (dtc *dynatraceClient) getTokensLookupURL() string {
