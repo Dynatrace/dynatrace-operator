@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
@@ -458,10 +457,10 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDynatraceClientBuild(mockDtcBuilder, mockClient)
 
-	mockDeploymentMetadataReconciler := controllermock.NewReconciler(t)
-	mockDeploymentMetadataReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
-
 	anyDynaKube := mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })
+
+	mockDeploymentMetadataReconciler := newMockDynakubeReconciler(t)
+	mockDeploymentMetadataReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
 	mockProxyReconciler := newMockDynakubeReconciler(t)
 	mockProxyReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
@@ -479,6 +478,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	mockExtensionReconciler := newMockDynakubeReconciler(t)
+
 	mockExtensionReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
 	mockOtelcReconciler := newMockDynakubeReconciler(t)
@@ -493,21 +493,21 @@ func TestReconcileDynaKube(t *testing.T) {
 	fakeIstio := fakeistio.NewSimpleClientset()
 
 	baseController := &Controller{
-		apiReader:                           fakeClient,
-		client:                              fakeClient,
-		istioClientBuilder:                  fakeIstioClientBuilder(t, fakeIstio, true),
-		activeGateReconcilerBuilder:         createActivegateReconcilerBuilder(mockActiveGateReconciler),
-		deploymentMetadataReconcilerBuilder: createDeploymentMetadataReconcilerBuilder(mockDeploymentMetadataReconciler),
-		dynatraceClientBuilder:              mockDtcBuilder,
-		extensionReconciler:                 mockExtensionReconciler,
-		injectionReconcilerBuilder:          createInjectionReconcilerBuilder(mockInjectionReconciler),
-		istioReconcilerBuilder:              istio.NewReconciler,
-		logMonitoringReconcilerBuilder:      createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
-		oneAgentReconcilerBuilder:           createOneAgentReconcilerBuilder(mockOneAgentReconciler),
-		otelcReconciler:                     mockOtelcReconciler,
-		proxyReconciler:                     mockProxyReconciler,
-		kspmReconciler:                      mockKSPMReconciler,
-		k8sEntityReconciler:                 mockK8sEntityReconciler,
+		apiReader:                      fakeClient,
+		client:                         fakeClient,
+		istioClientBuilder:             fakeIstioClientBuilder(t, fakeIstio, true),
+		activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
+		deploymentMetadataReconciler:   mockDeploymentMetadataReconciler,
+		dynatraceClientBuilder:         mockDtcBuilder,
+		extensionReconciler:            mockExtensionReconciler,
+		injectionReconcilerBuilder:     createInjectionReconcilerBuilder(mockInjectionReconciler),
+		istioReconcilerBuilder:         istio.NewReconciler,
+		logMonitoringReconcilerBuilder: createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
+		oneAgentReconcilerBuilder:      createOneAgentReconcilerBuilder(mockOneAgentReconciler),
+		otelcReconciler:                mockOtelcReconciler,
+		proxyReconciler:                mockProxyReconciler,
+		kspmReconciler:                 mockKSPMReconciler,
+		k8sEntityReconciler:            mockK8sEntityReconciler,
 	}
 
 	request := reconcile.Request{
@@ -574,12 +574,6 @@ func createLogMonitoringReconcilerBuilder(reconciler controllers.Reconciler) log
 
 func createInjectionReconcilerBuilder(reconciler controllers.Reconciler) injection.ReconcilerBuilder {
 	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) controllers.Reconciler {
-		return reconciler
-	}
-}
-
-func createDeploymentMetadataReconcilerBuilder(reconciler controllers.Reconciler) deploymentmetadata.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dynakube.DynaKube, _ string) controllers.Reconciler {
 		return reconciler
 	}
 }
