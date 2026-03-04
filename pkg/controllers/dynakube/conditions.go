@@ -15,7 +15,7 @@ const (
 	TokenReadyConditionMessage              = "Token ready"
 	TokenWithoutDataIngestConditionMessage  = "Token ready, DataIngest token not provided"
 	TokenVerificationFailedConditionMessage = "Token verification failed"
-	TokenScopesMissingConditionMessage      = "The following required scopes are missing: %s."
+	TokenScopesMissingConditionMessage      = "The following required scopes are missing: %s"
 )
 
 func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
