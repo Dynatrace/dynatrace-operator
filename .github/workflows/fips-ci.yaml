@@ -46,9 +46,7 @@ jobs:
       - name: Check if docker credentials are present
         id: is-docker-authorized
         run: |
-          echo "is_authorized=$IS_OWNER_REPO" >> $GITHUB_OUTPUT
-        env:
-          IS_OWNER_REPO: ${{ github.repository_owner == 'Dynatrace' }}
+          echo "is_authorized=${{ secrets.QUAY_USERNAME != '' && secrets.QUAY_PASSWORD != '' }}" >> $GITHUB_OUTPUT
       - name: Detect CI file changes
         uses: tj-actions/changed-files@7dee1b0c1557f278e5c7dc244927139d78c0e22a # v47.0.4
         id: ci
