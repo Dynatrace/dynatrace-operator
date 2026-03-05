@@ -2,12 +2,14 @@ package dynakube
 
 import (
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -83,6 +85,23 @@ func (dk *DynaKube) PullSecretNames() []string {
 
 func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
 	pullSecretNames := dk.PullSecretNames()
+	helmPullSecret := os.Getenv(k8senv.DtOperatorPullSecretEnvName)
+
+	if helmPullSecret != "" {
+		alreadyIncluded := false
+		for _, name := range pullSecretNames {
+			if name == helmPullSecret {
+				alreadyIncluded = true
+
+				break
+			}
+		}
+
+		if !alreadyIncluded {
+			pullSecretNames = append(pullSecretNames, helmPullSecret)
+		}
+	}
+
 	imagePullSecrets := make([]corev1.LocalObjectReference, len(pullSecretNames))
 	for i, pullSecretName := range pullSecretNames {
 		imagePullSecrets[i].Name = pullSecretName

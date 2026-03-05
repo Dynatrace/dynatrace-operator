@@ -71,6 +71,10 @@ spec:
                   fieldPath: metadata.name
             - name: DT_OPERATOR_IMAGE
               value: {{ include "dynatrace-operator.image" . }}
+            {{- if .Values.customPullSecret }}
+            - name: DT_OPERATOR_PULL_SECRET
+              value: {{ .Values.customPullSecret }}
+            {{- end }}
             - name: DT_HOST_AVAILABILITY_DETECTION
               value: "{{ .Values.operator.hostAvailabilityDetection }}"
             - name: DT_CRD_STORAGE_MIGRATION
