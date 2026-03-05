@@ -27,7 +27,6 @@ tests:
               - pods
               - namespaces
               - replicationcontrollers
-              - events
               - resourcequotas
               - pods/proxy
               - nodes/proxy
@@ -35,6 +34,17 @@ tests:
               - services
               - persistentvolumeclaims
               - persistentvolumes
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - events.k8s.io
+            resources:
+              - events
             verbs:
               - list
               - watch
