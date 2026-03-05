@@ -1,13 +1,13 @@
 package supportarchive
 
 import (
+"github.com/go-logr/logr"
 	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/pkg/errors"
@@ -40,7 +40,7 @@ var (
 	eecPodNotFoundError = errors.New("eec pod not found")
 )
 
-func newFsLogCollector(context context.Context, config *rest.Config, command Executor, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
+func newFsLogCollector(context context.Context, config *rest.Config, command Executor, log logr.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
 	return fsLogCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

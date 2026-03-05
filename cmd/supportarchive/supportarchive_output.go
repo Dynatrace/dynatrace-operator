@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/go-logr/logr"	
 )
 
 const (
@@ -15,7 +16,7 @@ type supportArchiveOutputCollector struct {
 	collectorCommon
 }
 
-func newSupportArchiveOutputCollector(log logd.Logger, supportArchive archiver, logBuffer io.Reader) collector {
+func newSupportArchiveOutputCollector(log logr.Logger, supportArchive archiver, logBuffer io.Reader) collector {
 	return supportArchiveOutputCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

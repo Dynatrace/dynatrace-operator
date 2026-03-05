@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -129,7 +129,7 @@ func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) stri
 	return defaultOperatorAppName
 }
 
-func runCollectors(log logd.Logger, supportArchive archiver) error {
+func runCollectors(log logr.Logger, supportArchive archiver) error {
 	ctx := context.Background()
 
 	kubeConfig, err := config.GetConfig()

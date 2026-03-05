@@ -2,41 +2,40 @@ package supportarchive
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"github.com/go-logr/logr"
+	"k8s.io/klog/v2"
 )
 
 const (
 	supportArchiveLoggerName = "[support-archive]"
 )
 
-func newSupportArchiveLogger(logBuffer *bytes.Buffer) logd.Logger {
-	config := zap.NewProductionEncoderConfig()
-	config.TimeKey = ""
-	config.LevelKey = ""
-	config.NameKey = "name"
-	config.EncodeTime = zapcore.ISO8601TimeEncoder
+func newSupportArchiveLogger(logBuffer *bytes.Buffer) logr.Logger {
+	// Initialize klog with custom settings for support archive
+	fs := flag.NewFlagSet("supportarchive-klog", flag.ContinueOnError)
+	klog.InitFlags(fs)
 
-	return logd.Logger{
-		Logger: ctrlzap.New(
-			ctrlzap.WriteTo(io.MultiWriter(os.Stderr, logBuffer)),
-			ctrlzap.Encoder(zapcore.NewConsoleEncoder(config)),
-			// Omit this file from the stacktrace
-			ctrlzap.RawZapOpts(zap.AddCallerSkip(1)),
-		).WithName(supportArchiveLoggerName),
-	}
+	// Disable default logging to stderr
+	_ = fs.Set("logtostderr", "false")
+	_ = fs.Set("alsologtostderr", "false")
+	_ = fs.Set("skip_headers", "true")
+	// Set klog to write to both stderr and the buffer
+	klog.SetOutput(io.MultiWriter(os.Stderr, logBuffer))
+
+	// Create klog logger
+	logger := klog.NewKlogr()
+	return logger.WithName(supportArchiveLoggerName)
 }
 
-func logInfof(log logd.Logger, format string, v ...any) {
+func logInfof(log logr.Logger, format string, v ...any) {
 	log.Info(fmt.Sprintf(format, v...))
 }
 
-func logErrorf(log logd.Logger, err error, format string, v ...any) {
+func logErrorf(log logr.Logger, err error, format string, v ...any) {
 	log.Error(err, fmt.Sprintf(format, v...))
 }
