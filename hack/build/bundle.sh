@@ -7,14 +7,6 @@ BUNDLE_CHANNELS="${3:-}"
 BUNDLE_DEFAULT_CHANNEL="${4:-}"
 OCP_MIN_VERSION="v4.14"
 
-if [[ -z ${OLM_IMAGE} ]]; then
-    OLM_IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}@${DIGEST}"
-    if [[ ${PLATFORM} == "kubernetes" ]]; then
-        OLM_IMAGE="public.ecr.aws/dynatrace/dynatrace-operator:v${VERSION}@${DIGEST}"
-    fi
-fi
-echo "OLM image: ${OLM_IMAGE}"
-
 KUSTOMIZE="$(hack/build/command.sh kustomize 2>/dev/null)"
 if [[ -z ${KUSTOMIZE} ]]; then
     echo "'kustomize' command not found"
@@ -50,7 +42,6 @@ fi
 rm -rf manifests
 
 "${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir pkg/api/
-(cd "config/deploy/${PLATFORM}" && ${KUSTOMIZE} edit set image "${REGISTRY-ghcr.io}"/dynatrace/dynatrace-operator:snapshot="${OLM_IMAGE}")
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --output-dir . --version "${VERSION}" "${SDK_PARAMS[@]}"
 # Add missing aggregated ClusterRole and binding. This fixes the issue of missing cluster permissions in the CSV.
 # operator-sdk looks at the RBAC on disk, but aggregated roles are rendered in the cluster.
