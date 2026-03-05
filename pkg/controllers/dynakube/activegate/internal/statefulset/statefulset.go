@@ -71,6 +71,7 @@ func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	statefulSetBuilder.addLabels(&sts)
 	statefulSetBuilder.addTemplateSpec(&sts)
 	statefulSetBuilder.addPersistentVolumeClaim(&sts)
+	statefulSetBuilder.addUpdateStrategy(&sts)
 
 	if statefulSetBuilder.dynakube.FF().IsActiveGateAppArmor() {
 		sts.Spec.Template.Annotations[consts.AnnotationActiveGateContainerAppArmor] = "runtime/default"
@@ -119,6 +120,17 @@ func (statefulSetBuilder Builder) buildAppLabels() *k8slabel.AppLabels {
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
 	sts.Annotations = maputils.MergeMap(sts.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
 	sts.Spec.Template.Annotations = maputils.MergeMap(sts.Spec.Template.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
+}
+
+func (statefulSetBuilder Builder) addUpdateStrategy(sts *appsv1.StatefulSet) {
+	sts.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+		Type:          appsv1.RollingUpdateStatefulSetStrategyType,
+		RollingUpdate: &statefulSetBuilder.dynakube.Spec.ActiveGate.RollingUpdate,
+	}
+
+	if statefulSetBuilder.dynakube.Spec.ActiveGate.RollingUpdate.MaxUnavailable == nil {
+		sts.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = statefulSetBuilder.defaultMaxUnavailable()
+	}
 }
 
 func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
@@ -205,6 +217,11 @@ func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.Topology
 			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
 	}
+}
+
+func (statefulSetBuilder Builder) defaultMaxUnavailable() *intstr.IntOrString {
+	maxUnavailable := intstr.FromInt32(1)
+	return &maxUnavailable
 }
 
 func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
