@@ -17,7 +17,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTP_PROXY", "")
 		t.Setenv("HTTPS_PROXY", "")
 
-		logOutput := runWithTestLogger(func(logger logd.Logger) {
+		logOutput := runWithTestLogger(func(logger logr.Logger) {
 			checkProxySettings(context.Background(), logger, nil, &dynakube.DynaKube{})
 		})
 
@@ -31,7 +31,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTP_PROXY", "foobar:1234")
 		t.Setenv("HTTPS_PROXY", "")
 
-		logOutput := runWithTestLogger(func(logger logd.Logger) {
+		logOutput := runWithTestLogger(func(logger logr.Logger) {
 			checkProxySettings(context.Background(), logger, nil, &dynakube.DynaKube{})
 		})
 
@@ -45,7 +45,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTP_PROXY", "")
 		t.Setenv("HTTPS_PROXY", "foobar:1234")
 
-		logOutput := runWithTestLogger(func(logger logd.Logger) {
+		logOutput := runWithTestLogger(func(logger logr.Logger) {
 			checkProxySettings(context.Background(), logger, nil, &dynakube.DynaKube{})
 		})
 
@@ -63,7 +63,7 @@ func TestCheckProxySettings(t *testing.T) {
 			withProxy("http://foobar:1234").
 			build()
 
-		logOutput := runWithTestLogger(func(logger logd.Logger) {
+		logOutput := runWithTestLogger(func(logger logr.Logger) {
 			checkProxySettings(context.Background(), logger, nil, &dk)
 		})
 
@@ -93,7 +93,7 @@ func TestCheckProxySettings(t *testing.T) {
 			withProxySecret(testSecretName).
 			build()
 
-		logOutput := runWithTestLogger(func(logger logd.Logger) {
+		logOutput := runWithTestLogger(func(logger logr.Logger) {
 			checkProxySettings(context.Background(), logger, clt, &dk)
 		})
 
@@ -111,7 +111,7 @@ func TestCheckProxySettings(t *testing.T) {
 			withProxy("http://foobar:1234").
 			build()
 
-		logOutput := runWithTestLogger(func(logger logd.Logger) {
+		logOutput := runWithTestLogger(func(logger logr.Logger) {
 			checkProxySettings(context.Background(), logger, nil, &dk)
 		})
 

@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/go-logr/logr"
 	"golang.org/x/net/http/httpproxy"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkProxySettings(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
+func checkProxySettings(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	log := baseLog.WithName("proxy")
 
 	var proxyURL string
@@ -44,7 +44,7 @@ func checkProxySettings(ctx context.Context, baseLog logd.Logger, apiReader clie
 	return nil
 }
 
-func checkEnvironmentProxySettings(log logd.Logger, proxyURL string) bool {
+func checkEnvironmentProxySettings(log logr.Logger, proxyURL string) bool {
 	envProxy := getEnvProxySettings()
 	if envProxy == nil {
 		return false
