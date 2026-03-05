@@ -90,6 +90,7 @@ func (in *TemplateSpec) DeepCopyInto(out *TemplateSpec) {
 	}
 	out.ImageRef = in.ImageRef
 	in.Resources.DeepCopyInto(&out.Resources)
+	in.RollingUpdate.DeepCopyInto(&out.RollingUpdate)
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))

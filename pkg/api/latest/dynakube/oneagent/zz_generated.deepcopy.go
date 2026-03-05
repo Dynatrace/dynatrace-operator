@@ -125,6 +125,7 @@ func (in *HostInjectSpec) DeepCopyInto(out *HostInjectSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	in.RollingUpdate.DeepCopyInto(&out.RollingUpdate)
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]v1.EnvVar, len(*in))
