@@ -15,8 +15,8 @@ limitations under the License.
 package main
 
 import (
-	stdLog "log"
 	"os"
+	stdLog "log"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/cmd/crdstoragemigration"
@@ -37,10 +37,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var (
-	log = logd.Get().WithName("main")
-)
-
 func newRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "dynatrace-operator",
@@ -55,9 +51,6 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 }
 
 func main() {
-	ctrl.SetLogger(log.Logger)
-	stdLog.SetOutput(&log)
-
 	cmd := newRootCommand()
 
 	cmd.AddCommand(
@@ -76,9 +69,13 @@ func main() {
 		metadata.New(),
 	)
 
+	log := logd.Get().WithName(cmd.Name())
+	ctrl.SetLogger(log)
+	stdLog.SetOutput(logd.LogWriter{log })
+
 	err := cmd.Execute()
 	if err != nil {
-		log.Info(err.Error())
+		log.Error(err, "exit dynatrace-operator with error", "command", cmd.Name())
 		os.Exit(1)
 	}
 }
