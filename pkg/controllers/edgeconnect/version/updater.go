@@ -63,7 +63,7 @@ func (u updater) Update(ctx context.Context) error {
 	target := u.Target()
 
 	if !u.edgeConnect.IsCustomImage() {
-		log.Debug("EdgeConnect public registry image used")
+		log.V(1).Info("EdgeConnect public registry image used")
 
 		imageVersion, err := u.registryClient.GetImageVersion(ctx, image)
 		if err != nil {
@@ -77,7 +77,7 @@ func (u updater) Update(ctx context.Context) error {
 
 		target.Source = status.PublicRegistryVersionSource
 	} else {
-		log.Debug("EdgeConnect custom image used")
+		log.V(1).Info("EdgeConnect custom image used")
 
 		target.Source = status.CustomImageVersionSource
 	}
@@ -90,19 +90,19 @@ func (u updater) Update(ctx context.Context) error {
 func (u updater) combineImageWithDigest(digest digest.Digest) (string, error) {
 	imageRef, err := name.ParseReference(u.edgeConnect.Image())
 	if err != nil {
-		log.Debug("unable to parse EdgeConnect image reference")
+		log.V(1).Info("unable to parse EdgeConnect image reference")
 
 		return "", errors.WithStack(err)
 	}
 
 	if taggedRef, ok := imageRef.(name.Tag); ok {
 		canonRef := registry.BuildImageIDWithTagAndDigest(taggedRef, digest)
-		log.Debug("canonical image reference", "reference", canonRef)
+		log.V(1).Info("canonical image reference", "reference", canonRef)
 
 		return canonRef, nil
 	}
 
-	log.Debug("wrong image reference format", "reference", imageRef.String())
+	log.V(1).Info("wrong image reference format", "reference", imageRef.String())
 
 	return "", errors.New("wrong image reference format")
 }

@@ -60,7 +60,7 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 }
 
 func (m Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
-	log.Debug("checking if OTLP env vars have already been injected")
+	log.V(1).Info("checking if OTLP env vars have already been injected")
 
 	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjected, false)
 }

@@ -23,9 +23,15 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	log.V(1).Info("reconciling proxy configuration", "dynakube", dk.Name, "namespace", dk.Namespace)
+
 	if dk.NeedsActiveGateProxy() || dk.NeedsOneAgentProxy() {
+		log.V(2).Info("proxy is needed, generating secret", "activeGateProxy", dk.NeedsActiveGateProxy(), "oneAgentProxy", dk.NeedsOneAgentProxy())
+
 		return r.generateForDynakube(ctx, dk)
 	}
+
+	log.V(2).Info("proxy not needed, ensuring cleanup", "dynakube", dk.Name)
 
 	return r.ensureDeleted(ctx, dk)
 }
@@ -75,6 +81,7 @@ func (r *Reconciler) ensureDeleted(ctx context.Context, dk *dynakube.DynaKube) e
 
 func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	if !dk.HasProxy() {
+		log.V(2).Info("dynakube has no proxy configured, creating empty proxy map", "dynakube", dk.Name)
 		dk.Status.ProxyURLHash = ""
 
 		// the parsed-proxy secret is expected to exist and the entrypoint.sh script handles empty values properly
@@ -92,10 +99,14 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) 
 		return nil, err
 	}
 
+	log.V(3).Info("parsed proxy URL from dynakube", "dynakube", dk.Name, "hasCredentials", strings.Contains(proxyURL, "@"))
+
 	dk.Status.ProxyURLHash, err = hasher.GenerateSecureHash(proxyURL)
 	if err != nil {
 		return nil, err
 	}
+
+	log.V(2).Info("generated proxy URL hash", "dynakube", dk.Name, "hash", dk.Status.ProxyURLHash)
 
 	scheme, host, port, username, password, err := parseProxyURL(proxyURL)
 	if err != nil {
@@ -113,7 +124,7 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) 
 
 func parseProxyURL(proxy string) (scheme, host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 6
 	if !strings.HasPrefix(strings.ToLower(proxy), "http://") && !strings.HasPrefix(strings.ToLower(proxy), "https://") {
-		log.Info("proxy url has no scheme. The default 'http://' scheme used")
+		log.V(1).Info("proxy url has no scheme. The default 'http://' scheme used")
 
 		proxy = "http://" + proxy
 	}
@@ -124,6 +135,8 @@ func parseProxyURL(proxy string) (scheme, host, port, username, password string,
 	}
 
 	passwd, _ := proxyURL.User.Password()
+
+	log.V(2).Info("parsed proxy URL components", "scheme", proxyURL.Scheme, "host", proxyURL.Hostname(), "port", proxyURL.Port(), "hasUsername", proxyURL.User.Username() != "")
 
 	return proxyURL.Scheme, proxyURL.Hostname(), proxyURL.Port(), proxyURL.User.Username(), passwd, nil
 }

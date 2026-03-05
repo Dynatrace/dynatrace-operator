@@ -4,16 +4,16 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const activeGateCheckLoggerName = "activegate"
 
-func checkActiveGates(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
+func checkActiveGates(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	log := baseLog.WithName(activeGateCheckLoggerName)
 
 	err := checkActiveGateOOM(ctx, log, apiReader, dk)
@@ -26,7 +26,7 @@ func checkActiveGates(ctx context.Context, baseLog logd.Logger, apiReader client
 	return nil
 }
 
-func checkActiveGateOOM(ctx context.Context, log logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
+func checkActiveGateOOM(ctx context.Context, log logr.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	logNewCheckf(log, "Checking ActiveGate pods")
 
 	labels := map[string]string{
@@ -38,7 +38,7 @@ func checkActiveGateOOM(ctx context.Context, log logd.Logger, apiReader client.R
 	return checkOOMKilled(ctx, log, apiReader, dk.Namespace, labels)
 }
 
-func checkOOMKilled(ctx context.Context, log logd.Logger, apiReader client.Reader, namespace string, labels map[string]string) error {
+func checkOOMKilled(ctx context.Context, log logr.Logger, apiReader client.Reader, namespace string, labels map[string]string) error {
 	podList := &corev1.PodList{}
 
 	err := apiReader.List(ctx, podList,

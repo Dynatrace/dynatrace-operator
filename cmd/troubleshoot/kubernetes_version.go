@@ -1,13 +1,13 @@
 package troubleshoot
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
+	"github.com/go-logr/logr"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 )
 
-func checkKubernetesVersion(baseLog logd.Logger, kubeConfig *rest.Config) {
+func checkKubernetesVersion(baseLog logr.Logger, kubeConfig *rest.Config) {
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
 	if err != nil {
 		logWarningf(baseLog, "could not create Kubernetes discovery client: %v", err)

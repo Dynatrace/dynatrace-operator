@@ -26,7 +26,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	log.Debug("reconciling deployments")
+	log.V(1).Info("reconciling deployments")
 
 	query := k8sdeployment.Query(r.client, r.apiReader, log)
 	ext := r.dk.Extensions()

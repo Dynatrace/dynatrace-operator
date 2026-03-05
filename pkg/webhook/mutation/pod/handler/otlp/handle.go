@@ -36,7 +36,8 @@ func New(
 
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	if !mutationRequest.DynaKube.OTLPExporterConfiguration().IsEnabled() {
-		log.Info("OTLP injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+
+		log.V(1).Info("OTLP injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 		return nil
 	}

@@ -322,12 +322,12 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 			return fmt.Errorf("read error response body: %w", readErr)
 		}
 
-		log.Debug("API request", loggerArgs(resp, body)...)
+		log.V(1).Info("API request", loggerArgs(resp, body)...)
 
 		return handleErrorResponse(resp, body)
 	}
 
-	log.Debug("API request", loggerArgs(resp, nil)...)
+	log.V(1).Info("API request", loggerArgs(resp, nil)...)
 
 	if _, err = io.Copy(writer, resp.Body); err != nil {
 		return fmt.Errorf("stream response body: %w", err)
@@ -381,7 +381,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 		return nil, fmt.Errorf("read response body: %w", err)
 	}
 
-	log.Debug("API request", loggerArgs(resp, body)...)
+	log.V(1).Info("API request", loggerArgs(resp, body)...)
 
 	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
 	statusCodeThreshold := 201

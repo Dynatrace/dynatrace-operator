@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -26,7 +26,7 @@ func NewInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *Info {
 	}
 }
 
-func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhook.BaseRequest, log logd.Logger) (*Info, error) {
+func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhook.BaseRequest, log logr.Logger) (*Info, error) {
 	podPartialMetadata := &metav1.PartialObjectMetadata{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: request.Pod.APIVersion,
@@ -48,7 +48,7 @@ func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhoo
 	return NewInfo(rootOwner), nil
 }
 
-func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata, log logd.Logger) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
+func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata, log logr.Logger) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
 	objectMetadata := childObjectMetadata.ObjectMeta
 	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller {

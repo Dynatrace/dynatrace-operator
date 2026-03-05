@@ -1,9 +1,9 @@
 package k8svirtualservice
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
+	"github.com/go-logr/logr"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -12,7 +12,7 @@ type QueryObject struct {
 	query.Generic[*istiov1beta1.VirtualService, *istiov1beta1.VirtualServiceList]
 }
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) QueryObject {
+func Query(kubeClient client.Client, kubeReader client.Reader, log logr.Logger) QueryObject {
 	return QueryObject{
 		query.Generic[*istiov1beta1.VirtualService, *istiov1beta1.VirtualServiceList]{
 			Target:     &istiov1beta1.VirtualService{},

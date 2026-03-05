@@ -51,6 +51,7 @@ type webhook struct {
 }
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
+	log.V(2).Info("received admission request", "namespace", request.Namespace, "name", request.Name, "operation", request.Operation)
 	emptyPatch := admission.Patched("")
 
 	mutationRequest, err := wh.createMutationRequestBase(ctx, request)
@@ -62,6 +63,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 	}
 
 	if mutationRequest == nil {
+		log.V(2).Info("mutation request is nil, skipping pod", "namespace", request.Namespace)
 		emptyPatch.Result.Message = "injection into pod not required"
 
 		return emptyPatch
@@ -70,16 +72,22 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 	podName := mutationRequest.PodName()
 
 	if !mutationRequired(mutationRequest) || wh.isOcDebugPod(mutationRequest.Pod) {
+		log.V(1).Info("mutation not required or OC debug pod detected, skipping", "podName", podName, "namespace", request.Namespace)
+
 		return emptyPatch
 	}
+
+	log.V(1).Info("mutation required, processing pod", "podName", podName, "namespace", request.Namespace)
 
 	originalPod := mutationRequest.Pod.DeepCopy()
 
 	var handlerErr error
 
 	if err := wh.injectionHandler.Handle(mutationRequest); err != nil {
+		log.V(1).Info("injection handler returned error", "podName", podName, "error", err.Error())
 		handlerErr = err
 	} else if err := wh.otlpHandler.Handle(mutationRequest); err != nil {
+		log.V(1).Info("OTLP handler returned error", "podName", podName, "error", err.Error())
 		handlerErr = err
 	}
 
@@ -93,7 +101,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 		mutErr.SetAnnotations(mutationRequest.Pod)
 	}
 
-	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
+	log.V(0).Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
 	return createResponseForPod(mutationRequest.Pod, request)
 }

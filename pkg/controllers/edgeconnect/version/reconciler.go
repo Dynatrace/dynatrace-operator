@@ -35,7 +35,7 @@ func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 		log.Info("updating version status", "updater", updater.Name())
 
 		if updater.RequiresReconcile() {
-			log.Debug("reconcile required", "updater", updater.Name())
+			log.V(1).Info("reconcile required", "updater", updater.Name())
 
 			return updater.Update(ctx)
 		}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/go-logr/logr"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -30,7 +30,7 @@ type Auths struct {
 
 type ImagePullFunc func(image string) error
 
-func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain authn.Keychain, transport *http.Transport, dk *dynakube.DynaKube) error {
+func verifyAllImagesAvailable(ctx context.Context, baseLog logr.Logger, keychain authn.Keychain, transport *http.Transport, dk *dynakube.DynaKube) error {
 	log := baseLog.WithName("imagepull")
 
 	imagePullFunc := CreateImagePullFunc(ctx, keychain, transport)
@@ -47,7 +47,7 @@ func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain
 	return nil
 }
 
-func verifyImageIsAvailable(log logd.Logger, pullImage ImagePullFunc, dk *dynakube.DynaKube, comp component, proxyWarning bool) {
+func verifyImageIsAvailable(log logr.Logger, pullImage ImagePullFunc, dk *dynakube.DynaKube, comp component, proxyWarning bool) {
 	image, isCustomImage := comp.getImage(dk)
 	if comp.SkipImageCheck(image) {
 		logErrorf(log, "Unknown %s image", comp.String())

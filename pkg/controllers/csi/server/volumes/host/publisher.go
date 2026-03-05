@@ -85,7 +85,7 @@ func cleanupDanglingSymlink(hostDir string) error {
 	if err == nil && linkInfo.Mode()&os.ModeSymlink != 0 {
 		_, err := os.Stat(hostDir)
 		if os.IsNotExist(err) {
-			log.Debug("found dangling symlink", "path", hostDir)
+			log.V(1).Info("found dangling symlink", "path", hostDir)
 
 			return os.Remove(hostDir)
 		}

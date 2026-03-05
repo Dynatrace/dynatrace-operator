@@ -532,7 +532,7 @@ func (b *builder) isRootFsReadonly() bool {
 		b.dk.OneAgent().GetVersion() != string(status.CustomImageVersionSource) {
 		agentSemver, err := dtversion.ToSemver(b.dk.OneAgent().GetVersion())
 		if err != nil {
-			log.Debug("Unable to determine OneAgent version to enable readonly pod filesystem, skipping", "version", b.dk.OneAgent().GetVersion(), "error", err.Error())
+			log.V(1).Info("Unable to determine OneAgent version to enable readonly pod filesystem, skipping", "version", b.dk.OneAgent().GetVersion(), "error", err.Error())
 
 			return true
 		}

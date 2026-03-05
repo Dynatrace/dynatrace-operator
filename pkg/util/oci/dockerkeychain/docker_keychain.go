@@ -56,9 +56,9 @@ func NewDockerKeychains(ctx context.Context, apiReader client.Reader, namespaceN
 
 	if len(configFile.AuthConfigs) > 0 {
 		keychain.dockerConfig = &configFile
-		log.Debug("loaded docker configs", "registries", maps.Keys(configFile.AuthConfigs))
+		log.V(1).Info("loaded docker configs", "registries", maps.Keys(configFile.AuthConfigs))
 	} else {
-		log.Debug("no docker configs found")
+		log.V(1).Info("no docker configs found")
 	}
 
 	return keychain, nil

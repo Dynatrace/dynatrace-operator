@@ -3,8 +3,8 @@ package supportarchive
 import (
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
+	"github.com/go-logr/logr"
 	"k8s.io/client-go/discovery"
 )
 
@@ -15,7 +15,7 @@ type kubernetesVersionCollector struct {
 	discoveryClient discovery.DiscoveryInterface
 }
 
-func newKubernetesVersionCollector(log logd.Logger, supportArchive archiver, discoveryClient discovery.DiscoveryInterface) collector {
+func newKubernetesVersionCollector(log logr.Logger, supportArchive archiver, discoveryClient discovery.DiscoveryInterface) collector {
 	return kubernetesVersionCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

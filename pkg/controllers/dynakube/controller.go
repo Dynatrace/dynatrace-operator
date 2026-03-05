@@ -203,7 +203,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	if !isCrdLatestVersion {
-		log.Debug("sending k8s event about CRD version mismatch")
+		log.V(1).Info("sending k8s event about CRD version mismatch")
 		k8sevent.SendCRDVersionMismatch(controller.eventRecorder, dk)
 	}
 

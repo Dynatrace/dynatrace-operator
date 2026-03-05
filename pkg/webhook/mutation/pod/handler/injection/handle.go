@@ -48,7 +48,7 @@ func New( //nolint:revive
 
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	if !mutationRequest.DynaKube.OneAgent().IsAppInjectionNeeded() && !mutationRequest.DynaKube.MetadataEnrichment().IsEnabled() {
-		log.Debug("injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+		log.V(1).Info("injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 		return nil
 	}

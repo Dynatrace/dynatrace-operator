@@ -68,7 +68,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
-	log.Debug("probeRequest")
+	log.V(1).Info("probeRequest")
 
 	ctx, cancelFunc := context.WithTimeout(r.Context(), s.probeTimeout)
 	defer cancelFunc()
@@ -82,7 +82,7 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	log.Debug("sending probe request to CSI driver")
+	log.V(1).Info("sending probe request to CSI driver")
 
 	ready, err := rpc.Probe(ctx, conn)
 	if err != nil {
@@ -101,7 +101,7 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 
 	writeResponse(w, http.StatusOK, "ok")
 
-	log.Debug("health check succeeded")
+	log.V(1).Info("health check succeeded")
 }
 
 func writeResponse(w http.ResponseWriter, statusCode int, message string) {

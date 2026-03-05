@@ -33,7 +33,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 			return nil, err
 		}
 
-		log.Debug("calling the Dynatrace API for ruxitagentproc content")
+		log.V(1).Info("calling the Dynatrace API for ruxitagentproc content")
 
 		k8sconditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated, update in progress")
 	}
@@ -55,7 +55,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 		AddProxy("")
 
 	if dk.NeedsOneAgentProxy() {
-		log.Debug("proxy is needed")
+		log.V(1).Info("proxy is needed")
 
 		proxy, err := dk.Proxy(ctx, s.apiReader)
 		if err != nil {

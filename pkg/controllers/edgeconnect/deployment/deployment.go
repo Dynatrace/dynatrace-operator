@@ -31,7 +31,7 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 		labels, // higher priority
 	)
 
-	log.Debug("EdgeConnect deployment app labels", "labels", labels)
+	log.V(1).Info("EdgeConnect deployment app labels", "labels", labels)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
