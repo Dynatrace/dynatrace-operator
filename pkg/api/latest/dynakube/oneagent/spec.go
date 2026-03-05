@@ -3,6 +3,7 @@ package oneagent
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -122,6 +123,10 @@ type HostInjectSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tolerations",order=18,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// Define RollingUpdate settings for OneAgent pods
+	// +kubebuilder:validation:Optional
+	RollingUpdate appsv1.RollingUpdateDaemonSet `json:"rollingUpdate,omitempty"`
 
 	// Set additional environment variables for the OneAgent pods.
 	// +kubebuilder:validation:Optional

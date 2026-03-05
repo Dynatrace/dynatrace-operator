@@ -2,6 +2,7 @@ package logmonitoring
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -57,6 +58,10 @@ type TemplateSpec struct {
 	// Define resources' requests and limits for all the LogMonitoring pods
 	// +kubebuilder:validation:Optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	//Define RollingUpdate settings for LogMonitoring pods
+	// +kubebuilder:validation:Optional
+	RollingUpdate appsv1.RollingUpdateDaemonSet `json:"rollingUpdate,omitempty"`
 
 	// Set tolerations for the LogMonitoring pods
 	// +kubebuilder:validation:Optional
