@@ -3,6 +3,7 @@ package dynakube
 import (
 	"net/url"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
@@ -88,14 +89,7 @@ func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
 	helmPullSecret := os.Getenv(k8senv.DtOperatorPullSecretEnvName)
 
 	if helmPullSecret != "" {
-		alreadyIncluded := false
-		for _, name := range pullSecretNames {
-			if name == helmPullSecret {
-				alreadyIncluded = true
-
-				break
-			}
-		}
+		alreadyIncluded := slices.Contains(pullSecretNames, helmPullSecret)
 
 		if !alreadyIncluded {
 			pullSecretNames = append(pullSecretNames, helmPullSecret)
