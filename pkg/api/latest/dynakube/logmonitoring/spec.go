@@ -59,7 +59,7 @@ type TemplateSpec struct {
 	// +kubebuilder:validation:Optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	//Define RollingUpdate settings for LogMonitoring pods
+	// Define RollingUpdate settings for LogMonitoring pods
 	// +kubebuilder:validation:Optional
 	RollingUpdate appsv1.RollingUpdateDaemonSet `json:"rollingUpdate,omitempty"`
 

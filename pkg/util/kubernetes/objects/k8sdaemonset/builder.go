@@ -8,6 +8,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var (
@@ -143,8 +144,34 @@ func SetServiceAccount(serviceAccountName string) builder.Option[*appsv1.DaemonS
 	}
 }
 
-func SetUpdateStrategy(updateStartegy appsv1.DaemonSetUpdateStrategy) builder.Option[*appsv1.DaemonSet] {
+func SetUpdateStrategy(updateStrategy appsv1.DaemonSetUpdateStrategy) builder.Option[*appsv1.DaemonSet] {
 	return func(s *appsv1.DaemonSet) {
-		s.Spec.UpdateStrategy = updateStartegy
+		updateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
+
+		if updateStrategy.RollingUpdate == nil {
+			updateStrategy.RollingUpdate = &appsv1.RollingUpdateDaemonSet{}
+		}
+
+		if updateStrategy.RollingUpdate.MaxUnavailable == nil {
+			updateStrategy.RollingUpdate.MaxUnavailable = getDefaultMaxUnavailable()
+		}
+
+		if updateStrategy.RollingUpdate.MaxSurge == nil {
+			updateStrategy.RollingUpdate.MaxSurge = getDefaultMaxSurge()
+		}
+
+		s.Spec.UpdateStrategy = updateStrategy
 	}
+}
+
+func getDefaultMaxUnavailable() *intstr.IntOrString {
+	defaultMaxUnavailable := 1
+
+	return &intstr.IntOrString{IntVal: int32(defaultMaxUnavailable)}
+}
+
+func getDefaultMaxSurge() *intstr.IntOrString {
+	defaultMaxSurge := 1
+
+	return &intstr.IntOrString{IntVal: int32(defaultMaxSurge)}
 }
