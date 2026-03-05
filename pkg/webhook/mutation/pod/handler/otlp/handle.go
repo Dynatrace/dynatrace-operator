@@ -36,7 +36,7 @@ func New(
 
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	if !mutationRequest.DynaKube.OTLPExporterConfiguration().IsEnabled() {
-		log.Debug("OTLP injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+		log.V(1).Info("OTLP injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 		return nil
 	}
@@ -49,7 +49,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 			mutationRequest,
 			exporterconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name),
 		) {
-			log.Debug("required input secret not present, skipping OTLP injection", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+			log.V(1).Info("required input secret not present, skipping OTLP injection", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 			return nil
 		}
@@ -57,18 +57,18 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		if !h.isExporterActiveGateCertSecretPresent(mutationRequest,
 			exporterconfig.GetSourceCertsSecretName(mutationRequest.DynaKube.Name),
 		) {
-			log.Debug("required ActiveGate cert secret not present, skipping OTLP injection", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+			log.V(1).Info("required ActiveGate cert secret not present, skipping OTLP injection", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 			return nil
 		}
 
 		if h.envVarMutator.IsInjected(mutationRequest.BaseRequest) {
 			if h.envVarMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {
-				log.Debug("OTLP exporter env var reinvocation policy applied", "podName", mutationRequest.PodName())
+				log.V(1).Info("OTLP exporter env var reinvocation policy applied", "podName", mutationRequest.PodName())
 			}
 
 			if h.resourceAttributeMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {
-				log.Debug("OTLP resource attribute reinvocation policy applied", "podName", mutationRequest.PodName())
+				log.V(1).Info("OTLP resource attribute reinvocation policy applied", "podName", mutationRequest.PodName())
 			}
 		} else {
 			if err := h.envVarMutator.Mutate(mutationRequest); err != nil {
@@ -87,7 +87,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		dtwebhook.AnnotationOTLPReason,
 	)
 
-	log.Debug("OTLP injection finished", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+	log.V(1).Info("OTLP injection finished", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 	return nil
 }

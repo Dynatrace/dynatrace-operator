@@ -139,13 +139,13 @@ func (srv *Server) Start(ctx context.Context) error {
 }
 
 func (srv *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
-	log.Debug("received GetPluginInfo")
+	log.V(1).Info("received GetPluginInfo")
 
 	return &csi.GetPluginInfoResponse{Name: dtcsi.DriverName, VendorVersion: version.Version}, nil
 }
 
 func (srv *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	log.Debug("received Probe")
+	log.V(1).Info("received Probe")
 
 	return &csi.ProbeResponse{}, nil
 }
@@ -241,11 +241,11 @@ func (srv *Server) unmountMappedMount(path string) error {
 		return nil
 	}
 
-	log.Debug("unmounting old mapped dir", "path", path)
+	log.V(1).Info("unmounting old mapped dir", "path", path)
 
 	err := srv.mounter.Unmount(path)
 	if err != nil {
-		log.Debug("error during unmounting old mapped dir", "path", path, "error", err)
+		log.V(1).Info("error during unmounting old mapped dir", "path", path, "error", err)
 	}
 
 	return err
@@ -321,7 +321,7 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 			}
 			log.Info("GRPC call", logValues...)
 		default:
-			log.Debug("GRPC call", "full_method", info.FullMethod)
+			log.V(1).Info("GRPC call", "full_method", info.FullMethod)
 
 			resp, err := handler(ctx, req)
 			if err != nil {

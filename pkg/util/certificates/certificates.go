@@ -10,8 +10,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	"github.com/go-logr/logr"
 )
 
 const (
@@ -99,7 +99,7 @@ func (c *Certificate) ToPEM() (pemCert []byte, pemPk []byte, err error) {
 	return pemCert, pemPk, nil
 }
 
-func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Duration, now time.Time, log logd.Logger) (bool, error) {
+func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Duration, now time.Time, log logr.Logger) (bool, error) {
 	if block, _ := pem.Decode(certData); block == nil {
 		log.Info("failed to parse certificate", "error", "can't decode PEM file")
 

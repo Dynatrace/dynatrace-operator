@@ -131,7 +131,7 @@ func (s Server) NotifyRegistrationStatus(_ context.Context, status *registerapi.
 
 func grpcMessageLogger() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		log.Debug("GRPC call", "full_method", info.FullMethod)
+		log.V(1).Info("GRPC call", "full_method", info.FullMethod)
 
 		resp, err := handler(ctx, req)
 		if err != nil {

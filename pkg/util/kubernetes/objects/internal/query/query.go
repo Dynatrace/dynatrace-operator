@@ -6,8 +6,8 @@ import (
 	"reflect"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,7 +26,7 @@ type Generic[T client.Object, L client.ObjectList] struct {
 	Owner      client.Object
 	KubeClient client.Client
 	KubeReader client.Reader
-	Log        logd.Logger
+	Log        logr.Logger
 }
 
 func (c Generic[T, L]) WithOwner(owner client.Object) Generic[T, L] {
@@ -241,7 +241,7 @@ func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName strin
 	return goerrors.Join(errs...)
 }
 
-func (c Generic[T, L]) log(object T) logd.Logger {
+func (c Generic[T, L]) log(object T) logr.Logger {
 	return c.Log.WithValues("kind", reflect.TypeOf(object), "name", object.GetName(), "namespace", object.GetNamespace())
 }
 

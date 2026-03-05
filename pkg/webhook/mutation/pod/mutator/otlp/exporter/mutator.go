@@ -37,12 +37,12 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 	otlpExporterConfiguration := request.DynaKube.OTLPExporterConfiguration()
 
 	if !otlpExporterConfiguration.IsEnabled() {
-		log.Debug("OTLP env var injection is disabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
+		log.V(1).Info("OTLP env var injection is disabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 		return false
 	}
 
-	log.Debug("OTLP env var injection is enabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	log.V(1).Info("OTLP env var injection is enabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	// first, check if otlp injection is enabled explicitly on pod
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjectionEnabled, false)
@@ -64,7 +64,7 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 }
 
 func (m Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
-	log.Debug("checking if OTLP env vars have already been injected")
+	log.V(1).Info("checking if OTLP env vars have already been injected")
 
 	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjected, false)
 }
@@ -76,7 +76,7 @@ func (m Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 }
 
 func (m Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	log.Debug("reinvocation of OTLP env vars mutator")
+	log.V(1).Info("reinvocation of OTLP env vars mutator")
 
 	mutated, err := m.mutate(request.BaseRequest)
 	if err != nil {
@@ -90,7 +90,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 	otlpExporterConfig := request.DynaKube.OTLPExporterConfiguration()
 
 	if !otlpExporterConfig.IsEnabled() {
-		log.Debug(
+		log.V(1).Info(
 			"no OTLP exporter configuration set, will not inject OTLP exporter env vars",
 			"podName", request.PodName(),
 			"namespace", request.Namespace.Name,
@@ -99,7 +99,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		return false, nil
 	}
 
-	log.Debug("injecting OTLP env vars", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	log.V(1).Info("injecting OTLP env vars", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	apiURL, err := endpoint.BuildOTLPEndpoint(request.DynaKube)
 	if err != nil {

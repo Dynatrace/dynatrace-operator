@@ -3,8 +3,8 @@ package k8sconfigmap
 import (
 	"reflect"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -13,7 +13,7 @@ type QueryObject struct {
 	query.Generic[*corev1.ConfigMap, *corev1.ConfigMapList]
 }
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) QueryObject {
+func Query(kubeClient client.Client, kubeReader client.Reader, log logr.Logger) QueryObject {
 	return QueryObject{
 		query.Generic[*corev1.ConfigMap, *corev1.ConfigMapList]{
 			Target:     &corev1.ConfigMap{},

@@ -16,7 +16,7 @@ func TestGetDataFromSecretName(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("get secret data", func(t *testing.T) {
-		data, _ := GetDataFromSecretName(ctx, fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logd.Logger{})
+		data, _ := GetDataFromSecretName(ctx, fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logd.Get())
 		assert.Equal(t, string(dataValue), data)
 	})
 }

@@ -72,7 +72,7 @@ func PrepareConfigFile(ctx context.Context, ec *edgeconnect.EdgeConnect, apiRead
 	}
 
 	edgeConnectYaml, err := yaml.Marshal(cfg)
-	log.Debug(safeEdgeConnectCfg(cfg))
+	log.V(1).Info(safeEdgeConnectCfg(cfg))
 
 	return edgeConnectYaml, err
 }

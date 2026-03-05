@@ -1,15 +1,15 @@
 package k8sstatefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList] {
+func Query(kubeClient client.Client, kubeReader client.Reader, log logr.Logger) query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList] {
 	return query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList]{
 		Target:     &appsv1.StatefulSet{},
 		ListTarget: &appsv1.StatefulSetList{},

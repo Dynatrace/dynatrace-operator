@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/go-logr/logr"
 )
 
 const (
@@ -67,7 +68,7 @@ func ReadModules() {
 	ReadModulesToLogger(log)
 }
 
-func ReadModulesToLogger(log logd.Logger) {
+func ReadModulesToLogger(log logr.Logger) {
 	once.Do(func() {
 		modulesJSON := os.Getenv(ModulesJSONEnv)
 		if modulesJSON == "" {

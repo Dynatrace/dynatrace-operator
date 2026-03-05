@@ -202,7 +202,7 @@ func buildReader(t *testing.T, dks ...dynakube.DynaKube) client.Reader {
 
 func setupLogForTest(t *testing.T) {
 	oldLog := log
-	log = logd.Logger{Logger: log.WithSink(testFailingLogSink{LogSink: log.GetSink(), t: t})}
+	log = logr.Logger{Logger: log.WithSink(testFailingLogSink{LogSink: log.GetSink(), t: t})}
 	t.Cleanup(func() { log = oldLog })
 }
 

@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/go-logr/logr"
 )
 
 var (
@@ -30,7 +31,7 @@ func LogVersion() {
 	LogVersionToLogger(log)
 }
 
-func LogVersionToLogger(log logd.Logger) {
+func LogVersionToLogger(log logr.Logger) {
 	log.Info(AppName,
 		"version", Version,
 		"gitCommit", Commit,
@@ -40,5 +41,5 @@ func LogVersionToLogger(log logd.Logger) {
 	)
 
 	// SetMemoryLimit returns the previously set memory limit. A negative input does not adjust the limit, and allows for retrieval of the currently set memory limit.
-	log.Debug("GOMEMLIMIT", "valueInBytes", debug.SetMemoryLimit(-1))
+	log.V(1).Info("GOMEMLIMIT", "valueInBytes", debug.SetMemoryLimit(-1))
 }

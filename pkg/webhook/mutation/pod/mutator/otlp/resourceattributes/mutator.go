@@ -47,7 +47,7 @@ func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 }
 
 func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	log.V(1).Info("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	mutated, _ := m.mutate(context.Background(), request.BaseRequest)
 
@@ -57,7 +57,7 @@ func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (bool, error) {
 	mutated := false
 
-	log.Debug("injecting OTLP resource Attributes")
+	log.V(1).Info("injecting OTLP resource Attributes")
 
 	// fetch workload information once per pod
 	ownerInfo, err := workload.FindRootOwnerOfPod(ctx, m.kubeClient, *request, log)

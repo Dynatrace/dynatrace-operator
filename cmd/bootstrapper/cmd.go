@@ -124,7 +124,7 @@ func run(cmd *cobra.Command, _ []string) error {
 
 func runConfigure() error {
 	if targetFolder != "" {
-		err := configure.SetupOneAgent(log.Logger, targetFolder)
+		err := configure.SetupOneAgent(log, targetFolder)
 		if err != nil {
 			log.Info("error during oneagent configuration")
 
@@ -133,7 +133,7 @@ func runConfigure() error {
 	}
 
 	if needsMetadataEnrichment {
-		err := configure.EnrichWithMetadata(log.Logger)
+		err := configure.EnrichWithMetadata(log)
 		if err != nil {
 			log.Info("error during metadata enrichment")
 
