@@ -166,7 +166,6 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		appLabels.BuildLabels(),
 		b.hostInjectSpec.Labels,
 	)
-	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable())
 
 	templateAnnotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
@@ -195,11 +194,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 				},
 				Spec: podSpec,
 			},
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: &maxUnavailable,
-				},
-			},
+			UpdateStrategy: b.updateStrategy(),
 		},
 	}
 
@@ -458,6 +453,40 @@ func (b *builder) securityContext() *corev1.SecurityContext {
 	}
 
 	return &securityContext
+}
+
+func (b *builder) updateStrategy() appsv1.DaemonSetUpdateStrategy {
+	var rollingUpdate appsv1.RollingUpdateDaemonSet
+
+	if b.hostInjectSpec != nil {
+		rollingUpdate = b.hostInjectSpec.RollingUpdate
+	}
+
+	if rollingUpdate.MaxUnavailable == nil {
+		rollingUpdate.MaxUnavailable = defaultMaxUnavailable()
+	}
+
+	if rollingUpdate.MaxSurge == nil {
+		rollingUpdate.MaxSurge = defaultMaxSurge()
+	}
+
+	us := appsv1.DaemonSetUpdateStrategy{
+		Type:          appsv1.RollingUpdateDaemonSetStrategyType,
+		RollingUpdate: &rollingUpdate,
+	}
+
+	return us
+}
+
+func defaultMaxUnavailable() *intstr.IntOrString {
+	maxUnavailable := 1
+	return &intstr.IntOrString{IntVal: int32(maxUnavailable)}
+
+}
+
+func defaultMaxSurge() *intstr.IntOrString {
+	maxSurge := 1
+	return &intstr.IntOrString{IntVal: int32(maxSurge)}
 }
 
 func defaultSecurityContextCapabilities() *corev1.Capabilities {
