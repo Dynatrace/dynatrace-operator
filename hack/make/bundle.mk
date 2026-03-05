@@ -30,6 +30,13 @@ OLM ?= false
 # Default bundle image with tag
 BUNDLE_IMG ?= $(REGISTRY)/$(REPOSITORY)/dynatrace-operator-bundle:$(VERSION)
 
+# CONTAINER_TOOL defines the container tool to be used for building images.
+ifneq ($(shell command -v podman),)
+	CONTAINER_TOOL ?= podman
+else
+	CONTAINER_TOOL ?= docker
+endif
+
 .PHONY: bundle
 ## Generates bundle manifests and metadata, then validates generated files
 bundle: manifests/$(PLATFORM)
@@ -39,12 +46,12 @@ bundle: manifests/$(PLATFORM)
 .PHONY: bundle/build
 ## Build the bundle image
 bundle/build:
-	cd config/olm/$(PLATFORM)/$(VERSION) && docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+	cd config/olm/$(PLATFORM)/$(VERSION) && $(CONTAINER_TOOL) build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 .PHONY: bundle/push
 ## Push the bundle image
 bundle/push:
-	docker push $(BUNDLE_IMG)
+	$(CONTAINER_TOOL) push $(BUNDLE_IMG)
 
 .PHONY: bundle/install
 ## Deploy the bundle
