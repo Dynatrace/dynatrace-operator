@@ -10,26 +10,26 @@ Prerequisites:
 
 The basic flow is as follows:
 
-* Generate bundle: `make bundle`
-* Build catalog image: `make bundle/build`
-* Push catalog image: `make bundle/push`
-* Install the bundle: `make bundle/install`
-* Run tests
-* Clean up bundle: `make bundle/cleanup`
+- Generate bundle: `make bundle`
+- Build catalog image: `make bundle/build`
+- Push catalog image: `make bundle/push`
+- Install the bundle: `make bundle/install`
+- Run tests
+- Clean up bundle: `make bundle/cleanup`
 
 Install depends on build and push so building and deploying can be abbreviated to: `make bundle bundle/install`
 
 The bundle generate can be configured using the following environment variables:
 
-* `PLATFORM`: Target platform. Must be either `openshift` (default) or `kubernetes`
-* `VERSION`: Version of the bundle. Does not affect the deployed operator version
-* `BUNDLE_IMG`: Override for the bundle image.
-* `CHANNELS`: Set bundle channels
-* `DEFAULT_CHANNEL`: Set bundle default channel
+- `PLATFORM`: Target platform. Must be either `openshift` (default) or `kubernetes`
+- `VERSION`: Version of the bundle. Does not affect the deployed operator version
+- `BUNDLE_IMG`: Override for the bundle image.
+- `CHANNELS`: Set bundle channels
+- `DEFAULT_CHANNEL`: Set bundle default channel
 
 Example:
 
-```
+```sh
 make images/build/push REGISTRY=quay.io
 make bundle bundle/install REGISTRY=quay.io PLATFORM=kubernetes
 make bundle bundle/upgrade REGISTRY=quay.io PLATFORM=kubernetes VERSION=0.0.2
