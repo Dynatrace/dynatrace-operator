@@ -108,6 +108,13 @@ startupProbe:
   value: {{ .Chart.AppVersion | quote }}
 {{- end -}}
 
+{{- define "dynatrace-operator.pull-secret-env" -}}
+{{- if .Values.customPullSecret }}
+- name: DT_OPERATOR_PULL_SECRET
+  value: {{ .Values.customPullSecret }}
+{{- end }}
+{{- end -}}
+
 {{- define "dynatrace-operator.helmPreUpgradeHookAnnotations" -}}
 "helm.sh/hook": pre-upgrade
 "helm.sh/hook-weight": "-5"
