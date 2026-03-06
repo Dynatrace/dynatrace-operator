@@ -156,6 +156,59 @@ func (_c *Builder_SetDynakube_Call) RunAndReturn(run func(dk dynakube.DynaKube) 
 	return _c
 }
 
+// SetName provides a mock function for the type Builder
+func (_mock *Builder) SetName(name string) dynatraceclient.Builder {
+	ret := _mock.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetName")
+	}
+
+	var r0 dynatraceclient.Builder
+	if returnFunc, ok := ret.Get(0).(func(string) dynatraceclient.Builder); ok {
+		r0 = returnFunc(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dynatraceclient.Builder)
+		}
+	}
+	return r0
+}
+
+// Builder_SetName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetName'
+type Builder_SetName_Call struct {
+	*mock.Call
+}
+
+// SetName is a helper method to define mock.On call
+//   - name string
+func (_e *Builder_Expecter) SetName(name interface{}) *Builder_SetName_Call {
+	return &Builder_SetName_Call{Call: _e.mock.On("SetName", name)}
+}
+
+func (_c *Builder_SetName_Call) Run(run func(name string)) *Builder_SetName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Builder_SetName_Call) Return(builder dynatraceclient.Builder) *Builder_SetName_Call {
+	_c.Call.Return(builder)
+	return _c
+}
+
+func (_c *Builder_SetName_Call) RunAndReturn(run func(name string) dynatraceclient.Builder) *Builder_SetName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SetTokens provides a mock function for the type Builder
 func (_mock *Builder) SetTokens(tokens token.Tokens) dynatraceclient.Builder {
 	ret := _mock.Called(tokens)

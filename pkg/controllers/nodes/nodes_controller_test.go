@@ -1,7 +1,6 @@
 package nodes
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -12,12 +11,12 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
+	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -60,9 +59,8 @@ func TestReconcile(t *testing.T) {
 		)
 
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
-		defer mock.AssertExpectationsForObjects(t, dtClient)
 
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -113,7 +111,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := dtclientmock.NewClient(t)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
 
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -162,7 +160,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := dtclientmock.NewClient(t)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
 
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -185,7 +183,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		defer mock.AssertExpectationsForObjects(t, dtClient)
 
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 		reconcileAllNodes(t, ctrl, fakeClient)
 
 		// delete node from kube api
@@ -210,7 +208,7 @@ func TestReconcile(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 
 		// Get node 1
 		node1 := &corev1.Node{}
@@ -252,7 +250,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := dtclientmock.NewClient(t)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
 
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
@@ -276,7 +274,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := dtclientmock.NewClient(t)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
 
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
@@ -299,7 +297,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		defer mock.AssertExpectationsForObjects(t, dtClient)
 
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 		// by doing this step we warm up cache by adding node1 and node2
 		reconcileAllNodes(t, ctrl, fakeClient)
 
@@ -322,44 +320,19 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 	}
 }
 
-type mockDynatraceClientBuilder struct {
-	dynatraceClient dtclient.Client
-}
+func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *dtclientmock.Client) *Controller {
+	mockDtcBuilder := dtbuildermock.NewBuilder(t)
+	mockDtcBuilder.EXPECT().SetDynakube(mock.MatchedBy(func(dynakube.DynaKube) bool { return true })).Return(mockDtcBuilder)
+	mockDtcBuilder.EXPECT().SetTokens(mock.MatchedBy(func(token.Tokens) bool { return true })).Return(mockDtcBuilder)
+	mockDtcBuilder.EXPECT().Build(t.Context()).Return(dtClient, nil)
 
-func (builder mockDynatraceClientBuilder) SetContext(context.Context) dynatraceclient.Builder {
-	return builder
-}
-
-func (builder mockDynatraceClientBuilder) SetDynakube(dynakube.DynaKube) dynatraceclient.Builder {
-	return builder
-}
-
-func (builder mockDynatraceClientBuilder) SetTokens(token.Tokens) dynatraceclient.Builder {
-	return builder
-}
-
-func (builder mockDynatraceClientBuilder) LastAPIProbeTimestamp() *metav1.Time {
-	return nil
-}
-
-func (builder mockDynatraceClientBuilder) Build(ctx context.Context) (dtclient.Client, error) {
-	return builder.dynatraceClient, nil
-}
-
-func (builder mockDynatraceClientBuilder) BuildWithTokenVerification(*dynakube.DynaKubeStatus) (dtclient.Client, error) {
-	return builder.dynatraceClient, nil
-}
-
-func createDefaultReconciler(fakeClient client.Client, dtClient *dtclientmock.Client) *Controller {
 	return &Controller{
-		client:    fakeClient,
-		apiReader: fakeClient,
-		dynatraceClientBuilder: &mockDynatraceClientBuilder{
-			dynatraceClient: dtClient,
-		},
-		podNamespace: testNamespace,
-		runLocal:     true,
-		timeProvider: timeprovider.New().Freeze(),
+		client:                 fakeClient,
+		apiReader:              fakeClient,
+		dynatraceClientBuilder: mockDtcBuilder,
+		podNamespace:           testNamespace,
+		runLocal:               true,
+		timeProvider:           timeprovider.New().Freeze(),
 	}
 }
 

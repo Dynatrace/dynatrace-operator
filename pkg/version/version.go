@@ -42,3 +42,7 @@ func LogVersionToLogger(log logd.Logger) {
 	// SetMemoryLimit returns the previously set memory limit. A negative input does not adjust the limit, and allows for retrieval of the currently set memory limit.
 	log.Debug("GOMEMLIMIT", "valueInBytes", debug.SetMemoryLimit(-1))
 }
+
+func UserAgent() string {
+	return AppName + "/" + Version
+}

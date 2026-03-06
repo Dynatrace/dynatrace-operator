@@ -13,6 +13,7 @@ import (
 type Builder interface {
 	SetDynakube(dk dynakube.DynaKube) Builder
 	SetTokens(tokens token.Tokens) Builder
+	SetName(name string) Builder
 	Build(ctx context.Context) (dtclient.Client, error)
 }
 
@@ -20,6 +21,7 @@ type builder struct {
 	apiReader client.Reader
 	tokens    token.Tokens
 	dk        dynakube.DynaKube
+	name      string
 }
 
 func NewBuilder(apiReader client.Reader) Builder {
@@ -36,6 +38,12 @@ func (dynatraceClientBuilder builder) SetDynakube(dk dynakube.DynaKube) Builder 
 
 func (dynatraceClientBuilder builder) SetTokens(tokens token.Tokens) Builder {
 	dynatraceClientBuilder.tokens = tokens
+
+	return dynatraceClientBuilder
+}
+
+func (dynatraceClientBuilder builder) SetName(name string) Builder {
+	dynatraceClientBuilder.name = name
 
 	return dynatraceClientBuilder
 }
@@ -74,6 +82,8 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (dtclient.Clien
 	if paasToken == "" {
 		paasToken = apiToken
 	}
+
+	opts.Opts = append(opts.Opts, dtclient.NamedClient(dynatraceClientBuilder.name))
 
 	return dtclient.NewClient(dynatraceClientBuilder.dk.Spec.APIURL, apiToken, paasToken, opts.Opts...)
 }

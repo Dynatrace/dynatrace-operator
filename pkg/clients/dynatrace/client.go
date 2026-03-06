@@ -191,3 +191,9 @@ func HostGroup(hostGroup string) Option {
 		c.hostGroup = hostGroup
 	}
 }
+
+func NamedClient(name string) Option {
+	return func(c *dynatraceClient) {
+		c.name = name
+	}
+}

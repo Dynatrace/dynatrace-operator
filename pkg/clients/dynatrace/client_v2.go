@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 )
 
 type ClientV2 struct {
@@ -38,6 +39,15 @@ type ConfigV2 struct {
 
 // OptionV2 is a functional option for configuring the dtClient
 type OptionV2 func(*ConfigV2)
+
+// WithName sets a client identifier that will be appended to the user agent
+func WithName(name string) OptionV2 {
+	return func(c *ConfigV2) {
+		if name != "" {
+			c.UserAgent = operatorversion.UserAgent() + " " + name
+		}
+	}
+}
 
 // WithAPIToken sets the API token
 func WithAPIToken(token string) OptionV2 {
@@ -106,7 +116,7 @@ func WithHostGroup(hostGroup string) OptionV2 {
 func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 	config := ConfigV2{
 		BaseURL:   baseURL,
-		UserAgent: "dynatrace-operator/2.0",
+		UserAgent: operatorversion.UserAgent(),
 		Timeout:   30 * time.Second,
 	}
 
@@ -168,6 +178,7 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 	// Fields are already validated by the v1 client constructor
 	v2, _ := newClientV2(
 		dtc.url,
+		WithName(dtc.name),
 		WithAPIToken(dtc.apiToken),
 		WithPaasToken(dtc.paasToken),
 		WithDataIngestToken(""),
