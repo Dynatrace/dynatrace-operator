@@ -388,12 +388,8 @@ func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Instal
 	t.Helper()
 
 	return func(_ context.Context, props *job.Properties) installer.Installer {
-		if len(pullSecrets) > 0 {
-			for _, pullSecret := range pullSecrets {
-				assert.Contains(t, props.PullSecrets, pullSecret)
-			}
-		} else {
-			assert.Empty(t, props.PullSecrets)
+		for _, pullSecret := range pullSecrets {
+			assert.Contains(t, props.PullSecrets, pullSecret)
 		}
 
 		return mockedInstaller

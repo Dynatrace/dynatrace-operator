@@ -81,21 +81,15 @@ func (dk *DynaKube) PullSecretNames() []string {
 		names = append(names, dk.Spec.CustomPullSecret)
 	}
 
+	if helmPullSecret := os.Getenv(k8senv.DtOperatorPullSecretEnvName); helmPullSecret != "" && !slices.Contains(names, helmPullSecret) {
+		names = append(names, helmPullSecret)
+	}
+
 	return names
 }
 
 func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
 	pullSecretNames := dk.PullSecretNames()
-	helmPullSecret := os.Getenv(k8senv.DtOperatorPullSecretEnvName)
-
-	if helmPullSecret != "" {
-		alreadyIncluded := slices.Contains(pullSecretNames, helmPullSecret)
-
-		if !alreadyIncluded {
-			pullSecretNames = append(pullSecretNames, helmPullSecret)
-		}
-	}
-
 	imagePullSecrets := make([]corev1.LocalObjectReference, len(pullSecretNames))
 	for i, pullSecretName := range pullSecretNames {
 		imagePullSecrets[i].Name = pullSecretName

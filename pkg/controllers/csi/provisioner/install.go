@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"os"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -16,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/helmconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 )
 
 const (
@@ -99,20 +97,11 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
 	}
 
-	pullSecrets := []string{}
-	if dk.Spec.CustomPullSecret != "" {
-		pullSecrets = append(pullSecrets, dk.Spec.CustomPullSecret)
-	}
-
-	if helmPullSecret := os.Getenv(k8senv.DtOperatorPullSecretEnvName); helmPullSecret != "" && helmPullSecret != dk.Spec.CustomPullSecret {
-		pullSecrets = append(pullSecrets, helmPullSecret)
-	}
-
 	props := &job.Properties{
 		ImageURI:        imageURI,
 		ImagePullPolicy: dk.OneAgent().GetCodeModulesImagePullPolicy(),
 		Owner:           &dk,
-		PullSecrets:     pullSecrets,
+		PullSecrets:     dk.PullSecretNames(),
 		APIReader:       provisioner.apiReader,
 		Client:          provisioner.kubeClient,
 		PathResolver:    provisioner.path,
