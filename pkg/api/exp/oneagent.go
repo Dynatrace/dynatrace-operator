@@ -4,6 +4,7 @@ const (
 	// Deprecated: OAProxyIgnoredKey use NoProxy annotation instead.
 	OAProxyIgnoredKey = FFPrefix + "oneagent-ignore-proxy"
 
+	// Deprecated: OAMaxUnavailableKey use maxUnavailable in RollingUpdate strategy of the OneAgent template instead.
 	OAMaxUnavailableKey      = FFPrefix + "oneagent-max-unavailable"
 	OAInitialConnectRetryKey = FFPrefix + "oneagent-initial-connect-retry-ms"
 	OAPrivilegedKey          = FFPrefix + "oneagent-privileged"
@@ -19,6 +20,7 @@ const (
 	DefaultOAIstioInitialConnectRetry = 6000
 )
 
+// Deprecated: Define maxUnavailable in RollingUpdate strategy of the OneAgent template instead.
 // GetOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
 func (ff *FeatureFlags) GetOneAgentMaxUnavailable() int {
 	return ff.getIntWithDefault(OAMaxUnavailableKey, 1)
