@@ -39,7 +39,7 @@ endif
 
 .PHONY: bundle
 ## Generates bundle manifests and metadata, then validates generated files
-bundle: manifests/$(PLATFORM)
+bundle: manifests/$(PLATFORM)/core
 	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
 	@git restore config/
 
