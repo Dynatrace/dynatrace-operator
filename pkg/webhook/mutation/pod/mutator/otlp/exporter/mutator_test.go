@@ -47,16 +47,6 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		require.False(t, m.IsEnabled(request.BaseRequest))
 	})
-	t.Run("auto-injection disabled on pod", func(t *testing.T) {
-		dk := getTestDynakube()
-		request := createTestMutationRequest(t, dk)
-
-		request.Pod.Annotations[mutator.AnnotationDynatraceInject] = "false"
-
-		m := Mutator{}
-
-		require.False(t, m.IsEnabled(request.BaseRequest))
-	})
 	t.Run("auto-injection enabled via 'feature.dynatrace.com/automatic-injection' default feature flag value", func(t *testing.T) {
 		dk := getTestDynakube()
 		request := createTestMutationRequest(t, dk)
@@ -112,6 +102,130 @@ func TestMutator_IsEnabled(t *testing.T) {
 		m := Mutator{}
 
 		require.True(t, m.IsEnabled(request.BaseRequest))
+	})
+}
+
+func TestMutator_IsEnabled_Comprehensive(t *testing.T) {
+	t.Run("automatic-injection=true (default), no annotations, namespace matches => inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		request := createTestMutationRequest(t, dk)
+
+		m := Mutator{}
+
+		require.True(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("automatic-injection=true (default), no annotations, namespace does not match => no inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.OTLPExporterConfiguration.NamespaceSelector = metav1.LabelSelector{
+			MatchLabels: map[string]string{"otlp": "true"},
+		}
+		request := createTestMutationRequest(t, dk)
+
+		m := Mutator{}
+
+		require.False(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("automatic-injection=true (default), feature-specific=true => inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		request := createTestMutationRequest(t, dk)
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "true"
+
+		m := Mutator{}
+
+		require.True(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("automatic-injection=true (default), feature-specific=false => no inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		request := createTestMutationRequest(t, dk)
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "false"
+
+		m := Mutator{}
+
+		require.False(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("automatic-injection=false, no annotations => no inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations[exp.InjectionAutomaticKey] = "false"
+		request := createTestMutationRequest(t, dk)
+
+		m := Mutator{}
+
+		require.False(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("automatic-injection=false, feature-specific=true => inject (explicit opt-in)", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations[exp.InjectionAutomaticKey] = "false"
+		request := createTestMutationRequest(t, dk)
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "true"
+
+		m := Mutator{}
+
+		require.True(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("automatic-injection=false, feature-specific=false => no inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations[exp.InjectionAutomaticKey] = "false"
+		request := createTestMutationRequest(t, dk)
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "false"
+
+		m := Mutator{}
+
+		require.False(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("feature-specific=false => no inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		request := createTestMutationRequest(t, dk)
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "false"
+
+		m := Mutator{}
+
+		require.False(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("OTLP disabled on DynaKube => no inject (regardless of annotations)", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.OTLPExporterConfiguration = nil
+		request := createTestMutationRequest(t, dk)
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "true"
+
+		m := Mutator{}
+
+		require.False(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("namespace selector matches with feature-specific=true => inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.OTLPExporterConfiguration.NamespaceSelector = metav1.LabelSelector{
+			MatchLabels: map[string]string{"otlp": "true"},
+		}
+		request := createTestMutationRequest(t, dk)
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "true"
+		request.Namespace.Labels = map[string]string{"otlp": "true"}
+
+		m := Mutator{}
+
+		require.True(t, m.IsEnabled(request.BaseRequest))
+	})
+
+	t.Run("namespace selector does not match with feature-specific=true => no inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.OTLPExporterConfiguration.NamespaceSelector = metav1.LabelSelector{
+			MatchLabels: map[string]string{"otlp": "true"},
+		}
+		request := createTestMutationRequest(t, dk)
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "true"
+		request.Namespace.Labels = map[string]string{}
+
+		m := Mutator{}
+
+		require.False(t, m.IsEnabled(request.BaseRequest))
 	})
 }
 

@@ -44,13 +44,9 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 
 	log.Debug("OTLP env var injection is enabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	// first, check if otlp injection is enabled explicitly on pod
-	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjectionEnabled, false)
-
-	if !enabledOnPod {
-		// if not enabled explicitly, check general injection setting via 'dynatrace.com/inject' annotation
-		enabledOnPod = maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, request.DynaKube.FF().IsAutomaticInjection())
-	}
+	// Check if OTLP injection is enabled on pod via feature-specific annotation
+	// Default to the automatic-injection feature flag value (consistent with OneAgent and metadata enrichment)
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjectionEnabled, request.DynaKube.FF().IsAutomaticInjection())
 
 	enabledOnNamespace := true
 
