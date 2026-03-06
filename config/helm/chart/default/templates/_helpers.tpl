@@ -108,6 +108,26 @@ startupProbe:
   value: {{ .Chart.AppVersion | quote }}
 {{- end -}}
 
+{{/*
+The common envs that inform the component about what is configured in its pod
+*/}}
+{{- define "dynatrace-operator.common.pod.envs" -}}
+- name: POD_NAMESPACE
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.namespace
+- name: POD_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.name
+- name: DT_OPERATOR_IMAGE
+  value: {{ include "dynatrace-operator.image" . }}
+- name: OLM_OPERATOR_NAMESPACE
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.annotations['olm.operatorNamespace']
+{{- end -}}
+
 {{- define "dynatrace-operator.helmPreUpgradeHookAnnotations" -}}
 "helm.sh/hook": pre-upgrade
 "helm.sh/hook-weight": "-5"

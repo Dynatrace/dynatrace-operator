@@ -59,20 +59,7 @@ spec:
           image: {{ include "dynatrace-operator.image" . }}
           imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
           env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: DT_OPERATOR_IMAGE
-              value: {{ include "dynatrace-operator.image" . }}
-            - name: OLM_OPERATOR_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.annotations['olm.operatorNamespace']
+            {{- include "dynatrace-operator.common.pod.envs" . | nindent 12 }}
             - name: DT_HOST_AVAILABILITY_DETECTION
               value: "{{ .Values.operator.hostAvailabilityDetection }}"
             - name: DT_CRD_STORAGE_MIGRATION
