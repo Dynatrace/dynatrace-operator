@@ -192,7 +192,9 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Empty(t, daemonset.Spec.Template.Spec.Tolerations)
 		assert.Len(t, daemonset.Spec.Template.Spec.ImagePullSecrets, 1)
 		require.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
-		assert.Equal(t, intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, appsv1.RollingUpdateDaemonSetStrategyType, daemonset.Spec.UpdateStrategy.Type)
+		assert.Equal(t, intstr.IntOrString{IntVal: 1}, *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, intstr.IntOrString{IntVal: 1}, *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
 	})
 
 	t.Run("respect custom labels", func(t *testing.T) {
@@ -358,6 +360,26 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.NotNil(t, daemonset)
 
 		assert.Equal(t, daemonset.Spec.Template.Spec.NodeSelector, customNodeSelector)
+	})
+
+	t.Run("respect custom update strategy", func(t *testing.T) {
+		expectedMaxUnavailable := intstr.FromString("80%")
+		expectedMaxSurge := intstr.FromInt32(2)
+		dk := createDynakube(true)
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			RollingUpdate: appsv1.RollingUpdateDaemonSet{
+				MaxUnavailable: &expectedMaxUnavailable,
+				MaxSurge:       &expectedMaxSurge,
+			},
+		}
+
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+
+		assert.Equal(t, &expectedMaxUnavailable, daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, &expectedMaxSurge, daemonset.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
 	})
 
 	t.Run("generate a daemonset with no kubernetes cluster name set in env and arg section if no MEID and all scopes set", func(t *testing.T) {
