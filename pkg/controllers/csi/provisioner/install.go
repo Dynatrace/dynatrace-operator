@@ -97,16 +97,11 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
 	}
 
-	pullSecrets := []string{}
-	if dk.Spec.CustomPullSecret != "" {
-		pullSecrets = append(pullSecrets, dk.Spec.CustomPullSecret)
-	}
-
 	props := &job.Properties{
 		ImageURI:        imageURI,
 		ImagePullPolicy: dk.OneAgent().GetCodeModulesImagePullPolicy(),
 		Owner:           &dk,
-		PullSecrets:     pullSecrets,
+		PullSecrets:     dk.PullSecretNames(),
 		APIReader:       provisioner.apiReader,
 		Client:          provisioner.kubeClient,
 		PathResolver:    provisioner.path,

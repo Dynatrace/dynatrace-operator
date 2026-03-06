@@ -184,6 +184,7 @@ spec:
                 fieldPath: spec.nodeName
           - name: CSI_DATA_DIR
             value: {{ include "dynatrace-operator.CSIDataDir" . }}
+          {{- include "dynatrace-operator.pull-secret-env" . | nindent 10 }}
           {{- if .Values.debugLogs }}
           - name: LOG_LEVEL
             value: "debug"
