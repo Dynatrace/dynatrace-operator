@@ -2,6 +2,8 @@ package dynatrace
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +14,9 @@ const (
 	oneAgentConnectionInfoEndpoint = "/v1/deployment/installer/agent/connectioninfo"
 
 	testCommunicationEndpoint = "https://tenant.dev.dynatracelabs.com:443"
+
+	testTenantUUID  = "1234"
+	testTenantToken = "abcd"
 )
 
 func Test_GetOneAgentConnectionInfo(t *testing.T) {
@@ -115,4 +120,50 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 
 		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
 	})
+}
+
+func connectionInfoServerHandler(url string, response any) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path == url {
+			rawData, err := json.Marshal(response)
+			if err != nil {
+				writer.WriteHeader(http.StatusInternalServerError)
+			} else {
+				writer.Header().Add("Content-Type", "application/json")
+				_, _ = writer.Write(rawData)
+			}
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+		}
+	}
+}
+
+func tenantInternalServerError(url string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path == url {
+			rawData, err := json.Marshal(serverErrorResponse{
+				ErrorMessage: ServerError{
+					Code:    http.StatusInternalServerError,
+					Message: "error retrieving tenant info",
+				}})
+
+			writer.WriteHeader(http.StatusInternalServerError)
+
+			if err == nil {
+				_, _ = writer.Write(rawData)
+			}
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+		}
+	}
+}
+
+func tenantMalformedJSON(url string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path == url {
+			writer.Write([]byte("this is not json"))
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+		}
+	}
 }

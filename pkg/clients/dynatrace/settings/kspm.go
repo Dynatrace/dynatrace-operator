@@ -11,17 +11,27 @@ const (
 	kspmSettingsSchemaVersion = "1"
 )
 
-type kspmSettingsValue struct {
+type KSPMSettingsResponse struct {
+	TotalCount int                `json:"totalCount"`
+	Items      []KSPMSettingsItem `json:"items"`
+}
+
+type KSPMSettingsItem struct {
+	ObjectID string            `json:"objectId"`
+	Value    KSPMSettingsValue `json:"value"`
+}
+
+type KSPMSettingsValue struct {
 	DatasetPipelineEnabled bool `json:"configurationDatasetPipelineEnabled"`
 }
 
-// GetSettingsForLogModule returns the settings response with the number of settings objects.
-func (c *Client) GetKSPMSettings(ctx context.Context, monitoredEntity string) (GetSettingsResponse, error) {
+// GetKSPMSettings returns the settings response with the number of settings objects and their values.
+func (c *Client) GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error) {
 	if monitoredEntity == "" {
-		return GetSettingsResponse{}, nil
+		return KSPMSettingsResponse{}, nil
 	}
 
-	var resp GetSettingsResponse
+	var resp KSPMSettingsResponse
 
 	err := c.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
@@ -31,7 +41,7 @@ func (c *Client) GetKSPMSettings(ctx context.Context, monitoredEntity string) (G
 		}).
 		Execute(&resp)
 	if err != nil {
-		return GetSettingsResponse{}, fmt.Errorf("get kspm settings: %w", err)
+		return KSPMSettingsResponse{}, fmt.Errorf("get kspm settings: %w", err)
 	}
 
 	return resp, nil
@@ -47,7 +57,7 @@ func (c *Client) CreateKSPMSetting(ctx context.Context, monitoredEntity string, 
 		kspmSettingsSchemaID,
 		kspmSettingsSchemaVersion,
 		monitoredEntity,
-		kspmSettingsValue{
+		KSPMSettingsValue{
 			DatasetPipelineEnabled: datasetPipelineEnabled,
 		},
 	)

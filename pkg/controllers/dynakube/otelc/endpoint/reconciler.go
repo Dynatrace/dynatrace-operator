@@ -18,47 +18,43 @@ import (
 )
 
 type Reconciler struct {
-	dk         *dynakube.DynaKube
 	configMaps k8sconfigmap.QueryObject
 }
 
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler
-
-func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		dk:         dk,
 		configMaps: k8sconfigmap.Query(client, apiReader, log),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.TelemetryIngest().IsEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), configMapConditionType) == nil {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	if !dk.TelemetryIngest().IsEnabled() {
+		if meta.FindStatusCondition(*dk.Conditions(), configMapConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), configMapConditionType)
+		defer meta.RemoveStatusCondition(dk.Conditions(), configMapConditionType)
 
-		configMap, _ := k8sconfigmap.Build(r.dk,
+		configMap, _ := k8sconfigmap.Build(dk,
 			consts.OtlpAPIEndpointConfigMapName,
 			nil,
 		)
 
-		_ = r.deleteConfigMap(ctx, configMap)
+		_ = r.deleteConfigMap(ctx, configMap, dk)
 
 		return nil
 	}
 
-	return r.reconcileConfigMap(ctx)
+	return r.reconcileConfigMap(ctx, dk)
 }
 
-func (r *Reconciler) deleteConfigMap(ctx context.Context, configMap *corev1.ConfigMap) error {
+func (r *Reconciler) deleteConfigMap(ctx context.Context, configMap *corev1.ConfigMap, dk *dynakube.DynaKube) error {
 	log.Info("deleting configmap", "name", configMap.Name)
 
 	err := r.configMaps.Delete(ctx, configMap)
 
 	if err != nil && !k8serrors.IsNotFound(err) {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), configMapConditionType, err)
 
 		return errors.WithMessagef(err, "failed to delete configMap %s", configMap.Name)
 	}
@@ -66,19 +62,19 @@ func (r *Reconciler) deleteConfigMap(ctx context.Context, configMap *corev1.Conf
 	return nil
 }
 
-func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
-	configMapData, err := r.generateData()
+func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
+	configMapData, err := r.generateData(dk)
 	if err != nil {
 		return errors.WithMessage(err, "could not generate config map data")
 	}
 
-	configMap, err := k8sconfigmap.Build(r.dk,
+	configMap, err := k8sconfigmap.Build(dk,
 		consts.OtlpAPIEndpointConfigMapName,
 		configMapData,
-		k8sconfigmap.SetLabels(k8slabel.NewCoreLabels(r.dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()),
+		k8sconfigmap.SetLabels(k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()),
 	)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), configMapConditionType, err)
 
 		return errors.WithStack(err)
 	}
@@ -86,20 +82,20 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
 	_, err = r.configMaps.CreateOrUpdate(ctx, configMap)
 	if err != nil {
 		log.Info("could not create or update config map", "name", configMap.Name)
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, errors.WithMessage(err, "failed to create or update config map"))
+		k8sconditions.SetKubeAPIError(dk.Conditions(), configMapConditionType, errors.WithMessage(err, "failed to create or update config map"))
 
 		return errors.WithMessage(err, "failed to create or update config map")
 	}
 
-	k8sconditions.SetConfigMapCreatedOrUpdated(r.dk.Conditions(), configMapConditionType, configMap.Name)
+	k8sconditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, configMap.Name)
 
 	return nil
 }
 
-func (r *Reconciler) generateData() (map[string]string, error) {
+func (r *Reconciler) generateData(dk *dynakube.DynaKube) (map[string]string, error) {
 	data := make(map[string]string)
 
-	dtEndpoint, err := BuildOTLPEndpoint(*r.dk)
+	dtEndpoint, err := BuildOTLPEndpoint(*dk)
 	if err != nil {
 		return data, err
 	}

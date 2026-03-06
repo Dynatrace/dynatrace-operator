@@ -28,10 +28,10 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithExtensionsPrometheusEnabledSpec(true),
-		componentDynakube.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
+		componentDynakube.WithExtensionsEECImageRef(),
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
-		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
+		componentDynakube.WithOTelCollectorImageRef(),
 	}
 
 	testDynakube := *componentDynakube.New(options...)

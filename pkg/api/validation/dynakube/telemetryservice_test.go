@@ -13,9 +13,8 @@ import (
 )
 
 const (
-	testOtherName        = "test-other-name"
-	testServiceName      = "test-service-name"
-	testOtherServiceName = "test-other-service-name"
+	testOtherName   = "test-other-name"
+	testServiceName = "test-service-name"
 )
 
 var otherDynakubeObjectMeta = metav1.ObjectMeta{
@@ -52,7 +51,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{},
+						Protocols: []otelcgen.Protocol{},
 					},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
@@ -74,9 +73,9 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
+						Protocols: []otelcgen.Protocol{
+							otelcgen.ZipkinProtocol,
+							otelcgen.OtlpProtocol,
 							"unknown",
 						},
 					},
@@ -92,49 +91,11 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
+						Protocols: []otelcgen.Protocol{
+							otelcgen.ZipkinProtocol,
+							otelcgen.OtlpProtocol,
 							"unknown1",
 							"unknown2",
-						},
-					},
-				},
-			})
-	})
-
-	t.Run("duplicated protocol", func(t *testing.T) {
-		assertDenied(t,
-			[]string{errorTelemetryIngestDuplicatedProtocols},
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testAPIURL,
-					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
-							string(otelcgen.OtlpProtocol),
-						},
-					},
-				},
-			})
-	})
-
-	t.Run("duplicated protocols", func(t *testing.T) {
-		assertDenied(t,
-			[]string{errorTelemetryIngestDuplicatedProtocols},
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testAPIURL,
-					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
-							string(otelcgen.OtlpProtocol),
-							string(otelcgen.JaegerProtocol),
 						},
 					},
 				},

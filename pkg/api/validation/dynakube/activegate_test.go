@@ -11,25 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TestDuplicateActiveGateCapabilities(t *testing.T) {
-	t.Run("conflicting dynakube specs", func(t *testing.T) {
-		assertDenied(t,
-			[]string{fmt.Sprintf(errorDuplicateActiveGateCapability, activegate.RoutingCapability.DisplayName)},
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
-						Capabilities: []activegate.CapabilityDisplayName{
-							activegate.RoutingCapability.DisplayName,
-							activegate.RoutingCapability.DisplayName,
-						},
-					},
-				},
-			})
-	})
-}
-
 func TestInvalidActiveGateCapabilities(t *testing.T) {
 	t.Run("conflicting dynakube specs", func(t *testing.T) {
 		assertDenied(t,

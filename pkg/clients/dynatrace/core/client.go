@@ -10,8 +10,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 )
 
 const apiTokenHeader = "Api-Token "
@@ -21,6 +19,7 @@ type APIClient interface {
 	GET(ctx context.Context, path string) APIRequest
 	POST(ctx context.Context, path string) APIRequest
 	PUT(ctx context.Context, path string) APIRequest
+	DELETE(ctx context.Context, path string) APIRequest
 }
 
 // APIRequest provides a fluent interface for building and executing HTTP requests
@@ -113,6 +112,11 @@ func (c *Client) PUT(ctx context.Context, path string) APIRequest {
 	return c.newRequest(ctx).withMethod(http.MethodPut).WithPath(path)
 }
 
+// DELETE creates a DELETE request builder
+func (c *Client) DELETE(ctx context.Context, path string) APIRequest {
+	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
+}
+
 // WithPath sets the path for the request
 func (r *Request) WithPath(path string) APIRequest {
 	r.path = path
@@ -185,33 +189,23 @@ func (r *Request) WithPaasToken() APIRequest {
 
 // Execute executes the request and unmarshals the response into the provided model
 func (r *Request) Execute(model any) error {
-	resp, err := r.doRequest()
+	body, err := r.doRequest()
 	if err != nil {
 		return err
 	}
-	defer utils.CloseBodyAfterRequest(resp)
 
-	return handleResponse(resp, model)
+	if model != nil {
+		if err := json.Unmarshal(body, model); err != nil {
+			return fmt.Errorf("unmarshal response body: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // ExecuteRaw executes the request and returns the raw response data
 func (r *Request) ExecuteRaw() ([]byte, error) {
-	resp, err := r.doRequest()
-	if err != nil {
-		return nil, err
-	}
-	defer utils.CloseBodyAfterRequest(resp)
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return body, handleErrorResponse(resp, body)
-	}
-
-	return body, nil
+	return r.doRequest()
 }
 
 func (r *Request) getToken() string {
@@ -246,7 +240,7 @@ func (r *Request) withMethod(method string) APIRequest {
 	return r
 }
 
-func (r *Request) doRequest() (*http.Response, error) {
+func (r *Request) doRequest() (body []byte, err error) {
 	if r.err != nil {
 		return nil, r.err
 	}
@@ -278,7 +272,26 @@ func (r *Request) doRequest() (*http.Response, error) {
 		return nil, fmt.Errorf("HTTP request: %w", err)
 	}
 
-	return resp, nil
+	defer func() {
+		err = errors.Join(err, resp.Body.Close())
+	}()
+
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
+
+	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
+	statusCodeThreshold := 201
+	if r.method == http.MethodDelete {
+		statusCodeThreshold = 299
+	}
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+		err = handleErrorResponse(resp, body)
+	}
+
+	return body, err
 }
 
 // setHeaders sets the common headers for the request
@@ -293,26 +306,6 @@ func setHeaders(req *http.Request, userAgent, token string) {
 	if req.GetBody != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-}
-
-// handleResponse processes the HTTP response and unmarshals it into the target
-func handleResponse(resp *http.Response, target any) error {
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("read response body: %w", err)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return handleErrorResponse(resp, body)
-	}
-
-	if target != nil {
-		if err := json.Unmarshal(body, target); err != nil {
-			return fmt.Errorf("unmarshal response body: %w", err)
-		}
-	}
-
-	return nil
 }
 
 // handleErrorResponse processes error responses from the API

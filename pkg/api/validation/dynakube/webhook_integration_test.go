@@ -6,11 +6,16 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -159,6 +164,51 @@ func TestWebhook(t *testing.T) {
 
 			err := clt.Create(t.Context(), oldObj)
 			require.True(t, meta.IsNoMatchError(err))
+		})
+	}
+
+	invalidTests := []struct {
+		name string
+		spec dynakube.DynaKubeSpec
+	}{
+		{
+			name: "duplicate telemetryingest protocols",
+			spec: dynakube.DynaKubeSpec{
+				APIURL: "https://test.localhost/api",
+				TelemetryIngest: &telemetryingest.Spec{
+					Protocols: []otelcgen.Protocol{
+						"zipkin",
+						"zipkin",
+					},
+				},
+			},
+		},
+		{
+			name: "duplicate activegate capabilities",
+			spec: dynakube.DynaKubeSpec{
+				APIURL: "https://test.localhost/api",
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						"routing",
+						"routing",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range invalidTests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: metav1.NamespaceDefault,
+				},
+				Spec: tt.spec,
+			}
+
+			err := clt.Create(t.Context(), dk)
+			require.True(t, apierrors.IsInvalid(err), err)
 		})
 	}
 }

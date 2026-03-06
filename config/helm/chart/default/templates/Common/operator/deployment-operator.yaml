@@ -57,9 +57,12 @@ spec:
             - operator
           # Replace this with the built image name
           image: {{ include "dynatrace-operator.image" . }}
-          imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+          {{- with .Values.imageRef.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
           env:
             {{- include "dynatrace-operator.common.pod.envs" . | nindent 12 }}
+            {{- include "dynatrace-operator.pull-secret-env" . | nindent 12 }}
             - name: DT_HOST_AVAILABILITY_DETECTION
               value: "{{ .Values.operator.hostAvailabilityDetection }}"
             - name: DT_CRD_STORAGE_MIGRATION

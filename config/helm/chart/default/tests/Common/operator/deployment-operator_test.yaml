@@ -76,7 +76,6 @@ tests:
                   - operator
                 # Replace this with the built image name
                 image: image-name
-                imagePullPolicy: Always
                 env:
                   - name: POD_NAMESPACE
                     valueFrom:
@@ -305,7 +304,6 @@ tests:
                   - operator
                 # Replace this with the built image name
                 image: image-name
-                imagePullPolicy: Always
                 env:
                   - name: POD_NAMESPACE
                     valueFrom:
@@ -463,6 +461,26 @@ tests:
       - equal:
           path: spec.template.spec.imagePullSecrets[0].name
           value: pull-secret
+
+  - it: should have DT_OPERATOR_PULL_SECRET env var when customPullSecret is set
+    set:
+      platform: kubernetes
+      customPullSecret: pull-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_OPERATOR_PULL_SECRET
+            value: pull-secret
+
+  - it: should not have DT_OPERATOR_PULL_SECRET env var when customPullSecret is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_OPERATOR_PULL_SECRET
 
   - it: should not have imagePullSecrets defined in spec
     set:

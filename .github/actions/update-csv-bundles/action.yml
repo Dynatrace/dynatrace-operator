@@ -88,8 +88,6 @@ runs:
         DIGEST: ${{ inputs.digest }}
         VERSION: ${{ inputs.version }}
         PLATFORM: openshift
-        CHANNELS: stable
-        DEFAULT_CHANNEL: stable
         IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator
         OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
       run: |
@@ -100,8 +98,6 @@ runs:
         DIGEST: ${{ inputs.digest }}
         VERSION: ${{ inputs.version }}
         PLATFORM: kubernetes
-        CHANNELS: stable
-        DEFAULT_CHANNEL: stable
         IMAGE: docker.io/dynatrace/dynatrace-operator
         OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
       run: |

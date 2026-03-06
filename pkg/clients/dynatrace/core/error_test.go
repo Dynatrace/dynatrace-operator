@@ -97,3 +97,23 @@ func TestIsNotFound(t *testing.T) {
 		})
 	}
 }
+
+func TestStatusCode(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{"nil", nil, 0},
+		{"type mismatch", errors.New("test"), 0},
+		{"from status", &HTTPError{StatusCode: 404}, 404},
+		{"from body", &HTTPError{StatusCode: 404, ServerErrors: []ServerError{{Code: 429}}}, 429},
+		{"pick first", &HTTPError{ServerErrors: []ServerError{{Code: 404}, {Code: 429}}}, 404},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := StatusCode(tt.err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

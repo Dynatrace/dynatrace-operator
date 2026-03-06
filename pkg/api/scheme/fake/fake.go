@@ -65,3 +65,27 @@ func NewClientWithInterceptors(funcs interceptor.Funcs, objs ...client.Object) c
 
 	return clientBuilder.Build()
 }
+
+func NewClientWithInterceptorsAndIndex(funcs interceptor.Funcs, objs ...client.Object) client.Client {
+	clientBuilder := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithInterceptorFuncs(funcs).
+		WithObjects(objs...).
+		WithStatusSubresource(objs...)
+
+	objects := []runtime.Object{
+		&corev1.Namespace{},
+		&corev1.Secret{},
+		&admissionregistrationv1.MutatingWebhookConfiguration{},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{},
+		&apiextensionsv1.CustomResourceDefinition{},
+	}
+
+	for _, object := range objects {
+		clientBuilder.WithIndex(object, "metadata.name", func(o client.Object) []string {
+			return []string{o.GetName()}
+		})
+	}
+
+	return clientBuilder.Build()
+}

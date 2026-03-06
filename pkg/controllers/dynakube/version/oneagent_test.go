@@ -1,17 +1,13 @@
 package version
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -19,36 +15,29 @@ import (
 )
 
 func TestOneAgentUpdater(t *testing.T) {
-	ctx := t.Context()
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
+	testVersion := "1.2.3.4-5"
+	testImage := "some.registry.com:" + testVersion
 
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
-						Image:   testImage.String(),
-						Version: testImage.Tag,
+						Image:   testImage,
+						Version: testVersion,
 					},
 				},
 			},
 		}
-		mockClient := dtclientmock.NewClient(t)
-		mockOneAgentImageInfo(mockClient, testImage)
+		mockVerionClient := versionclientmock.NewAPIClient(t)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVerionClient)
 
 		assert.Equal(t, "oneagent", updater.Name())
 		assert.True(t, updater.IsEnabled())
 		assert.Equal(t, dk.Spec.OneAgent.ClassicFullStack.Image, updater.CustomImage())
-		assert.Equal(t, dk.Spec.OneAgent.ClassicFullStack.Version, updater.CustomVersion())
+		assert.Equal(t, dk.Spec.OneAgent.ClassicFullStack.Version, updater.CustomVersion()) //nolint:staticcheck
 		assert.False(t, updater.IsAutoUpdateEnabled())
-		imageInfo, err := updater.LatestImageInfo(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, testImage, *imageInfo)
 	})
 }
 
@@ -79,63 +68,6 @@ func TestOneAgentIsEnabled(t *testing.T) {
 	})
 }
 
-func TestOneAgentPublicRegistry(t *testing.T) {
-	t.Run("sets condition if enabled", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.PublicRegistryKey: "true",
-				},
-			},
-		}
-
-		updater := newOneAgentUpdater(dk, nil, nil)
-
-		isEnabled := updater.IsPublicRegistryEnabled()
-		require.True(t, isEnabled)
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, verifiedReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-	})
-	t.Run("ignores conditions if not enabled", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-
-		updater := newOneAgentUpdater(dk, nil, nil)
-
-		isEnabled := updater.IsPublicRegistryEnabled()
-		require.False(t, isEnabled)
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
-		require.Nil(t, condition)
-	})
-}
-
-func TestOneAgentLatestImageInfo(t *testing.T) {
-	t.Run("problem with Dynatrace request => visible in conditions", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.PublicRegistryKey: "true",
-				},
-			},
-		}
-
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().GetLatestOneAgentImage(anyCtx).Return(nil, errors.New("BOOM")).Once()
-		updater := newOneAgentUpdater(dk, nil, mockClient)
-
-		_, err := updater.LatestImageInfo(t.Context())
-		require.Error(t, err)
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, k8sconditions.DynatraceAPIErrorReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-	})
-}
-
 func TestOneAgentUseDefault(t *testing.T) {
 	testVersion := "1.2.3.4-5"
 
@@ -152,9 +84,9 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
-		mockClient := dtclientmock.NewClient(t)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 
@@ -175,10 +107,10 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
-		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, testVersion, 1)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 
@@ -208,10 +140,10 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, testVersion, 1)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 		require.NoError(t, err) // we only log the downgrade problem, not fail the reconcile
@@ -242,44 +174,14 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, "BOOM", 1)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockLatestAgentVersion(mockVersionClient, "BOOM", 1)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 		require.Error(t, err)
 		assert.Equal(t, previousVersion, dk.Status.OneAgent.Version)
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
-		assert.Equal(t, verificationFailedReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-	})
-	t.Run("Verification fails due to malformed ImageID", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				OneAgent: oneagent.Status{
-					VersionStatus: status.VersionStatus{
-						ImageID: "BOOM",
-						Source:  status.PublicRegistryVersionSource,
-					},
-				},
-			},
-		}
-
-		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, testVersion, 1)
-
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
-
-		err := updater.UseTenantRegistry(t.Context())
-		require.Error(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
 		assert.Equal(t, verificationFailedReason, condition.Reason)
@@ -319,29 +221,11 @@ func TestCheckForDowngrade(t *testing.T) {
 			isDowngrade: true,
 		},
 		{
-			testName: "is downgrade, public registry",
-			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
-				ImageID: "some.registry.com:" + newerVersion,
-				Source:  status.PublicRegistryVersionSource,
-			}),
-			newVersion:  olderVersion,
-			isDowngrade: true,
-		},
-		{
 			testName: "is NOT downgrade, tenant registry",
 			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "does-not-matter",
 				Version: olderVersion,
 				Source:  status.TenantRegistryVersionSource,
-			}),
-			newVersion:  newerVersion,
-			isDowngrade: false,
-		},
-		{
-			testName: "is NOT downgrade, public registry",
-			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
-				ImageID: "some.registry.com:" + olderVersion,
-				Source:  status.PublicRegistryVersionSource,
 			}),
 			newVersion:  newerVersion,
 			isDowngrade: false,

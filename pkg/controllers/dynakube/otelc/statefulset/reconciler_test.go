@@ -46,9 +46,8 @@ func TestReconcile(t *testing.T) {
 		mockK8sClient := fake.NewClient()
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, dk)
-		err := reconciler.Reconcile(ctx)
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
+		err := reconciler.Reconcile(ctx, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
@@ -58,7 +57,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.StatefulSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context())
+		err = reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var sts appsv1.StatefulSet
@@ -82,8 +81,8 @@ func TestReconcile(t *testing.T) {
 
 		k8sconditions.SetStatefulSetCreated(dk.Conditions(), conditionType, "this is a test")
 
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := reconciler.Reconcile(ctx)
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
+		err := reconciler.Reconcile(ctx, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, *dk.Conditions())
@@ -122,8 +121,8 @@ func TestSecretHashAnnotation(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := reconciler.Reconcile(t.Context())
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
+		err := reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
@@ -136,7 +135,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Update(t.Context(), &updatedTLSSecret)
 		require.NoError(t, err)
 
-		err = reconciler.Reconcile(t.Context())
+		err = reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
@@ -403,7 +402,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube, objs ...client.Object) 
 		require.NoError(t, err)
 	}
 
-	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+	err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}

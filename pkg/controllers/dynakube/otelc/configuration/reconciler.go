@@ -20,77 +20,73 @@ import (
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dk        *dynakube.DynaKube
 }
 
-func NewReconciler(clt client.Client,
-	apiReader client.Reader,
-	dk *dynakube.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,
-		dk:        dk,
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.TelemetryIngest().IsEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	if !dk.TelemetryIngest().IsEnabled() {
+		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
 		query := k8sconfigmap.Query(r.client, r.apiReader, log)
 
-		err := query.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: GetConfigMapName(r.dk.Name), Namespace: r.dk.Namespace}})
+		err := query.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up OTELC configuration configmap")
 		}
 
-		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+		meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 
 		return nil
 	}
 
-	return r.reconcileConfigMap(ctx)
+	return r.reconcileConfigMap(ctx, dk)
 }
 
-func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
+func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
 	query := k8sconfigmap.Query(r.client, r.apiReader, log)
 
-	newConfigMap, err := r.prepareConfigMap()
+	newConfigMap, err := r.prepareConfigMap(dk)
 	if err != nil {
 		return err
 	}
 
 	changed, err := query.CreateOrUpdate(ctx, newConfigMap)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	} else if changed {
-		k8sconditions.SetConfigMapOutdated(r.dk.Conditions(), conditionType, newConfigMap.Name) // needed so the timestamp updates, will never actually show up in the status
+		k8sconditions.SetConfigMapOutdated(dk.Conditions(), conditionType, newConfigMap.Name) // needed so the timestamp updates, will never actually show up in the status
 	}
 
-	k8sconditions.SetConfigMapCreatedOrUpdated(r.dk.Conditions(), conditionType, newConfigMap.Name)
+	k8sconditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), conditionType, newConfigMap.Name)
 
 	return nil
 }
 
-func (r *Reconciler) prepareConfigMap() (*corev1.ConfigMap, error) {
-	data, err := r.getData()
+func (r *Reconciler) prepareConfigMap(dk *dynakube.DynaKube) (*corev1.ConfigMap, error) {
+	data, err := r.getData(dk)
 	if err != nil {
 		return nil, err
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()
 
-	newSecret, err := k8sconfigmap.Build(r.dk,
-		GetConfigMapName(r.dk.Name),
+	newSecret, err := k8sconfigmap.Build(dk,
+		GetConfigMapName(dk.Name),
 		data,
 		k8sconfigmap.SetLabels(coreLabels),
 	)
 	if err != nil {
-		k8sconditions.SetConfigMapGenFailed(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetConfigMapGenFailed(dk.Conditions(), conditionType, err)
 
 		return nil, err
 	}
@@ -98,7 +94,7 @@ func (r *Reconciler) prepareConfigMap() (*corev1.ConfigMap, error) {
 	return newSecret, err
 }
 
-func (r *Reconciler) getData() (map[string]string, error) {
+func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
 	myPodIP := "${env:MY_POD_IP}"
 
 	options := []otelcgen.Option{
@@ -106,14 +102,14 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
 	}
 
-	if r.dk.IsAGCertificateNeeded() {
+	if dk.IsAGCertificateNeeded() {
 		options = append(options, otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath))
-	} else if r.dk.IsCACertificateNeeded() {
+	} else if dk.IsCACertificateNeeded() {
 		options = append(options, otelcgen.WithCA(otelcconsts.TrustedCAVolumePath))
 		options = append(options, otelcgen.WithSystemCAs(true))
 	}
 
-	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().TLSRefName != "" {
+	if dk.TelemetryIngest().IsEnabled() && dk.TelemetryIngest().TLSRefName != "" {
 		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSKeyDataName)))
 	}
 
@@ -125,7 +121,7 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithServices(),
 	)
 
-	config, err := otelcgen.NewConfig(myPodIP, r.dk.TelemetryIngest().GetProtocols(), options...)
+	config, err := otelcgen.NewConfig(myPodIP, dk.TelemetryIngest().GetProtocols(), options...)
 	if err != nil {
 		return nil, err
 	}

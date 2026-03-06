@@ -51,10 +51,7 @@ const (
 	testCAConfigMapName            = "test-ca-name"
 	testK8sAutomationHostPattern   = "test-name-edgeconnect.test-namespace.1-2-3-4.kubernetes-automation"
 
-	testClusterIP = "1.2.3.4"
-	testUID       = "1-2-3-4"
-
-	kubeSystemNamespaceName = "kube-system"
+	testUID = "1-2-3-4"
 )
 
 var (
@@ -1003,7 +1000,7 @@ func createEdgeConnectProvisionerCR(finalizers []string, deletionTimestamp *meta
 func createKubeSystemNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      kubeSystemNamespaceName,
+			Name:      metav1.NamespaceSystem,
 			Namespace: "",
 			UID:       testUID,
 		},

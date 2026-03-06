@@ -39,48 +39,44 @@ const (
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dk        *dynakube.DynaKube
 }
 
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler
-
-func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		client:    client,
-		dk:        dk,
 		apiReader: apiReader,
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.TelemetryIngest().IsEnabled() {
-		r.removeServiceOnce(ctx)
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	if !dk.TelemetryIngest().IsEnabled() {
+		r.removeServiceOnce(ctx, dk)
 
 		return nil
 	}
 
-	r.removeAllServicesExcept(ctx, r.dk.TelemetryIngest().GetServiceName())
+	r.removeAllServicesExcept(ctx, dk.TelemetryIngest().GetServiceName(), dk)
 
-	return r.createOrUpdateService(ctx)
+	return r.createOrUpdateService(ctx, dk)
 }
 
-func (r *Reconciler) removeServiceOnce(ctx context.Context) {
-	if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
+func (r *Reconciler) removeServiceOnce(ctx context.Context, dk *dynakube.DynaKube) {
+	if meta.FindStatusCondition(*dk.Conditions(), serviceConditionType) == nil {
 		return
 	}
-	defer meta.RemoveStatusCondition(r.dk.Conditions(), serviceConditionType)
+	defer meta.RemoveStatusCondition(dk.Conditions(), serviceConditionType)
 
-	r.removeAllServicesExcept(ctx, "")
+	r.removeAllServicesExcept(ctx, "", dk)
 }
 
-func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceName string) {
+func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceName string, dk *dynakube.DynaKube) {
 	telemetryServiceList := &corev1.ServiceList{}
 
 	listOps := []client.ListOption{
-		client.InNamespace(r.dk.Namespace),
+		client.InNamespace(dk.Namespace),
 		client.MatchingLabels{
 			k8slabel.AppComponentLabel: k8slabel.OtelCComponentLabel,
-			k8slabel.AppCreatedByLabel: r.dk.Name,
+			k8slabel.AppCreatedByLabel: dk.Name,
 		},
 	}
 
@@ -101,10 +97,10 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 	}
 }
 
-func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
-	newService, err := r.buildService()
+func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.DynaKube) error {
+	newService, err := r.buildService(dk)
 	if err != nil {
-		k8sconditions.SetServiceGenFailed(r.dk.Conditions(), serviceConditionType, err)
+		k8sconditions.SetServiceGenFailed(dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
@@ -112,24 +108,24 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	_, err = k8sservice.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update telemetry service")
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), serviceConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
 
-	k8sconditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetServiceName())
+	k8sconditions.SetServiceCreated(dk.Conditions(), serviceConditionType, dk.TelemetryIngest().GetServiceName())
 
 	return nil
 }
 
-func (r *Reconciler) buildService() (*corev1.Service, error) {
-	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.OtelCComponentLabel)
-	appLabels := k8slabel.NewAppLabels(k8slabel.OtelCComponentLabel, r.dk.Name, k8slabel.OtelCComponentLabel, "")
+func (r *Reconciler) buildService(dk *dynakube.DynaKube) (*corev1.Service, error) {
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel)
+	appLabels := k8slabel.NewAppLabels(k8slabel.OtelCComponentLabel, dk.Name, k8slabel.OtelCComponentLabel, "")
 
-	return k8sservice.Build(r.dk,
-		r.dk.TelemetryIngest().GetServiceName(),
+	return k8sservice.Build(dk,
+		dk.TelemetryIngest().GetServiceName(),
 		appLabels.BuildMatchLabels(),
-		buildServicePortList(r.dk.TelemetryIngest().GetProtocols()),
+		buildServicePortList(dk.TelemetryIngest().GetProtocols()),
 		k8sservice.SetLabels(coreLabels.BuildLabels()),
 		k8sservice.SetType(corev1.ServiceTypeClusterIP),
 	)

@@ -114,8 +114,8 @@ func createDynaKube(activeGateEnabled bool) dynakube.DynaKube {
 func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk dynakube.DynaKube) (dtEndpoint string, noProxy string) {
 	t.Helper()
 
-	er := endpoint.NewReconciler(clt, clt, &dk)
-	err := er.Reconcile(ctx)
+	er := endpoint.NewReconciler(clt, clt)
+	err := er.Reconcile(ctx, &dk)
 	require.NoError(t, err)
 
 	var apiEndpointConfigMap corev1.ConfigMap
@@ -125,8 +125,8 @@ func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk dynak
 	dtEndpoint, ok = apiEndpointConfigMap.Data["DT_ENDPOINT"]
 	require.True(t, ok)
 
-	sr := statefulset.NewReconciler(clt, clt, &dk)
-	err = sr.Reconcile(ctx)
+	sr := statefulset.NewReconciler(clt, clt)
+	err = sr.Reconcile(ctx, &dk)
 	require.NoError(t, err)
 
 	var otelcSts appsv1.StatefulSet

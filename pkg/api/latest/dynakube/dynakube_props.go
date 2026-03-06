@@ -2,12 +2,15 @@ package dynakube
 
 import (
 	"net/url"
+	"os"
+	"slices"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -78,6 +81,10 @@ func (dk *DynaKube) PullSecretNames() []string {
 		names = append(names, dk.Spec.CustomPullSecret)
 	}
 
+	if helmPullSecret := os.Getenv(k8senv.DtOperatorPullSecretEnvName); helmPullSecret != "" && !slices.Contains(names, helmPullSecret) {
+		names = append(names, helmPullSecret)
+	}
+
 	return names
 }
 
@@ -127,7 +134,7 @@ func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.P
 }
 
 func (dk *DynaKube) IsCodeModulesStatusReady() bool {
-	if dk.OneAgent().GetCustomCodeModulesImage() != "" || dk.FF().IsPublicRegistry() {
+	if dk.OneAgent().GetCustomCodeModulesImage() != "" || dk.FF().IsAutomaticRegistry() {
 		if dk.OneAgent().GetCodeModulesImage() == "" {
 			return false
 		}

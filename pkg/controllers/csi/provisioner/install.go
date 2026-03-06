@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	installerclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
@@ -75,8 +75,8 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 		}
 
 		props := &url.Properties{
-			Os:            dtclient.OsUnix,
-			Type:          dtclient.InstallerTypePaaS,
+			Os:            installerclient.OsUnix,
+			Type:          installerclient.TypePaaS,
 			Arch:          arch.Arch,
 			Flavor:        arch.Flavor,
 			Technologies:  []string{"all"},
@@ -97,16 +97,11 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
 	}
 
-	pullSecrets := []string{}
-	if dk.Spec.CustomPullSecret != "" {
-		pullSecrets = append(pullSecrets, dk.Spec.CustomPullSecret)
-	}
-
 	props := &job.Properties{
 		ImageURI:        imageURI,
 		ImagePullPolicy: dk.OneAgent().GetCodeModulesImagePullPolicy(),
 		Owner:           &dk,
-		PullSecrets:     pullSecrets,
+		PullSecrets:     dk.PullSecretNames(),
 		APIReader:       provisioner.apiReader,
 		Client:          provisioner.kubeClient,
 		PathResolver:    provisioner.path,

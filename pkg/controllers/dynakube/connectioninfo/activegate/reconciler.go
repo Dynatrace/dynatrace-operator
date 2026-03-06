@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -21,20 +21,20 @@ import (
 )
 
 type reconciler struct {
-	dtc          dtclient.Client
+	agClient     agclient.APIClient
 	timeProvider *timeprovider.Provider
 	dk           *dynakube.DynaKube
 	secrets      k8ssecret.QueryObject
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, agClient agclient.APIClient, dk *dynakube.DynaKube) controllers.Reconciler
 
 var _ ReconcilerBuilder = NewReconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, agClient agclient.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		dk:           dk,
-		dtc:          dtc,
+		agClient:     agClient,
 		timeProvider: timeprovider.New(),
 		secrets:      k8ssecret.Query(clt, apiReader, log),
 	}
@@ -88,7 +88,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 	k8sconditions.SetSecretOutdated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
-	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo(ctx)
+	connectionInfo, err := r.agClient.GetConnectionInfo(ctx)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
@@ -101,7 +101,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		log.Info("tenant has no endpoints", "tenant", connectionInfo.TenantUUID)
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dk.ActiveGate().GetTenantSecretName(), connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.ActiveGate().GetTenantSecretName(), connectionInfo)
 	if err != nil {
 		return err
 	}
@@ -116,13 +116,13 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
+func (r *reconciler) setDynakubeStatus(connectionInfo agclient.ConnectionInfo) {
 	r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
 	r.dk.Status.ActiveGate.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 }
 
-func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
-	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo)
+func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo agclient.ConnectionInfo) error {
+	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}

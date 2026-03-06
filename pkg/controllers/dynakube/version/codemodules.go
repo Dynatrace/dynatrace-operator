@@ -6,7 +6,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
@@ -16,14 +17,14 @@ const (
 )
 
 type codeModulesUpdater struct {
-	dk       *dynakube.DynaKube
-	dtClient dtclient.Client
+	dk            *dynakube.DynaKube
+	versionClient version.APIClient
 }
 
-func newCodeModulesUpdater(dk *dynakube.DynaKube, dtClient dtclient.Client) *codeModulesUpdater {
+func newCodeModulesUpdater(dk *dynakube.DynaKube, versionClient version.APIClient) *codeModulesUpdater {
 	return &codeModulesUpdater{
-		dk:       dk,
-		dtClient: dtClient,
+		dk:            dk,
+		versionClient: versionClient,
 	}
 }
 
@@ -63,22 +64,8 @@ func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
 	return true
 }
 
-func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FF().IsPublicRegistry()
-	if isPublicRegistry {
-		setVerifiedCondition(updater.dk.Conditions(), cmConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
-	}
-
-	return isPublicRegistry
-}
-
-func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imgInfo, err := updater.dtClient.GetLatestCodeModulesImage(ctx)
-	if err != nil {
-		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
-	}
-
-	return imgInfo, err
+func (updater codeModulesUpdater) IsAutoRegistryEnabled() bool {
+	return updater.dk.FF().IsAutomaticRegistry()
 }
 
 func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
@@ -98,8 +85,8 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 		return nil
 	}
 
-	latestAgentVersionUnixPaas, err := updater.dtClient.GetLatestAgentVersion(ctx,
-		dtclient.OsUnix, dtclient.InstallerTypePaaS)
+	latestAgentVersionUnixPaas, err := updater.versionClient.GetLatestAgentVersion(ctx,
+		installer.OsUnix, installer.TypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)

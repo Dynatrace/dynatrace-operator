@@ -9,8 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -18,11 +17,7 @@ import (
 )
 
 func TestActiveGateUpdater(t *testing.T) {
-	ctx := context.Background()
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
+	testImage := "some.registry.com:1.2.3.4-5"
 
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -35,24 +30,20 @@ func TestActiveGateUpdater(t *testing.T) {
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName},
 					CapabilityProperties: activegate.CapabilityProperties{
-						Image: testImage.String(),
+						Image: testImage,
 					},
 				},
 			},
 		}
-		mockClient := dtclientmock.NewClient(t)
-		mockActiveGateImageInfo(mockClient, testImage)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
 
-		updater := newActiveGateUpdater(dk, fake.NewClient(), mockClient)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		assert.Equal(t, "activegate", updater.Name())
 		assert.True(t, updater.IsEnabled())
 		assert.Equal(t, dk.Spec.ActiveGate.Image, updater.CustomImage())
 		assert.Empty(t, updater.CustomVersion())
 		assert.False(t, updater.IsAutoUpdateEnabled())
-		imageInfo, err := updater.LatestImageInfo(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, testImage, *imageInfo)
 	})
 }
 
@@ -75,11 +66,10 @@ func TestActiveGateUseDefault(t *testing.T) {
 		}
 		expectedVersion := "1.2.3.4-5"
 		expectedImage := dk.ActiveGate().GetDefaultImage(expectedVersion)
-		mockClient := dtclientmock.NewClient(t)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)
 
-		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)
-
-		updater := newActiveGateUpdater(dk, fake.NewClient(), mockClient)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		err := updater.UseTenantRegistry(context.Background())
 		require.NoError(t, err)

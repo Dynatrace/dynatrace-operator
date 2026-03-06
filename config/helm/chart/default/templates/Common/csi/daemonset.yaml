@@ -57,7 +57,9 @@ spec:
       initContainers:
       - name: csi-init
         image: {{ include "dynatrace-operator.image" . }}
-        imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+        {{- with .Values.imageRef.pullPolicy }}
+        imagePullPolicy: {{ . }}
+        {{- end }}
         args:
         - csi-init
         env:
@@ -81,7 +83,9 @@ spec:
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: server
         image: {{ include "dynatrace-operator.image" . }}
-        imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+        {{- with .Values.imageRef.pullPolicy }}
+        imagePullPolicy: {{ . }}
+        {{- end }}
         {{- if .Values.debug }}
         command:
           - /usr/local/bin/dlv
@@ -148,7 +152,9 @@ spec:
           mountPropagation: Bidirectional
       - name: provisioner
         image: {{ include "dynatrace-operator.image" . }}
-        imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+        {{- with .Values.imageRef.pullPolicy }}
+        imagePullPolicy: {{ . }}
+        {{- end }}
         {{- if .Values.debug }}
         command:
           - /usr/local/bin/dlv
@@ -178,6 +184,7 @@ spec:
                 fieldPath: spec.nodeName
           - name: CSI_DATA_DIR
             value: {{ include "dynatrace-operator.CSIDataDir" . }}
+          {{- include "dynatrace-operator.pull-secret-env" . | nindent 10 }}
           {{- if .Values.debugLogs }}
           - name: LOG_LEVEL
             value: "debug"
@@ -227,7 +234,9 @@ spec:
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
         image: {{ include "dynatrace-operator.image" . }}
-        imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+        {{- with .Values.imageRef.pullPolicy }}
+        imagePullPolicy: {{ . }}
+        {{- end }}
         env:
         - name: DRIVER_REG_SOCK_PATH
           value: {{ include "dynatrace-operator.CSISocketPath" . }}
@@ -254,7 +263,9 @@ spec:
       {{- if .Values.csidriver.server.livenessProbe.enabled }}
       - name: liveness-probe
         image: {{ include "dynatrace-operator.image" . }}
-        imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+        {{- with .Values.imageRef.pullPolicy }}
+        imagePullPolicy: {{ . }}
+        {{- end }}
         args:
         - livenessprobe
         - --csi-address=/csi/csi.sock

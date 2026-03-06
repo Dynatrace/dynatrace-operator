@@ -5,7 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -17,20 +18,20 @@ const (
 )
 
 type activeGateUpdater struct {
-	dk        *dynakube.DynaKube
-	apiReader client.Reader
-	dtClient  dtclient.Client
+	dk            *dynakube.DynaKube
+	apiReader     client.Reader
+	versionClient version.APIClient
 }
 
 func newActiveGateUpdater(
 	dk *dynakube.DynaKube,
 	apiReader client.Reader,
-	dtClient dtclient.Client,
+	versionClient version.APIClient,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
-		dk:        dk,
-		apiReader: apiReader,
-		dtClient:  dtClient,
+		dk:            dk,
+		apiReader:     apiReader,
+		versionClient: versionClient,
 	}
 }
 
@@ -70,30 +71,16 @@ func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
 	return !updater.dk.FF().IsActiveGateUpdatesDisabled()
 }
 
-func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FF().IsPublicRegistry() && !updater.dk.OneAgent().IsClassicFullStackMode()
-	if isPublicRegistry {
-		setVerifiedCondition(updater.dk.Conditions(), activeGateVersionConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
-	}
-
-	return isPublicRegistry
-}
-
-func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imageInfo, err := updater.dtClient.GetLatestActiveGateImage(ctx)
-	if err != nil {
-		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
-	}
-
-	return imageInfo, err
-}
-
 func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
 	return false, nil
 }
 
+func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
+	return updater.dk.FF().IsAutomaticRegistry()
+}
+
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
-	latestVersion, err := updater.dtClient.GetLatestActiveGateVersion(ctx, dtclient.OsUnix)
+	latestVersion, err := updater.versionClient.GetLatestActiveGateVersion(ctx, installer.OsUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)

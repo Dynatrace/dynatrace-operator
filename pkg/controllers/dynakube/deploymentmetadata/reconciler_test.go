@@ -41,8 +41,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("don't create anything, if no mode is configured", func(t *testing.T) {
 		dk := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, clusterID)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
@@ -59,8 +59,8 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		).Build()
-		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, clusterID)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
@@ -77,8 +77,8 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, clusterID)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
@@ -99,8 +99,8 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, clusterID)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
@@ -123,8 +123,8 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, clusterID)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
