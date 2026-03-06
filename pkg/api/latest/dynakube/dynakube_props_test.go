@@ -119,9 +119,9 @@ func TestIsTokenScopeVerificationAllowed(t *testing.T) {
 }
 
 func TestImagePullSecretReferences(t *testing.T) {
-	const dkName = "test-dk"
-	const customPullSecret = "my-custom-secret"
-	const helmPullSecret = "helm-pull-secret"
+	dkName := "test-dk"
+	customPullSecret := "my-custom-secret"
+	helmPullSecret := "helm-pull-secret"
 
 	t.Run("only tenant pull secret when no custom pull secret is set", func(t *testing.T) {
 		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName}}
