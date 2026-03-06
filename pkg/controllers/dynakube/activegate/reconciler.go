@@ -29,12 +29,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type dynakubeReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 type Reconciler struct {
 	client                            client.Client
 	dk                                *dynakube.DynaKube
 	apiReader                         client.Reader
 	authTokenReconciler               controllers.Reconciler
-	istioReconciler                   istio.Reconciler
+	istioReconciler                   dynakubeReconciler
 	connectionReconciler              controllers.Reconciler
 	versionReconciler                 version.Reconciler
 	pullSecretReconciler              controllers.Reconciler
@@ -49,7 +53,6 @@ type ReconcilerBuilder func(clt client.Client,
 	apiReader client.Reader,
 	dk *dynakube.DynaKube,
 	dtc dtclient.Client,
-	istioClient *istio.Client,
 	tokens token.Tokens,
 ) controllers.Reconciler
 
@@ -57,13 +60,7 @@ func NewReconciler(clt client.Client, //nolint
 	apiReader client.Reader,
 	dk *dynakube.DynaKube,
 	dtc dtclient.Client,
-	istioClient *istio.Client,
 	tokens token.Tokens) controllers.Reconciler {
-	var istioReconciler istio.Reconciler
-	if istioClient != nil {
-		istioReconciler = istio.NewReconciler(istioClient)
-	}
-
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, dk, dtc.AsV2().ActiveGate)
 	versionReconciler := version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
 	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc.AsV2().ActiveGate, dk)
@@ -78,7 +75,7 @@ func NewReconciler(clt client.Client, //nolint
 		apiReader:                         apiReader,
 		dk:                                dk,
 		authTokenReconciler:               authTokenReconciler,
-		istioReconciler:                   istioReconciler,
+		istioReconciler:                   istio.NewActiveGateReconciler(clt, apiReader),
 		connectionReconciler:              connectionInfoReconciler,
 		versionReconciler:                 versionReconciler,
 		pullSecretReconciler:              pullSecretReconciler,
@@ -123,11 +120,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if r.istioReconciler != nil {
-		err = r.istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, r.dk)
-		if err != nil {
-			return err
-		}
+	err = r.istioReconciler.Reconcile(ctx, r.dk)
+	if err != nil {
+		return err
 	}
 
 	err = r.authTokenReconciler.Reconcile(ctx)

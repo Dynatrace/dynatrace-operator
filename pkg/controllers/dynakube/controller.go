@@ -83,12 +83,10 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		operatorNamespace:      os.Getenv(k8senv.PodNamespace),
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
-		istioClientBuilder:     istio.NewClient,
 
 		activeGateReconcilerBuilder:    activegate.NewReconciler,
 		oneAgentReconcilerBuilder:      oneagent.NewReconciler,
 		injectionReconcilerBuilder:     injection.NewReconciler,
-		istioReconcilerBuilder:         istio.NewReconciler,
 		logMonitoringReconcilerBuilder: logmonitoring.NewReconciler,
 
 		apiMonitoringReconciler:      apimonitoring.NewReconciler(),
@@ -98,6 +96,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		otelcReconciler:              otelc.NewReconciler(kubeClient, apiReader),
 		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
 		deploymentMetadataReconciler: deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
+		istioReconciler:              istio.NewAPIUrlReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -141,15 +140,14 @@ type Controller struct {
 	otelcReconciler              dynakubeReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
+	istioReconciler              dynakubeReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
-	istioClientBuilder     istio.ClientBuilder
 
 	activeGateReconcilerBuilder    activegate.ReconcilerBuilder
 	oneAgentReconcilerBuilder      oneagent.ReconcilerBuilder
 	injectionReconcilerBuilder     injection.ReconcilerBuilder
-	istioReconcilerBuilder         istio.ReconcilerBuilder
 	logMonitoringReconcilerBuilder logmonitoring.ReconcilerBuilder
 
 	tokens            token.Tokens
@@ -272,24 +270,9 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakube.DynaKube) error {
-	var istioClient *istio.Client
-
-	var err error
-	if dk.Spec.EnableIstio {
-		istioClient, err = controller.setupIstioClient(dk)
-	}
-
+	err := controller.istioReconciler.Reconcile(ctx, dk)
 	if err != nil {
-		return err
-	}
-
-	if istioClient != nil {
-		istioReconciler := controller.istioReconcilerBuilder(istioClient)
-
-		err := istioReconciler.ReconcileAPIUrl(ctx, dk)
-		if err != nil {
-			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
-		}
+		return errors.WithMessage(err, "failed to reconcile istio objects for API url")
 	}
 
 	dynatraceClient, err := controller.setupTokensAndClient(ctx, dk)
@@ -312,23 +295,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return err
 	}
 
-	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dk)
-}
-
-func (controller *Controller) setupIstioClient(dk *dynakube.DynaKube) (*istio.Client, error) {
-	istioClient, err := controller.istioClientBuilder(controller.config, dk)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize istio client")
-	}
-
-	isInstalled, err := istioClient.CheckIstioInstalled()
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to initialize istio client")
-	} else if !isInstalled {
-		return nil, errors.New("istio not installed, yet is enabled, aborting reconciliation, check configuration")
-	}
-
-	return istioClient, nil
+	return controller.reconcileComponents(ctx, dynatraceClient, dk)
 }
 
 func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakube.DynaKube) (dtclient.Client, error) {
@@ -366,12 +333,12 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
 	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
 
-	err := controller.reconcileActiveGate(ctx, dk, dynatraceClient, istioClient)
+	err := controller.reconcileActiveGate(ctx, dk, dynatraceClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
@@ -419,7 +386,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		controller.client,
 		controller.apiReader,
 		dynatraceClient,
-		istioClient,
 		dk,
 	).Reconcile(ctx)
 	if err != nil {

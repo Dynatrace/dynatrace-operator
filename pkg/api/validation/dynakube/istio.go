@@ -8,20 +8,19 @@ import (
 )
 
 const (
-	errorNoResources           = `No resources for istio available`
-	errorFailToInitIstioClient = `Failed to initialize istio client`
+	errorNoIstioInstalled      = `No resources for istio available`
+	errorFailedToCheckForIstio = `Failed to verify if istio is available`
 )
 
-func noResourcesAvailable(_ context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func noIstioInstalled(_ context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	if dk.Spec.EnableIstio {
-		istioClient, err := istio.NewClient(dv.cfg, dk)
+		enabled, err := istio.IsInstalled(dv.discoveryClient)
 		if err != nil {
-			return errorFailToInitIstioClient
+			return errorFailedToCheckForIstio
 		}
 
-		enabled, err := istioClient.CheckIstioInstalled()
-		if !enabled || err != nil {
-			return errorNoResources
+		if !enabled {
+			return errorNoIstioInstalled
 		}
 	}
 

@@ -17,7 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+	fakeclientset "k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -282,10 +283,13 @@ func runValidators(dk *dynakube.DynaKube, other ...client.Object) (admission.War
 		clt = fake.NewClient(other...)
 	}
 
+	client := fakeclientset.NewClientset()
+	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
+
 	validator := &Validator{
-		apiReader: clt,
-		cfg:       &rest.Config{},
-		modules:   installconfig.GetModules(),
+		apiReader:       clt,
+		discoveryClient: fakeDiscovery,
+		modules:         installconfig.GetModules(),
 	}
 
 	return validator.ValidateCreate(context.Background(), dk)
@@ -297,10 +301,13 @@ func runUpdateValidators(oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, oth
 		clt = fake.NewClient(other...)
 	}
 
+	client := fakeclientset.NewClientset()
+	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
+
 	validator := &Validator{
-		apiReader: clt,
-		cfg:       &rest.Config{},
-		modules:   installconfig.GetModules(),
+		apiReader:       clt,
+		discoveryClient: fakeDiscovery,
+		modules:         installconfig.GetModules(),
 	}
 
 	return validator.ValidateUpdate(context.Background(), oldDk, newDk)

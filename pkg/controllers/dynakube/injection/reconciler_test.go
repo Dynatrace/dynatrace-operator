@@ -15,7 +15,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -30,9 +29,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	istio2 "istio.io/api/networking/v1beta1"
-	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
-	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -137,9 +133,8 @@ func TestReconciler(t *testing.T) {
 			Version:  versionClient,
 		}).Twice()
 
-		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
-
-		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
+		rec := NewReconciler(clt, clt, dtClient, dk).(*Reconciler)
+		rec.istioReconciler = createDynaKubeReconcilerMock(t, dk)
 
 		err := rec.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -150,16 +145,6 @@ func TestReconciler(t *testing.T) {
 
 		assertSecretFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
-
-		_, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
-		_, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
-
-		_, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
-		_, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
 	})
 	t.Run("remove injection", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -191,11 +176,11 @@ func TestReconciler(t *testing.T) {
 			dk,
 		)
 		dtClient := dtclientmock.NewClient(t)
-		istioClient := setupIstioClientWithObjects(dk)
 		settingsClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Twice()
 
-		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
+		rec := NewReconciler(clt, clt, dtClient, dk).(*Reconciler)
+		rec.istioReconciler = createDynaKubeReconcilerMock(t, dk)
 
 		err := rec.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -211,29 +196,6 @@ func TestReconciler(t *testing.T) {
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), metaDataEnrichmentConditionType))
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType))
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType))
-
-		obj, err := istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
-		assert.Nil(t, obj)
-		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
-		assert.Nil(t, obj)
-
-		virtualService, err := istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
-		assert.Nil(t, virtualService)
-
-		istioClient.Owner.SetNamespace(testNamespace2)
-		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
-		assert.NotNil(t, obj)
-		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
-		assert.NotNil(t, obj)
-
-		virtualService, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
-		require.NoError(t, err)
-		assert.NotNil(t, virtualService)
 	})
 	t.Run("failure is logged in condition", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -262,7 +224,6 @@ func TestReconciler(t *testing.T) {
 			},
 		})
 
-		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
 		fakeReconciler := createReconcilerMock(t)
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
@@ -270,7 +231,8 @@ func TestReconciler(t *testing.T) {
 		settingsClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Once()
 
-		rec := NewReconciler(boomClient, boomClient, dtClient, istioClient, dk).(*Reconciler)
+		rec := NewReconciler(boomClient, boomClient, dtClient, dk).(*Reconciler)
+		rec.istioReconciler = createDynaKubeReconcilerMock(t, dk)
 		rec.connectionInfoReconciler = fakeReconciler
 		rec.versionReconciler = fakeVersionReconciler
 
@@ -291,6 +253,7 @@ func TestRemoveAppInjection(t *testing.T) {
 	rec.versionReconciler = createVersionReconcilerMock(t)
 	rec.connectionInfoReconciler = createReconcilerMock(t)
 	rec.enrichmentRulesReconciler = createReconcilerMock(t)
+	rec.istioReconciler = createDynaKubeReconcilerMock(t, rec.dk)
 
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
@@ -323,6 +286,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.istioReconciler = createDynaKubeReconcilerMock(t, rec.dk)
 
 		err := rec.setupOneAgentInjection(t.Context())
 		require.NoError(t, err)
@@ -335,6 +299,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.istioReconciler = createDynaKubeReconcilerMock(t, rec.dk)
 
 		err := rec.setupOneAgentInjection(t.Context())
 		require.NoError(t, err)
@@ -347,6 +312,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.istioReconciler = createDynaKubeReconcilerMock(t, rec.dk)
 
 		err := rec.setupOneAgentInjection(t.Context())
 		require.NoError(t, err)
@@ -359,6 +325,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.istioReconciler = createDynaKubeReconcilerMock(t, rec.dk)
 
 		err := rec.setupOneAgentInjection(t.Context())
 		require.NoError(t, err)
@@ -692,13 +659,6 @@ func TestCleanupOTLPInjection(t *testing.T) {
 	})
 }
 
-func newIstioTestingClient(fakeClient *fakeistio.Clientset, dk *dynakube.DynaKube) *istio.Client {
-	return &istio.Client{
-		IstioClientset: fakeClient,
-		Owner:          dk,
-	}
-}
-
 func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace string, oneAgentSpec oneagent.Spec) Reconciler {
 	return Reconciler{
 		client:    clt,
@@ -754,18 +714,6 @@ func clientEnrichmentInjection() client.Client {
 	)
 }
 
-func setupIstioClientWithObjects(dk *dynakube.DynaKube) *istio.Client {
-	return newIstioTestingClient(fakeistio.NewSimpleClientset(
-		clientServiceEntry(istio.BuildNameForIPServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace),
-		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace),
-		clientServiceEntry(istio.BuildNameForIPServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace2),
-		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace2),
-
-		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace),
-		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace2),
-	), dk)
-}
-
 func clientInjectedNamespace(namespaceName string, dynakubeName string) *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
@@ -810,26 +758,6 @@ func clientSecret(secretName string, namespaceName string, data map[string][]byt
 	}
 }
 
-func clientServiceEntry(name string, namespaceName string) *istiov1beta1.ServiceEntry {
-	return &istiov1beta1.ServiceEntry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespaceName,
-		},
-		Spec: istio2.ServiceEntry{},
-	}
-}
-
-func clientVirtualService(name string, namespaceName string) *istiov1beta1.VirtualService {
-	return &istiov1beta1.VirtualService{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespaceName,
-		},
-		Spec: istio2.VirtualService{},
-	}
-}
-
 func assertSecretFound(t *testing.T, clt client.Client, secretName string, secretNamespace string) {
 	var secret corev1.Secret
 	err := clt.Get(t.Context(), client.ObjectKey{Name: secretName, Namespace: secretNamespace}, &secret)
@@ -855,4 +783,12 @@ func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 	versionReconciler.EXPECT().ReconcileCodeModules(anyCtx, mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
 
 	return versionReconciler
+}
+
+func createDynaKubeReconcilerMock(t *testing.T, dk *dynakube.DynaKube) dynakubeReconciler {
+	rec := newMockDynakubeReconciler(t)
+
+	rec.EXPECT().Reconcile(t.Context(), dk).Return(nil).Once()
+
+	return rec
 }
