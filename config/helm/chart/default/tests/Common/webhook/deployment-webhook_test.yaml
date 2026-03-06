@@ -118,7 +118,7 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                  - name: DT_WEBHOOK_IMAGE
+                  - name: DT_OPERATOR_IMAGE
                     value: image-name
                   - name: OLM_OPERATOR_NAMESPACE
                     valueFrom:
@@ -324,7 +324,7 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                  - name: DT_WEBHOOK_IMAGE
+                  - name: DT_OPERATOR_IMAGE
                     value: image-name
                   - name: OLM_OPERATOR_NAMESPACE
                     valueFrom:
@@ -495,7 +495,7 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                  - name: DT_WEBHOOK_IMAGE
+                  - name: DT_OPERATOR_IMAGE
                     value: image-name
                   - name: OLM_OPERATOR_NAMESPACE
                     valueFrom:
