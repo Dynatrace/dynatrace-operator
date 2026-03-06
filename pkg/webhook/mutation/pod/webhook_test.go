@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler"
 	podwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -220,7 +221,7 @@ func getTestPodWithInjectionDisabledOnContainer() *corev1.Pod {
 func createTestWebhook(t *testing.T, injectionHandler, otlpHandler handler.Handler, objects ...client.Object) *webhook {
 	t.Helper()
 
-	t.Setenv("DT_WEBHOOK_IMAGE", testWebhookImage)
+	t.Setenv(k8senv.DtOperatorImageEnvName, testWebhookImage)
 
 	decoder := admission.NewDecoder(scheme.Scheme)
 

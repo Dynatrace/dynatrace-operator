@@ -13,7 +13,6 @@ const (
 	PodNamespace            = "POD_NAMESPACE"
 	PodName                 = "POD_NAME"
 	DtOperatorImageEnvName  = "DT_OPERATOR_IMAGE"
-	DtWebhookImageEnvName   = "DT_WEBHOOK_IMAGE"
 	OlmOperatorNamespaceEnv = "OLM_OPERATOR_NAMESPACE"
 	AppVersion              = "APP_VERSION"
 )
