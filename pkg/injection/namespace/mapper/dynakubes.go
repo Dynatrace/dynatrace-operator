@@ -2,7 +2,7 @@ package mapper
 
 import (
 	"context"
-	"sort"
+	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -155,8 +155,8 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 		}
 	}
 
-	sort.Strings(dm.matchedOANamespaces)
-	sort.Strings(dm.matchedMENamespaces)
+	slices.Sort(dm.matchedOANamespaces)
+	slices.Sort(dm.matchedMENamespaces)
 
 	return modifiedNs, nil
 }

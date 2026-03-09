@@ -71,12 +71,26 @@ func (e *HTTPError) Error() string {
 
 // HasStatusCode checks if the given error is an HTTPError with the specified status code
 func HasStatusCode(err error, statusCode int) bool {
-	httpErr := new(HTTPError)
-
-	return errors.As(err, &httpErr) && httpErr.StatusCode == statusCode
+	return StatusCode(err) == statusCode
 }
 
 // IsNotFound checks if the given error represents an HTTP 404 Not Found error
 func IsNotFound(err error) bool {
 	return HasStatusCode(err, http.StatusNotFound)
+}
+
+// StatusCode extracts the status code from an HTTPError. Returns 0 if error type doesn't match.
+func StatusCode(err error) int {
+	httpErr := new(HTTPError)
+
+	if !errors.As(err, &httpErr) {
+		return 0
+	}
+
+	// The legacy Dynatrace client always checked the code from the response body instead of the HTTP status.
+	for _, e := range httpErr.ServerErrors {
+		return e.Code
+	}
+
+	return httpErr.StatusCode
 }

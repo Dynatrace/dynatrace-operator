@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"strings"
 
@@ -14,6 +15,16 @@ type Token struct {
 	Type     string
 	Value    string
 	Features []Feature
+}
+
+type ScopeError struct {
+	Token         string
+	MissingScopes []string
+	Errs          []error
+}
+
+func (m ScopeError) Error() string {
+	return fmt.Sprintf("token '%s' has scope errors: %v", m.Token, m.Errs)
 }
 
 func newToken(tokenType string, value string) Token {
@@ -59,11 +70,13 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, 
 
 func (token *Token) verifyRequiredScopes(scopes dtclient.TokenScopes, dk dynakube.DynaKube) error {
 	collectedErrors := make([]error, 0)
+	allMissingScopes := make([]string, 0)
 
 	for _, feature := range token.Features {
 		if feature.IsEnabled(dk) {
 			missingScopes := feature.CollectMissingRequiredScopes(scopes)
 			if len(missingScopes) > 0 {
+				allMissingScopes = append(allMissingScopes, missingScopes...)
 				collectedErrors = append(collectedErrors,
 					errors.Errorf("feature '%s' is missing scope '%s'",
 						feature.Name,
@@ -73,7 +86,7 @@ func (token *Token) verifyRequiredScopes(scopes dtclient.TokenScopes, dk dynakub
 	}
 
 	if len(collectedErrors) > 0 {
-		return errors.Errorf("token '%s' has scope errors: %s", token.Type, collectedErrors)
+		return ScopeError{Errs: collectedErrors, Token: token.Type, MissingScopes: allMissingScopes}
 	}
 
 	return nil

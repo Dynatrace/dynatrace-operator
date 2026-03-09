@@ -282,6 +282,8 @@ As such, you declare them at the package level and, in doing so, imply that your
 
 ### Don'ts
 
+- Do not put full errors (`err.Error()`) into condition messages, as it could lead to unexpected reconcile loops if the error message changes on every x occurrence.
+  - Example: the error message contains a timestamp or ip:port that could change
 - Errors that are propagated to the controller or reconciler must not be logged directly by us, as they get automatically logged by the Operator-SDK framework.
   - So we do not log errors twice.
   - Example:

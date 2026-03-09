@@ -23,12 +23,12 @@ func setExistsCondition(conditions *[]metav1.Condition) {
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setErrorCondition(conditions *[]metav1.Condition, message string) {
+func setErrorCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    ConditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  errorReason,
-		Message: "LogMonitoring settings creation has encountered an error: " + message,
+		Message: "LogMonitoring settings creation has encountered an error",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

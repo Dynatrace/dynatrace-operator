@@ -16,7 +16,6 @@ import (
 const (
 	MetricsURLSecretField   = "DT_METRICS_INGEST_URL"
 	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
-	configFile              = "endpoint.properties"
 )
 
 func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
@@ -25,15 +24,15 @@ func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.Dyn
 		return "", errors.WithStack(err)
 	}
 
-	endpointPropertiesBuilder := strings.Builder{}
+	var endpointPropertiesBuilder strings.Builder
 
-	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsURLSecretField, fields[MetricsURLSecretField])); err != nil {
+	if _, err := fmt.Fprintf(&endpointPropertiesBuilder, "%s=%s\n", MetricsURLSecretField, fields[MetricsURLSecretField]); err != nil {
 		k8sconditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
 		return "", errors.WithStack(err)
 	}
 
-	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsTokenSecretField, fields[MetricsTokenSecretField])); err != nil {
+	if _, err := fmt.Fprintf(&endpointPropertiesBuilder, "%s=%s\n", MetricsTokenSecretField, fields[MetricsTokenSecretField]); err != nil {
 		k8sconditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
 		return "", errors.WithStack(err)

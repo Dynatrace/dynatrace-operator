@@ -19,12 +19,12 @@ func setServiceEntryUpdatedConditionForComponent(conditions *[]metav1.Condition,
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setServiceEntryFailedConditionForComponent(conditions *[]metav1.Condition, component string, err error) {
+func setServiceEntryFailedConditionForComponent(conditions *[]metav1.Condition, component string) {
 	condition := metav1.Condition{
 		Type:    getConditionTypeName(component),
 		Status:  metav1.ConditionFalse,
 		Reason:  "IstioFor" + component + "Failed",
-		Message: "Failed to configure Istio ServiceEntries and VirtualServices for " + component + " with error: " + err.Error(),
+		Message: "Failed to configure Istio ServiceEntries and VirtualServices for " + component,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
