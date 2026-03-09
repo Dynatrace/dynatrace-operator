@@ -129,7 +129,7 @@ func TestNoNameViolationOnTooLongName(t *testing.T) {
 		},
 	}
 
-	_, err := runValidators(dk)
+	_, err := runValidators(t, dk)
 	msg := fmt.Sprintf(errorNameTooLong, dynakube.MaxNameLength)
 	require.ErrorContains(t, err, msg)
 	assert.NotContains(t, err.Error(), errorNoDNS1053Label)
