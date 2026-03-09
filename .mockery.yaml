@@ -44,22 +44,6 @@ packages:
       apiMonitoringReconciler:
       dtSettingReconciler:
       dynakubeReconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
-    config:
-      dir: "{{.InterfaceDir}}"
-      pkgname: "{{.SrcPackageName}}"
-      structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
-      filename: "mock_reconcilers_test.go"
-    interfaces:
-      dynakubeReconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection:
-    config:
-      dir: "{{.InterfaceDir}}"
-      pkgname: "{{.SrcPackageName}}"
-      structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
-      filename: "mock_reconcilers_test.go"
-    interfaces:
-      dynakubeReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
@@ -71,6 +55,9 @@ packages:
   # =============================================================================
   # Shared mocks: placed in test/mocks/ (using default config)
   # =============================================================================
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
+    interfaces:
+      Interface:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
     interfaces:
       Client:

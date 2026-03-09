@@ -22,15 +22,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type dynakubeReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
-}
-
 type Reconciler struct {
 	client                    client.Client
 	apiReader                 client.Reader
 	dk                        *dynakube.DynaKube
-	istioReconciler           dynakubeReconciler
+	istioReconciler           istio.Interface
 	versionReconciler         version.Reconciler
 	connectionInfoReconciler  controllers.Reconciler
 	enrichmentRulesReconciler controllers.Reconciler
@@ -56,7 +52,7 @@ func NewReconciler(
 		apiReader:                 apiReader,
 		dk:                        dk,
 		dynatraceClient:           dynatraceClient,
-		istioReconciler:           istio.NewCodeModuleReconciler(client, apiReader),
+		istioReconciler:           istio.NewReconciler(client, apiReader),
 		versionReconciler:         version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
 		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient.AsV2().Settings, dk),
@@ -160,7 +156,7 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
 		return err
 	}
 
-	err = r.istioReconciler.Reconcile(ctx, r.dk)
+	err = r.istioReconciler.ReconcileCodeModules(ctx, r.dk)
 	if err != nil {
 		log.Error(err, "error reconciling istio configuration for codemodules")
 	}

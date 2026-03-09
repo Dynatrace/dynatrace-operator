@@ -96,7 +96,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		otelcReconciler:              otelc.NewReconciler(kubeClient, apiReader),
 		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
 		deploymentMetadataReconciler: deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
-		istioReconciler:              istio.NewAPIUrlReconciler(kubeClient, apiReader),
+		istioReconciler:              istio.NewReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -140,7 +140,7 @@ type Controller struct {
 	otelcReconciler              dynakubeReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
-	istioReconciler              dynakubeReconciler
+	istioReconciler              istio.Interface
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
@@ -270,7 +270,7 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakube.DynaKube) error {
-	err := controller.istioReconciler.Reconcile(ctx, dk)
+	err := controller.istioReconciler.ReconcileAPIURL(ctx, dk)
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile istio objects for API url")
 	}

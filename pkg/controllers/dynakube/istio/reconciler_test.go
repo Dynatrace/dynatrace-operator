@@ -66,7 +66,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(serviceEntry)
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
 		err := reconciler.reconcileIPServiceEntry(ctx, nil, dk, component)
 		require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 		commHosts := []CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
@@ -102,7 +102,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		dk := createTestDynaKube()
 		fakeClient := createFailK8sClient()
 
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 		commHosts := []CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
@@ -131,7 +131,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(serviceEntry, virtualService)
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
 		err := reconciler.reconcileFQDNServiceEntry(ctx, nil, owner, component)
 		require.NoError(t, err)
@@ -144,7 +144,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		ctx := t.Context()
 		owner := createTestDynaKube()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 		commHosts := []CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
@@ -178,7 +178,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		owner := createTestDynaKube()
 		fakeClient := createFailK8sClient()
 
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 		commHosts := []CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
@@ -192,9 +192,9 @@ func TestReconcileAPIUrl(t *testing.T) {
 	t.Run("nil => error", func(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, nil)
+		err := reconciler.ReconcileAPIURL(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("malformed api-url => error", func(t *testing.T) {
@@ -202,18 +202,18 @@ func TestReconcileAPIUrl(t *testing.T) {
 		dk := createTestDynaKube()
 		dk.Spec.APIURL = "something-random"
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.ReconcileAPIURL(ctx, dk)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.ReconcileAPIURL(ctx, dk)
 		require.NoError(t, err)
 
 		expectedServiceEntryMeta := &istiov1beta1.ServiceEntry{
@@ -241,9 +241,9 @@ func TestReconcileAPIUrl(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		fakeClient := createFailK8sClient()
-		reconciler := NewAPIUrlReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.ReconcileAPIURL(ctx, dk)
 		require.Error(t, err)
 	})
 }
@@ -252,18 +252,18 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 	t.Run("nil => error", func(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewCodeModuleReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, nil)
+		err := reconciler.ReconcileCodeModules(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewCodeModuleReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 
 		expectedFQDNServiceEntryMeta := &istiov1beta1.ServiceEntry{
@@ -306,9 +306,9 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		fakeClient := createFailK8sClient()
-		reconciler := NewCodeModuleReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.ReconcileCodeModules(ctx, dk)
 		require.Error(t, err)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
@@ -319,9 +319,9 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewCodeModuleReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 
 		expectedFQDNServiceEntryMeta := &istiov1beta1.ServiceEntry{
@@ -363,7 +363,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		dk.Spec.OneAgent.CloudNativeFullStack = nil
 		dk.Spec.OneAgent.HostMonitoring = &oneagent.HostInjectSpec{}
 
-		err = reconciler.Reconcile(ctx, dk)
+		err = reconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 
 		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
@@ -384,18 +384,18 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 	t.Run("nil => error", func(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewActiveGateReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, nil)
+		err := reconciler.ReconcileActiveGate(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewActiveGateReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
 
 		expectedFQDNServiceEntryMeta := &istiov1beta1.ServiceEntry{
@@ -428,9 +428,9 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		fakeClient := createFailK8sClient()
-		reconciler := NewActiveGateReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.ReconcileActiveGate(ctx, dk)
 		require.Error(t, err)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
@@ -441,9 +441,9 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		fakeClient := fake.NewClientWithIndex()
-		reconciler := NewActiveGateReconciler(fakeClient, fakeClient)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
 
 		expectedFQDNServiceEntryMeta := &istiov1beta1.ServiceEntry{
@@ -473,7 +473,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 
 		dk.Spec.ActiveGate = activegate.Spec{}
 
-		err = reconciler.Reconcile(ctx, dk)
+		err = reconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
 
 		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")

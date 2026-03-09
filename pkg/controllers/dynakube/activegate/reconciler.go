@@ -29,16 +29,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type dynakubeReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
-}
-
 type Reconciler struct {
 	client                            client.Client
 	dk                                *dynakube.DynaKube
 	apiReader                         client.Reader
 	authTokenReconciler               controllers.Reconciler
-	istioReconciler                   dynakubeReconciler
+	istioReconciler                   istio.Interface
 	connectionReconciler              controllers.Reconciler
 	versionReconciler                 version.Reconciler
 	pullSecretReconciler              controllers.Reconciler
@@ -75,7 +71,7 @@ func NewReconciler(clt client.Client, //nolint
 		apiReader:                         apiReader,
 		dk:                                dk,
 		authTokenReconciler:               authTokenReconciler,
-		istioReconciler:                   istio.NewActiveGateReconciler(clt, apiReader),
+		istioReconciler:                   istio.NewReconciler(clt, apiReader),
 		connectionReconciler:              connectionInfoReconciler,
 		versionReconciler:                 versionReconciler,
 		pullSecretReconciler:              pullSecretReconciler,
@@ -120,7 +116,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	err = r.istioReconciler.Reconcile(ctx, r.dk)
+	err = r.istioReconciler.ReconcileActiveGate(ctx, r.dk)
 	if err != nil {
 		return err
 	}
