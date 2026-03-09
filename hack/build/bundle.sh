@@ -7,14 +7,23 @@ BUNDLE_CHANNELS="${3:-}"
 BUNDLE_DEFAULT_CHANNEL="${4:-}"
 OCP_MIN_VERSION="v4.14"
 
-KUSTOMIZE="$(hack/build/command.sh kustomize 2>/dev/null)"
-if [[ -z ${KUSTOMIZE} ]]; then
+lookup_cmd() {
+    local cmd=$1
+    # prioritize local installed binary
+    if [[ -e ./bin/$1 ]]; then
+        echo "$PWD/bin/$1"
+    else
+        command -v "$cmd"
+    fi
+}
+
+if ! KUSTOMIZE=$(lookup_cmd kustomize); then
     echo "'kustomize' command not found"
     exit 2
 fi
 
-OPERATOR_SDK="$(hack/build/command.sh operator-sdk 2>/dev/null)"
-if [[ -z ${OPERATOR_SDK} ]]; then
+
+if ! OPERATOR_SDK=$(lookup_cmd operator-sdk); then
     echo "'operator-sdk' command not found"
     exit 2
 fi

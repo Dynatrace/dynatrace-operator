@@ -39,7 +39,7 @@ endif
 
 .PHONY: bundle
 ## Generates bundle manifests and metadata, then validates generated files
-bundle: manifests/$(PLATFORM)/core
+bundle: prerequisites/kustomize prerequisites/operator-sdk manifests/$(PLATFORM)/core
 	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
 	@git restore config/
 
@@ -55,15 +55,15 @@ bundle/push:
 
 .PHONY: bundle/install
 ## Deploy the bundle
-bundle/install: bundle/build bundle/push
-	operator-sdk run bundle $(BUNDLE_IMG) --namespace dynatrace --timeout 5m
+bundle/install: prerequisites/operator-sdk bundle/build bundle/push
+	$(OPERATOR_SDK) run bundle $(BUNDLE_IMG) --namespace dynatrace --timeout 5m
 
 .PHONY: bundle/upgrade
 ## Upgrade previously installed bundle
-bundle/upgrade: bundle/build bundle/push
-	operator-sdk run bundle-upgrade $(BUNDLE_IMG) --namespace dynatrace --timeout 5m
+bundle/upgrade: prerequisites/operator-sdk bundle/build bundle/push
+	$(OPERATOR_SDK) run bundle-upgrade $(BUNDLE_IMG) --namespace dynatrace --timeout 5m
 
 .PHONY: bundle/cleanup
 ## Clean up bundle
-bundle/cleanup:
-	operator-sdk cleanup dynatrace-operator --delete-all --delete-crds --delete-operator-groups --namespace dynatrace --timeout 5m
+bundle/cleanup: prerequisites/operator-sdk
+	$(OPERATOR_SDK) cleanup dynatrace-operator --delete-all --delete-crds --delete-operator-groups --namespace dynatrace --timeout 5m
