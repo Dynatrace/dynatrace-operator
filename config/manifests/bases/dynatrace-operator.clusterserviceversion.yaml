@@ -2297,6 +2297,7 @@ spec:
   - email: support@dynatrace.com
     name: Dynatrace LLC
   maturity: alpha
+  minKubeVersion: 1.25.0
   provider:
     name: Dynatrace LLC
     url: www.dynatrace.com
