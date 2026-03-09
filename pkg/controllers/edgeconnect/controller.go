@@ -251,6 +251,7 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, ec *edge
 	}
 
 	requeueAfter := envvars.GetDurationMinutes(requeueEnvVar, defaultRequeueInterval)
+
 	return reconcile.Result{RequeueAfter: requeueAfter}, nil
 }
 
