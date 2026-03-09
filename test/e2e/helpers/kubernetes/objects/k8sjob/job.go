@@ -22,11 +22,7 @@ func ListForOwner(ctx context.Context, t *testing.T, resource *resources.Resourc
 
 	var targetJobs batchv1.JobList
 	for _, jobItem := range jobs.Items {
-		if len(jobItem.OwnerReferences) < 1 {
-			continue
-		}
-
-		if jobItem.OwnerReferences[0].Name == ownerName {
+		if len(jobItem.OwnerReferences) > 0 && jobItem.OwnerReferences[0].Name == ownerName {
 			targetJobs.Items = append(targetJobs.Items, jobItem)
 		}
 	}

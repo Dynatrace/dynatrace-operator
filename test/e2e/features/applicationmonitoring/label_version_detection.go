@@ -158,7 +158,7 @@ func checkBuildLabels(builder *features.FeatureBuilder, sampleApps []*sample.App
 func assertBuildLabels(sampleApp *sample.App, expectedBuildLabels map[string]buildLabel) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		kubeResources := envConfig.Client().Resources()
-		pods := sampleApp.GetPods(ctx, t, kubeResources)
+		pods := sampleApp.ListPods(ctx, t, kubeResources)
 
 		for _, pod := range pods.Items {
 			appContainer := pod.Spec.Containers[0]
