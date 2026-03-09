@@ -16,6 +16,7 @@ import (
 	ecsecret "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
@@ -43,6 +44,7 @@ import (
 const (
 	fastUpdateInterval    = 1 * time.Minute
 	defaultUpdateInterval = 30 * time.Minute
+	requeueEnvVar         = "DT_EDGECONNECT_REQUEUE_INTERVAL_MIN"
 
 	controllerName = "edgeconnect-controller"
 	finalizerName  = "server"
@@ -248,7 +250,8 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, ec *edge
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{RequeueAfter: defaultUpdateInterval}, nil
+	requeueAfter := envvars.GetDurationMinutes(requeueEnvVar, defaultUpdateInterval)
+	return reconcile.Result{RequeueAfter: requeueAfter}, nil
 }
 
 func (controller *Controller) reconcileEdgeConnectCR(ctx context.Context, ec *edgeconnect.EdgeConnect) error {

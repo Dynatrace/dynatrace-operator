@@ -3,9 +3,7 @@ package oneagent
 import (
 	"context"
 	"fmt"
-	"os"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -20,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -165,16 +164,7 @@ func (r *Reconciler) cleanUp(ctx context.Context) error {
 }
 
 func (r *Reconciler) updateInstancesStatus(ctx context.Context) error {
-	updInterval := defaultUpdateInterval
-
-	if val := os.Getenv(updateEnvVar); val != "" {
-		x, err := strconv.Atoi(val)
-		if err != nil {
-			log.Info("conversion of ONEAGENT_OPERATOR_UPDATE_INTERVAL failed")
-		} else {
-			updInterval = time.Duration(x) * time.Minute
-		}
-	}
+	updInterval := envvars.GetDurationMinutes(updateEnvVar, defaultUpdateInterval)
 
 	now := metav1.Now()
 	if timeprovider.TimeoutReached(r.dk.Status.OneAgent.LastInstanceStatusUpdate, &now, updInterval) {

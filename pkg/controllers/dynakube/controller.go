@@ -28,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -52,6 +53,7 @@ import (
 const (
 	fastUpdateInterval    = 1 * time.Minute
 	defaultUpdateInterval = 30 * time.Minute
+	requeueEnvVar         = "DT_DYNAKUBE_REQUEUE_INTERVAL_MIN"
 
 	controllerName = "dynakube-controller"
 )
@@ -188,7 +190,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	oldStatus := *dk.Status.DeepCopy()
-	controller.requeueAfter = defaultUpdateInterval
+	controller.requeueAfter = envvars.GetDurationMinutes(requeueEnvVar, defaultUpdateInterval)
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
