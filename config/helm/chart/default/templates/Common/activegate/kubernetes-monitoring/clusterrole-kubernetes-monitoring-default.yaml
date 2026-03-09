@@ -28,6 +28,7 @@ rules:
       - pods
       - namespaces
       - replicationcontrollers
+      - events
       - resourcequotas
       - pods/proxy
       - nodes/proxy
@@ -35,14 +36,6 @@ rules:
       - services
       - persistentvolumeclaims
       - persistentvolumes
-    verbs:
-      - list
-      - watch
-      - get
-  - apiGroups:
-      - events.k8s.io
-    resources:
-      - events
     verbs:
       - list
       - watch
