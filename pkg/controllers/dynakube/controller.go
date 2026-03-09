@@ -51,9 +51,9 @@ import (
 )
 
 const (
-	fastUpdateInterval    = 1 * time.Minute
-	defaultUpdateInterval = 30 * time.Minute
-	requeueEnvVar         = "DT_DYNAKUBE_REQUEUE_INTERVAL_MIN"
+	fastRequeueInterval    = 1 * time.Minute
+	defaultRequeueInterval = 15 * time.Minute
+	requeueEnvVar          = "DT_DYNAKUBE_REQUEUE_INTERVAL_MIN"
 
 	controllerName = "dynakube-controller"
 )
@@ -190,7 +190,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	oldStatus := *dk.Status.DeepCopy()
-	controller.requeueAfter = envvars.GetDurationMinutes(requeueEnvVar, defaultUpdateInterval)
+	controller.requeueAfter = envvars.GetDurationMinutes(requeueEnvVar, defaultRequeueInterval)
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
@@ -231,7 +231,7 @@ func (controller *Controller) handleError(
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
 			"errorCode", dynatraceapi.StatusCode(reconcileErr), "errorMessage", dynatraceapi.Message(reconcileErr))
 		// should we set the phase to error ?
-		return reconcile.Result{RequeueAfter: fastUpdateInterval}, nil
+		return reconcile.Result{RequeueAfter: fastRequeueInterval}, nil
 
 	case reconcileErr != nil:
 		dk.Status.SetPhase(dynatracestatus.Error)
@@ -405,7 +405,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	err = logMonitoringReconciler.Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
-			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 
 			return goerrors.Join(componentErrors...)
 		}
@@ -428,7 +428,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
 			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
-			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 
 			return goerrors.Join(componentErrors...)
 		}
@@ -453,7 +453,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
 			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
-			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 
 			return goerrors.Join(componentErrors...)
 		}

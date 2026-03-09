@@ -192,7 +192,7 @@ func TestHandleError(t *testing.T) {
 
 		result, err := controller.handleError(ctx, oldDynakube, serverError, oldDynakube.Status)
 		require.NoError(t, err)
-		assert.Equal(t, fastUpdateInterval, result.RequeueAfter)
+		assert.Equal(t, fastRequeueInterval, result.RequeueAfter)
 	})
 	t.Run("random error => error, set error-phase", func(t *testing.T) {
 		oldDynakube := dynakubeBase.DeepCopy()
