@@ -44,12 +44,12 @@ func setVerificationSkippedReasonCondition(conditions *[]metav1.Condition, condi
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setVerificationFailedReasonCondition(conditions *[]metav1.Condition, conditionType string, err error) {
+func setVerificationFailedReasonCondition(conditions *[]metav1.Condition, conditionType string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  verificationFailedReason,
-		Message: "Version verification failed, due to: " + err.Error(),
+		Message: "Version verification failed",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
