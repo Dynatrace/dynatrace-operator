@@ -21,7 +21,7 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 				return list.Items
 			},
 			IsEqual:      isEqual,
-			MustRecreate: mustRecreate,
+			MustRecreate: func(_, _ *istiov1beta1.VirtualService) bool { return false },
 
 			KubeClient: kubeClient,
 			KubeReader: kubeReader,
@@ -32,8 +32,4 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 func isEqual(current, desired *istiov1beta1.VirtualService) bool {
 	return !hasher.IsAnnotationDifferent(current, desired)
-}
-
-func mustRecreate(current, desired *istiov1beta1.VirtualService) bool {
-	return false
 }

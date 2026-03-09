@@ -284,7 +284,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.Contains(t, expectedFQDNServiceEntry.Spec.Hosts, "something.test.io")
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "something.test.io")
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
@@ -342,7 +342,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.Contains(t, expectedFQDNServiceEntry.Spec.Hosts, "something.test.io")
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "something.test.io")
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
@@ -410,7 +410,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.Contains(t, expectedFQDNServiceEntry.Spec.Hosts, "abcd123.some.activegate.endpointurl.com")
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "abcd123.some.activegate.endpointurl.com")
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
@@ -457,7 +457,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.Contains(t, expectedFQDNServiceEntry.Spec.Hosts, "abcd123.some.activegate.endpointurl.com")
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "abcd123.some.activegate.endpointurl.com")
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
