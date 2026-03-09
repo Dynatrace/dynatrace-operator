@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -159,7 +159,7 @@ func TestManifestCollector_Success(t *testing.T) {
 		fmt.Sprintf("%s/customresourcedefinition-edgeconnects%s", "crds", manifestExtension),
 	}
 
-	sort.Strings(expectedFiles)
+	slices.Sort(expectedFiles)
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 
@@ -169,7 +169,7 @@ func TestManifestCollector_Success(t *testing.T) {
 		actualFileName[i] = file.Name
 	}
 
-	sort.Strings(actualFileName)
+	slices.Sort(actualFileName)
 
 	for i, expectedFile := range expectedFiles {
 		t.Run("expected "+expectedFile, func(t *testing.T) {
@@ -296,7 +296,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension)), zipReader.File[6].Name)
 
 	crds := []string{zipReader.File[7].Name, zipReader.File[8].Name}
-	sort.Strings(crds)
+	slices.Sort(crds)
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-dynakubes%s", "crds", manifestExtension)), crds[0])
 
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-edgeconnects%s", "crds", manifestExtension)), crds[1])
