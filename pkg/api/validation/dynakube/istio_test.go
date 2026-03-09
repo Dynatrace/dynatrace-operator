@@ -5,15 +5,15 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestNoIstioInstalled(t *testing.T) {
 	noIstioInterceptor := interceptor.Funcs{
 		Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
-			return new(apiutil.ErrResourceDiscoveryFailed)
+			return new(meta.NoResourceMatchError)
 		},
 	}
 

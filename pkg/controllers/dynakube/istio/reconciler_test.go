@@ -19,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
@@ -567,7 +566,7 @@ func TestIsInstalled(t *testing.T) {
 		errClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
 				if istioMissing {
-					return new(apiutil.ErrResourceDiscoveryFailed)
+					return new(meta.NoResourceMatchError)
 				} else {
 					return errors.New("BOOM")
 				}

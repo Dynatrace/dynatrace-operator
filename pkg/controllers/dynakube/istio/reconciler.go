@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 var (
@@ -313,9 +312,7 @@ func buildObjectMeta(name, namespace string, labels map[string]string) metav1.Ob
 func IsInstalled(ctx context.Context, apiReader client.Reader) bool {
 	vs := &istiov1beta1.VirtualService{}
 	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, vs); err != nil {
-		discoveryFailed := new(apiutil.ErrResourceDiscoveryFailed)
-
-		return !errors.As(err, &discoveryFailed)
+		return !meta.IsNoMatchError(err)
 	}
 
 	return true
