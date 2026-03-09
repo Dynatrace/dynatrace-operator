@@ -1,25 +1,52 @@
 package dynakube
 
 import (
+	"errors"
+	"fmt"
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	TokenReadyConditionMessage             = "Token ready"
-	TokenWithoutDataIngestConditionMessage = "Token ready, DataIngest token not provided"
+	TokenReadyConditionMessage              = "Token ready"
+	TokenWithoutDataIngestConditionMessage  = "Token ready, DataIngest token not provided"
+	TokenVerificationFailedConditionMessage = "Token verification failed"
+	TokenScopesMissingConditionMessage      = "The following required scopes are missing: %s"
 )
 
 func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
+	msg := TokenVerificationFailedConditionMessage
+
+	var e token.VerificationError
+	if errors.As(err, &e) {
+		if len(e.Errs) > 0 {
+			missingScopes := make([]string, 0)
+
+			for _, scopeErr := range e.Errs {
+				var se token.ScopeError
+				if errors.As(scopeErr, &se) {
+					missingScopes = append(missingScopes, se.MissingScopes...)
+				}
+			}
+
+			if len(missingScopes) > 0 {
+				msg = fmt.Sprintf(TokenScopesMissingConditionMessage, strings.Join(missingScopes, ", "))
+			}
+		}
+	}
+
 	tokenErrorCondition := metav1.Condition{
 		Type:    dynakube.TokenConditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  dynakube.ReasonTokenError,
-		Message: err.Error(),
+		Message: msg,
 	}
 
-	controller.setAndLogCondition(dk, tokenErrorCondition)
+	controller.setCondition(dk, tokenErrorCondition)
 }
 
 func (controller *Controller) setConditionTokenReady(dk *dynakube.DynaKube, dataIngestTokenProvided bool) {
@@ -35,20 +62,13 @@ func (controller *Controller) setConditionTokenReady(dk *dynakube.DynaKube, data
 		Message: msg,
 	}
 
-	controller.setAndLogCondition(dk, tokenErrorCondition)
+	controller.setCondition(dk, tokenErrorCondition)
 }
 
-// TODO: Probably should be removed, as most of this is done inside meta.SetStatusCondition (except the logging) the removeDeprecatedConditionTypes already did its job, as it has been in since forever
-func (controller *Controller) setAndLogCondition(dk *dynakube.DynaKube, newCondition metav1.Condition) {
+// TODO: Probably should be removed, as most of this is done inside meta.SetStatusCondition the removeDeprecatedConditionTypes already did its job, as it has been in since forever
+func (controller *Controller) setCondition(dk *dynakube.DynaKube, newCondition metav1.Condition) {
 	controller.removeDeprecatedConditionTypes(dk)
 	statusCondition := meta.FindStatusCondition(dk.Status.Conditions, newCondition.Type)
-
-	if newCondition.Reason != dynakube.ReasonTokenReady {
-		log.Info("problem with token detected",
-			"dynakube", dk.Name, "namespace", dk.Namespace,
-			"token", newCondition.Type,
-			"message", newCondition.Message)
-	}
 
 	if areStatusesEqual(statusCondition, newCondition) {
 		return
