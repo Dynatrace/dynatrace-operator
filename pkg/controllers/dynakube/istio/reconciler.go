@@ -12,11 +12,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sserviceentry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8svirtualservice"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 var (
@@ -323,13 +323,11 @@ func buildObjectMeta(name, namespace string, labels map[string]string) metav1.Ob
 	}
 }
 
-// IsInstalled checks whether Istio is installed on the cluster by querying
-// the discovery API for the Istio networking group version.
-func IsInstalled(discoveryClient discovery.DiscoveryInterface) (bool, error) {
-	_, err := discoveryClient.ServerResourcesForGroupVersion(istioGVR)
-	if k8serrors.IsNotFound(err) {
-		return false, nil
+func IsInstalled(ctx context.Context, apiReader client.Reader) bool {
+	vs := &istiov1beta1.VirtualService{}
+	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, vs); err != nil {
+		discoveryFailed := new(apiutil.ErrResourceDiscoveryFailed)
+		return !errors.As(err, &discoveryFailed)
 	}
-
-	return err == nil, err
+	return true
 }

@@ -12,16 +12,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type Validator struct {
-	apiReader       client.Reader
-	discoveryClient discovery.DiscoveryInterface
-	modules         installconfig.Modules
+	apiReader client.Reader
+	modules   installconfig.Modules
 }
 
 var (
@@ -91,11 +88,10 @@ var (
 type validatorFunc func(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string
 type updateValidatorFunc func(ctx context.Context, dv *Validator, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string
 
-func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.Object] {
+func New(apiReader client.Reader) admission.Validator[runtime.Object] {
 	return &Validator{
-		apiReader:       apiReader,
-		discoveryClient: discovery.NewDiscoveryClientForConfigOrDie(cfg),
-		modules:         installconfig.GetModules(),
+		apiReader: apiReader,
+		modules:   installconfig.GetModules(),
 	}
 }
 

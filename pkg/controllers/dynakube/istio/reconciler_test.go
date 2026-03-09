@@ -17,11 +17,9 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	fakediscovery "k8s.io/client-go/discovery/fake"
-	k8stesting "k8s.io/client-go/testing"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
@@ -565,40 +563,39 @@ func createFailK8sClient() client.Client {
 }
 
 func TestIsInstalled(t *testing.T) {
-	t.Run("istio is installed => returns true, no error", func(t *testing.T) {
-		fakeDiscovery := &fakediscovery.FakeDiscovery{
-			Fake: &k8stesting.Fake{
-				Resources: []*metav1.APIResourceList{
-					{GroupVersion: istioGVR},
-				},
+	createErrorClient := func(istioMissing bool) client.Client {
+		errClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				if istioMissing {
+					return new(apiutil.ErrResourceDiscoveryFailed)
+				} else {
+					return errors.New("BOOM")
+				}
 			},
-		}
+		})
 
-		installed, err := IsInstalled(fakeDiscovery)
-		require.NoError(t, err)
+		return errClient
+	}
+
+	t.Run("istio is installed => returns true", func(t *testing.T) {
+		fakeClient := fake.NewClientWithIndex()
+
+		installed := IsInstalled(t.Context(), fakeClient)
 		assert.True(t, installed)
 	})
 
-	t.Run("istio is not installed => returns false, no error", func(t *testing.T) {
-		fakeDiscovery := &fakediscovery.FakeDiscovery{
-			Fake: &k8stesting.Fake{},
-		}
+	t.Run("istio is not installed => returns false", func(t *testing.T) {
+		fakeClient := createErrorClient(true)
 
-		installed, err := IsInstalled(fakeDiscovery)
-		require.NoError(t, err)
+		installed := IsInstalled(t.Context(), fakeClient)
 		assert.False(t, installed)
 	})
 
-	t.Run("server error => returns false, error", func(t *testing.T) {
-		fakeDiscovery := &fakediscovery.FakeDiscovery{
-			Fake: &k8stesting.Fake{},
-		}
-		fakeDiscovery.PrependReactor("get", "resource", func(_ k8stesting.Action) (bool, runtime.Object, error) {
-			return true, nil, errors.New("server error")
-		})
+	t.Run("unknown client err => returns true (no discovery fail == istio is present)", func(t *testing.T) {
+		fakeClient := createErrorClient(false)
 
-		installed, err := IsInstalled(fakeDiscovery)
-		require.Error(t, err)
-		assert.False(t, installed)
+		installed := IsInstalled(t.Context(), fakeClient)
+		assert.True(t, installed)
 	})
+
 }

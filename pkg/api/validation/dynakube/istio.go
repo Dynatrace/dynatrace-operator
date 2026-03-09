@@ -8,20 +8,12 @@ import (
 )
 
 const (
-	errorNoIstioInstalled      = `No resources for istio available`
-	errorFailedToCheckForIstio = `Failed to verify if istio is available`
+	errorNoIstioInstalled = `No resources for istio available`
 )
 
-func noIstioInstalled(_ context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if dk.Spec.EnableIstio {
-		enabled, err := istio.IsInstalled(dv.discoveryClient)
-		if err != nil {
-			return errorFailedToCheckForIstio
-		}
-
-		if !enabled {
-			return errorNoIstioInstalled
-		}
+func noIstioInstalled(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	if dk.Spec.EnableIstio && !istio.IsInstalled(ctx, dv.apiReader) {
+		return errorNoIstioInstalled
 	}
 
 	return ""
