@@ -20,6 +20,7 @@ package activegate
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 )
 
@@ -51,6 +52,11 @@ func (in *CapabilityProperties) DeepCopyInto(out *CapabilityProperties) {
 		**out = **in
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.RollingUpdate != nil {
+		in, out := &in.RollingUpdate, &out.RollingUpdate
+		*out = new(appsv1.RollingUpdateStatefulSetStrategy)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))
