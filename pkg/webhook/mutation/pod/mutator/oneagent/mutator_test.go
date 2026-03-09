@@ -38,7 +38,6 @@ func TestIsEnabled(t *testing.T) {
 			dkMods:  func(dk *dynakube.DynaKube) {},
 			enabled: false,
 		},
-
 		{
 			title:   "only OA enabled => enabled",
 			podMods: func(p *corev1.Pod) {},
@@ -48,7 +47,18 @@ func TestIsEnabled(t *testing.T) {
 			},
 			enabled: true,
 		},
-
+		{
+			title:   "OA enabled + FF enabled => enabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				}
+			},
+			enabled: true,
+		},
 		{
 			title:   "OA + FF enabled => enabled",
 			podMods: func(p *corev1.Pod) {},
@@ -58,18 +68,6 @@ func TestIsEnabled(t *testing.T) {
 				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 			},
 			enabled: true,
-		},
-		{
-			title:   "OA enabled + auto-inject false => disabled",
-			podMods: func(p *corev1.Pod) {},
-			nsMods:  func(n *corev1.Namespace) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{
-					exp.InjectionAutomaticKey: "false",
-				}
-			},
-			enabled: false,
 		},
 		{
 			title:   "OA enabled + auto-inject false + no pod annotation => disabled",
@@ -100,6 +98,33 @@ func TestIsEnabled(t *testing.T) {
 			enabled: true,
 		},
 		{
+			title: "OA enabled + auto-inject false + pod annotation false => disabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{
+					AnnotationInject: "false",
+				}
+			},
+			nsMods: func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "false",
+				}
+			},
+			enabled: false,
+		},
+		{
+			title: "OA disable + auto-inject true => disabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{
+					AnnotationInject: "true",
+				}
+			},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods:  func(dk *dynakube.DynaKube) {},
+			enabled: false,
+		},
+		{
 			title:   "OA enabled + labels not match => disabled",
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},
@@ -125,6 +150,40 @@ func TestIsEnabled(t *testing.T) {
 			},
 			enabled: true,
 		},
+		{
+			title: "OA enabled + labels match + pod annotation => enabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{
+					AnnotationInject: "true",
+				}
+			},
+			nsMods: func(n *corev1.Namespace) {
+				n.Labels = matchLabels
+			},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				}
+			},
+			enabled: true,
+		},
+		{
+			title: "OA enabled + labels not match => disabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{
+					AnnotationInject: "true",
+				}
+			},
+			nsMods: func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				}
+			},
+			enabled: false,
+		},
 	}
 	for _, test := range cases {
 		t.Run(test.title, func(t *testing.T) {
@@ -142,210 +201,6 @@ func TestIsEnabled(t *testing.T) {
 			assert.Equal(t, test.enabled, IsEnabled(req.BaseRequest))
 		})
 	}
-}
-
-func TestIsEnabled_Comprehensive(t *testing.T) {
-	t.Run("automatic-injection=true (default), no annotations, OA enabled, namespace matches => inject", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-
-		pod := &corev1.Pod{}
-		ns := &corev1.Namespace{}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.True(t, IsEnabled(req.BaseRequest))
-	})
-
-	t.Run("automatic-injection=true (default), no annotations, namespace does not match => no inject", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{
-				NamespaceSelector: metav1.LabelSelector{
-					MatchLabels: map[string]string{"oneagent": "true"},
-				},
-			},
-		}
-
-		pod := &corev1.Pod{}
-		ns := &corev1.Namespace{}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.False(t, IsEnabled(req.BaseRequest))
-	})
-
-	t.Run("automatic-injection=true (default), feature-specific=true => inject", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-
-		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationInject: "true",
-				},
-			},
-		}
-		ns := &corev1.Namespace{}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.True(t, IsEnabled(req.BaseRequest))
-	})
-
-	t.Run("automatic-injection=true (default), feature-specific=false => no inject", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-
-		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationInject: "false",
-				},
-			},
-		}
-		ns := &corev1.Namespace{}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.False(t, IsEnabled(req.BaseRequest))
-	})
-
-	t.Run("automatic-injection=false, no annotations => no inject", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "false",
-				},
-			},
-		}
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-
-		pod := &corev1.Pod{}
-		ns := &corev1.Namespace{}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.False(t, IsEnabled(req.BaseRequest))
-	})
-
-	t.Run("automatic-injection=false, feature-specific=true => inject (explicit opt-in)", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "false",
-				},
-			},
-		}
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-
-		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationInject: "true",
-				},
-			},
-		}
-		ns := &corev1.Namespace{}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.True(t, IsEnabled(req.BaseRequest))
-	})
-
-	t.Run("automatic-injection=false, feature-specific=false => no inject", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "false",
-				},
-			},
-		}
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-
-		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationInject: "false",
-				},
-			},
-		}
-		ns := &corev1.Namespace{}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.False(t, IsEnabled(req.BaseRequest))
-	})
-
-	t.Run("OA disabled on DynaKube => no inject (regardless of annotations)", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		// OneAgent ApplicationMonitoring not enabled
-
-		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationInject: "true",
-				},
-			},
-		}
-		ns := &corev1.Namespace{}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.False(t, IsEnabled(req.BaseRequest))
-	})
-
-	t.Run("namespace selector matches with feature-specific=true => inject", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{
-				NamespaceSelector: metav1.LabelSelector{
-					MatchLabels: map[string]string{"oneagent": "true"},
-				},
-			},
-		}
-
-		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationInject: "true",
-				},
-			},
-		}
-		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{"oneagent": "true"},
-			},
-		}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.True(t, IsEnabled(req.BaseRequest))
-	})
-
-	t.Run("namespace selector does not match with feature-specific=true => no inject", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{
-				NamespaceSelector: metav1.LabelSelector{
-					MatchLabels: map[string]string{"oneagent": "true"},
-				},
-			},
-		}
-
-		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationInject: "true",
-				},
-			},
-		}
-		ns := &corev1.Namespace{}
-
-		req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-		require.False(t, IsEnabled(req.BaseRequest))
-	})
 }
 
 func TestIsSelfExtractingImage(t *testing.T) {
@@ -608,6 +463,10 @@ func createTestMutationRequestWithoutInjectedContainers() *dtwebhook.MutationReq
 		},
 		BaseRequest: &dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -620,6 +479,7 @@ func createTestMutationRequestWithoutInjectedContainers() *dtwebhook.MutationReq
 						},
 					},
 				},
+				Status: corev1.PodStatus{},
 			},
 			DynaKube: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{

@@ -207,21 +207,6 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 
 		assert.Empty(t, containerEnvVars)
 	})
-	t.Run("injection disabled on pod by dynatrace.com/inject:false", func(t *testing.T) {
-
-		dk := getTestDynakube()
-		dk.Spec.OTLPExporterConfiguration = nil
-
-		request := createTestMutationRequest(t, dk)
-		request.Pod.Annotations[mutator.AnnotationDynatraceInject] = "false"
-
-		m := Mutator{}
-		err := m.Mutate(request)
-		require.NoError(t, err)
-
-		containerEnvVars := request.Pod.Spec.Containers[0].Env
-		assert.Empty(t, containerEnvVars)
-	})
 	t.Run("no OTLP ingest endpoint available - do not modify anything, return error", func(t *testing.T) {
 		m := Mutator{}
 
