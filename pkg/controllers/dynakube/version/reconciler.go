@@ -24,8 +24,6 @@ type reconciler struct {
 	apiReader client.Reader
 }
 
-type ReconcilerBuilder func(apiReader client.Reader, dtClient dtclient.Client, timeProvider *timeprovider.Provider) Reconciler
-
 func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvider *timeprovider.Provider) Reconciler {
 	return &reconciler{
 		apiReader:    apiReader,
