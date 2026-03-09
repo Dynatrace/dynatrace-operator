@@ -69,6 +69,7 @@ func extractMissingScopesFromError(err error) []string {
 
 		return missingScopes
 	}
+
 	return nil
 }
 
