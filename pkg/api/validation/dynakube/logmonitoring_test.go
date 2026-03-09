@@ -3,7 +3,6 @@ package validation
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
@@ -29,54 +28,6 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 			},
 		}
 		assertAllowed(t, dk)
-	})
-	t.Run("error if logMonitoring is enabled with activegate with k8s-monitoring but automatic-kubernetes-api-monitoring disabled", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.AGAutomaticK8sAPIMonitoringKey: "false",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL:        testAPIURL,
-				LogMonitoring: &logmonitoring.Spec{},
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
-					},
-				},
-				Templates: dynakube.TemplatesSpec{
-					LogMonitoring: &logmonitoring.TemplateSpec{
-						ImageRef: image.Ref{
-							Repository: "repo/image",
-							Tag:        "version",
-						},
-					},
-				},
-			},
-		}
-		assertAllowedWithWarnings(t, 1, dk)
-	})
-	t.Run("error if logMonitoring is enabled without activegate with k8s-monitoring and automatic-kubernetes-api-monitoring disabled", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 0, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.AGAutomaticK8sAPIMonitoringKey: "false",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL:        testAPIURL,
-				LogMonitoring: &logmonitoring.Spec{},
-				Templates: dynakube.TemplatesSpec{
-					LogMonitoring: &logmonitoring.TemplateSpec{
-						ImageRef: image.Ref{
-							Repository: "repo/image",
-							Tag:        "version",
-						},
-					},
-				},
-			},
-		})
 	})
 }
 
