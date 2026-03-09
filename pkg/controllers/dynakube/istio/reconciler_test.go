@@ -2,7 +2,6 @@ package istio
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -83,16 +82,16 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		err := reconciler.reconcileIPServiceEntry(ctx, commHosts, dk, component)
 		require.NoError(t, err)
 
-		expectedServiceEntryMeta := &istiov1beta1.ServiceEntry{
+		expectedServiceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForIPServiceEntry(dk.Name, component),
 				Namespace: dk.Namespace,
 			},
 		}
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntryMeta), expectedServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedServiceEntryMeta)
+		assert.NotNil(t, expectedServiceEntry)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		ctx := t.Context()
@@ -149,26 +148,26 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		err := reconciler.reconcileFQDNServiceEntry(ctx, commHosts, owner, component)
 		require.NoError(t, err)
 
-		expectedServiceEntryMeta := &istiov1beta1.ServiceEntry{
+		expectedServiceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
 				Namespace: owner.GetNamespace(),
 			},
 		}
-		expectedVirtualServiceMeta := &istiov1beta1.VirtualService{
+		expectedVirtualService := &istiov1beta1.VirtualService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
 				Namespace: owner.GetNamespace(),
 			},
 		}
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntryMeta), expectedServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedServiceEntryMeta)
+		assert.NotNil(t, expectedServiceEntry)
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualServiceMeta), expectedVirtualServiceMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualServiceMeta)
+		assert.NotNil(t, expectedVirtualService)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		ctx := t.Context()
@@ -213,26 +212,26 @@ func TestReconcileAPIUrl(t *testing.T) {
 		err := reconciler.ReconcileAPIURL(ctx, dk)
 		require.NoError(t, err)
 
-		expectedServiceEntryMeta := &istiov1beta1.ServiceEntry{
+		expectedServiceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
-		expectedVirtualServiceMeta := &istiov1beta1.VirtualService{
+		expectedVirtualService := &istiov1beta1.VirtualService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntryMeta), expectedServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedServiceEntryMeta)
+		assert.NotNil(t, expectedServiceEntry)
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualServiceMeta), expectedVirtualServiceMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualServiceMeta)
+		assert.NotNil(t, expectedVirtualService)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		ctx := t.Context()
@@ -263,37 +262,37 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNServiceEntryMeta := &istiov1beta1.ServiceEntry{
+		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
 
-		expectedIPServiceEntryMeta := &istiov1beta1.ServiceEntry{
+		expectedIPServiceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
-		expectedVirtualServiceMeta := &istiov1beta1.VirtualService{
+		expectedVirtualService := &istiov1beta1.VirtualService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntryMeta), expectedFQDNServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.Contains(t, fmt.Sprintf("%v", expectedFQDNServiceEntryMeta), "something.test.io")
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.Hosts, "something.test.io")
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualServiceMeta), expectedVirtualServiceMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualServiceMeta)
+		assert.NotNil(t, expectedVirtualService)
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntryMeta), expectedIPServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntry), expectedIPServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedIPServiceEntryMeta)
+		assert.NotNil(t, expectedIPServiceEntry)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.NotNil(t, statusCondition)
@@ -321,37 +320,37 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNServiceEntryMeta := &istiov1beta1.ServiceEntry{
+		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
 
-		expectedIPServiceEntryMeta := &istiov1beta1.ServiceEntry{
+		expectedIPServiceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
-		expectedVirtualServiceMeta := &istiov1beta1.VirtualService{
+		expectedVirtualService := &istiov1beta1.VirtualService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntryMeta), expectedFQDNServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.Contains(t, fmt.Sprintf("%v", expectedFQDNServiceEntryMeta), "something.test.io")
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.Hosts, "something.test.io")
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualServiceMeta), expectedVirtualServiceMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualServiceMeta)
+		assert.NotNil(t, expectedVirtualService)
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntryMeta), expectedIPServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntry), expectedIPServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedIPServiceEntryMeta)
+		assert.NotNil(t, expectedIPServiceEntry)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.NotNil(t, statusCondition)
@@ -366,13 +365,13 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.Nil(t, statusCondition)
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntryMeta), expectedFQDNServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.Error(t, err)
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualServiceMeta), expectedVirtualServiceMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.Error(t, err)
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntryMeta), expectedIPServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntry), expectedIPServiceEntry)
 		require.Error(t, err)
 	})
 }
@@ -395,27 +394,27 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNServiceEntryMeta := &istiov1beta1.ServiceEntry{
+		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
 
-		expectedVirtualServiceMeta := &istiov1beta1.VirtualService{
+		expectedVirtualService := &istiov1beta1.VirtualService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntryMeta), expectedFQDNServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.Contains(t, fmt.Sprintf("%v", expectedFQDNServiceEntryMeta), "abcd123.some.activegate.endpointurl.com")
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.Hosts, "abcd123.some.activegate.endpointurl.com")
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualServiceMeta), expectedVirtualServiceMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualServiceMeta)
+		assert.NotNil(t, expectedVirtualService)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
@@ -443,26 +442,26 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNServiceEntryMeta := &istiov1beta1.ServiceEntry{
+		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
-		expectedVirtualServiceMeta := &istiov1beta1.VirtualService{
+		expectedVirtualService := &istiov1beta1.VirtualService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
 				Namespace: dk.GetNamespace(),
 			},
 		}
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntryMeta), expectedFQDNServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.Contains(t, fmt.Sprintf("%v", expectedFQDNServiceEntryMeta), "abcd123.some.activegate.endpointurl.com")
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.Hosts, "abcd123.some.activegate.endpointurl.com")
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualServiceMeta), expectedVirtualServiceMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualServiceMeta)
+		assert.NotNil(t, expectedVirtualService)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
@@ -476,10 +475,10 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.Nil(t, statusCondition)
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntryMeta), expectedFQDNServiceEntryMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.Error(t, err)
 
-		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualServiceMeta), expectedVirtualServiceMeta)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.Error(t, err)
 	})
 }
