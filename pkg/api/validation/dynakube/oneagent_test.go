@@ -475,7 +475,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				Namespace: testNamespace,
 				Annotations: map[string]string{
 					exp.OANodeImagePullKey:   "true",
-					exp.AutomaticRegistryKey: "true",
+					exp.UsePublicRegistryKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

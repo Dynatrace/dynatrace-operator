@@ -6,7 +6,7 @@ import (
 
 const (
 	FFPrefix             = "feature.dynatrace.com/"
-	AutomaticRegistryKey = FFPrefix + "use-public-registry"
+	UsePublicRegistryKey = FFPrefix + "use-public-registry"
 	NoProxyKey           = FFPrefix + "no-proxy"
 
 	UseEECLegacyMountsKey = FFPrefix + "use-eec-legacy-mounts"
@@ -31,7 +31,7 @@ func (ff *FeatureFlags) GetNoProxy() string {
 }
 
 func (ff *FeatureFlags) IsAutomaticRegistry() bool {
-	return ff.getBoolWithDefault(AutomaticRegistryKey, false)
+	return ff.getBoolWithDefault(UsePublicRegistryKey, false)
 }
 
 func (ff *FeatureFlags) UseEECLegacyMounts() bool {
