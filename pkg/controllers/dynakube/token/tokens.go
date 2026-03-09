@@ -11,6 +11,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 )
 
+type VerificationError struct {
+	Errs []error
+}
+
+func (v VerificationError) Error() string {
+	return concatErrors(v.Errs).Error()
+}
+
 type Tokens map[string]*Token
 
 func (tokens Tokens) APIToken() *Token {
@@ -64,7 +72,11 @@ func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client,
 		maps.Insert(collectedMissingOptionalScopes, maps.All(missingOptionalScopes))
 	}
 
-	return collectedMissingOptionalScopes, concatErrors(collectedScopeErrors)
+	if len(collectedScopeErrors) == 0 {
+		return collectedMissingOptionalScopes, nil
+	}
+
+	return collectedMissingOptionalScopes, VerificationError{Errs: collectedScopeErrors}
 }
 
 func (tokens Tokens) VerifyValues() error {

@@ -22,7 +22,7 @@ func SetKubeAPIError(conditions *[]metav1.Condition, conditionType string, err e
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  KubeAPIErrorReason,
-		Message: "A problem occurred when using the Kubernetes API: " + err.Error(),
+		Message: "A problem occurred when using the Kubernetes API",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
@@ -36,7 +36,7 @@ func SetDynatraceAPIError(conditions *[]metav1.Condition, conditionType string, 
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  DynatraceAPIErrorReason,
-		Message: "A problem occurred when using the Dynatrace API: " + err.Error(),
+		Message: "A problem occurred when using the Dynatrace API",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
