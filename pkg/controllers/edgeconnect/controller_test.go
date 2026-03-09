@@ -175,7 +175,7 @@ func TestReconcile(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Equal(t, defaultUpdateInterval, result.RequeueAfter)
+		assert.Equal(t, defaultRequeueInterval, result.RequeueAfter)
 
 		var edgeConnectDeployment edgeconnect.EdgeConnect
 
