@@ -18,10 +18,7 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 			Target:     &istiov1beta1.VirtualService{},
 			ListTarget: &istiov1beta1.VirtualServiceList{},
 			ToList: func(list *istiov1beta1.VirtualServiceList) []*istiov1beta1.VirtualService {
-				out := make([]*istiov1beta1.VirtualService, len(list.Items))
-				copy(out, list.Items)
-
-				return out
+				return list.Items
 			},
 			IsEqual:      isEqual,
 			MustRecreate: mustRecreate,
