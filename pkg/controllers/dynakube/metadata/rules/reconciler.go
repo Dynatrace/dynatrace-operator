@@ -20,8 +20,6 @@ type Reconciler struct {
 	timeProvider *timeprovider.Provider
 }
 
-type ReconcilerBuilder func(dtc settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler
-
 func NewReconciler(dtc settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &Reconciler{
 		dtc:          dtc,

@@ -35,6 +35,7 @@ func TestClient_Verbs(t *testing.T) {
 	require.NoError(t, c.GET(t.Context(), http.MethodGet).Execute(nil))
 	require.NoError(t, c.POST(t.Context(), http.MethodPost).Execute(nil))
 	require.NoError(t, c.PUT(t.Context(), http.MethodPut).Execute(nil))
+	require.NoError(t, c.DELETE(t.Context(), http.MethodDelete).Execute(nil))
 }
 
 func TestClient_Headers(t *testing.T) {
