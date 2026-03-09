@@ -6,7 +6,7 @@ import (
 
 const (
 	FFPrefix             = "feature.dynatrace.com/"
-	AutomaticRegistryKey = FFPrefix + "automatic-registry"
+	AutomaticRegistryKey = FFPrefix + "use-public-registry"
 	NoProxyKey           = FFPrefix + "no-proxy"
 
 	UseEECLegacyMountsKey = FFPrefix + "use-eec-legacy-mounts"

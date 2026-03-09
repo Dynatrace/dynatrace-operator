@@ -11,7 +11,7 @@ const (
 	CustomImageVersionSource       VersionSource = "custom-image"
 	CustomVersionVersionSource     VersionSource = "custom-version"
 	PublicRegistryVersionSource    VersionSource = "public-registry"
-	AutomaticRegistryVersionSource VersionSource = "use-public-registry"
+	AutomaticRegistryVersionSource VersionSource = "automatic-registry"
 
 	ImmutableImageType = "immutable"
 )

@@ -468,7 +468,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 		})
 	})
 
-	t.Run("is allowed when spec with cloudNative, csi driver and node image pull enabled and image not set and automatic-registry ff is enabled", func(t *testing.T) {
+	t.Run("is allowed when spec with cloudNative, csi driver and node image pull enabled and image not set and use-public-registry ff is enabled", func(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
