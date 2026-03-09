@@ -597,5 +597,4 @@ func TestIsInstalled(t *testing.T) {
 		installed := IsInstalled(t.Context(), fakeClient)
 		assert.True(t, installed)
 	})
-
 }

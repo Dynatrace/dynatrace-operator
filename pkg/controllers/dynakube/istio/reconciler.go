@@ -3,7 +3,6 @@ package istio
 import (
 	"context"
 	goerrors "errors"
-	"fmt"
 	"net"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -32,13 +31,6 @@ const (
 
 	ActiveGateComponent     = "activegate"
 	activeGateConditionName = "ActiveGate"
-
-	istioGVRName    = "networking.istio.io"
-	istioGVRVersion = "v1beta1"
-)
-
-var (
-	istioGVR = fmt.Sprintf("%s/%s", istioGVRName, istioGVRVersion)
 )
 
 // Reconciler holds the shared logic for managing istio ServiceEntry
@@ -322,7 +314,9 @@ func IsInstalled(ctx context.Context, apiReader client.Reader) bool {
 	vs := &istiov1beta1.VirtualService{}
 	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, vs); err != nil {
 		discoveryFailed := new(apiutil.ErrResourceDiscoveryFailed)
+
 		return !errors.As(err, &discoveryFailed)
 	}
+
 	return true
 }
