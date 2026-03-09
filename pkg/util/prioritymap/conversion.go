@@ -1,8 +1,8 @@
 package prioritymap
 
 import (
+	"cmp"
 	"fmt"
-	"sort"
 
 	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
@@ -46,8 +46,8 @@ func (m Map) AsKeyValueStrings() []string {
 	valStrings := make([]string, 0)
 
 	for _, key := range keys {
-		sort.SliceStable(m.entries[key], func(i, j int) bool {
-			return m.entries[key][i].priority < m.entries[key][j].priority
+		slices.SortStableFunc(m.entries[key], func(a, b entry) int {
+			return cmp.Compare(a.priority, b.priority)
 		})
 
 		for _, entry := range m.entries[key] {

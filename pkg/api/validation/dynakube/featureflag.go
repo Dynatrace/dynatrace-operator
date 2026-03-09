@@ -20,11 +20,11 @@ var deprecatedFeatureFlags = []string{
 }
 
 func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	results := strings.Builder{}
+	var results strings.Builder
 
 	for _, flag := range deprecatedFeatureFlags {
 		if dk.Annotations != nil && dk.Annotations[flag] != "" {
-			results.WriteString(fmt.Sprintf(warningFeatureFlagDeprecated, flag))
+			fmt.Fprintf(&results, warningFeatureFlagDeprecated, flag)
 		}
 	}
 

@@ -158,14 +158,14 @@ func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCo
 	if err := json.Unmarshal(response, &se); err != nil {
 		var sb strings.Builder
 
-		sb.WriteString(fmt.Sprintf("server returned status code %d", statusCode))
+		fmt.Fprintf(&sb, "server returned status code %d", statusCode)
 
 		if proxy != "" {
-			sb.WriteString(fmt.Sprintf(" (via proxy %s)", proxy))
+			fmt.Fprintf(&sb, " (via proxy %s)", proxy)
 		}
 
 		responseLen := min(getMaxResponseLen(), len(response))
-		sb.WriteString(fmt.Sprintf("; can't unmarshal response (content-type: %s): %s", contentType, response[:responseLen]))
+		fmt.Fprintf(&sb, "; can't unmarshal response (content-type: %s): %s", contentType, response[:responseLen])
 
 		return errors.New(sb.String())
 	}
