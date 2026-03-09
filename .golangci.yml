@@ -128,6 +128,7 @@ linters:
       excludes:
         - G101
         - G305
+        - G117
     govet:
       disable:
         - fieldalignment
@@ -265,6 +266,8 @@ linters:
           disabled: true
         - name: enforce-switch-style
           disabled: true
+        - name: package-naming
+          disabled: true
     importas:
       no-unaliased: true
       alias:
@@ -304,6 +307,7 @@ linters:
           - wsl_v5
           - dupl
           - govet
+          - prealloc
         path: _(test|gen)\.go
       - linters:
           - govet
@@ -318,6 +322,10 @@ linters:
       - linters:
           - gosec
         path: pkg/ingestendpoint/secret_test.go
+      - text: G120
+        path: pkg/clients/dynatrace/dynatrace_client_test.go
+      - text: G120
+        path: test/benchmarks/nodes_controller/config_test.go
       - linters:
           - unparam
         text: always receives
@@ -330,8 +338,6 @@ linters:
     paths:
       - pkg/api/v1alpha1/dynakube
       - pkg/api/v1alpha1/edgeconnect
-      - pkg/api/v1beta1/dynakube
-      - pkg/api/v1beta2/dynakube
       - pkg/api/v1beta3/dynakube
       - pkg/api/v1beta4/dynakube
       - pkg/api/v1beta5/dynakube
