@@ -362,7 +362,7 @@ func TestProcessModuleConfig_AddProxy(t *testing.T) {
 }
 
 func TestProcessModuleConfig_AddNoProxy(t *testing.T) {
-	const NoProxy = "dummy-proxy"
+	const noProxy = "dummy-proxy"
 
 	type fields struct {
 		Revision   uint
@@ -386,7 +386,7 @@ func TestProcessModuleConfig_AddNoProxy(t *testing.T) {
 				Properties: []ProcessModuleProperty{},
 			},
 			args: args{
-				noProxy: NoProxy,
+				noProxy: noProxy,
 			},
 			want: &ProcessModuleConfig{
 				Revision: 0,
@@ -394,7 +394,7 @@ func TestProcessModuleConfig_AddNoProxy(t *testing.T) {
 					{
 						Section: generalSectionName,
 						Key:     "noProxy",
-						Value:   NoProxy,
+						Value:   noProxy,
 					},
 				},
 			},

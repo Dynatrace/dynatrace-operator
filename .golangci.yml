@@ -329,8 +329,7 @@ linters:
       - linters:
           - unparam
         text: always receives
-      - linters:
-          - revive
+      - text: argument-limit
         path: pkg/clients/dynatrace
       - linters:
           - godot

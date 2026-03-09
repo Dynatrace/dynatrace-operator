@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"sort"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
@@ -147,8 +148,8 @@ func (pmc ProcessModuleConfig) ToMap() ConfMap {
 }
 
 func (pmc *ProcessModuleConfig) SortPropertiesByKey() {
-	sort.Slice(pmc.Properties, func(i, j int) bool {
-		return pmc.Properties[i].Key < pmc.Properties[j].Key
+	slices.SortFunc(pmc.Properties, func(a, b ProcessModuleProperty) int {
+		return strings.Compare(a.Key, b.Key)
 	})
 }
 
