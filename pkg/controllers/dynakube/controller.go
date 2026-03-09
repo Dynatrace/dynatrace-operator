@@ -116,6 +116,10 @@ type apiMonitoringReconciler interface {
 	Reconcile(ctx context.Context, dtc settings.APIClient, clusterLabel string, dk *dynakube.DynaKube) error
 }
 
+type istioReconciler interface {
+	ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 type dynakubeReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
@@ -140,7 +144,7 @@ type Controller struct {
 	otelcReconciler              dynakubeReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
-	istioReconciler              istio.Interface
+	istioReconciler              istioReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config

@@ -22,11 +22,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type istioReconciler interface {
+	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 type Reconciler struct {
 	client                    client.Client
 	apiReader                 client.Reader
 	dk                        *dynakube.DynaKube
-	istioReconciler           istio.Interface
+	istioReconciler           istioReconciler
 	versionReconciler         version.Reconciler
 	connectionInfoReconciler  controllers.Reconciler
 	enrichmentRulesReconciler controllers.Reconciler

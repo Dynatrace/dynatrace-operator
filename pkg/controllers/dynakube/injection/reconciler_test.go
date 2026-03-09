@@ -15,7 +15,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -26,7 +25,6 @@ import (
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	istiomock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/istio"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -787,8 +785,8 @@ func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 	return versionReconciler
 }
 
-func createIstioReconcilerMock(t *testing.T, dk *dynakube.DynaKube) istio.Interface {
-	rec := istiomock.NewInterface(t)
+func createIstioReconcilerMock(t *testing.T, dk *dynakube.DynaKube) istioReconciler {
+	rec := newMockIstioReconciler(t)
 
 	rec.EXPECT().ReconcileCodeModules(t.Context(), dk).Return(nil).Once()
 

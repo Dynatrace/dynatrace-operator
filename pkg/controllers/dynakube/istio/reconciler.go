@@ -47,11 +47,6 @@ type Reconciler struct {
 	serviceEntry   k8sserviceentry.QueryObject
 	virtualService k8svirtualservice.QueryObject
 }
-type Interface interface {
-	ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube) error
-	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
-	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
-}
 
 func NewReconciler(kubeClient client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{

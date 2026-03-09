@@ -18,12 +18,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	istiomock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/istio"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -87,7 +85,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			client:               fakeClient,
 			apiReader:            fakeClient,
 			authTokenReconciler:  mockGenericReconcileOnce(t),
-			istioReconciler:      mockIstioReconciler(t),
+			istioReconciler:      createIstioReconcilerMock(t),
 			connectionReconciler: mockGenericReconcileOnce(t),
 			versionReconciler:    mockVersionReconcileOnce(t),
 			pullSecretReconciler: mockGenericReconcileOnce(t),
@@ -120,7 +118,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			client:               fakeClient,
 			apiReader:            fakeClient,
 			authTokenReconciler:  mockGenericReconcileOnce(t),
-			istioReconciler:      mockIstioReconciler(t),
+			istioReconciler:      createIstioReconcilerMock(t),
 			connectionReconciler: mockGenericReconcileOnce(t),
 			versionReconciler:    mockVersionReconcileOnce(t),
 			pullSecretReconciler: mockGenericReconcileOnce(t),
@@ -148,7 +146,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, true), nil).(*Reconciler)
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
-		r.istioReconciler = mockIstioReconciler(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
 
 		err := r.Reconcile(t.Context())
@@ -166,7 +164,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk.Spec.ActiveGate = activegate.Spec{}
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
-		r.istioReconciler = mockIstioReconciler(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
 		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -206,7 +204,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			pullSecretReconciler: mockGenericReconcileOnce(t),
 			connectionReconciler: mockGenericReconcileOnce(t),
 			versionReconciler:    mockVersionReconcileOnce(t),
-			istioReconciler:      mockIstioReconciler(t),
+			istioReconciler:      createIstioReconcilerMock(t),
 		}
 		setupCapabilityReconcile(t, proxyReconciler)
 		err := proxyReconciler.Reconcile(t.Context())
@@ -220,7 +218,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			pullSecretReconciler: mockGenericReconcileOnce(t),
 			connectionReconciler: mockGenericReconcileOnce(t),
 			versionReconciler:    mockVersionReconcileOnce(t),
-			istioReconciler:      mockIstioReconciler(t),
+			istioReconciler:      createIstioReconcilerMock(t),
 		}
 		setupCapabilityReconcile(t, noProxyReconciler)
 		err = noProxyReconciler.Reconcile(t.Context())
@@ -247,7 +245,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
-		r.istioReconciler = mockIstioReconciler(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -284,7 +282,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.connectionReconciler = controllermock.NewReconciler(t)
 		r.versionReconciler = versionmock.NewReconciler(t)
 		r.pullSecretReconciler = controllermock.NewReconciler(t)
-		r.istioReconciler = istiomock.NewInterface(t)
+		r.istioReconciler = newMockIstioReconciler(t)
 
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -314,7 +312,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
-		r.istioReconciler = mockIstioReconciler(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -346,7 +344,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
-		r.istioReconciler = mockIstioReconciler(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -378,7 +376,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
-		r.istioReconciler = mockIstioReconciler(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -410,7 +408,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
-		r.istioReconciler = mockIstioReconciler(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -429,7 +427,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
-		r.istioReconciler = mockIstioReconciler(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
 
@@ -446,7 +444,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
-		r.istioReconciler = mockIstioReconciler(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
 
@@ -519,7 +517,7 @@ func TestServiceCreation(t *testing.T) {
 			reconciler.connectionReconciler = mockGenericReconcileOnce(t)
 			reconciler.versionReconciler = mockVersionReconcileOnce(t)
 			reconciler.pullSecretReconciler = mockGenericReconcileOnce(t)
-			reconciler.istioReconciler = mockIstioReconciler(t)
+			reconciler.istioReconciler = createIstioReconcilerMock(t)
 
 			dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
 				capName,
@@ -578,7 +576,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			pullSecretReconciler: mockGenericReconcileOnce(t),
 			connectionReconciler: mockGenericReconcileOnce(t),
 			versionReconciler:    mockVersionReconcileOnce(t),
-			istioReconciler:      mockIstioReconciler(t),
+			istioReconciler:      createIstioReconcilerMock(t),
 		}
 		setupCapabilityReconcile(t, r)
 		err := r.Reconcile(t.Context())
@@ -610,8 +608,8 @@ func mockVersionReconcileOnce(t *testing.T) version.Reconciler {
 	return versionReconciler
 }
 
-func mockIstioReconciler(t *testing.T) istio.Interface {
-	rec := istiomock.NewInterface(t)
+func createIstioReconcilerMock(t *testing.T) istioReconciler {
+	rec := newMockIstioReconciler(t)
 
 	rec.EXPECT().ReconcileActiveGate(t.Context(), anyDynakube).Return(nil).Once()
 

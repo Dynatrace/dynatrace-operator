@@ -29,12 +29,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type istioReconciler interface {
+	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 type Reconciler struct {
 	client                            client.Client
 	dk                                *dynakube.DynaKube
 	apiReader                         client.Reader
 	authTokenReconciler               controllers.Reconciler
-	istioReconciler                   istio.Interface
+	istioReconciler                   istioReconciler
 	connectionReconciler              controllers.Reconciler
 	versionReconciler                 version.Reconciler
 	pullSecretReconciler              controllers.Reconciler
