@@ -29,7 +29,6 @@ tests:
                 - ""
               resources:
                 - secrets
-                - pods
                 - configmaps
               verbs:
                 - get
@@ -72,7 +71,6 @@ tests:
                 - ""
               resources:
                 - secrets
-                - pods
                 - configmaps
               verbs:
                 - get
