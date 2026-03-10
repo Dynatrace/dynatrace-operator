@@ -1,6 +1,8 @@
 package dynakube
 
 import (
+	"math"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -14,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
-	"math"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -92,13 +93,13 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = toHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
 		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.ClassicFullStack.AutoUpdate)
-		src.migrateOAMaxUnavailableToRollingUpdate(dst, &dst.Spec.OneAgent.ClassicFullStack.RollingUpdate)
+		src.migrateOAMaxUnavailableToRollingUpdate(&dst.Spec.OneAgent.ClassicFullStack.RollingUpdate)
 	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &oneagentlatest.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *toHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
 		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.CloudNativeFullStack.AutoUpdate)
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
-		src.migrateOAMaxUnavailableToRollingUpdate(dst, &dst.Spec.OneAgent.CloudNativeFullStack.RollingUpdate)
+		src.migrateOAMaxUnavailableToRollingUpdate(&dst.Spec.OneAgent.CloudNativeFullStack.RollingUpdate)
 	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &oneagentlatest.ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
@@ -106,7 +107,7 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = toHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
 		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.HostMonitoring.AutoUpdate)
-		src.migrateOAMaxUnavailableToRollingUpdate(dst, &dst.Spec.OneAgent.HostMonitoring.RollingUpdate)
+		src.migrateOAMaxUnavailableToRollingUpdate(&dst.Spec.OneAgent.HostMonitoring.RollingUpdate)
 	}
 
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
@@ -114,9 +115,7 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 
 // migrateOAMaxUnavailableToRollingUpdate translates the deprecated OAMaxUnavailable feature-flag annotation to the
 // RollingUpdate.MaxUnavailable field when the user has not already set RollingUpdate explicitly.
-// The original annotation value is preserved in the internal conversion annotation so that ConvertFrom can detect it
-// and avoid translating rollingUpdate back to the older API version.
-func (src *DynaKube) migrateOAMaxUnavailableToRollingUpdate(dst *dynakubelatest.DynaKube, rollingUpdate **appsv1.RollingUpdateDaemonSet) {
+func (src *DynaKube) migrateOAMaxUnavailableToRollingUpdate(rollingUpdate **appsv1.RollingUpdateDaemonSet) {
 	if *rollingUpdate != nil {
 		// User already set rollingUpdate explicitly – do not override it.
 		return
@@ -139,8 +138,6 @@ func (src *DynaKube) migrateOAMaxUnavailableToRollingUpdate(dst *dynakubelatest.
 	*rollingUpdate = &appsv1.RollingUpdateDaemonSet{
 		MaxUnavailable: &maxUnavailable,
 	}
-
-	dst.RemovedFields().OAMaxUnavailable.Set(ptr.To(maxUnavailableVal))
 }
 
 func (src *DynaKube) toTemplatesSpec(dst *dynakubelatest.DynaKube) {
@@ -168,7 +165,7 @@ func (src *DynaKube) toLogMonitoringTemplate(dst *dynakubelatest.DynaKube, tmplS
 	result.Tolerations = tmplSrc.Tolerations
 	result.Args = tmplSrc.Args
 
-	src.migrateOAMaxUnavailableToRollingUpdate(dst, &result.RollingUpdate)
+	src.migrateOAMaxUnavailableToRollingUpdate(&result.RollingUpdate)
 
 	return result
 }

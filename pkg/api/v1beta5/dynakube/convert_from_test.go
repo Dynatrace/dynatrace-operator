@@ -252,9 +252,8 @@ func TestConvertFrom(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
-		// Simulate what ConvertTo would have written: annotation in ObjectMeta + OAMaxUnavailable in RemovedFields
+		// The annotation survives on ObjectMeta
 		from.Annotations[exp.OAMaxUnavailableKey] = "3" //nolint:staticcheck
-		from.RemovedFields().OAMaxUnavailable.Set(ptr.To(3))
 		maxUnavailable := intstr.FromInt32(int32(3))
 		from.Spec.OneAgent.HostMonitoring.RollingUpdate = &appsv1.RollingUpdateDaemonSet{
 			MaxUnavailable: &maxUnavailable,
