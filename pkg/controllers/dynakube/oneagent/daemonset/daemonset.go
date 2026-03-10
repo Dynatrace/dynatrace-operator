@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
@@ -193,9 +194,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 				},
 				Spec: podSpec,
 			},
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				RollingUpdate: b.hostInjectSpec.RollingUpdate,
-			},
+			UpdateStrategy: b.updateStrategy(),
 		},
 	}
 
@@ -378,6 +377,22 @@ func (b *builder) resources() corev1.ResourceRequirements {
 	}
 
 	return resources
+}
+
+func (b *builder) updateStrategy() appsv1.DaemonSetUpdateStrategy {
+	maxUnavailable := intstr.FromInt(b.dk.FF().GetOneAgentMaxUnavailable())
+
+	us := appsv1.DaemonSetUpdateStrategy{
+		RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+			MaxUnavailable: &maxUnavailable,
+		},
+	}
+
+	if b.hostInjectSpec.RollingUpdate != nil {
+		us.RollingUpdate = b.hostInjectSpec.RollingUpdate
+	}
+
+	return us
 }
 
 func (b *builder) oneAgentResource() corev1.ResourceRequirements {

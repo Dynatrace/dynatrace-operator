@@ -685,7 +685,7 @@ func TestPriorityClass(t *testing.T) {
 }
 
 func TestUpdateStrategy(t *testing.T) {
-	t.Run("returns nil update strategy if not specified in hostInjectSpec", func(t *testing.T) {
+	t.Run("returns update strategy defined by default value of feature-flag oneagent-max-unavailable", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
@@ -696,8 +696,11 @@ func TestUpdateStrategy(t *testing.T) {
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
 		daemonset, err := dsBuilder.BuildDaemonSet()
 
+		expected := intstr.FromInt32(int32(dk.FF().GetOneAgentMaxUnavailable()))
+
 		require.NoError(t, err)
-		assert.Nil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
+		assert.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
+		assert.Equal(t, expected, *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
 	})
 	t.Run("returns update strategy", func(t *testing.T) {
 		maxUnavailable := intstr.FromInt32(4)
