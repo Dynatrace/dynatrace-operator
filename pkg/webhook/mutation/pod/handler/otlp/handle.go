@@ -79,13 +79,14 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 				return err
 			}
 		}
-	}
 
-	annotations.SetInjected(
-		mutationRequest,
-		dtwebhook.AnnotationOTLPInjected,
-		dtwebhook.AnnotationOTLPReason,
-	)
+		// Set injected annotation only after successful injection
+		annotations.SetInjected(
+			mutationRequest,
+			dtwebhook.AnnotationOTLPInjected,
+			dtwebhook.AnnotationOTLPReason,
+		)
+	}
 
 	log.Debug("OTLP injection finished", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
