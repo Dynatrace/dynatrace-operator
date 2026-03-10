@@ -41,8 +41,8 @@ import (
 )
 
 const (
-	fastUpdateInterval    = 1 * time.Minute
-	defaultUpdateInterval = 30 * time.Minute
+	fastRequeueInterval    = 1 * time.Minute
+	defaultRequeueInterval = 15 * time.Minute
 
 	controllerName = "edgeconnect-controller"
 	finalizerName  = "server"
@@ -236,7 +236,7 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, ec *edge
 
 			_log.Debug("reconcileEdgeConnect status update error")
 
-			return reconcile.Result{RequeueAfter: fastUpdateInterval}, retErr
+			return reconcile.Result{RequeueAfter: fastRequeueInterval}, retErr
 		}
 	}
 
@@ -248,7 +248,7 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, ec *edge
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{RequeueAfter: defaultUpdateInterval}, nil
+	return reconcile.Result{RequeueAfter: defaultRequeueInterval}, nil
 }
 
 func (controller *Controller) reconcileEdgeConnectCR(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
