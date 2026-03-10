@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
@@ -166,7 +165,6 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		appLabels.BuildLabels(),
 		b.hostInjectSpec.Labels,
 	)
-	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable())
 
 	templateAnnotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
@@ -196,9 +194,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 				Spec: podSpec,
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: &maxUnavailable,
-				},
+				RollingUpdate: b.hostInjectSpec.RollingUpdate,
 			},
 		},
 	}

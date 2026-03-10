@@ -18,9 +18,11 @@ import (
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
@@ -679,6 +681,48 @@ func TestPriorityClass(t *testing.T) {
 		priorityClassName := dsBuilder.priorityClassName()
 
 		assert.Equal(t, testName, priorityClassName)
+	})
+}
+
+func TestUpdateStrategy(t *testing.T) {
+	t.Run("returns nil update strategy if not specified in hostInjectSpec", func(t *testing.T) {
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+			},
+		}
+		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		daemonset, err := dsBuilder.BuildDaemonSet()
+
+		assert.NoError(t, err)
+		assert.Nil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
+
+	})
+	t.Run("returns update strategy", func(t *testing.T) {
+		maxUnavailable := intstr.FromInt32(4)
+		maxSurge := intstr.FromString("40%")
+
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{
+						RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+							MaxUnavailable: &maxUnavailable,
+							MaxSurge:       &maxSurge,
+						},
+					},
+				},
+			},
+		}
+		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		daemonset, err := dsBuilder.BuildDaemonSet()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
+		assert.Equal(t, &maxUnavailable, daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, &maxSurge, daemonset.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
 	})
 }
 
