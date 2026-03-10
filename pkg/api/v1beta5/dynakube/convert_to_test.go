@@ -259,6 +259,96 @@ func TestConvertTo(t *testing.T) {
 		assert.Equal(t, from.Spec.TelemetryIngest.ServiceName, to.Spec.TelemetryIngest.ServiceName)
 		assert.Equal(t, from.Spec.TelemetryIngest.TLSRefName, to.Spec.TelemetryIngest.TLSRefName)
 	})
+
+	t.Run("migrate OAMaxUnavailable annotation to RollingUpdate for host-monitoring", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Annotations[exp.OAMaxUnavailableKey] = "3" //nolint:staticcheck
+		hostSpec := getOldHostInjectSpec()
+		from.Spec.OneAgent.HostMonitoring = &hostSpec
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		require.NotNil(t, to.Spec.OneAgent.HostMonitoring.RollingUpdate)
+		require.NotNil(t, to.Spec.OneAgent.HostMonitoring.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, intstr.FromInt32(int32(3)), *to.Spec.OneAgent.HostMonitoring.RollingUpdate.MaxUnavailable)
+		require.NotNil(t, to.RemovedFields().OAMaxUnavailable.Get())
+		assert.Equal(t, 3, *to.RemovedFields().OAMaxUnavailable.Get())
+	})
+
+	t.Run("migrate OAMaxUnavailable annotation to RollingUpdate for cloud-native-fullstack", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Annotations[exp.OAMaxUnavailableKey] = "2" //nolint:staticcheck
+		cnSpec := getOldCloudNativeSpec()
+		from.Spec.OneAgent.CloudNativeFullStack = &cnSpec
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		require.NotNil(t, to.Spec.OneAgent.CloudNativeFullStack.RollingUpdate)
+		require.NotNil(t, to.Spec.OneAgent.CloudNativeFullStack.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, intstr.FromInt32(int32(2)), *to.Spec.OneAgent.CloudNativeFullStack.RollingUpdate.MaxUnavailable)
+		require.NotNil(t, to.RemovedFields().OAMaxUnavailable.Get())
+		assert.Equal(t, 2, *to.RemovedFields().OAMaxUnavailable.Get())
+	})
+
+	t.Run("migrate OAMaxUnavailable annotation to RollingUpdate for log-monitoring template", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Annotations[exp.OAMaxUnavailableKey] = "4" //nolint:staticcheck
+		from.Spec.Templates.LogMonitoring = getOldLogMonitoringTemplateSpec()
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		require.NotNil(t, to.Spec.Templates.LogMonitoring)
+		require.NotNil(t, to.Spec.Templates.LogMonitoring.RollingUpdate)
+		require.NotNil(t, to.Spec.Templates.LogMonitoring.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, intstr.FromInt(4), *to.Spec.Templates.LogMonitoring.RollingUpdate.MaxUnavailable)
+		require.NotNil(t, to.RemovedFields().OAMaxUnavailable.Get())
+		assert.Equal(t, 4, *to.RemovedFields().OAMaxUnavailable.Get())
+	})
+
+	t.Run("do not migrate OAMaxUnavailable to RollingUpdate for log-monitoring template when absent", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Spec.Templates.LogMonitoring = getOldLogMonitoringTemplateSpec()
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		require.NotNil(t, to.Spec.Templates.LogMonitoring)
+		assert.Nil(t, to.Spec.Templates.LogMonitoring.RollingUpdate)
+	})
+
+	t.Run("do not migrate OAMaxUnavailable annotation when set to default value (1)", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Annotations[exp.OAMaxUnavailableKey] = "1" //nolint:staticcheck
+		hostSpec := getOldHostInjectSpec()
+		from.Spec.OneAgent.HostMonitoring = &hostSpec
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring.RollingUpdate)
+		assert.Nil(t, to.RemovedFields().OAMaxUnavailable.Get())
+	})
+
+	t.Run("do not migrate OAMaxUnavailable annotation when absent", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		hostSpec := getOldHostInjectSpec()
+		from.Spec.OneAgent.HostMonitoring = &hostSpec
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring.RollingUpdate)
+		assert.Nil(t, to.RemovedFields().OAMaxUnavailable.Get())
+	})
 }
 
 func getTestNamespaceSelector() metav1.LabelSelector {

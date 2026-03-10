@@ -247,6 +247,69 @@ func TestConvertFrom(t *testing.T) {
 
 		assert.Equal(t, to.Spec.OneAgent.HostGroup, from.Spec.OneAgent.HostGroup)
 	})
+
+	t.Run("OAMaxUnavailable annotation preserved in ObjectMeta when converting from latest to v1beta5", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		hostSpec := getNewHostInjectSpec()
+		from.Spec.OneAgent.HostMonitoring = &hostSpec
+		// Simulate what ConvertTo would have written: annotation in ObjectMeta + OAMaxUnavailable in RemovedFields
+		from.Annotations[exp.OAMaxUnavailableKey] = "3" //nolint:staticcheck
+		from.RemovedFields().OAMaxUnavailable.Set(ptr.To(3))
+		maxUnavailable := intstr.FromInt32(int32(3))
+		from.Spec.OneAgent.HostMonitoring.RollingUpdate = &appsv1.RollingUpdateDaemonSet{
+			MaxUnavailable: &maxUnavailable,
+		}
+
+		to := DynaKube{}
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		// The annotation must still be present in v1beta5 ObjectMeta
+		assert.Equal(t, "3", to.Annotations[exp.OAMaxUnavailableKey]) //nolint:staticcheck
+		// v1beta5 HostInjectSpec has no RollingUpdate field – nothing to assert
+	})
+
+	t.Run("full round-trip: v1beta5 annotation -> latest RollingUpdate -> v1beta5 annotation preserved", func(t *testing.T) {
+		original := getOldDynakubeBase()
+		original.Annotations[exp.OAMaxUnavailableKey] = "3" //nolint:staticcheck
+		hostSpec := getOldHostInjectSpec()
+		original.Spec.OneAgent.HostMonitoring = &hostSpec
+
+		latest := dynakubelatest.DynaKube{}
+		err := original.ConvertTo(&latest)
+		require.NoError(t, err)
+
+		require.NotNil(t, latest.Spec.OneAgent.HostMonitoring.RollingUpdate)
+		assert.Equal(t, intstr.FromInt32(int32(3)), *latest.Spec.OneAgent.HostMonitoring.RollingUpdate.MaxUnavailable)
+
+		roundTripped := DynaKube{}
+		err = roundTripped.ConvertFrom(&latest)
+		require.NoError(t, err)
+
+		// Original annotation must survive the round-trip
+		assert.Equal(t, "3", roundTripped.Annotations[exp.OAMaxUnavailableKey]) //nolint:staticcheck
+	})
+
+	t.Run("full round-trip: v1beta5 log-monitoring annotation -> latest RollingUpdate -> v1beta5 annotation preserved", func(t *testing.T) {
+		original := getOldDynakubeBase()
+		original.Annotations[exp.OAMaxUnavailableKey] = "4" //nolint:staticcheck
+		original.Spec.Templates.LogMonitoring = getOldLogMonitoringTemplateSpec()
+
+		latest := dynakubelatest.DynaKube{}
+		err := original.ConvertTo(&latest)
+		require.NoError(t, err)
+
+		require.NotNil(t, latest.Spec.Templates.LogMonitoring)
+		require.NotNil(t, latest.Spec.Templates.LogMonitoring.RollingUpdate)
+		assert.Equal(t, intstr.FromInt32(int32(4)), *latest.Spec.Templates.LogMonitoring.RollingUpdate.MaxUnavailable)
+
+		roundTripped := DynaKube{}
+		err = roundTripped.ConvertFrom(&latest)
+		require.NoError(t, err)
+
+		// Original annotation must survive the round-trip
+		assert.Equal(t, "4", roundTripped.Annotations[exp.OAMaxUnavailableKey]) //nolint:staticcheck
+	})
 }
 
 func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
@@ -768,6 +831,7 @@ func getPersistentVolumeClaimSpec() *corev1.PersistentVolumeClaimSpec {
 }
 
 func getNewLogMonitoringTemplateSpec() *logmonitoringlatest.TemplateSpec {
+	maxUnavailable := intstr.FromString("10%")
 	return &logmonitoringlatest.TemplateSpec{
 		Labels: map[string]string{
 			"logagent-label-key1": "logagent-label-value1",
@@ -799,6 +863,9 @@ func getNewLogMonitoringTemplateSpec() *logmonitoringlatest.TemplateSpec {
 				Name:    "claim-name",
 				Request: "claim-request",
 			}},
+		},
+		RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+			MaxUnavailable: &maxUnavailable,
 		},
 		Tolerations: []corev1.Toleration{
 			{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
