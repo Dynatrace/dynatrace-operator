@@ -15,7 +15,7 @@ func setupWebhookWithManager(mgr ctrl.Manager, obj runtime.Object, validator adm
 }
 
 func SetupWebhookWithManager(mgr ctrl.Manager) error {
-	validator := New(mgr.GetAPIReader(), mgr.GetConfig())
+	validator := New(mgr.GetAPIReader())
 
 	if err := setupWebhookWithManager(mgr, &v1beta3.DynaKube{}, validator); err != nil {
 		return err

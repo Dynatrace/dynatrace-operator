@@ -28,7 +28,7 @@ func WaitForCutOffCurlPod(podName, namespaceName string) features.Func {
 	return k8spod.WaitForCondition(podName, namespaceName, func(object k8s.Object) bool {
 		pod, isPod := object.(*corev1.Pod)
 		// If probe fails we don't have internet, so we achieve waiting condition
-		return isPod && !pod.Status.ContainerStatuses[0].Ready
+		return isPod && len(pod.Status.ContainerStatuses) > 0 && !pod.Status.ContainerStatuses[0].Ready
 	}, connectionTimeout*2*time.Second)
 }
 

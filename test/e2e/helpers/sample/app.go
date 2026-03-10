@@ -357,7 +357,7 @@ func (app *App) asDeployment() *appsv1.Deployment {
 	}
 }
 
-func (app *App) GetPods(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.PodList {
+func (app *App) ListPods(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.PodList {
 	if app.isDeployment {
 		replica := k8sreplicaset.GetForOwner(ctx, t, resource, app.Name(), app.Namespace())
 		require.NotNil(t, replica)
@@ -371,10 +371,17 @@ func (app *App) GetPods(ctx context.Context, t *testing.T, resource *resources.R
 	return corev1.PodList{Items: []corev1.Pod{pod}}
 }
 
+func (app *App) GetPod(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.Pod {
+	pods := app.ListPods(ctx, t, resource)
+	require.NotEmpty(t, pods.Items)
+
+	return pods.Items[0]
+}
+
 func (app *App) Restart() features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		pods := app.GetPods(ctx, t, resource)
+		pods := app.ListPods(ctx, t, resource)
 
 		deletePods(t, ctx, pods, resource)
 

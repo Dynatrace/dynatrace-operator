@@ -3,16 +3,18 @@ package istio
 import (
 	"context"
 	goerrors "errors"
-	"fmt"
 	"net"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sserviceentry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8svirtualservice"
 	"github.com/pkg/errors"
+	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -20,47 +22,48 @@ var (
 )
 
 const (
-	OperatorComponent = "operator"
+	OperatorComponent     = "operator"
+	operatorConditionName = "Operator"
 
 	CodeModuleComponent     = "oneagent"
 	codeModuleConditionName = "OneAgent"
 
 	ActiveGateComponent     = "activegate"
 	activeGateConditionName = "ActiveGate"
-
-	IstioGVRName    = "networking.istio.io"
-	IstioGVRVersion = "v1beta1"
 )
 
-var (
-	IstioGVR = fmt.Sprintf("%s/%s", IstioGVRName, IstioGVRVersion)
-)
-
-type Reconciler interface {
-	ReconcileAPIUrl(ctx context.Context, dk *dynakube.DynaKube) error
-	ReconcileCodeModuleCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error
-	ReconcileActiveGateCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error
+// Reconciler holds the shared logic for managing istio ServiceEntry
+// and VirtualService objects for a given set of communication hosts.
+type Reconciler struct {
+	serviceEntry   k8sserviceentry.QueryObject
+	virtualService k8svirtualservice.QueryObject
 }
 
-type reconciler struct {
-	client       *Client
-	timeProvider *timeprovider.Provider
-}
-
-type ReconcilerBuilder func(istio *Client) Reconciler
-
-func NewReconciler(istio *Client) Reconciler {
-	return &reconciler{
-		client:       istio,
-		timeProvider: timeprovider.New(),
+func NewReconciler(kubeClient client.Client, apiReader client.Reader) *Reconciler {
+	return &Reconciler{
+		serviceEntry:   k8sserviceentry.Query(kubeClient, apiReader, log),
+		virtualService: k8svirtualservice.Query(kubeClient, apiReader, log),
 	}
 }
-
-func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling istio components for the Dynatrace API url")
 
 	if dk == nil {
 		return errors.New("can't reconcile api url of nil dynakube")
+	}
+
+	if !dk.Spec.EnableIstio {
+		if isIstioConfigured(dk, OperatorComponent) {
+			err := r.cleanupIstio(ctx, dk, OperatorComponent)
+			if err != nil {
+				// We don't error out here to avoid stuck reconciliations in case cleanup fails
+				log.Error(err, "failed to cleanup the istio configuration", "component", OperatorComponent)
+			}
+
+			meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(operatorConditionName))
+		}
+
+		return nil
 	}
 
 	apiCommunicationHost, err := NewCommunicationHost(dk.Spec.APIURL)
@@ -68,17 +71,19 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dk *dynakube.DynaKube)
 		return err
 	}
 
-	err = r.reconcileCommunicationHosts(ctx, []CommunicationHost{apiCommunicationHost}, OperatorComponent)
+	err = r.reconcileCommunicationHosts(ctx, []CommunicationHost{apiCommunicationHost}, dk, OperatorComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	}
 
 	log.Info("reconciled istio objects for API url")
 
+	setServiceEntryUpdatedConditionForComponent(dk.Conditions(), operatorConditionName)
+
 	return nil
 }
 
-func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
 
 	if dk == nil {
@@ -87,11 +92,11 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 
 	migrateDeprecatedCondition(dk.Conditions())
 
-	if !dk.OneAgent().IsAppInjectionNeeded() {
+	if !dk.Spec.EnableIstio || !dk.OneAgent().IsAppInjectionNeeded() {
 		if isIstioConfigured(dk, codeModuleConditionName) {
 			log.Info("appinjection disabled, cleaning up")
 
-			err := r.cleanupIstio(ctx, CodeModuleComponent)
+			err := r.cleanupIstio(ctx, dk, CodeModuleComponent)
 			if err != nil {
 				// We don't error out here to avoid stuck reconciliations in case cleanup fails
 				log.Error(err, "failed to cleanup the istio configuration", "component", codeModuleConditionName)
@@ -110,7 +115,7 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 		return err
 	}
 
-	err = r.reconcileCommunicationHostsForComponent(ctx, oaCommunicationHosts, CodeModuleComponent)
+	err = r.reconcileCommunicationHostsForComponent(ctx, oaCommunicationHosts, dk, CodeModuleComponent)
 	if err != nil {
 		setServiceEntryFailedConditionForComponent(dk.Conditions(), codeModuleConditionName)
 
@@ -128,18 +133,18 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 	return nil
 }
 
-func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling istio components for activegate communication hosts")
 
 	if dk == nil {
 		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
-	if !dk.ActiveGate().IsEnabled() {
+	if !dk.Spec.EnableIstio || !dk.ActiveGate().IsEnabled() {
 		if isIstioConfigured(dk, activeGateConditionName) {
 			log.Info("activegate disabled, cleaning up")
 
-			err := r.cleanupIstio(ctx, ActiveGateComponent)
+			err := r.cleanupIstio(ctx, dk, ActiveGateComponent)
 			if err != nil {
 				// We don't error out here to avoid stuck reconciliations in case cleanup fails
 				log.Error(err, "failed to cleanup the istio configuration", "component", activeGateConditionName)
@@ -158,7 +163,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		return err
 	}
 
-	err = r.reconcileCommunicationHostsForComponent(ctx, agCommunicationHosts, ActiveGateComponent)
+	err = r.reconcileCommunicationHostsForComponent(ctx, agCommunicationHosts, dk, ActiveGateComponent)
 	if err != nil {
 		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName)
 
@@ -176,9 +181,9 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	return nil
 }
 
-func (r *reconciler) cleanupIstio(ctx context.Context, component string) error {
-	err1 := r.cleanupIPServiceEntry(ctx, component)
-	err2 := r.cleanupFQDNServiceEntry(ctx, component)
+func (r *Reconciler) cleanupIstio(ctx context.Context, owner client.Object, component string) error {
+	err1 := r.cleanupIPServiceEntry(ctx, owner, component)
+	err2 := r.cleanupFQDNServiceEntry(ctx, owner, component)
 
 	// try to clean up all entries even if one fails
 	return goerrors.Join(err1, err2)
@@ -190,8 +195,8 @@ func isIstioConfigured(dk *dynakube.DynaKube, conditionComponent string) bool {
 	return istioCondition != nil
 }
 
-func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []CommunicationHost, componentName string) error {
-	err := r.reconcileCommunicationHosts(ctx, comHosts, componentName)
+func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []CommunicationHost, owner client.Object, componentName string) error {
+	err := r.reconcileCommunicationHosts(ctx, comHosts, owner, componentName)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
 	}
@@ -201,11 +206,11 @@ func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context
 	return nil
 }
 
-func (r *reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts []CommunicationHost, component string) error {
+func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts []CommunicationHost, owner client.Object, component string) error {
 	ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
 
-	errIPServiceEntry := r.reconcileIPServiceEntry(ctx, ipHosts, component)
-	errFQDNServiceEntry := r.reconcileFQDNServiceEntry(ctx, fqdnHosts, component)
+	errIPServiceEntry := r.reconcileIPServiceEntry(ctx, ipHosts, owner, component)
+	errFQDNServiceEntry := r.reconcileFQDNServiceEntry(ctx, fqdnHosts, owner, component)
 
 	return goerrors.Join(errIPServiceEntry, errFQDNServiceEntry)
 }
@@ -222,8 +227,7 @@ func splitCommunicationHost(comHosts []CommunicationHost) (ipHosts, fqdnHosts []
 	return
 }
 
-func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []CommunicationHost, component string) error {
-	owner := r.client.Owner
+func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []CommunicationHost, owner client.Object, component string) error {
 	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 
 	if len(ipHosts) != 0 {
@@ -235,12 +239,12 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []Comm
 
 		serviceEntry := buildServiceEntryIPs(objectMeta, ipHosts)
 
-		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
+		_, err := r.serviceEntry.WithOwner(owner).CreateOrUpdate(ctx, serviceEntry)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := r.cleanupIPServiceEntry(ctx, component)
+		err := r.cleanupIPServiceEntry(ctx, owner, component)
 		if err != nil {
 			return err
 		}
@@ -249,14 +253,13 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []Comm
 	return nil
 }
 
-func (r *reconciler) cleanupIPServiceEntry(ctx context.Context, component string) error {
-	entryName := BuildNameForIPServiceEntry(r.client.Owner.GetName(), component)
+func (r *Reconciler) cleanupIPServiceEntry(ctx context.Context, owner client.Object, component string) error {
+	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 
-	return r.client.DeleteServiceEntry(ctx, entryName)
+	return r.serviceEntry.DeleteForNamespace(ctx, entryName, owner.GetNamespace())
 }
 
-func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []CommunicationHost, component string) error {
-	owner := r.client.Owner
+func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []CommunicationHost, owner client.Object, component string) error {
 	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 
 	if len(fqdnHosts) != 0 {
@@ -268,19 +271,19 @@ func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 
 		serviceEntry := buildServiceEntryFQDNs(objectMeta, fqdnHosts)
 
-		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
+		_, err := r.serviceEntry.WithOwner(owner).CreateOrUpdate(ctx, serviceEntry)
 		if err != nil {
 			return err
 		}
 
 		virtualService := buildVirtualService(objectMeta, fqdnHosts)
 
-		err = r.client.CreateOrUpdateVirtualService(ctx, virtualService)
+		_, err = r.virtualService.WithOwner(owner).CreateOrUpdate(ctx, virtualService)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := r.cleanupFQDNServiceEntry(ctx, component)
+		err := r.cleanupFQDNServiceEntry(ctx, owner, component)
 		if err != nil {
 			return err
 		}
@@ -289,11 +292,11 @@ func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 	return nil
 }
 
-func (r *reconciler) cleanupFQDNServiceEntry(ctx context.Context, component string) error {
-	entryName := BuildNameForFQDNServiceEntry(r.client.Owner.GetName(), component)
+func (r *Reconciler) cleanupFQDNServiceEntry(ctx context.Context, owner client.Object, component string) error {
+	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 
-	errServiceEntry := r.client.DeleteServiceEntry(ctx, entryName)
-	errVirtualService := r.client.DeleteVirtualService(ctx, entryName)
+	errServiceEntry := r.serviceEntry.DeleteForNamespace(ctx, entryName, owner.GetNamespace())
+	errVirtualService := r.virtualService.DeleteForNamespace(ctx, entryName, owner.GetNamespace())
 
 	return goerrors.Join(errServiceEntry, errVirtualService)
 }
@@ -304,4 +307,13 @@ func buildObjectMeta(name, namespace string, labels map[string]string) metav1.Ob
 		Namespace: namespace,
 		Labels:    labels,
 	}
+}
+
+func IsInstalled(ctx context.Context, apiReader client.Reader) bool {
+	vs := &istiov1beta1.VirtualService{}
+	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, vs); err != nil {
+		return !meta.IsNoMatchError(err)
+	}
+
+	return true
 }
