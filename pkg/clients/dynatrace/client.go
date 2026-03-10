@@ -192,8 +192,8 @@ func HostGroup(hostGroup string) Option {
 	}
 }
 
-func NamedClient(name string) Option {
+func UserAgentSuffix(suffix string) Option {
 	return func(c *dynatraceClient) {
-		c.name = name
+		c.userAgentSuffix = suffix
 	}
 }

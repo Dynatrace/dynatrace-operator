@@ -40,15 +40,6 @@ type ConfigV2 struct {
 // OptionV2 is a functional option for configuring the dtClient
 type OptionV2 func(*ConfigV2)
 
-// WithName sets a client identifier that will be appended to the user agent
-func WithName(name string) OptionV2 {
-	return func(c *ConfigV2) {
-		if name != "" {
-			c.UserAgent = operatorversion.UserAgent() + " " + name
-		}
-	}
-}
-
 // WithAPIToken sets the API token
 func WithAPIToken(token string) OptionV2 {
 	return func(c *ConfigV2) {
@@ -109,6 +100,15 @@ func WithNetworkZone(networkZone string) OptionV2 {
 func WithHostGroup(hostGroup string) OptionV2 {
 	return func(c *ConfigV2) {
 		c.HostGroup = hostGroup
+	}
+}
+
+// WithUserAgentSuffix sets a client identifier that will be appended to the user agent
+func WithUserAgentSuffix(suffix string) OptionV2 {
+	return func(c *ConfigV2) {
+		if suffix != "" {
+			c.UserAgent += " " + suffix
+		}
 	}
 }
 
@@ -178,7 +178,7 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 	// Fields are already validated by the v1 client constructor
 	v2, _ := newClientV2(
 		dtc.url,
-		WithName(dtc.name),
+		WithUserAgentSuffix(dtc.userAgentSuffix),
 		WithAPIToken(dtc.apiToken),
 		WithPaasToken(dtc.paasToken),
 		WithDataIngestToken(""),

@@ -35,7 +35,7 @@ type dynatraceClient struct {
 
 	hostGroup string
 
-	name string
+	userAgentSuffix string
 }
 
 type tokenType int

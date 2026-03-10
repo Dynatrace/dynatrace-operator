@@ -184,7 +184,7 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube
 	dynatraceClient, err := provisioner.dynatraceClientBuilder.
 		SetDynakube(dk).
 		SetTokens(tokens).
-		SetName("provisioner").
+		SetUserAgentSuffix("provisioner").
 		Build(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create Dynatrace client")
