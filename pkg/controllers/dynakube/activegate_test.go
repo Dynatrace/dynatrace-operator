@@ -42,7 +42,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		}
 
-		err := controller.reconcileActiveGate(t.Context(), dk, nil, nil)
+		err := controller.reconcileActiveGate(t.Context(), dk, nil)
 		require.NoError(t, err)
 	})
 	t.Run("no active-gate configured => active-gate reconcile returns error => returns error", func(t *testing.T) {
@@ -60,7 +60,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		}
 
-		err := controller.reconcileActiveGate(t.Context(), dk, nil, nil)
+		err := controller.reconcileActiveGate(t.Context(), dk, nil)
 		require.Error(t, err)
 		require.Equal(t, "failed to reconcile ActiveGate: BOOM", err.Error())
 	})
@@ -96,7 +96,7 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		mockClient := dtclientmock.NewClient(t)
 
-		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
+		err := controller.reconcileActiveGate(t.Context(), dk, mockClient)
 		require.NoError(t, err)
 	})
 	t.Run("reconcile automatic kubernetes api monitoring", func(t *testing.T) {
@@ -137,7 +137,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
 		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
 
-		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
+		err := controller.reconcileActiveGate(t.Context(), dk, mockClient)
 		require.NoError(t, err)
 	})
 	t.Run("reconcile automatic kubernetes api monitoring with custom cluster name", func(t *testing.T) {
@@ -181,7 +181,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
 		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
 
-		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
+		err := controller.reconcileActiveGate(t.Context(), dk, mockClient)
 		require.NoError(t, err)
 	})
 }

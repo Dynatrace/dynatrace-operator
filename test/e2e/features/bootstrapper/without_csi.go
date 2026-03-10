@@ -111,7 +111,7 @@ func NoCSI(t *testing.T) features.Feature {
 func checkInjection(deployment *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		samplePods := deployment.GetPods(ctx, t, resource)
+		samplePods := deployment.ListPods(ctx, t, resource)
 
 		require.NotNil(t, samplePods)
 

@@ -28,7 +28,7 @@ func SetConfigMapGenFailed(conditions *[]metav1.Condition, conditionType string,
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  ConfigMapGenerationFailed,
-		Message: "Failed to generate configmap: " + err.Error(),
+		Message: "Failed to generate configmap",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

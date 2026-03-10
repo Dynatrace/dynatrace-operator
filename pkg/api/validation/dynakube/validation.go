@@ -12,14 +12,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type Validator struct {
 	apiReader client.Reader
-	cfg       *rest.Config
 	modules   installconfig.Modules
 }
 
@@ -42,7 +40,7 @@ var (
 		conflictingOneAgentConfiguration,
 		conflictingOneAgentNodeSelector,
 		conflictingNamespaceSelector,
-		noResourcesAvailable,
+		isIstioNotInstalled,
 		imageFieldSetWithoutCSIFlag,
 		missingCodeModulesImage,
 		conflictingOneAgentVolumeStorageSettings,
@@ -76,7 +74,6 @@ var (
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,
-		logMonitoringWithoutK8SMonitoring,
 		noMappedHostPaths,
 		extensionsWithoutK8SMonitoring,
 		hostPathDatabaseVolumeFound,
@@ -90,10 +87,9 @@ var (
 type validatorFunc func(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string
 type updateValidatorFunc func(ctx context.Context, dv *Validator, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string
 
-func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.Object] {
+func New(apiReader client.Reader) admission.Validator[runtime.Object] {
 	return &Validator{
 		apiReader: apiReader,
-		cfg:       cfg,
 		modules:   installconfig.GetModules(),
 	}
 }

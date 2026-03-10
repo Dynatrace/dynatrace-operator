@@ -73,7 +73,7 @@ func AssessIstio(builder *features.FeatureBuilder, testDynakube dynakube.DynaKub
 func checkSampleAppIstioInitContainers(sampleApp sample.App, testDynakube dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		pods := sampleApp.GetPods(ctx, t, resources)
+		pods := sampleApp.ListPods(ctx, t, resources)
 		assertIstioInitContainer(t, pods, testDynakube)
 
 		return ctx

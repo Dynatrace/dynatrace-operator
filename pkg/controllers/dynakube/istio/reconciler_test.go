@@ -1,22 +1,24 @@
 package istio
 
 import (
-	"fmt"
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
-	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestSplitCommunicationHost(t *testing.T) {
@@ -49,63 +51,69 @@ func TestSplitCommunicationHost(t *testing.T) {
 }
 
 func TestReconcileIPServiceEntry(t *testing.T) {
-	ctx := t.Context()
 	component := "best-component"
-	dk := createTestDynaKube()
-
 	t.Run("empty communication host => delete if previously created", func(t *testing.T) {
+		ctx := t.Context()
+		dk := createTestDynaKube()
 		serviceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForIPServiceEntry(dk.Name, component),
 				Namespace: dk.Namespace,
 			},
 		}
-		fakeClient := fakeistio.NewSimpleClientset(serviceEntry)
-		istioClient := newTestingClient(fakeClient, dk.Namespace)
-		reconciler := NewReconciler(istioClient).(*reconciler)
+		fakeClient := fake.NewClientWithIndex(serviceEntry)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.reconcileIPServiceEntry(ctx, nil, component)
+		err := reconciler.reconcileIPServiceEntry(ctx, nil, dk, component)
 		require.NoError(t, err)
-		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(serviceEntry.Namespace).Get(ctx, serviceEntry.Name, metav1.GetOptions{})
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(serviceEntry), serviceEntry)
 		require.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("success", func(t *testing.T) {
-		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dk.Namespace)
-		reconciler := NewReconciler(istioClient).(*reconciler)
+		ctx := t.Context()
+		dk := createTestDynaKube()
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 		commHosts := []CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
-		err := reconciler.reconcileIPServiceEntry(ctx, commHosts, component)
+		err := reconciler.reconcileIPServiceEntry(ctx, commHosts, dk, component)
 		require.NoError(t, err)
 
-		expectedName := BuildNameForIPServiceEntry(dk.Name, component)
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.Namespace).Get(ctx, expectedName, metav1.GetOptions{})
+		expectedServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForIPServiceEntry(dk.Name, component),
+				Namespace: dk.Namespace,
+			},
+		}
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
+		assert.NotNil(t, expectedServiceEntry)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
-		fakeClient := fakeistio.NewSimpleClientset()
-		fakeClient.PrependReactor("*", "*", boomReaction)
+		ctx := t.Context()
+		dk := createTestDynaKube()
+		fakeClient := createFailK8sClient()
 
-		istioClient := newTestingClient(fakeClient, dk.Namespace)
-		reconciler := NewReconciler(istioClient).(*reconciler)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 		commHosts := []CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
-		err := reconciler.reconcileIPServiceEntry(ctx, commHosts, component)
+		err := reconciler.reconcileIPServiceEntry(ctx, commHosts, dk, component)
 		require.Error(t, err)
 	})
 }
 
 func TestReconcileFQDNServiceEntry(t *testing.T) {
-	ctx := t.Context()
 	component := "best-component"
-	owner := createTestDynaKube()
 
 	t.Run("empty communication host => delete if previously created", func(t *testing.T) {
+		ctx := t.Context()
+		owner := createTestDynaKube()
 		serviceEntry := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
@@ -118,150 +126,185 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 				Namespace: owner.GetNamespace(),
 			},
 		}
-		fakeClient := fakeistio.NewSimpleClientset(serviceEntry, virtualService)
-		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
-		reconciler := NewReconciler(istioClient).(*reconciler)
+		fakeClient := fake.NewClientWithIndex(serviceEntry, virtualService)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.reconcileFQDNServiceEntry(ctx, nil, component)
+		err := reconciler.reconcileFQDNServiceEntry(ctx, nil, owner, component)
 		require.NoError(t, err)
-		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(serviceEntry.Namespace).Get(ctx, serviceEntry.Name, metav1.GetOptions{})
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(serviceEntry), serviceEntry)
 		require.True(t, k8serrors.IsNotFound(err))
-		_, err = fakeClient.NetworkingV1beta1().VirtualServices(serviceEntry.Namespace).Get(ctx, virtualService.Name, metav1.GetOptions{})
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(virtualService), virtualService)
 		require.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("success", func(t *testing.T) {
-		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
-		reconciler := NewReconciler(istioClient).(*reconciler)
+		ctx := t.Context()
+		owner := createTestDynaKube()
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 		commHosts := []CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
 
-		err := reconciler.reconcileFQDNServiceEntry(ctx, commHosts, component)
+		err := reconciler.reconcileFQDNServiceEntry(ctx, commHosts, owner, component)
 		require.NoError(t, err)
 
-		expectedName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(owner.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
+		expectedServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
+				Namespace: owner.GetNamespace(),
+			},
+		}
+		expectedVirtualService := &istiov1beta1.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
+				Namespace: owner.GetNamespace(),
+			},
+		}
 
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(owner.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, virtualService)
+		assert.NotNil(t, expectedServiceEntry)
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.NoError(t, err)
+		assert.NotNil(t, expectedVirtualService)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
-		fakeClient := fakeistio.NewSimpleClientset()
-		fakeClient.PrependReactor("*", "*", boomReaction)
+		ctx := t.Context()
+		owner := createTestDynaKube()
+		fakeClient := createFailK8sClient()
 
-		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
-		reconciler := NewReconciler(istioClient).(*reconciler)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 		commHosts := []CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
 
-		err := reconciler.reconcileFQDNServiceEntry(ctx, commHosts, component)
+		err := reconciler.reconcileFQDNServiceEntry(ctx, commHosts, owner, component)
 		require.Error(t, err)
 	})
 }
 
 func TestReconcileAPIUrl(t *testing.T) {
-	ctx := t.Context()
-	dk := createTestDynaKube()
-
 	t.Run("nil => error", func(t *testing.T) {
-		istioClient := newTestingClient(nil, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		ctx := t.Context()
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.ReconcileAPIUrl(ctx, nil)
+		err := reconciler.ReconcileAPIURL(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("malformed api-url => error", func(t *testing.T) {
+		ctx := t.Context()
 		dk := createTestDynaKube()
 		dk.Spec.APIURL = "something-random"
-		istioClient := newTestingClient(nil, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.ReconcileAPIUrl(ctx, dk)
+		err := reconciler.ReconcileAPIURL(ctx, dk)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
-		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		ctx := t.Context()
+		dk := createTestDynaKube()
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.ReconcileAPIUrl(ctx, dk)
+		err := reconciler.ReconcileAPIURL(ctx, dk)
 		require.NoError(t, err)
 
-		expectedName := BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent)
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
+		expectedServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
+		expectedVirtualService := &istiov1beta1.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
 
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, virtualService)
+		assert.NotNil(t, expectedServiceEntry)
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.NoError(t, err)
+		assert.NotNil(t, expectedVirtualService)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
-		fakeClient := fakeistio.NewSimpleClientset()
-		fakeClient.PrependReactor("*", "*", boomReaction)
+		ctx := t.Context()
+		dk := createTestDynaKube()
+		fakeClient := createFailK8sClient()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
-
-		err := reconciler.ReconcileAPIUrl(ctx, dk)
+		err := reconciler.ReconcileAPIURL(ctx, dk)
 		require.Error(t, err)
 	})
 }
 
 func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
-	ctx := t.Context()
-
 	t.Run("nil => error", func(t *testing.T) {
-		dk := createTestDynaKube()
-		istioClient := newTestingClient(nil, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		ctx := t.Context()
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, nil)
+		err := reconciler.ReconcileCodeModules(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
+		ctx := t.Context()
 		dk := createTestDynaKube()
-		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dk)
+		err := reconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent)
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
-		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "something.test.io")
+		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
 
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, virtualService)
+		expectedIPServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
+		expectedVirtualService := &istiov1beta1.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
 
-		expectedIPName := BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent)
-		serviceEntry, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
-
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "something.test.io")
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.NoError(t, err)
+		assert.NotNil(t, expectedVirtualService)
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntry), expectedIPServiceEntry)
+		require.NoError(t, err)
+		assert.NotNil(t, expectedIPServiceEntry)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForOneAgentChanged", statusCondition.Reason)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		ctx := t.Context()
 		dk := createTestDynaKube()
-		fakeClient := fakeistio.NewSimpleClientset()
-		fakeClient.PrependReactor("*", "*", boomReaction)
+		fakeClient := createFailK8sClient()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
-
-		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dk)
+		err := reconciler.ReconcileCodeModules(ctx, dk)
 		require.Error(t, err)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
@@ -269,29 +312,45 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.Equal(t, "IstioForOneAgentFailed", statusCondition.Reason)
 	})
 	t.Run("remove and cleanup if AppInjection is disabled", func(t *testing.T) {
+		ctx := t.Context()
 		dk := createTestDynaKube()
-		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
-		r := NewReconciler(istioClient)
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := r.ReconcileCodeModuleCommunicationHosts(ctx, dk)
+		err := reconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent)
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
-		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "something.test.io")
+		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
 
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, virtualService)
+		expectedIPServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
+		expectedVirtualService := &istiov1beta1.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
 
-		expectedIPName := BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent)
-		serviceEntry, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
-
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "something.test.io")
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.NoError(t, err)
+		assert.NotNil(t, expectedVirtualService)
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntry), expectedIPServiceEntry)
+		require.NoError(t, err)
+		assert.NotNil(t, expectedIPServiceEntry)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.NotNil(t, statusCondition)
@@ -300,145 +359,127 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		dk.Spec.OneAgent.CloudNativeFullStack = nil
 		dk.Spec.OneAgent.HostMonitoring = &oneagent.HostInjectSpec{}
 
-		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dk)
+		err = reconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 
 		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.Nil(t, statusCondition)
 
-		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.Error(t, err)
 
-		_, err = fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.Error(t, err)
 
-		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
-
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntry), expectedIPServiceEntry)
 		require.Error(t, err)
 	})
 }
 
 func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
-	ctx := t.Context()
-
 	t.Run("nil => error", func(t *testing.T) {
-		dk := createTestDynaKube()
-		istioClient := newTestingClient(nil, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		ctx := t.Context()
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, nil)
+		err := reconciler.ReconcileActiveGate(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
+		ctx := t.Context()
 		dk := createTestDynaKube()
-		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
+		err := reconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent)
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
-		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
+		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
 
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, virtualService)
+		expectedVirtualService := &istiov1beta1.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
 
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "abcd123.some.activegate.endpointurl.com")
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.NoError(t, err)
+		assert.NotNil(t, expectedVirtualService)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		ctx := t.Context()
 		dk := createTestDynaKube()
-		fakeClient := fakeistio.NewSimpleClientset()
-		fakeClient.PrependReactor("*", "*", boomReaction)
+		fakeClient := createFailK8sClient()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
-
-		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
+		err := reconciler.ReconcileActiveGate(ctx, dk)
 		require.Error(t, err)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateFailed", statusCondition.Reason)
 	})
-	t.Run("verify removal of conditions", func(t *testing.T) {
+	t.Run("remove and cleanup if activeGate is disabled", func(t *testing.T) {
+		ctx := t.Context()
 		dk := createTestDynaKube()
-		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
-		r := NewReconciler(istioClient)
-		rec := r.(*reconciler)
-		rec.timeProvider.Freeze()
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := r.ReconcileActiveGateCommunicationHosts(ctx, dk)
+		err := reconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent)
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
-		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
+		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
+		expectedVirtualService := &istiov1beta1.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
 
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
 		require.NoError(t, err)
-		assert.NotNil(t, virtualService)
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "abcd123.some.activegate.endpointurl.com")
 
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
+		assert.NotNil(t, expectedVirtualService)
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
-		// disable endpoints
-		dk.Status.ActiveGate.ConnectionInfo.Endpoints = ""
+		dk.Spec.ActiveGate = activegate.Spec{}
 
-		err = r.ReconcileActiveGateCommunicationHosts(ctx, dk)
+		err = reconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
 
-		statusCondition2 := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
-		require.Nil(t, statusCondition2)
-	})
-	t.Run("verify removal of conditions when ActiveGate disabled", func(t *testing.T) {
-		dk := createTestDynaKube()
-		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
+		require.Nil(t, statusCondition)
 
-		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
-		require.NoError(t, err)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
+		require.Error(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent)
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
-		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
-
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, virtualService)
-
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
-
-		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
-		require.NotNil(t, statusCondition)
-		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
-
-		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{}
-		err = reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
-		require.NoError(t, err)
-
-		statusCondition2 := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
-		require.Nil(t, statusCondition2)
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.Error(t, err)
 	})
 }
 
@@ -482,6 +523,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 			DynatraceAPIRequestThreshold: ptr.To(uint16(15)),
+			EnableIstio:                  true,
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
@@ -499,33 +541,58 @@ func createTestDynaKube() *dynakube.DynaKube {
 	}
 }
 
-func TestIstio(t *testing.T) {
-	type test struct {
-		name    string
-		input   []*metav1.APIResourceList
-		wantErr error
-		want    bool
-	}
+func createFailK8sClient() client.Client {
+	boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+		Create: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.CreateOption) error {
+			return errors.New("BOOM")
+		},
+		Delete: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.DeleteOption) error {
+			return errors.New("BOOM")
+		},
+		Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+			return errors.New("BOOM")
+		},
+		Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+			return errors.New("BOOM")
+		},
+	})
 
-	tests := []test{
-		{name: "enabled", input: []*metav1.APIResourceList{{GroupVersion: IstioGVR}}, wantErr: nil, want: true},
-		{name: "disabled", input: []*metav1.APIResourceList{}, wantErr: nil, want: false},
-	}
+	return boomClient
+}
 
-	ist := fakeistio.NewSimpleClientset()
-
-	fakeDiscovery, ok := ist.Discovery().(*fakediscovery.FakeDiscovery)
-	if !ok {
-		t.Fatal("couldn't convert Discovery() to *FakeDiscovery")
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			fakeDiscovery.Resources = tc.input
-			istioClient := newTestingClient(ist, "")
-			isInstalled, err := istioClient.CheckIstioInstalled()
-			assert.Equal(t, tc.want, isInstalled)
-			require.ErrorIs(t, tc.wantErr, err)
+func TestIsInstalled(t *testing.T) {
+	createErrorClient := func(istioMissing bool) client.Client {
+		errClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				if istioMissing {
+					return new(meta.NoResourceMatchError)
+				} else {
+					return errors.New("BOOM")
+				}
+			},
 		})
+
+		return errClient
 	}
+
+	t.Run("istio is installed => returns true", func(t *testing.T) {
+		fakeClient := fake.NewClientWithIndex()
+
+		installed := IsInstalled(t.Context(), fakeClient)
+		assert.True(t, installed)
+	})
+
+	t.Run("istio is not installed => returns false", func(t *testing.T) {
+		fakeClient := createErrorClient(true)
+
+		installed := IsInstalled(t.Context(), fakeClient)
+		assert.False(t, installed)
+	})
+
+	t.Run("unknown client err => returns true (no discovery fail == istio is present)", func(t *testing.T) {
+		fakeClient := createErrorClient(false)
+
+		installed := IsInstalled(t.Context(), fakeClient)
+		assert.True(t, installed)
+	})
 }

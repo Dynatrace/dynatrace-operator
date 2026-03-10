@@ -135,7 +135,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(t.Context())
 		require.Error(t, err)
 
-		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.KubeAPIErrorReason, "A problem occurred when using the Kubernetes API: "+err.Error())
+		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.KubeAPIErrorReason, "A problem occurred when using the Kubernetes API")
 	})
 }
 
