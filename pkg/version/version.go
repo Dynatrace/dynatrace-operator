@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"runtime"
 	"runtime/debug"
+	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
@@ -44,5 +46,5 @@ func LogVersionToLogger(log logd.Logger) {
 }
 
 func UserAgent() string {
-	return AppName + "/" + Version
+	return AppName + "/" + strings.TrimSuffix(Version, "-"+arch.ImageArch)
 }
