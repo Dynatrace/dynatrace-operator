@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
+	"math"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -125,6 +126,13 @@ func (src *DynaKube) migrateOAMaxUnavailableToRollingUpdate(dst *dynakubelatest.
 	if maxUnavailableVal == exp.DefaultOAMaxUnavailable {     //nolint:staticcheck
 		// Annotation is absent or has the default value – nothing to migrate.
 		return
+	}
+
+	// Clamp to the valid int32 range before converting to avoid overflow.
+	if maxUnavailableVal < 0 {
+		maxUnavailableVal = 0
+	} else if maxUnavailableVal > math.MaxInt32 {
+		maxUnavailableVal = math.MaxInt32
 	}
 
 	maxUnavailable := intstr.FromInt32(int32(maxUnavailableVal))
