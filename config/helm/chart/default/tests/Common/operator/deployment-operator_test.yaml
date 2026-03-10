@@ -547,6 +547,18 @@ tests:
           count: 1
           any: true
 
+  - it: should have DT_CLIENT_LOG_LEVEL=debug if dtClientLogLevel=test
+    set:
+      dtClientLogLevel: test
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_LOG_LEVEL
+            value: "test"
+          count: 1
+          any: true
+
   - it: should set ephemeral-storage request/limits
     set:
       platform: kubernetes
