@@ -696,9 +696,8 @@ func TestUpdateStrategy(t *testing.T) {
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
 		daemonset, err := dsBuilder.BuildDaemonSet()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Nil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
-
 	})
 	t.Run("returns update strategy", func(t *testing.T) {
 		maxUnavailable := intstr.FromInt32(4)
@@ -719,7 +718,7 @@ func TestUpdateStrategy(t *testing.T) {
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
 		daemonset, err := dsBuilder.BuildDaemonSet()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
 		assert.Equal(t, &maxUnavailable, daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
 		assert.Equal(t, &maxSurge, daemonset.Spec.UpdateStrategy.RollingUpdate.MaxSurge)

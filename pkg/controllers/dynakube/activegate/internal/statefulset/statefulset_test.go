@@ -509,7 +509,7 @@ func TestSecurityContexts(t *testing.T) {
 
 func TestUpdateStrategy(t *testing.T) {
 	t.Run("has rollingUpdate fields set", func(t *testing.T) {
-		maxUnavailable := intstr.FromString("2")
+		maxUnavailable := intstr.FromString("20%")
 
 		dk := getTestDynakube()
 		dk.Spec.ActiveGate.RollingUpdate = &appsv1.RollingUpdateStatefulSetStrategy{
