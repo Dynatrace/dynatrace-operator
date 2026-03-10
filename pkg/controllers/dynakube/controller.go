@@ -51,7 +51,7 @@ import (
 
 const (
 	fastUpdateInterval    = 1 * time.Minute
-	defaultUpdateInterval = 30 * time.Minute
+	defaultUpdateInterval = 15 * time.Minute
 
 	controllerName = "dynakube-controller"
 )
