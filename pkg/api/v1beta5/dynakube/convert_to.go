@@ -1,9 +1,6 @@
 package dynakube
 
 import (
-	"math"
-
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -16,8 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
@@ -93,13 +88,11 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = toHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
 		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.ClassicFullStack.AutoUpdate)
-		src.migrateOAMaxUnavailableToRollingUpdate(&dst.Spec.OneAgent.ClassicFullStack.RollingUpdate)
 	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &oneagentlatest.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *toHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
 		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.CloudNativeFullStack.AutoUpdate)
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
-		src.migrateOAMaxUnavailableToRollingUpdate(&dst.Spec.OneAgent.CloudNativeFullStack.RollingUpdate)
 	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &oneagentlatest.ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
@@ -107,67 +100,37 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = toHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
 		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.HostMonitoring.AutoUpdate)
-		src.migrateOAMaxUnavailableToRollingUpdate(&dst.Spec.OneAgent.HostMonitoring.RollingUpdate)
 	}
 
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 }
 
-// migrateOAMaxUnavailableToRollingUpdate translates the deprecated OAMaxUnavailable feature-flag annotation to the
-// RollingUpdate.MaxUnavailable field when the user has not already set RollingUpdate explicitly.
-func (src *DynaKube) migrateOAMaxUnavailableToRollingUpdate(rollingUpdate **appsv1.RollingUpdateDaemonSet) {
-	if *rollingUpdate != nil {
-		// User already set rollingUpdate explicitly – do not override it.
-		return
-	}
-
-	maxUnavailableVal := src.FF().GetOneAgentMaxUnavailable() //nolint:staticcheck
-	if maxUnavailableVal == exp.DefaultOAMaxUnavailable {     //nolint:staticcheck
-		// Annotation is absent or has the default value – nothing to migrate.
-		return
-	}
-
-	// Clamp to the valid int32 range before converting to avoid overflow.
-	if maxUnavailableVal < 0 {
-		maxUnavailableVal = 0
-	} else if maxUnavailableVal > math.MaxInt32 {
-		maxUnavailableVal = math.MaxInt32
-	}
-
-	maxUnavailable := intstr.FromInt32(int32(maxUnavailableVal))
-	*rollingUpdate = &appsv1.RollingUpdateDaemonSet{
-		MaxUnavailable: &maxUnavailable,
-	}
-}
-
 func (src *DynaKube) toTemplatesSpec(dst *dynakubelatest.DynaKube) {
-	dst.Spec.Templates.LogMonitoring = src.toLogMonitoringTemplate(dst, src.Spec.Templates.LogMonitoring)
+	dst.Spec.Templates.LogMonitoring = toLogMonitoringTemplate(src.Spec.Templates.LogMonitoring)
 	dst.Spec.Templates.KspmNodeConfigurationCollector = toKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KspmNodeConfigurationCollector)
 	dst.Spec.Templates.OpenTelemetryCollector = toOpenTelemetryCollectorTemplate(dst, src.Spec.Templates.OpenTelemetryCollector)
 	dst.Spec.Templates.ExtensionExecutionController = toExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
 }
 
-func (src *DynaKube) toLogMonitoringTemplate(dst *dynakubelatest.DynaKube, tmplSrc *logmonitoring.TemplateSpec) *logmonitoringlatest.TemplateSpec {
-	if tmplSrc == nil {
+func toLogMonitoringTemplate(src *logmonitoring.TemplateSpec) *logmonitoringlatest.TemplateSpec {
+	if src == nil {
 		return nil
 	}
 
-	result := &logmonitoringlatest.TemplateSpec{}
+	dst := &logmonitoringlatest.TemplateSpec{}
 
-	result.Annotations = tmplSrc.Annotations
-	result.Labels = tmplSrc.Labels
-	result.NodeSelector = tmplSrc.NodeSelector
-	result.ImageRef = tmplSrc.ImageRef
-	result.DNSPolicy = tmplSrc.DNSPolicy
-	result.PriorityClassName = tmplSrc.PriorityClassName
-	result.SecCompProfile = tmplSrc.SecCompProfile
-	result.Resources = tmplSrc.Resources
-	result.Tolerations = tmplSrc.Tolerations
-	result.Args = tmplSrc.Args
+	dst.Annotations = src.Annotations
+	dst.Labels = src.Labels
+	dst.NodeSelector = src.NodeSelector
+	dst.ImageRef = src.ImageRef
+	dst.DNSPolicy = src.DNSPolicy
+	dst.PriorityClassName = src.PriorityClassName
+	dst.SecCompProfile = src.SecCompProfile
+	dst.Resources = src.Resources
+	dst.Tolerations = src.Tolerations
+	dst.Args = src.Args
 
-	src.migrateOAMaxUnavailableToRollingUpdate(&result.RollingUpdate)
-
-	return result
+	return dst
 }
 
 func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollectorSpec) kspmlatest.NodeConfigurationCollectorSpec {
