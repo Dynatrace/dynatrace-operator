@@ -12,6 +12,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -94,9 +95,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		k8sdaemonset.SetNodeSelector(r.dk.LogMonitoring().Template().NodeSelector),
 		k8sdaemonset.SetTolerations(r.dk.LogMonitoring().Template().Tolerations),
 		k8sdaemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
-		k8sdaemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{
-			RollingUpdate: r.dk.LogMonitoring().Template().RollingUpdate,
-		}),
+		k8sdaemonset.SetUpdateStrategy(r.getUpdateStrategy()),
 		k8sdaemonset.SetVolumes(getVolumes(r.dk.Name)),
 	)
 	if err != nil {
@@ -104,6 +103,22 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	return ds, nil
+}
+
+func (r *Reconciler) getUpdateStrategy() appsv1.DaemonSetUpdateStrategy {
+	maxUnavailable := intstr.FromInt(r.dk.FF().GetOneAgentMaxUnavailable())
+
+	us := appsv1.DaemonSetUpdateStrategy{
+		RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+			MaxUnavailable: &maxUnavailable,
+		},
+	}
+
+	if r.dk.LogMonitoring().Template().RollingUpdate != nil {
+		us.RollingUpdate = r.dk.LogMonitoring().Template().RollingUpdate
+	}
+
+	return us
 }
 
 func isMEConfigured(dk dynakube.DynaKube) bool {
