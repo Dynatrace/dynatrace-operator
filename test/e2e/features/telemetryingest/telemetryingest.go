@@ -243,7 +243,7 @@ func assertTelemetryIngestActiveGateModulesAreActive(ctx context.Context, t *tes
 	require.Len(t, head, 2, "list of AG active modules not found")
 
 	tail := strings.SplitAfter(head[1], "Lifecycle listeners:")
-	require.Len(t, head, 2, "list of AG active modules not found")
+	require.NotEmpty(t, tail, "list of AG active modules not found")
 
 	/*
 		Expected log messages of the Gateway process:

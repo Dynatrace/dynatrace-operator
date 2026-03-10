@@ -117,6 +117,12 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
+                  - name: DT_OPERATOR_IMAGE
+                    value: image-name
+                  - name: OLM_OPERATOR_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.annotations['olm.operatorNamespace']
                   - name: WEBHOOK_PORT
                     value: "8443"
                   - name: HEALTH_PROBE_BIND_ADDRESS
@@ -316,6 +322,12 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
+                  - name: DT_OPERATOR_IMAGE
+                    value: image-name
+                  - name: OLM_OPERATOR_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.annotations['olm.operatorNamespace']
                   - name: WEBHOOK_PORT
                     value: "8443"
                   - name: HEALTH_PROBE_BIND_ADDRESS
@@ -480,6 +492,12 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
+                  - name: DT_OPERATOR_IMAGE
+                    value: image-name
+                  - name: OLM_OPERATOR_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.annotations['olm.operatorNamespace']
                   - name: WEBHOOK_PORT
                     value: "8443"
                   - name: HEALTH_PROBE_BIND_ADDRESS

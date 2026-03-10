@@ -289,7 +289,7 @@ func getTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeC
 		require.NoError(t, err)
 
 		assert.LessOrEqual(t, len(ecs.EdgeConnects), 1, "Found multiple EdgeConnect objects with the same tenantConfigName", "count", ecs.EdgeConnects)
-		assert.NotEmpty(t, ecs.EdgeConnects, "EdgeConnect object not found", "count", ecs.EdgeConnects)
+		require.NotEmpty(t, ecs.EdgeConnects, "EdgeConnect object not found", "count", ecs.EdgeConnects)
 
 		assert.Equal(t, ecName, ecs.EdgeConnects[0].Name, "expected EC object not found on the tenant")
 		assert.True(t, ecs.EdgeConnects[0].ManagedByDynatraceOperator)

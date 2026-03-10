@@ -30,7 +30,6 @@ rules:
       - ""
     resources:
       - secrets
-      - pods
       - configmaps
     verbs:
       - get

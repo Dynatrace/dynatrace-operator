@@ -1,13 +1,11 @@
 package pod
 
 import (
-	"context"
 	"net/http"
+	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
 	otlphandler "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/otlp"
@@ -16,23 +14,17 @@ import (
 	otlpexporter "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
 	otlpresourceattributes "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	webhooks "sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, webhookPodName string, isOpenShift bool) error {
+func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, isOpenShift bool) error {
 	eventRecorder := events.NewRecorder(mgr.GetEventRecorderFor("dynatrace-webhook")) //nolint
 	kubeConfig := mgr.GetConfig()
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
-
-	webhookPod, err := k8spod.Get(ctx, apiReader, webhookPodName, webhookNamespace)
-	if err != nil {
-		return err
-	}
 
 	// the injected podMutator.client doesn't have permissions to Get(sth) from a different namespace
 	metaClient, err := client.New(kubeConfig, client.Options{})
@@ -46,7 +38,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 		apiReader,
 		eventRecorder,
 		admission.NewDecoder(mgr.GetScheme()),
-		*webhookPod,
+		webhookNamespace,
 		isOpenShift,
 	)
 	if err != nil {
@@ -65,19 +57,21 @@ func newWebhook( //nolint:revive
 	apiReader client.Reader,
 	eventRecorder events.EventRecorder,
 	decoder admission.Decoder,
-	webhookPod corev1.Pod,
+	webhookNamespace string,
 	isOpenshift bool) (*webhook, error) {
-	webhookPodImage, err := getWebhookContainerImage(webhookPod)
-	if err != nil {
-		return nil, err
+	webhookImage := os.Getenv(k8senv.DtOperatorImageEnvName)
+	if webhookImage == "" {
+		return nil, errors.New("DT_OPERATOR_IMAGE env var is not set, cannot determine webhook container image")
 	}
+
+	log.Info("got webhook's image from env", "image", webhookImage)
 
 	return &webhook{
 		injectionHandler: injection.New(
 			kubeClient,
 			apiReader,
 			eventRecorder,
-			webhookPodImage,
+			webhookImage,
 			isOpenshift,
 			metadata.NewMutator(metaClient),
 			oneagent.NewMutator(),
@@ -90,8 +84,8 @@ func newWebhook( //nolint:revive
 		),
 		apiReader:        apiReader,
 		recorder:         eventRecorder,
-		webhookNamespace: webhookPod.Namespace,
-		deployedViaOLM:   system.IsDeployedViaOlm(webhookPod),
+		webhookNamespace: webhookNamespace,
+		deployedViaOLM:   system.IsDeployedViaOlm(),
 		decoder:          decoder,
 	}, nil
 }
@@ -101,15 +95,4 @@ func registerLivezEndpoint(mgr manager.Manager) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	log.Info("registered /livez endpoint")
-}
-
-func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
-	webhookContainer, err := k8scontainer.FindInPod(webhookPod, dtwebhook.WebhookContainerName)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	log.Info("got webhook's image", "image", webhookContainer.Image)
-
-	return webhookContainer.Image, nil
 }

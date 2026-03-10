@@ -113,6 +113,7 @@ func TestWebhook(t *testing.T) {
 			dummyWebhookPod := getDummyWebhookPod()
 			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
 			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
+			t.Setenv(k8senv.DtOperatorImageEnvName, dummyWebhookPod.Spec.Containers[0].Image)
 
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
@@ -368,6 +369,7 @@ func TestOTLPWebhook(t *testing.T) {
 			dummyWebhookPod := getDummyWebhookPod()
 			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
 			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
+			t.Setenv(k8senv.DtOperatorImageEnvName, dummyWebhookPod.Spec.Containers[0].Image)
 
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
@@ -846,6 +848,7 @@ func setupOTLPWebhookEnv(t *testing.T) client.Client {
 			dummyWebhookPod := getDummyWebhookPod()
 			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
 			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
+			t.Setenv(k8senv.DtOperatorImageEnvName, dummyWebhookPod.Spec.Containers[0].Image)
 
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
