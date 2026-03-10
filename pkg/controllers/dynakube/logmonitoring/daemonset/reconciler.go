@@ -12,7 +12,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -84,8 +83,6 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 
 	labels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.LogMonitoringComponentLabel)
 
-	maxUnavailable := intstr.FromInt(r.dk.FF().GetOneAgentMaxUnavailable())
-
 	ds, err := k8sdaemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
 		k8sdaemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID)),
 		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
@@ -98,9 +95,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		k8sdaemonset.SetTolerations(r.dk.LogMonitoring().Template().Tolerations),
 		k8sdaemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
 		k8sdaemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{
-			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-				MaxUnavailable: &maxUnavailable,
-			},
+			RollingUpdate: r.dk.LogMonitoring().Template().RollingUpdate,
 		}),
 		k8sdaemonset.SetVolumes(getVolumes(r.dk.Name)),
 	)
