@@ -103,7 +103,7 @@ func WithHostGroup(hostGroup string) OptionV2 {
 	}
 }
 
-// WithUserAgentSuffix sets a client identifier that will be appended to the user agent
+// WithUserAgentSuffix appends a suffix (comment) to the default user agent.
 func WithUserAgentSuffix(suffix string) OptionV2 {
 	return func(c *ConfigV2) {
 		if suffix != "" {
