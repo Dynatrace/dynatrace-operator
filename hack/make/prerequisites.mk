@@ -13,7 +13,7 @@ KUSTOMIZE_VERSION ?= v5.8.1
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 CONTROLLER_GEN_VERSION ?= v0.20.1
 # renovate depName=github.com/golangci/golangci-lint/v2
-GOLANGCI_LINT_VERSION ?= v2.9.0
+GOLANGCI_LINT_VERSION ?= v2.11.2
 # renovate depName=golang.org/x/tools
 GOLANG_TOOLS_VERSION ?= v0.42.0
 # renovate depName=github.com/vektra/mockery
@@ -26,6 +26,9 @@ MARKDOWN_LINK_CHECK_VERSION ?= v3.14.2
 HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
 GO_TEST_COVERAGE_VERSION ?= v2.18.3
+
+# Enable renovate once project is migrated to newer structure
+OPERATOR_SDK_VERSION ?= v1.36.0
 
 # Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
@@ -119,6 +122,24 @@ prerequisites/setup-pre-commit:
 ## Configure git to use .git-blame-ignore-revs file
 prerequisites/git-ignore-revs-file:
 	git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+.PHONY: prerequisites/operator-sdk
+OPERATOR_SDK ?= $(LOCALBIN)/operator-sdk
+## Download operator-sdk locally if necessary.
+prerequisites/operator-sdk:
+ifeq (,$(wildcard $(OPERATOR_SDK)))
+ifeq (, $(shell which operator-sdk 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OPERATOR_SDK)) ;\
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	curl -sSLo $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/$(OPERATOR_SDK_VERSION)/operator-sdk_$${OS}_$${ARCH} ;\
+	chmod +x $(OPERATOR_SDK) ;\
+	}
+else
+OPERATOR_SDK = $(shell which operator-sdk)
+endif
+endif
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary

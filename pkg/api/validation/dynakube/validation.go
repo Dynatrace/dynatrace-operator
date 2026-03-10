@@ -74,7 +74,6 @@ var (
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,
-		logMonitoringWithoutK8SMonitoring,
 		noMappedHostPaths,
 		extensionsWithoutK8SMonitoring,
 		hostPathDatabaseVolumeFound,

@@ -33,8 +33,6 @@ type Reconciler struct {
 	secrets      k8ssecret.QueryObject
 }
 
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler
-
 func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler {
 	return &Reconciler{
 		dk:           dk,

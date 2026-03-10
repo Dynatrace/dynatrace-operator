@@ -244,7 +244,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 	dsDesired, err := r.buildDesiredDaemonSet(r.dk)
 	if err != nil {
 		log.Info("failed to get desired daemonset")
-		setDaemonSetGenerationFailedCondition(r.dk.Conditions(), err)
+		setDaemonSetGenerationFailedCondition(r.dk.Conditions())
 
 		return err
 	}

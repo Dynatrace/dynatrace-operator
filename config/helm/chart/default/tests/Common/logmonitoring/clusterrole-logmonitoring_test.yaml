@@ -19,6 +19,15 @@ tests:
           path: rules
           content:
             apiGroups:
+              - ""
+            resources:
+              - nodes/proxy
+            verbs:
+              - get
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
               - security.openshift.io
             resourceNames:
               - privileged
@@ -59,3 +68,28 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+  - it: logmonitoring ClusterRole should exist on openshift
+    set:
+      rbac.logMonitoring.create: true
+      rbac.oneagent.create: false
+      platform: openshift
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-logmonitoring
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use

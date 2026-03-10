@@ -49,7 +49,7 @@ func (s *Server) Start(ctx context.Context) error {
 		<-ctx.Done()
 		log.Info("stopping HTTP server")
 
-		sctx, cancelFunc := context.WithTimeout(context.Background(), s.probeTimeout)
+		sctx, cancelFunc := context.WithTimeout(context.WithoutCancel(ctx), s.probeTimeout)
 		defer cancelFunc()
 
 		err := httpServer.Shutdown(sctx)

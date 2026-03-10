@@ -110,14 +110,14 @@ func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 
 	oaCommunicationHosts, err := NewCommunicationHosts(dk.Status.OneAgent.ConnectionInfo.Endpoints)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dk.Conditions(), codeModuleConditionName, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), codeModuleConditionName)
 
 		return err
 	}
 
 	err = r.reconcileCommunicationHostsForComponent(ctx, oaCommunicationHosts, dk, CodeModuleComponent)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dk.Conditions(), codeModuleConditionName, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), codeModuleConditionName)
 
 		return err
 	}
@@ -158,14 +158,14 @@ func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 
 	agCommunicationHosts, err := NewCommunicationHosts(dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName)
 
 		return err
 	}
 
 	err = r.reconcileCommunicationHostsForComponent(ctx, agCommunicationHosts, dk, ActiveGateComponent)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName)
 
 		return err
 	}
