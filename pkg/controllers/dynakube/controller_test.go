@@ -18,7 +18,6 @@ import (
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	oneagentcontroller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -33,14 +32,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	fakediscovery "k8s.io/client-go/discovery/fake"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -368,6 +364,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockKSPMReconciler := newMockDtSettingReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockOtelcReconciler := newMockDynakubeReconciler(t)
+		mockIstioReconciler := newMockIstioReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -378,6 +375,7 @@ func TestReconcileComponents(t *testing.T) {
 			oneAgentReconcilerBuilder:      createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 			logMonitoringReconcilerBuilder: createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
 			extensionReconciler:            mockExtensionReconciler,
+			istioReconciler:                mockIstioReconciler,
 			otelcReconciler:                mockOtelcReconciler,
 			kspmReconciler:                 mockKSPMReconciler,
 			k8sEntityReconciler:            mockK8sEntityReconciler,
@@ -395,7 +393,7 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockKSPMReconciler, &err, &settings.Client{}, dk)
 		expectReconcileError(t, mockK8sEntityReconciler, &err, &settings.Client{}, dk)
 
-		err = controller.reconcileComponents(ctx, mockedDtc, nil, dk)
+		err = controller.reconcileComponents(ctx, mockedDtc, dk)
 		require.Error(t, err)
 	})
 
@@ -407,6 +405,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := newMockDynakubeReconciler(t)
 		mockOtelcReconciler := newMockDynakubeReconciler(t)
 		k8sEntityReconciler := newMockDtSettingReconciler(t)
+		mockIstioReconciler := newMockIstioReconciler(t)
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
@@ -419,6 +418,7 @@ func TestReconcileComponents(t *testing.T) {
 			extensionReconciler:            mockExtensionReconciler,
 			otelcReconciler:                mockOtelcReconciler,
 			k8sEntityReconciler:            k8sEntityReconciler,
+			istioReconciler:                mockIstioReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
@@ -429,7 +429,7 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
 		expectReconcileError(t, k8sEntityReconciler, &err, &settings.Client{}, dk)
 
-		err = controller.reconcileComponents(ctx, mockedDtc, nil, dk)
+		err = controller.reconcileComponents(ctx, mockedDtc, dk)
 		require.Error(t, err)
 	})
 }
@@ -484,24 +484,24 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockOtelcReconciler := newMockDynakubeReconciler(t)
 	mockOtelcReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
+	mockIstioReconciler := newMockIstioReconciler(t)
+	mockIstioReconciler.EXPECT().ReconcileAPIURL(anyCtx, anyDynaKube).Return(nil)
+
 	mockKSPMReconciler := newMockDtSettingReconciler(t)
 	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, &settings.Client{}, anyDynaKube).Return(nil)
 
 	mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, &settings.Client{}, anyDynaKube).Return(nil)
 
-	fakeIstio := fakeistio.NewSimpleClientset()
-
 	baseController := &Controller{
 		apiReader:                      fakeClient,
 		client:                         fakeClient,
-		istioClientBuilder:             fakeIstioClientBuilder(t, fakeIstio, true),
 		activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		deploymentMetadataReconciler:   mockDeploymentMetadataReconciler,
 		dynatraceClientBuilder:         mockDtcBuilder,
 		extensionReconciler:            mockExtensionReconciler,
 		injectionReconcilerBuilder:     createInjectionReconcilerBuilder(mockInjectionReconciler),
-		istioReconcilerBuilder:         istio.NewReconciler,
+		istioReconciler:                mockIstioReconciler,
 		logMonitoringReconcilerBuilder: createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
 		oneAgentReconcilerBuilder:      createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 		otelcReconciler:                mockOtelcReconciler,
@@ -527,11 +527,11 @@ func TestReconcileDynaKube(t *testing.T) {
 		dk.Spec.APIURL = testAPIURL
 		dk.Spec.EnableIstio = true
 
-		fakeClientWithIstio := fake.NewClientWithIndex(dk, createCRD(t), createAPISecret())
+		fakeClient := fake.NewClientWithIndex(dk, createCRD(t), createAPISecret())
 
 		controller := baseController
-		controller.client = fakeClientWithIstio
-		controller.apiReader = fakeClientWithIstio
+		controller.client = fakeClient
+		controller.apiReader = fakeClient
 
 		result, err := controller.Reconcile(ctx, request)
 		require.NoError(t, err)
@@ -542,11 +542,11 @@ func TestReconcileDynaKube(t *testing.T) {
 		dk := baseDk.DeepCopy()
 		dk.Spec.EnableIstio = true
 
-		fakeClientWithIstio := fake.NewClientWithIndex(dk, createAPISecret())
+		fakeClient := fake.NewClientWithIndex(dk, createAPISecret())
 
 		controller := baseController
-		controller.client = fakeClientWithIstio
-		controller.apiReader = fakeClientWithIstio
+		controller.client = fakeClient
+		controller.apiReader = fakeClient
 
 		result, err := controller.Reconcile(ctx, request)
 		require.Error(t, err)
@@ -555,7 +555,7 @@ func TestReconcileDynaKube(t *testing.T) {
 }
 
 func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) ag.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ dtclient.Client, _ *istio.Client, _ token.Tokens) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ dtclient.Client, _ token.Tokens) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -573,7 +573,7 @@ func createLogMonitoringReconcilerBuilder(reconciler controllers.Reconciler) log
 }
 
 func createInjectionReconcilerBuilder(reconciler controllers.Reconciler) injection.ReconcilerBuilder {
-	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) controllers.Reconciler {
+	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -799,77 +799,6 @@ func TestTokenConditions(t *testing.T) {
 		controller.removeDeprecatedConditionTypes(dk)
 		assert.Empty(t, dk.Status.Conditions)
 	})
-}
-
-func TestSetupIstio(t *testing.T) {
-	ctx := t.Context()
-	dkBase := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Spec: dynakube.DynaKubeSpec{
-			APIURL:      testAPIURL,
-			EnableIstio: true,
-		},
-	}
-
-	t.Run("no istio installed + EnableIstio: true => error", func(t *testing.T) {
-		dk := dkBase.DeepCopy()
-		fakeIstio := fakeistio.NewSimpleClientset()
-		isIstioInstalled := false
-		controller := &Controller{
-			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
-		}
-		istioClient, err := controller.setupIstioClient(dk)
-		require.Error(t, err)
-		assert.Nil(t, istioClient)
-	})
-	t.Run("success", func(t *testing.T) {
-		dk := dkBase.DeepCopy()
-		fakeIstio := fakeistio.NewSimpleClientset()
-		isIstioInstalled := true
-		controller := &Controller{
-			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
-		}
-		istioClient, err := controller.setupIstioClient(dk)
-		require.NoError(t, err)
-		require.NotNil(t, istioClient)
-
-		istioReconciler := istio.NewReconciler(istioClient)
-		require.NotNil(t, istioClient)
-
-		err = istioReconciler.ReconcileAPIUrl(ctx, dk)
-
-		require.NoError(t, err)
-
-		expectedName := istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OperatorComponent)
-		serviceEntry, err := fakeIstio.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
-
-		virtualService, err := fakeIstio.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, virtualService)
-	})
-}
-
-func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIstioInstalled bool) istio.ClientBuilder {
-	return func(_ *rest.Config, owner metav1.Object) (*istio.Client, error) {
-		if isIstioInstalled == true {
-			fakeDiscovery, ok := fakeIstio.Discovery().(*fakediscovery.FakeDiscovery)
-			fakeDiscovery.Resources = []*metav1.APIResourceList{{GroupVersion: istio.IstioGVR}}
-
-			if !ok {
-				t.Fatal("couldn't convert Discovery() to *FakeDiscovery")
-			}
-		}
-
-		return &istio.Client{
-			IstioClientset: fakeIstio,
-			Owner:          owner,
-		}, nil
-	}
 }
 
 func assertCondition(t *testing.T, dk *dynakube.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) { //nolint:revive // argument-limit

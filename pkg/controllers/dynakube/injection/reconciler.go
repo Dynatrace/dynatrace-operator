@@ -22,11 +22,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type istioReconciler interface {
+	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 type Reconciler struct {
 	client                    client.Client
 	apiReader                 client.Reader
 	dk                        *dynakube.DynaKube
-	istioReconciler           istio.Reconciler
+	istioReconciler           istioReconciler
 	versionReconciler         version.Reconciler
 	connectionInfoReconciler  controllers.Reconciler
 	enrichmentRulesReconciler controllers.Reconciler
@@ -37,7 +41,6 @@ type ReconcilerBuilder func(
 	client client.Client,
 	apiReader client.Reader,
 	dynatraceClient dynatrace.Client,
-	istioClient *istio.Client,
 	dk *dynakube.DynaKube,
 ) controllers.Reconciler
 
@@ -46,21 +49,14 @@ func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
 	dynatraceClient dynatrace.Client,
-	istioClient *istio.Client,
 	dk *dynakube.DynaKube,
 ) controllers.Reconciler {
-	var istioReconciler istio.Reconciler = nil
-
-	if istioClient != nil {
-		istioReconciler = istio.NewReconciler(istioClient)
-	}
-
 	return &Reconciler{
 		client:                    client,
 		apiReader:                 apiReader,
 		dk:                        dk,
 		dynatraceClient:           dynatraceClient,
-		istioReconciler:           istioReconciler,
+		istioReconciler:           istio.NewReconciler(client, apiReader),
 		versionReconciler:         version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
 		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient.AsV2().Settings, dk),
@@ -164,11 +160,9 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
 		return err
 	}
 
-	if r.istioReconciler != nil {
-		err = r.istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, r.dk)
-		if err != nil {
-			log.Error(err, "error reconciling istio configuration for codemodules")
-		}
+	err = r.istioReconciler.ReconcileCodeModules(ctx, r.dk)
+	if err != nil {
+		log.Error(err, "error reconciling istio configuration for codemodules")
 	}
 
 	if !r.dk.OneAgent().IsAppInjectionNeeded() {
