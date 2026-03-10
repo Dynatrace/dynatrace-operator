@@ -90,7 +90,7 @@ func checkForDummyVolume(sampleApp *sample.App) features.Func {
 		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 		require.NoError(t, err)
 
-		pods := sampleApp.GetPods(ctx, t, resources)
+		pods := sampleApp.ListPods(ctx, t, resources)
 
 		for _, pod := range pods.Items {
 			require.NotEmpty(t, pod.Spec.InitContainers)

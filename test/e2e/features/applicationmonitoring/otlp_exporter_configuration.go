@@ -125,9 +125,8 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 // Assessors
 func podHasOTLPExporterEnvVarsInjected(app *sample.App, expectedBase string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		pods := app.GetPods(ctx, t, envConfig.Client().Resources())
-		require.NotEmpty(t, pods.Items)
-		assertOTLPEnvVarsPresentWithResourceAttributes(t, &pods.Items[0], expectedBase)
+		pod := app.GetPod(ctx, t, envConfig.Client().Resources())
+		assertOTLPEnvVarsPresentWithResourceAttributes(t, &pod, expectedBase)
 
 		return ctx
 	}
@@ -135,9 +134,8 @@ func podHasOTLPExporterEnvVarsInjected(app *sample.App, expectedBase string) fea
 
 func podHasNoOTLPExporterEnvVarsInjected(app *sample.App, _ string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		pods := app.GetPods(ctx, t, envConfig.Client().Resources())
-		require.NotEmpty(t, pods.Items)
-		assertOTLPEnvVarsAbsent(t, &pods.Items[0])
+		pod := app.GetPod(ctx, t, envConfig.Client().Resources())
+		assertOTLPEnvVarsAbsent(t, &pod)
 
 		return ctx
 	}

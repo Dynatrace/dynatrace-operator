@@ -26,7 +26,7 @@ func checkMetadataEnrichment(sampleApp *sample.App) features.Func {
 		// We expect "deployment" kind for the sample app
 		deploymentName := sampleApp.Name()
 
-		pods := sampleApp.GetPods(ctx, t, kubeResources)
+		pods := sampleApp.ListPods(ctx, t, kubeResources)
 		require.NotEmpty(t, pods.Items)
 
 		for _, pod := range pods.Items {

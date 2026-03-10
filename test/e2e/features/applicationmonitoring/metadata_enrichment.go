@@ -140,7 +140,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 
 func podHasOnlyMetadataEnrichmentInitContainer(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		testPod := samplePod.GetPod(ctx, t, envConfig.Client().Resources())
 
 		assessOnlyMetadataEnrichmentIsInjected(t)(testPod)
 		assessPodHasMetadataEnrichmentFile(ctx, t, envConfig.Client().Resources(), testPod)
@@ -177,7 +177,7 @@ func deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleApp *sample.App
 // podHasCompleteInitContainer checks if the sample has BOTH the metadata-enrichment and oneagent parts added to it.
 func podHasCompleteInitContainer(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		testPod := samplePod.GetPod(ctx, t, envConfig.Client().Resources())
 		initContainers := testPod.Spec.InitContainers
 
 		require.Len(t, initContainers, 1)

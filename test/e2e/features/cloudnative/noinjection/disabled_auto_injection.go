@@ -62,7 +62,7 @@ func checkInitContainersNotInjected(sampleApp *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		pods := sampleApp.GetPods(ctx, t, resources)
+		pods := sampleApp.ListPods(ctx, t, resources)
 		require.NotEmpty(t, pods.Items)
 
 		for _, pod := range pods.Items {
