@@ -28,7 +28,6 @@ func TestSendCRDVersionMismatch(t *testing.T) {
 		case event := <-recorder.Events:
 			assert.Contains(t, event, corev1.EventTypeWarning)
 			assert.Contains(t, event, crdVersionMismatchReason)
-			assert.Contains(t, event, crdVersionMismatchAction)
 			assert.Contains(t, event, crdVersionMismatchNote)
 		default:
 			t.Fatal("Expected event to be recorded, but none was found")
@@ -50,7 +49,6 @@ func TestSendCRDVersionMismatch(t *testing.T) {
 		case event := <-recorder.Events:
 			assert.Contains(t, event, corev1.EventTypeWarning)
 			assert.Contains(t, event, crdVersionMismatchReason)
-			assert.Contains(t, event, crdVersionMismatchAction)
 			assert.Contains(t, event, crdVersionMismatchNote)
 		default:
 			t.Fatal("Expected event to be recorded, but none was found")

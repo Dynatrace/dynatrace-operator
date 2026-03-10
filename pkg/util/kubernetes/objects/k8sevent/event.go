@@ -9,7 +9,7 @@ import (
 const (
 	crdVersionMismatchReason = "CRDVersionMismatch"
 	crdVersionMismatchNote   = "The CustomResourceDefinition doesn't match version with the operator. Please update the CRD to avoid potential issues"
-	crdVersionMismatchAction = "The CustomResourceDefinition doesn't match version with the operator"
+	crdVersionMismatchAction = "CRDVersionValidation"
 )
 
 func SendCRDVersionMismatch(eventRecorder events.EventRecorder, object client.Object) {
