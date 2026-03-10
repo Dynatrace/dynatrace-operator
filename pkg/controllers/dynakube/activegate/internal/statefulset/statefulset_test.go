@@ -25,6 +25,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
@@ -178,6 +179,7 @@ func TestGetBaseSpec(t *testing.T) {
 		require.NotNil(t, stsSpec.Template.Annotations)
 		assert.Equal(t, testConfigHash, stsSpec.Template.Annotations[consts.AnnotationActiveGateConfigurationHash])
 		assert.Equal(t, testTokenHash, stsSpec.Template.Annotations[consts.AnnotationActiveGateTenantTokenHash])
+		assert.Nil(t, stsSpec.UpdateStrategy.RollingUpdate)
 	})
 }
 
@@ -502,6 +504,23 @@ func TestSecurityContexts(t *testing.T) {
 
 		require.NotEmpty(t, sts)
 		require.Truef(t, reflect.DeepEqual(sts.Spec.Template.Spec.InitContainers[0].SecurityContext, sts.Spec.Template.Spec.Containers[0].SecurityContext), "InitContainer and Container have different SecurityContexts")
+	})
+}
+
+func TestUpdateStrategy(t *testing.T) {
+	t.Run("has rollingUpdate fields set", func(t *testing.T) {
+		maxUnavailable := intstr.FromString("2")
+
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.RollingUpdate = &appsv1.RollingUpdateStatefulSetStrategy{
+			MaxUnavailable: &maxUnavailable,
+		}
+		b := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, capability.NewMultiCapability(&dk))
+		sts, err := b.CreateStatefulSet(nil)
+
+		require.NoError(t, err)
+		require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
+		require.Equal(t, &maxUnavailable, sts.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
 	})
 }
 
