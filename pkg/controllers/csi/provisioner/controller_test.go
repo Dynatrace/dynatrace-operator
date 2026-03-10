@@ -153,7 +153,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("dynakube with job => job installer used, dtclient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t), "")
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t))
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -177,10 +177,25 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
+	t.Run("dynakube with job + helm pull secret env var => helm pull secret included", func(t *testing.T) {
+		helmPullSecret := "helm-pull-secret"
+		t.Setenv("DT_OPERATOR_PULL_SECRET", helmPullSecret)
+		dk := createDynaKubeWithJobFF(t)
+		prov := createProvisioner(t, dk)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t), helmPullSecret)
+
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+	})
+
 	t.Run("dynakube with job => job installer used, back-off when not ready, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createNotReadyInstaller(t), "")
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createNotReadyInstaller(t))
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -193,7 +208,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("dynakube with job => job installer used, with error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createFailingInstaller(t), "")
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createFailingInstaller(t))
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
@@ -369,14 +384,12 @@ func mockImageInstallerBuilder(t *testing.T, mockedInstaller *installermock.Inst
 	}
 }
 
-func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer, pullSecret string) jobInstallerBuilder {
+func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer, pullSecrets ...string) jobInstallerBuilder {
 	t.Helper()
 
 	return func(_ context.Context, props *job.Properties) installer.Installer {
-		if pullSecret != "" {
+		for _, pullSecret := range pullSecrets {
 			assert.Contains(t, props.PullSecrets, pullSecret)
-		} else {
-			assert.Empty(t, props.PullSecrets)
 		}
 
 		return mockedInstaller

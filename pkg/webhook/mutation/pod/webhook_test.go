@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler"
 	podwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -218,34 +218,17 @@ func getTestPodWithInjectionDisabledOnContainer() *corev1.Pod {
 	return pod
 }
 
-func getTestWebhookPod(t *testing.T) corev1.Pod {
-	t.Helper()
-
-	return corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-webhook",
-			Namespace: "test-namespace",
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  dtwebhook.WebhookContainerName,
-					Image: testWebhookImage,
-				},
-			},
-		},
-	}
-}
-
 func createTestWebhook(t *testing.T, injectionHandler, otlpHandler handler.Handler, objects ...client.Object) *webhook {
 	t.Helper()
+
+	t.Setenv(k8senv.DtOperatorImageEnvName, testWebhookImage)
 
 	decoder := admission.NewDecoder(scheme.Scheme)
 
 	fakeClient := fake.NewClient(objects...)
 
 	wh, err := newWebhook(fakeClient, fakeClient, fakeClient,
-		events.NewRecorder(record.NewFakeRecorder(10)), decoder, getTestWebhookPod(t), false)
+		events.NewRecorder(record.NewFakeRecorder(10)), decoder, testNamespaceName, false)
 
 	require.NoError(t, err)
 

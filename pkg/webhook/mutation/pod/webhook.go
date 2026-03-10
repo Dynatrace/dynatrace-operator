@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
@@ -30,12 +28,7 @@ const (
 )
 
 func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string, isOpenShift bool) error {
-	podName := os.Getenv(k8senv.PodName)
-	if podName == "" {
-		log.Info("no Pod name set for webhook container")
-	}
-
-	if err := registerInjectEndpoint(ctx, mgr, ns, podName, isOpenShift); err != nil {
+	if err := registerInjectEndpoint(mgr, ns, isOpenShift); err != nil {
 		return err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -34,19 +35,20 @@ func TestGetUID(t *testing.T) {
 }
 
 func TestIsDeployedViaOLM(t *testing.T) {
-	testPodName := "test-pod"
-	testNamespaceName := "test-namespace"
+	t.Run("returns true when OLM_OPERATOR_NAMESPACE is set", func(t *testing.T) {
+		t.Setenv(k8senv.OlmOperatorNamespaceEnv, "operators")
 
-	pod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testPodName,
-			Namespace: testNamespaceName,
-			Annotations: map[string]string{
-				"olm.operatorNamespace": "operators",
-			},
-		},
-	}
+		assert.True(t, IsDeployedViaOlm())
+	})
 
-	deployed := IsDeployedViaOlm(pod)
-	assert.True(t, deployed)
+	t.Run("returns false when OLM_OPERATOR_NAMESPACE is not set", func(t *testing.T) {
+		// t.Setenv is not used here, so the env var is simply absent
+		assert.False(t, IsDeployedViaOlm())
+	})
+
+	t.Run("returns false when OLM_OPERATOR_NAMESPACE is empty", func(t *testing.T) {
+		t.Setenv(k8senv.OlmOperatorNamespaceEnv, "")
+
+		assert.False(t, IsDeployedViaOlm())
+	})
 }

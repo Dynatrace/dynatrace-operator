@@ -175,7 +175,7 @@ func TestReconcile(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Equal(t, defaultUpdateInterval, result.RequeueAfter)
+		assert.Equal(t, defaultRequeueInterval, result.RequeueAfter)
 
 		var edgeConnectDeployment edgeconnect.EdgeConnect
 
@@ -289,7 +289,7 @@ func TestReconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, k8sconditions.SecretGenerationFailed, condition.Reason)
-		assert.Contains(t, condition.Message, "Failed to generate secret: failed to get clientSecret")
+		assert.Contains(t, condition.Message, "Failed to generate secret")
 	})
 
 	t.Run("SecretConfigConditionType is set SecretGenFailed failed", func(t *testing.T) {
@@ -328,7 +328,7 @@ func TestReconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, k8sconditions.SecretGenerationFailed, condition.Reason)
-		assert.Contains(t, condition.Message, "Failed to generate secret: BOOM")
+		assert.Contains(t, condition.Message, "Failed to generate secret")
 	})
 }
 

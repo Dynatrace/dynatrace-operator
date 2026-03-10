@@ -32,10 +32,10 @@ func (e ServerError) Error() string {
 
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("dynatrace server error %d: %s", int64(e.Code), e.Message))
+	fmt.Fprintf(&sb, "dynatrace server error %d: %s", int64(e.Code), e.Message)
 
 	for _, constraintViolation := range e.ConstraintViolations {
-		sb.WriteString(fmt.Sprintf("\n\t- %s: %s", constraintViolation.Path, constraintViolation.Message))
+		fmt.Fprintf(&sb, "\n\t- %s: %s", constraintViolation.Path, constraintViolation.Message)
 	}
 
 	return sb.String()

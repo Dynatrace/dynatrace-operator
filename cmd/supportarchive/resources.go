@@ -62,7 +62,7 @@ func (collector k8sResourceCollector) Do() error {
 		for _, resource := range resourceList.Items {
 			numberOfStorages++
 
-			collector.storeObject(resource)
+			collector.storeObject(&resource)
 		}
 	}
 
@@ -75,7 +75,7 @@ func (collector k8sResourceCollector) Do() error {
 		}
 
 		for _, resource := range webhookConfigurations.Items {
-			collector.storeObject(resource)
+			collector.storeObject(&resource)
 		}
 
 		customResourceDefinitions, err := collector.readCustomResourceDefinitions()
@@ -86,7 +86,7 @@ func (collector k8sResourceCollector) Do() error {
 		}
 
 		for _, resource := range customResourceDefinitions.Items {
-			collector.storeObject(resource)
+			collector.storeObject(&resource)
 		}
 	}
 
@@ -188,7 +188,7 @@ func (collector k8sResourceCollector) getMutatingWebhookConfiguration(mutatingWe
 	}
 }
 
-func (collector k8sResourceCollector) storeObject(resource unstructured.Unstructured) {
+func (collector k8sResourceCollector) storeObject(resource *unstructured.Unstructured) {
 	yamlManifest, err := yaml.Marshal(resource)
 	if err != nil {
 		logErrorf(collector.log, err, "Failed to marshal %s %s/%s", resource.GetKind(), collector.namespace, resource.GetName())
@@ -196,7 +196,7 @@ func (collector k8sResourceCollector) storeObject(resource unstructured.Unstruct
 		return
 	}
 
-	fileName := collector.createFileName(resource.GetKind(), resource)
+	fileName := collector.createFileName(resource.GetKind(), *resource)
 
 	err = collector.supportArchive.addFile(fileName, bytes.NewBuffer(yamlManifest))
 	if err != nil {

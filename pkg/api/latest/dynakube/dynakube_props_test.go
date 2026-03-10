@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,4 +116,64 @@ func TestIsTokenScopeVerificationAllowed(t *testing.T) {
 			assert.Equal(t, test.updateExpected, dk.IsTokenScopeVerificationAllowed(timeProvider))
 		})
 	}
+}
+
+func TestImagePullSecretReferences(t *testing.T) {
+	const (
+		dkName           = "test-dk"
+		customPullSecret = "my-custom-secret"
+		helmPullSecret   = "helm-pull-secret"
+	)
+
+	t.Run("only tenant pull secret when no custom pull secret is set", func(t *testing.T) {
+		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName}}
+		refs := dk.ImagePullSecretReferences()
+		assert.Len(t, refs, 1)
+		assert.Equal(t, dkName+PullSecretSuffix, refs[0].Name)
+	})
+
+	t.Run("includes DynaKube customPullSecret when set", func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
+		}
+		refs := dk.ImagePullSecretReferences()
+		assert.Len(t, refs, 2)
+		assert.Equal(t, dkName+PullSecretSuffix, refs[0].Name)
+		assert.Equal(t, customPullSecret, refs[1].Name)
+	})
+
+	t.Run("includes Helm pull secret from env var", func(t *testing.T) {
+		t.Setenv(k8senv.DtOperatorPullSecretEnvName, helmPullSecret)
+		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName}}
+		refs := dk.ImagePullSecretReferences()
+		assert.Len(t, refs, 2)
+		assert.Equal(t, dkName+PullSecretSuffix, refs[0].Name)
+		assert.Equal(t, helmPullSecret, refs[1].Name)
+	})
+
+	t.Run("does not duplicate helm pull secret when it matches DynaKube customPullSecret", func(t *testing.T) {
+		t.Setenv(k8senv.DtOperatorPullSecretEnvName, customPullSecret)
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
+		}
+		refs := dk.ImagePullSecretReferences()
+		assert.Len(t, refs, 2)
+		assert.Equal(t, dkName+PullSecretSuffix, refs[0].Name)
+		assert.Equal(t, customPullSecret, refs[1].Name)
+	})
+
+	t.Run("includes both DynaKube customPullSecret and helm pull secret", func(t *testing.T) {
+		t.Setenv(k8senv.DtOperatorPullSecretEnvName, helmPullSecret)
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
+		}
+		refs := dk.ImagePullSecretReferences()
+		assert.Len(t, refs, 3)
+		assert.Equal(t, dkName+PullSecretSuffix, refs[0].Name)
+		assert.Equal(t, customPullSecret, refs[1].Name)
+		assert.Equal(t, helmPullSecret, refs[2].Name)
+	})
 }

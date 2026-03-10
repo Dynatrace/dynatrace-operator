@@ -139,6 +139,9 @@ Run the go unit tests via make:
 make go/test
 ```
 
+> [!NOTE]
+> This command also runs integration tests based on [envtest](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest). See [Integration Tests](#integration-tests) for more details.
+
 ### Mocking
 
 For our mocking needs we use [testify](https://github.com/stretchr/testify) with [mockery](https://github.com/vektra/mockery) to generate our mocks.
@@ -217,13 +220,16 @@ mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
 ## Integration Tests
 
-Based on [controller-runtime/pkg/envtest](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#pkg-overview)
+Based on [controller-runtime/pkg/envtest](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#pkg-overview) and run via make:
 
-### Setup
-
-```bash
-make integrationtest
+```sh
+make go/test
 ```
+
+> [!NOTE]
+> This command also runs unit tests. See [Unit Tests](#unit-tests) for more details.
+
+Integration tests should use the `_integration_test.go` suffix to clearly distinguish them from unit tests.
 
 ### Motivation
 
