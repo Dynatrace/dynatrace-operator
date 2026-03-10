@@ -4,6 +4,7 @@ const (
 	// Deprecated: OAProxyIgnoredKey use NoProxy annotation instead.
 	OAProxyIgnoredKey = FFPrefix + "oneagent-ignore-proxy"
 
+	// Deprecated: OAMaxUnavailableKey is no longer used. Use rollingUpdate configuration for OneAgent in the DynaKube spec instead.
 	OAMaxUnavailableKey      = FFPrefix + "oneagent-max-unavailable"
 	OAInitialConnectRetryKey = FFPrefix + "oneagent-initial-connect-retry-ms"
 	OAPrivilegedKey          = FFPrefix + "oneagent-privileged"
@@ -17,8 +18,12 @@ const (
 
 const (
 	DefaultOAIstioInitialConnectRetry = 6000
+
+	// Deprecated: DefaultOAMaxUnavailable is the default value for the deprecated OAMaxUnavailableKey annotation.
+	DefaultOAMaxUnavailable = 1
 )
 
+// Deprecated: Use rollingUpdate configuration for OneAgent in the DynaKube spec instead.
 // GetOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
 func (ff *FeatureFlags) GetOneAgentMaxUnavailable() int {
 	return ff.getIntWithDefault(OAMaxUnavailableKey, 1)

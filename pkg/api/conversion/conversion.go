@@ -9,6 +9,7 @@ const (
 
 	AutoUpdateKey        = Prefix + "auto-update"
 	DefaultOTELCImageKey = Prefix + "default-otelc-image"
+	OAMaxUnavailableKey  = Prefix + "oneagent-max-unavailable"
 )
 
 type Field[T any] struct {
@@ -44,16 +45,19 @@ func (f Field[T]) Set(value *T) {
 type RemovedFields struct {
 	AutoUpdate        Field[bool]
 	DefaultOTELCImage Field[bool]
+	OAMaxUnavailable  Field[int]
 }
 
 func NewRemovedFields(annotations map[string]string) *RemovedFields {
 	return &RemovedFields{
 		AutoUpdate:        Field[bool]{name: AutoUpdateKey, data: annotations},
 		DefaultOTELCImage: Field[bool]{name: DefaultOTELCImageKey, data: annotations},
+		OAMaxUnavailable:  Field[int]{name: OAMaxUnavailableKey, data: annotations},
 	}
 }
 
 func CleanupAnnotations(annotations map[string]string) {
 	delete(annotations, AutoUpdateKey)
 	delete(annotations, DefaultOTELCImageKey)
+	delete(annotations, OAMaxUnavailableKey)
 }
