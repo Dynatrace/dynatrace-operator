@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func TestNoIstioInstalled(t *testing.T) {
+func TestIsIstioNotInstalled(t *testing.T) {
 	noIstioInterceptor := interceptor.Funcs{
 		Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
 			return new(meta.NoResourceMatchError)

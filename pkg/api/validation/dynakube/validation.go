@@ -40,7 +40,7 @@ var (
 		conflictingOneAgentConfiguration,
 		conflictingOneAgentNodeSelector,
 		conflictingNamespaceSelector,
-		noIstioInstalled,
+		isIstioNotInstalled,
 		imageFieldSetWithoutCSIFlag,
 		missingCodeModulesImage,
 		conflictingOneAgentVolumeStorageSettings,

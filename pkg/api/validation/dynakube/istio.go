@@ -11,7 +11,7 @@ const (
 	errorNoIstioInstalled = `No resources for istio available`
 )
 
-func noIstioInstalled(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func isIstioNotInstalled(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	if dk.Spec.EnableIstio && !istio.IsInstalled(ctx, dv.apiReader) {
 		return errorNoIstioInstalled
 	}
