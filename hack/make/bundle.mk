@@ -25,8 +25,6 @@ endif
 
 # Default platform for bundles
 PLATFORM ?= openshift
-# Needed variable for manifest generation
-OLM ?= false
 # Default bundle image with tag
 BUNDLE_IMG ?= $(REGISTRY)/$(REPOSITORY)/dynatrace-operator-bundle:$(VERSION)
 
@@ -39,6 +37,7 @@ endif
 
 .PHONY: bundle
 ## Generates bundle manifests and metadata, then validates generated files
+bundle: OLM=true # with the current state of the helm chart OLM must always be true when generating the bundle. it should not be set to false accidentally
 bundle: prerequisites/kustomize prerequisites/operator-sdk manifests/$(PLATFORM)/core
 	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
 	@git restore config/

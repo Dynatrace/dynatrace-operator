@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
+	toolsevents "k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -228,7 +228,7 @@ func createTestWebhook(t *testing.T, injectionHandler, otlpHandler handler.Handl
 	fakeClient := fake.NewClient(objects...)
 
 	wh, err := newWebhook(fakeClient, fakeClient, fakeClient,
-		events.NewRecorder(record.NewFakeRecorder(10)), decoder, testNamespaceName, false)
+		events.NewRecorder(toolsevents.NewFakeRecorder(10)), decoder, testNamespaceName, false)
 
 	require.NoError(t, err)
 

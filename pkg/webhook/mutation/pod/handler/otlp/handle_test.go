@@ -42,6 +42,35 @@ func TestHandler_Handle(t *testing.T) {
 		err := h.Handle(request)
 		require.NoError(t, err)
 	})
+	t.Run("do not annotate when mutator is disabled", func(t *testing.T) {
+		mockEnvVarMutator := webhookmock.NewMutator(t)
+		mockResourceAttributeMutator := webhookmock.NewMutator(t)
+
+		// Mutator disabled - no injection should occur
+		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(false)
+
+		h := createTestHandler(
+			mockEnvVarMutator,
+			mockResourceAttributeMutator,
+			getTestTokenSecret(),
+			getTestCertSecret(),
+		)
+
+		dk := getTestDynakube()
+		req := createTestMutationRequest(t, dk)
+
+		err := h.Handle(req)
+		require.NoError(t, err)
+
+		// Expected behavior: Should NOT annotate when no actual injection occurs
+		assert.NotContains(t, req.Pod.Annotations, mutator.AnnotationOTLPInjected)
+		assert.NotContains(t, req.Pod.Annotations, mutator.AnnotationOTLPReason)
+
+		// Verify mutators were not called
+		mockEnvVarMutator.AssertNotCalled(t, "IsInjected", mock.Anything)
+		mockEnvVarMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+	})
 	t.Run("call mutators if enabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
@@ -64,6 +93,10 @@ func TestHandler_Handle(t *testing.T) {
 
 		err := h.Handle(request)
 		require.NoError(t, err)
+
+		// Verify annotations for successful injection
+		assert.Equal(t, "true", request.Pod.Annotations[mutator.AnnotationOTLPInjected])
+		assert.NotContains(t, request.Pod.Annotations, mutator.AnnotationOTLPReason)
 	})
 	t.Run("call mutators if no certificate secret is present, but ActiveGate is disabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
@@ -91,6 +124,10 @@ func TestHandler_Handle(t *testing.T) {
 
 		err := h.Handle(request)
 		require.NoError(t, err)
+
+		// Verify annotations for successful injection
+		assert.Equal(t, "true", request.Pod.Annotations[mutator.AnnotationOTLPInjected])
+		assert.NotContains(t, request.Pod.Annotations, mutator.AnnotationOTLPReason)
 	})
 	t.Run("call otlp exporter env var and resource attribute reinvocation if enabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
@@ -115,6 +152,10 @@ func TestHandler_Handle(t *testing.T) {
 
 		err := h.Handle(request)
 		require.NoError(t, err)
+
+		// Verify annotations for successful injection (reinvocation case)
+		assert.Equal(t, "true", request.Pod.Annotations[mutator.AnnotationOTLPInjected])
+		assert.NotContains(t, request.Pod.Annotations, mutator.AnnotationOTLPReason)
 	})
 	t.Run("return error if exporter env var mutator returns error", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
@@ -258,6 +299,10 @@ func TestHandler_Handle(t *testing.T) {
 		require.NoError(t, h.apiReader.Get(req.Context, targetKey, &target))
 		assert.Equal(t, consts.OTLPExporterSecretName, target.Name)
 		assert.Equal(t, testNamespaceName, target.Namespace)
+
+		// Verify annotations for successful injection
+		assert.Equal(t, "true", req.Pod.Annotations[mutator.AnnotationOTLPInjected])
+		assert.NotContains(t, req.Pod.Annotations, mutator.AnnotationOTLPReason)
 	})
 }
 

@@ -19,7 +19,7 @@ tests:
           path: rules
           value:
             - apiGroups:
-                - ""
+                - events.k8s.io
               resources:
                 - events
               verbs:
@@ -61,7 +61,7 @@ tests:
           path: rules
           value:
             - apiGroups:
-                - ""
+                - events.k8s.io
               resources:
                 - events
               verbs:

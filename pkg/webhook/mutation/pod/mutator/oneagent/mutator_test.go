@@ -38,7 +38,6 @@ func TestIsEnabled(t *testing.T) {
 			dkMods:  func(dk *dynakube.DynaKube) {},
 			enabled: false,
 		},
-
 		{
 			title:   "only OA enabled => enabled",
 			podMods: func(p *corev1.Pod) {},
@@ -48,7 +47,18 @@ func TestIsEnabled(t *testing.T) {
 			},
 			enabled: true,
 		},
-
+		{
+			title:   "OA enabled + FF enabled => enabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				}
+			},
+			enabled: true,
+		},
 		{
 			title:   "OA + FF enabled => enabled",
 			podMods: func(p *corev1.Pod) {},
@@ -58,18 +68,6 @@ func TestIsEnabled(t *testing.T) {
 				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 			},
 			enabled: true,
-		},
-		{
-			title:   "OA enabled + auto-inject false => disabled",
-			podMods: func(p *corev1.Pod) {},
-			nsMods:  func(n *corev1.Namespace) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{
-					exp.InjectionAutomaticKey: "false",
-				}
-			},
-			enabled: false,
 		},
 		{
 			title:   "OA enabled + auto-inject false + no pod annotation => disabled",
@@ -100,6 +98,33 @@ func TestIsEnabled(t *testing.T) {
 			enabled: true,
 		},
 		{
+			title: "OA enabled + auto-inject false + pod annotation false => disabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{
+					AnnotationInject: "false",
+				}
+			},
+			nsMods: func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "false",
+				}
+			},
+			enabled: false,
+		},
+		{
+			title: "OA disable + auto-inject true => disabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{
+					AnnotationInject: "true",
+				}
+			},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods:  func(dk *dynakube.DynaKube) {},
+			enabled: false,
+		},
+		{
 			title:   "OA enabled + labels not match => disabled",
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},
@@ -124,6 +149,40 @@ func TestIsEnabled(t *testing.T) {
 				}
 			},
 			enabled: true,
+		},
+		{
+			title: "OA enabled + labels match + pod annotation => enabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{
+					AnnotationInject: "true",
+				}
+			},
+			nsMods: func(n *corev1.Namespace) {
+				n.Labels = matchLabels
+			},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				}
+			},
+			enabled: true,
+		},
+		{
+			title: "OA enabled + labels not match => disabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{
+					AnnotationInject: "true",
+				}
+			},
+			nsMods: func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				}
+			},
+			enabled: false,
 		},
 	}
 	for _, test := range cases {
@@ -404,6 +463,10 @@ func createTestMutationRequestWithoutInjectedContainers() *dtwebhook.MutationReq
 		},
 		BaseRequest: &dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -416,6 +479,7 @@ func createTestMutationRequestWithoutInjectedContainers() *dtwebhook.MutationReq
 						},
 					},
 				},
+				Status: corev1.PodStatus{},
 			},
 			DynaKube: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{
