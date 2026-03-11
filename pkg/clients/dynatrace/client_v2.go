@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 )
 
 type ClientV2 struct {
@@ -102,11 +103,20 @@ func WithHostGroup(hostGroup string) OptionV2 {
 	}
 }
 
+// WithUserAgentSuffix appends a suffix (comment) to the default user agent.
+func WithUserAgentSuffix(suffix string) OptionV2 {
+	return func(c *ConfigV2) {
+		if suffix != "" {
+			c.UserAgent += " " + suffix
+		}
+	}
+}
+
 // newClientV2 creates a new Dynatrace API client
 func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 	config := ConfigV2{
 		BaseURL:   baseURL,
-		UserAgent: "dynatrace-operator/2.0",
+		UserAgent: operatorversion.UserAgent(),
 		Timeout:   30 * time.Second,
 	}
 
@@ -168,6 +178,7 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 	// Fields are already validated by the v1 client constructor
 	v2, _ := newClientV2(
 		dtc.url,
+		WithUserAgentSuffix(dtc.userAgentSuffix),
 		WithAPIToken(dtc.apiToken),
 		WithPaasToken(dtc.paasToken),
 		WithDataIngestToken(""),

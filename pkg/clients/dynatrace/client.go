@@ -191,3 +191,9 @@ func HostGroup(hostGroup string) Option {
 		c.hostGroup = hostGroup
 	}
 }
+
+func UserAgentSuffix(suffix string) Option {
+	return func(c *dynatraceClient) {
+		c.userAgentSuffix = suffix
+	}
+}
