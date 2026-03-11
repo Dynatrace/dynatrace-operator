@@ -62,6 +62,7 @@ operator:
   limits:
     cpu: 100m
     memory: 128Mi
+  startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
 
 webhook:
   hostNetwork: false
@@ -127,6 +128,7 @@ webhook:
   volumes:
     certsDir:
       sizeLimit: 10Mi
+  startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
 
 csidriver:
   enabled: true
@@ -211,6 +213,7 @@ csidriver:
       requests:
         cpu: 300m
         memory: 100Mi
+    startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
   registrar:
     securityContext:
       allowPrivilegeEscalation: false

@@ -72,6 +72,14 @@ startupProbe:
   failureThreshold: 1
 {{- end -}}
 
+{{- define "dynatrace-operator.startupProbeForComponent" -}}
+{{- $default := (include "dynatrace-operator.startupProbe" . | fromYaml).startupProbe -}}
+{{- $override := pick (default (dict) .) "periodSeconds" "timeoutSeconds" "failureThreshold" -}}
+{{- $probe := mergeOverwrite $default $override -}}
+startupProbe:
+  {{- toYaml $probe | nindent 2 }}
+{{- end -}}
+
 {{- define "dynatrace-operator.modules-json-env" -}}
 - name: modules.json
   value: |
