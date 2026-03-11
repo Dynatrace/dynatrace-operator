@@ -34,6 +34,8 @@ type dynatraceClient struct {
 	networkZone string
 
 	hostGroup string
+
+	userAgentSuffix string
 }
 
 type tokenType int

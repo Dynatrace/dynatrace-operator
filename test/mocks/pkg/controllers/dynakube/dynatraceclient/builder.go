@@ -208,3 +208,56 @@ func (_c *Builder_SetTokens_Call) RunAndReturn(run func(tokens token.Tokens) dyn
 	_c.Call.Return(run)
 	return _c
 }
+
+// SetUserAgentSuffix provides a mock function for the type Builder
+func (_mock *Builder) SetUserAgentSuffix(suffix string) dynatraceclient.Builder {
+	ret := _mock.Called(suffix)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetUserAgentSuffix")
+	}
+
+	var r0 dynatraceclient.Builder
+	if returnFunc, ok := ret.Get(0).(func(string) dynatraceclient.Builder); ok {
+		r0 = returnFunc(suffix)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(dynatraceclient.Builder)
+		}
+	}
+	return r0
+}
+
+// Builder_SetUserAgentSuffix_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetUserAgentSuffix'
+type Builder_SetUserAgentSuffix_Call struct {
+	*mock.Call
+}
+
+// SetUserAgentSuffix is a helper method to define mock.On call
+//   - suffix string
+func (_e *Builder_Expecter) SetUserAgentSuffix(suffix interface{}) *Builder_SetUserAgentSuffix_Call {
+	return &Builder_SetUserAgentSuffix_Call{Call: _e.mock.On("SetUserAgentSuffix", suffix)}
+}
+
+func (_c *Builder_SetUserAgentSuffix_Call) Run(run func(suffix string)) *Builder_SetUserAgentSuffix_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Builder_SetUserAgentSuffix_Call) Return(builder dynatraceclient.Builder) *Builder_SetUserAgentSuffix_Call {
+	_c.Call.Return(builder)
+	return _c
+}
+
+func (_c *Builder_SetUserAgentSuffix_Call) RunAndReturn(run func(suffix string) dynatraceclient.Builder) *Builder_SetUserAgentSuffix_Call {
+	_c.Call.Return(run)
+	return _c
+}
