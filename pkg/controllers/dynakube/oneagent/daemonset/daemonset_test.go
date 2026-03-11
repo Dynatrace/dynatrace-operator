@@ -696,14 +696,14 @@ func TestUpdateStrategy(t *testing.T) {
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
 		daemonset, err := dsBuilder.BuildDaemonSet()
 
-		expected := intstr.FromInt32(exp.DefaultOAMaxUnavailable) //nolint:staticcheck
+		expected := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
 		assert.Equal(t, expected, *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
 	})
 	t.Run("returns update strategy", func(t *testing.T) {
-		maxUnavailable := intstr.FromInt32(4)
+		maxUnavailable := intstr.FromInt(4)
 		maxSurge := intstr.FromString("40%")
 
 		dk := dynakube.DynaKube{

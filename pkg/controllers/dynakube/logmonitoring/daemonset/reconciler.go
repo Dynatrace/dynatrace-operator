@@ -2,7 +2,6 @@ package daemonset
 
 import (
 	"context"
-	"math"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
@@ -107,16 +106,8 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 }
 
 func (r *Reconciler) getUpdateStrategy() appsv1.DaemonSetUpdateStrategy {
-	maxUnavailableVal := r.dk.FF().GetOneAgentMaxUnavailable() //nolint:staticcheck
+	maxUnavailable := intstr.FromInt(r.dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
 
-	// Clamp to the valid int32 range before converting to avoid overflow.
-	if maxUnavailableVal < 0 {
-		maxUnavailableVal = 0
-	} else if maxUnavailableVal > math.MaxInt32 {
-		maxUnavailableVal = math.MaxInt32
-	}
-
-	maxUnavailable := intstr.FromInt32(int32(maxUnavailableVal))
 	us := appsv1.DaemonSetUpdateStrategy{
 		RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 			MaxUnavailable: &maxUnavailable,

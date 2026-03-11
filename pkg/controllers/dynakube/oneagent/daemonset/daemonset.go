@@ -1,7 +1,6 @@
 package daemonset
 
 import (
-	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -381,16 +380,7 @@ func (b *builder) resources() corev1.ResourceRequirements {
 }
 
 func (b *builder) updateStrategy() appsv1.DaemonSetUpdateStrategy {
-	maxUnavailableVal := b.dk.FF().GetOneAgentMaxUnavailable() //nolint:staticcheck
-
-	// Clamp to the valid int32 range before converting to avoid overflow.
-	if maxUnavailableVal < 0 {
-		maxUnavailableVal = 0
-	} else if maxUnavailableVal > math.MaxInt32 {
-		maxUnavailableVal = math.MaxInt32
-	}
-
-	maxUnavailable := intstr.FromInt32(int32(maxUnavailableVal))
+	maxUnavailable := intstr.FromInt(b.dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
 
 	us := appsv1.DaemonSetUpdateStrategy{
 		RollingUpdate: &appsv1.RollingUpdateDaemonSet{
