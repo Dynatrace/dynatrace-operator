@@ -18,9 +18,6 @@ const (
 
 const (
 	DefaultOAIstioInitialConnectRetry = 6000
-
-	// Deprecated: DefaultOAMaxUnavailable is the default value for the deprecated OAMaxUnavailableKey annotation.
-	DefaultOAMaxUnavailable = 1
 )
 
 // Deprecated: Use rollingUpdate configuration for OneAgent in the DynaKube spec instead.
