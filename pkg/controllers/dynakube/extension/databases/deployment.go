@@ -182,6 +182,8 @@ func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []
 }
 
 func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.Volume {
+	mode := ptr.To(int32(0o640))
+
 	volumes := []corev1.Volume{
 		{
 			Name: tmpVolumeName,
@@ -200,6 +202,7 @@ func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev
 							Path: tokenVolumeName,
 						},
 					},
+					DefaultMode: mode,
 				},
 			},
 		},
@@ -214,6 +217,7 @@ func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev
 							Path: consts.TLSCrtDataName,
 						},
 					},
+					DefaultMode: mode,
 				},
 			},
 		},
