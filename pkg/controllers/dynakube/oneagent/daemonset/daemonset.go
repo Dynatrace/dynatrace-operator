@@ -432,32 +432,40 @@ func (b *builder) securityContext() *corev1.SecurityContext {
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
 
-		if b.dk != nil {
-			switch {
-			case b.dk.OneAgent().IsHostMonitoringMode() && b.dk.Spec.OneAgent.HostMonitoring.SecCompProfile != "":
-				secCompName := b.dk.Spec.OneAgent.HostMonitoring.SecCompProfile
-				securityContext.SeccompProfile = &corev1.SeccompProfile{
-					Type:             corev1.SeccompProfileTypeLocalhost,
-					LocalhostProfile: &secCompName,
-				}
-			case b.dk.OneAgent().IsClassicFullStackMode() && b.dk.Spec.OneAgent.ClassicFullStack.SecCompProfile != "":
-				secCompName := b.dk.Spec.OneAgent.ClassicFullStack.SecCompProfile
-				securityContext.SeccompProfile = &corev1.SeccompProfile{
-					Type:             corev1.SeccompProfileTypeLocalhost,
-					LocalhostProfile: &secCompName,
-				}
-			case b.dk.OneAgent().IsCloudNativeFullstackMode() && b.dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile != "":
-				secCompName := b.dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
-				securityContext.SeccompProfile = &corev1.SeccompProfile{
-					Type:             corev1.SeccompProfileTypeLocalhost,
-					LocalhostProfile: &secCompName,
-				}
-			default:
-			}
-		}
+		securityContext.SeccompProfile = seccompProfile(b.dk)
 	}
 
 	return &securityContext
+}
+
+func seccompProfile(dk *dynakube.DynaKube) *corev1.SeccompProfile {
+	if dk == nil {
+		return &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		}
+	}
+
+	var secCompName string
+
+	switch {
+	case dk.OneAgent().IsHostMonitoringMode():
+		secCompName = dk.Spec.OneAgent.HostMonitoring.SecCompProfile
+	case dk.OneAgent().IsClassicFullStackMode():
+		secCompName = dk.Spec.OneAgent.ClassicFullStack.SecCompProfile
+	case dk.OneAgent().IsCloudNativeFullstackMode():
+		secCompName = dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
+	}
+
+	if secCompName != "" {
+		return &corev1.SeccompProfile{
+			Type:             corev1.SeccompProfileTypeLocalhost,
+			LocalhostProfile: &secCompName,
+		}
+	}
+
+	return &corev1.SeccompProfile{
+		Type: corev1.SeccompProfileTypeRuntimeDefault,
+	}
 }
 
 func defaultSecurityContextCapabilities() *corev1.Capabilities {
