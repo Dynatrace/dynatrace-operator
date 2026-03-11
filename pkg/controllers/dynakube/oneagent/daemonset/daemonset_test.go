@@ -696,7 +696,7 @@ func TestUpdateStrategy(t *testing.T) {
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
 		daemonset, err := dsBuilder.BuildDaemonSet()
 
-		expected := intstr.FromInt32(int32(dk.FF().GetOneAgentMaxUnavailable()))
+		expected := intstr.FromInt32(exp.DefaultOAMaxUnavailable) //nolint:staticcheck
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
