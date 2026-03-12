@@ -51,7 +51,7 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
-	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient.AsV2().Version)
+	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient.AsV2().Version, r.dtClient.AsV2().Images)
 	if r.needsUpdate(updater, dk) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
 

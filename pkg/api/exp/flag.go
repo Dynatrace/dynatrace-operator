@@ -30,7 +30,7 @@ func (ff *FeatureFlags) GetNoProxy() string {
 	return ff.getRaw(NoProxyKey)
 }
 
-func (ff *FeatureFlags) IsAutomaticRegistry() bool {
+func (ff *FeatureFlags) IsPublicRegistry() bool {
 	return ff.getBoolWithDefault(UsePublicRegistryKey, false)
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	imagesclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/images"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -36,8 +37,9 @@ func TestActiveGateUpdater(t *testing.T) {
 			},
 		}
 		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockImagesClient := imagesclientmock.NewAPIClient(t)
 
-		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient, mockImagesClient)
 
 		assert.Equal(t, "activegate", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -69,7 +71,8 @@ func TestActiveGateUseDefault(t *testing.T) {
 		mockVersionClient := versionclientmock.NewAPIClient(t)
 		mockVersionClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)
 
-		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient)
+		mockImagesClient := imagesclientmock.NewAPIClient(t)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient, mockImagesClient)
 
 		err := updater.UseTenantRegistry(context.Background())
 		require.NoError(t, err)
@@ -90,7 +93,7 @@ func TestActiveGateIsEnabled(t *testing.T) {
 			},
 		}
 
-		updater := newActiveGateUpdater(dk, nil, nil)
+		updater := newActiveGateUpdater(dk, nil, nil, nil)
 
 		isEnabled := updater.IsEnabled()
 		require.False(t, isEnabled)

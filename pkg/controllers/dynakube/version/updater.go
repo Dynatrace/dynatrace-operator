@@ -19,9 +19,10 @@ type StatusUpdater interface {
 	CustomImage() string
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
-	IsAutoRegistryEnabled() bool
+	IsPublicRegistryEnabled() bool
 	CheckForDowngrade(latestVersion string) (bool, error)
 	ValidateStatus() error
+	LatestImageURI(ctx context.Context) (string, error)
 
 	UseTenantRegistry(context.Context) error
 }
@@ -57,8 +58,8 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		}
 	}
 
-	if updater.IsAutoRegistryEnabled() {
-		err = r.processAutoRegistry(ctx, updater)
+	if updater.IsPublicRegistryEnabled() {
+		err = r.processPublicRegistry(ctx, updater)
 		if err != nil {
 			return err
 		}
@@ -76,10 +77,25 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	return updater.ValidateStatus()
 }
 
-func (r *reconciler) processAutoRegistry(_ context.Context, updater StatusUpdater) error {
+func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
 	log.Info("updating version status according to public registry", "updater", updater.Name())
-	// TODO: implement in ICP-1077
-	return errors.New("auto registry is not yet supported")
+
+	publicImage, err := updater.LatestImageURI(ctx)
+
+	if err != nil {
+		log.Info("could not get public image", "updater", updater.Name())
+
+		return err
+	}
+
+	isDowngrade, err := updater.CheckForDowngrade(publicImage.Tag)
+	if err != nil || isDowngrade {
+		return err
+	}
+
+	setImageFromImageInfo(updater.Target(), *publicImage)
+
+	return nil
 }
 
 func determineSource(updater StatusUpdater) status.VersionSource {
@@ -87,7 +103,7 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 		return status.CustomImageVersionSource
 	}
 
-	if updater.IsAutoRegistryEnabled() {
+	if updater.IsPublicRegistryEnabled() {
 		return status.AutomaticRegistryVersionSource
 	}
 
@@ -108,6 +124,21 @@ func setImageIDToCustomImage(
 
 	target.ImageID = imageURI
 	target.Version = string(status.CustomImageVersionSource)
+
+	log.Info("updated image version info",
+		"newImageID", target.ImageID)
+}
+
+func setImageFromImageURI(
+	target *status.VersionStatus,
+	imageInfo string,
+) {
+	log.Info("updating image version info",
+		"image", imageURI,
+		"oldImageID", target.ImageID)
+
+	target.Version = imageInfo.Tag
+	target.ImageID = imageURI
 
 	log.Info("updated image version info",
 		"newImageID", target.ImageID)

@@ -187,11 +187,11 @@ func (_c *MockStatusUpdater_CustomVersion_Call) RunAndReturn(run func() string) 
 }
 
 // IsAutoRegistryEnabled provides a mock function for the type MockStatusUpdater
-func (_mock *MockStatusUpdater) IsAutoRegistryEnabled() bool {
+func (_mock *MockStatusUpdater) IsPublicRegistryEnabled() bool {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for IsAutoRegistryEnabled")
+		panic("no return value specified for IsPublicRegistryEnabled")
 	}
 
 	var r0 bool
@@ -203,14 +203,14 @@ func (_mock *MockStatusUpdater) IsAutoRegistryEnabled() bool {
 	return r0
 }
 
-// MockStatusUpdater_IsAutoRegistryEnabled_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsAutoRegistryEnabled'
+// MockStatusUpdater_IsAutoRegistryEnabled_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsPublicRegistryEnabled'
 type MockStatusUpdater_IsAutoRegistryEnabled_Call struct {
 	*mock.Call
 }
 
 // IsAutoRegistryEnabled is a helper method to define mock.On call
 func (_e *MockStatusUpdater_Expecter) IsAutoRegistryEnabled() *MockStatusUpdater_IsAutoRegistryEnabled_Call {
-	return &MockStatusUpdater_IsAutoRegistryEnabled_Call{Call: _e.mock.On("IsAutoRegistryEnabled")}
+	return &MockStatusUpdater_IsAutoRegistryEnabled_Call{Call: _e.mock.On("IsPublicRegistryEnabled")}
 }
 
 func (_c *MockStatusUpdater_IsAutoRegistryEnabled_Call) Run(run func()) *MockStatusUpdater_IsAutoRegistryEnabled_Call {
