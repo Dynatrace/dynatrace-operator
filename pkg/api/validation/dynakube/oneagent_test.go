@@ -1200,7 +1200,7 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 			Name:      testName,
 			Namespace: testNamespace,
 			Annotations: map[string]string{
-				exp.OAMaxUnavailableKey: "2",
+				exp.OAMaxUnavailableKey: "2", //nolint:staticcheck
 			},
 		}
 		assertDenied(t, []string{errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate}, &dynakube.DynaKube{
@@ -1225,7 +1225,7 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 			Name:      testName,
 			Namespace: testNamespace,
 			Annotations: map[string]string{
-				exp.OAMaxUnavailableKey: "2",
+				exp.OAMaxUnavailableKey: "2", //nolint:staticcheck
 			},
 		}
 		assertDenied(t, []string{errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate}, &dynakube.DynaKube{
