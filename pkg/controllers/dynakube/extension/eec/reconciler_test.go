@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -1074,7 +1075,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1101,7 +1102,8 @@ func TestLegacyVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1122,7 +1124,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1149,7 +1151,8 @@ func TestLegacyVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1192,7 +1195,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1219,7 +1222,8 @@ func TestLegacyVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1240,7 +1244,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1267,7 +1271,8 @@ func TestLegacyVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1299,7 +1304,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1326,7 +1331,8 @@ func TestLegacyVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1358,7 +1364,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1385,7 +1391,8 @@ func TestLegacyVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1435,7 +1442,7 @@ func TestVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1450,7 +1457,8 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1472,7 +1480,7 @@ func TestVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1487,7 +1495,8 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1531,7 +1540,7 @@ func TestVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1546,7 +1555,8 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1568,7 +1578,7 @@ func TestVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1583,7 +1593,8 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1616,7 +1627,7 @@ func TestVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1631,7 +1642,8 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1664,7 +1676,7 @@ func TestVolumes(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		mode := int32(420)
+		mode := int32(0o640)
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
@@ -1679,7 +1691,8 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			},
@@ -1727,7 +1740,8 @@ func TestVolumes(t *testing.T) {
 			Name: httpsCertVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: "custom-tls",
+					SecretName:  "custom-tls",
+					DefaultMode: ptr.To(int32(0o640)),
 				},
 			},
 		}
@@ -1748,7 +1762,8 @@ func TestVolumes(t *testing.T) {
 			Name: customCertificateVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: "custom-certs",
+					SecretName:  "custom-certs",
+					DefaultMode: ptr.To(int32(0o640)),
 				},
 			},
 		}
@@ -1770,7 +1785,7 @@ func TestActiveGateVolumes(t *testing.T) {
 		MountPath: activeGateTrustedCertMountPath,
 		ReadOnly:  true,
 	}
-	defaultMode := int32(420)
+	defaultMode := int32(0o640)
 	expectedVolume := corev1.Volume{
 		Name: activeGateTrustedCertVolumeName,
 		VolumeSource: corev1.VolumeSource{
