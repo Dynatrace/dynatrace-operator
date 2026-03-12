@@ -91,7 +91,7 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
-          {{- include "dynatrace-operator.startupProbeForComponent" .Values.operator.startupProbe | nindent 10 }}
+          {{- include "dynatrace-operator.startupProbe" .Values.operator.startupProbe | nindent 10 }}
           securityContext:
           {{- toYaml .Values.operator.securityContext | nindent 12 }}
       {{- include "dynatrace-operator.nodeAffinity" . | nindent 6 }}

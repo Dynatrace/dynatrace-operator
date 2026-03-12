@@ -196,7 +196,7 @@ spec:
           {{- include "dynatrace-operator.modules-json-env" . | nindent 10 }}
           {{- include "dynatrace-operator.helm-json-env" . | nindent 10 }}
           {{- include "dynatrace-operator.gomemlimit" .Values.csidriver.provisioner.resources | nindent 10 }}
-        {{- include "dynatrace-operator.startupProbeForComponent" .Values.csidriver.provisioner.startupProbe | nindent 8 }}
+        {{- include "dynatrace-operator.startupProbe" .Values.csidriver.provisioner.startupProbe | nindent 8 }}
         {{- if not .Values.debug }}
         livenessProbe:
           failureThreshold: 3

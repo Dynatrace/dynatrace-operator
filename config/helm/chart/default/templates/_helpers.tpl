@@ -67,17 +67,9 @@ startupProbe:
     command:
     - /usr/local/bin/dynatrace-operator
     - startup-probe
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 1
-{{- end -}}
-
-{{- define "dynatrace-operator.startupProbeForComponent" -}}
-{{- $default := (include "dynatrace-operator.startupProbe" . | fromYaml).startupProbe -}}
-{{- $override := pick (default (dict) .) "periodSeconds" "timeoutSeconds" "failureThreshold" -}}
-{{- $probe := mergeOverwrite $default $override -}}
-startupProbe:
-  {{- toYaml $probe | nindent 2 }}
+  periodSeconds: {{ .periodSeconds | default 10 }}
+  timeoutSeconds: {{ .timeoutSeconds | default 5 }}
+  failureThreshold: {{ .failureThreshold | default 1 }}
 {{- end -}}
 
 {{- define "dynatrace-operator.modules-json-env" -}}

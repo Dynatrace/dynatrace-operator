@@ -95,7 +95,7 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
-          {{- include "dynatrace-operator.startupProbeForComponent" .Values.webhook.startupProbe | nindent 10 }}
+          {{- include "dynatrace-operator.startupProbe" .Values.webhook.startupProbe | nindent 10 }}
           ports:
             - name: server-port
               containerPort: {{ .Values.webhook.ports.server | default 8443 }}
