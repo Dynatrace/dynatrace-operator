@@ -315,6 +315,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 
 		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
 		require.NoError(t, err)
+		require.Empty(t, dk.Conditions())
 	})
 
 	t.Run("forbidden error creating kspm settings -> silently skip", func(t *testing.T) {
@@ -331,6 +332,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 
 		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
 		require.NoError(t, err)
+		require.Empty(t, dk.Conditions())
 	})
 }
 
