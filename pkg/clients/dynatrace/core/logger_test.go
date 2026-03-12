@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -46,21 +45,21 @@ func Test_loggerArgs(t *testing.T) {
 	u, err := url.Parse("https://host.test/path-foo?query-foo=query-bar")
 	require.NoError(t, err)
 
-	tok, err := dttoken.New("test123")
-	require.NoError(t, err)
+	publicPart := strings.Repeat("a", 5) + "." + strings.Repeat("B", 24)
+	token := publicPart + "." + strings.Repeat("C", 64)
 
 	response := &http.Response{
 		StatusCode: http.StatusOK,
-		Header:     http.Header{"response-foo": []string{"response-" + tok.String()}},
+		Header:     http.Header{"response-foo": []string{"response-" + token}},
 		Request: &http.Request{
 			Method: http.MethodGet,
 			URL:    u,
-			Header: http.Header{"request-foo": []string{"request-" + tok.String()}},
+			Header: http.Header{"request-foo": []string{"request-" + token}},
 		},
 	}
 
-	requestBody := []byte("request " + tok.String() + "rest")
-	responseBody := []byte("response " + tok.String() + "rest")
+	requestBody := []byte("request " + token + "rest")
+	responseBody := []byte("response " + token + "rest")
 
 	tests := []struct {
 		name     string
@@ -80,7 +79,7 @@ func Test_loggerArgs(t *testing.T) {
 			levelRequest,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_body", "request ***rest",
+				"request_body", "request " + publicPart + ".***rest",
 			},
 		},
 		{
@@ -88,8 +87,8 @@ func Test_loggerArgs(t *testing.T) {
 			levelResponse,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_body", "request ***rest",
-				"response_body", "response ***rest",
+				"request_body", "request " + publicPart + ".***rest",
+				"response_body", "response " + publicPart + ".***rest",
 			},
 		},
 		{
@@ -97,10 +96,10 @@ func Test_loggerArgs(t *testing.T) {
 			levelFull,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_headers", `{"Request-Foo":"request-***"}`,
-				"response_headers", `{"Response-Foo":"response-***"}`,
-				"request_body", "request ***rest",
-				"response_body", "response ***rest",
+				"request_headers", `{"Request-Foo":"request-` + publicPart + `.***"}`,
+				"response_headers", `{"Response-Foo":"response-` + publicPart + `.***"}`,
+				"request_body", "request " + publicPart + ".***rest",
+				"response_body", "response " + publicPart + ".***rest",
 			},
 		},
 	}
@@ -148,8 +147,8 @@ func Test_dumpValues(t *testing.T) {
 		{"multi value w canonicalize", http.Header{"x-foo": []string{"bar", "baz"}}, true, `{"X-Foo":["bar","baz"]}`},
 		{"multi value wo canonicalize", url.Values{"foo": []string{"bar", "baz"}}, false, `{"foo":["bar","baz"]}`},
 
-		{"mask secret w canonicalize", http.Header{"x-foo": []string{"Bearer " + token}}, true, `{"X-Foo":"Bearer ***"}`},
-		{"mask secret wo canonicalize", url.Values{"foo": []string{"Bearer " + token}}, false, `{"foo":"Bearer ***"}`},
+		{"mask secret w canonicalize", http.Header{"x-foo": []string{"Bearer " + token}}, true, `{"X-Foo":"Bearer aaaaa.AAAAAAAA.***"}`},
+		{"mask secret wo canonicalize", url.Values{"foo": []string{"Bearer " + token}}, false, `{"foo":"Bearer aaaaa.AAAAAAAA.***"}`},
 	}
 
 	for _, tt := range tests {

@@ -92,7 +92,12 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 var dtTokenRegex = regexp.MustCompile(`[a-z0-9]{5,}\.([A-Z0-7]{8}|[A-Z0-7]{24})\.[A-Z0-7]{64}`)
 
 func sanitizeBody(body []byte) string {
-	return string(dtTokenRegex.ReplaceAll(body, []byte("***")))
+	return dtTokenRegex.ReplaceAllStringFunc(string(body), func(s string) string {
+		// Only hide private part from output
+		idx := strings.LastIndexByte(s, '.')
+
+		return s[:idx] + ".***"
+	})
 }
 
 // Dump objects like http.Header or url.Values into a JSON string.
@@ -122,5 +127,5 @@ func dumpValues(header map[string][]string, canonicalize bool) string {
 
 	o, _ := json.Marshal(data)
 
-	return string(dtTokenRegex.ReplaceAll(o, []byte("***")))
+	return sanitizeBody(o)
 }
