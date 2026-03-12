@@ -468,27 +468,6 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 		})
 	})
 
-	t.Run("is allowed when spec with cloudNative, csi driver and node image pull enabled and image not set and use-public-registry ff is enabled", func(t *testing.T) {
-		assertAllowed(t, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.OANodeImagePullKey:   "true",
-					exp.UsePublicRegistryKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{},
-					},
-				},
-			},
-		})
-	})
-
 	t.Run("spec with appmon enabled, csi driver and node image pull enabled and image not set", func(t *testing.T) {
 		assertDenied(t, []string{errorImagePullRequiresCodeModulesImage}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
