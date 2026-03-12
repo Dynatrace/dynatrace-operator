@@ -11,6 +11,7 @@ import (
 const (
 	oneAgentNamespacesMonitoredConditionType           = "OneAgentNamespacesMonitored"
 	metadataEnrichmentNamespacesMonitoredConditionType = "MetadataEnrichmentNamespacesMonitored"
+	otlpExporterNamespacesMonitoredConditionType       = "OTLPExporterConfigurationNamespacesMonitored"
 
 	matchesFoundReason = "MatchesFound"
 	noMatchesReason    = "NoMatches"
@@ -26,6 +27,8 @@ func setNamespacesMonitoredSelectorCondition(conditions *[]metav1.Condition, sel
 		condType = oneAgentNamespacesMonitoredConditionType
 	case "MetadataEnrichment":
 		condType = metadataEnrichmentNamespacesMonitoredConditionType
+	case "OTLPExporterConfiguration":
+		condType = otlpExporterNamespacesMonitoredConditionType
 	}
 
 	log.Info("namespaces monitored",

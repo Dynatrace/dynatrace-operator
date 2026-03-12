@@ -29,7 +29,11 @@ func (m matchResult) IsAny() bool {
 
 func (c *ConflictChecker) check(dk *dynakube.DynaKube) error {
 	metadataEnrichment := dk.MetadataEnrichment()
-	if !dk.OneAgent().IsAppInjectionNeeded() && !metadataEnrichment.IsEnabled() {
+	otlpExporterConfig := dk.OTLPExporterConfiguration()
+
+	if !dk.OneAgent().IsAppInjectionNeeded() &&
+		!metadataEnrichment.IsEnabled() &&
+		!otlpExporterConfig.IsEnabled() {
 		return nil
 	}
 

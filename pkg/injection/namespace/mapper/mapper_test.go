@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,6 +52,22 @@ func createDynakubeWithMetadataAndAppInjection(name string, selector metav1.Labe
 
 	dk.Spec.MetadataEnrichment.NamespaceSelector = selector
 	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
+
+	return dk
+}
+
+func createDynakubeWithOTLP(name string, selector metav1.LabelSelector) *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
+		Spec: dynakube.DynaKubeSpec{
+			OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+				Signals: otlp.SignalConfiguration{
+					Traces: &otlp.TracesSignal{},
+				},
+				NamespaceSelector: selector,
+			},
+		},
+	}
 
 	return dk
 }
@@ -244,6 +261,54 @@ func TestUpdateNamespace(t *testing.T) {
 		require.True(t, updated)
 		assert.Len(t, namespace.Labels, 1)
 	})
+
+	t.Run("Throw error for conflicting OTLP and OneAgent DynaKubes", func(t *testing.T) {
+		labels := map[string]string{"test": "selector"}
+		otlpDk := createDynakubeWithOTLP("otlp-dk", convertToLabelSelector(labels))
+		oaDk := createDynakubeWithAppInject("oa-dk", convertToLabelSelector(labels))
+		namespace := createNamespace("test-namespace", labels)
+
+		_, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDk, *oaDk}})
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), ErrorConflictingNamespace)
+	})
+
+	t.Run("Throw error for conflicting OTLP and MetadataEnrichment DynaKubes", func(t *testing.T) {
+		labels := map[string]string{"test": "selector"}
+		otlpDk := createDynakubeWithOTLP("otlp-dk", convertToLabelSelector(labels))
+		meDk := createDynakubeWithMetadataEnrichment("me-dk", convertToLabelSelector(labels))
+		namespace := createNamespace("test-namespace", labels)
+
+		_, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDk, *meDk}})
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), ErrorConflictingNamespace)
+	})
+
+	t.Run("Throw error for two conflicting OTLP DynaKubes", func(t *testing.T) {
+		labels := map[string]string{"test": "selector"}
+		otlpDk1 := createDynakubeWithOTLP("otlp-dk-1", convertToLabelSelector(labels))
+		otlpDk2 := createDynakubeWithOTLP("otlp-dk-2", convertToLabelSelector(labels))
+		namespace := createNamespace("test-namespace", labels)
+
+		_, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDk1, *otlpDk2}})
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), ErrorConflictingNamespace)
+	})
+
+	t.Run("No conflict for non-overlapping OTLP DynaKubes", func(t *testing.T) {
+		labels1 := map[string]string{"env": "prod"}
+		labels2 := map[string]string{"env": "dev"}
+		otlpDk1 := createDynakubeWithOTLP("otlp-dk-prod", convertToLabelSelector(labels1))
+		otlpDk2 := createDynakubeWithOTLP("otlp-dk-dev", convertToLabelSelector(labels2))
+		namespace := createNamespace("prod-namespace", labels1)
+
+		_, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDk1, *otlpDk2}})
+
+		require.NoError(t, err)
+	})
 }
 
 func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
@@ -386,5 +451,27 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 
 		require.Empty(t, dm.matchedOANamespaces)
 		require.Empty(t, dm.matchedMENamespaces)
+	})
+
+	t.Run("Track OTLP matched namespaces in DynakubeMapper", func(t *testing.T) {
+		labels := map[string]string{"otlp": "enabled"}
+		selector := convertToLabelSelector(labels)
+		dk := createDynakubeWithOTLP("dk-otlp", selector)
+
+		nsList := &corev1.NamespaceList{
+			Items: []corev1.Namespace{
+				*createNamespace("ns-with-otlp", labels),
+				*createNamespace("ns-without-otlp", map[string]string{"other": "label"}),
+			},
+		}
+
+		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
+		dm := DynakubeMapper{dk: dk, matchedOTLPNamespaces: []string{}}
+
+		_, err := dm.mapFromDynakube(nsList, dkList)
+		require.NoError(t, err)
+
+		require.Len(t, dm.matchedOTLPNamespaces, 1)
+		assert.Equal(t, "ns-with-otlp", dm.matchedOTLPNamespaces[0])
 	})
 }
