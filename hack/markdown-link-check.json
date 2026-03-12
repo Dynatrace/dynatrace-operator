@@ -1,0 +1,10 @@
+{
+    "httpHeaders": [
+        {
+            "urls": ["https://community.dynatrace.com"],
+            "headers": {
+                "User-Agent": "Mozilla/5.0 (platform; rv:gecko-version) Gecko/gecko-trail Firefox/firefox-version"
+            }
+        }
+    ]
+}
