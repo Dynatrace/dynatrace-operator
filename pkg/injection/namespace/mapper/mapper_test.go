@@ -474,4 +474,28 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		require.Len(t, dm.matchedOTLPNamespaces, 1)
 		assert.Equal(t, "ns-with-otlp", dm.matchedOTLPNamespaces[0])
 	})
+
+	t.Run("OTLP with empty namespace selector matches all namespaces", func(t *testing.T) {
+		// Create OTLP DynaKube with empty selector (should match all)
+		dk := createDynakubeWithOTLP("dk-otlp-all", metav1.LabelSelector{})
+
+		nsList := &corev1.NamespaceList{
+			Items: []corev1.Namespace{
+				*createNamespace("ns-a", map[string]string{"env": "prod"}),
+				*createNamespace("ns-b", map[string]string{"env": "dev"}),
+				*createNamespace("ns-c", nil),
+			},
+		}
+
+		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
+		dm := DynakubeMapper{dk: dk, matchedOTLPNamespaces: []string{}}
+
+		_, err := dm.mapFromDynakube(nsList, dkList)
+		require.NoError(t, err)
+
+		require.Len(t, dm.matchedOTLPNamespaces, 3)
+		assert.Contains(t, dm.matchedOTLPNamespaces, "ns-a")
+		assert.Contains(t, dm.matchedOTLPNamespaces, "ns-b")
+		assert.Contains(t, dm.matchedOTLPNamespaces, "ns-c")
+	})
 }
