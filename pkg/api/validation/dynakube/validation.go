@@ -44,6 +44,7 @@ var (
 		imageFieldSetWithoutCSIFlag,
 		missingCodeModulesImage,
 		conflictingOneAgentVolumeStorageSettings,
+		conflictingMaxUnavailableAnnotationWithRollingUpdate,
 		nameInvalid,
 		namespaceSelectorViolateLabelSpec,
 		imageFieldHasTenantImage,

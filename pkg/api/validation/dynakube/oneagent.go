@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -24,6 +25,8 @@ const (
 Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube specification specifies a read-only host file system while OneAgent has volume storage enabled.`
+
+	errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate = `The DynaKube specification uses both the deprecated annotation "oneagent-max-unavailable" and the oneagent.rollingUpdate configuration. Please use only the oneagent.rollingUpdate configuration.`
 
 	warningOneAgentInstallerEnvVars = `The environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please ensure you are using a supported image.`
 
@@ -128,6 +131,33 @@ func mapKeysToString(m map[string]bool, sep string) string {
 	}
 
 	return strings.Join(keys, sep)
+}
+
+func conflictingMaxUnavailableAnnotationWithRollingUpdate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.Annotations == nil {
+		return ""
+	}
+
+	_, annotationSet := dk.Annotations[exp.OAMaxUnavailableKey] //nolint:staticcheck
+	if !annotationSet {
+		return ""
+	}
+
+	oa := dk.OneAgent()
+	// Check if rollingUpdate is configured in any of the OneAgent modes
+	if oa.IsClassicFullStackMode() && dk.Spec.OneAgent.ClassicFullStack.RollingUpdate != nil {
+		return errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate
+	}
+
+	if oa.IsCloudNativeFullstackMode() && dk.Spec.OneAgent.CloudNativeFullStack.RollingUpdate != nil {
+		return errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate
+	}
+
+	if oa.IsHostMonitoringMode() && dk.Spec.OneAgent.HostMonitoring.RollingUpdate != nil {
+		return errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate
+	}
+
+	return ""
 }
 
 func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
