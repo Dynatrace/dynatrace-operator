@@ -89,8 +89,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 	kspmSettings, err := dtc.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		if core.HasStatusCode(err, http.StatusForbidden) {
-			msg := "tenant requires additional permissions for getting KSPM settings. Skipping reconciliation"
-			log.Info(msg)
+			log.Info("tenant requires additional scopes for getting KSPM settings. Skipping reconciliation")
 
 			return nil
 		}
@@ -113,8 +112,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 	objectID, err := dtc.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, datasetPipelineEnabled)
 	if err != nil {
 		if core.HasStatusCode(err, http.StatusForbidden) {
-			msg := "tenant requires additional permissions for creating KSPM settings. Skipping reconciliation"
-			log.Info(msg)
+			log.Info("tenant requires additional scopes for creating KSPM settings. Skipping reconciliation")
 
 			return nil
 		}
