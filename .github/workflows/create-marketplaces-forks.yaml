@@ -153,56 +153,7 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
           RHCC_USERNAME: ${{ secrets.RHCC_USERNAME }}
           RHCC_PASSWORD: ${{ secrets.RHCC_PASSWORD }}
-        run: |
-          set -euo pipefail
-          cd "${FORK_REPO_DIR}"
-
-          # Set IMAGE based on marketplace
-          case "${MARKETPLACE}" in
-            community)
-              image_digest=$(skopeo inspect "docker://docker.io/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
-              IMAGE="docker.io/dynatrace/dynatrace-operator@${image_digest}"
-              ;;
-            community-prod)
-              image_digest=$(skopeo inspect --username "${RHCC_USERNAME}" --password "${RHCC_PASSWORD}" "docker://registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
-              IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator@${image_digest}"
-              ;;
-            certified)
-              image_digest=$(skopeo inspect --username "${RHCC_USERNAME}" --password "${RHCC_PASSWORD}" "docker://registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
-              IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator@${image_digest}"
-              ;;
-            redhat)
-              image_digest=$(skopeo inspect --username "${RHCC_USERNAME}" --password "${RHCC_PASSWORD}" "docker://registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
-              IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator@${image_digest}"
-              ;;
-            *)
-              echo "Unknown marketplace: ${MARKETPLACE}"
-              exit 1
-              ;;
-          esac
-
-          # Prepare CSV files
-          if [ "${MARKETPLACE}" = "redhat" ]; then
-            csv_file="operators/dynatrace-operator-rhmp/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml"
-          else
-            csv_file="operators/dynatrace-operator/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml"
-          fi
-          yq -i ".metadata.annotations.containerImage = \"${IMAGE}\"" "${csv_file}"
-          yq -i ".spec.install.spec.deployments[].spec.template.spec.containers[].image = \"${IMAGE}\"" "${csv_file}"
-          yq -i "(.spec.install.spec.deployments[] | select(.name == \"dynatrace-operator\") | .spec.template.metadata.labels.\"dynatrace.com/install-source\") = \"operatorhub-${MARKETPLACE}\"" "${csv_file}"
-          yq -i '.metadata.annotations."operators.openshift.io/valid-subscription" = "[\"Dynatrace Platform Subscription (DPS)\",\"Dynatrace Classic License\"]"' "${csv_file}"
-          yq -i '.metadata.annotations."features.operators.openshift.io/disconnected" = "true"' "${csv_file}"
-          yq -i '.metadata.annotations."features.operators.openshift.io/proxy-aware" = "true"' "${csv_file}"
-          yq -i '.metadata.annotations."features.operators.openshift.io/fips-compliant" = "false"' "${csv_file}"
-          yq -i '.metadata.annotations."features.operators.openshift.io/tls-profiles" = "false"' "${csv_file}"
-          yq -i '.metadata.annotations."features.operators.openshift.io/token-auth-aws" = "false"' "${csv_file}"
-          yq -i '.metadata.annotations."features.operators.openshift.io/token-auth-azure" = "false"' "${csv_file}"
-          yq -i '.metadata.annotations."features.operators.openshift.io/token-auth-gcp" = "false"' "${csv_file}"
-          yq -i ".spec.relatedImages = [{\"name\": \"dynatrace-operator\", \"image\": \"${IMAGE}\"}]" "${csv_file}"
-          if [ "${MARKETPLACE}" = "redhat" ]; then
-            yq -i '.metadata.annotations."marketplace.openshift.io/remote-workflow" = "https://marketplace.redhat.com/en-us/operators/dynatrace-operator-rhmp/pricing?utm_source=openshift_console"' "${csv_file}"
-            yq -i '.metadata.annotations."marketplace.openshift.io/support-workflow" = "https://marketplace.redhat.com/en-us/operators/dynatrace-operator-rhmp/support?utm_source=openshift_console"' "${csv_file}"
-          fi
+        run: bash .github/scripts/release/csv/prepare_marketplace_csv.sh
       - name: Post-process CSV for redhat marketplace
         if: matrix.marketplace == 'redhat'
         env:
