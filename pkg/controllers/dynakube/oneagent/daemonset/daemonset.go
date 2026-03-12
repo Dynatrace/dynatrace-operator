@@ -439,27 +439,10 @@ func (b *builder) securityContext() *corev1.SecurityContext {
 }
 
 func seccompProfile(dk *dynakube.DynaKube) *corev1.SeccompProfile {
-	if dk == nil {
-		return &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		}
-	}
-
-	var secCompName string
-
-	switch {
-	case dk.OneAgent().IsHostMonitoringMode():
-		secCompName = dk.Spec.OneAgent.HostMonitoring.SecCompProfile
-	case dk.OneAgent().IsClassicFullStackMode():
-		secCompName = dk.Spec.OneAgent.ClassicFullStack.SecCompProfile
-	case dk.OneAgent().IsCloudNativeFullstackMode():
-		secCompName = dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
-	}
-
-	if secCompName != "" {
+	if dk != nil && dk.OneAgent().GetSecCompProfile() != "" {
 		return &corev1.SeccompProfile{
 			Type:             corev1.SeccompProfileTypeLocalhost,
-			LocalhostProfile: &secCompName,
+			LocalhostProfile: ptr.To(dk.OneAgent().GetSecCompProfile()),
 		}
 	}
 
