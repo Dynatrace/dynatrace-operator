@@ -44,9 +44,6 @@ jobs:
         run: |
           git config --global user.name  "${{ secrets.TEAM_USER_NAME }}"
           git config --global user.email "${{ secrets.TEAM_USER_EMAIL }}"
-      - name: Install Python deps
-        run: |
-          pip install -r hack/requirements.txt
       - name: Derive version and branch name
         id: meta
         run: |
@@ -60,7 +57,8 @@ jobs:
             exit 1
           fi
 
-          version="$(python .github/scripts/release/directory_version.py "${versions_dirs}")"
+          # strip trailing slash and path prefix from each dir, then pick the highest semver
+          version="$(echo "${versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | sort -V | tail -1)"
           echo "Detected bundle version: $version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "branch=$BASE_REF" >> "$GITHUB_OUTPUT"
@@ -132,10 +130,12 @@ jobs:
 
           # Determine last existing version and set spec.replaces
           if [ "${MARKETPLACE}" = "redhat" ]; then
-            last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator-rhmp/*/)" 2>/dev/null || true)"
+            operator_versions_dirs="$(ls -d operators/dynatrace-operator-rhmp/*/ 2>/dev/null || true)"
           else
-            last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator/*/)" 2>/dev/null || true)"
+            operator_versions_dirs="$(ls -d operators/dynatrace-operator/*/ 2>/dev/null || true)"
           fi
+          # strip trailing slash and path prefix from each dir, then pick the highest semver
+          last_version="$(echo "${operator_versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | sort -V | tail -1)"
 
           csv_file="${operator_dir}/manifests/dynatrace-operator.clusterserviceversion.yaml"
 
@@ -184,17 +184,24 @@ jobs:
           # Prepare CSV files
           if [ "${MARKETPLACE}" = "redhat" ]; then
             csv_file="operators/dynatrace-operator-rhmp/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml"
-            python ../.github/scripts/release/csv/make_release_csv.py \
-              "${csv_file}" \
-              --image "${IMAGE}" \
-              --marketplace "${MARKETPLACE}" \
-              --isRHCC true
           else
             csv_file="operators/dynatrace-operator/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml"
-            python ../.github/scripts/release/csv/make_release_csv.py \
-              "${csv_file}" \
-              --image "${IMAGE}" \
-              --marketplace "${MARKETPLACE}"
+          fi
+          yq -i ".metadata.annotations.containerImage = \"${IMAGE}\"" "${csv_file}"
+          yq -i ".spec.install.spec.deployments[].spec.template.spec.containers[].image = \"${IMAGE}\"" "${csv_file}"
+          yq -i "(.spec.install.spec.deployments[] | select(.name == \"dynatrace-operator\") | .spec.template.metadata.labels.\"dynatrace.com/install-source\") = \"operatorhub-${MARKETPLACE}\"" "${csv_file}"
+          yq -i '.metadata.annotations."operators.openshift.io/valid-subscription" = "[\"Dynatrace Platform Subscription (DPS)\",\"Dynatrace Classic License\"]"' "${csv_file}"
+          yq -i '.metadata.annotations."features.operators.openshift.io/disconnected" = "true"' "${csv_file}"
+          yq -i '.metadata.annotations."features.operators.openshift.io/proxy-aware" = "true"' "${csv_file}"
+          yq -i '.metadata.annotations."features.operators.openshift.io/fips-compliant" = "false"' "${csv_file}"
+          yq -i '.metadata.annotations."features.operators.openshift.io/tls-profiles" = "false"' "${csv_file}"
+          yq -i '.metadata.annotations."features.operators.openshift.io/token-auth-aws" = "false"' "${csv_file}"
+          yq -i '.metadata.annotations."features.operators.openshift.io/token-auth-azure" = "false"' "${csv_file}"
+          yq -i '.metadata.annotations."features.operators.openshift.io/token-auth-gcp" = "false"' "${csv_file}"
+          yq -i ".spec.relatedImages = [{\"name\": \"dynatrace-operator\", \"image\": \"${IMAGE}\"}]" "${csv_file}"
+          if [ "${MARKETPLACE}" = "redhat" ]; then
+            yq -i '.metadata.annotations."marketplace.openshift.io/remote-workflow" = "https://marketplace.redhat.com/en-us/operators/dynatrace-operator-rhmp/pricing?utm_source=openshift_console"' "${csv_file}"
+            yq -i '.metadata.annotations."marketplace.openshift.io/support-workflow" = "https://marketplace.redhat.com/en-us/operators/dynatrace-operator-rhmp/support?utm_source=openshift_console"' "${csv_file}"
           fi
       - name: Post-process CSV for redhat marketplace
         if: matrix.marketplace == 'redhat'
