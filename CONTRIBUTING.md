@@ -1,14 +1,27 @@
 # Contributing
 
-- [Pull requests](#pull-requests)
-- [Quick start](#quick-start)
-- [Unit tests](#unit-tests)
-- [Integration tests](#integration-tests)
-- [E2E tests](#e2e-tests)
-- [Useful commands](#useful-commands)
-  - [Remove all Dynatrace pods in force mode (useful debugging E2E tests)](#remove-all-dynatrace-pods-in-force-mode-useful-debugging-e2e-tests)
-  - [Add debug suffix on E2E tests to avoid removing pods](#add-debug-suffix-on-e2e-tests-to-avoid-removing-pods)
-  - [Debug cluster nodes by opening a shell prompt (details here)](#debug-cluster-nodes-by-opening-a-shell-prompt)
+- [Contributing](#contributing)
+  - [Pull requests](#pull-requests)
+    - [Bug fixes](#bug-fixes)
+      - [Bugfix for bugs in production](#bugfix-for-bugs-in-production)
+        - [Reasoning](#reasoning)
+      - [Bugfix for bugs in main (ie.: not released), example: for new features](#bugfix-for-bugs-in-main-ie-not-released-example-for-new-features)
+        - [Reasoning](#reasoning-1)
+  - [Quick start](#quick-start)
+  - [Unit tests](#unit-tests)
+    - [Mocking](#mocking)
+      - [Installing _mockery_](#installing-mockery)
+      - [Adding a mock](#adding-a-mock)
+      - [Migrating to Mockery](#migrating-to-mockery)
+    - [motivation](#motivation)
+  - [E2E tests](#e2e-tests)
+    - [Triggering E2E tests on kind in CI](#triggering-e2e-tests-on-kind-in-ci)
+  - [Useful commands](#useful-commands)
+    - [Install kind cluster](#install-kind-cluster)
+    - [Delete kind cluster](#delete-kind-cluster)
+    - [Remove all Dynatrace pods in force mode (useful debugging E2E tests)](#remove-all-dynatrace-pods-in-force-mode-useful-debugging-e2e-tests)
+    - [Add debug suffix on E2E tests to avoid removing pods](#add-debug-suffix-on-e2e-tests-to-avoid-removing-pods)
+    - [Debug cluster nodes by opening a shell prompt](#debug-cluster-nodes-by-opening-a-shell-prompt)
 
 ## Pull requests
 
@@ -98,19 +111,22 @@ If the bug flew under the radar, and got discovered later:
     make test/e2e/<scope_of_the_changes>
     ```
 
-6. To test your changes on a cluster use
-
-    > Pushing to the default container registry (`quay.io/dynatrace/dynatrace-operator`) requires specific permissions.
-    > You can use your own container registry by setting the `IMAGE` environment variable to a different value.
-
+7. To test your changes on a cluster:
     1. Connect to a cluster using `kubectl`
     2. Use make commands to build and deploy your operator as follows:
 
     ```sh
+    export REPOSITORY=<your GitHub handle>
     make build && make deploy
     ```
 
-7. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
+> [!IMPORTANT]
+> Make sure to set the environment variables `REGISTRY` (default: ghcr.io) and/or `REPOSITORY` (default: dynatrace) to something you control.
+> For example: `REPOSITORY=<your GitHub handle>` => ghcr.io will still be used (default), but the images will be pulled from your GitHub account.
+> If you want to push to ghcr.io, make sure to authenticate to the registry: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry
+> You can also set `IMAGE`, which will reconfigure both registry and repository.
+
+8. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
 
 8. A maintainer will review the pull request and make comments. It's preferable to add additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
 

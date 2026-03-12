@@ -9,11 +9,13 @@ TIMEOUT="${3:-600}"
 INTERVAL="${4:-30}"
 ELAPSED=0
 
-echo "Checking if image ${IMAGE}:${TAG} is available on quay.io"
+echo "Checking if image ${IMAGE}:${TAG} is available on ghcr.io"
 
+token=$(curl -s https://ghcr.io/token\?scope\="repository:${IMAGE}:pull" | jq -r .token)
 while true; do
-  STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://quay.io/v2/${IMAGE}/manifests/${TAG}")
-  if [ "$STATUS" -eq 200 ]; then
+  tags=$(curl -s -H "Authorization: Bearer ${token}" "https://ghcr.io/v2/${IMAGE}/tags/list")
+  tag_found=$(echo "$tags" | jq --arg TAG "$TAG" 'any(.tags[]; . ==  $TAG)')
+  if $tag_found; then
     echo "Image exists"
     exit 0
   fi
