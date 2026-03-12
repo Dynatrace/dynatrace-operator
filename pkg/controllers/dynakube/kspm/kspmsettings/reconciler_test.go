@@ -2,6 +2,7 @@ package kspmsettings
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
@@ -299,6 +301,36 @@ func TestCheckKSPMSettings(t *testing.T) {
 		require.ErrorIs(t, err, testErr)
 
 		verifyCondition(t, dk, errorReason)
+	})
+
+	t.Run("forbidden error fetching kspm settings -> silently skip", func(t *testing.T) {
+		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
+		mockClient := settingsmock.NewAPIClient(t)
+		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+			Return(settings.KSPMSettingsResponse{}, forbiddenErr)
+
+		dk := getDK(true, meID)
+
+		r := NewReconciler()
+
+		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+	})
+
+	t.Run("forbidden error creating kspm settings -> silently skip", func(t *testing.T) {
+		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
+		mockClient := settingsmock.NewAPIClient(t)
+		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
+		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, true).
+			Return("", forbiddenErr)
+
+		dk := getDK(true, meID)
+
+		r := NewReconciler()
+
+		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
+		require.NoError(t, err)
 	})
 }
 
