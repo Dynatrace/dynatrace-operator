@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGet(t *testing.T) {
+func TestGetModules(t *testing.T) {
 	t.Run("empty env -> use fallback", func(t *testing.T) {
 		t.Setenv(ModulesJSONEnv, "")
 
