@@ -134,10 +134,6 @@ func mapKeysToString(m map[string]bool, sep string) string {
 }
 
 func conflictingMaxUnavailableAnnotationWithRollingUpdate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.Annotations == nil {
-		return ""
-	}
-
 	_, annotationSet := dk.Annotations[exp.OAMaxUnavailableKey] //nolint:staticcheck
 	if !annotationSet {
 		return ""
