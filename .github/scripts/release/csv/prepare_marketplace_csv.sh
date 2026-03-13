@@ -8,11 +8,11 @@ set -euo pipefail
 
 case "${MARKETPLACE}" in
   community)
-    image_digest=$(skopeo inspect "docker://docker.io/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
+    image_digest=$(skopeo inspect --override-os linux --override-arch amd64 "docker://docker.io/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
     export IMAGE="docker.io/dynatrace/dynatrace-operator@${image_digest}"
     ;;
   community-prod|certified|redhat)
-    image_digest=$(skopeo inspect \
+    image_digest=$(skopeo inspect --override-os linux --override-arch amd64 \
       --username "${RHCC_USERNAME}" --password "${RHCC_PASSWORD}" \
       "docker://registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
     export IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator@${image_digest}"
