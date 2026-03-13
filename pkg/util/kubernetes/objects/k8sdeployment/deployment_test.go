@@ -123,8 +123,9 @@ func TestResolveReplicas(t *testing.T) {
 			replicas, err := ResolveReplicas(ctx, tc.reader, objectKey, tc.defaultReplicas)
 
 			if tc.expectedErr != nil {
-				assert.ErrorIs(t, err, tc.expectedErr)
+				require.ErrorIs(t, err, tc.expectedErr)
 				assert.Equal(t, int32(0), replicas)
+
 				return
 			}
 
@@ -178,8 +179,9 @@ func TestResolveAndSetReplicas(t *testing.T) {
 
 			err := ResolveAndSetReplicas(ctx, tc.reader, deployment, tc.defaultReplicas)
 			if tc.expectedErr != nil {
-				assert.ErrorIs(t, err, tc.expectedErr)
+				require.ErrorIs(t, err, tc.expectedErr)
 				assert.Nil(t, deployment.Spec.Replicas)
+
 				return
 			}
 
