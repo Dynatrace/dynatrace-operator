@@ -169,8 +169,8 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdateLogMonitoring(t *te
 				exp.OAMaxUnavailableKey: "2", //nolint:staticcheck
 			},
 		}
-		assertDenied(t, []string{errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate}, &dynakube.DynaKube{
-			ObjectMeta: meta,
+		// warning amount 2: deprecated flag + conflict with rolling update
+		assertAllowedWithWarnings(t, 2, &dynakube.DynaKube{ObjectMeta: meta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				Templates: dynakube.TemplatesSpec{
