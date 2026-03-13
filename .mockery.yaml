@@ -46,6 +46,15 @@ packages:
       dynakubeReconciler:
       istioReconciler:
       logMonitoringReconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{.SrcPackageName}}"
+      structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
+      filename: "mock_reconcilers_test.go"
+    interfaces:
+      subReconciler:
+      logmonsettingsSubReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection:
     config:
       dir: "{{.InterfaceDir}}"

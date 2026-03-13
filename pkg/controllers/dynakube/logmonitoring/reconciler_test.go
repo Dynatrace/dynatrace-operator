@@ -1,7 +1,6 @@
 package logmonitoring
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -14,24 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-// mockSubReconciler is a testify mock implementing subReconciler (Reconcile(ctx, dk)).
-type mockSubReconciler struct {
-	mock.Mock
-}
-
-func (m *mockSubReconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	return m.Called(ctx, dk).Error(0)
-}
-
-// mockLogmonsettingsSubReconciler is a testify mock implementing logmonsettingsSubReconciler.
-type mockLogmonsettingsSubReconciler struct {
-	mock.Mock
-}
-
-func (m *mockLogmonsettingsSubReconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error {
-	return m.Called(ctx, dtc, dk).Error(0)
-}
 
 func TestReconcile(t *testing.T) {
 	ctx := t.Context()
@@ -50,9 +31,12 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("config-secret fail => error", func(t *testing.T) {
-		failConfigSecret := createFailingSubReconciler(t)
 		passOAConnectionInfo := createPassingReconciler(t)
 		dk := &dynakube.DynaKube{}
+
+		failConfigSecret := newMockSubReconciler(t)
+		failConfigSecret.EXPECT().Reconcile(mock.Anything, dk).Return(errors.New("BOOM")).Once()
+
 		r := Reconciler{
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           failConfigSecret,
@@ -60,24 +44,27 @@ func TestReconcile(t *testing.T) {
 
 		err := r.Reconcile(ctx, nil, dk)
 		require.Error(t, err)
-
-		passOAConnectionInfo.AssertCalled(t, "Reconcile", ctx)
-		failConfigSecret.AssertCalled(t, "Reconcile", ctx, dk)
 	})
 
 	t.Run("all reconcilers pass", func(t *testing.T) {
 		passOAConnectionInfo := createPassingReconciler(t)
-		passConfigSecret := createPassingSubReconciler(t)
-		passDaemonSet := createPassingSubReconciler(t)
-		passLogMonSetting := createPassingLogmonsettingsSubReconciler(t)
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				LogMonitoring: &logmonitoring.Spec{},
 			},
 		}
 
+		passConfigSecret := newMockSubReconciler(t)
+		passConfigSecret.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+
+		passDaemonSet := newMockSubReconciler(t)
+		passDaemonSet.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+
 		mockDtc := dtclientmock.NewClient(t)
 		mockDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
+
+		passLogMonSetting := newMockLogmonsettingsSubReconciler(t)
+		passLogMonSetting.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 
 		r := Reconciler{
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
@@ -88,10 +75,6 @@ func TestReconcile(t *testing.T) {
 
 		err := r.Reconcile(ctx, mockDtc, dk)
 		require.NoError(t, err)
-
-		passOAConnectionInfo.AssertCalled(t, "Reconcile", ctx)
-		passConfigSecret.AssertCalled(t, "Reconcile", ctx, dk)
-		passDaemonSet.AssertCalled(t, "Reconcile", ctx, dk)
 	})
 }
 
@@ -111,37 +94,4 @@ func createPassingReconciler(t *testing.T) *controllermock.Reconciler {
 	passMock.On("Reconcile", mock.Anything).Return(nil)
 
 	return passMock
-}
-
-func createFailingSubReconciler(t *testing.T) *mockSubReconciler {
-	t.Helper()
-
-	m := &mockSubReconciler{}
-	m.Test(t)
-	t.Cleanup(func() { m.AssertExpectations(t) })
-	m.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
-
-	return m
-}
-
-func createPassingSubReconciler(t *testing.T) *mockSubReconciler {
-	t.Helper()
-
-	m := &mockSubReconciler{}
-	m.Test(t)
-	t.Cleanup(func() { m.AssertExpectations(t) })
-	m.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
-
-	return m
-}
-
-func createPassingLogmonsettingsSubReconciler(t *testing.T) *mockLogmonsettingsSubReconciler {
-	t.Helper()
-
-	m := &mockLogmonsettingsSubReconciler{}
-	m.Test(t)
-	t.Cleanup(func() { m.AssertExpectations(t) })
-	m.On("Reconcile", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	return m
 }

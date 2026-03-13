@@ -170,7 +170,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 	t.Run("generate daemonset", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -205,7 +205,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			Labels: customLabels,
 		}
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -225,7 +225,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -242,7 +242,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			DNSPolicy: customPolicy,
 		}
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -254,7 +254,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.NetworkZone = "my-networkzone"
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -268,7 +268,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.Proxy = &value.Source{Value: "unknown"}
 		dk.Status.ProxyURLHash = "proxy-hash"
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -283,7 +283,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			exp.NoProxyKey: "no-proxy",
 		}
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -300,7 +300,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			PriorityClassName: customClass,
 		}
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -314,7 +314,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.CustomPullSecret = customPullSecret
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -335,7 +335,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Tolerations: customTolerations,
 		}
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -352,7 +352,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			NodeSelector: customNodeSelector,
 		}
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -364,7 +364,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Status.KubernetesClusterMEID = ""
 
-		reconciler := NewReconciler(fake.NewClient(), fake.NewClient())
+		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
