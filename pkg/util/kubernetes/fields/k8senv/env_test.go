@@ -7,14 +7,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	testKey1       = "test-key"
-	testKey2       = "test-name"
-	testAppName    = "dynatrace-operator"
-	testAppVersion = "snapshot"
-)
-
 func TestFind(t *testing.T) {
+	const testKey1 = "test-key"
+	const testKey2 = "test-name"
+	const testAppName = "dynatrace-operator"
+	const testAppVersion = "snapshot"
+
 	envVars := []corev1.EnvVar{
 		{Name: testKey1, Value: testAppVersion},
 		{Name: testKey2, Value: testAppName},
@@ -35,6 +33,11 @@ func TestFind(t *testing.T) {
 }
 
 func TestContains(t *testing.T) {
+	const testKey1 = "test-key"
+	const testKey2 = "test-name"
+	const testAppName = "dynatrace-operator"
+	const testAppVersion = "snapshot"
+
 	envVars := []corev1.EnvVar{
 		{Name: testKey1, Value: testAppVersion},
 		{Name: testKey2, Value: testAppName},
