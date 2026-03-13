@@ -2,6 +2,7 @@ package edgeconnect
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"slices"
 	"time"
@@ -399,6 +400,10 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 
 	desiredDeployment.Spec.Template.Annotations[consts.EdgeConnectAnnotationSecretHash] = secretHash
 
+	if err = k8sdeployment.ResolveAndSetReplicas(ctx, controller.apiReader, desiredDeployment, ec.Spec.Replicas); err != nil {
+		return fmt.Errorf("failed to resolve and set replica count: %w", err)
+	}
+
 	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Info("could not create or update deployment for EdgeConnect")
@@ -709,6 +714,10 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 		_log.Debug("Could not set controller reference")
 
 		return errors.WithStack(err)
+	}
+
+	if err = k8sdeployment.ResolveAndSetReplicas(ctx, controller.apiReader, desiredDeployment, ec.Spec.Replicas); err != nil {
+		return fmt.Errorf("failed to resolve and set replica count: %w", err)
 	}
 
 	_, err = k8sdeployment.Query(controller.client, controller.apiReader, _log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)

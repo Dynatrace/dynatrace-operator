@@ -90,8 +90,15 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.State
 	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dk, r.capability)
 
 	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
+	if err != nil {
+		return nil, err
+	}
 
-	return desiredSts, err
+	if err = k8sstatefulset.ResolveAndSetReplicas(ctx, r.apiReader, desiredSts, r.dk.Spec.ActiveGate.Replicas); err != nil {
+		return nil, err
+	}
+
+	return desiredSts, nil
 }
 
 func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context) (string, error) {
