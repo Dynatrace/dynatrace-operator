@@ -45,6 +45,7 @@ packages:
       dtSettingReconciler:
       dynakubeReconciler:
       istioReconciler:
+      logMonitoringReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection:
     config:
       dir: "{{.InterfaceDir}}"
