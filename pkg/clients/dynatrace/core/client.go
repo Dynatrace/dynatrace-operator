@@ -10,9 +10,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const apiTokenHeader = "Api-Token "
+
+var log = logd.Get().WithName("dtclient-core")
 
 // APIClient defines the behavior required from a config provider and is mockable
 type APIClient interface {
@@ -267,19 +271,25 @@ func (r *Request) doRequest() (body []byte, err error) {
 		httpClient = http.DefaultClient
 	}
 
+	loggerArgs := createLoggerArgs(r.body)
+
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request: %w", err)
 	}
 
 	defer func() {
-		err = errors.Join(err, resp.Body.Close())
+		if errClose := resp.Body.Close(); errClose != nil {
+			err = errors.Join(err, errClose)
+		}
 	}()
 
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read response body: %w", err)
 	}
+
+	log.Debug("API request", loggerArgs(resp, body)...)
 
 	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
 	statusCodeThreshold := 201
