@@ -3,7 +3,6 @@ package k8sdeployment
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,8 +49,8 @@ func GetDeployment(c client.Client, podName, namespace string) (*appsv1.Deployme
 	return &d, nil
 }
 
-func ResolveAndSetReplicas(ctx context.Context, r client.Reader, log logd.Logger, d *appsv1.Deployment, defaultReplicas *int32) error {
-	replicas, err := ResolveReplicas(ctx, r, client.ObjectKey{Name: d.Name, Namespace: d.Namespace}, log, defaultReplicas)
+func ResolveAndSetReplicas(ctx context.Context, r client.Reader, d *appsv1.Deployment, defaultReplicas *int32) error {
+	replicas, err := ResolveReplicas(ctx, r, client.ObjectKeyFromObject(d), defaultReplicas)
 	if err != nil {
 		return err
 	}
@@ -61,13 +60,13 @@ func ResolveAndSetReplicas(ctx context.Context, r client.Reader, log logd.Logger
 	return nil
 }
 
-func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey, log logd.Logger, defaultReplicas *int32) (int32, error) {
+func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey, defaultReplicas *int32) (int32, error) {
 	if defaultReplicas != nil {
 		return *defaultReplicas, nil
 	}
 
-	obj, err := Query(nil, r, log).Get(ctx, key)
-	if err != nil {
+	d := &appsv1.Deployment{}
+	if err := r.Get(ctx, key, d); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return 1, nil
 		}
@@ -75,7 +74,7 @@ func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey,
 		return 0, err
 	}
 
-	return getReplicas(obj), nil
+	return getReplicas(d), nil
 }
 
 func getReplicas(d *appsv1.Deployment) int32 {

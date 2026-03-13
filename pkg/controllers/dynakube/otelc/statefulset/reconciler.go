@@ -96,7 +96,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		topologySpreadConstraints = dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
 	}
 
-	replicas, err := k8sstatefulset.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, log, dk.Spec.Templates.OpenTelemetryCollector.Replicas)
+	replicas, err := k8sstatefulset.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, dk.Spec.Templates.OpenTelemetryCollector.Replicas)
 	if err != nil {
 		return err
 	}

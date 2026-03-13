@@ -3,15 +3,14 @@ package k8sstatefulset
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ResolveAndSetReplicas(ctx context.Context, r client.Reader, log logd.Logger, ss *appsv1.StatefulSet, defaultReplicas *int32) error {
-	replicas, err := ResolveReplicas(ctx, r, client.ObjectKey{Name: ss.Name, Namespace: ss.Namespace}, log, defaultReplicas)
+func ResolveAndSetReplicas(ctx context.Context, r client.Reader, ss *appsv1.StatefulSet, defaultReplicas *int32) error {
+	replicas, err := ResolveReplicas(ctx, r, client.ObjectKeyFromObject(ss), defaultReplicas)
 	if err != nil {
 		return err
 	}
@@ -21,21 +20,20 @@ func ResolveAndSetReplicas(ctx context.Context, r client.Reader, log logd.Logger
 	return nil
 }
 
-func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey, log logd.Logger, defaultReplicas *int32) (int32, error) {
+func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey, defaultReplicas *int32) (int32, error) {
 	if defaultReplicas != nil {
 		return *defaultReplicas, nil
 	}
 
-	obj, err := Query(nil, r, log).Get(ctx, key)
-	if err != nil {
+	ss := &appsv1.StatefulSet{}
+	if err := r.Get(ctx, key, ss); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return 1, nil
 		}
-
 		return 0, err
 	}
 
-	return getReplicas(obj), nil
+	return getReplicas(ss), nil
 }
 
 func getReplicas(ss *appsv1.StatefulSet) int32 {

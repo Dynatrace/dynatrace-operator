@@ -94,7 +94,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.State
 		return nil, err
 	}
 
-	if err = k8sstatefulset.ResolveAndSetReplicas(ctx, r.apiReader, log, desiredSts, r.dk.Spec.ActiveGate.Replicas); err != nil {
+	if err = k8sstatefulset.ResolveAndSetReplicas(ctx, r.apiReader, desiredSts, r.dk.Spec.ActiveGate.Replicas); err != nil {
 		return nil, err
 	}
 
