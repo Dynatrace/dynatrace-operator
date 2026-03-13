@@ -166,7 +166,6 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		appLabels.BuildLabels(),
 		b.hostInjectSpec.Labels,
 	)
-	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable())
 
 	templateAnnotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
@@ -195,11 +194,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 				},
 				Spec: podSpec,
 			},
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: &maxUnavailable,
-				},
-			},
+			UpdateStrategy: b.updateStrategy(),
 		},
 	}
 
@@ -382,6 +377,22 @@ func (b *builder) resources() corev1.ResourceRequirements {
 	}
 
 	return resources
+}
+
+func (b *builder) updateStrategy() appsv1.DaemonSetUpdateStrategy {
+	maxUnavailable := intstr.FromInt(b.dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
+
+	us := appsv1.DaemonSetUpdateStrategy{
+		RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+			MaxUnavailable: &maxUnavailable,
+		},
+	}
+
+	if b.hostInjectSpec.RollingUpdate != nil {
+		us.RollingUpdate = b.hostInjectSpec.RollingUpdate
+	}
+
+	return us
 }
 
 func (b *builder) oneAgentResource() corev1.ResourceRequirements {

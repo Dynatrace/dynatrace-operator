@@ -192,7 +192,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Empty(t, daemonset.Spec.Template.Spec.Tolerations)
 		assert.Len(t, daemonset.Spec.Template.Spec.ImagePullSecrets, 1)
 		require.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
-		assert.Equal(t, intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable) //nolint:staticcheck
 	})
 
 	t.Run("respect custom labels", func(t *testing.T) {
@@ -248,6 +248,28 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.NotNil(t, daemonset)
 
 		assert.Equal(t, customPolicy, daemonset.Spec.Template.Spec.DNSPolicy)
+	})
+
+	t.Run("respect updateStrategy", func(t *testing.T) {
+		maxUnavailable := intstr.FromInt32(2)
+		maxSurge := intstr.FromString("25%")
+
+		dk := createDynakube(true)
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+				MaxUnavailable: &maxUnavailable,
+				MaxSurge:       &maxSurge,
+			},
+		}
+
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+
+		require.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
+		assert.Equal(t, maxUnavailable, *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, maxSurge, *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
 	})
 
 	t.Run("networkzone is in the template annotations, so if config changes, redeploy happens", func(t *testing.T) {

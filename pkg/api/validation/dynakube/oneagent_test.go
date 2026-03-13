@@ -11,8 +11,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -1130,6 +1132,70 @@ func Test_findDuplicates(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got := findDuplicates(test.input)
 			assert.Equal(t, test.expect, got)
+		})
+	}
+}
+
+func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
+	deprecatedAnnotation := map[string]string{exp.OAMaxUnavailableKey: "2"} //nolint:staticcheck
+	rollingUpdate := appsv1.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}
+
+	type testCase struct {
+		name             string
+		annotation       map[string]string
+		oaspec           oneagent.Spec
+		expectedWarnings int
+	}
+
+	testCases := []testCase{
+		{
+			name:       "rollingUpdate set but no annotation",
+			annotation: defaultDynakubeObjectMeta.Annotations,
+			oaspec: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{
+					RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+						MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}}},
+			expectedWarnings: 0,
+		},
+		{
+			name:             "annotation set but no rollingUpdate",
+			annotation:       deprecatedAnnotation,
+			oaspec:           oneagent.Spec{},
+			expectedWarnings: 1, // deprecated flag warning
+		},
+		{
+			name:             "both annotation and rollingUpdate in ClassicFullStack",
+			annotation:       deprecatedAnnotation,
+			oaspec:           oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}},
+			expectedWarnings: 2, // deprecated flag + conflict with rolling update
+		},
+		{
+			name:             "both annotation and rollingUpdate in CloudNativeFullStack",
+			annotation:       deprecatedAnnotation,
+			oaspec:           oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{HostInjectSpec: oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}}},
+			expectedWarnings: 2, // deprecated flag + conflict with rolling update
+		},
+		{
+			name:             "both annotation and rollingUpdate in HostMonitoring",
+			annotation:       deprecatedAnnotation,
+			oaspec:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}},
+			expectedWarnings: 2, // deprecated flag + conflict with rolling update
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assertAllowedWithWarnings(t, tc.expectedWarnings, &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        testName,
+					Namespace:   testNamespace,
+					Annotations: tc.annotation,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:   testAPIURL,
+					OneAgent: tc.oaspec,
+				},
+			})
 		})
 	}
 }

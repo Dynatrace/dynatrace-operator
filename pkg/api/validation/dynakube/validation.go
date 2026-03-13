@@ -69,6 +69,7 @@ var (
 		missingActiveGateMemoryLimit,
 		unsupportedOneAgentImage,
 		conflictingHostGroupSettings,
+		conflictingMaxUnavailableAnnotationWithRollingUpdate,
 		deprecatedAutoUpdate,
 		deprecatedOneAgentVersionField,
 		deprecatedFeatureFlag,
