@@ -68,7 +68,18 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		WorkloadName: workloadInfo.Name,
 	}
 
-	SetDeprecatedAttributes(&attrs)
+	withDeprecatedAttributesArg := arg.Arg{
+		Name:  bootstrapper.EnableAttributesDtKubernetesFlag,
+		Value: "false",
+	}
+
+	if request.DynaKube.FF().EnableAttributesDtKubernetes() {
+		setDeprecatedAttributes(&attrs)
+
+		withDeprecatedAttributesArg.Value = "true"
+	}
+
+	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{withDeprecatedAttributesArg})...)
 
 	addMetadataToInitArgs(request, &attrs)
 	setInjectedAnnotation(request.Pod)
