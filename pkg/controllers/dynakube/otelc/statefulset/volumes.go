@@ -24,6 +24,8 @@ const (
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	var volumes []corev1.Volume
 
+	mode := ptr.To(int32(0o640))
+
 	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
 		volumes = append(
 			volumes,
@@ -38,7 +40,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 								Path: consts.DatasourceTokenSecretKey,
 							},
 						},
-						DefaultMode: ptr.To(int32(420)),
+						DefaultMode: mode,
 					},
 				},
 			},
@@ -53,6 +55,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 								Path: consts.TLSCrtDataName,
 							},
 						},
+						DefaultMode: mode,
 					},
 				},
 			},
@@ -91,6 +94,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 								Path: otelcconsts.ActiveGateCertFile,
 							},
 						},
+						DefaultMode: mode,
 					},
 				},
 			})
@@ -112,6 +116,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 								Path: consts.TLSKeyDataName,
 							},
 						},
+						DefaultMode: mode,
 					},
 				},
 			})
