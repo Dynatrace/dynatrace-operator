@@ -107,10 +107,9 @@ jobs:
           else
             operator_dir="operators/dynatrace-operator/${VERSION}"
           fi
-          
-          mkdir -p "${operator_dir}/manifests"
-          mkdir -p "${operator_dir}/metadata"
-          
+
+          mkdir -p "${operator_dir}"
+
           # Copy bundle files
           cp -rf "../config/olm/${bundle_source}/${VERSION}/manifests" "${operator_dir}/"
           cp -rf "../config/olm/${bundle_source}/${VERSION}/metadata" "${operator_dir}/"
@@ -118,11 +117,8 @@ jobs:
           # Create Dockerfile for community marketplaces
           if [ "${MARKETPLACE}" = "community" ] || [ "${MARKETPLACE}" = "community-prod" ]; then
             echo "Creating Dockerfile for ${MARKETPLACE}"
-            origin_dockerfile="../config/olm/kubernetes/bundle-${VERSION}.Dockerfile"
+            origin_dockerfile="../config/olm/kubernetes/${VERSION}/bundle.Dockerfile"
             target_dockerfile="${operator_dir}/Dockerfile"
-            sed -n "\|COPY ${VERSION}/manifests /manifests/|q;p" "${origin_dockerfile}" > "${target_dockerfile}"
-            echo "COPY manifests /manifests/" >> "${target_dockerfile}"
-            echo "COPY metadata /metadata/" >> "${target_dockerfile}"
           fi
           
           # Update package annotation for redhat
