@@ -57,8 +57,8 @@ jobs:
             exit 1
           fi
 
-          # strip trailing slash and path prefix from each dir, then pick the highest semver
-          version="$(echo "${versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | sort -V | tail -1)"
+          # strip trailing slash and path prefix from each dir, filter out non-version strings, then pick the highest semver
+          version="$(echo "${versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | grep -E '^[vV]?[0-9]' | sort -V | tail -1)"
           echo "Detected bundle version: $version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "branch=$BASE_REF" >> "$GITHUB_OUTPUT"
@@ -134,8 +134,8 @@ jobs:
           else
             operator_versions_dirs="$(ls -d operators/dynatrace-operator/*/ 2>/dev/null || true)"
           fi
-          # strip trailing slash and path prefix from each dir, then pick the highest semver
-          last_version="$(echo "${operator_versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | sort -V | tail -1)"
+          # strip trailing slash and path prefix from each dir, filter out non-version strings, then pick the highest semver
+          last_version="$(echo "${operator_versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | grep -E '^[vV]?[0-9]' | sort -V | tail -1)"
 
           csv_file="${operator_dir}/manifests/dynatrace-operator.clusterserviceversion.yaml"
 
