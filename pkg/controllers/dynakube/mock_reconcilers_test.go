@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -362,6 +363,97 @@ func (_c *mockDtSettingReconciler_Reconcile_Call) Return(err error) *mockDtSetti
 }
 
 func (_c *mockDtSettingReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error) *mockDtSettingReconciler_Reconcile_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// newMockLogMonitoringReconciler creates a new instance of mockLogMonitoringReconciler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func newMockLogMonitoringReconciler(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *mockLogMonitoringReconciler {
+	mock := &mockLogMonitoringReconciler{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}
+
+// mockLogMonitoringReconciler is a mock type for the logMonitoringReconciler type
+type mockLogMonitoringReconciler struct {
+	mock.Mock
+}
+
+type mockLogMonitoringReconciler_Expecter struct {
+	mock *mock.Mock
+}
+
+func (_m *mockLogMonitoringReconciler) EXPECT() *mockLogMonitoringReconciler_Expecter {
+	return &mockLogMonitoringReconciler_Expecter{mock: &_m.Mock}
+}
+
+// Reconcile provides a mock function for the type mockLogMonitoringReconciler
+func (_mock *mockLogMonitoringReconciler) Reconcile(ctx context.Context, dtc dtclient.Client, dk *dynakube.DynaKube) error {
+	ret := _mock.Called(ctx, dtc, dk)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Reconcile")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dtclient.Client, *dynakube.DynaKube) error); ok {
+		r0 = returnFunc(ctx, dtc, dk)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// mockLogMonitoringReconciler_Reconcile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Reconcile'
+type mockLogMonitoringReconciler_Reconcile_Call struct {
+	*mock.Call
+}
+
+// Reconcile is a helper method to define mock.On call
+//   - ctx context.Context
+//   - dtc dtclient.Client
+//   - dk *dynakube.DynaKube
+func (_e *mockLogMonitoringReconciler_Expecter) Reconcile(ctx interface{}, dtc interface{}, dk interface{}) *mockLogMonitoringReconciler_Reconcile_Call {
+	return &mockLogMonitoringReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtc, dk)}
+}
+
+func (_c *mockLogMonitoringReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtc dtclient.Client, dk *dynakube.DynaKube)) *mockLogMonitoringReconciler_Reconcile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+
+		var arg1 dtclient.Client
+		if args[1] != nil {
+			arg1 = args[1].(dtclient.Client)
+		}
+
+		var arg2 *dynakube.DynaKube
+		if args[2] != nil {
+			arg2 = args[2].(*dynakube.DynaKube)
+		}
+
+		run(arg0, arg1, arg2)
+	})
+
+	return _c
+}
+
+func (_c *mockLogMonitoringReconciler_Reconcile_Call) Return(err error) *mockLogMonitoringReconciler_Reconcile_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *mockLogMonitoringReconciler_Reconcile_Call) RunAndReturn(run func(context.Context, dtclient.Client, *dynakube.DynaKube) error) *mockLogMonitoringReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }
