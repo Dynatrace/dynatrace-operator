@@ -1137,112 +1137,65 @@ func Test_findDuplicates(t *testing.T) {
 }
 
 func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
-	t.Run("annotation set but no rollingUpdate", func(t *testing.T) {
-		meta := metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				exp.OAMaxUnavailableKey: "2", //nolint:staticcheck
-			},
-		}
-		assertAllowedWithWarnings(t, 1, &dynakube.DynaKube{
-			ObjectMeta: meta,
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					ClassicFullStack: &oneagent.HostInjectSpec{},
-				},
-			},
-		})
-	})
+	deprecatedAnnotation := map[string]string{exp.OAMaxUnavailableKey: "2"} //nolint:staticcheck
+	rollingUpdate := appsv1.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}
 
-	t.Run("rollingUpdate set but no annotation", func(t *testing.T) {
-		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
-			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					ClassicFullStack: &oneagent.HostInjectSpec{
-						RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-							MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2},
-						},
-					},
-				},
-			},
-		})
-	})
+	type testCase struct {
+		name             string
+		annotation       map[string]string
+		oaspec           oneagent.Spec
+		expectedWarnings int
+	}
 
-	t.Run("both annotation and rollingUpdate in ClassicFullStack", func(t *testing.T) {
-		meta := metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				exp.OAMaxUnavailableKey: "2", //nolint:staticcheck
-			},
-		}
-		// warning amount 2: deprecated flag + conflict with rolling update
-		assertAllowedWithWarnings(t, 2, &dynakube.DynaKube{
-			ObjectMeta: meta,
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					ClassicFullStack: &oneagent.HostInjectSpec{
-						RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-							MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2},
-						},
-					},
-				},
-			},
-		})
-	})
+	testCases := []testCase{
+		{
+			name:       "rollingUpdate set but no annotation",
+			annotation: defaultDynakubeObjectMeta.Annotations,
+			oaspec: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{
+					RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+						MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}}},
+			expectedWarnings: 0,
+		},
+		{
+			name:             "annotation set but no rollingUpdate",
+			annotation:       deprecatedAnnotation,
+			oaspec:           oneagent.Spec{},
+			expectedWarnings: 1, // deprecated flag warning
+		},
+		{
+			name:             "both annotation and rollingUpdate in ClassicFullStack",
+			annotation:       deprecatedAnnotation,
+			oaspec:           oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}},
+			expectedWarnings: 2, // deprecated flag + conflict with rolling update
+		},
+		{
+			name:             "both annotation and rollingUpdate in CloudNativeFullStack",
+			annotation:       deprecatedAnnotation,
+			oaspec:           oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{HostInjectSpec: oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}}},
+			expectedWarnings: 2, // deprecated flag + conflict with rolling update
+		},
+		{
+			name:             "both annotation and rollingUpdate in HostMonitoring",
+			annotation:       deprecatedAnnotation,
+			oaspec:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}},
+			expectedWarnings: 2, // deprecated flag + conflict with rolling update
+		},
+	}
 
-	t.Run("both annotation and rollingUpdate in CloudNativeFullStack", func(t *testing.T) {
-		meta := metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				exp.OAMaxUnavailableKey: "2", //nolint:staticcheck
-			},
-		}
-		// warning amount 2: deprecated flag + conflict with rolling update
-		assertAllowedWithWarnings(t, 2, &dynakube.DynaKube{
-			ObjectMeta: meta,
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{
-							RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-								MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2},
-							},
-						},
-					},
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assertAllowedWithWarnings(t, tc.expectedWarnings, &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        testName,
+					Namespace:   testNamespace,
+					Annotations: tc.annotation,
 				},
-			},
-		})
-	})
-
-	t.Run("both annotation and rollingUpdate in HostMonitoring", func(t *testing.T) {
-		meta := metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				exp.OAMaxUnavailableKey: "2", //nolint:staticcheck
-			},
-		}
-		// warning amount 2: deprecated flag + conflict with rolling update
-		assertAllowedWithWarnings(t, 2, &dynakube.DynaKube{
-			ObjectMeta: meta,
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					HostMonitoring: &oneagent.HostInjectSpec{
-						RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-							MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2},
-						},
-					},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:   testAPIURL,
+					OneAgent: tc.oaspec,
 				},
-			},
+			})
 		})
-	})
+	}
 }
