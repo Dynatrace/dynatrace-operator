@@ -800,3 +800,59 @@ tests:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/operator"]
       - isNull:
           path: spec.template.spec.securityContext.appArmorProfile
+
+  - it: should use custom startupProbe when set for operator
+    set:
+      platform: kubernetes
+      image: image-name
+      operator.startupProbe:
+        failureThreshold: 5
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            exec:
+              command:
+                - /usr/local/bin/dynatrace-operator
+                - startup-probe
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+
+  - it: should use default startupProbe when no overrides are set for operator
+    set:
+      platform: kubernetes
+      image: image-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            exec:
+              command:
+                - /usr/local/bin/dynatrace-operator
+                - startup-probe
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 1
+
+  - it: should ignore non-exposed fields in startupProbe for operator
+    set:
+      platform: kubernetes
+      image: image-name
+      operator.startupProbe:
+        failureThreshold: 5
+        initialDelaySeconds: 30
+        httpGet:
+          path: /livez
+          port: livez
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            exec:
+              command:
+                - /usr/local/bin/dynatrace-operator
+                - startup-probe
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
