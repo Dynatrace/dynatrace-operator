@@ -29,7 +29,7 @@ func TestManagedByLogsIgnored(t *testing.T) {
 }
 
 func testLogCollection(t *testing.T, collectManagedLogs bool) {
-	fakeClientSet := fake.NewSimpleClientset(
+	fakeClientSet := fake.NewClientset(
 		createPod("pod1", k8slabel.AppNameLabel),
 		createPod("pod2", k8slabel.AppNameLabel),
 		createPod("pod3", k8slabel.AppManagedByLabel),
@@ -126,7 +126,7 @@ func assertNoErrorOnClose(t *testing.T, closer io.Closer) {
 func TestLogCollectorGetPodFail(t *testing.T) {
 	ctx := context.Background()
 
-	fakeClientSet := fake.NewSimpleClientset(
+	fakeClientSet := fake.NewClientset(
 		createPod("pod1", k8slabel.AppNameLabel),
 		createPod("pod2", k8slabel.AppNameLabel),
 		createPod("oneagent", k8slabel.AppManagedByLabel))
@@ -165,7 +165,7 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 func TestLogCollectorGetLogsFail(t *testing.T) {
 	ctx := context.Background()
 
-	fakeClientSet := fake.NewSimpleClientset(
+	fakeClientSet := fake.NewClientset(
 		createPod("pod1", k8slabel.AppNameLabel),
 		createPod("pod2", k8slabel.AppNameLabel))
 
@@ -243,7 +243,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 func TestLogCollectorNoAbortOnError(t *testing.T) {
 	ctx := context.Background()
 
-	fakeClientSet := fake.NewSimpleClientset(
+	fakeClientSet := fake.NewClientset(
 		createPod("pod1", k8slabel.AppNameLabel),
 		createPod("pod2", k8slabel.AppNameLabel))
 
