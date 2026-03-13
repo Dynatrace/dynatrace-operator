@@ -31,7 +31,7 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 }
 
 func isEqual(current, desired *appsv1.Deployment) bool {
-	return !hasher.IsAnnotationDifferent(current, desired) && GetReplicas(desired) == GetReplicas(current)
+	return !hasher.IsAnnotationDifferent(current, desired) && getReplicas(desired) == getReplicas(current)
 }
 
 func mustRecreate(current, desired *appsv1.Deployment) bool {

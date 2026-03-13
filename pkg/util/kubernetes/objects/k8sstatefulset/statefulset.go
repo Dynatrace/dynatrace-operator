@@ -35,10 +35,10 @@ func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey,
 		return 0, err
 	}
 
-	return GetReplicas(obj), nil
+	return getReplicas(obj), nil
 }
 
-func GetReplicas(ss *appsv1.StatefulSet) int32 {
+func getReplicas(ss *appsv1.StatefulSet) int32 {
 	switch {
 	case ss == nil:
 		return 0

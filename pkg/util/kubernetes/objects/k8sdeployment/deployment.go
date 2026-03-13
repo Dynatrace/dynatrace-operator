@@ -75,10 +75,10 @@ func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey,
 		return 0, err
 	}
 
-	return GetReplicas(obj), nil
+	return getReplicas(obj), nil
 }
 
-func GetReplicas(d *appsv1.Deployment) int32 {
+func getReplicas(d *appsv1.Deployment) int32 {
 	switch {
 	case d == nil:
 		return 0
