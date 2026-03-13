@@ -30,6 +30,7 @@ func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey,
 		if k8serrors.IsNotFound(err) {
 			return 1, nil
 		}
+
 		return 0, err
 	}
 

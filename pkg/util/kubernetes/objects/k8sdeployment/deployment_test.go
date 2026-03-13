@@ -75,7 +75,6 @@ func TestGetDeployment(t *testing.T) {
 func TestResolveReplicas(t *testing.T) {
 	const name = "test-deployment"
 
-	ctx := context.Background()
 	objectKey := client.ObjectKey{Name: name, Namespace: ns}
 	testErr := errors.New("kube api failure")
 
@@ -120,7 +119,7 @@ func TestResolveReplicas(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			replicas, err := ResolveReplicas(ctx, tc.reader, objectKey, tc.defaultReplicas)
+			replicas, err := ResolveReplicas(t.Context(), tc.reader, objectKey, tc.defaultReplicas)
 
 			if tc.expectedErr != nil {
 				require.ErrorIs(t, err, tc.expectedErr)
@@ -138,7 +137,6 @@ func TestResolveReplicas(t *testing.T) {
 func TestResolveAndSetReplicas(t *testing.T) {
 	const name = "test-deployment"
 
-	ctx := context.Background()
 	testErr := errors.New("kube api failure")
 
 	tests := []struct {
@@ -177,7 +175,7 @@ func TestResolveAndSetReplicas(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			deployment := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}
 
-			err := ResolveAndSetReplicas(ctx, tc.reader, deployment, tc.defaultReplicas)
+			err := ResolveAndSetReplicas(t.Context(), tc.reader, deployment, tc.defaultReplicas)
 			if tc.expectedErr != nil {
 				require.ErrorIs(t, err, tc.expectedErr)
 				assert.Nil(t, deployment.Spec.Replicas)

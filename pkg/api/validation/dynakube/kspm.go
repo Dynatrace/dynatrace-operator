@@ -18,7 +18,6 @@ const (
 	errorKSPMRelativeHostPath = `The Dynakube's specification specifies KSPM, relative path found on the MappedHostPath list. Use absolute paths only. Relative path: %s`
 )
 
-// TODO Could potentially HPA break things?
 func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.KSPM().IsEnabled() && dk.ActiveGate().GetReplicas() > 1 {
 		return errorTooManyAGReplicas
