@@ -79,6 +79,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
+      attestations: write
+      artifact-metadata: write
     environment: Release
     strategy:
       matrix:
@@ -139,3 +141,8 @@ jobs:
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Add build provenance attestation for ${{ matrix.registry }}
+        uses: ./.github/actions/attest-artifact
+        with:
+          subject-name: ${{ matrix.url }}/${{ secrets[matrix.repository] }}
+          subject-digest: ${{ steps.image-index.outputs.digest }}

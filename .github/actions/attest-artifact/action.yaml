@@ -1,0 +1,19 @@
+name: Add SLSA Level 2 Build Provenance Attestation
+description: Generates and pushes a build provenance attestation for an OCI artifact to the registry
+inputs:
+  subject-name:
+    description: OCI artifact name as it appears in the registry (e.g. "ghcr.io/dynatrace/dynatrace-operator")
+    required: true
+  subject-digest:
+    description: Immutable digest of the OCI artifact to attest (e.g. "sha256:abc123...")
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Add build provenance attestation
+      uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+      with:
+        subject-name: ${{ inputs.subject-name }}
+        subject-digest: ${{ inputs.subject-digest }}
+        push-to-registry: true
