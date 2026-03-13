@@ -2,10 +2,12 @@ package kspmsettings
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -86,6 +88,12 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 
 	kspmSettings, err := dtc.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
 	if err != nil {
+		if core.HasStatusCode(err, http.StatusForbidden) {
+			log.Info("tenant requires additional scopes for getting KSPM settings. Skipping reconciliation")
+
+			return nil
+		}
+
 		setErrorCondition(dk.Conditions())
 
 		return errors.WithMessage(err, "error trying to check if setting exists")
@@ -103,6 +111,12 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 
 	objectID, err := dtc.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, datasetPipelineEnabled)
 	if err != nil {
+		if core.HasStatusCode(err, http.StatusForbidden) {
+			log.Info("tenant requires additional scopes for creating KSPM settings. Skipping reconciliation")
+
+			return nil
+		}
+
 		setErrorCondition(dk.Conditions())
 
 		return err
