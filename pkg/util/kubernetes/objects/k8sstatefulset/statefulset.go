@@ -10,29 +10,31 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ResolveAndSetReplicas(ctx context.Context, c client.Client, r client.Reader, log logd.Logger, ss *appsv1.StatefulSet, defaultReplicas *int32) error {
-	replicas, err := ResolveReplicas(ctx, c, r, log, ss.Name, ss.Namespace, defaultReplicas)
-
+func ResolveAndSetReplicas(ctx context.Context, r client.Reader, log logd.Logger, ss *appsv1.StatefulSet, defaultReplicas *int32) error {
+	replicas, err := ResolveReplicas(ctx, r, client.ObjectKey{Name: ss.Name, Namespace: ss.Namespace}, log, defaultReplicas)
 	if err != nil {
 		return err
 	}
 
 	ss.Spec.Replicas = ptr.To(replicas)
+
 	return nil
 }
 
-func ResolveReplicas(ctx context.Context, c client.Client, r client.Reader, log logd.Logger, ssName, ssNamespace string, defaultReplicas *int32) (int32, error) {
+func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey, log logd.Logger, defaultReplicas *int32) (int32, error) {
 	if defaultReplicas != nil {
 		return *defaultReplicas, nil
 	}
 
-	obj, err := Query(c, r, log).Get(ctx, client.ObjectKey{Namespace: ssNamespace, Name: ssName})
+	obj, err := Query(nil, r, log).Get(ctx, key)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return 1, nil
 		}
+
 		return 0, err
 	}
+
 	return GetReplicas(obj), nil
 }
 

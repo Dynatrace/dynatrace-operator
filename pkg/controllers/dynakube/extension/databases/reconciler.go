@@ -43,7 +43,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	for i, dbSpec := range ext.Databases {
-		replicas, err := k8sdeployment.ResolveReplicas(ctx, r.client, r.apiReader, log, expectedDeploymentNames[i], r.dk.Namespace, dbSpec.Replicas)
+		replicas, err := k8sdeployment.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: expectedDeploymentNames[i], Namespace: r.dk.Namespace}, log, dbSpec.Replicas)
 		if err != nil {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
