@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	warningFeatureFlagDeprecated = `Feature flag %s is deprecated.\n`
+	warningFeatureFlagDeprecated = `Feature flag %s is deprecated.`
 )
 
 var deprecatedFeatureFlags = []string{
