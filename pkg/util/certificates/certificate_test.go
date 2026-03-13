@@ -37,7 +37,7 @@ func TestValidateCertificateExpiration(t *testing.T) {
 	})
 }
 
-func TestNewCertificate(t *testing.T) {
+func TestNew(t *testing.T) {
 	t.Run("create new certificate", func(t *testing.T) {
 		cert, err := New(timeprovider.New())
 
@@ -54,11 +54,12 @@ func TestNewCertificate(t *testing.T) {
 	})
 }
 
-func TestSelfSign(t *testing.T) {
+func Test_Certificate_SelfSign(t *testing.T) {
 	t.Run("self sign certificate", func(t *testing.T) {
-		cert, _ := New(timeprovider.New())
-		err := cert.SelfSign()
+		cert, err := New(timeprovider.New())
+		require.NoError(t, err)
 
+		err = cert.SelfSign()
 		require.NoError(t, err)
 
 		require.NotEmpty(t, cert.SignedCert)
@@ -66,10 +67,13 @@ func TestSelfSign(t *testing.T) {
 	})
 }
 
-func TestToPEM(t *testing.T) {
+func Test_Certificate_ToPEM(t *testing.T) {
 	t.Run("signed certificate to PEM", func(t *testing.T) {
-		cert, _ := New(timeprovider.New())
-		cert.SelfSign()
+		cert, err := New(timeprovider.New())
+		require.NoError(t, err)
+		err = cert.SelfSign()
+		require.NoError(t, err)
+
 		pemCert, pemPk, err := cert.ToPEM()
 
 		require.NoError(t, err)
@@ -77,7 +81,9 @@ func TestToPEM(t *testing.T) {
 		require.NotEmpty(t, pemPk)
 	})
 	t.Run("unsigned certificate to PEM", func(t *testing.T) {
-		cert, _ := New(timeprovider.New())
+		cert, err := New(timeprovider.New())
+		require.NoError(t, err)
+
 		pemCert, pemPk, err := cert.ToPEM()
 
 		require.Error(t, err)
