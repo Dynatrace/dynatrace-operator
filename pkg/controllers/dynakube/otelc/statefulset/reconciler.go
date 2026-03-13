@@ -96,8 +96,13 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		topologySpreadConstraints = dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
 	}
 
-	sts, err := k8sstatefulset.Build(dk, dk.OtelCollectorStatefulsetName(), getContainer(dk),
-		k8sstatefulset.SetReplicas(getReplicas(dk)),
+	replicas, err := k8sstatefulset.ResolveReplicas(ctx, r.client, r.apiReader, log, dk.OtelCollectorStatefulsetName(), dk.Namespace, dk.Spec.Templates.OpenTelemetryCollector.Replicas)
+	if err != nil {
+		return err
+	}
+
+	sts, err := k8sstatefulset.Build(dk, dk.OtelCollectorStatefulsetName(), getContainer(dk, replicas),
+		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.OpenTelemetryCollector.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, templateAnnotations),

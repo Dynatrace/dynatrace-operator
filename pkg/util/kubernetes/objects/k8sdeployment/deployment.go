@@ -3,10 +3,13 @@ package k8sdeployment
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,4 +48,41 @@ func GetDeployment(c client.Client, podName, namespace string) (*appsv1.Deployme
 	}
 
 	return &d, nil
+}
+
+func ResolveAndSetReplicas(ctx context.Context, c client.Client, r client.Reader, log logd.Logger, d *appsv1.Deployment, defaultReplicas *int32) error {
+	replicas, err := ResolveReplicas(ctx, c, r, log, d.Name, d.Namespace, defaultReplicas)
+
+	if err != nil {
+		return err
+	}
+
+	d.Spec.Replicas = ptr.To(replicas)
+	return nil
+}
+
+func ResolveReplicas(ctx context.Context, c client.Client, r client.Reader, log logd.Logger, deployName, deployNamespace string, defaultReplicas *int32) (int32, error) {
+	if defaultReplicas != nil {
+		return *defaultReplicas, nil
+	}
+
+	obj, err := Query(c, r, log).Get(ctx, client.ObjectKey{Namespace: deployNamespace, Name: deployName})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return 1, nil
+		}
+		return 0, err
+	}
+	return GetReplicas(obj), nil
+}
+
+func GetReplicas(d *appsv1.Deployment) int32 {
+	switch {
+	case d == nil:
+		return 0
+	case d.Spec.Replicas == nil:
+		return 1
+	default:
+		return *d.Spec.Replicas
+	}
 }

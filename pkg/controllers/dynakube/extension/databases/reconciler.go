@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -44,7 +43,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	for i, dbSpec := range ext.Databases {
-		replicas, err := r.getReplicas(ctx, expectedDeploymentNames[i], dbSpec.Replicas)
+		replicas, err := k8sdeployment.ResolveReplicas(ctx, r.client, r.apiReader, log, expectedDeploymentNames[i], r.dk.Namespace, dbSpec.Replicas)
 		if err != nil {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
@@ -92,22 +91,4 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// To work well with horizontal pod autoscalers, ensure that we use external changes to replicas and not overwrite it.
-func (r *Reconciler) getReplicas(ctx context.Context, name string, defaultReplicas *int32) (int32, error) {
-	if defaultReplicas != nil {
-		return *defaultReplicas, nil
-	}
-
-	deploy, err := k8sdeployment.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Namespace: r.dk.Namespace, Name: name})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return 1, nil
-		}
-
-		return 0, err
-	}
-
-	return *deploy.Spec.Replicas, nil
 }
