@@ -26,7 +26,7 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube specification specifies a read-only host file system while OneAgent has volume storage enabled.`
 
-	errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate = `The DynaKube specification uses both the deprecated annotation "oneagent-max-unavailable" and the oneagent.rollingUpdate configuration. Please use only the oneagent.rollingUpdate configuration.`
+	errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate = `The DynaKube specification uses both the deprecated annotation "oneagent-max-unavailable" and a rollingUpdate configuration. Please use only the rollingUpdate configuration.`
 
 	warningOneAgentInstallerEnvVars = `The environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please ensure you are using a supported image.`
 
@@ -150,6 +150,10 @@ func conflictingMaxUnavailableAnnotationWithRollingUpdate(_ context.Context, _ *
 	}
 
 	if oa.IsHostMonitoringMode() && dk.Spec.OneAgent.HostMonitoring.RollingUpdate != nil {
+		return errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate
+	}
+
+	if dk.LogMonitoring().Template().RollingUpdate != nil {
 		return errorDeprecatedMaxUnavailableAnnotationWithRollingUpdate
 	}
 
