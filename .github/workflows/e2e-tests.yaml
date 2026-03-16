@@ -24,7 +24,6 @@ jobs:
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
-      - self-hosted
       - operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
@@ -65,7 +64,6 @@ jobs:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
-      - self-hosted
       - operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
@@ -106,7 +104,6 @@ jobs:
     name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
-      - self-hosted
       - operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
