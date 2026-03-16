@@ -13,17 +13,14 @@ import (
 
 func TestQuery(t *testing.T) {
 	const namespaceName = "dynatrace"
-
 	const deploymentName = "my-deployment"
-
-	ctx := t.Context()
 
 	t.Run("create when not exists", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		annotations := map[string]string{hasher.AnnotationHash: "hash"}
 		depl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, annotations, nil)
 
-		created, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(ctx, &depl)
+		created, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(t.Context(), &depl)
 
 		require.NoError(t, err)
 		assert.True(t, created)
@@ -36,7 +33,7 @@ func TestQuery(t *testing.T) {
 		newDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, newAnnotations, nil)
 		fakeClient := fake.NewClient(&oldDepl)
 
-		updated, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(ctx, &newDepl)
+		updated, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(t.Context(), &newDepl)
 
 		require.NoError(t, err)
 		assert.True(t, updated)
@@ -47,7 +44,7 @@ func TestQuery(t *testing.T) {
 
 		fakeClient := fake.NewClient(&oldDepl)
 
-		updated, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(ctx, &oldDepl)
+		updated, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(t.Context(), &oldDepl)
 		require.NoError(t, err)
 		assert.False(t, updated)
 	})
@@ -61,13 +58,13 @@ func TestQuery(t *testing.T) {
 		newDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, newAnnotations, newMatchLabels)
 		fakeClient := fake.NewClient(&oldDepl)
 
-		updated, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(ctx, &newDepl)
+		updated, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(t.Context(), &newDepl)
 
 		require.NoError(t, err)
 		assert.True(t, updated)
 
 		var actualDepl appsv1.Deployment
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: deploymentName, Namespace: namespaceName}, &actualDepl)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: deploymentName, Namespace: namespaceName}, &actualDepl)
 		require.NoError(t, err)
 		assert.Equal(t, newMatchLabels, actualDepl.Spec.Selector.MatchLabels)
 	})
@@ -80,22 +77,22 @@ func TestQuery(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
 		oldDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, oldAnnotations, matchLabels)
 
-		created, err := Query(fakeClient, fakeClient, deploymentLog).WithOwner(&dummyOwner).CreateOrUpdate(ctx, &oldDepl)
+		created, err := Query(fakeClient, fakeClient, deploymentLog).WithOwner(&dummyOwner).CreateOrUpdate(t.Context(), &oldDepl)
 		require.NoError(t, err)
 		assert.True(t, created)
 
-		actual, err := Query(fakeClient, fakeClient, deploymentLog).Get(ctx, client.ObjectKeyFromObject(&oldDepl))
+		actual, err := Query(fakeClient, fakeClient, deploymentLog).Get(t.Context(), client.ObjectKeyFromObject(&oldDepl))
 		require.NoError(t, err)
 		assert.NotEmpty(t, actual.OwnerReferences)
 
 		newAnnotations := map[string]string{hasher.AnnotationHash: "new"}
 		newDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, newAnnotations, matchLabels)
 
-		updated, err := Query(fakeClient, fakeClient, deploymentLog).WithOwner(&dummyOwner).CreateOrUpdate(ctx, &newDepl)
+		updated, err := Query(fakeClient, fakeClient, deploymentLog).WithOwner(&dummyOwner).CreateOrUpdate(t.Context(), &newDepl)
 		require.NoError(t, err)
 		assert.True(t, updated)
 
-		actual, err = Query(fakeClient, fakeClient, deploymentLog).Get(ctx, client.ObjectKeyFromObject(&newDepl))
+		actual, err = Query(fakeClient, fakeClient, deploymentLog).Get(t.Context(), client.ObjectKeyFromObject(&newDepl))
 		require.NoError(t, err)
 		assert.NotEmpty(t, actual.OwnerReferences)
 		assert.Equal(t, matchLabels, actual.Spec.Selector.MatchLabels)
