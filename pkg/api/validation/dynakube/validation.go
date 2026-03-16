@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	v1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
@@ -171,8 +170,6 @@ func getDynakube(obj runtime.Object) (dk *dynakube.DynaKube, err error) {
 	case *v1beta5.DynaKube:
 		err = v.ConvertTo(dk)
 	case *v1beta4.DynaKube:
-		err = v.ConvertTo(dk)
-	case *v1beta3.DynaKube:
 		err = v.ConvertTo(dk)
 	default:
 		if gvk := obj.GetObjectKind().GroupVersionKind(); !gvk.Empty() {

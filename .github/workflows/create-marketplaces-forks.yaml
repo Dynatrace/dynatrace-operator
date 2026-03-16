@@ -44,9 +44,6 @@ jobs:
         run: |
           git config --global user.name  "${{ secrets.TEAM_USER_NAME }}"
           git config --global user.email "${{ secrets.TEAM_USER_EMAIL }}"
-      - name: Install Python deps
-        run: |
-          pip install -r hack/requirements.txt
       - name: Derive version and branch name
         id: meta
         run: |
@@ -60,7 +57,8 @@ jobs:
             exit 1
           fi
 
-          version="$(python .github/scripts/release/directory_version.py "${versions_dirs}")"
+          # strip trailing slash and path prefix from each dir, filter out non-version strings, then pick the highest semver
+          version="$(echo "${versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | grep -E '^[vV]?[0-9]' | sort -V | tail -1)"
           echo "Detected bundle version: $version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "branch=$BASE_REF" >> "$GITHUB_OUTPUT"
@@ -132,10 +130,12 @@ jobs:
 
           # Determine last existing version and set spec.replaces
           if [ "${MARKETPLACE}" = "redhat" ]; then
-            last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator-rhmp/*/)" 2>/dev/null || true)"
+            operator_versions_dirs="$(ls -d operators/dynatrace-operator-rhmp/*/ 2>/dev/null || true)"
           else
-            last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator/*/)" 2>/dev/null || true)"
+            operator_versions_dirs="$(ls -d operators/dynatrace-operator/*/ 2>/dev/null || true)"
           fi
+          # strip trailing slash and path prefix from each dir, filter out non-version strings, then pick the highest semver
+          last_version="$(echo "${operator_versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | grep -E '^[vV]?[0-9]' | sort -V | tail -1)"
 
           csv_file="${operator_dir}/manifests/dynatrace-operator.clusterserviceversion.yaml"
 
@@ -153,49 +153,7 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
           RHCC_USERNAME: ${{ secrets.RHCC_USERNAME }}
           RHCC_PASSWORD: ${{ secrets.RHCC_PASSWORD }}
-        run: |
-          set -euo pipefail
-          cd "${FORK_REPO_DIR}"
-
-          # Set IMAGE based on marketplace
-          case "${MARKETPLACE}" in
-            community)
-              image_digest=$(skopeo inspect "docker://docker.io/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
-              IMAGE="docker.io/dynatrace/dynatrace-operator@${image_digest}"
-              ;;
-            community-prod)
-              image_digest=$(skopeo inspect --username "${RHCC_USERNAME}" --password "${RHCC_PASSWORD}" "docker://registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
-              IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator@${image_digest}"
-              ;;
-            certified)
-              image_digest=$(skopeo inspect --username "${RHCC_USERNAME}" --password "${RHCC_PASSWORD}" "docker://registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
-              IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator@${image_digest}"
-              ;;
-            redhat)
-              image_digest=$(skopeo inspect --username "${RHCC_USERNAME}" --password "${RHCC_PASSWORD}" "docker://registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
-              IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator@${image_digest}"
-              ;;
-            *)
-              echo "Unknown marketplace: ${MARKETPLACE}"
-              exit 1
-              ;;
-          esac
-
-          # Prepare CSV files
-          if [ "${MARKETPLACE}" = "redhat" ]; then
-            csv_file="operators/dynatrace-operator-rhmp/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml"
-            python ../.github/scripts/release/csv/make_release_csv.py \
-              "${csv_file}" \
-              --image "${IMAGE}" \
-              --marketplace "${MARKETPLACE}" \
-              --isRHCC true
-          else
-            csv_file="operators/dynatrace-operator/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml"
-            python ../.github/scripts/release/csv/make_release_csv.py \
-              "${csv_file}" \
-              --image "${IMAGE}" \
-              --marketplace "${MARKETPLACE}"
-          fi
+        run: bash .github/scripts/release/csv/prepare_marketplace_csv.sh
       - name: Post-process CSV for redhat marketplace
         if: matrix.marketplace == 'redhat'
         env:

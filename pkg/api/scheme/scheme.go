@@ -23,8 +23,6 @@ import (
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
-	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
@@ -44,7 +42,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(Scheme))
 	utilruntime.Must(v1alpha2.AddToScheme(Scheme))
-	utilruntime.Must(v1beta3.AddToScheme(Scheme))
 	utilruntime.Must(v1beta4.AddToScheme(Scheme))
 	utilruntime.Must(v1beta5.AddToScheme(Scheme))
 	utilruntime.Must(latest.AddToScheme(Scheme))

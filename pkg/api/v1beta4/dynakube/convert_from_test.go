@@ -155,7 +155,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate kspm from latest to v1beta3", func(t *testing.T) {
+	t.Run("migrate kspm from latest to v1beta4", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Kspm = &kspmlatest.Spec{}
 		to := DynaKube{}

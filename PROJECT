@@ -13,18 +13,6 @@ resources:
   group: dynatrace
   domain: com
   kind: DynaKube
-  path: github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3
-  version: v1beta3
-  controller: true
-  webhooks:
-    conversion: true
-    webhookVersion: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  group: dynatrace
-  domain: com
-  kind: DynaKube
   path: github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4
   version: v1beta4
   controller: true

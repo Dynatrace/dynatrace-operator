@@ -76,7 +76,7 @@ func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
 }
 
 func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
-	return updater.dk.FF().IsAutomaticRegistry()
+	return false
 }
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {

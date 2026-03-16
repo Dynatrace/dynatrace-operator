@@ -151,6 +151,14 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
                 ports:
                   - containerPort: 8443
                     name: server-port
@@ -356,6 +364,14 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
                 ports:
                   - containerPort: 8443
                     name: server-port
@@ -526,6 +542,14 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
                 ports:
                   - containerPort: 8443
                     name: server-port
@@ -773,3 +797,59 @@ tests:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/webhook"]
       - isNull:
           path: spec.template.spec.securityContext.appArmorProfile
+
+  - it: should use default startupProbe when not set for webhook
+    set:
+      platform: kubernetes
+      image: image-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            exec:
+              command:
+                - /usr/local/bin/dynatrace-operator
+                - startup-probe
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 1
+
+  - it: should override only timeoutSeconds when set for webhook
+    set:
+      platform: kubernetes
+      image: image-name
+      webhook.startupProbe:
+        timeoutSeconds: 15
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            exec:
+              command:
+                - /usr/local/bin/dynatrace-operator
+                - startup-probe
+            periodSeconds: 10
+            timeoutSeconds: 15
+            failureThreshold: 1
+
+  - it: should ignore non-exposed fields in startupProbe for webhook
+    set:
+      platform: kubernetes
+      image: image-name
+      webhook.startupProbe:
+        failureThreshold: 5
+        initialDelaySeconds: 30
+        httpGet:
+          path: /livez
+          port: livez
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            exec:
+              command:
+                - /usr/local/bin/dynatrace-operator
+                - startup-probe
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
