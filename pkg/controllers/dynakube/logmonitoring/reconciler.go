@@ -37,10 +37,9 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		client:    clt,
 		apiReader: apiReader,
 
-		configSecretReconciler:           configsecret.NewReconciler(clt, apiReader),
-		daemonsetReconciler:              daemonset.NewReconciler(clt, apiReader),
-		logmonsettingsReconciler:         logmonsettings.NewReconciler(),
-		oneAgentConnectionInfoReconciler: oaconnectioninfo.NewReconciler(clt, apiReader, nil, nil),
+		configSecretReconciler:   configsecret.NewReconciler(clt, apiReader),
+		daemonsetReconciler:      daemonset.NewReconciler(clt, apiReader),
+		logmonsettingsReconciler: logmonsettings.NewReconciler(),
 	}
 }
 
