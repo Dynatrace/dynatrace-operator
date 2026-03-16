@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/deployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -32,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -79,21 +81,8 @@ var (
 
 func TestReconcile(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				APIServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnect.OAuthSpec{
-					Endpoint:     "https://test.com/sso/oauth2/token",
-					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: testOauthClientSecret,
-					Provisioner:  false,
-				},
-			},
-		}
+		ec := createEdgeConnectRegularCR()
+
 		controller := createFakeClientAndReconciler(t, ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
@@ -108,26 +97,12 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("Timestamp update in EdgeConnect status works", func(t *testing.T) {
 		now := metav1.Now()
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				APIServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnect.OAuthSpec{
-					Endpoint:     "https://test.com/sso/oauth2/token",
-					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: testOauthClientSecret,
-					Provisioner:  false,
-				},
-			},
-			Status: edgeconnect.EdgeConnectStatus{
-				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
-				Version: status.VersionStatus{
-					LastProbeTimestamp: &now,
-					ImageID:            "docker.io/dynatrace/edgeconnectClient:latest",
-				},
+		ec := createEdgeConnectRegularCR()
+		ec.Status = edgeconnect.EdgeConnectStatus{
+			UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
+			Version: status.VersionStatus{
+				LastProbeTimestamp: &now,
+				ImageID:            "docker.io/dynatrace/edgeconnectClient:latest",
 			},
 		}
 
@@ -150,21 +125,8 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, expectedTimestamp, ec.Status.UpdatedTimestamp.Time)
 	})
 	t.Run("Reconciles phase change correctly", func(t *testing.T) {
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				APIServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnect.OAuthSpec{
-					Endpoint:     "https://test.com/sso/oauth2/token",
-					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: testOauthClientSecret,
-					Provisioner:  false,
-				},
-			},
-		}
+		ec := createEdgeConnectRegularCR()
+
 		controller := createFakeClientAndReconciler(t, ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
@@ -194,22 +156,8 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("Reconciles custom CA provided", func(t *testing.T) {
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				APIServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnect.OAuthSpec{
-					Endpoint:     "https://test.com/sso/oauth2/token",
-					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: testOauthClientSecret,
-					Provisioner:  false,
-				},
-				CaCertsRef: testCAConfigMapName,
-			},
-		}
+		ec := createEdgeConnectRegularCR()
+		ec.Spec.CaCertsRef = testCAConfigMapName
 
 		data := make(map[string]string)
 		data[consts.EdgeConnectCAConfigMapKey] = "dummy"
@@ -226,21 +174,8 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("SecretConfigConditionType is set SecretCreated", func(t *testing.T) {
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				APIServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnect.OAuthSpec{
-					Endpoint:     "https://test.com/sso/oauth2/token",
-					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: testOauthClientSecret,
-					Provisioner:  false,
-				},
-			},
-		}
+		ec := createEdgeConnectRegularCR()
+
 		controller := createFakeClientAndReconciler(t, ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
@@ -262,21 +197,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("SecretConfigConditionType is set SecretGenFailed failed to get clientSecret", func(t *testing.T) {
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				APIServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnect.OAuthSpec{
-					Endpoint:     "https://test.com/sso/oauth2/token",
-					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: testOauthClientSecret,
-					Provisioner:  false,
-				},
-			},
-		}
+		ec := createEdgeConnectRegularCR()
 
 		controller := createFakeClientAndReconciler(t, ec,
 			createKubeSystemNamespace(),
@@ -293,21 +214,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("SecretConfigConditionType is set SecretGenFailed failed", func(t *testing.T) {
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				APIServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnect.OAuthSpec{
-					Endpoint:     "https://test.com/sso/oauth2/token",
-					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: testOauthClientSecret,
-					Provisioner:  false,
-				},
-			},
-		}
+		ec := createEdgeConnectRegularCR()
 
 		controller := createFakeClientAndReconciler(t, ec,
 			createKubeSystemNamespace(),
@@ -727,6 +634,130 @@ func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", testCreatedID)
 		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedID, edgeconnectClient.NewRequest(testName, testHostPatterns2, testHostMappings, testCreatedOauthClientID))
 	})
+}
+
+func TestReconcileReplicas(t *testing.T) {
+	modes := []struct {
+		name        string
+		provisioner bool
+	}{
+		{name: "regular", provisioner: false},
+		{name: "provisioner", provisioner: true},
+	}
+
+	tests := []struct {
+		name             string
+		specReplicas     *int32
+		existingReplicas *int32
+		expectedReplicas int32
+	}{
+		{
+			name:             "uses explicit spec replicas over existing deployment",
+			specReplicas:     ptr.To(int32(2)),
+			existingReplicas: ptr.To(int32(3)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses existing deployment replicas when spec replicas are nil",
+			specReplicas:     nil,
+			existingReplicas: ptr.To(int32(2)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses default replicas when spec replicas are nil and deployment does not exist",
+			specReplicas:     nil,
+			existingReplicas: nil,
+			expectedReplicas: int32(1),
+		},
+	}
+
+	for _, mode := range modes {
+		t.Run(mode.name, func(t *testing.T) {
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					ec := createReplicaTestEdgeConnect(mode.provisioner, tc.specReplicas)
+
+					objs := []client.Object{createKubeSystemNamespace(), createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace)}
+					if mode.provisioner {
+						objs = append(objs, createClientSecret(ec.ClientSecretName(), ec.Namespace))
+					}
+
+					if tc.existingReplicas != nil {
+						existing := deployment.New(ec)
+						existing.Spec.Replicas = tc.existingReplicas
+						objs = append(objs, existing)
+					}
+
+					controller := createReplicaTestController(t, ec, mode.provisioner, objs...)
+
+					_, err := controller.Reconcile(context.Background(), reconcile.Request{
+						NamespacedName: types.NamespacedName{Namespace: ec.Namespace, Name: ec.Name},
+					})
+					require.NoError(t, err)
+
+					assertDeploymentReplicas(t, controller.apiReader, ec, tc.expectedReplicas)
+				})
+			}
+		})
+	}
+}
+
+func createReplicaTestEdgeConnect(provisioner bool, replicas *int32) *edgeconnect.EdgeConnect {
+	ec := createEdgeConnectRegularCR()
+	if provisioner {
+		ec = createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
+	}
+
+	ec.Spec.Replicas = replicas
+
+	return ec
+}
+
+func createReplicaTestController(t *testing.T, ec *edgeconnect.EdgeConnect, provisioner bool, objs ...client.Object) *Controller {
+	t.Helper()
+
+	if !provisioner {
+		return createFakeClientAndReconciler(t, ec, objs...)
+	}
+
+	edgeClient := edgeconnectmock.NewClient(t)
+	edgeClient.On("GetConnectionSettings").Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Maybe()
+	edgeClient.On("UpdateConnectionSetting", mock.Anything).Return(nil).Maybe()
+
+	return createFakeClientAndReconcilerForProvisioner(
+		t,
+		ec,
+		mockNewEdgeConnectClientCreate(edgeClient, testHostPatterns),
+		objs...,
+	)
+}
+
+func assertDeploymentReplicas(t *testing.T, apiReader client.Reader, ec *edgeconnect.EdgeConnect, expectedReplicas int32) {
+	t.Helper()
+
+	d := &appsv1.Deployment{}
+	err := apiReader.Get(context.Background(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, d)
+	require.NoError(t, err)
+	require.NotNil(t, d.Spec.Replicas)
+	assert.Equal(t, expectedReplicas, *d.Spec.Replicas)
+}
+
+func createEdgeConnectRegularCR() *edgeconnect.EdgeConnect {
+	return &edgeconnect.EdgeConnect{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: edgeconnect.EdgeConnectSpec{
+			APIServer: "abc12345.dynatrace.com",
+			OAuth: edgeconnect.OAuthSpec{
+				Endpoint:     "https://test.com/sso/oauth2/token",
+				Resource:     "urn:dtenvironment:test12345",
+				ClientSecret: testOauthClientSecret,
+				Provisioner:  false,
+			},
+		},
+	}
 }
 
 func createOauthSecret(name string, namespace string) *corev1.Secret {

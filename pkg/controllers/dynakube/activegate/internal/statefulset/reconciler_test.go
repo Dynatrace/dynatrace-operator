@@ -22,6 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -288,4 +289,53 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 	dk.Spec.ActiveGate.UseEphemeralVolume = true
 	err = reconciler.Reconcile(ctx)
 	require.NoError(t, err)
+}
+
+func TestReconcileReplicas(t *testing.T) {
+	tests := []struct {
+		name             string
+		specReplicas     *int32
+		existingReplicas *int32
+		expectedReplicas int32
+	}{
+		{
+			name:             "uses explicit spec replicas over existing deployment",
+			specReplicas:     ptr.To(int32(2)),
+			existingReplicas: ptr.To(int32(3)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses existing deployment replicas when spec replicas are nil",
+			specReplicas:     nil,
+			existingReplicas: ptr.To(int32(2)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses default replicas when spec replicas are nil and deployment does not exist",
+			specReplicas:     nil,
+			existingReplicas: nil,
+			expectedReplicas: int32(1),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			r, c, dk := createDefaultReconciler(t)
+			dk.Spec.ActiveGate.Replicas = tc.specReplicas
+
+			if tc.existingReplicas != nil {
+				existing, err := r.buildDesiredStatefulSet(t.Context())
+				require.NoError(t, err)
+				existing.Spec.Replicas = tc.existingReplicas
+				require.NoError(t, c.Create(t.Context(), existing))
+			}
+
+			err := r.Reconcile(t.Context())
+			require.NoError(t, err)
+
+			sts := getStatefulSet(t, c, dk)
+			require.NotNil(t, sts)
+			assert.Equal(t, tc.expectedReplicas, *sts.Spec.Replicas)
+		})
+	}
 }
