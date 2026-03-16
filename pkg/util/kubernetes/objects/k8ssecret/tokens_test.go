@@ -36,7 +36,8 @@ func TestGetDataFromSecretName(t *testing.T) {
 	fakeClient.Create(t.Context(), getTestSecret())
 
 	t.Run("get secret data", func(t *testing.T) {
-		data, _ := GetDataFromSecretName(t.Context(), fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logd.Logger{})
+		data, err := GetDataFromSecretName(t.Context(), fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logd.Logger{})
+		require.NoError(t, err)
 		assert.Equal(t, string(dataValue), data)
 	})
 }
