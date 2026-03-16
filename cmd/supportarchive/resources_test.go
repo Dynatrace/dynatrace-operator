@@ -135,7 +135,7 @@ func TestManifestCollector_Success(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	client := fakeclientset.NewSimpleClientset()
+	client := fakeclientset.NewClientset()
 
 	client.Resources = getResourceLists()
 	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
@@ -188,7 +188,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	client := fakeclientset.NewSimpleClientset()
+	client := fakeclientset.NewClientset()
 	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
 
 	err := newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery).Do()
@@ -268,7 +268,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	client := fakeclientset.NewSimpleClientset()
+	client := fakeclientset.NewClientset()
 
 	client.Resources = getResourceLists()
 

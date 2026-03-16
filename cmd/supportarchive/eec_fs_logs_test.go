@@ -38,7 +38,7 @@ diag_executor.log
 )
 
 func TestFsLog(t *testing.T) {
-	fakeClientSet := fake.NewSimpleClientset(
+	fakeClientSet := fake.NewClientset(
 		&corev1.Pod{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Pod",
