@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"context"
 	"net/http"
 	"net/url"
 	"testing"
@@ -36,7 +35,7 @@ func TestProxy(t *testing.T) {
 			},
 		}
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, dk)
+		transport, err := PrepareTransportForDynaKube(t.Context(), nil, transport, dk)
 
 		require.NoError(t, err)
 
@@ -68,14 +67,14 @@ func TestSkipCertCheck(t *testing.T) {
 	t.Run("has skipCertCheck enabled", func(t *testing.T) {
 		dk.Spec.SkipCertCheck = true
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, dk)
+		transport, err := PrepareTransportForDynaKube(t.Context(), nil, transport, dk)
 		require.NoError(t, err)
 		assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 	t.Run("has skipCertCheck disabled", func(t *testing.T) {
 		dk.Spec.SkipCertCheck = false
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, dk)
+		transport, err := PrepareTransportForDynaKube(t.Context(), nil, transport, dk)
 		require.NoError(t, err)
 		assert.False(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})

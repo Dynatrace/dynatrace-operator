@@ -1,7 +1,6 @@
 package dockerkeychain
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -46,7 +45,7 @@ func TestNewDockerKeychain(t *testing.T) {
 		}
 		client := fake.NewClient()
 
-		_, err := NewDockerKeychain(context.TODO(), client, pullSecret)
+		_, err := NewDockerKeychain(t.Context(), client, pullSecret)
 		require.NoError(t, err)
 	})
 
@@ -62,7 +61,7 @@ func TestNewDockerKeychain(t *testing.T) {
 		}
 		client := fake.NewClientWithIndex(&pullSecret)
 
-		_, err := NewDockerKeychain(context.TODO(), client, pullSecret)
+		_, err := NewDockerKeychain(t.Context(), client, pullSecret)
 		require.Error(t, err)
 
 		var syntaxError *json.SyntaxError
@@ -84,7 +83,7 @@ func TestNewDockerKeychain(t *testing.T) {
 		}
 		client := fake.NewClientWithIndex(&pullSecret)
 
-		keychain, err := NewDockerKeychain(context.TODO(), client, pullSecret)
+		keychain, err := NewDockerKeychain(t.Context(), client, pullSecret)
 		require.NoError(t, err)
 		registry, err := name.NewRegistry(registryName, name.StrictValidation)
 		require.NoError(t, err)
@@ -104,7 +103,7 @@ func TestNewDockerKeychains(t *testing.T) {
 	t.Run("tenant secret not found", func(t *testing.T) {
 		client := fake.NewClient()
 
-		_, err := NewDockerKeychains(context.TODO(), client, "dynatrace", []string{"dynakube-pull-secret"})
+		_, err := NewDockerKeychains(t.Context(), client, "dynatrace", []string{"dynakube-pull-secret"})
 		require.NoError(t, err)
 	})
 
@@ -131,7 +130,7 @@ func TestNewDockerKeychains(t *testing.T) {
 		}
 		client := fake.NewClientWithIndex(&tenantPullSecret, &customPullSecret)
 
-		keychain, err := NewDockerKeychains(context.TODO(), client, "dynatrace", []string{tenantPullSecretName, customPullSecretName})
+		keychain, err := NewDockerKeychains(t.Context(), client, "dynatrace", []string{tenantPullSecretName, customPullSecretName})
 		require.NoError(t, err)
 		registry, err := name.NewRegistry(registryName, name.StrictValidation)
 		require.NoError(t, err)
@@ -169,7 +168,7 @@ func TestNewDockerKeychains(t *testing.T) {
 		}
 		client := fake.NewClientWithIndex(&tenantPullSecret, &customPullSecret)
 
-		keychain, err := NewDockerKeychains(context.TODO(), client, "dynatrace", []string{tenantPullSecretName, customPullSecretName})
+		keychain, err := NewDockerKeychains(t.Context(), client, "dynatrace", []string{tenantPullSecretName, customPullSecretName})
 		require.NoError(t, err)
 
 		registry, err := name.NewRegistry(registryName, name.StrictValidation)
