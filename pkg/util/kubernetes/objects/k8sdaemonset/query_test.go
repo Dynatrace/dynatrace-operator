@@ -1,7 +1,6 @@
 package k8sdaemonset
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -16,12 +15,12 @@ import (
 
 var daemonSetLog = logd.Get().WithName("test-daemonset")
 
-func TestCreateOrUpdateDaemonSet(t *testing.T) {
+func TestQuery(t *testing.T) {
 	const namespaceName = "dynatrace"
 
 	const daemonsetName = "my-daemonset"
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("create when not exists", func(t *testing.T) {
 		fakeClient := fake.NewClient()
