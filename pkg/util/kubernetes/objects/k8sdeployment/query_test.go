@@ -1,7 +1,6 @@
 package k8sdeployment
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -12,12 +11,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestCreateOrUpdateDeployment(t *testing.T) {
+func TestQuery(t *testing.T) {
 	const namespaceName = "dynatrace"
 
 	const deploymentName = "my-deployment"
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("create when not exists", func(t *testing.T) {
 		fakeClient := fake.NewClient()
@@ -68,7 +67,7 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 		assert.True(t, updated)
 
 		var actualDepl appsv1.Deployment
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: deploymentName, Namespace: namespaceName}, &actualDepl)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: deploymentName, Namespace: namespaceName}, &actualDepl)
 		require.NoError(t, err)
 		assert.Equal(t, newMatchLabels, actualDepl.Spec.Selector.MatchLabels)
 	})
