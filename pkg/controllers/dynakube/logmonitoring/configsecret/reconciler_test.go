@@ -45,8 +45,8 @@ func TestReconcile(t *testing.T) {
 		mockK8sClient := createK8sClientWithConfigSecret(t)
 
 		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, dk)
-		err := reconciler.Reconcile(ctx)
+			mockK8sClient)
+		err := reconciler.Reconcile(ctx, dk)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -63,8 +63,8 @@ func TestReconcile(t *testing.T) {
 		mockK8sClient := createK8sClientWithOneAgentTenantSecret(t, dk, tokenValue)
 
 		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, dk)
-		err := reconciler.Reconcile(ctx)
+			mockK8sClient)
+		err := reconciler.Reconcile(ctx, dk)
 		require.NoError(t, err)
 
 		checkSecretForValue(t, mockK8sClient, dk)
@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context())
+		err = reconciler.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, dk)
@@ -88,8 +88,8 @@ func TestReconcile(t *testing.T) {
 		mockK8sClient := createK8sClientWithOneAgentTenantSecret(t, dk, tokenValue)
 
 		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, dk)
-		err := reconciler.Reconcile(ctx)
+			mockK8sClient)
+		err := reconciler.Reconcile(ctx, dk)
 		require.NoError(t, err)
 
 		checkSecretForValue(t, mockK8sClient, dk)
@@ -100,15 +100,15 @@ func TestReconcile(t *testing.T) {
 		require.NotEmpty(t, oldTransitionTime)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		reconciler.dk.Spec.NetworkZone = "test-zone"
-		reconciler.dk.Spec.Proxy = &value.Source{
+		dk.Spec.NetworkZone = "test-zone"
+		dk.Spec.Proxy = &value.Source{
 			Value: "test-proxy",
 		}
-		reconciler.dk.Annotations = map[string]string{
+		dk.Annotations = map[string]string{
 			exp.NoProxyKey: "test-no-proxy",
 		}
 
-		err = reconciler.Reconcile(t.Context())
+		err = reconciler.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, dk)
@@ -119,8 +119,8 @@ func TestReconcile(t *testing.T) {
 		mockK8sClient := createK8sClientWithOneAgentTenantSecret(t, dk, tokenValue)
 		k8sconditions.SetSecretCreated(dk.Conditions(), LmcConditionType, "this is a test")
 
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := reconciler.Reconcile(ctx)
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
+		err := reconciler.Reconcile(ctx, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, *dk.Conditions())
@@ -139,9 +139,9 @@ func TestReconcile(t *testing.T) {
 		boomClient := createBOOMK8sClient(t)
 
 		reconciler := NewReconciler(boomClient,
-			boomClient, dk)
+			boomClient)
 
-		err := reconciler.Reconcile(t.Context())
+		err := reconciler.Reconcile(t.Context(), dk)
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
