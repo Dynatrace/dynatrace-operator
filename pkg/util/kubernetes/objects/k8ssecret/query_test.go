@@ -95,7 +95,6 @@ func newClientWithSecrets() client.Client {
 }
 
 func TestMultipleNamespaces(t *testing.T) {
-
 	t.Run("deletion of test secret in namespaces 1 and 2", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
 		secretQuery := Query(fakeClient, fakeClient, secretLog)
@@ -137,7 +136,6 @@ func TestMultipleNamespaces(t *testing.T) {
 }
 
 func TestMultipleSecrets(t *testing.T) {
-
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
 		secretQuery := Query(fakeClient, fakeClient, secretLog)
