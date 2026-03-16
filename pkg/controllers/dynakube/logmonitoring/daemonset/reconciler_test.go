@@ -262,8 +262,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 			},
 		}
 
-		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, fake.NewClient())
+		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
