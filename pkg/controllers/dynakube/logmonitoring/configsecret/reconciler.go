@@ -39,78 +39,75 @@ const (
 
 type Reconciler struct {
 	apiReader client.Reader
-	dk        *dynakube.DynaKube
 	secrets   k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client,
-	apiReader client.Reader,
-	dk *dynakube.DynaKube) *Reconciler {
+	apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		apiReader: apiReader,
-		dk:        dk,
 		secrets:   k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.LogMonitoring().IsStandalone() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), LmcConditionType) == nil {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	if !dk.LogMonitoring().IsStandalone() {
+		if meta.FindStatusCondition(*dk.Conditions(), LmcConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
 		log.Info("cleaning up the LogMonitoring config-secret")
 
-		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: GetSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
+		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: GetSecretName(dk.Name), Namespace: dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up LogMonitoring config-secret")
 		}
 
-		meta.RemoveStatusCondition(r.dk.Conditions(), LmcConditionType)
+		meta.RemoveStatusCondition(dk.Conditions(), LmcConditionType)
 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	return r.reconcileSecret(ctx)
+	return r.reconcileSecret(ctx, dk)
 }
 
-func (r *Reconciler) reconcileSecret(ctx context.Context) error {
-	newSecret, err := r.prepareSecret(ctx)
+func (r *Reconciler) reconcileSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+	newSecret, err := r.prepareSecret(ctx, dk)
 	if err != nil {
 		return err
 	}
 
 	changed, err := r.secrets.CreateOrUpdate(ctx, newSecret)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), LmcConditionType, err)
 
 		return err
 	} else if changed {
-		k8sconditions.SetSecretOutdated(r.dk.Conditions(), LmcConditionType, newSecret.Name) // needed so the timestamp updates, will never actually show up in the status
+		k8sconditions.SetSecretOutdated(dk.Conditions(), LmcConditionType, newSecret.Name) // needed so the timestamp updates, will never actually show up in the status
 	}
 
-	k8sconditions.SetSecretCreated(r.dk.Conditions(), LmcConditionType, newSecret.Name)
+	k8sconditions.SetSecretCreated(dk.Conditions(), LmcConditionType, newSecret.Name)
 
 	return nil
 }
 
-func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) {
-	data, err := r.getSecretData(ctx)
+func (r *Reconciler) prepareSecret(ctx context.Context, dk *dynakube.DynaKube) (*corev1.Secret, error) {
+	data, err := r.getSecretData(ctx, dk)
 	if err != nil {
 		return nil, err
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.LogMonitoringComponentLabel).BuildLabels()
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.LogMonitoringComponentLabel).BuildLabels()
 
-	newSecret, err := k8ssecret.Build(r.dk,
-		GetSecretName(r.dk.Name),
+	newSecret, err := k8ssecret.Build(dk,
+		GetSecretName(dk.Name),
 		data,
 		k8ssecret.SetLabels(coreLabels),
 	)
 	if err != nil {
 		log.Info("failed to build the final secret")
 
-		k8sconditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
@@ -118,41 +115,41 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	return newSecret, err
 }
 
-func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, error) {
+func (r *Reconciler) getSecretData(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
-		Name:      r.dk.OneAgent().GetTenantSecret(),
-		Namespace: r.dk.Namespace,
+		Name:      dk.OneAgent().GetTenantSecret(),
+		Namespace: dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
 		log.Info("failed to get the oneagent-tenant secret")
 
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
 
-	tenantUUID, err := r.dk.TenantUUID()
+	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		log.Info("failed to determine the tenantUUID")
 
-		k8sconditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
 
 	deploymentConfigContent := map[string]string{
-		serverKey:       fmt.Sprintf("{%s}", r.dk.OneAgent().GetEndpoints()),
+		serverKey:       fmt.Sprintf("{%s}", dk.OneAgent().GetEndpoints()),
 		tenantKey:       tenantUUID,
 		tenantTokenKey:  tenantToken,
 		hostIDSourceKey: "k8s-node-name",
 	}
 
-	if r.dk.HasProxy() {
-		proxyURL, err := r.dk.Proxy(ctx, r.apiReader)
+	if dk.HasProxy() {
+		proxyURL, err := dk.Proxy(ctx, r.apiReader)
 		if err != nil {
 			log.Info("failed get the proxy value")
 
-			k8sconditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
+			k8sconditions.SetKubeAPIError(dk.Conditions(), LmcConditionType, err)
 
 			return nil, err
 		}
@@ -160,13 +157,13 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		deploymentConfigContent[proxyKey] = proxyURL
 	}
 
-	noProxy := createNoProxyValue(*r.dk)
+	noProxy := createNoProxyValue(*dk)
 	if noProxy != "" {
 		deploymentConfigContent[noProxyKey] = noProxy
 	}
 
-	if r.dk.Spec.NetworkZone != "" {
-		deploymentConfigContent[networkZoneKey] = r.dk.Spec.NetworkZone
+	if dk.Spec.NetworkZone != "" {
+		deploymentConfigContent[networkZoneKey] = dk.Spec.NetworkZone
 	}
 
 	var content strings.Builder
