@@ -88,7 +88,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		k8sdaemonset.SetNodeSelector(dk.LogMonitoring().Template().NodeSelector),
 		k8sdaemonset.SetTolerations(dk.LogMonitoring().Template().Tolerations),
 		k8sdaemonset.SetPullSecret(dk.ImagePullSecretReferences()...),
-		k8sdaemonset.SetUpdateStrategy(r.getUpdateStrategy(dk)),
+		k8sdaemonset.SetUpdateStrategy(getUpdateStrategy(dk)),
 		k8sdaemonset.SetVolumes(getVolumes(dk.Name)),
 	)
 	if err != nil {
@@ -98,7 +98,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 	return ds, nil
 }
 
-func (r *Reconciler) getUpdateStrategy(dk *dynakube.DynaKube) appsv1.DaemonSetUpdateStrategy {
+func getUpdateStrategy(dk *dynakube.DynaKube) appsv1.DaemonSetUpdateStrategy {
 	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
 
 	us := appsv1.DaemonSetUpdateStrategy{
