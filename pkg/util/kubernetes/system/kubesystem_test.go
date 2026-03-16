@@ -1,7 +1,6 @@
 package system
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -27,7 +26,7 @@ func TestGetUID(t *testing.T) {
 				},
 			},
 		).Build()
-	uid, err := GetUID(context.Background(), fakeClient)
+	uid, err := GetUID(t.Context(), fakeClient)
 
 	require.NoError(t, err)
 	assert.NotEmpty(t, uid)

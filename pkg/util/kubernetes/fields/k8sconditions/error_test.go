@@ -10,9 +10,17 @@ import (
 )
 
 func TestIsKubeApiError(t *testing.T) {
-	assert.False(t, IsKubeAPIError(nil), "Nil error should not be a Kube API error")
-	assert.False(t, IsKubeAPIError(errors.New("Some error")), "Non-Kube API error should not be a Kube API error")
-	assert.True(t, IsKubeAPIError(k8serrors.NewBadRequest("Bad request")), "Kube API error should be a Kube API error")
+	t.Run("nil error", func(t *testing.T) {
+		assert.False(t, IsKubeAPIError(nil), "Nil error should not be a Kube API error")
+	})
+
+	t.Run("non-Kube API error", func(t *testing.T) {
+		assert.False(t, IsKubeAPIError(errors.New("Some error")), "Non-Kube API error should not be a Kube API error")
+	})
+
+	t.Run("Kube API error", func(t *testing.T) {
+		assert.True(t, IsKubeAPIError(k8serrors.NewBadRequest("Bad request")), "Kube API error should be a Kube API error")
+	})
 
 	t.Run("wrapped error", func(t *testing.T) {
 		var err error

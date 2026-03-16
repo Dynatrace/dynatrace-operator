@@ -9,7 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestAffinity(t *testing.T) {
+func TestNewMultiArchNodeAffinity(t *testing.T) {
 	affinity := NewMultiArchNodeAffinity()
 
 	require.NotNil(t, affinity)
@@ -21,7 +21,7 @@ func TestAffinity(t *testing.T) {
 	assert.Contains(t, matchExpression, linuxRequirement())
 }
 
-func TestAffinityForArches(t *testing.T) {
+func Test_nodeAffinityForArches(t *testing.T) {
 	expectedArches := []string{"arch1", "arch2", "arch3"}
 	affinity := nodeAffinityForArches(expectedArches...)
 
