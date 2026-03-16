@@ -29,6 +29,6 @@ func LogEvents(ctx context.Context, c *envconf.Config, t *testing.T) {
 
 	klog.InfoS("Events list", "events total", len(events))
 	for _, event := range events {
-		klog.InfoS("Event", "name", event.Name, "message", event.Message, "reason", event.Reason, "type", event.Type)
+		klog.InfoS("Event", "name", event.Name, "message", event.Note, "reason", event.Reason, "action", event.Action, "type", event.Type)
 	}
 }

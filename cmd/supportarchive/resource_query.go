@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"slices"
 
-	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
@@ -13,6 +13,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	eventsv1 "k8s.io/api/events/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -114,7 +115,7 @@ func getConfigMapQueryGroup(namespace string) resourceQueryGroup {
 func getEventsQueryGroup(namespace string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
-			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Event{}),
+			toGroupVersionKind(eventsv1.SchemeGroupVersion, eventsv1.Event{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
