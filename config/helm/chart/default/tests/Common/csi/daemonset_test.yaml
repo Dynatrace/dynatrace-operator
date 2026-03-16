@@ -1084,3 +1084,64 @@ tests:
       - equal:
           path: spec.template.spec.securityContext.appArmorProfile.type
           value: RuntimeDefault
+
+  - it: should use custom startupProbe when set for csi provisioner
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.provisioner.startupProbe:
+        failureThreshold: 5
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].startupProbe
+          value:
+            exec:
+              command:
+                - /usr/local/bin/dynatrace-operator
+                - startup-probe
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+
+  - it: should override only periodSeconds when set for csi provisioner
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.provisioner.startupProbe:
+        periodSeconds: 30
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].startupProbe
+          value:
+            exec:
+              command:
+                - /usr/local/bin/dynatrace-operator
+                - startup-probe
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 1
+
+  - it: should ignore non-exposed fields in startupProbe for csi provisioner
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.provisioner.startupProbe:
+        failureThreshold: 5
+        initialDelaySeconds: 30
+        httpGet:
+          path: /livez
+          port: livez
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].startupProbe
+          value:
+            exec:
+              command:
+                - /usr/local/bin/dynatrace-operator
+                - startup-probe
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
