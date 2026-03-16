@@ -62,7 +62,6 @@ jobs:
             platform: ocp
     environment: E2E
     runs-on:
-      - self-hosted
       - operator-e2e
     steps:
       - name: Checkout
