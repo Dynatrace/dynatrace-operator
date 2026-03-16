@@ -335,7 +335,6 @@ linters:
           - godot
         path-except: pkg/api/(.+)\.go
     paths:
-      - pkg/api/v1alpha1/dynakube
       - pkg/api/v1alpha1/edgeconnect
       - pkg/api/v1beta4/dynakube
       - pkg/api/v1beta5/dynakube
@@ -349,7 +348,6 @@ formatters:
   exclusions:
     generated: lax
     paths:
-      - pkg/api/v1alpha1/dynakube
       - pkg/api/v1alpha1/edgeconnect
       - third_party$
       - builtin$
