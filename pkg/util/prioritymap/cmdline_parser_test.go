@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseArgument(t *testing.T) {
+func TestParseCommandLineArgument(t *testing.T) {
 	tests := []struct {
 		input             string
 		expectedKey       string
