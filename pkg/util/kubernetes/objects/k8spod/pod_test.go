@@ -1,7 +1,6 @@
 package k8spod
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -11,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetPod(t *testing.T) {
+func TestGet(t *testing.T) {
 	testPodName := "testPod"
 	testNamespace := "testNamespace"
 	fakeClient := fake.NewClient(
@@ -24,12 +23,12 @@ func TestGetPod(t *testing.T) {
 	)
 
 	t.Run("get existing pod", func(t *testing.T) {
-		pod, err := Get(context.TODO(), fakeClient, testPodName, testNamespace)
+		pod, err := Get(t.Context(), fakeClient, testPodName, testNamespace)
 		require.NoError(t, err)
 		assert.NotNil(t, pod)
 	})
 	t.Run("return error if pod does not exist", func(t *testing.T) {
-		pod, err := Get(context.TODO(), fakeClient, "not a pod name", testNamespace)
+		pod, err := Get(t.Context(), fakeClient, "not a pod name", testNamespace)
 		require.Error(t, err)
 		assert.Nil(t, pod)
 	})

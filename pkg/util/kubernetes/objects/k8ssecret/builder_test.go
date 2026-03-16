@@ -5,10 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestSecretBuilder(t *testing.T) {
+func TestBuild(t *testing.T) {
 	labelName := "name"
 	labelValue := "value"
 	labels := map[string]string{
@@ -17,6 +19,14 @@ func TestSecretBuilder(t *testing.T) {
 	dataKey := ".dockercfg"
 	dockerCfg := map[string][]byte{
 		dataKey: {},
+	}
+
+	createDeployment := func() *appsv1.Deployment {
+		return &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: testDeploymentName,
+			},
+		}
 	}
 
 	t.Run("create secret", func(t *testing.T) {
