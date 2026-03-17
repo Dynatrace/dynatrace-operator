@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,6 +51,23 @@ func TestCreateOrUpdateStatefulSet(t *testing.T) {
 		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(ctx, client.ObjectKeyFromObject(&newStatefulSet))
 		require.NoError(t, err)
 		assert.Equal(t, newAnnotations, ds.Annotations)
+	})
+	t.Run("update when exists and changed replicas", func(t *testing.T) {
+		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
+		oldStatefulSet := createTestStatefulSetWithMatchLabels(statefulSetName, namespaceName, oldAnnotations, nil)
+		oldStatefulSet.Spec.Replicas = ptr.To(int32(3))
+		newAnnotations := map[string]string{hasher.AnnotationHash: "old"}
+		newStatefulSet := createTestStatefulSetWithMatchLabels(statefulSetName, namespaceName, newAnnotations, nil)
+		newStatefulSet.Spec.Replicas = ptr.To(int32(2))
+		fakeClient := fake.NewClient(&oldStatefulSet)
+
+		updated, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(ctx, &newStatefulSet)
+		require.NoError(t, err)
+		require.True(t, updated)
+
+		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(ctx, client.ObjectKeyFromObject(&newStatefulSet))
+		require.NoError(t, err)
+		assert.Equal(t, *newStatefulSet.Spec.Replicas, *ds.Spec.Replicas)
 	})
 	t.Run("not update when exists and no changed", func(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}

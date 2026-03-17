@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -41,6 +42,24 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.True(t, updated)
+	})
+	t.Run("update when exists and changed replicas", func(t *testing.T) {
+		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
+		oldDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, oldAnnotations, nil)
+		oldDepl.Spec.Replicas = ptr.To(int32(3))
+		newAnnotations := map[string]string{hasher.AnnotationHash: "old"}
+		newDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, newAnnotations, nil)
+		newDepl.Spec.Replicas = ptr.To(int32(2))
+		fakeClient := fake.NewClient(&oldDepl)
+
+		updated, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(ctx, &newDepl)
+
+		require.NoError(t, err)
+		assert.True(t, updated)
+
+		d, err := Query(fakeClient, fakeClient, deploymentLog).Get(ctx, client.ObjectKeyFromObject(&newDepl))
+		require.NoError(t, err)
+		assert.Equal(t, *newDepl.Spec.Replicas, *d.Spec.Replicas)
 	})
 	t.Run("not update when exists and no changed", func(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
