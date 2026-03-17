@@ -637,6 +637,65 @@ func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 }
 
 func TestReconcileReplicas(t *testing.T) {
+	createEdgeConnect := func(provisioner bool, replicas *int32) *edgeconnect.EdgeConnect {
+		ec := createEdgeConnectRegularCR()
+		if provisioner {
+			ec = createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
+		}
+
+		ec.Spec.Replicas = replicas
+
+		return ec
+	}
+
+	createController := func(t *testing.T, ec *edgeconnect.EdgeConnect, provisioner bool, objs ...client.Object) *Controller {
+		t.Helper()
+
+		if !provisioner {
+			return createFakeClientAndReconciler(t, ec, objs...)
+		}
+
+		edgeClient := edgeconnectmock.NewClient(t)
+		edgeClient.On("GetConnectionSettings").Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Maybe()
+		edgeClient.On("UpdateConnectionSetting", mock.Anything).Return(nil).Maybe()
+
+		return createFakeClientAndReconcilerForProvisioner(
+			t,
+			ec,
+			mockNewEdgeConnectClientCreate(edgeClient, testHostPatterns),
+			objs...,
+		)
+	}
+
+	buildObjects := func(ec *edgeconnect.EdgeConnect, provisioner bool, existingReplicas *int32) []client.Object {
+		objs := []client.Object{
+			createKubeSystemNamespace(),
+			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
+		}
+
+		if provisioner {
+			objs = append(objs, createClientSecret(ec.ClientSecretName(), ec.Namespace))
+		}
+
+		if existingReplicas != nil {
+			existing := deployment.New(ec)
+			existing.Spec.Replicas = existingReplicas
+			objs = append(objs, existing)
+		}
+
+		return objs
+	}
+
+	assertDeploymentReplicas := func(t *testing.T, apiReader client.Reader, ec *edgeconnect.EdgeConnect, expectedReplicas int32) {
+		t.Helper()
+
+		d := &appsv1.Deployment{}
+		err := apiReader.Get(context.Background(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, d)
+		require.NoError(t, err)
+		require.NotNil(t, d.Spec.Replicas)
+		assert.Equal(t, expectedReplicas, *d.Spec.Replicas)
+	}
+
 	modes := []struct {
 		name        string
 		provisioner bool
@@ -675,20 +734,11 @@ func TestReconcileReplicas(t *testing.T) {
 		t.Run(mode.name, func(t *testing.T) {
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					ec := createReplicaTestEdgeConnect(mode.provisioner, tc.specReplicas)
+					ec := createEdgeConnect(mode.provisioner, tc.specReplicas)
 
-					objs := []client.Object{createKubeSystemNamespace(), createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace)}
-					if mode.provisioner {
-						objs = append(objs, createClientSecret(ec.ClientSecretName(), ec.Namespace))
-					}
+					objs := buildObjects(ec, mode.provisioner, tc.existingReplicas)
 
-					if tc.existingReplicas != nil {
-						existing := deployment.New(ec)
-						existing.Spec.Replicas = tc.existingReplicas
-						objs = append(objs, existing)
-					}
-
-					controller := createReplicaTestController(t, ec, mode.provisioner, objs...)
+					controller := createController(t, ec, mode.provisioner, objs...)
 
 					_, err := controller.Reconcile(context.Background(), reconcile.Request{
 						NamespacedName: types.NamespacedName{Namespace: ec.Namespace, Name: ec.Name},
@@ -700,46 +750,6 @@ func TestReconcileReplicas(t *testing.T) {
 			}
 		})
 	}
-}
-
-func createReplicaTestEdgeConnect(provisioner bool, replicas *int32) *edgeconnect.EdgeConnect {
-	ec := createEdgeConnectRegularCR()
-	if provisioner {
-		ec = createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
-	}
-
-	ec.Spec.Replicas = replicas
-
-	return ec
-}
-
-func createReplicaTestController(t *testing.T, ec *edgeconnect.EdgeConnect, provisioner bool, objs ...client.Object) *Controller {
-	t.Helper()
-
-	if !provisioner {
-		return createFakeClientAndReconciler(t, ec, objs...)
-	}
-
-	edgeClient := edgeconnectmock.NewClient(t)
-	edgeClient.On("GetConnectionSettings").Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Maybe()
-	edgeClient.On("UpdateConnectionSetting", mock.Anything).Return(nil).Maybe()
-
-	return createFakeClientAndReconcilerForProvisioner(
-		t,
-		ec,
-		mockNewEdgeConnectClientCreate(edgeClient, testHostPatterns),
-		objs...,
-	)
-}
-
-func assertDeploymentReplicas(t *testing.T, apiReader client.Reader, ec *edgeconnect.EdgeConnect, expectedReplicas int32) {
-	t.Helper()
-
-	d := &appsv1.Deployment{}
-	err := apiReader.Get(context.Background(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, d)
-	require.NoError(t, err)
-	require.NotNil(t, d.Spec.Replicas)
-	assert.Equal(t, expectedReplicas, *d.Spec.Replicas)
 }
 
 func createEdgeConnectRegularCR() *edgeconnect.EdgeConnect {
