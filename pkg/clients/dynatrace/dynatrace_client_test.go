@@ -216,17 +216,10 @@ func writeError(w http.ResponseWriter, status int) {
 	_, _ = w.Write(result)
 }
 
-func createTestDynatraceServer(t *testing.T, handler http.Handler, networkZoneName string) (*httptest.Server, Client) {
-	dynatraceServer := httptest.NewServer(handler)
+func createTestDynatraceServer(t *testing.T, handler http.Handler) *httptest.Server {
+	t.Helper()
 
-	skipCert := SkipCertificateValidation(true)
-	networkZone := NetworkZone(networkZoneName)
-	dynatraceClient, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert, networkZone)
-
-	require.NoError(t, err)
-	require.NotNil(t, dynatraceClient)
-
-	return dynatraceServer, dynatraceClient
+	return httptest.NewServer(handler)
 }
 
 func createTestDynatraceClientWithFunc(t *testing.T, handler http.HandlerFunc) (*httptest.Server, Client) {

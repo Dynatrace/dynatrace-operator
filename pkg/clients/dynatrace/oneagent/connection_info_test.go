@@ -5,15 +5,12 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 )
 
 const (
-	oneAgentConnectionInfoEndpoint = "/v1/deployment/installer/agent/connectioninfo"
-
 	testCommunicationEndpoint = "https://tenant.dev.dynatracelabs.com:443"
 
 	testTenantUUID  = "1234"
@@ -107,7 +104,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 		client := setupMockedClient(t, "", oneAgentJSONResponse, &core.HTTPError{StatusCode: 400, Message: "bad request"})
 
 		_, err := client.GetConnectionInfo(ctx)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("server error", func(t *testing.T) {
