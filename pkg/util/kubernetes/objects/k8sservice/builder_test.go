@@ -23,7 +23,7 @@ func createDeployment() *appsv1.Deployment {
 	}
 }
 
-func TestServiceBuilder(t *testing.T) {
+func TestBuild(t *testing.T) {
 	labelName := "name"
 	labelValue := "value"
 	labels := map[string]string{

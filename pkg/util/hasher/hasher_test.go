@@ -141,7 +141,7 @@ func TestIsDifferent(t *testing.T) {
 	})
 }
 
-func TestIsHashAnnotationDifferent(t *testing.T) {
+func TestIsAnnotationDifferent(t *testing.T) {
 	testDeployment := appsv1.Deployment{}
 	testDeployment.Annotations = map[string]string{
 		AnnotationHash: "hash1",
@@ -161,7 +161,7 @@ func TestIsHashAnnotationDifferent(t *testing.T) {
 	})
 }
 
-func TestAddHashAnnotation(t *testing.T) {
+func TestAddAnnotation(t *testing.T) {
 	t.Run("nil => error", func(t *testing.T) {
 		err := AddAnnotation(nil)
 		require.Error(t, err)

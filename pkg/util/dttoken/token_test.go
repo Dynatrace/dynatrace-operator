@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenerateToken(t *testing.T) {
+func TestNew(t *testing.T) {
 	t.Run("generate token but always new one", func(t *testing.T) {
 		tokenA, err := New("test")
 		require.NoError(t, err)

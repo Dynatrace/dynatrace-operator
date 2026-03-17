@@ -67,9 +67,9 @@ startupProbe:
     command:
     - /usr/local/bin/dynatrace-operator
     - startup-probe
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 1
+  periodSeconds: {{ .periodSeconds | default 10 }}
+  timeoutSeconds: {{ .timeoutSeconds | default 5 }}
+  failureThreshold: {{ .failureThreshold | default 1 }}
 {{- end -}}
 
 {{- define "dynatrace-operator.modules-json-env" -}}

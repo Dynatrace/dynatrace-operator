@@ -20,8 +20,6 @@ var (
 )
 
 func TestReplicate(t *testing.T) {
-	ctx := t.Context()
-
 	sourceNs := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "dk-ns",
@@ -52,7 +50,7 @@ func TestReplicate(t *testing.T) {
 		sourceKey := client.ObjectKey{Name: testSourceSecretName, Namespace: sourceNs.Name}
 		targetKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}
 
-		err := Replicate(ctx, Query(clt, clt, testLog), sourceKey, targetKey)
+		err := Replicate(t.Context(), Query(clt, clt, testLog), sourceKey, targetKey)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
@@ -74,7 +72,7 @@ func TestReplicate(t *testing.T) {
 		sourceKey := client.ObjectKey{Name: testSourceSecretName, Namespace: sourceNs.Name}
 		targetKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}
 
-		err := Replicate(ctx, Query(clt, clt, testLog), sourceKey, targetKey)
+		err := Replicate(t.Context(), Query(clt, clt, testLog), sourceKey, targetKey)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret

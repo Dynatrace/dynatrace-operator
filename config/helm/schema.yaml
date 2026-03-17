@@ -247,6 +247,21 @@ properties:
     title: Operator Memory limit
     description: The amount of memory allocation to which the cluster may limit the Operator.
     default: 128Mi
+  operator.startupProbe.periodSeconds:
+    type: integer
+    title: Operator startup probe periodSeconds
+    description: How often (in seconds) to perform the startup probe. Defaults to 10.
+    nullable: true
+  operator.startupProbe.timeoutSeconds:
+    type: integer
+    title: Operator startup probe timeoutSeconds
+    description: Number of seconds after which the startup probe times out. Defaults to 5.
+    nullable: true
+  operator.startupProbe.failureThreshold:
+    type: integer
+    title: Operator startup probe failureThreshold
+    description: Number of times the startup probe can fail before giving up. Defaults to 1.
+    nullable: true
 
   webhook.hostNetwork:
     type: boolean
@@ -310,6 +325,21 @@ properties:
       The minimum number of available replicas for the Webhook.
       Only used if webhook.highAvailability is set to true.
     default: 1
+  webhook.startupProbe.periodSeconds:
+    type: integer
+    title: Webhook startup probe periodSeconds
+    description: How often (in seconds) to perform the startup probe. Defaults to 10.
+    nullable: true
+  webhook.startupProbe.timeoutSeconds:
+    type: integer
+    title: Webhook startup probe timeoutSeconds
+    description: Number of seconds after which the startup probe times out. Defaults to 5.
+    nullable: true
+  webhook.startupProbe.failureThreshold:
+    type: integer
+    title: Webhook startup probe failureThreshold
+    description: Number of times the startup probe can fail before giving up. Defaults to 1.
+    nullable: true
 
   csidriver.enabled:
     type: boolean
@@ -338,6 +368,21 @@ properties:
       The amount of memory allocation the CSI driver requests from the cluster.
       It is recommended for the memory requests to be the same as the memory limits.
     default: 100Mi
+  csidriver.provisioner.startupProbe.periodSeconds:
+    type: integer
+    title: CSI driver provisioner startup probe periodSeconds
+    description: How often (in seconds) to perform the startup probe. Defaults to 10.
+    nullable: true
+  csidriver.provisioner.startupProbe.timeoutSeconds:
+    type: integer
+    title: CSI driver provisioner startup probe timeoutSeconds
+    description: Number of seconds after which the startup probe times out. Defaults to 5.
+    nullable: true
+  csidriver.provisioner.startupProbe.failureThreshold:
+    type: integer
+    title: CSI driver provisioner startup probe failureThreshold
+    description: Number of times the startup probe can fail before giving up. Defaults to 1.
+    nullable: true
   csidriver.server.resources.requests.cpu:
     type: string
     title: CSI driver CPU request - server

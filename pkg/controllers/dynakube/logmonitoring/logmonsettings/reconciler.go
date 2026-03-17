@@ -15,35 +15,30 @@ import (
 )
 
 type Reconciler struct {
-	dk  *dynakube.DynaKube
-	dtc settings.APIClient
-
 	timeProvider *timeprovider.Provider
 }
 
-func NewReconciler(dtc settings.APIClient, dk *dynakube.DynaKube) *Reconciler {
+func NewReconciler() *Reconciler {
 	return &Reconciler{
-		dk:           dk,
-		dtc:          dtc,
 		timeProvider: timeprovider.New(),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.LogMonitoring().IsEnabled() {
-		_ = meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
+func (r *Reconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error {
+	if !dk.LogMonitoring().IsEnabled() {
+		_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
 		return nil
 	}
 
-	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, ConditionType) {
+	if !k8sconditions.IsOutdated(r.timeProvider, dk, ConditionType) {
 		return nil
 	}
 
-	_ = meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
+	_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
-	hasReadScope := k8sconditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead)
-	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite)
+	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsRead)
+	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsWrite)
 
 	var missingScopes []string
 	if !hasReadScope {
@@ -56,7 +51,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	if len(missingScopes) > 0 {
 		message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing log monitoring setting and/or safely create new one."
-		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), ConditionType, message)
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, message)
 		log.Info(message)
 
 		return nil
@@ -64,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		log.Info("necessary scopes for logmonitoring settings creation is available, proceeding with reconciliation")
 	}
 
-	err := r.checkLogMonitoringSettings(ctx)
+	err := r.checkLogMonitoringSettings(ctx, dtc, dk)
 	if err != nil {
 		return err
 	}
@@ -72,21 +67,21 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context) error {
+func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error {
 	log.Info("start reconciling log monitoring settings")
 
-	if r.dk.Status.KubernetesClusterMEID == "" {
+	if dk.Status.KubernetesClusterMEID == "" {
 		msg := "kubernetesClusterMEID is not available, which is needed for logmonitoring settings creation, will skip it for now"
 		log.Info(msg)
 
-		setSkippedCondition(r.dk.Conditions(), msg)
+		setSkippedCondition(dk.Conditions(), msg)
 
 		return nil
 	}
 
-	logMonitoringSettings, err := r.dtc.GetSettingsForLogModule(ctx, r.dk.Status.KubernetesClusterMEID)
+	logMonitoringSettings, err := dtc.GetSettingsForLogModule(ctx, dk.Status.KubernetesClusterMEID)
 	if err != nil {
-		setErrorCondition(r.dk.Conditions())
+		setErrorCondition(dk.Conditions())
 
 		return errors.WithMessage(err, "error trying to check if setting exists")
 	}
@@ -94,24 +89,24 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	if logMonitoringSettings.TotalCount > 0 {
 		log.Info("there are already settings", "settings", logMonitoringSettings)
 
-		setExistsCondition(r.dk.Conditions())
+		setExistsCondition(dk.Conditions())
 
 		return nil
 	}
 
 	matchers := []logmonitoring.IngestRuleMatchers{}
-	if len(r.dk.LogMonitoring().IngestRuleMatchers) > 0 {
-		matchers = r.dk.LogMonitoring().IngestRuleMatchers
+	if len(dk.LogMonitoring().IngestRuleMatchers) > 0 {
+		matchers = dk.LogMonitoring().IngestRuleMatchers
 	}
 
-	objectID, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
+	objectID, err := dtc.CreateLogMonitoringSetting(ctx, dk.Status.KubernetesClusterMEID, dk.Status.KubernetesClusterName, matchers)
 	if err != nil {
-		setErrorCondition(r.dk.Conditions())
+		setErrorCondition(dk.Conditions())
 
 		return err
 	}
 
-	setExistsCondition(r.dk.Conditions())
+	setExistsCondition(dk.Conditions())
 	log.Info("log monitoring setting created", "settings", objectID)
 
 	return nil

@@ -1,7 +1,6 @@
 package k8sconfigmap
 
 import (
-	"context"
 	"reflect"
 	"testing"
 
@@ -37,7 +36,7 @@ func createDeployment() *appsv1.Deployment {
 	}
 }
 
-func TestConfigMapQuery(t *testing.T) {
+func TestQuery(t *testing.T) {
 	t.Run("Get configMap", testGetConfigMap)
 	t.Run("Create configMap", testCreateConfigMap)
 	t.Run("Update configMap", testUpdateConfigMap)
@@ -61,7 +60,7 @@ func testGetConfigMap(t *testing.T) {
 	fakeClient := fake.NewClient(&configMap)
 	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
 
-	foundConfigMap, err := configMapQuery.Get(context.Background(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace})
+	foundConfigMap, err := configMapQuery.Get(t.Context(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace})
 
 	require.NoError(t, err)
 	assert.True(t, isEqual(&configMap, foundConfigMap))
@@ -78,12 +77,12 @@ func testCreateConfigMap(t *testing.T) {
 		Data: map[string]string{testKey1: testConfigMapValue},
 	}
 
-	err := configMapQuery.Create(context.Background(), configMap)
+	err := configMapQuery.Create(t.Context(), configMap)
 
 	require.NoError(t, err)
 
 	var actualConfigMap corev1.ConfigMap
-	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace}, &actualConfigMap)
+	err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace}, &actualConfigMap)
 
 	require.NoError(t, err)
 	assert.True(t, isEqual(configMap, &actualConfigMap))
@@ -100,7 +99,7 @@ func testUpdateConfigMap(t *testing.T) {
 	fakeClient := fake.NewClient()
 	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
 
-	err := configMapQuery.Update(context.Background(), configMap)
+	err := configMapQuery.Update(t.Context(), configMap)
 
 	require.Error(t, err)
 
@@ -108,12 +107,12 @@ func testUpdateConfigMap(t *testing.T) {
 	fakeClient = fake.NewClient(configMap)
 	configMapQuery.KubeClient = fakeClient
 
-	err = configMapQuery.Update(context.Background(), configMap)
+	err = configMapQuery.Update(t.Context(), configMap)
 
 	require.NoError(t, err)
 
 	var updatedConfigMap corev1.ConfigMap
-	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: configMap.Name, Namespace: configMap.Namespace}, &updatedConfigMap)
+	err = fakeClient.Get(t.Context(), client.ObjectKey{Name: configMap.Name, Namespace: configMap.Namespace}, &updatedConfigMap)
 
 	require.NoError(t, err)
 	assert.True(t, isEqual(configMap, &updatedConfigMap))
@@ -130,12 +129,12 @@ func testCreateOrUpdateConfigMap(t *testing.T) {
 	fakeClient := fake.NewClient()
 	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
 
-	created, err := configMapQuery.CreateOrUpdate(context.Background(), configMap)
+	created, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
 	require.True(t, created)
 
 	var createdConfigMap corev1.ConfigMap
-	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: configMap.Name, Namespace: configMap.Namespace}, &createdConfigMap)
+	err = fakeClient.Get(t.Context(), client.ObjectKey{Name: configMap.Name, Namespace: configMap.Namespace}, &createdConfigMap)
 
 	require.NoError(t, err)
 	assert.True(t, isEqual(configMap, &createdConfigMap))
@@ -150,12 +149,12 @@ func testCreateOrUpdateConfigMap(t *testing.T) {
 	}
 	configMapQuery.KubeClient = fakeClient
 
-	updated, err := configMapQuery.CreateOrUpdate(context.Background(), configMap)
+	updated, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
 	require.True(t, updated)
 
 	var updatedConfigMap corev1.ConfigMap
-	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: configMap.Name, Namespace: configMap.Namespace}, &updatedConfigMap)
+	err = fakeClient.Get(t.Context(), client.ObjectKey{Name: configMap.Name, Namespace: configMap.Namespace}, &updatedConfigMap)
 
 	require.NoError(t, err)
 	assert.True(t, isEqual(configMap, &updatedConfigMap))
@@ -177,7 +176,7 @@ func testIdenticalConfigMapIsNotUpdated(t *testing.T) {
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
 
-	updated, err := configMapQuery.CreateOrUpdate(context.Background(), configMap)
+	updated, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
 	require.False(t, updated)
 }
@@ -198,12 +197,12 @@ func testUpdateConfigMapWhenDataChanged(t *testing.T) {
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
 
-	updated, err := configMapQuery.CreateOrUpdate(context.Background(), configMap)
+	updated, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
 	require.True(t, updated)
 
 	var updatedConfigMap corev1.ConfigMap
-	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &updatedConfigMap)
+	err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &updatedConfigMap)
 
 	require.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(data, updatedConfigMap.Data))
@@ -225,12 +224,12 @@ func testUpdateConfigMapWhenLabelsChanged(t *testing.T) {
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
 
-	updated, err := configMapQuery.CreateOrUpdate(context.Background(), configMap)
+	updated, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
 	require.True(t, updated)
 
 	var updatedConfigMap corev1.ConfigMap
-	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &updatedConfigMap)
+	err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &updatedConfigMap)
 
 	require.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(labels, updatedConfigMap.Labels))
@@ -251,12 +250,12 @@ func testCreateConfigMapInTargetNamespace(t *testing.T) {
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
 
-	updated, err := configMapQuery.CreateOrUpdate(context.Background(), configMap)
+	updated, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
 	require.True(t, updated)
 
 	var newConfigMap corev1.ConfigMap
-	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &newConfigMap)
+	err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &newConfigMap)
 
 	require.NoError(t, err)
 	assert.True(t, reflect.DeepEqual(data, newConfigMap.Data))
@@ -281,11 +280,11 @@ func testDeleteConfigMap(t *testing.T) {
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
 
-	err := configMapQuery.Delete(context.Background(), configMap)
+	err := configMapQuery.Delete(t.Context(), configMap)
 	require.NoError(t, err)
 
 	var deletedConfigMap corev1.ConfigMap
-	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &deletedConfigMap)
+	err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &deletedConfigMap)
 	require.Error(t, err)
 }
 
@@ -300,12 +299,12 @@ func testHashAnnotationAfterCreate(t *testing.T) {
 		Data: map[string]string{testKey1: testConfigMapValue},
 	}
 
-	err := configMapQuery.Create(context.Background(), configMap)
+	err := configMapQuery.Create(t.Context(), configMap)
 
 	require.NoError(t, err)
 
 	var actualConfigMap corev1.ConfigMap
-	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace}, &actualConfigMap)
+	err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace}, &actualConfigMap)
 
 	require.NoError(t, err)
 	assert.True(t, isEqual(configMap, &actualConfigMap))

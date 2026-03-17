@@ -5,4 +5,4 @@ markdown/lint: prerequisites/markdownlint
 
 ## Runs markdown-link-check for all .md files in the project
 markdown/link-check: prerequisites/markdown-link-check
-	$(MARKDOWN_LINK_CHECK) --ignore node_modules,.git,testdata .
+	$(MARKDOWN_LINK_CHECK) --ignore node_modules,.git,testdata . --config hack/markdown-link-check.json

@@ -84,10 +84,9 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 
-		activeGateReconcilerBuilder:    activegate.NewReconciler,
-		oneAgentReconcilerBuilder:      oneagent.NewReconciler,
-		injectionReconcilerBuilder:     injection.NewReconciler,
-		logMonitoringReconcilerBuilder: logmonitoring.NewReconciler,
+		activeGateReconcilerBuilder: activegate.NewReconciler,
+		oneAgentReconcilerBuilder:   oneagent.NewReconciler,
+		injectionReconcilerBuilder:  injection.NewReconciler,
 
 		apiMonitoringReconciler:      apimonitoring.NewReconciler(),
 		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
@@ -97,6 +96,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
 		deploymentMetadataReconciler: deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
 		istioReconciler:              istio.NewReconciler(kubeClient, apiReader),
+		logMonitoringReconciler:      logmonitoring.NewReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -129,6 +129,10 @@ type dtSettingReconciler interface {
 	Reconcile(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error
 }
 
+type logMonitoringReconciler interface {
+	Reconcile(ctx context.Context, dtc dtclient.Client, dk *dynakube.DynaKube) error
+}
+
 // Controller reconciles a DynaKube object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -145,14 +149,14 @@ type Controller struct {
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
 	istioReconciler              istioReconciler
+	logMonitoringReconciler      logMonitoringReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
 
-	activeGateReconcilerBuilder    activegate.ReconcilerBuilder
-	oneAgentReconcilerBuilder      oneagent.ReconcilerBuilder
-	injectionReconcilerBuilder     injection.ReconcilerBuilder
-	logMonitoringReconcilerBuilder logmonitoring.ReconcilerBuilder
+	activeGateReconcilerBuilder activegate.ReconcilerBuilder
+	oneAgentReconcilerBuilder   oneagent.ReconcilerBuilder
+	injectionReconcilerBuilder  injection.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -369,9 +373,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling LogMonitoring")
 
-	logMonitoringReconciler := controller.logMonitoringReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, dk)
-
-	err = logMonitoringReconciler.Reconcile(ctx)
+	err = controller.logMonitoringReconciler.Reconcile(ctx, dynatraceClient, dk)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
