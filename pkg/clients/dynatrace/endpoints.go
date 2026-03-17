@@ -26,14 +26,6 @@ func (dtc *dynatraceClient) getAgentVersionsURL(os, installerType, flavor, arch 
 		dtc.url, os, installerType, flavor)
 }
 
-func (dtc *dynatraceClient) getOneAgentConnectionInfoURL() string {
-	if dtc.networkZone != "" {
-		return fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo?networkZone=%s&defaultZoneFallback=true", dtc.url, dtc.networkZone)
-	}
-
-	return dtc.url + "/v1/deployment/installer/agent/connectioninfo"
-}
-
 func (dtc *dynatraceClient) getProcessModuleConfigURL() string {
 	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig?sections=general,agentType"
 }

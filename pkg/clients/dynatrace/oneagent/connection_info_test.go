@@ -115,3 +115,29 @@ func Test_GetConnectionInfo(t *testing.T) {
 		assert.ErrorIs(t, err, expectErr)
 	})
 }
+
+func Test_getOneAgentConnectionInfoUrl(t *testing.T) {
+	tests := []struct {
+		name        string
+		networkZone string
+		want        string
+	}{
+		{
+			name:        "with network zone",
+			networkZone: "mynetworkzone",
+			want:        "/v1/deployment/installer/agent/connectioninfo?networkZone=mynetworkzone&defaultZoneFallback=true",
+		},
+		{
+			name:        "without network zone",
+			networkZone: "",
+			want:        "/v1/deployment/installer/agent/connectioninfo",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getOneAgentConnectionInfoURL(tt.networkZone); got != tt.want {
+				t.Errorf("getOneAgentConnectionInfoURL() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
