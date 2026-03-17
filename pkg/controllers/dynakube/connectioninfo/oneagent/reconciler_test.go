@@ -9,11 +9,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -62,7 +62,7 @@ func TestReconcile(t *testing.T) {
 		dk.Spec = dynakube.DynaKubeSpec{}
 
 		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace}})
-		dtc := dtclientmock.NewClient(t)
+		dtc := oneagentclientmock.NewAPIClient(t)
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
@@ -90,8 +90,8 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		fakeClient := fake.NewClient(dk)
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtc := oneagentclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
@@ -106,8 +106,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("set correct condition on dynatrace-client error", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient()
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(dtclient.OneAgentConnectionInfo{}, errors.New("BOOM")).Once()
+		dtc := oneagentclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(oneagentclient.ConnectionInfo{}, errors.New("BOOM")).Once()
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
@@ -118,8 +118,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("set correct condition on kube-client error", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := createFailK8sClient()
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtc := oneagentclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
@@ -130,8 +130,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("store OneAgent connection info to DynaKube status + create secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtc := oneagentclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
@@ -153,8 +153,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("update OneAgent connection info + secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtc := oneagentclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
@@ -182,7 +182,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("do not update OneAgent connection info within timeout", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
-		dtc := dtclientmock.NewClient(t)
+		dtc := oneagentclientmock.NewAPIClient(t)
 
 		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
@@ -207,8 +207,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("update OneAgent connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtc := oneagentclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
@@ -234,8 +234,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("update OneAgent connection info in case conditions is in 'False' state ", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtc := oneagentclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
@@ -273,15 +273,13 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 		},
 	}
 
-	dtc := dtclientmock.NewClient(t)
-	dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(dtclient.OneAgentConnectionInfo{
-		ConnectionInfo: dtclient.ConnectionInfo{
+	dtc := oneagentclientmock.NewAPIClient(t)
+	dtc.EXPECT().GetConnectionInfo(anyCtx).Return(
+		oneagentclient.ConnectionInfo{
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
 			Endpoints:   "",
-		},
-	}, nil)
-
+		}, nil).Once()
 	fakeClient := fake.NewClient(dk)
 
 	r := NewReconciler(fakeClient, fakeClient, dtc, dk)
@@ -323,13 +321,11 @@ func buildOneAgentTenantSecret(dk *dynakube.DynaKube, token string) *corev1.Secr
 	}
 }
 
-func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
-	return dtclient.OneAgentConnectionInfo{
-		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID:  testTenantUUID,
-			TenantToken: testTenantToken,
-			Endpoints:   testTenantEndpoints,
-		},
+func getTestOneAgentConnectionInfo() oneagentclient.ConnectionInfo {
+	return oneagentclient.ConnectionInfo{
+		TenantUUID:  testTenantUUID,
+		TenantToken: testTenantToken,
+		Endpoints:   testTenantEndpoints,
 	}
 }
 

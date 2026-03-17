@@ -67,7 +67,7 @@ func NewReconciler( //nolint
 		apiReader:                apiReader,
 		clusterID:                clusterID,
 		dk:                       dk,
-		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient, dk),
+		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient.AsV2().OneAgent, dk),
 		versionReconciler:        version.NewReconciler(apiReader, dtClient, timeprovider.New().Freeze()),
 		tokens:                   tokens,
 	}
