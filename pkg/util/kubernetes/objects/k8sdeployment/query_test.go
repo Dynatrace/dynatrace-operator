@@ -52,12 +52,12 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 		newDepl.Spec.Replicas = ptr.To(int32(2))
 		fakeClient := fake.NewClient(&oldDepl)
 
-		updated, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(ctx, &newDepl)
+		updated, err := Query(fakeClient, fakeClient, deploymentLog).CreateOrUpdate(t.Context(), &newDepl)
 
 		require.NoError(t, err)
 		assert.True(t, updated)
 
-		d, err := Query(fakeClient, fakeClient, deploymentLog).Get(ctx, client.ObjectKeyFromObject(&newDepl))
+		d, err := Query(fakeClient, fakeClient, deploymentLog).Get(t.Context(), client.ObjectKeyFromObject(&newDepl))
 		require.NoError(t, err)
 		assert.Equal(t, *newDepl.Spec.Replicas, *d.Spec.Replicas)
 	})

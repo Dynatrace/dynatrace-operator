@@ -61,11 +61,11 @@ func TestCreateOrUpdateStatefulSet(t *testing.T) {
 		newStatefulSet.Spec.Replicas = ptr.To(int32(2))
 		fakeClient := fake.NewClient(&oldStatefulSet)
 
-		updated, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(ctx, &newStatefulSet)
+		updated, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(t.Context(), &newStatefulSet)
 		require.NoError(t, err)
 		require.True(t, updated)
 
-		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(ctx, client.ObjectKeyFromObject(&newStatefulSet))
+		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(t.Context(), client.ObjectKeyFromObject(&newStatefulSet))
 		require.NoError(t, err)
 		assert.Equal(t, *newStatefulSet.Spec.Replicas, *ds.Spec.Replicas)
 	})
