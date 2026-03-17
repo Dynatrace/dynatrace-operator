@@ -271,4 +271,39 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				},
 			}, &dummyNamespace)
 	})
+	t.Run("Metadata and OneAgent injection for same namespace from two DynaKubes should cause a conflict", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorConflictingNamespaceSelector},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					MetadataEnrichment: metadataenrichment.Spec{
+						Enabled: ptr.To(true),
+						NamespaceSelector: metav1.LabelSelector{
+							MatchLabels: dummyLabels,
+						},
+					},
+				},
+			},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "conflicting-dk",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{
+						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
+								NamespaceSelector: metav1.LabelSelector{
+									MatchLabels: dummyLabels,
+								},
+							},
+						},
+					},
+				},
+			}, &dummyNamespace)
+	})
+
 }
