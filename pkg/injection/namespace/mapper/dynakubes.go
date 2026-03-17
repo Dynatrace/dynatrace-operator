@@ -58,9 +58,9 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 	oaActive := dm.dk.OneAgent().IsAppInjectionNeeded()
 	meActive := dm.dk.MetadataEnrichment().IsEnabled()
 	otlpActive := dm.dk.OTLPExporterConfiguration().IsEnabled()
-	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "OneAgent", oaActive, dm.matchedOANamespaces)
-	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "MetadataEnrichment", meActive, dm.matchedMENamespaces)
-	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "OTLPExporterConfiguration", otlpActive, dm.matchedOTLPNamespaces)
+	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType, oaActive, dm.matchedOANamespaces)
+	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType, meActive, dm.matchedMENamespaces)
+	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType, otlpActive, dm.matchedOTLPNamespaces)
 
 	return nil
 }
@@ -109,9 +109,9 @@ func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error
 		}
 	}
 
-	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType)
-	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType)
-	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType)
+	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType.String())
+	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType.String())
+	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType.String())
 
 	return nil
 }
