@@ -1,7 +1,6 @@
 package k8sdaemonset
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -16,23 +15,21 @@ import (
 
 var daemonSetLog = logd.Get().WithName("test-daemonset")
 
-func TestCreateOrUpdateDaemonSet(t *testing.T) {
+func TestQuery(t *testing.T) {
 	const namespaceName = "dynatrace"
 
 	const daemonsetName = "my-daemonset"
-
-	ctx := context.Background()
 
 	t.Run("create when not exists", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		annotations := map[string]string{hasher.AnnotationHash: "hash"}
 		daemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, annotations, nil)
 
-		created, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(ctx, &daemonSet)
+		created, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(t.Context(), &daemonSet)
 		require.NoError(t, err)
 		require.True(t, created)
 
-		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(ctx, client.ObjectKeyFromObject(&daemonSet))
+		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(t.Context(), client.ObjectKeyFromObject(&daemonSet))
 		require.NoError(t, err)
 		assert.NotEmpty(t, ds)
 	})
@@ -43,11 +40,11 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, nil)
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(ctx, &newDaemonSet)
+		updated, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(t.Context(), &newDaemonSet)
 		require.NoError(t, err)
 		require.True(t, updated)
 
-		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(ctx, client.ObjectKeyFromObject(&newDaemonSet))
+		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(t.Context(), client.ObjectKeyFromObject(&newDaemonSet))
 		require.NoError(t, err)
 		assert.Equal(t, newAnnotations, ds.Annotations)
 	})
@@ -57,11 +54,11 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(ctx, &oldDaemonSet)
+		updated, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(t.Context(), &oldDaemonSet)
 		require.NoError(t, err)
 		require.False(t, updated)
 
-		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(ctx, client.ObjectKeyFromObject(&oldDaemonSet))
+		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(t.Context(), client.ObjectKeyFromObject(&oldDaemonSet))
 		require.NoError(t, err)
 		assert.Equal(t, oldDaemonSet, *ds)
 	})
@@ -75,11 +72,11 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, newMatchLabels)
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		recreate, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(ctx, &newDaemonSet)
+		recreate, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(t.Context(), &newDaemonSet)
 		require.NoError(t, err)
 		require.True(t, recreate)
 
-		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(ctx, client.ObjectKeyFromObject(&newDaemonSet))
+		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(t.Context(), client.ObjectKeyFromObject(&newDaemonSet))
 		require.NoError(t, err)
 		assert.Equal(t, newDaemonSet, *ds)
 		assert.Equal(t, newMatchLabels, ds.Spec.Selector.MatchLabels)

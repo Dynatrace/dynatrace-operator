@@ -15,7 +15,6 @@ import (
 const (
 	testDeploymentName  = "deployment-as-owner-of-service"
 	testStatefulSetName = "test-statefulset-name"
-	testNamespace       = "test-namespace"
 	testDynakubeName    = "dynakube"
 	testVersion         = "1.0.0"
 	testAppName         = "dynatrace-operator"
@@ -29,7 +28,7 @@ func createDeployment() *appsv1.Deployment {
 	}
 }
 
-func TestStatefulSetBuilder(t *testing.T) {
+func TestBuild(t *testing.T) {
 	t.Run("create StatefulSet", func(t *testing.T) {
 		container := corev1.Container{}
 		service, err := Build(

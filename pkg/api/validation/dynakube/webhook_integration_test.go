@@ -37,31 +37,6 @@ func TestWebhook(t *testing.T) {
 					},
 					Webhooks: []admissionregistrationv1.ValidatingWebhook{
 						{
-							Name: "v1beta3.dynakube.webhook.dynatrace.com",
-							ClientConfig: admissionregistrationv1.WebhookClientConfig{
-								Service: &admissionregistrationv1.ServiceReference{
-									Path: ptr.To("/validate-dynatrace-com-v1beta3-dynakube"),
-								},
-							},
-							Rules: []admissionregistrationv1.RuleWithOperations{
-								{
-									Operations: []admissionregistrationv1.OperationType{
-										admissionregistrationv1.Create,
-										admissionregistrationv1.Update,
-									},
-									Rule: admissionregistrationv1.Rule{
-										APIGroups:   []string{"dynatrace.com"},
-										APIVersions: []string{"v1beta3"},
-										Resources:   []string{"dynakubes"},
-									},
-								},
-							},
-							MatchPolicy:             ptr.To(admissionregistrationv1.Exact),
-							SideEffects:             ptr.To(admissionregistrationv1.SideEffectClassNone),
-							TimeoutSeconds:          ptr.To[int32](10),
-							AdmissionReviewVersions: []string{"v1"},
-						},
-						{
 							Name: "v1beta4.dynakube.webhook.dynatrace.com",
 							ClientConfig: admissionregistrationv1.WebhookClientConfig{
 								Service: &admissionregistrationv1.ServiceReference{
@@ -155,9 +130,7 @@ func TestWebhook(t *testing.T) {
 		})
 	}
 
-	unServedVersions := []string{
-		"v1beta3",
-	}
+	unServedVersions := []string{}
 	for _, version := range unServedVersions {
 		t.Run(version, func(t *testing.T) {
 			oldObj := readTestData(t, version, "default")

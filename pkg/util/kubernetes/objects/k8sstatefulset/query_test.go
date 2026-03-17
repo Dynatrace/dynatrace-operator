@@ -1,7 +1,6 @@
 package k8sstatefulset
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -22,18 +21,16 @@ func TestCreateOrUpdateStatefulSet(t *testing.T) {
 
 	const statefulSetName = "my-daemonset"
 
-	ctx := context.Background()
-
 	t.Run("create when not exists", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		annotations := map[string]string{hasher.AnnotationHash: "hash"}
 		daemonSet := createTestStatefulSetWithMatchLabels(statefulSetName, namespaceName, annotations, nil)
 
-		created, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(ctx, &daemonSet)
+		created, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(t.Context(), &daemonSet)
 		require.NoError(t, err)
 		require.True(t, created)
 
-		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(ctx, client.ObjectKeyFromObject(&daemonSet))
+		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(t.Context(), client.ObjectKeyFromObject(&daemonSet))
 		require.NoError(t, err)
 		assert.NotEmpty(t, ds)
 	})
@@ -44,11 +41,11 @@ func TestCreateOrUpdateStatefulSet(t *testing.T) {
 		newStatefulSet := createTestStatefulSetWithMatchLabels(statefulSetName, namespaceName, newAnnotations, nil)
 		fakeClient := fake.NewClient(&oldStatefulSet)
 
-		updated, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(ctx, &newStatefulSet)
+		updated, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(t.Context(), &newStatefulSet)
 		require.NoError(t, err)
 		require.True(t, updated)
 
-		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(ctx, client.ObjectKeyFromObject(&newStatefulSet))
+		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(t.Context(), client.ObjectKeyFromObject(&newStatefulSet))
 		require.NoError(t, err)
 		assert.Equal(t, newAnnotations, ds.Annotations)
 	})
@@ -75,11 +72,11 @@ func TestCreateOrUpdateStatefulSet(t *testing.T) {
 
 		fakeClient := fake.NewClient(&oldStatefulSet)
 
-		updated, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(ctx, &oldStatefulSet)
+		updated, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(t.Context(), &oldStatefulSet)
 		require.NoError(t, err)
 		require.False(t, updated)
 
-		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(ctx, client.ObjectKeyFromObject(&oldStatefulSet))
+		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(t.Context(), client.ObjectKeyFromObject(&oldStatefulSet))
 		require.NoError(t, err)
 		assert.Equal(t, oldStatefulSet, *ds)
 	})
@@ -93,11 +90,11 @@ func TestCreateOrUpdateStatefulSet(t *testing.T) {
 		newStatefulSet := createTestStatefulSetWithMatchLabels(statefulSetName, namespaceName, newAnnotations, newMatchLabels)
 		fakeClient := fake.NewClient(&oldStatefulSet)
 
-		recreate, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(ctx, &newStatefulSet)
+		recreate, err := Query(fakeClient, fakeClient, statefulSetLog).CreateOrUpdate(t.Context(), &newStatefulSet)
 		require.NoError(t, err)
 		require.True(t, recreate)
 
-		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(ctx, client.ObjectKeyFromObject(&newStatefulSet))
+		ds, err := Query(fakeClient, fakeClient, statefulSetLog).Get(t.Context(), client.ObjectKeyFromObject(&newStatefulSet))
 		require.NoError(t, err)
 		assert.Equal(t, newStatefulSet, *ds)
 		assert.Equal(t, newMatchLabels, ds.Spec.Selector.MatchLabels)

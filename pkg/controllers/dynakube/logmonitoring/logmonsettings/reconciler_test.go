@@ -44,12 +44,12 @@ func TestReconcile(t *testing.T) {
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
 		setReadScope(t, dk)
 		setWriteScope(t, dk)
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		verifyCondition(t, dk, existsReason)
@@ -64,12 +64,12 @@ func TestReconcile(t *testing.T) {
 
 		dk := getDK()
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
 		setReadScope(t, dk)
 		setWriteScope(t, dk)
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		verifyCondition(t, dk, existsReason)
@@ -79,11 +79,11 @@ func TestReconcile(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 
 		dk := getDK()
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
 		setReadScope(t, dk)
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
@@ -94,11 +94,11 @@ func TestReconcile(t *testing.T) {
 
 		dk := getDK()
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
 		setWriteScope(t, dk)
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
@@ -109,11 +109,11 @@ func TestReconcile(t *testing.T) {
 
 		dk := &dynakube.DynaKube{}
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
 		setExistsCondition(dk.Conditions())
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		require.Empty(t, dk.Conditions())
@@ -128,7 +128,7 @@ func TestReconcile(t *testing.T) {
 		setReadScope(t, dk)
 		setWriteScope(t, dk)
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 		r.timeProvider.Set(time.Now().Add(time.Hour))
 
 		setExistsCondition(dk.Conditions())
@@ -137,7 +137,7 @@ func TestReconcile(t *testing.T) {
 
 		prevTS := condition.LastTransitionTime.Time
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
@@ -153,7 +153,7 @@ func TestReconcile(t *testing.T) {
 
 		dk := getDK()
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
 		setExistsCondition(dk.Conditions())
 		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
@@ -161,7 +161,7 @@ func TestReconcile(t *testing.T) {
 
 		prevTS := condition.LastTransitionTime.Time
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
@@ -200,9 +200,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 		dk := getDK()
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
-		err := r.checkLogMonitoringSettings(t.Context())
+		err := r.checkLogMonitoringSettings(t.Context(), mockClient, dk)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when fetching settings")
 
@@ -214,9 +214,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 		dk := getDK()
 		dk.Status.KubernetesClusterMEID = ""
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
-		err := r.checkLogMonitoringSettings(t.Context())
+		err := r.checkLogMonitoringSettings(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		verifyCondition(t, dk, skippedReason)
@@ -229,9 +229,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 		dk := getDK()
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
-		err := r.checkLogMonitoringSettings(t.Context())
+		err := r.checkLogMonitoringSettings(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		verifyCondition(t, dk, existsReason)
@@ -256,9 +256,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			},
 		}
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
-		err := r.checkLogMonitoringSettings(t.Context())
+		err := r.checkLogMonitoringSettings(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		verifyCondition(t, dk, existsReason)
@@ -273,9 +273,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 		dk := getDK()
 
-		r := NewReconciler(mockClient, dk)
+		r := NewReconciler()
 
-		err := r.checkLogMonitoringSettings(t.Context())
+		err := r.checkLogMonitoringSettings(t.Context(), mockClient, dk)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when creating")
 

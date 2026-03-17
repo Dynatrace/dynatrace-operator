@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConfigMapBuilder(t *testing.T) {
+func TestBuild(t *testing.T) {
 	dataKey := "cfg"
 	data := map[string]string{
 		dataKey: "",

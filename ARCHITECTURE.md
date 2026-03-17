@@ -54,7 +54,7 @@ The Dynatrace Operator supports two main Custom Resource Definitions (CRDs):
 
 ### DynaKube
 
-The primary CRD for deploying and managing Dynatrace observability components. The latest API version is stored in `pkg/api/latest/dynakube/`, with versioned APIs maintained for [backward compatibility](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube#deprecation) (at the time of writing: v1beta3, v1beta4 and v1beta5).
+The primary CRD for deploying and managing Dynatrace observability components. The latest API version is stored in `pkg/api/latest/dynakube/`, with versioned APIs maintained for [backward compatibility](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube#deprecation) (at the time of writing: v1beta4, v1beta5, v1beta6).
 
 **Key Features:**
 
@@ -242,7 +242,7 @@ This command [`cmd/metadata/`](./cmd/metadata/) generates metadata files contain
 
 - [**`latest/`**](./pkg/api/latest/): Current API version
   - the purpose of this "hack" is to make the codebase easier to maintain, so when we introduce a new API version, we don't have to update the imports for every single file.
-- [**`v1alpha1/`**](./pkg/api/v1alpha1/), [**`v1alpha2/`**](./pkg/api/v1alpha2/), [**`v1beta3/`**](./pkg/api/v1beta3/), etc. - Versioned APIs
+- [**`v1alpha1/`**](./pkg/api/v1alpha1/), [**`v1alpha2/`**](./pkg/api/v1alpha2/), [**`v1beta4/`**](./pkg/api/v1beta4/), etc. - Versioned APIs
 - [**`conversion/`**](./pkg/api/conversion/): API version conversion logic
 - [**`validation/`**](./pkg/api/validation/): CR validation logic
 - [**`scheme/`**](./pkg/api/scheme/): Kubernetes scheme registration

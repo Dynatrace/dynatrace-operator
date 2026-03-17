@@ -1,5 +1,6 @@
 ENABLE_CSI ?= true
 DEBUG_LOGS ?= true
+DT_CLIENT_LOG_LEVEL ?= response
 WEBHOOK_REPLICAS ?= 2
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
@@ -35,6 +36,7 @@ deploy: manifests/crd/helm
 			--set image=$(IMAGE_URI) \
 			--set debugLogs=$(DEBUG_LOGS) \
 			--set debug=$(DEBUG) \
+			--set dtClientLogLevel=$(DT_CLIENT_LOG_LEVEL) \
 			--set imageRef.pullPolicy=$(IMAGE_PULL_POLICY)
 
 ## Undeploy the current operator installation
