@@ -35,8 +35,6 @@ type Client interface {
 	// download a specific agent version
 	GetAgentVersions(ctx context.Context, os, installerType, flavor string) ([]string, error)
 
-	GetOneAgentConnectionInfo(ctx context.Context) (OneAgentConnectionInfo, error)
-
 	GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error)
 
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.

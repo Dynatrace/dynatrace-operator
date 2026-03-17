@@ -420,66 +420,6 @@ func (_c *Client_GetLatestAgent_Call) RunAndReturn(run func(ctx context.Context,
 	return _c
 }
 
-// GetOneAgentConnectionInfo provides a mock function for the type Client
-func (_mock *Client) GetOneAgentConnectionInfo(ctx context.Context) (dynatrace.OneAgentConnectionInfo, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetOneAgentConnectionInfo")
-	}
-
-	var r0 dynatrace.OneAgentConnectionInfo
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (dynatrace.OneAgentConnectionInfo, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) dynatrace.OneAgentConnectionInfo); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		r0 = ret.Get(0).(dynatrace.OneAgentConnectionInfo)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Client_GetOneAgentConnectionInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOneAgentConnectionInfo'
-type Client_GetOneAgentConnectionInfo_Call struct {
-	*mock.Call
-}
-
-// GetOneAgentConnectionInfo is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Client_Expecter) GetOneAgentConnectionInfo(ctx interface{}) *Client_GetOneAgentConnectionInfo_Call {
-	return &Client_GetOneAgentConnectionInfo_Call{Call: _e.mock.On("GetOneAgentConnectionInfo", ctx)}
-}
-
-func (_c *Client_GetOneAgentConnectionInfo_Call) Run(run func(ctx context.Context)) *Client_GetOneAgentConnectionInfo_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *Client_GetOneAgentConnectionInfo_Call) Return(oneAgentConnectionInfo dynatrace.OneAgentConnectionInfo, err error) *Client_GetOneAgentConnectionInfo_Call {
-	_c.Call.Return(oneAgentConnectionInfo, err)
-	return _c
-}
-
-func (_c *Client_GetOneAgentConnectionInfo_Call) RunAndReturn(run func(ctx context.Context) (dynatrace.OneAgentConnectionInfo, error)) *Client_GetOneAgentConnectionInfo_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetProcessModuleConfig provides a mock function for the type Client
 func (_mock *Client) GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*dynatrace.ProcessModuleConfig, error) {
 	ret := _mock.Called(ctx, prevRevision)
