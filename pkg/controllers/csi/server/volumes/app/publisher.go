@@ -71,6 +71,7 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
+	os.Remove(pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -78,11 +79,12 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 // if any of the FS calls fail in an unexpected way, then it is considered that the limit was reached.
 func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) bool {
 	appDir := pub.path.AppMountForID(volumeCfg.VolumeID)
+	retryDir := pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID)
 
-	stat, err := os.Stat(appDir)
+	stat, err := os.Stat(retryDir)
 	if errors.Is(err, os.ErrNotExist) {
 		// First run, create folder, to keep track of time
-		err := os.MkdirAll(appDir, os.ModePerm)
+		err := os.MkdirAll(retryDir, os.ModePerm)
 		if err != nil {
 			log.Error(err, "failed to create base dir for app mount, skipping injection", "dir", appDir)
 

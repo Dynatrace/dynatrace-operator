@@ -42,7 +42,7 @@ func TestPublishVolume(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
-		require.NoError(t, os.MkdirAll(path.AppMountForID(volumeCfg.VolumeID), os.ModePerm))
+		require.NoError(t, os.MkdirAll(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), os.ModePerm))
 
 		pastTime := timeprovider.New()
 		pastTime.Set(time.Now().Add(2 * volumeCfg.RetryTimeout))
@@ -71,6 +71,7 @@ func TestPublishVolume(t *testing.T) {
 		require.Nil(t, resp)
 
 		assert.Empty(t, mounter.MountPoints)
+		require.DirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("early return (with error) - binary is just a file", func(t *testing.T) {
@@ -89,13 +90,14 @@ func TestPublishVolume(t *testing.T) {
 		require.Nil(t, resp)
 
 		assert.Empty(t, mounter.MountPoints)
+		require.DirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("NO early return - retry limit reached but binary is available (node restart scenario)", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
-		require.NoError(t, os.MkdirAll(path.AppMountForID(volumeCfg.VolumeID), os.ModePerm))
+		require.NoError(t, os.MkdirAll(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), os.ModePerm))
 
 		pastTime := timeprovider.New()
 		pastTime.Set(time.Now().Add(2 * volumeCfg.RetryTimeout))
@@ -138,6 +140,8 @@ func TestPublishVolume(t *testing.T) {
 		assert.Contains(t, overlayMount.Opts[0], testBinary) // lowerdir
 		assert.Contains(t, overlayMount.Opts[1], varDir)     // upperdir
 		assert.Contains(t, overlayMount.Opts[2], workDir)    // workdir
+
+		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("happy path", func(t *testing.T) {
@@ -180,6 +184,8 @@ func TestPublishVolume(t *testing.T) {
 		assert.Contains(t, overlayMount.Opts[0], testBinary) // lowerdir
 		assert.Contains(t, overlayMount.Opts[1], varDir)     // upperdir
 		assert.Contains(t, overlayMount.Opts[2], workDir)    // workdir
+
+		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 }
 
