@@ -342,7 +342,7 @@ jobs:
 
   build-push-olm-bundle:
     needs: [ detect-changes ]
-    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.ci_changed)
     name: Build and push OLM bundle
     runs-on: ubuntu-24.04
     permissions:
