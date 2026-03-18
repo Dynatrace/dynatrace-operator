@@ -75,7 +75,7 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 }
 
 func (pub *Publisher) finishMount(volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	err := os.Remove(pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
+	err := os.RemoveAll(pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	if err != nil {
 		log.Error(err, "failed to cleanup backoff tracking dir")
 	}
