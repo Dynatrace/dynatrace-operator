@@ -361,7 +361,7 @@ jobs:
       - name: Build image metadata
         uses: ./.github/actions/metadata
         id: meta
-      - name: build and push OLM bundle
+      - name: Build and push OLM bundle
         env:
           VERSION: 0.0.0-${{ steps.meta.outputs.tags }}
         run: |
