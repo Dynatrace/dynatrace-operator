@@ -36,6 +36,8 @@ func TestPublishVolume(t *testing.T) {
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
+
+		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("early return - retry limit reached", func(t *testing.T) {
@@ -57,6 +59,7 @@ func TestPublishVolume(t *testing.T) {
 		require.NotNil(t, resp)
 
 		assert.Empty(t, mounter.MountPoints)
+		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("early return (with error) - no binary present", func(t *testing.T) {
@@ -90,7 +93,7 @@ func TestPublishVolume(t *testing.T) {
 		require.Nil(t, resp)
 
 		assert.Empty(t, mounter.MountPoints)
-		require.DirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
+		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("NO early return - retry limit reached but binary is available (node restart scenario)", func(t *testing.T) {

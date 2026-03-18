@@ -52,7 +52,7 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 		if pub.hasRetryLimitReached(volumeCfg) {
 			log.Info("version or digest is not yet set, csi-provisioner hasn't finished setup yet, reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName, "dk", volumeCfg.DynakubeName)
 
-			return &csi.NodePublishVolumeResponse{}, nil
+			return pub.finishMount(volumeCfg)
 		}
 
 		return nil, status.Error(
@@ -65,13 +65,22 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 		if pub.hasRetryLimitReached(volumeCfg) {
 			log.Info("failed to mount oneagent volume, reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName, "mountErr", err)
 
-			return &csi.NodePublishVolumeResponse{}, nil
+			return pub.finishMount(volumeCfg)
 		}
 
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
 	os.Remove(pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
+
+	return pub.finishMount(volumeCfg)
+}
+
+func (pub *Publisher) finishMount(volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	err := os.Remove(pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
+	if err != nil {
+		log.Error(err, "failed to cleanup backoff tracking dir")
+	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
