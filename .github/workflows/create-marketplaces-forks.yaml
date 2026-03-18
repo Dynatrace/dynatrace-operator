@@ -1,6 +1,12 @@
 name: Create forks for marketplaces
 
 on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Release branch to use (e.g. release-1.4)'
+        required: true
+        type: string
   pull_request:
     types: closed
     branches:
@@ -8,9 +14,10 @@ on:
 jobs:
   create-forks:
     if: >
-      github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'csv-') &&
-      startsWith(github.event.pull_request.base.ref, 'release-')
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'csv-') &&
+       startsWith(github.event.pull_request.base.ref, 'release-'))
     runs-on: ubuntu-24.04
     environment: Release
     strategy:
@@ -36,7 +43,7 @@ jobs:
       - name: Checkout dynatrace-operator at base branch (team user)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ inputs.branch || github.event.pull_request.base.ref }}
           fetch-depth: 0
           token: ${{ secrets.TEAM_USER_TOKEN }}
           persist-credentials: false
@@ -63,7 +70,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "branch=$BASE_REF" >> "$GITHUB_OUTPUT"
         env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_REF: ${{ inputs.branch || github.event.pull_request.base.ref }}
       - name: Clone and setup fork repository
         env:
           VERSION: ${{ steps.meta.outputs.version }}
