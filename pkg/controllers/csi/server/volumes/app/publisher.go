@@ -72,6 +72,7 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 	}
 
 	os.Remove(pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
+
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
