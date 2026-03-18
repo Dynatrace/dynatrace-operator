@@ -8,7 +8,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
@@ -164,6 +166,26 @@ func TestWebhook(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{
 						"routing",
 						"routing",
+					},
+				},
+			},
+		},
+		{
+			name: "duplicate kspm mapped host paths",
+			spec: dynakube.DynaKubeSpec{
+				APIURL: "https://test.localhost/api",
+				Kspm: &kspm.Spec{
+					MappedHostPaths: []string{
+						"/a",
+						"/a",
+					},
+				},
+				Templates: dynakube.TemplatesSpec{
+					KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						ImageRef: image.Ref{
+							Repository: "foo/bar",
+							Tag:        "baz",
+						},
 					},
 				},
 			},
