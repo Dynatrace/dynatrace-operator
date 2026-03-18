@@ -18,7 +18,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -47,28 +46,31 @@ type Publisher struct {
 	path    metadata.PathResolver
 }
 
+const (
+	retryLimitReachedMsg = "reached max mount attempts for pod, attaching dummy volume, monitoring disabled"
+)
+
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
 	if !pub.isCodeModuleAvailable(volumeCfg) {
+		provisionerNotDoneErr := errors.Errorf("version or digest is not yet set, csi-provisioner hasn't finished setup yet for %s DynaKube", volumeCfg.DynakubeName)
 		if pub.hasRetryLimitReached(volumeCfg) {
-			log.Info("version or digest is not yet set, csi-provisioner hasn't finished setup yet, reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName, "dk", volumeCfg.DynakubeName)
+			log.Error(provisionerNotDoneErr, retryLimitReachedMsg, "pod", volumeCfg.PodName)
 
 			return pub.finishMount(volumeCfg)
 		}
 
-		return nil, status.Error(
-			codes.Unavailable,
-			"version or digest is not yet set, csi-provisioner hasn't finished setup yet for DynaKube: "+volumeCfg.DynakubeName,
-		)
+		return nil, status.Error(codes.Unavailable, provisionerNotDoneErr.Error())
 	}
 
 	if err := pub.mountCodeModule(volumeCfg); err != nil {
+		mountFailedErr := errors.WithMessage(err, "failed to mount oneagent volume")
 		if pub.hasRetryLimitReached(volumeCfg) {
-			log.Info("failed to mount oneagent volume, reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName, "mountErr", err)
+			log.Error(mountFailedErr, retryLimitReachedMsg, "pod", volumeCfg.PodName)
 
 			return pub.finishMount(volumeCfg)
 		}
 
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
+		return nil, status.Error(codes.Internal, mountFailedErr.Error())
 	}
 
 	return pub.finishMount(volumeCfg)
