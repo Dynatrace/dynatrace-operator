@@ -71,8 +71,6 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
-	os.Remove(pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
-
 	return pub.finishMount(volumeCfg)
 }
 
