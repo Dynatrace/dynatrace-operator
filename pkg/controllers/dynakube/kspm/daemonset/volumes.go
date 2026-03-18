@@ -22,7 +22,7 @@ const (
 func getVolumes(dk dynakube.DynaKube) []corev1.Volume {
 	var volumes []corev1.Volume
 
-	volumes = append(volumes, getNodeVolumes(dk.KSPM().GetSortedMappedHostPaths())...)
+	volumes = append(volumes, getNodeVolumes(dk.KSPM().GetUniqueMappedHostPaths())...)
 	volumes = append(volumes, getTokenVolume(dk))
 
 	if dk.ActiveGate().HasCaCert() {
@@ -35,7 +35,7 @@ func getVolumes(dk dynakube.DynaKube) []corev1.Volume {
 func getMounts(dk dynakube.DynaKube) []corev1.VolumeMount {
 	var mounts []corev1.VolumeMount
 
-	mounts = append(mounts, getNodeVolumeMounts(dk.KSPM().GetSortedMappedHostPaths())...)
+	mounts = append(mounts, getNodeVolumeMounts(dk.KSPM().GetUniqueMappedHostPaths())...)
 	mounts = append(mounts, getTokenVolumeMount())
 
 	if dk.ActiveGate().HasCaCert() {
