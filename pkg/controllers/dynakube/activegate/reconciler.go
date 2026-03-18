@@ -34,6 +34,7 @@ type istioReconciler interface {
 }
 
 type Reconciler struct {
+	dtc                               dtclient.Client
 	client                            client.Client
 	dk                                *dynakube.DynaKube
 	apiReader                         client.Reader
@@ -62,7 +63,7 @@ func NewReconciler(clt client.Client, //nolint
 	dtc dtclient.Client,
 	tokens token.Tokens) controllers.Reconciler {
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, dk, dtc.AsV2().ActiveGate)
-	versionReconciler := version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
+	versionReconciler := version.NewReconciler(apiReader, timeprovider.New().Freeze())
 	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc.AsV2().ActiveGate, dk)
 	pullSecretReconciler := dtpullsecret.NewReconciler(clt, apiReader, dk, tokens)
 
@@ -71,6 +72,7 @@ func NewReconciler(clt client.Client, //nolint
 	}
 
 	return &Reconciler{
+		dtc: dtc,
 		client:                            clt,
 		apiReader:                         apiReader,
 		dk:                                dk,
@@ -110,7 +112,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	err = r.versionReconciler.ReconcileActiveGate(ctx, r.dk)
+	err = r.versionReconciler.ReconcileActiveGate(ctx, r.dk, r.dtc)
 	if err != nil {
 		return err
 	}

@@ -26,13 +26,17 @@ type istioReconciler interface {
 	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
+type connectionInfoReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dynatrace.Client) error
+}
+
 type Reconciler struct {
 	client                    client.Client
 	apiReader                 client.Reader
 	dk                        *dynakube.DynaKube
 	istioReconciler           istioReconciler
 	versionReconciler         version.Reconciler
-	connectionInfoReconciler  controllers.Reconciler
+	connectionInfoReconciler  connectionInfoReconciler
 	enrichmentRulesReconciler controllers.Reconciler
 	dynatraceClient           dynatrace.Client
 }
@@ -44,7 +48,6 @@ type ReconcilerBuilder func(
 	dk *dynakube.DynaKube,
 ) controllers.Reconciler
 
-//nolint:revive
 func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
@@ -57,8 +60,8 @@ func NewReconciler(
 		dk:                        dk,
 		dynatraceClient:           dynatraceClient,
 		istioReconciler:           istio.NewReconciler(client, apiReader),
-		versionReconciler:         version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
-		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
+		versionReconciler:         version.NewReconciler(apiReader, timeprovider.New().Freeze()),
+		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader),
 		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient.AsV2().Settings, dk),
 	}
 }
@@ -150,12 +153,12 @@ func (r *Reconciler) unmap(ctx context.Context) {
 }
 
 func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
-	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dk)
+	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dk, r.dynatraceClient)
 	if err != nil {
 		return err
 	}
 
-	err = r.connectionInfoReconciler.Reconcile(ctx)
+	err = r.connectionInfoReconciler.Reconcile(ctx, r.dk, r.dynatraceClient)
 	if err != nil {
 		return err
 	}

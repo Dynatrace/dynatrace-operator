@@ -9,7 +9,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +26,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx, nil, dk)
 		require.Error(t, err)
 
-		failOAConnectionInfo.AssertCalled(t, "Reconcile", ctx)
+		failOAConnectionInfo.AssertCalled(t, "Reconcile", ctx, dk, nil)
 	})
 
 	t.Run("config-secret fail => error", func(t *testing.T) {
@@ -78,20 +77,20 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func createFailingReconciler(t *testing.T) *controllermock.Reconciler {
+func createFailingReconciler(t *testing.T) *mockOneAgentConnectionInfoReconciler {
 	t.Helper()
 
-	failMock := controllermock.NewReconciler(t)
-	failMock.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+	failMock := newMockOneAgentConnectionInfoReconciler(t)
+	failMock.On("Reconcile", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("BOOM"))
 
 	return failMock
 }
 
-func createPassingReconciler(t *testing.T) *controllermock.Reconciler {
+func createPassingReconciler(t *testing.T) *mockOneAgentConnectionInfoReconciler {
 	t.Helper()
 
-	passMock := controllermock.NewReconciler(t)
-	passMock.On("Reconcile", mock.Anything).Return(nil)
+	passMock := newMockOneAgentConnectionInfoReconciler(t)
+	passMock.On("Reconcile", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	return passMock
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
@@ -22,13 +21,17 @@ type logmonsettingsSubReconciler interface {
 	Reconcile(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error
 }
 
+type oneAgentConnectionInfoReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client) error
+}
+
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
 
 	configSecretReconciler           subReconciler
 	daemonsetReconciler              subReconciler
-	oneAgentConnectionInfoReconciler controllers.Reconciler
+	oneAgentConnectionInfoReconciler oneAgentConnectionInfoReconciler
 	logmonsettingsReconciler         logmonsettingsSubReconciler
 }
 
@@ -46,10 +49,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dtc dtclient.Client, dk *dynakube.DynaKube) error {
 	oaConnectionInfoReconciler := r.oneAgentConnectionInfoReconciler
 	if oaConnectionInfoReconciler == nil {
-		oaConnectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtc, dk)
+		oaConnectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader)
 	}
 
-	err := oaConnectionInfoReconciler.Reconcile(ctx)
+	err := oaConnectionInfoReconciler.Reconcile(ctx, dk, dtc)
 	if err != nil {
 		return err
 	}

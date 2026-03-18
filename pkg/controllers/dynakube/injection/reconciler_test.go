@@ -225,7 +225,7 @@ func TestReconciler(t *testing.T) {
 			},
 		})
 
-		fakeReconciler := createReconcilerMock(t)
+		fakeReconciler := createConnectionInfoReconcilerMock(t)
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
 		dtClient := dtclientmock.NewClient(t)
@@ -252,7 +252,7 @@ func TestRemoveAppInjection(t *testing.T) {
 		CloudNativeFullStack: nil,
 	})
 	rec.versionReconciler = createVersionReconcilerMock(t)
-	rec.connectionInfoReconciler = createReconcilerMock(t)
+	rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 	rec.enrichmentRulesReconciler = createReconcilerMock(t)
 	rec.istioReconciler = createIstioReconcilerMock(t, rec.dk)
 
@@ -286,7 +286,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 			ClassicFullStack: &oneagent.HostInjectSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
-		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		rec.istioReconciler = createIstioReconcilerMock(t, rec.dk)
 
 		err := rec.setupOneAgentInjection(t.Context())
@@ -299,7 +299,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 			HostMonitoring: &oneagent.HostInjectSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
-		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		rec.istioReconciler = createIstioReconcilerMock(t, rec.dk)
 
 		err := rec.setupOneAgentInjection(t.Context())
@@ -312,7 +312,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 			ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
-		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		rec.istioReconciler = createIstioReconcilerMock(t, rec.dk)
 
 		err := rec.setupOneAgentInjection(t.Context())
@@ -325,7 +325,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
-		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		rec.istioReconciler = createIstioReconcilerMock(t, rec.dk)
 
 		err := rec.setupOneAgentInjection(t.Context())
@@ -779,9 +779,16 @@ func createReconcilerMock(t *testing.T) controllers.Reconciler {
 	return connectionInfoReconciler
 }
 
+func createConnectionInfoReconcilerMock(t *testing.T) connectionInfoReconciler {
+	connectionInfoReconciler := newMockConnectionInfoReconciler(t)
+	connectionInfoReconciler.EXPECT().Reconcile(anyCtx, mock.AnythingOfType("*dynakube.DynaKube"), mock.Anything).Return(nil).Once()
+
+	return connectionInfoReconciler
+}
+
 func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 	versionReconciler := versionmock.NewReconciler(t)
-	versionReconciler.EXPECT().ReconcileCodeModules(anyCtx, mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+	versionReconciler.EXPECT().ReconcileCodeModules(anyCtx, mock.AnythingOfType("*dynakube.DynaKube"), mock.Anything).Return(nil).Once()
 
 	return versionReconciler
 }

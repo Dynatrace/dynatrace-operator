@@ -64,8 +64,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace}})
 		dtc := dtclientmock.NewClient(t)
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dk, dtc)
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.OneAgent.ConnectionInfo)
 
@@ -93,8 +93,8 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dk, dtc)
 		require.NoError(t, err)
 		assert.NotEmpty(t, dk.Status.OneAgent.ConnectionInfo)
 
@@ -108,8 +108,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient()
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(dtclient.OneAgentConnectionInfo{}, errors.New("BOOM")).Once()
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dk, dtc)
 		require.Error(t, err)
 
 		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.DynatraceAPIErrorReason)
@@ -120,8 +120,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createFailK8sClient()
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dk, dtc)
 		require.Error(t, err)
 
 		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.KubeAPIErrorReason)
@@ -132,8 +132,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dk)
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dk, dtc)
 		require.NoError(t, err)
 
 		tenantTokenHash, err := hasher.GenerateHash(testTenantToken)
@@ -162,11 +162,10 @@ func TestReconcile(t *testing.T) {
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		rec := r.(*reconciler)
-		rec.timeProvider.Set(rec.timeProvider.Now().Add(time.Minute * 20))
+		r := NewReconciler(fakeClient, fakeClient)
+		r.timeProvider.Set(r.timeProvider.Now().Add(time.Minute * 20))
 
-		err := r.Reconcile(ctx)
+		err := r.Reconcile(ctx, dk, dtc)
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
@@ -190,8 +189,8 @@ func TestReconcile(t *testing.T) {
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dk, dtc)
 		require.NoError(t, err)
 
 		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
@@ -216,8 +215,8 @@ func TestReconcile(t *testing.T) {
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dk, dtc)
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
@@ -243,8 +242,8 @@ func TestReconcile(t *testing.T) {
 		}
 		setEmptyCommunicationHostsCondition(dk.Conditions())
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dk, dtc)
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
@@ -284,8 +283,8 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 
 	fakeClient := fake.NewClient(dk)
 
-	r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-	err := r.Reconcile(ctx)
+	r := NewReconciler(fakeClient, fakeClient)
+	err := r.Reconcile(ctx, dk, dtc)
 	require.ErrorIs(t, err, NoOneAgentCommunicationEndpointsError)
 
 	assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
