@@ -359,6 +359,8 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: build and push OLM bundle
+        env:
+          VERSION: 0.0.0-snapshot
         run: |
           make bundle
           make bundle/build bundle/push
