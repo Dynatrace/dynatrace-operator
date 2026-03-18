@@ -359,7 +359,9 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: build and push OLM bundle
-        run: make bundle
+        run: |
+          make bundle
+          make bundle/build bundle/push
 
   run-preflight:
     name: Run preflight on ghcr.io without submitting results when merging to main
