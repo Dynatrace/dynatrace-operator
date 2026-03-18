@@ -305,5 +305,4 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				},
 			}, &dummyNamespace)
 	})
-
 }

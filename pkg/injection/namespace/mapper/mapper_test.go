@@ -498,5 +498,4 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		assert.Contains(t, dm.matchedOTLPNamespaces, "ns-b")
 		assert.Contains(t, dm.matchedOTLPNamespaces, "ns-c")
 	})
-
 }
