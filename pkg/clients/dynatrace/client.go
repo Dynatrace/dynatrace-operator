@@ -39,36 +39,9 @@ type Client interface {
 
 	GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error)
 
-	// GetTokenScopes returns the list of scopes assigned to a token if successful.
-	GetTokenScopes(ctx context.Context, token string) (TokenScopes, error)
-
 	// AsV2 is a temporary adapter to gradually migrate to the v2 client.
 	AsV2() *ClientV2
 }
-
-// Relevant token scopes
-const (
-	TokenScopeInstallerDownload        = "InstallerDownload"
-	TokenScopeDataExport               = "DataExport"
-	TokenScopeMetricsIngest            = "metrics.ingest"
-	TokenScopeOpenTelemetryTraceIngest = "openTelemetryTrace.ingest"
-	TokenScopeLogsIngest               = "logs.ingest"
-	TokenScopeSettingsRead             = "settings.read"
-	TokenScopeSettingsWrite            = "settings.write"
-	TokenScopeActiveGateTokenCreate    = "activeGateTokenManagement.create"
-)
-
-const (
-	ConditionTypeAPITokenSettingsRead  = "ApiTokenSettingsRead"
-	ConditionTypeAPITokenSettingsWrite = "ApiTokenSettingsWrite"
-)
-
-var (
-	OptionalScopes = map[string]string{
-		TokenScopeSettingsRead:  ConditionTypeAPITokenSettingsRead,
-		TokenScopeSettingsWrite: ConditionTypeAPITokenSettingsWrite,
-	}
-)
 
 type NewFunc func(url, apiToken, paasToken string, opts ...Option) (Client, error)
 
