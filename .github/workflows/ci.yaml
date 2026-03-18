@@ -358,22 +358,14 @@ jobs:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Sanitize names
-        id: sanitize
-        shell: bash
-        env:
-          HEAD_REF: ${{ github.head_ref }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          # Sanitize names
-          sanitized_ref_name=$(hack/build/ci/sanitize-branch-name.sh "${REF_NAME}")
-          sanitized_head_ref=$(hack/build/ci/sanitize-branch-name.sh "${HEAD_REF}")
-          suffix=${{ github.event_name == 'pull_request' && sanitized_head_ref || sanitized_ref_name }}
-          echo "suffix=${suffix}" >> $GITHUB_OUTPUT
+      - name: Build image metadata
+        uses: ./.github/actions/metadata
+        id: meta
       - name: build and push OLM bundle
         env:
-          VERSION: 0.0.0-${{ steps.sanitize.outputs.suffix }}
+          VERSION: 0.0.0-${{ steps.meta.outputs.tags }}
         run: |
+          echo $VERSION
           make bundle
           make bundle/build bundle/push
 
