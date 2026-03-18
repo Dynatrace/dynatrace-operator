@@ -91,6 +91,55 @@ func TestPublishVolume(t *testing.T) {
 		assert.Empty(t, mounter.MountPoints)
 	})
 
+	t.Run("NO early return - retry limit reached but binary is available (node restart scenario)", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		volumeCfg := getTestVolumeConfig(t)
+		require.NoError(t, os.MkdirAll(path.AppMountForID(volumeCfg.VolumeID), os.ModePerm))
+
+		pastTime := timeprovider.New()
+		pastTime.Set(time.Now().Add(2 * volumeCfg.RetryTimeout))
+		pub := Publisher{
+			mounter: mounter,
+			path:    path,
+			time:    pastTime,
+		}
+
+		// Binary present
+		binaryDir := path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
+		testBinary := path.AgentSharedBinaryDirForAgent("test")
+		require.NoError(t, os.MkdirAll(filepath.Dir(binaryDir), os.ModePerm))
+		require.NoError(t, os.MkdirAll(testBinary, os.ModePerm))
+		require.NoError(t, os.Symlink(testBinary, binaryDir))
+
+		resp, err := pub.PublishVolume(ctx, &volumeCfg)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		// Directories created correctly
+		assert.DirExists(t, volumeCfg.TargetPath)
+
+		varDir := path.AppMountVarDir(volumeCfg.VolumeID)
+		assert.DirExists(t, varDir)
+
+		workDir := path.AppMountWorkDir(volumeCfg.VolumeID)
+		assert.DirExists(t, workDir)
+
+		// overlay is mounted directly to targetPath
+		isMountPoint, err := mounter.IsMountPoint(volumeCfg.TargetPath)
+		require.NoError(t, err)
+		assert.True(t, isMountPoint)
+
+		require.Len(t, mounter.MountPoints, 1)
+		overlayMount := mounter.MountPoints[0]
+		assert.Equal(t, "overlay", overlayMount.Device)
+		assert.Equal(t, volumeCfg.TargetPath, overlayMount.Path)
+		require.Len(t, overlayMount.Opts, 3)
+		assert.Contains(t, overlayMount.Opts[0], testBinary) // lowerdir
+		assert.Contains(t, overlayMount.Opts[1], varDir)     // upperdir
+		assert.Contains(t, overlayMount.Opts[2], workDir)    // workdir
+	})
+
 	t.Run("happy path", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})

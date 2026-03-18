@@ -48,13 +48,13 @@ type Publisher struct {
 }
 
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	if pub.hasRetryLimitReached(volumeCfg) {
-		log.Info("reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName)
-
-		return &csi.NodePublishVolumeResponse{}, nil
-	}
-
 	if !pub.isCodeModuleAvailable(volumeCfg) {
+		if pub.hasRetryLimitReached(volumeCfg) {
+			log.Info("codemodules is still not available, reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName)
+
+			return &csi.NodePublishVolumeResponse{}, nil
+		}
+
 		return nil, status.Error(
 			codes.Unavailable,
 			"version or digest is not yet set, csi-provisioner hasn't finished setup yet for DynaKube: "+volumeCfg.DynakubeName,
@@ -62,6 +62,12 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 	}
 
 	if err := pub.mountCodeModule(volumeCfg); err != nil {
+		if pub.hasRetryLimitReached(volumeCfg) {
+			log.Info("failed to mount oneagent volume, reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName, "mountErr", err)
+
+			return &csi.NodePublishVolumeResponse{}, nil
+		}
+
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
