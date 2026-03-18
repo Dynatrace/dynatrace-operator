@@ -3,12 +3,15 @@ package validation
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
@@ -154,5 +157,30 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 					},
 				},
 			})
+	})
+}
+
+func TestConflictingMaxUnavailableAnnotationWithRollingUpdateLogMonitoring(t *testing.T) {
+	t.Run("both annotation and rollingUpdate in LogMonitoring", func(t *testing.T) {
+		meta := metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				exp.OAMaxUnavailableKey: "2", //nolint:staticcheck
+			},
+		}
+		// warning amount 2: deprecated flag + conflict with rolling update
+		assertAllowedWithWarnings(t, 2, &dynakube.DynaKube{ObjectMeta: meta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				Templates: dynakube.TemplatesSpec{
+					LogMonitoring: &logmonitoring.TemplateSpec{
+						RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+							MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2},
+						},
+					},
+				},
+			},
+		})
 	})
 }

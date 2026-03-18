@@ -122,6 +122,13 @@
 |`tolerations`||-|array|
 |`topologySpreadConstraints`||-|array|
 
+### .spec.activeGate.rollingUpdate
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`maxUnavailable`||-|integer or string|
+|`partition`||-|integer|
+
 ### .spec.oneAgent.classicFullStack
 
 |Parameter|Description|Default value|Data type|
@@ -224,6 +231,20 @@
 |`metrics`||-|object|
 |`traces`||-|object|
 
+### .spec.oneAgent.hostMonitoring.rollingUpdate
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`maxSurge`||-|integer or string|
+|`maxUnavailable`||-|integer or string|
+
+### .spec.templates.logMonitoring.rollingUpdate
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`maxSurge`||-|integer or string|
+|`maxUnavailable`||-|integer or string|
+
 ### .spec.templates.extensionExecutionController
 
 |Parameter|Description|Default value|Data type|
@@ -237,6 +258,13 @@
 |`tolerations`||-|array|
 |`topologySpreadConstraints`||-|array|
 |`useEphemeralVolume`||-|boolean|
+
+### .spec.oneAgent.classicFullStack.rollingUpdate
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`maxSurge`||-|integer or string|
+|`maxUnavailable`||-|integer or string|
 
 ### .spec.templates.sqlExtensionExecutor.imageRef
 
@@ -258,6 +286,13 @@
 |`priorityClassName`||-|string|
 |`resources`||-|object|
 |`tolerations`||-|array|
+
+### .spec.oneAgent.cloudNativeFullStack.rollingUpdate
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`maxSurge`||-|integer or string|
+|`maxUnavailable`||-|integer or string|
 
 ### .spec.activeGate.volumeClaimTemplate.dataSourceRef
 
