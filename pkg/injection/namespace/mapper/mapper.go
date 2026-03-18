@@ -29,7 +29,11 @@ func (m matchResult) IsAny() bool {
 
 func (c *ConflictChecker) check(dk *dynakube.DynaKube) error {
 	metadataEnrichment := dk.MetadataEnrichment()
-	if !dk.OneAgent().IsAppInjectionNeeded() && !metadataEnrichment.IsEnabled() {
+	otlpExporterConfig := dk.OTLPExporterConfiguration()
+
+	if !dk.OneAgent().IsAppInjectionNeeded() &&
+		!metadataEnrichment.IsEnabled() &&
+		!otlpExporterConfig.IsEnabled() {
 		return nil
 	}
 
@@ -140,6 +144,8 @@ func matchOTLPExporterConfiguration(dk *dynakube.DynaKube, namespace *corev1.Nam
 	otlpExporterConfiguration := dk.OTLPExporterConfiguration()
 	if !otlpExporterConfiguration.IsEnabled() {
 		return false, nil
+	} else if otlpExporterConfiguration.Spec.NamespaceSelector.Size() == 0 {
+		return true, nil
 	}
 
 	namespaceSelector, err := metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.Spec.NamespaceSelector)

@@ -9,36 +9,36 @@ import (
 )
 
 const (
-	oneAgentNamespacesMonitoredConditionType           = "OneAgentNamespacesMonitored"
-	metadataEnrichmentNamespacesMonitoredConditionType = "MetadataEnrichmentNamespacesMonitored"
-
 	matchesFoundReason = "MatchesFound"
 	noMatchesReason    = "NoMatches"
 
 	maxNamesInMsg = 10
 )
 
-func setNamespacesMonitoredSelectorCondition(conditions *[]metav1.Condition, selectorType string, configured bool, names []string) {
-	var condType string
+type conditionType string
 
-	switch selectorType {
-	case "OneAgent":
-		condType = oneAgentNamespacesMonitoredConditionType
-	case "MetadataEnrichment":
-		condType = metadataEnrichmentNamespacesMonitoredConditionType
-	}
+func (c conditionType) String() string {
+	return string(c)
+}
 
+const (
+	oneAgentNamespacesMonitoredConditionType           conditionType = "OneAgentNamespacesMonitored"
+	metadataEnrichmentNamespacesMonitoredConditionType conditionType = "MetadataEnrichmentNamespacesMonitored"
+	otlpExporterNamespacesMonitoredConditionType       conditionType = "OTLPExporterConfigurationNamespacesMonitored"
+)
+
+func setNamespacesMonitoredSelectorCondition(conditions *[]metav1.Condition, condType conditionType, configured bool, names []string) {
 	log.Info("namespaces monitored",
-		"selector", selectorType,
+		"condition", condType,
 		"count", len(names),
 		"namespaces (max 10 listed)", names,
 	)
 
-	cond := metav1.Condition{Type: condType}
+	cond := metav1.Condition{Type: condType.String()}
 
 	switch {
 	case !configured:
-		_ = meta.RemoveStatusCondition(conditions, condType)
+		_ = meta.RemoveStatusCondition(conditions, condType.String())
 
 		return
 	case len(names) == 0:

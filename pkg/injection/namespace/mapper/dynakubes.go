@@ -23,20 +23,22 @@ type DynakubeMapper struct {
 	operatorNs string
 	secrets    k8ssecret.QueryObject
 
-	matchedOANamespaces []string
-	matchedMENamespaces []string
+	matchedOANamespaces   []string
+	matchedMENamespaces   []string
+	matchedOTLPNamespaces []string
 }
 
 func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynakube.DynaKube) DynakubeMapper {
 	return DynakubeMapper{
-		ctx:                 ctx,
-		client:              clt,
-		apiReader:           apiReader,
-		operatorNs:          operatorNs,
-		dk:                  dk,
-		secrets:             k8ssecret.Query(clt, apiReader, log),
-		matchedOANamespaces: []string{},
-		matchedMENamespaces: []string{},
+		ctx:                   ctx,
+		client:                clt,
+		apiReader:             apiReader,
+		operatorNs:            operatorNs,
+		dk:                    dk,
+		secrets:               k8ssecret.Query(clt, apiReader, log),
+		matchedOANamespaces:   []string{},
+		matchedMENamespaces:   []string{},
+		matchedOTLPNamespaces: []string{},
 	}
 }
 
@@ -55,8 +57,10 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 
 	oaActive := dm.dk.OneAgent().IsAppInjectionNeeded()
 	meActive := dm.dk.MetadataEnrichment().IsEnabled()
-	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "OneAgent", oaActive, dm.matchedOANamespaces)
-	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "MetadataEnrichment", meActive, dm.matchedMENamespaces)
+	otlpActive := dm.dk.OTLPExporterConfiguration().IsEnabled()
+	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType, oaActive, dm.matchedOANamespaces)
+	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType, meActive, dm.matchedMENamespaces)
+	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType, otlpActive, dm.matchedOTLPNamespaces)
 
 	return nil
 }
@@ -105,8 +109,9 @@ func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error
 		}
 	}
 
-	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType)
-	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType)
+	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType.String())
+	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType.String())
+	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType.String())
 
 	return nil
 }
@@ -145,6 +150,10 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 			dm.matchedMENamespaces = append(dm.matchedMENamespaces, namespace.Name)
 		}
 
+		if result.IsOTLP {
+			dm.matchedOTLPNamespaces = append(dm.matchedOTLPNamespaces, namespace.Name)
+		}
+
 		updated, err := updateNamespace(namespace, dkList)
 		if err != nil {
 			return nil, err
@@ -157,6 +166,7 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 
 	slices.Sort(dm.matchedOANamespaces)
 	slices.Sort(dm.matchedMENamespaces)
+	slices.Sort(dm.matchedOTLPNamespaces)
 
 	return modifiedNs, nil
 }
