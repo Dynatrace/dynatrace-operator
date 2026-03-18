@@ -7,6 +7,11 @@ on:
         description: 'Release branch to use (e.g. release-1.4)'
         required: true
         type: string
+      fork_branch:
+        description: 'Target branch name for the fork repos'
+        required: false
+        type: string
+        default: 'test-release-fork'
   pull_request:
     types: closed
     branches:
@@ -75,6 +80,7 @@ jobs:
         env:
           VERSION: ${{ steps.meta.outputs.version }}
           TEAM_TOKEN: ${{ secrets.TEAM_USER_TOKEN }}
+          FORK_BRANCH_OVERRIDE: ${{ inputs.fork_branch }}
         run: |
           set -euo pipefail
 
@@ -89,7 +95,11 @@ jobs:
           git remote add upstream "https://github.com/${upstream_repo}.git" || true
           git fetch upstream
 
-          branch_name="dynatrace-operator-${VERSION}"
+          if [ -n "${FORK_BRANCH_OVERRIDE}" ]; then
+            branch_name="${FORK_BRANCH_OVERRIDE}"
+          else
+            branch_name="dynatrace-operator-${VERSION}"
+          fi
           git checkout -B "${branch_name}" "upstream/main"
 
           echo "FORK_REPO_DIR=$(pwd)" >> "$GITHUB_ENV"
