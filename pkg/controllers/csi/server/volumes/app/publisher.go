@@ -50,7 +50,7 @@ type Publisher struct {
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
 	if !pub.isCodeModuleAvailable(volumeCfg) {
 		if pub.hasRetryLimitReached(volumeCfg) {
-			log.Info("codemodules is still not available, reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName)
+			log.Info("version or digest is not yet set, csi-provisioner hasn't finished setup yet, reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName, "dk", volumeCfg.DynakubeName)
 
 			return &csi.NodePublishVolumeResponse{}, nil
 		}
