@@ -365,9 +365,7 @@ jobs:
         env:
           VERSION: 0.0.0-${{ steps.meta.outputs.tags }}
         run: |
-          echo $VERSION
-          make bundle
-          make bundle/build bundle/push
+          make bundle bundle/build bundle/push
 
   run-preflight:
     name: Run preflight on ghcr.io without submitting results when merging to main
