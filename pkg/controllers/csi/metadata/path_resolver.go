@@ -74,6 +74,10 @@ func (pr PathResolver) AppMountForID(volumeID string) string {
 	return filepath.Join(pr.AppMountsBaseDir(), volumeID)
 }
 
+func (pr PathResolver) AppMountRetryTrackerForID(volumeID string) string {
+	return filepath.Join(pr.AppMountsBaseDir(), volumeID, "mount-start")
+}
+
 // AppMountForDK is a directory where a given app-mount volume is stored under a certain dynakube
 func (pr PathResolver) AppMountForDK(dkName string) string {
 	return filepath.Join(pr.DynaKubeDir(dkName), dtcsi.SharedAppMountsDir)

@@ -36,13 +36,15 @@ func TestPublishVolume(t *testing.T) {
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
+
+		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("early return - retry limit reached", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
-		require.NoError(t, os.MkdirAll(path.AppMountForID(volumeCfg.VolumeID), os.ModePerm))
+		require.NoError(t, os.MkdirAll(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), os.ModePerm))
 
 		pastTime := timeprovider.New()
 		pastTime.Set(time.Now().Add(2 * volumeCfg.RetryTimeout))
@@ -57,6 +59,7 @@ func TestPublishVolume(t *testing.T) {
 		require.NotNil(t, resp)
 
 		assert.Empty(t, mounter.MountPoints)
+		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("early return (with error) - no binary present", func(t *testing.T) {
@@ -71,6 +74,7 @@ func TestPublishVolume(t *testing.T) {
 		require.Nil(t, resp)
 
 		assert.Empty(t, mounter.MountPoints)
+		require.DirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("early return (with error) - binary is just a file", func(t *testing.T) {
@@ -89,6 +93,58 @@ func TestPublishVolume(t *testing.T) {
 		require.Nil(t, resp)
 
 		assert.Empty(t, mounter.MountPoints)
+		require.DirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
+	})
+
+	t.Run("NO early return - retry limit reached but binary is available (node restart scenario)", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		volumeCfg := getTestVolumeConfig(t)
+		require.NoError(t, os.MkdirAll(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), os.ModePerm))
+
+		pastTime := timeprovider.New()
+		pastTime.Set(time.Now().Add(2 * volumeCfg.RetryTimeout))
+		pub := Publisher{
+			mounter: mounter,
+			path:    path,
+			time:    pastTime,
+		}
+
+		// Binary present
+		binaryDir := path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
+		testBinary := path.AgentSharedBinaryDirForAgent("test")
+		require.NoError(t, os.MkdirAll(filepath.Dir(binaryDir), os.ModePerm))
+		require.NoError(t, os.MkdirAll(testBinary, os.ModePerm))
+		require.NoError(t, os.Symlink(testBinary, binaryDir))
+
+		resp, err := pub.PublishVolume(ctx, &volumeCfg)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		// Directories created correctly
+		assert.DirExists(t, volumeCfg.TargetPath)
+
+		varDir := path.AppMountVarDir(volumeCfg.VolumeID)
+		assert.DirExists(t, varDir)
+
+		workDir := path.AppMountWorkDir(volumeCfg.VolumeID)
+		assert.DirExists(t, workDir)
+
+		// overlay is mounted directly to targetPath
+		isMountPoint, err := mounter.IsMountPoint(volumeCfg.TargetPath)
+		require.NoError(t, err)
+		assert.True(t, isMountPoint)
+
+		require.Len(t, mounter.MountPoints, 1)
+		overlayMount := mounter.MountPoints[0]
+		assert.Equal(t, "overlay", overlayMount.Device)
+		assert.Equal(t, volumeCfg.TargetPath, overlayMount.Path)
+		require.Len(t, overlayMount.Opts, 3)
+		assert.Contains(t, overlayMount.Opts[0], testBinary) // lowerdir
+		assert.Contains(t, overlayMount.Opts[1], varDir)     // upperdir
+		assert.Contains(t, overlayMount.Opts[2], workDir)    // workdir
+
+		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 
 	t.Run("happy path", func(t *testing.T) {
@@ -131,6 +187,8 @@ func TestPublishVolume(t *testing.T) {
 		assert.Contains(t, overlayMount.Opts[0], testBinary) // lowerdir
 		assert.Contains(t, overlayMount.Opts[1], varDir)     // upperdir
 		assert.Contains(t, overlayMount.Opts[2], workDir)    // workdir
+
+		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	})
 }
 

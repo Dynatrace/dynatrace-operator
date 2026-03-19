@@ -35,10 +35,9 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        ec.Name,
-			Namespace:   ec.Namespace,
-			Labels:      labels,
-			Annotations: buildAnnotations(),
+			Name:      ec.Name,
+			Namespace: ec.Namespace,
+			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ec.Spec.Replicas,
@@ -47,7 +46,7 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: ec.Spec.Annotations,
+					Annotations: maputils.MergeMap(buildContainerAnnotations(), ec.Spec.Annotations),
 					Labels:      customPodLabels,
 				},
 				Spec: corev1.PodSpec{
@@ -92,10 +91,9 @@ func buildAppLabels(ec *edgeconnect.EdgeConnect) *k8slabel.AppLabels {
 		ec.Status.Version.Version)
 }
 
-func buildAnnotations() map[string]string {
+func buildContainerAnnotations() map[string]string {
 	return map[string]string{
-		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
-		webhook.AnnotationDynatraceInject:             "false",
+		webhook.AnnotationDynatraceInject: "false",
 	}
 }
 

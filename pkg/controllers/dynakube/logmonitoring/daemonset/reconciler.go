@@ -77,8 +77,6 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 
 	labels := k8slabel.NewCoreLabels(dk.Name, k8slabel.LogMonitoringComponentLabel)
 
-	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable())
-
 	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(*dk, tenantUUID),
 		k8sdaemonset.SetInitContainer(getInitContainer(*dk, tenantUUID)),
 		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.LogMonitoring().Template().Labels),
@@ -90,11 +88,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		k8sdaemonset.SetNodeSelector(dk.LogMonitoring().Template().NodeSelector),
 		k8sdaemonset.SetTolerations(dk.LogMonitoring().Template().Tolerations),
 		k8sdaemonset.SetPullSecret(dk.ImagePullSecretReferences()...),
-		k8sdaemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{
-			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-				MaxUnavailable: &maxUnavailable,
-			},
-		}),
+		k8sdaemonset.SetUpdateStrategy(getUpdateStrategy(dk)),
 		k8sdaemonset.SetVolumes(getVolumes(dk.Name)),
 	)
 	if err != nil {
@@ -102,6 +96,22 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 	}
 
 	return ds, nil
+}
+
+func getUpdateStrategy(dk *dynakube.DynaKube) appsv1.DaemonSetUpdateStrategy {
+	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
+
+	us := appsv1.DaemonSetUpdateStrategy{
+		RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+			MaxUnavailable: &maxUnavailable,
+		},
+	}
+
+	if dk.LogMonitoring().Template().RollingUpdate != nil {
+		us.RollingUpdate = dk.LogMonitoring().Template().RollingUpdate
+	}
+
+	return us
 }
 
 func isMEConfigured(dk dynakube.DynaKube) bool {

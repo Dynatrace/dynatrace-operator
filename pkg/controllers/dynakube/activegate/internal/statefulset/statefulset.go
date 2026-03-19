@@ -91,6 +91,9 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 	return appsv1.StatefulSetSpec{
 		Replicas:            statefulSetBuilder.capability.Properties().Replicas,
 		PodManagementPolicy: appsv1.ParallelPodManagement,
+		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+			RollingUpdate: statefulSetBuilder.dynakube.Spec.ActiveGate.RollingUpdate,
+		},
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{

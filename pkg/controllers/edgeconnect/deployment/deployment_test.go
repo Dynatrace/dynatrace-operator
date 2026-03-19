@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
+	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -162,7 +163,9 @@ func TestAnnotations(t *testing.T) {
 
 		deployment := New(ec)
 
-		assert.Nil(t, deployment.Spec.Template.Annotations)
+		assert.Len(t, deployment.Spec.Template.Annotations, 1)
+		assert.Contains(t, deployment.Spec.Template.Annotations, webhook.AnnotationDynatraceInject)
+		assert.Equal(t, "false", deployment.Spec.Template.Annotations[webhook.AnnotationDynatraceInject])
 
 		assert.NotContains(t, deployment.Annotations, testObjectMetaAnnotationKey)
 	})
@@ -185,9 +188,11 @@ func TestAnnotations(t *testing.T) {
 
 		deployment := New(ec)
 
-		assert.Len(t, deployment.Spec.Template.Annotations, 1)
+		assert.Len(t, deployment.Spec.Template.Annotations, 2)
 		assert.Contains(t, deployment.Spec.Template.Annotations, testAnnotationKey)
 		assert.Equal(t, testAnnotationValue, deployment.Spec.Template.Annotations[testAnnotationKey])
+		assert.Contains(t, deployment.Spec.Template.Annotations, webhook.AnnotationDynatraceInject)
+		assert.Equal(t, "false", deployment.Spec.Template.Annotations[webhook.AnnotationDynatraceInject])
 
 		assert.NotContains(t, deployment.Annotations, testAnnotationKey)
 		assert.NotContains(t, deployment.Annotations, testObjectMetaAnnotationKey)

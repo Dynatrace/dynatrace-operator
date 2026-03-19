@@ -4186,6 +4186,17 @@ spec:
                           x-kubernetes-int-or-string: true
                         type: object
                     type: object
+                  rollingUpdate:
+                    properties:
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        x-kubernetes-int-or-string: true
+                      partition:
+                        format: int32
+                        type: integer
+                    type: object
                   terminationGracePeriodSeconds:
                     format: int64
                     type: integer
@@ -6027,6 +6038,19 @@ spec:
                         type: object
                       priorityClassName:
                         type: string
+                      rollingUpdate:
+                        properties:
+                          maxSurge:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                          maxUnavailable:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                        type: object
                       secCompProfile:
                         type: string
                       storageHostPath:
@@ -6265,6 +6289,19 @@ spec:
                         type: object
                       priorityClassName:
                         type: string
+                      rollingUpdate:
+                        properties:
+                          maxSurge:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                          maxUnavailable:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                        type: object
                       secCompProfile:
                         type: string
                       storageHostPath:
@@ -6438,6 +6475,19 @@ spec:
                         type: object
                       priorityClassName:
                         type: string
+                      rollingUpdate:
+                        properties:
+                          maxSurge:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                          maxUnavailable:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                        type: object
                       secCompProfile:
                         type: string
                       storageHostPath:
@@ -7108,6 +7158,19 @@ spec:
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
                             type: object
+                        type: object
+                      rollingUpdate:
+                        properties:
+                          maxSurge:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
+                          maxUnavailable:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            x-kubernetes-int-or-string: true
                         type: object
                       secCompProfile:
                         type: string

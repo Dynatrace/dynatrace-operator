@@ -37,12 +37,12 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 	otlpExporterConfiguration := request.DynaKube.OTLPExporterConfiguration()
 
 	if !otlpExporterConfiguration.IsEnabled() {
-		log.Debug("OTLP env var injection is disabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
+		log.Info("OTLP env var injection is disabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 		return false
 	}
 
-	log.Debug("OTLP env var injection is enabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	log.Info("OTLP env var injection is enabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	// Check if OTLP injection is enabled on pod via feature-specific annotation
 	// Default to the automatic-injection feature flag value (consistent with OneAgent and metadata enrichment)
@@ -72,7 +72,7 @@ func (m Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 }
 
 func (m Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	log.Debug("reinvocation of OTLP env vars mutator")
+	log.Info("reinvocation of OTLP env vars mutator")
 
 	mutated, err := m.mutate(request.BaseRequest)
 	if err != nil {
@@ -86,7 +86,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 	otlpExporterConfig := request.DynaKube.OTLPExporterConfiguration()
 
 	if !otlpExporterConfig.IsEnabled() {
-		log.Debug(
+		log.Info(
 			"no OTLP exporter configuration set, will not inject OTLP exporter env vars",
 			"podName", request.PodName(),
 			"namespace", request.Namespace.Name,
@@ -95,7 +95,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		return false, nil
 	}
 
-	log.Debug("injecting OTLP env vars", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	log.Info("injecting OTLP env vars", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	apiURL, err := endpoint.BuildOTLPEndpoint(request.DynaKube)
 	if err != nil {

@@ -4,8 +4,11 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestConflictingNamespaceSelector(t *testing.T) {
@@ -196,5 +199,110 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 					},
 				},
 			}, &dummyNamespace, &dummyNamespace2)
+	})
+
+	t.Run("OA and OTLP injection for same namespace from two Dynakubes should cause a conflict", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorConflictingNamespaceSelector},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{
+						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
+								NamespaceSelector: metav1.LabelSelector{
+									MatchLabels: dummyLabels,
+								},
+							},
+						},
+					},
+				},
+			},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "conflicting-dk",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+						Signals: otlp.SignalConfiguration{
+							Metrics: &otlp.MetricsSignal{},
+						},
+						NamespaceSelector: metav1.LabelSelector{
+							MatchLabels: dummyLabels,
+						},
+					},
+				},
+			}, &dummyNamespace)
+	})
+
+	t.Run("Metadata and OTLP injection for same namespace from two DynaKubes should cause a conflict", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorConflictingNamespaceSelector},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					MetadataEnrichment: metadataenrichment.Spec{
+						Enabled: ptr.To(true),
+						NamespaceSelector: metav1.LabelSelector{
+							MatchLabels: dummyLabels,
+						},
+					},
+				},
+			},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "conflicting-dk",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+						Signals: otlp.SignalConfiguration{
+							Metrics: &otlp.MetricsSignal{},
+						},
+						NamespaceSelector: metav1.LabelSelector{
+							MatchLabels: dummyLabels,
+						},
+					},
+				},
+			}, &dummyNamespace)
+	})
+	t.Run("Metadata and OneAgent injection for same namespace from two DynaKubes should cause a conflict", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorConflictingNamespaceSelector},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					MetadataEnrichment: metadataenrichment.Spec{
+						Enabled: ptr.To(true),
+						NamespaceSelector: metav1.LabelSelector{
+							MatchLabels: dummyLabels,
+						},
+					},
+				},
+			},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "conflicting-dk",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{
+						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
+								NamespaceSelector: metav1.LabelSelector{
+									MatchLabels: dummyLabels,
+								},
+							},
+						},
+					},
+				},
+			}, &dummyNamespace)
 	})
 }

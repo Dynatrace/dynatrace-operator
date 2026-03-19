@@ -340,6 +340,33 @@ jobs:
           platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
           images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
 
+  build-push-olm-bundle:
+    needs: [ detect-changes ]
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.ci_changed)
+    name: Build and push OLM bundle
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Login to Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build image metadata
+        uses: ./.github/actions/metadata
+        id: meta
+      - name: Build and push OLM bundle
+        env:
+          VERSION: 0.0.0-${{ steps.meta.outputs.tags }}
+        run: |
+          make bundle bundle/build bundle/push
+
   run-preflight:
     name: Run preflight on ghcr.io without submitting results when merging to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

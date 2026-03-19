@@ -18,7 +18,9 @@ Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceS
 )
 
 func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled() {
+	if !dk.OneAgent().IsAppInjectionNeeded() &&
+		!dk.MetadataEnrichment().IsEnabled() &&
+		!dk.OTLPExporterConfiguration().IsEnabled() {
 		return ""
 	}
 

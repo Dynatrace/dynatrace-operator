@@ -3,6 +3,7 @@ package oneagent
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -117,6 +118,10 @@ type HostInjectSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitempty"`
+
+	// Rolling update settings for the OneAgent DaemonSet.
+	// +kubebuilder:validation:Optional
+	RollingUpdate *appsv1.RollingUpdateDaemonSet `json:"rollingUpdate,omitempty"`
 
 	// Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
 	// +kubebuilder:validation:Optional
