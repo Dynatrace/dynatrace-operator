@@ -400,7 +400,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 	desiredDeployment.Spec.Template.Annotations[consts.EdgeConnectAnnotationSecretHash] = secretHash
 
 	if err = k8sdeployment.ResolveAndSetReplicas(ctx, controller.apiReader, desiredDeployment, ec.Spec.Replicas); err != nil {
-		return errors.WithStack(errors.Wrap(err, "failed to resolve and set replica count"))
+		return errors.Wrap(err, "failed to resolve and set replica count")
 	}
 
 	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
@@ -716,7 +716,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 	}
 
 	if err = k8sdeployment.ResolveAndSetReplicas(ctx, controller.apiReader, desiredDeployment, ec.Spec.Replicas); err != nil {
-		return errors.WithStack(errors.Wrap(err, "failed to resolve and set replica count"))
+		return errors.Wrap(err, "failed to resolve and set replica count")
 	}
 
 	_, err = k8sdeployment.Query(controller.client, controller.apiReader, _log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
