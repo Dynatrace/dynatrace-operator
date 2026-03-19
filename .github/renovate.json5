@@ -35,6 +35,7 @@
   automergeType: "pr",
   automerge: true,
   branchNameStrict: true,
+  hashedBranchLength: 54, // 63 character limit for label values with space for "snapshot-" prefix
   regexManagers: [
     {
       fileMatch: [
