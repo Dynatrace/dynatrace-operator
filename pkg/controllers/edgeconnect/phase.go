@@ -26,12 +26,7 @@ func (controller *Controller) determineEdgeConnectPhase(ec *edgeconnect.EdgeConn
 		return status.Error
 	}
 
-	scheduledReplicas := int32(0)
-	if deployment.Spec.Replicas != nil {
-		scheduledReplicas = *deployment.Spec.Replicas
-	}
-
-	if scheduledReplicas != deployment.Status.ReadyReplicas {
+	if deployment.Status.Replicas != deployment.Status.ReadyReplicas {
 		log.Info("edgeConnect deployment is still deploying", "edgeConnect", ec.Name, "namespace", ec.Name)
 
 		return status.Deploying

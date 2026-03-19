@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -31,7 +32,9 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 }
 
 func isEqual(current, desired *appsv1.StatefulSet) bool {
-	return !hasher.IsAnnotationDifferent(current, desired)
+	// the replicas check is a workaround to enforce the replica count set on the CR
+	// without it any direct changes on the ss will be overseen because the hash will remain the same
+	return !hasher.IsAnnotationDifferent(current, desired) && ptr.Deref(desired.Spec.Replicas, 1) == ptr.Deref(current.Spec.Replicas, 1)
 }
 
 func mustRecreate(current, desired *appsv1.StatefulSet) bool {
