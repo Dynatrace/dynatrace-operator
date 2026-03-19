@@ -18,7 +18,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -47,22 +46,40 @@ type Publisher struct {
 	path    metadata.PathResolver
 }
 
+const (
+	retryLimitReachedMsg = "reached max mount attempts for pod, attaching dummy volume, monitoring disabled"
+)
+
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	if pub.hasRetryLimitReached(volumeCfg) {
-		log.Info("reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName)
-
-		return &csi.NodePublishVolumeResponse{}, nil
-	}
-
 	if !pub.isCodeModuleAvailable(volumeCfg) {
-		return nil, status.Error(
-			codes.Unavailable,
-			"version or digest is not yet set, csi-provisioner hasn't finished setup yet for DynaKube: "+volumeCfg.DynakubeName,
-		)
+		provisionerNotDoneErr := errors.Errorf("version or digest is not yet set, csi-provisioner hasn't finished setup yet for %s DynaKube", volumeCfg.DynakubeName)
+		if pub.hasRetryLimitReached(volumeCfg) {
+			log.Error(provisionerNotDoneErr, retryLimitReachedMsg, "pod", volumeCfg.PodName)
+
+			return pub.finishMount(volumeCfg)
+		}
+
+		return nil, status.Error(codes.Unavailable, provisionerNotDoneErr.Error())
 	}
 
 	if err := pub.mountCodeModule(volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
+		mountFailedErr := errors.WithMessage(err, "failed to mount oneagent volume")
+		if pub.hasRetryLimitReached(volumeCfg) {
+			log.Error(mountFailedErr, retryLimitReachedMsg, "pod", volumeCfg.PodName)
+
+			return pub.finishMount(volumeCfg)
+		}
+
+		return nil, status.Error(codes.Internal, mountFailedErr.Error())
+	}
+
+	return pub.finishMount(volumeCfg)
+}
+
+func (pub *Publisher) finishMount(volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	err := os.RemoveAll(pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
+	if err != nil {
+		log.Error(err, "failed to cleanup backoff tracking dir")
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -72,11 +89,12 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 // if any of the FS calls fail in an unexpected way, then it is considered that the limit was reached.
 func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) bool {
 	appDir := pub.path.AppMountForID(volumeCfg.VolumeID)
+	retryDir := pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID)
 
-	stat, err := os.Stat(appDir)
+	stat, err := os.Stat(retryDir)
 	if errors.Is(err, os.ErrNotExist) {
 		// First run, create folder, to keep track of time
-		err := os.MkdirAll(appDir, os.ModePerm)
+		err := os.MkdirAll(retryDir, os.ModePerm)
 		if err != nil {
 			log.Error(err, "failed to create base dir for app mount, skipping injection", "dir", appDir)
 
