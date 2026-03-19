@@ -14,8 +14,8 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 )
@@ -41,8 +41,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient,
 
 	k8sconditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
 
-	if !k8sconditions.IsOptionalScopeAvailable(dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
-		msg := dynatrace.TokenScopeSettingsRead + " optional scope not available"
+	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead) {
+		msg := token.ScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
 		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
 

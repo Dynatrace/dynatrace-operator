@@ -6,8 +6,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +37,7 @@ func TestReconcile(t *testing.T) {
 		require.NotNil(t, condition)
 		assert.Equal(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Contains(t, condition.Message, dtclient.TokenScopeSettingsRead)
+		assert.Contains(t, condition.Message, token.ScopeSettingsRead)
 	})
 	t.Run("no error if has valid kube system uuid", func(t *testing.T) {
 		clt := settingsmock.NewAPIClient(t)
@@ -83,7 +83,7 @@ func createDynaKube() *dynakube.DynaKube {
 			KubeSystemUUID: "kube-system-uuid",
 			Conditions: []metav1.Condition{
 				{
-					Type:   dtclient.ConditionTypeAPITokenSettingsRead,
+					Type:   token.ConditionTypeAPITokenSettingsRead,
 					Status: metav1.ConditionTrue,
 				},
 			},

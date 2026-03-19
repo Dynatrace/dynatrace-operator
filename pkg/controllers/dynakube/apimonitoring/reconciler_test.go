@@ -10,9 +10,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
@@ -70,7 +70,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("optional scope settings.read not available", func(t *testing.T) {
 		dk := newDynaKube()
-		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "not available")
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "not available")
 
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), settingsmock.NewAPIClient(t), anyClusterLabel, dk)
@@ -79,7 +79,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("optional scope settings.write not available", func(t *testing.T) {
 		dk := newDynaKube()
-		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsWrite, "not available")
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), token.ConditionTypeAPITokenSettingsWrite, "not available")
 
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), settingsmock.NewAPIClient(t), anyClusterLabel, dk)
@@ -279,8 +279,8 @@ func newDynaKube() *dynakube.DynaKube {
 			KubernetesClusterMEID: testMEID,
 		},
 	}
-	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead, "available")
-	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite, "available")
+	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, token.ConditionTypeAPITokenSettingsRead, "available")
+	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, token.ConditionTypeAPITokenSettingsWrite, "available")
 
 	return dk
 }

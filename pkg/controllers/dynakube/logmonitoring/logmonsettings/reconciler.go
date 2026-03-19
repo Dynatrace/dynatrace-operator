@@ -6,8 +6,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -37,16 +37,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *
 
 	_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
-	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsRead)
-	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsWrite)
+	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead)
+	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite)
 
 	var missingScopes []string
 	if !hasReadScope {
-		missingScopes = append(missingScopes, dtclient.TokenScopeSettingsRead)
+		missingScopes = append(missingScopes, token.ScopeSettingsRead)
 	}
 
 	if !hasWriteScope {
-		missingScopes = append(missingScopes, dtclient.TokenScopeSettingsWrite)
+		missingScopes = append(missingScopes, token.ScopeSettingsWrite)
 	}
 
 	if len(missingScopes) > 0 {

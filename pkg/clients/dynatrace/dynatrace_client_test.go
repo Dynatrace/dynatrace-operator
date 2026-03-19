@@ -170,9 +170,6 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, dtc)
 
-	// TODO: Fix this monster, this is not ok
-	testGetTokenScopes(t, dtc)
-
 	testServerErrors(t)
 }
 
@@ -196,8 +193,6 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 		handleAvailableAgentVersions(request, writer)
 	case "/v1/deployment/installer/agent/connectioninfo":
 		handleOACommunicationEndpoints(request, writer)
-	case "/v2/apiTokens/lookup":
-		handleTokenScopes(request, writer)
 	default:
 		writeError(writer, http.StatusBadRequest)
 	}

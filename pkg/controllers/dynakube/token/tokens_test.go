@@ -10,48 +10,49 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
 
-func getAllScopesForAPIToken() dtclient.TokenScopes {
+func getAllScopesForAPIToken() []string {
 	return []string{
-		dtclient.TokenScopeDataExport,
-		dtclient.TokenScopeSettingsRead,
-		dtclient.TokenScopeSettingsWrite,
-		dtclient.TokenScopeActiveGateTokenCreate,
+		tokenclient.ScopeDataExport,
+		tokenclient.ScopeSettingsRead,
+		tokenclient.ScopeSettingsWrite,
+		tokenclient.ScopeActiveGateTokenCreate,
 	}
 }
 
-func getAllScopesForPaaSToken() dtclient.TokenScopes {
+func getAllScopesForPaaSToken() []string {
 	return []string{
-		dtclient.TokenScopeInstallerDownload,
+		tokenclient.ScopeInstallerDownload,
 	}
 }
 
-func getAllScopesForDataIngest() dtclient.TokenScopes {
+func getAllScopesForDataIngest() []string {
 	return []string{
-		dtclient.TokenScopeMetricsIngest,
+		tokenclient.ScopeMetricsIngest,
 	}
 }
-func getAllScopesForTelemetryIngest() dtclient.TokenScopes {
+func getAllScopesForTelemetryIngest() []string {
 	return []string{
-		dtclient.TokenScopeMetricsIngest,
-		dtclient.TokenScopeOpenTelemetryTraceIngest,
-		dtclient.TokenScopeLogsIngest,
+		tokenclient.ScopeMetricsIngest,
+		tokenclient.ScopeOpenTelemetryTraceIngest,
+		tokenclient.ScopeLogsIngest,
 	}
 }
 
-func getAllScopesForOTLPExporter() dtclient.TokenScopes {
+func getAllScopesForOTLPExporter() []string {
 	return []string{
-		dtclient.TokenScopeMetricsIngest,
-		dtclient.TokenScopeOpenTelemetryTraceIngest,
-		dtclient.TokenScopeLogsIngest,
+		tokenclient.ScopeMetricsIngest,
+		tokenclient.ScopeOpenTelemetryTraceIngest,
+		tokenclient.ScopeLogsIngest,
 	}
 }
 
@@ -86,12 +87,13 @@ func TestTokens(t *testing.T) {
 
 	createFakeClient := func(t *testing.T) *dtclientmock.Client {
 		fakeClient := dtclientmock.NewClient(t)
+		mockedTokenClient := tokenclientmock.NewAPIClient(t)
 
 		tokenScopes := []struct {
 			token  string
-			scopes dtclient.TokenScopes
+			scopes []string
 		}{
-			{fakeTokenNoPermissions, dtclient.TokenScopes{}},
+			{fakeTokenNoPermissions, []string{}},
 			{fakeTokenAllAPITokenPermissions, getAllScopesForAPIToken()},
 			{fakeTokenAllAPITokenPermissionsIncludingPaaS, append(getAllScopesForAPIToken(), getAllScopesForPaaSToken()...)},
 			{fakeTokenPaas, getAllScopesForPaaSToken()},
@@ -101,9 +103,9 @@ func TestTokens(t *testing.T) {
 		}
 
 		for _, tokenScope := range tokenScopes {
-			fakeClient.On("GetTokenScopes", mock.Anything, tokenScope.token).
-				Return(tokenScope.scopes, nil).Maybe()
+			mockedTokenClient.EXPECT().GetScopes(t.Context(), tokenScope.token).Return(tokenScope.scopes, nil).Maybe()
 		}
+		fakeClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
 
 		return fakeClient
 	}
@@ -274,7 +276,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 	type testCase struct {
 		title            string
 		dk               dynakube.DynaKube
-		availableScopes  dtclient.TokenScopes
+		availableScopes  []string
 		expectedOptional map[string]bool
 		shouldError      bool
 	}
@@ -296,16 +298,16 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					},
 				},
 			},
-			availableScopes: dtclient.TokenScopes{
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeSettingsRead,
-				dtclient.TokenScopeSettingsWrite,
-				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
-				dtclient.TokenScopeActiveGateTokenCreate,
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite,
+				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+				tokenclient.ScopeActiveGateTokenCreate,
 			},
 			expectedOptional: map[string]bool{
-				dtclient.TokenScopeSettingsRead:  true,
-				dtclient.TokenScopeSettingsWrite: true,
+				tokenclient.ScopeSettingsRead:  true,
+				tokenclient.ScopeSettingsWrite: true,
 			},
 			shouldError: false,
 		},
@@ -325,15 +327,15 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					},
 				},
 			},
-			availableScopes: dtclient.TokenScopes{
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeSettingsRead,
-				dtclient.TokenScopeSettingsWrite,
-				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite,
+				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
 			expectedOptional: map[string]bool{
-				dtclient.TokenScopeSettingsRead:  true,
-				dtclient.TokenScopeSettingsWrite: true,
+				tokenclient.ScopeSettingsRead:  true,
+				tokenclient.ScopeSettingsWrite: true,
 			},
 			shouldError: true,
 		},
@@ -353,14 +355,14 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					},
 				},
 			},
-			availableScopes: dtclient.TokenScopes{
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeActiveGateTokenCreate,
-				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeActiveGateTokenCreate,
+				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
 			expectedOptional: map[string]bool{
-				dtclient.TokenScopeSettingsRead:  false,
-				dtclient.TokenScopeSettingsWrite: false,
+				tokenclient.ScopeSettingsRead:  false,
+				tokenclient.ScopeSettingsWrite: false,
 			},
 			shouldError: false,
 		},
@@ -373,13 +375,13 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					},
 				},
 			},
-			availableScopes: dtclient.TokenScopes{
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeSettingsRead,
-				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
 			expectedOptional: map[string]bool{
-				dtclient.TokenScopeSettingsRead: true,
+				tokenclient.ScopeSettingsRead: true,
 			},
 			shouldError: false,
 		},
@@ -392,12 +394,12 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					},
 				},
 			},
-			availableScopes: dtclient.TokenScopes{
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeSettingsRead,
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
 			},
 			expectedOptional: map[string]bool{
-				dtclient.TokenScopeSettingsRead: true,
+				tokenclient.ScopeSettingsRead: true,
 			},
 			shouldError: true,
 		},
@@ -410,12 +412,12 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					},
 				},
 			},
-			availableScopes: dtclient.TokenScopes{
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
 			expectedOptional: map[string]bool{
-				dtclient.TokenScopeSettingsRead: false,
+				tokenclient.ScopeSettingsRead: false,
 			},
 			shouldError: false,
 		},
@@ -426,15 +428,15 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					LogMonitoring: &logmonitoring.Spec{},
 				},
 			},
-			availableScopes: dtclient.TokenScopes{
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeSettingsRead,
-				dtclient.TokenScopeSettingsWrite,
-				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite,
+				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
 			expectedOptional: map[string]bool{
-				dtclient.TokenScopeSettingsRead:  true,
-				dtclient.TokenScopeSettingsWrite: true,
+				tokenclient.ScopeSettingsRead:  true,
+				tokenclient.ScopeSettingsWrite: true,
 			},
 			shouldError: false,
 		},
@@ -445,13 +447,13 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					LogMonitoring: &logmonitoring.Spec{},
 				},
 			},
-			availableScopes: dtclient.TokenScopes{
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
 			expectedOptional: map[string]bool{
-				dtclient.TokenScopeSettingsRead:  false,
-				dtclient.TokenScopeSettingsWrite: false,
+				tokenclient.ScopeSettingsRead:  false,
+				tokenclient.ScopeSettingsWrite: false,
 			},
 			shouldError: false,
 		},
@@ -460,8 +462,11 @@ func TestTokens_VerifyScopes(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			tokenValue := "test-token"
+			mockedTokenClient := tokenclientmock.NewAPIClient(t)
+			mockedTokenClient.EXPECT().GetScopes(t.Context(), tokenValue).Return(c.availableScopes, nil).Once()
+
 			fakeClient := dtclientmock.NewClient(t)
-			fakeClient.On("GetTokenScopes", mock.Anything, tokenValue).Return(c.availableScopes, nil)
+			fakeClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
 
 			apiToken := newToken(dtclient.APIToken, tokenValue)
 			tokens := Tokens{
