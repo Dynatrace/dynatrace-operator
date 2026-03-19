@@ -47,3 +47,8 @@ runs:
       image: "${{ inputs.image-base-url }}/${{ inputs.registry-namespace }}/${{ inputs.helm-repository-name }}:${{ inputs.version }}@${{ steps.push-helm-to-OCI.outputs.digest }}"
       signing-key: ${{ inputs.cosign-private-key }}
       signing-password: ${{ inputs.cosign-password }}
+  - name: Add build provenance attestation
+    uses: ./.github/actions/attest-artifact
+    with:
+      subject-name: ${{ inputs.registry-url }}/${{ inputs.registry-namespace }}/${{ inputs.helm-repository-name }}
+      subject-digest: ${{ steps.push-helm-to-OCI.outputs.digest }}

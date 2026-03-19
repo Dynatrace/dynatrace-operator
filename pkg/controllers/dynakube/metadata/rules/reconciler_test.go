@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
@@ -71,7 +71,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update if outdated", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
+		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
 
 		expectedResponse := createRules()
 		specialMessage := "TESTING" // if the special message changes == condition updated
@@ -99,7 +99,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set rules correctly", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
+		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
 
 		expectedResponse := createRules()
 
@@ -118,7 +118,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no rules if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
+		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		dk.Annotations = map[string]string{
@@ -136,7 +136,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
+		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
 
 		dtc := settingsmock.NewAPIClient(t)
 		dtc.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, errors.New("BOOM"))

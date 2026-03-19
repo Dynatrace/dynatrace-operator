@@ -163,9 +163,6 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, dtc)
 
-	// TODO: Fix this monster, this is not ok
-	testGetTokenScopes(t, dtc)
-
 	testServerErrors(t)
 }
 
@@ -183,8 +180,6 @@ func dynatraceServerHandler(t *testing.T) http.HandlerFunc {
 
 func handleRequest(request *http.Request, writer http.ResponseWriter) {
 	switch request.URL.Path {
-	case "/v2/apiTokens/lookup":
-		handleTokenScopes(request, writer)
 	default:
 		writeError(writer, http.StatusBadRequest)
 	}

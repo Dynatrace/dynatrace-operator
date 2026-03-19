@@ -91,6 +91,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
+      attestations: write
+      artifact-metadata: write
     strategy:
       matrix:
         registry: [gcr, dockerhub, amazon-ecr, rhcc]
@@ -158,6 +160,11 @@ jobs:
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Add build provenance attestation for ${{ matrix.registry }}
+        uses: ./.github/actions/attest-artifact
+        with:
+          subject-name: ${{ matrix.url }}/${{ secrets[matrix.repository] }}
+          subject-digest: ${{ needs.build-push.outputs.digest }}
 
   run-preflight-rhcc:
     name: Run preflight for rhcc
@@ -196,6 +203,8 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code

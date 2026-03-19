@@ -10,6 +10,7 @@ import (
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -489,7 +490,7 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 }
 
 func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, optionalScopes map[string]bool) {
-	for scope, conditionType := range dtclient.OptionalScopes {
+	for scope, conditionType := range tokenclient.OptionalScopes {
 		available, ok := optionalScopes[scope]
 		switch {
 		case !ok: // no enabled feature uses the `scope` -> doesn't need to be in the status

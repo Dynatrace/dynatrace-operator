@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 )
@@ -23,6 +24,7 @@ type ClientV2 struct {
 	HostEvent  hostevent.APIClient
 	OneAgent   oneagent.APIClient
 	Version    version.APIClient
+	Token      token.APIClient
 }
 
 type ConfigV2 struct {
@@ -174,6 +176,7 @@ func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		HostEvent:  hostevent.NewClient(apiClient, config.NetworkZone),
 		OneAgent:   oneagent.NewClient(apiClient, config.NetworkZone),
 		Version:    version.NewClient(apiClient),
+		Token:      token.NewClient(apiClient),
 	}, nil
 }
 

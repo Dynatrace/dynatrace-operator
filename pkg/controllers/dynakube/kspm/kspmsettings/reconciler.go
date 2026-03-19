@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -44,16 +44,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk
 
 	_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType) // needed so the timestamp updates, will never actually show up in the status
 
-	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsRead)
-	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsWrite)
+	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead)
+	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite)
 
 	var missingScopes []string
 	if !hasReadScope {
-		missingScopes = append(missingScopes, dtclient.TokenScopeSettingsRead)
+		missingScopes = append(missingScopes, token.ScopeSettingsRead)
 	}
 
 	if !hasWriteScope {
-		missingScopes = append(missingScopes, dtclient.TokenScopeSettingsWrite)
+		missingScopes = append(missingScopes, token.ScopeSettingsWrite)
 	}
 
 	if len(missingScopes) > 0 {

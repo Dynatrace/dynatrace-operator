@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
@@ -110,7 +111,7 @@ func TestReconciler(t *testing.T) {
 				},
 			},
 		}
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
+		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
 		clt := fake.NewClientWithIndex(
 			clientNotInjectedNamespace(testNamespace, testDynakube),
 			clientNotInjectedNamespace(testNamespace2, testDynakube2),

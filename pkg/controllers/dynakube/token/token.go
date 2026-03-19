@@ -44,7 +44,7 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, 
 		return map[string]bool{}, nil
 	}
 
-	scopes, err := dtClient.GetTokenScopes(ctx, token.Value)
+	scopes, err := dtClient.AsV2().Token.GetScopes(ctx, token.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, 
 	return optionalScopes, err
 }
 
-func (token *Token) verifyRequiredScopes(scopes dtclient.TokenScopes, dk dynakube.DynaKube) error {
+func (token *Token) verifyRequiredScopes(scopes []string, dk dynakube.DynaKube) error {
 	collectedErrors := make([]error, 0)
 	allMissingScopes := make([]string, 0)
 
@@ -92,7 +92,7 @@ func (token *Token) verifyRequiredScopes(scopes dtclient.TokenScopes, dk dynakub
 	return nil
 }
 
-func (token *Token) collectOptionalScopes(availableScopes dtclient.TokenScopes, dk dynakube.DynaKube) map[string]bool {
+func (token *Token) collectOptionalScopes(availableScopes []string, dk dynakube.DynaKube) map[string]bool {
 	optionalScopes := map[string]bool{}
 
 	for _, feature := range token.Features {

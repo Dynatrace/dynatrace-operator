@@ -2,7 +2,7 @@ package token
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"golang.org/x/exp/slices"
@@ -41,7 +41,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 	return []Feature{
 		{
 			Name:           "Access problem and event feed, metrics, and topology",
-			RequiredScopes: []string{dtclient.TokenScopeDataExport},
+			RequiredScopes: []string{tokenclient.ScopeDataExport},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return envvars.GetBool(consts.HostAvailabilityDetectionEnvVar, true)
 			},
@@ -49,8 +49,8 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 		{
 			Name: "Kubernetes API Monitoring",
 			OptionalScopes: []string{
-				dtclient.TokenScopeSettingsRead,
-				dtclient.TokenScopeSettingsWrite},
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.ActiveGate().IsKubernetesMonitoringEnabled() &&
 					dk.FF().IsAutomaticK8sAPIMonitoring()
@@ -59,8 +59,8 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 		{
 			Name: "LogMonitoring",
 			OptionalScopes: []string{
-				dtclient.TokenScopeSettingsRead,
-				dtclient.TokenScopeSettingsWrite},
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.LogMonitoring().IsEnabled()
 			},
@@ -68,7 +68,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 		{
 			Name: "CodeModule Injection",
 			OptionalScopes: []string{
-				dtclient.TokenScopeSettingsRead,
+				tokenclient.ScopeSettingsRead,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.OneAgent().IsAppInjectionNeeded() // also covers node-image pull
@@ -77,7 +77,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 		{
 			Name: "TelemetryIngest",
 			OptionalScopes: []string{
-				dtclient.TokenScopeSettingsRead,
+				tokenclient.ScopeSettingsRead,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.TelemetryIngest().IsEnabled()
@@ -86,7 +86,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 		{
 			Name: "PrometheusExtensions",
 			OptionalScopes: []string{
-				dtclient.TokenScopeSettingsRead,
+				tokenclient.ScopeSettingsRead,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.Extensions().IsPrometheusEnabled()
@@ -94,28 +94,28 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 		},
 		{
 			Name:           "Automatic ActiveGate Token Creation",
-			RequiredScopes: []string{dtclient.TokenScopeActiveGateTokenCreate},
+			RequiredScopes: []string{tokenclient.ScopeActiveGateTokenCreate},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.ActiveGate().IsEnabled()
 			},
 		},
 		{
 			Name:           "Download Installer",
-			RequiredScopes: []string{dtclient.TokenScopeInstallerDownload},
+			RequiredScopes: []string{tokenclient.ScopeInstallerDownload},
 			IsEnabled: func(_ dynakube.DynaKube) bool {
 				return !paasTokenExists
 			},
 		},
 		{
 			Name:           "MetadataEnrichment Rules",
-			OptionalScopes: []string{dtclient.TokenScopeSettingsRead},
+			OptionalScopes: []string{tokenclient.ScopeSettingsRead},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.MetadataEnrichment().IsEnabled()
 			},
 		},
 		{
 			Name:           "OTLP Auto-configuration",
-			OptionalScopes: []string{dtclient.TokenScopeSettingsRead},
+			OptionalScopes: []string{tokenclient.ScopeSettingsRead},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.OTLPExporterConfiguration().IsEnabled()
 			},
@@ -127,7 +127,7 @@ func getFeaturesForPaaSToken() []Feature {
 	return []Feature{
 		{
 			Name:           "PaaS Token",
-			RequiredScopes: []string{dtclient.TokenScopeInstallerDownload},
+			RequiredScopes: []string{tokenclient.ScopeInstallerDownload},
 			IsEnabled: func(_ dynakube.DynaKube) bool {
 				return true
 			},
@@ -139,7 +139,7 @@ func getFeaturesForDataIngest() []Feature {
 	return []Feature{
 		{
 			Name:           "Data Ingest",
-			RequiredScopes: []string{dtclient.TokenScopeMetricsIngest},
+			RequiredScopes: []string{tokenclient.ScopeMetricsIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.ActiveGate().IsMetricsIngestEnabled()
 			},
@@ -147,9 +147,9 @@ func getFeaturesForDataIngest() []Feature {
 		{
 			Name: "Telemetry Ingest OTLP",
 			RequiredScopes: []string{
-				dtclient.TokenScopeMetricsIngest,
-				dtclient.TokenScopeOpenTelemetryTraceIngest,
-				dtclient.TokenScopeLogsIngest,
+				tokenclient.ScopeMetricsIngest,
+				tokenclient.ScopeOpenTelemetryTraceIngest,
+				tokenclient.ScopeLogsIngest,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.TelemetryIngest().IsOtlpEnabled()
@@ -158,7 +158,7 @@ func getFeaturesForDataIngest() []Feature {
 		{
 			Name: "Telemetry Ingest Zipkin",
 			RequiredScopes: []string{
-				dtclient.TokenScopeOpenTelemetryTraceIngest,
+				tokenclient.ScopeOpenTelemetryTraceIngest,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.TelemetryIngest().IsZipkinEnabled()
@@ -167,7 +167,7 @@ func getFeaturesForDataIngest() []Feature {
 		{
 			Name: "Telemetry Ingest Jaeger",
 			RequiredScopes: []string{
-				dtclient.TokenScopeOpenTelemetryTraceIngest,
+				tokenclient.ScopeOpenTelemetryTraceIngest,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.TelemetryIngest().IsZipkinEnabled()
@@ -176,7 +176,7 @@ func getFeaturesForDataIngest() []Feature {
 		{
 			Name: "Telemetry Ingest StatsD",
 			RequiredScopes: []string{
-				dtclient.TokenScopeMetricsIngest,
+				tokenclient.ScopeMetricsIngest,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.TelemetryIngest().IsZipkinEnabled()
@@ -184,21 +184,21 @@ func getFeaturesForDataIngest() []Feature {
 		},
 		{
 			Name:           "OTLP trace exporter configuration",
-			RequiredScopes: []string{dtclient.TokenScopeOpenTelemetryTraceIngest},
+			RequiredScopes: []string{tokenclient.ScopeOpenTelemetryTraceIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.OTLPExporterConfiguration().IsTracesEnabled()
 			},
 		},
 		{
 			Name:           "OTLP logs exporter configuration",
-			RequiredScopes: []string{dtclient.TokenScopeLogsIngest},
+			RequiredScopes: []string{tokenclient.ScopeLogsIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.OTLPExporterConfiguration().IsLogsEnabled()
 			},
 		},
 		{
 			Name:           "OTLP metrics exporter configuration",
-			RequiredScopes: []string{dtclient.TokenScopeMetricsIngest},
+			RequiredScopes: []string{tokenclient.ScopeMetricsIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.OTLPExporterConfiguration().IsMetricsEnabled()
 			},

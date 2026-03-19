@@ -2,6 +2,7 @@ ENABLE_CSI ?= true
 DEBUG_LOGS ?= true
 DT_CLIENT_LOG_LEVEL ?= response
 WEBHOOK_REPLICAS ?= 2
+PROFILING ?= true
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 IMAGE_PULL_POLICY ?= Always
@@ -36,6 +37,7 @@ deploy: manifests/crd/helm
 			--set image=$(IMAGE_URI) \
 			--set debugLogs=$(DEBUG_LOGS) \
 			--set debug=$(DEBUG) \
+			--set enableInsecurePprofEndpoint=$(PROFILING) \
 			--set dtClientLogLevel=$(DT_CLIENT_LOG_LEVEL) \
 			--set imageRef.pullPolicy=$(IMAGE_PULL_POLICY)
 
