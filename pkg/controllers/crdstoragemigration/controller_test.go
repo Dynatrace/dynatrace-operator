@@ -4,425 +4,134 @@ import (
 	"context"
 	"testing"
 
-	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const (
-	testNamespace = "dynatrace"
-)
+func TestInitReconcile(t *testing.T) {
+	setupOneTimeClient := func(deploy *appsv1.Deployment) (context.Context, client.Client) {
+		ctx, cancel := context.WithCancel(t.Context())
 
-func TestIsWebhookReady(t *testing.T) {
-	t.Run("returns false when replicas is nil", func(t *testing.T) {
-		deployment := &appsv1.Deployment{
-			Spec: appsv1.DeploymentSpec{
-				Replicas: nil,
+		deploy.Name = webhook.DeploymentName
+		deploy.Namespace = testNamespace
+
+		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+				deploy.DeepCopyInto(obj.(*appsv1.Deployment))
+				cancel()
+
+				return nil
 			},
-		}
+		})
 
-		ready := isWebhookReady(deployment)
-		assert.False(t, ready)
+		return ctx, fakeClient
+	}
+
+	t.Cleanup(func() { run = Run })
+
+	t.Run("deployment not found", func(t *testing.T) {
+		run = nil
+		err := InitReconcile(t.Context(), fake.NewClient(), testNamespace)
+		assert.NoError(t, err)
 	})
 
-	t.Run("returns false when ready replicas is less than desired", func(t *testing.T) {
-		replicas := int32(3)
-		deployment := &appsv1.Deployment{
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &replicas,
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas: 2,
-			},
-		}
+	t.Run("deployment not ready", func(t *testing.T) {
+		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
+			Spec: appsv1.DeploymentSpec{Replicas: ptr.To(int32(1))},
+		})
 
-		ready := isWebhookReady(deployment)
-		assert.False(t, ready)
+		run = nil
+		err := InitReconcile(ctx, clt, testNamespace)
+		assert.ErrorIs(t, err, context.Canceled)
 	})
 
-	t.Run("returns false when desired replicas is zero", func(t *testing.T) {
-		replicas := int32(0)
-		deployment := &appsv1.Deployment{
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &replicas,
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas: 0,
-			},
-		}
+	t.Run("run error", func(t *testing.T) {
+		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
+			Spec:   appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
+		})
 
-		ready := isWebhookReady(deployment)
-		assert.False(t, ready)
-	})
-
-	t.Run("returns true when ready replicas equals desired replicas", func(t *testing.T) {
-		replicas := int32(3)
-		deployment := &appsv1.Deployment{
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &replicas,
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas: 3,
-			},
-		}
-
-		ready := isWebhookReady(deployment)
-		assert.True(t, ready)
-	})
-
-	t.Run("returns true when ready replicas exceeds desired replicas", func(t *testing.T) {
-		replicas := int32(3)
-		deployment := &appsv1.Deployment{
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &replicas,
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas: 4,
-			},
-		}
-
-		ready := isWebhookReady(deployment)
-		assert.True(t, ready)
-	})
-}
-
-func TestCancelMgr(t *testing.T) {
-	t.Run("calls cancel function when set", func(t *testing.T) {
 		called := false
-		cancelFunc := func() {
+		run = func(context.Context, client.Client, string) error {
 			called = true
+
+			return errors.New("retry")
 		}
 
-		controller := &Controller{
-			cancelMgrFunc: cancelFunc,
-		}
-
-		controller.cancelMgr()
+		err := InitReconcile(ctx, clt, testNamespace)
+		assert.ErrorIs(t, err, context.Canceled) //nolint:testifylint
 		assert.True(t, called)
 	})
 
-	t.Run("does not panic when cancel function is nil", func(t *testing.T) {
-		controller := &Controller{
-			cancelMgrFunc: nil,
+	t.Run("run ok", func(t *testing.T) {
+		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
+			Spec:   appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
+		})
+
+		run = func(context.Context, client.Client, string) error {
+			return nil
 		}
 
-		assert.NotPanics(t, func() {
-			controller.cancelMgr()
-		})
+		err := InitReconcile(ctx, clt, testNamespace)
+		assert.NoError(t, err)
 	})
 }
 
-func TestReconcile(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("returns no error when webhook deployment not found", func(t *testing.T) {
-		clt := fake.NewClient()
-		cancelCalled := false
-
-		controller := &Controller{
-			client:    clt,
-			apiReader: clt,
-			cancelMgrFunc: func() {
-				cancelCalled = true
+func Test_isDeploymentReady(t *testing.T) {
+	tests := []struct {
+		name     string
+		deploy   *appsv1.Deployment
+		expected bool
+	}{
+		{
+			name: "ready: generation synced and all replicas ready",
+			deploy: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Generation: 2},
+				Spec:       appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 3},
 			},
-		}
-
-		request := reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
+			expected: true,
+		},
+		{
+			name: "not ready: generation synced but not all replicas ready",
+			deploy: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Generation: 2},
+				Spec:       appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 2},
 			},
-		}
-
-		result, err := controller.Reconcile(ctx, request)
-
-		require.NoError(t, err)
-		assert.Equal(t, reconcile.Result{}, result)
-		assert.False(t, cancelCalled, "cancel should not be called when webhook deployment is not found")
-	})
-
-	t.Run("returns error when apiReader.Get fails", func(t *testing.T) {
-		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
-			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-				return errors.New("fake error")
+			expected: false,
+		},
+		{
+			name: "not ready: generation not yet observed by controller",
+			deploy: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Generation: 3},
+				Spec:       appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 3},
 			},
+			expected: false,
+		},
+		{
+			name: "not ready: scaled down deployment",
+			deploy: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Generation: 1},
+				Spec:       appsv1.DeploymentSpec{Replicas: ptr.To(int32(0))},
+				Status:     appsv1.DeploymentStatus{ObservedGeneration: 1, ReadyReplicas: 0},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, isDeploymentReady(tt.deploy))
 		})
-
-		controller := &Controller{
-			client:    clt,
-			apiReader: clt,
-		}
-
-		request := reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
-		}
-
-		result, err := controller.Reconcile(ctx, request)
-
-		require.Error(t, err)
-		assert.Equal(t, reconcile.Result{}, result)
-	})
-
-	t.Run("returns requeue when webhook deployment not ready", func(t *testing.T) {
-		replicas := int32(3)
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &replicas,
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas: 1, // Not ready
-			},
-		}
-
-		clt := fake.NewClient(deployment)
-		cancelCalled := false
-
-		controller := &Controller{
-			client:    clt,
-			apiReader: clt,
-			cancelMgrFunc: func() {
-				cancelCalled = true
-			},
-		}
-
-		request := reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
-		}
-
-		result, err := controller.Reconcile(ctx, request)
-
-		require.NoError(t, err)
-		assert.Equal(t, reconcile.Result{RequeueAfter: retryDuration}, result)
-		assert.False(t, cancelCalled, "cancel should not be called when webhook is not ready")
-	})
-
-	t.Run("performs storage version migration and calls cancel when webhook ready and migration needed", func(t *testing.T) {
-		replicas := int32(1)
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &replicas,
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas: 1,
-			},
-		}
-
-		crd := &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
-			},
-			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-				Group: "dynatrace.com",
-				Names: apiextensionsv1.CustomResourceDefinitionNames{
-					Plural: "dynakubes",
-					Kind:   "DynaKube",
-				},
-				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
-					{Name: "v1beta4", Storage: false, Served: true},
-					{Name: "v1beta5", Storage: false, Served: true},
-					{Name: "v1beta6", Storage: true, Served: true},
-				},
-			},
-			Status: apiextensionsv1.CustomResourceDefinitionStatus{
-				StoredVersions: []string{"v1beta4", "v1beta5", "v1beta6"},
-			},
-		}
-
-		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testNamespace,
-			},
-		}
-
-		dk := &latest.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dynakube",
-				Namespace: testNamespace,
-			},
-			Spec: latest.DynaKubeSpec{},
-		}
-
-		clt := fake.NewClient(deployment, crd, ns, dk)
-		cancelCalled := false
-
-		controller := &Controller{
-			client:    clt,
-			apiReader: clt,
-			cancelMgrFunc: func() {
-				cancelCalled = true
-			},
-		}
-
-		request := reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
-		}
-
-		result, err := controller.Reconcile(ctx, request)
-
-		require.NoError(t, err)
-		assert.Equal(t, reconcile.Result{}, result)
-		assert.True(t, cancelCalled, "cancel should be called after successful storage version migration")
-
-		// Verify CRD was updated
-		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = clt.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
-		require.NoError(t, err)
-		assert.Equal(t, []string{"v1beta6"}, updatedCRD.Status.StoredVersions)
-	})
-
-	t.Run("calls cancel when storage version migration not needed", func(t *testing.T) {
-		replicas := int32(1)
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &replicas,
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas: 1,
-			},
-		}
-
-		crd := &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
-			},
-			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-				Group: "dynatrace.com",
-				Names: apiextensionsv1.CustomResourceDefinitionNames{
-					Plural: "dynakubes",
-					Kind:   "DynaKube",
-				},
-				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
-					{Name: "v1beta6", Storage: true, Served: true},
-				},
-			},
-			Status: apiextensionsv1.CustomResourceDefinitionStatus{
-				StoredVersions: []string{"v1beta6"},
-			},
-		}
-
-		clt := fake.NewClient(deployment, crd)
-		cancelCalled := false
-
-		controller := &Controller{
-			client:    clt,
-			apiReader: clt,
-			cancelMgrFunc: func() {
-				cancelCalled = true
-			},
-		}
-
-		request := reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
-		}
-
-		result, err := controller.Reconcile(ctx, request)
-
-		require.NoError(t, err)
-		assert.Equal(t, reconcile.Result{}, result)
-		assert.True(t, cancelCalled, "cancel should be called even when storage version migration not needed")
-	})
-
-	t.Run("returns error when storage version migration fails", func(t *testing.T) {
-		replicas := int32(1)
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: &replicas,
-			},
-			Status: appsv1.DeploymentStatus{
-				ReadyReplicas: 1,
-			},
-		}
-
-		crd := &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
-			},
-			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-				Group: "dynatrace.com",
-				Names: apiextensionsv1.CustomResourceDefinitionNames{
-					Plural: "dynakubes",
-					Kind:   "DynaKube",
-				},
-				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
-					{Name: "v1beta5", Storage: false, Served: true},
-					{Name: "v1beta6", Storage: true, Served: true},
-				},
-			},
-			Status: apiextensionsv1.CustomResourceDefinitionStatus{
-				StoredVersions: []string{"v1beta5", "v1beta6"},
-			},
-		}
-
-		clt := fake.NewClient(deployment, crd)
-		cltWithInterceptor := fake.NewClientWithInterceptors(
-			interceptor.Funcs{
-				List: func(ctx context.Context, client client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
-					return errors.New("fake error")
-				},
-			},
-		)
-
-		cancelCalled := false
-
-		controller := &Controller{
-			client:    cltWithInterceptor,
-			apiReader: clt, // Use normal client for reads
-			cancelMgrFunc: func() {
-				cancelCalled = true
-			},
-		}
-
-		request := reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
-		}
-
-		result, err := controller.Reconcile(ctx, request)
-
-		require.Error(t, err)
-		assert.Equal(t, reconcile.Result{}, result)
-		assert.False(t, cancelCalled, "cancel should not be called when storage version migration fails")
-	})
+	}
 }

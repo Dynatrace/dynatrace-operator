@@ -16,17 +16,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func TestRun(t *testing.T) {
-	ctx := context.Background()
-	testNamespace := "test-namespace"
+const testNamespace = "test-namespace"
 
+func TestRun(t *testing.T) {
 	t.Run("returns no error when CRD not found", func(t *testing.T) {
 		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
 				return errors.New("unexpected write operation")
 			},
 		})
-		err := Run(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(t.Context(), fakeClient, testNamespace)
 
 		require.NoError(t, err)
 	})
@@ -59,7 +58,7 @@ func TestRun(t *testing.T) {
 			},
 		}, crd)
 
-		err := Run(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(t.Context(), fakeClient, testNamespace)
 
 		require.NoError(t, err)
 	})
@@ -91,7 +90,7 @@ func TestRun(t *testing.T) {
 				return errors.New("unexpected write operation")
 			},
 		}, crd)
-		err := Run(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(t.Context(), fakeClient, testNamespace)
 
 		require.NoError(t, err)
 	})
@@ -123,7 +122,7 @@ func TestRun(t *testing.T) {
 				return errors.New("unexpected write operation")
 			},
 		}, crd)
-		err := Run(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(t.Context(), fakeClient, testNamespace)
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to determine target storage version")
@@ -182,13 +181,13 @@ func TestRun(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(crd, dk1, dk2)
-		err := Run(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(t.Context(), fakeClient, testNamespace)
 
 		require.NoError(t, err)
 
 		// Verify CRD status was updated
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta2"}, updatedCRD.Status.StoredVersions)
 	})
@@ -221,13 +220,13 @@ func TestRun(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(crd)
-		err := Run(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(t.Context(), fakeClient, testNamespace)
 
 		require.NoError(t, err)
 
 		// Verify CRD status was updated even without DynaKubes
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta2"}, updatedCRD.Status.StoredVersions)
 	})

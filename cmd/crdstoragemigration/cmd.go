@@ -1,13 +1,10 @@
 package crdstoragemigration
 
 import (
-	"context"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdstoragemigration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -21,6 +18,7 @@ const (
 
 var (
 	namespaceFlagValue string
+	retryFlagValue     bool
 )
 
 func New() *cobra.Command {
@@ -36,7 +34,8 @@ func New() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&namespaceFlagValue, namespaceFlagName, namespaceFlagShorthand, k8senv.DefaultNamespace(), "Specify the namespace to search for DynaKube instances.")
+	cmd.PersistentFlags().StringVarP(&namespaceFlagValue, namespaceFlagName, namespaceFlagShorthand, k8senv.DefaultNamespace(), "Webhook deployment namespace")
+	cmd.PersistentFlags().BoolVar(&retryFlagValue, "retry", false, "Retry until completion")
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -49,8 +48,12 @@ func run(cmd *cobra.Command, args []string) error {
 
 	clt, err := client.New(kubeCfg, client.Options{Scheme: scheme.Scheme})
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
-	return crdstoragemigration.Run(context.Background(), clt, clt, namespaceFlagValue)
+	if retryFlagValue {
+		return crdstoragemigration.InitReconcile(cmd.Context(), clt, namespaceFlagValue)
+	}
+
+	return crdstoragemigration.Run(cmd.Context(), clt, namespaceFlagValue)
 }
