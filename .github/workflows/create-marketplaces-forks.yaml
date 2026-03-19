@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment: Release
     strategy:
+      fail-fast: false
       matrix:
         include:
           - marketplace: community
@@ -51,7 +52,7 @@ jobs:
           fetch-depth: 1
           token: ${{ secrets.TEAM_USER_TOKEN }}
           persist-credentials: false
-      - name: Checkout dynatrace-operator at base branch (team user)
+      - name: Checkout dynatrace-operator at release-branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.branch || github.event.pull_request.base.ref }}
