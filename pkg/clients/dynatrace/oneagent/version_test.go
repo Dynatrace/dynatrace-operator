@@ -14,32 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//const (
-//	agentVersionHostsResponse = `[
-// {
-//	"entityId": "dynatraceSampleEntityId",
-//   "displayName": "good",
-//   "lastSeenTimestamp": 1521540000000,
-//   "ipAddresses": [
-//     "10.11.12.13",
-//     "192.168.0.1"
-//   ],
-//   "agentVersion": {
-//     "major": 1,
-//     "minor": 142,
-//     "revision": 0,
-//     "timestamp": "20180313-173634"
-//   }
-// },
-// {
-//   "entityId": "unsetAgentHost",
-//   "displayName": "unset version",
-//   "ipAddresses": [
-//     "192.168.100.1"
-//   ]
-// }
-//]`
-
 const (
 	agentResponse          = `zip-content`
 	versionedAgentResponse = `zip-content-1.2.3`
