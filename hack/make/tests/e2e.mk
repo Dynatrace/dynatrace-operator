@@ -27,6 +27,12 @@ test/e2e-publish:
 	make test/e2e/release/publish || RC=1; \
 	exit $$RC
 
+## Run e2e but using OLM bundle instead of helm install
+test/olm-e2e-publish:
+	RC=0; \
+	make test/e2e/olm/publish || RC=1; \
+	exit $$RC
+
 ## Run standard e2e test only
 test/e2e/standard:
 	$(GOTESTCMD) -timeout 200m ./test/e2e/scenarios/standard $(SKIPCLEANUP)
@@ -42,6 +48,10 @@ test/e2e/no-csi:
 ## Run release e2e test only
 test/e2e/release:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release $(SKIPCLEANUP)
+
+## Run OLM related e2e tests only
+test/e2e/olm:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/olm $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:

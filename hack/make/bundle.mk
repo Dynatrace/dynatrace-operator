@@ -25,8 +25,18 @@ endif
 
 # Default platform for bundles
 PLATFORM ?= openshift
+
+#Needed for the e2e pipeline to work
+BRANCH ?= $(shell git branch --show-current)
+TAG_BRANCH_SUFFIX ?= $(shell hack/build/ci/sanitize-branch-name.sh "${BRANCH}")
+ifneq ($(BRANCH), main)
+	TAG ?= snapshot-${TAG_BRANCH_SUFFIX}
+else
+	TAG ?= snapshot
+endif
+
 # Default bundle image with tag
-BUNDLE_IMG ?= $(REGISTRY)/$(REPOSITORY)/dynatrace-operator-bundle:$(VERSION)
+BUNDLE_IMG ?= $(REGISTRY)/$(REPOSITORY)/dynatrace-operator-bundle:$(VERSION)-$(TAG)
 
 # CONTAINER_TOOL defines the container tool to be used for building images.
 ifneq ($(shell command -v podman),)
@@ -34,6 +44,10 @@ ifneq ($(shell command -v podman),)
 else
 	CONTAINER_TOOL ?= docker
 endif
+
+## Display the image name used to deploy the helm chart
+bundle/show-image-ref:
+	@echo $(BUNDLE_IMG)
 
 .PHONY: bundle
 ## Generates bundle manifests and metadata, then validates generated files

@@ -53,6 +53,22 @@ func InstallLocal(withCSI bool) env.Func {
 	}
 }
 
+// InstallLocalBundle deploys the operator helm chart from filesystem.
+func InstallLocalBundle(version string) env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		rootDir := project.RootDir()
+		// bundle/install
+		err := execMakeCommand(rootDir, "bundle/install", fmt.Sprintf("VERSION=%s", version))
+		if err != nil {
+			return ctx, err
+		}
+
+		withCSI := false
+
+		return VerifyInstall(ctx, envConfig, withCSI)
+	}
+}
+
 func Uninstall(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		rootDir := project.RootDir()
