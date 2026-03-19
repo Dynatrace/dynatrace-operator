@@ -25,7 +25,7 @@ MARKDOWN_LINK_CHECK_VERSION ?= v3.14.2
 # renovate depName=github.com/helm-unittest/helm-unittest
 HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.18.3
+GO_TEST_COVERAGE_VERSION ?= v2.18.4
 
 # Enable renovate once project is migrated to newer structure
 OPERATOR_SDK_VERSION ?= v1.36.0
