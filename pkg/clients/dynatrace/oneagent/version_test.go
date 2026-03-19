@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,10 +53,13 @@ func TestGetLatest(t *testing.T) {
 		require.NoError(t, err)
 
 		req := coremock.NewAPIRequest(t)
+		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
+		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
+		req.EXPECT().WithHeader("Accept", "application/octet-stream").Return(req).Once()
 		req.EXPECT().ExecuteRaw().Return(rawResponse, rawErr).Once()
 
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getLatestURL(installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, "arch", nil, false)).Return(req).Once()
+		client.EXPECT().GET(t.Context(), getLatestURL(installer.OsUnix, installer.TypePaaS)).Return(req).Once()
 
 		return NewClient(client, ""), file
 	}
@@ -80,10 +84,13 @@ func TestGetLatest(t *testing.T) {
 func TestGet(t *testing.T) {
 	setupClient := func(t *testing.T, rawResponse []byte, rawErr error) *Client {
 		req := coremock.NewAPIRequest(t)
+		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
+		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
+		req.EXPECT().WithHeader(mock.Anything, mock.Anything).Return(req).Once()
 		req.EXPECT().ExecuteRaw().Return(rawResponse, rawErr).Once()
 
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getURL(installer.OsUnix, installer.TypePaaS, "", "", "", nil, false)).Return(req).Once()
+		client.EXPECT().GET(t.Context(), getURL(installer.OsUnix, installer.TypePaaS, "")).Return(req).Once()
 
 		return NewClient(client, "")
 	}
@@ -111,6 +118,7 @@ func TestGetVersions(t *testing.T) {
 		var resp VersionsResponse
 
 		req := coremock.NewAPIRequest(t)
+		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().Execute(&resp).Run(func(model any) {
 			if execErr == nil {
@@ -120,7 +128,7 @@ func TestGetVersions(t *testing.T) {
 		}).Return(execErr).Once()
 
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getVersionsURL(installer.OsUnix, installer.TypePaaS, "", determineArch(installer.TypePaaS))).Return(req).Once()
+		client.EXPECT().GET(t.Context(), getVersionsURL(installer.OsUnix, installer.TypePaaS)).Return(req).Once()
 
 		return NewClient(client, "")
 	}
