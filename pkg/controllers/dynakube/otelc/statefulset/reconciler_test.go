@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -355,6 +356,59 @@ func TestUpdateStrategy(t *testing.T) {
 	})
 }
 
+func TestReconcileReplicas(t *testing.T) {
+	tests := []struct {
+		name             string
+		specReplicas     *int32
+		existingReplicas *int32
+		expectedReplicas int32
+	}{
+		{
+			name:             "uses explicit spec replicas over existing statefulset",
+			specReplicas:     ptr.To(int32(2)),
+			existingReplicas: ptr.To(int32(3)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses existing statefulset replicas when spec replicas are nil",
+			specReplicas:     nil,
+			existingReplicas: ptr.To(int32(2)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses default replicas when spec replicas are nil and statefulset does not exist",
+			specReplicas:     nil,
+			existingReplicas: nil,
+			expectedReplicas: int32(1),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := getTestDynakubeWithExtensions()
+			dk.Spec.Templates.OpenTelemetryCollector.Replicas = tc.specReplicas
+
+			var objs []client.Object
+			if tc.existingReplicas != nil {
+				objs = append(objs, &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      dk.OtelCollectorStatefulsetName(),
+						Namespace: dk.Namespace,
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: tc.existingReplicas,
+						Selector: &metav1.LabelSelector{MatchLabels: buildAppLabels(dk.Name).BuildMatchLabels()},
+					},
+				})
+			}
+
+			sts := getStatefulset(t, dk, objs...)
+			require.NotNil(t, sts.Spec.Replicas)
+			assert.Equal(t, tc.expectedReplicas, *sts.Spec.Replicas)
+		})
+	}
+}
+
 func getTestDynakubeWithExtensions() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -394,13 +448,10 @@ func getTestDynakube() *dynakube.DynaKube {
 
 func getStatefulset(t *testing.T, dk *dynakube.DynaKube, objs ...client.Object) *appsv1.StatefulSet {
 	t.Helper()
-	mockK8sClient := fake.NewClient(dk)
-	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-	for _, obj := range objs {
-		err := mockK8sClient.Create(t.Context(), obj)
-		require.NoError(t, err)
-	}
+	allObjs := append([]client.Object{dk}, objs...)
+	mockK8sClient := fake.NewClient(allObjs...)
+	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 	err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 	require.NoError(t, err)

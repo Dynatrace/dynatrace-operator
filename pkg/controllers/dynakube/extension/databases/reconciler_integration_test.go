@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -39,34 +38,6 @@ func TestReconciler(t *testing.T) {
 		deployment := getReconciledDeployment(t, clt, dk)
 		require.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, conditionType))
 		require.Nil(t, deployment)
-	})
-
-	t.Run("use existing replicas", func(t *testing.T) {
-		dk := getTestDynakube()
-		origDeployment := getMatchingDeployment(dk)
-		// Use non-default (1) value
-		origDeployment.Spec.Replicas = ptr.To(int32(2))
-		integrationtests.CreateKubernetesObject(t, t.Context(), clt, origDeployment)
-
-		dk.Spec.Extensions.Databases[0].Replicas = nil
-		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
-
-		deployment := getReconciledDeployment(t, clt, dk)
-		require.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, conditionType))
-		require.NotNil(t, deployment)
-		require.Equal(t, origDeployment.Spec.Replicas, deployment.Spec.Replicas)
-	})
-
-	t.Run("use default replicas", func(t *testing.T) {
-		dk := getTestDynakube()
-
-		dk.Spec.Extensions.Databases[0].Replicas = nil
-		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
-
-		deployment := getReconciledDeployment(t, clt, dk)
-		require.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, conditionType))
-		require.NotNil(t, deployment)
-		require.Equal(t, ptr.To(int32(1)), deployment.Spec.Replicas)
 	})
 
 	t.Run("don't exceed 63 characters", func(t *testing.T) {

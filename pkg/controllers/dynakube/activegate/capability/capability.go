@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"k8s.io/utils/net"
-	"k8s.io/utils/ptr"
 )
 
 var (
@@ -61,10 +60,6 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 	}
 
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
-
-	if len(dk.Spec.ActiveGate.Capabilities) == 0 && dk.Extensions().IsAnyEnabled() {
-		mc.properties.Replicas = ptr.To(int32(1))
-	}
 
 	capabilityArgs := []string{}
 

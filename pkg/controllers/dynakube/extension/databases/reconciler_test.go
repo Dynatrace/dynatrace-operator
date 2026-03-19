@@ -219,6 +219,58 @@ func TestReconcileCondition(t *testing.T) {
 	})
 }
 
+func TestReconcileReplicas(t *testing.T) {
+	tests := []struct {
+		name             string
+		specReplicas     *int32
+		existingReplicas *int32
+		expectedReplicas int32
+	}{
+		{
+			name:             "uses explicit spec replicas over existing deployment",
+			specReplicas:     ptr.To(int32(2)),
+			existingReplicas: ptr.To(int32(3)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses existing deployment replicas when spec replicas are nil",
+			specReplicas:     nil,
+			existingReplicas: ptr.To(int32(2)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses default replicas when spec replicas are nil and deployment does not exist",
+			specReplicas:     nil,
+			existingReplicas: nil,
+			expectedReplicas: int32(1),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := getTestDynakube()
+			dk.Spec.Extensions.Databases[0].Replicas = tc.specReplicas
+
+			objects := []client.Object{dk}
+			if tc.existingReplicas != nil {
+				existing := getMatchingDeployment(dk)
+				existing.Spec.Replicas = tc.existingReplicas
+				objects = append(objects, existing)
+			}
+
+			mockK8sClient := fake.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objects...).
+				Build()
+
+			d := getReconciledDeployment(t, mockK8sClient, dk)
+			require.NotNil(t, d)
+			require.NotNil(t, d.Spec.Replicas)
+			assert.Equal(t, tc.expectedReplicas, *d.Spec.Replicas)
+		})
+	}
+}
+
 func fakeClient() client.Client {
 	return fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).

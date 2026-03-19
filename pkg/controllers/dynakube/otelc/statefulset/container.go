@@ -14,13 +14,13 @@ const (
 	otelcSecretTokenFilePath = secretsTokensPath + "/" + consts.DatasourceTokenSecretKey
 )
 
-func getContainer(dk *dynakube.DynaKube) corev1.Container {
+func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
 		Image:           dk.Spec.Templates.OpenTelemetryCollector.ImageRef.String(),
 		ImagePullPolicy: dk.Spec.Templates.OpenTelemetryCollector.ImageRef.GetPullPolicy(),
 		SecurityContext: buildSecurityContext(),
-		Env:             getEnvs(dk),
+		Env:             getEnvs(dk, replicas),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
 		Args:            buildArgs(dk),
 		VolumeMounts:    buildContainerVolumeMounts(dk),
