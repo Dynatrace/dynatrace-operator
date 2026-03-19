@@ -12,26 +12,28 @@ import (
 )
 
 type Reconciler interface {
-	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client) error
-	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client) error
-	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client) error
+	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 type reconciler struct {
+	dtClient     dtclient.Client
 	timeProvider *timeprovider.Provider
 
 	apiReader client.Reader
 }
 
-func NewReconciler(apiReader client.Reader, timeProvider *timeprovider.Provider) Reconciler {
+func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvider *timeprovider.Provider) Reconciler {
 	return &reconciler{
 		apiReader:    apiReader,
 		timeProvider: timeProvider,
+		dtClient:     dtClient,
 	}
 }
 
-func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client) error {
-	updater := newCodeModulesUpdater(dk, dtClient.AsV2().Version)
+func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
+	updater := newCodeModulesUpdater(dk, r.dtClient.AsV2().Version)
 	if r.needsUpdate(updater, dk) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
@@ -39,8 +41,8 @@ func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 	return nil
 }
 
-func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client) error {
-	updater := newOneAgentUpdater(dk, r.apiReader, dtClient.AsV2().Version)
+func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error {
+	updater := newOneAgentUpdater(dk, r.apiReader, r.dtClient.AsV2().Version)
 	if r.needsUpdate(updater, dk) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
@@ -48,8 +50,8 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKub
 	return nil
 }
 
-func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client) error {
-	updater := newActiveGateUpdater(dk, r.apiReader, dtClient.AsV2().Version)
+func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
+	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient.AsV2().Version)
 	if r.needsUpdate(updater, dk) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
 

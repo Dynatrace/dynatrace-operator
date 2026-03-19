@@ -603,7 +603,7 @@ func mockVersionReconcileOnce(t *testing.T) version.Reconciler {
 	t.Helper()
 
 	versionReconciler := versionmock.NewReconciler(t)
-	versionReconciler.EXPECT().ReconcileActiveGate(anyCtx, anyDynakube, mock.Anything).Return(nil).Once()
+	versionReconciler.EXPECT().ReconcileActiveGate(anyCtx, anyDynakube).Return(nil).Once()
 
 	return versionReconciler
 }

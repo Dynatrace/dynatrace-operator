@@ -341,7 +341,7 @@ func TestReconcileComponents(t *testing.T) {
 	expectReconcileError := func(t *testing.T, reconciler mockReconciler, reconcileError *error, args ...any) {
 		t.Helper()
 		uniqueError := fmt.Errorf("BOOM %T", reconciler)
-		reconciler.On("Reconcile", append([]any{anyCtx}, args...)...).Return(uniqueError).Maybe()
+		reconciler.On("Reconcile", append([]any{anyCtx}, args...)...).Return(uniqueError).Once()
 		t.Cleanup(func() {
 			assert.ErrorIs(t, *reconcileError, uniqueError)
 		})
