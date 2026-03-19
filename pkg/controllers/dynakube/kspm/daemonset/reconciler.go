@@ -10,9 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -94,6 +96,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		k8sdaemonset.SetVolumes(getVolumes(*dk)),
 		k8sdaemonset.SetAutomountServiceAccountToken(false),
 		k8sdaemonset.SetHostPID(true),
+		k8sdaemonset.SetSecurityContext(buildPodSecurityContext()),
 	)
 	if err != nil {
 		return nil, err
@@ -128,4 +131,10 @@ func getDefaultMaxSurge() *intstr.IntOrString {
 	defaultMaxSurge := 1
 
 	return &intstr.IntOrString{IntVal: int32(defaultMaxSurge)}
+}
+
+func buildPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		FSGroup: ptr.To(runAs),
+	}
 }

@@ -48,7 +48,8 @@ func (mod RawImageModifier) getVolumes() []corev1.Volume {
 			Name: connectioninfo.TenantSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dk.ActiveGate().GetTenantSecretName(),
+					SecretName:  mod.dk.ActiveGate().GetTenantSecretName(),
+					DefaultMode: ptr.To(int32(0o640)),
 				},
 			},
 		},

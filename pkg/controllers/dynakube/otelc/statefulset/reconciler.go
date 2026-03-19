@@ -249,6 +249,7 @@ func buildSecurityContext() *corev1.SecurityContext {
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
+		FSGroup: ptr.To(runAs),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
