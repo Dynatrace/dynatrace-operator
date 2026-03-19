@@ -16,3 +16,6 @@ On newer Kubernetes versions prefer setting appArmorProfile in the pod or contai
 {{- if not .Values.webhook.highAvailability }}
 WARNING: The `webhook.highAvailability` field is deprecated and will be removed in a future release. Please migrate to the new `webhook.replicas`, `webhook.topologySpreadConstraints`, and `webhook.podDisruptionBudget` fields.
 {{- end }}
+{{- if .Values.enableInsecurePprofEndpoint }}
+WARNING: Golang profiling endpoint is enabled. Make sure to restrict external access to the operator{{ if .Values.csidriver.enabled }}, webhook and CSI driver{{ else }} and webhook{{ end }}.
+{{- end }}

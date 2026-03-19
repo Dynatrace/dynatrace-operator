@@ -559,6 +559,18 @@ tests:
           count: 1
           any: true
 
+  - it: should have PPROF_BIND_ADDRESS if enableInsecurePprofEndpoint is set
+    set:
+      enableInsecurePprofEndpoint: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PPROF_BIND_ADDRESS
+            value: ":6060"
+          count: 1
+          any: true
+
   - it: should set ephemeral-storage request/limits
     set:
       platform: kubernetes

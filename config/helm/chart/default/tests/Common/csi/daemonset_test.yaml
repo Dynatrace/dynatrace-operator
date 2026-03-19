@@ -500,6 +500,25 @@ tests:
           count: 1
           any: true
 
+  - it: should have PPROF_BIND_ADDRESS if enableInsecurePprofEndpoint is set
+    set:
+      enableInsecurePprofEndpoint: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PPROF_BIND_ADDRESS
+            value: ":6060"
+          count: 1
+          any: true
+      - contains:
+          path: spec.template.spec.containers[1].env
+          content:
+            name: PPROF_BIND_ADDRESS
+            value: ":6061"
+          count: 1
+          any: true
+
   - it: should always use builtIn livenessprobe and csi-node-driver-registrar even if the (deprecated) flags are set to false
     set:
       platform: kubernetes
