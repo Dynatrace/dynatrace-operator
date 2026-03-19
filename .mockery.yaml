@@ -46,6 +46,7 @@ packages:
       dynakubeReconciler:
       istioReconciler:
       logMonitoringReconciler:
+      oneAgentReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring:
     config:
       dir: "{{.InterfaceDir}}"
@@ -55,6 +56,7 @@ packages:
     interfaces:
       subReconciler:
       logmonsettingsSubReconciler:
+      oneAgentConnectionInfoReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection:
     config:
       dir: "{{.InterfaceDir}}"
@@ -63,6 +65,7 @@ packages:
       filename: "mock_reconcilers_test.go"
     interfaces:
       istioReconciler:
+      connectionInfoReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
     config:
       dir: "{{.InterfaceDir}}"
@@ -79,6 +82,14 @@ packages:
       filename: "mock_{{.InterfaceName | snakecase}}_test.go"
     interfaces:
       Modifier:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{.SrcPackageName}}"
+      structname: "{{.Mock}}{{.InterfaceName}}"
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+    interfaces:
+      connectionInfoReconciler:
   # =============================================================================
   # Shared mocks: placed in test/mocks/ (using default config)
   # =============================================================================

@@ -92,6 +92,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", dk.Spec.NetworkZone, "dynakube", dk.Name)
 		}
 	}
+
 	if err != nil {
 		return err
 	}

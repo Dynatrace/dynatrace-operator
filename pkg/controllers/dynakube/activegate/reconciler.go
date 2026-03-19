@@ -72,7 +72,7 @@ func NewReconciler(clt client.Client, //nolint
 	}
 
 	return &Reconciler{
-		dtc: dtc,
+		dtc:                               dtc,
 		client:                            clt,
 		apiReader:                         apiReader,
 		dk:                                dk,

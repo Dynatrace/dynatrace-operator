@@ -205,7 +205,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		versionReconciler:        createVersionReconcilerMock(t),
 	}
 
-	err := reconciler.Reconcile(ctx, dk, dtClient,createTokens())
+	err := reconciler.Reconcile(ctx, dk, dtClient, createTokens())
 	require.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
