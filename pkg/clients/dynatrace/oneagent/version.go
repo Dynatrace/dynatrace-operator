@@ -7,8 +7,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/pkg/errors"
 )
@@ -21,8 +23,16 @@ func (c *Client) Get(ctx context.Context, os, installerType, flavor, arch, versi
 		return errors.New("os or installerType is empty")
 	}
 
-	url := getURL(os, installerType, flavor, arch, version, technologies, skipMetadata)
-	sha256, err := c.makeRequestForBinary(ctx, url, writer)
+	apiRequest := c.apiClient.GET(ctx, getURL(os, installerType, version)).
+		WithQueryParams(map[string]string{
+			"flavor":       flavor,
+			"arch":         determineArch(installerType),
+			"bitness":      "64",
+			"skipMetadata": fmt.Sprintf("%t", skipMetadata),
+		}).
+		WithRawQueryParams(technologiesQueryParams(technologies))
+
+	sha256, err := c.makeRequestForBinary(apiRequest, writer)
 
 	if err == nil {
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "sha256", sha256)
@@ -37,8 +47,16 @@ func (c *Client) GetLatest(ctx context.Context, os, installerType, flavor, arch 
 		return errors.New("os or installerType is empty")
 	}
 
-	url := getLatestURL(os, installerType, flavor, arch, technologies, skipMetadata)
-	sha256, err := c.makeRequestForBinary(ctx, url, writer)
+	apiRequest := c.apiClient.GET(ctx, getLatestURL(os, installerType)).
+		WithQueryParams(map[string]string{
+			"flavor":       flavor,
+			"arch":         determineArch(installerType),
+			"bitness":      "64",
+			"skipMetadata": fmt.Sprintf("%t", skipMetadata),
+		}).
+		WithRawQueryParams(technologiesQueryParams(technologies))
+
+	sha256, err := c.makeRequestForBinary(apiRequest, writer)
 	if err == nil {
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "sha256", sha256)
 	}
@@ -58,8 +76,7 @@ func (c *Client) GetVersions(ctx context.Context, os, installerType, flavor stri
 
 	var resp VersionsResponse
 
-	url := getVersionsURL(os, installerType)
-	err := c.apiClient.GET(ctx, url).
+	err := c.apiClient.GET(ctx, getVersionsURL(os, installerType)).
 		WithQueryParams(
 			map[string]string{
 				"flavor": flavor,
@@ -73,7 +90,8 @@ func (c *Client) GetVersions(ctx context.Context, os, installerType, flavor stri
 }
 
 func (c *Client) GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
-	sha256, err := c.makeRequestForBinary(ctx, url, writer)
+	apiRequest := c.apiClient.GET(ctx, url)
+	sha256, err := c.makeRequestForBinary(apiRequest, writer)
 	if err == nil {
 		log.Info("downloaded agent file using given url", "url", url, "sha256", sha256)
 	}
@@ -81,10 +99,8 @@ func (c *Client) GetViaInstallerURL(ctx context.Context, url string, writer io.W
 	return err
 }
 
-func (c *Client) makeRequestForBinary(ctx context.Context, url string, writer io.Writer) (string, error) {
-	// Unsupported/Missing 'Accept' header.
-	// need to add
-	body, err := c.apiClient.GET(ctx, url).ExecuteRaw()
+func (c *Client) makeRequestForBinary(client core.APIRequest, writer io.Writer) (string, error) {
+	body, err := client.WithHeader("Accept", "application/octet-stream").ExecuteRaw()
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -95,30 +111,25 @@ func (c *Client) makeRequestForBinary(ctx context.Context, url string, writer io
 	return hex.EncodeToString(hash.Sum(nil)), err
 }
 
-func getURL(os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool) string {
-	url := fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/version/%s?flavor=%s&arch=%s&bitness=64&skipMetadata=%t",
-		os, installerType, version, flavor, arch, skipMetadata)
-
-	return appendTechnologies(url, technologies)
+func getURL(os, installerType, version string) string {
+	return fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/version/%s", os, installerType, version)
 }
 
-func getLatestURL(os, installerType, flavor, arch string, technologies []string, skipMetadata bool) string {
-	url := fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s&skipMetadata=%t",
-		os, installerType, flavor, arch, skipMetadata)
-
-	return appendTechnologies(url, technologies)
+func getLatestURL(os, installerType string) string {
+	return fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest", os, installerType)
 }
 
 func getVersionsURL(os, installerType string) string {
 	return fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", os, installerType)
 }
 
-func appendTechnologies(url string, technologies []string) string {
+func technologiesQueryParams(technologies []string) url.Values {
+	params := make(url.Values)
 	for _, tech := range technologies {
-		url = fmt.Sprintf("%s&include=%s", url, tech)
+		params.Add("include", tech)
 	}
 
-	return url
+	return params
 }
 
 // determineArch gives you the proper arch value, because the OSAgent and ActiveGate images on the tenant-image-registry only have AMD images.
