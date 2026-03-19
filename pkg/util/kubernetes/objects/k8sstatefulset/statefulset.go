@@ -34,16 +34,5 @@ func ResolveReplicas(ctx context.Context, r client.Reader, key client.ObjectKey,
 		return 0, err
 	}
 
-	return getReplicas(ss), nil
-}
-
-func getReplicas(ss *appsv1.StatefulSet) int32 {
-	switch {
-	case ss == nil:
-		return 0
-	case ss.Spec.Replicas == nil:
-		return 1
-	default:
-		return *ss.Spec.Replicas
-	}
+	return ptr.Deref(ss.Spec.Replicas, 1), nil
 }

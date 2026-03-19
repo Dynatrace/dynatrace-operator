@@ -299,19 +299,19 @@ func TestReconcileReplicas(t *testing.T) {
 		expectedReplicas int32
 	}{
 		{
-			name:             "uses explicit spec replicas over existing deployment",
+			name:             "uses explicit spec replicas over existing statefulset",
 			specReplicas:     ptr.To(int32(2)),
 			existingReplicas: ptr.To(int32(3)),
 			expectedReplicas: int32(2),
 		},
 		{
-			name:             "uses existing deployment replicas when spec replicas are nil",
+			name:             "uses existing statefulset replicas when spec replicas are nil",
 			specReplicas:     nil,
 			existingReplicas: ptr.To(int32(2)),
 			expectedReplicas: int32(2),
 		},
 		{
-			name:             "uses default replicas when spec replicas are nil and deployment does not exist",
+			name:             "uses default replicas when spec replicas are nil and statefulset does not exist",
 			specReplicas:     nil,
 			existingReplicas: nil,
 			expectedReplicas: int32(1),
