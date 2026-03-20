@@ -39,5 +39,7 @@ while ((NUM_VERSIONS > 0)); do
     $sed -i "s/$(tail -1 <<< "$VERSION_LIST")/$NEW_VERSION/g" $WORKFLOW_FILE
     NEW_VERSION=$(tail -1 <<< "$VERSION_LIST")
     NUM_VERSIONS=$((NUM_VERSIONS-1))
-    VERSION_LIST=$(head -n+$NUM_VERSIONS <<<"$VERSION_LIST")
+    if ((NUM_VERSIONS > 0)); then
+        VERSION_LIST=$(head -n+$NUM_VERSIONS <<<"$VERSION_LIST")
+    fi
 done
