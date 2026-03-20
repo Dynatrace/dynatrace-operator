@@ -18,7 +18,9 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Update release branches
-        run: ./hack/build/ci/update-release-branches.sh
+        run: |
+          git fetch --prune --tags
+          ./hack/build/ci/update-release-branches.sh
       - name: Create GitHub app token
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         id: create-github-app-token
