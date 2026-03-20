@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -28,7 +29,7 @@ func (c *Client) Get(ctx context.Context, os, installerType, flavor, arch, versi
 			"flavor":       flavor,
 			"arch":         determineArch(installerType),
 			"bitness":      "64",
-			"skipMetadata": fmt.Sprintf("%t", skipMetadata),
+			"skipMetadata": strconv.FormatBool(skipMetadata),
 		}).
 		WithRawQueryParams(technologiesQueryParams(technologies))
 
@@ -52,7 +53,7 @@ func (c *Client) GetLatest(ctx context.Context, os, installerType, flavor, arch 
 			"flavor":       flavor,
 			"arch":         determineArch(installerType),
 			"bitness":      "64",
-			"skipMetadata": fmt.Sprintf("%t", skipMetadata),
+			"skipMetadata": strconv.FormatBool(skipMetadata),
 		}).
 		WithRawQueryParams(technologiesQueryParams(technologies))
 
