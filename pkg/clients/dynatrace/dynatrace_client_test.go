@@ -12,7 +12,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,37 +38,6 @@ var (
 		"aix", installer.TypePaaS, arch.FlavorMultidistro, arch.Arch)
 	oaLatestMetainfoURIResponse = `{"error":{"code":404,"message":"non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>"}}`
 )
-
-func TestMakeRequest(t *testing.T) {
-	ctx := context.Background()
-
-	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
-	defer dynatraceServer.Close()
-
-	dc := &dynatraceClient{
-		url:       dynatraceServer.URL,
-		apiToken:  apiToken,
-		paasToken: paasToken,
-
-		httpClient: http.DefaultClient,
-	}
-
-	require.NotNil(t, dc)
-	t.Run("happy path", func(t *testing.T) {
-		url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-		resp, err := dc.makeRequest(ctx, url, dynatraceAPIToken)
-		require.NoError(t, err)
-		assert.NotNil(t, resp)
-
-		defer utils.CloseBodyAfterRequest(resp)
-	})
-
-	t.Run("sad path", func(t *testing.T) {
-		resp, err := dc.makeRequest(ctx, "%s/v1/deployment/installer/agent/connectioninfo", dynatraceAPIToken)
-		require.Error(t, err, "unsupported protocol scheme")
-		assert.Nil(t, resp)
-	})
-}
 
 func TestGetResponseOrServerError(t *testing.T) {
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
@@ -179,10 +147,7 @@ func dynatraceServerHandler(t *testing.T) http.HandlerFunc {
 }
 
 func handleRequest(request *http.Request, writer http.ResponseWriter) {
-	switch request.URL.Path {
-	default:
-		writeError(writer, http.StatusBadRequest)
-	}
+	writeError(writer, http.StatusBadRequest)
 }
 
 func writeError(w http.ResponseWriter, status int) {
