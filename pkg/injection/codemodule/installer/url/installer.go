@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
@@ -35,16 +35,16 @@ func (props *Properties) fillEmptyWithDefaults() {
 }
 
 type Installer struct {
-	dtc       oneagent.APIClient
+	dtc       dtclient.Client
 	extractor zip.Extractor
 	props     *Properties
 }
 
-type NewFunc func(oneagent.APIClient, *Properties) installer.Installer
+type NewFunc func(dtclient.Client, *Properties) installer.Installer
 
 var _ NewFunc = NewURLInstaller
 
-func NewURLInstaller(dtc oneagent.APIClient, props *Properties) installer.Installer {
+func NewURLInstaller(dtc dtclient.Client, props *Properties) installer.Installer {
 	return &Installer{
 		dtc:       dtc,
 		extractor: zip.NewOneAgentExtractor(props.PathResolver),
