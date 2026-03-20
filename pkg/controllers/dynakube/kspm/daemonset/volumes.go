@@ -58,7 +58,8 @@ func getTokenVolume(dk dynakube.DynaKube) corev1.Volume {
 		Name: tokenVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: dk.KSPM().GetTokenSecretName(),
+				SecretName:  dk.KSPM().GetTokenSecretName(),
+				DefaultMode: ptr.To(int32(0o640)),
 			},
 		},
 	}

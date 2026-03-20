@@ -52,7 +52,7 @@ func TestVolumes(t *testing.T) {
 								Path: consts.DatasourceTokenSecretKey,
 							},
 						},
-						DefaultMode: ptr.To(int32(420)),
+						DefaultMode: ptr.To(int32(0o640)),
 					},
 				},
 			},
@@ -67,6 +67,7 @@ func TestVolumes(t *testing.T) {
 								Path: consts.TLSCrtDataName,
 							},
 						},
+						DefaultMode: ptr.To(int32(0o640)),
 					},
 				},
 			},
@@ -97,7 +98,7 @@ func TestVolumes(t *testing.T) {
 							Path: consts.DatasourceTokenSecretKey,
 						},
 					},
-					DefaultMode: ptr.To(int32(420)),
+					DefaultMode: ptr.To(int32(0o640)),
 				},
 			},
 		}
@@ -132,6 +133,7 @@ func TestVolumes(t *testing.T) {
 							Path: consts.TLSKeyDataName,
 						},
 					},
+					DefaultMode: ptr.To(int32(0o640)),
 				},
 			},
 		}
@@ -365,6 +367,7 @@ func agCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 						Path: otelcconsts.ActiveGateCertFile,
 					},
 				},
+				DefaultMode: ptr.To(int32(0o640)),
 			},
 		},
 	}

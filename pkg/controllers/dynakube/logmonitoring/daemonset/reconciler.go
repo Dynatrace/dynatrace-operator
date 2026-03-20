@@ -10,9 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -90,6 +92,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		k8sdaemonset.SetPullSecret(dk.ImagePullSecretReferences()...),
 		k8sdaemonset.SetUpdateStrategy(getUpdateStrategy(dk)),
 		k8sdaemonset.SetVolumes(getVolumes(dk.Name)),
+		k8sdaemonset.SetSecurityContext(buildPodSecurityContext()),
 	)
 	if err != nil {
 		return nil, err
@@ -116,4 +119,10 @@ func getUpdateStrategy(dk *dynakube.DynaKube) appsv1.DaemonSetUpdateStrategy {
 
 func isMEConfigured(dk dynakube.DynaKube) bool {
 	return dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != ""
+}
+
+func buildPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		FSGroup: ptr.To(runAs),
+	}
 }
