@@ -21,7 +21,7 @@ WORKFLOW_FILE=.github/workflows/e2e-tests-ondemand.yaml
 # Trim the first line to get rid of the "$default".
 # Clean up the list by removing all spaces, commas and quotes.
 VERSION_LIST=$(grep -A $((NUM_VERSIONS+1)) baseBranches $RENOVATE_FILE | tail -n+$NUM_VERSIONS | tr -d ' ",')
-if [[ $NUM_VERSIONS != $(wc -l <<< "$VERSION_LIST") ]]; then
+if (( NUM_VERSIONS != "$(wc -l <<< "$VERSION_LIST")" )); then
     printf "unexpected list of versions:\n%s\n" "$VERSION_LIST" >&2
     exit 1
 fi
