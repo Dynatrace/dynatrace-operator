@@ -29,13 +29,18 @@ if (( NUM_VERSIONS != "$(wc -l <<< "$VERSION_LIST")" )); then
     exit 1
 fi
 
+sed=sed
+if command -v gsed &>/dev/null; then
+    sed=gsed
+fi
+
 # Replace versions bottom up. New version replaces the last from the current list
 # Then we shorten the list by one and assign the new version to the removed element
 # Repeat this until we iterated over all expected versions
 while ((NUM_VERSIONS > 0)); do
-    sed -i "s/$(tail -1 <<< "$VERSION_LIST")/$NEW_VERSION/g" $RENOVATE_FILE
+    $sed -i "s/$(tail -1 <<< "$VERSION_LIST")/$NEW_VERSION/g" $RENOVATE_FILE
     # Repurpose the replacement for the workflow file
-    sed -i "s/$(tail -1 <<< "$VERSION_LIST")/$NEW_VERSION/g" $WORKFLOW_FILE
+    $sed -i "s/$(tail -1 <<< "$VERSION_LIST")/$NEW_VERSION/g" $WORKFLOW_FILE
     NEW_VERSION=$(tail -1 <<< "$VERSION_LIST")
     NUM_VERSIONS=$((NUM_VERSIONS-1))
     VERSION_LIST=$(head -n+$NUM_VERSIONS <<<"$VERSION_LIST")
