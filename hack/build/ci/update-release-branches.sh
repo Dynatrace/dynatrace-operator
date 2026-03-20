@@ -2,6 +2,9 @@
 
 set -o errexit
 set -o pipefail
+if [[ ${RUNNER_DEBUG-} == "true" ]]; then
+    set -o xtrace
+fi
 
 if [[ $# -eq 0 ]]; then
     # Only prune if we need to fetch remote branches
