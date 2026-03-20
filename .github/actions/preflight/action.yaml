@@ -1,13 +1,15 @@
 name: Preflight
 description: Does the preflight check
 inputs:
-  platforms:
-    description: The platforms for which the image will be built
-    default: linux/amd64,linux/arm64
+  version:
+    description: The version the image is for
     required: true
-  images:
-    description: Base names of the image tags
-    required: false
+  registry:
+    description: The registry where the image is uploaded
+    required: true
+  repository:
+    description: The repository in the registry where the image is uploaded
+    required: true
   report-name:
     description: The name of the output report
     required: true
@@ -34,15 +36,12 @@ runs:
   - name: Run preflight on image
     shell: bash
     env:
-      IMAGE_URI: ${{ steps.meta.outputs.tags }}
+      IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
       PREFLIGHT_EXECUTABLE: "preflight-linux-amd64"
       PREFLIGHT_LOG: "preflight.log"
       PREFLIGHT_REPORT_NAME: ${{ inputs.report-name }}
       # renovate datasource=github-releases depName=redhat-openshift-ecosystem/openshift-preflight
       PREFLIGHT_VERSION: 1.16.0
-      RHCC_APITOKEN: ${{ inputs.pyxis-api-token }}
-      RHCC_PROJECT_ID: ${{ inputs.redhat-project-id }}
-      SHOULD_SUBMIT: ${{ inputs.should-submit }}
     run: |
       hack/build/ci/preflight.sh
   - name: Upload report
