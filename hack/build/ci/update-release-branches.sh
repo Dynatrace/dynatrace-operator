@@ -3,8 +3,11 @@
 set -o errexit
 set -o pipefail
 
-git fetch --prune --tags
-NEW_VERSION=$(git branch -r --list 'origin/release-*' | sort --version-sort | tail -n 1 | cut -d/ -f2)
+if [[ $# -eq 0 ]]; then
+    # Only prune if we need to fetch remote branches
+    git fetch --prune --tags
+fi
+NEW_VERSION=${1-$(git branch -r --list 'origin/release-*' | sort --version-sort | tail -n 1 | cut -d/ -f2)}
 if grep -q "$NEW_VERSION" .github/renovate.json5; then
     echo "$NEW_VERSION release branch already present"
     exit 0
