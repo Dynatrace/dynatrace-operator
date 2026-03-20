@@ -47,7 +47,8 @@ func getConfigVolume(dkName string) corev1.Volume {
 		Name: configVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: configsecret.GetSecretName(dkName),
+				SecretName:  configsecret.GetSecretName(dkName),
+				DefaultMode: ptr.To(int32(0o640)),
 			},
 		},
 	}

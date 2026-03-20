@@ -102,7 +102,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		k8sstatefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
 		k8sstatefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
 		k8sstatefulset.SetServiceAccount(serviceAccountName),
-		k8sstatefulset.SetSecurityContext(buildPodSecurityContext(r.dk)),
+		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
 		k8sstatefulset.SetRollingUpdateStrategyType(),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
@@ -231,16 +231,14 @@ func buildSecurityContext() *corev1.SecurityContext {
 	}
 }
 
-func buildPodSecurityContext(dk *dynakube.DynaKube) *corev1.PodSecurityContext {
+func buildPodSecurityContext() *corev1.PodSecurityContext {
 	podSecurityContext := &corev1.PodSecurityContext{
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
 	}
 
-	if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
-		podSecurityContext.FSGroup = ptr.To(userGroupID)
-	}
+	podSecurityContext.FSGroup = ptr.To(userGroupID)
 
 	return podSecurityContext
 }
@@ -385,7 +383,8 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		mode := int32(420)
+		mode := int32(0o640)
+
 		if useLegacyMounts(dk) {
 			o.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
@@ -413,7 +412,8 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					Name: httpsCertVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: dk.Extensions().GetTLSSecretName(),
+							SecretName:  dk.Extensions().GetTLSSecretName(),
+							DefaultMode: &mode,
 						},
 					},
 				},
@@ -433,7 +433,8 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					Name: httpsCertVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: dk.Extensions().GetTLSSecretName(),
+							SecretName:  dk.Extensions().GetTLSSecretName(),
+							DefaultMode: &mode,
 						},
 					},
 				},
@@ -463,12 +464,11 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		}
 
 		if dk.ActiveGate().HasCaCert() {
-			defaultMode := int32(420)
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: activeGateTrustedCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						DefaultMode: &defaultMode,
+						DefaultMode: &mode,
 						SecretName:  dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
@@ -486,7 +486,8 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: customCertificateVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates,
+						SecretName:  dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates,
+						DefaultMode: &mode,
 					},
 				},
 			})
