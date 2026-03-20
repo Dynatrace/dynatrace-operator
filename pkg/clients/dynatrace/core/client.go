@@ -93,6 +93,7 @@ const (
 
 func (c *Client) newRequest(ctx context.Context) *Request {
 	headers := make(http.Header)
+
 	query := make(url.Values)
 	if c.cfg.BaseURL != nil {
 		query = c.cfg.BaseURL.Query()
@@ -332,7 +333,6 @@ func setHeaders(req *http.Request, userAgent, token string, customHeaders http.H
 	for key, values := range customHeaders {
 		req.Header.Set(key, values[0])
 	}
-
 }
 
 // handleErrorResponse processes error responses from the API

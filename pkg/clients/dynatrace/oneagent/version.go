@@ -34,7 +34,6 @@ func (c *Client) Get(ctx context.Context, os, installerType, flavor, arch, versi
 		WithRawQueryParams(technologiesQueryParams(technologies))
 
 	sha256, err := c.makeRequestForBinary(apiRequest, writer)
-
 	if err == nil {
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "sha256", sha256)
 	}
@@ -92,6 +91,7 @@ func (c *Client) GetVersions(ctx context.Context, os, installerType, flavor stri
 
 func (c *Client) GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
 	apiRequest := c.apiClient.GET(ctx, url)
+
 	sha256, err := c.makeRequestForBinary(apiRequest, writer)
 	if err == nil {
 		log.Info("downloaded agent file using given url", "url", url, "sha256", sha256)

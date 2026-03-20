@@ -9,10 +9,12 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -47,13 +49,16 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("error when downloading latest agent", func(t *testing.T) {
 		target := filepath.Join(t.TempDir(), "target")
 
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().Get(anyCtx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro,
+		dtc := dtclientmock.NewClient(t)
+		oaClient := oneagentclientmock.NewAPIClient(t)
+		oaClient.EXPECT().Get(anyCtx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro,
 			mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
 			mock.AnythingOfType("bool"), mock.AnythingOfType("*os.File")).
 			Return(errors.New(testErrorMessage))
-		dtc.EXPECT().GetVersions(anyCtx, installer.OsUnix, installer.TypePaaS, mock.AnythingOfType("string")).
+		oaClient.EXPECT().GetVersions(anyCtx, installer.OsUnix, installer.TypePaaS, mock.AnythingOfType("string")).
 			Return([]string{}, errors.New(testErrorMessage))
+
+		dtc.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oaClient}).Twice()
 
 		installer := &Installer{
 			dtc: dtc,
@@ -70,8 +75,10 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("error unzipping file", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, "target")
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().Get(anyCtx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro,
+
+		dtc := dtclientmock.NewClient(t)
+		oaClient := oneagentclientmock.NewAPIClient(t)
+		oaClient.EXPECT().Get(anyCtx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro,
 			mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
 			mock.AnythingOfType("bool"), mock.AnythingOfType("*os.File")).
 			Run(func(ctx context.Context, os string, installerType string, flavor string, arch string, version string, technologies []string, skipMetadata bool, writer io.Writer) {
@@ -82,6 +89,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
+		dtc.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oaClient}).Once()
 
 		installer := &Installer{
 			dtc:       dtc,
@@ -99,8 +107,9 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("downloading and unzipping agent via version", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, testVersion)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().Get(anyCtx,
+		dtc := dtclientmock.NewClient(t)
+		oaClient := oneagentclientmock.NewAPIClient(t)
+		oaClient.EXPECT().Get(anyCtx,
 			installer.OsUnix,
 			installer.TypePaaS,
 			arch.FlavorMultidistro,
@@ -117,6 +126,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
+		dtc.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oaClient}).Once()
 
 		installer := &Installer{
 			dtc:       dtc,
@@ -135,8 +145,10 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("downloading and unzipping latest agent", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, VersionLatest)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetLatest(anyCtx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro,
+
+		dtc := dtclientmock.NewClient(t)
+		oaClient := oneagentclientmock.NewAPIClient(t)
+		oaClient.EXPECT().GetLatest(anyCtx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro,
 			mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("bool"),
 			mock.AnythingOfType("*os.File")).
 			Run(func(ctx context.Context, os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer) {
@@ -147,6 +159,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
+		dtc.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oaClient})
 
 		installer := &Installer{
 			dtc:       dtc,
@@ -165,8 +178,9 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("downloading and unzipping agent via url", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, VersionLatest)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetViaInstallerURL(anyCtx, testURL, mock.AnythingOfType("*os.File")).
+		dtc := dtclientmock.NewClient(t)
+		oaClient := oneagentclientmock.NewAPIClient(t)
+		oaClient.EXPECT().GetViaInstallerURL(anyCtx, testURL, mock.AnythingOfType("*os.File")).
 			Run(func(ctx context.Context, url string, writer io.Writer) {
 				zipFile := zip.SetupTestArchive(t, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
@@ -175,6 +189,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
+		dtc.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oaClient}).Once()
 
 		installer := &Installer{
 			dtc:       dtc,
