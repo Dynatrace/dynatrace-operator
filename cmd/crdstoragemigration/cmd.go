@@ -10,16 +10,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-const (
-	use                    = "crd-storage-migration"
-	namespaceFlagName      = "namespace"
-	namespaceFlagShorthand = "n"
-)
+const use = "crd-storage-migration"
 
-var (
-	namespaceFlagValue string
-	retryFlagValue     bool
-)
+var retryFlagValue bool
 
 func New() *cobra.Command {
 	cmd := &cobra.Command{
@@ -34,7 +27,6 @@ func New() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&namespaceFlagValue, namespaceFlagName, namespaceFlagShorthand, k8senv.DefaultNamespace(), "Webhook deployment namespace")
 	cmd.PersistentFlags().BoolVar(&retryFlagValue, "retry", false, "Retry until completion")
 }
 
@@ -52,8 +44,8 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if retryFlagValue {
-		return crdstoragemigration.InitReconcile(cmd.Context(), clt, namespaceFlagValue)
+		return crdstoragemigration.InitReconcile(cmd.Context(), clt, k8senv.DefaultNamespace())
 	}
 
-	return crdstoragemigration.Run(cmd.Context(), clt, namespaceFlagValue)
+	return crdstoragemigration.Run(cmd.Context(), clt, k8senv.DefaultNamespace())
 }

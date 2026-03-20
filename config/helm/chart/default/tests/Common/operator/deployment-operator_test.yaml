@@ -30,6 +30,8 @@ tests:
     set:
       platform: kubernetes
       image: image-name
+    release:
+      upgrade: true
     asserts:
       - isKind:
           of: Deployment
@@ -70,6 +72,66 @@ tests:
       - equal:
           path: spec.template.spec
           value:
+            initContainers:
+              - name: certgen
+                image: image-name
+                args:
+                  - certgen
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
+              - name: crd-storage-migration
+                image: image-name
+                args:
+                  - crd-storage-migration
+                  - --retry
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
             containers:
               - name: operator
                 args:
@@ -92,8 +154,6 @@ tests:
                       fieldRef:
                         fieldPath: metadata.annotations['olm.operatorNamespace']
                   - name: DT_HOST_AVAILABILITY_DETECTION
-                    value: "true"
-                  - name: DT_CRD_STORAGE_MIGRATION
                     value: "true"
                   - name: modules.json
                     value: |
@@ -237,27 +297,23 @@ tests:
             name: DT_HOST_AVAILABILITY_DETECTION
             value: "false"
 
-  - it: should have env var DT_CRD_STORAGE_MIGRATION when set to init-manager
+  - it: should not have init container on install
     set:
-      platform: kubernetes
+      platform: openshift
       operator.crdStorageMigrationInitManager: true
     asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: DT_CRD_STORAGE_MIGRATION
-            value: "true"
+      - isNull:
+          path: spec.template.spec.containers[0].initContainers
 
-  - it: should have env var DT_CRD_STORAGE_MIGRATION when disabled
+  - it: should not have init container when they are disabled
     set:
-      platform: kubernetes
+      platform: openshift
       operator.crdStorageMigrationInitManager: false
+    release:
+      upgrade: true
     asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: DT_CRD_STORAGE_MIGRATION
-            value: "false"
+      - isNull:
+          path: spec.template.spec.containers[0].initContainers
 
   - it: should not have imagePullSecrets defined in spec
     set:
@@ -270,6 +326,8 @@ tests:
     set:
       platform: openshift
       image: image-name
+    release:
+      upgrade: true
     asserts:
       - isKind:
           of: Deployment
@@ -298,6 +356,37 @@ tests:
       - equal:
           path: spec.template.spec
           value:
+            initContainers:
+              - name: crd-storage-migration
+                image: image-name
+                args:
+                  - crd-storage-migration
+                  - --retry
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
             containers:
               - name: operator
                 args:
@@ -320,8 +409,6 @@ tests:
                       fieldRef:
                         fieldPath: metadata.annotations['olm.operatorNamespace']
                   - name: DT_HOST_AVAILABILITY_DETECTION
-                    value: "true"
-                  - name: DT_CRD_STORAGE_MIGRATION
                     value: "true"
                   - name: modules.json
                     value: |
