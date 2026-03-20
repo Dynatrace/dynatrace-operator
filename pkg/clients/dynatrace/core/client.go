@@ -332,7 +332,6 @@ func setHeaders(req *http.Request, userAgent, token string, customHeaders http.H
 	for key, values := range customHeaders {
 		req.Header.Set(key, values[0])
 	}
-
 }
 
 // handleErrorResponse processes error responses from the API

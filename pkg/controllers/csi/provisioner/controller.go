@@ -23,6 +23,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
@@ -49,7 +50,7 @@ const (
 	longRequeueDuration    = 30 * time.Minute
 )
 
-type urlInstallerBuilder func(dtclient.Client, *url.Properties) installer.Installer
+type urlInstallerBuilder func(oneagent.APIClient, *url.Properties) installer.Installer
 type imageInstallerBuilder func(context.Context, *image.Properties) (installer.Installer, error)
 type jobInstallerBuilder func(context.Context, *job.Properties) installer.Installer
 
