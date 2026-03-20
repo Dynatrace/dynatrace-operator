@@ -35,7 +35,7 @@
   automergeType: "pr",
   automerge: true,
   branchNameStrict: true,
-  hashedBranchLength: 47, // 63 character limit for label values with space for "v0.0.0-snapshot-" prefix
+  hashedBranchLength: 27, // 63 character limit for label values with space for "dynatrace-operator.v0.0.0-snapshot-" prefix
   regexManagers: [
     {
       fileMatch: [
