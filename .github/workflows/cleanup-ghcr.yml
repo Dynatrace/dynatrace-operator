@@ -16,6 +16,7 @@ on:
 
 jobs:
   cleanup:
+    if: github.repository_owner == 'Dynatrace'
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -27,8 +28,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - if: github.repository_owner == 'Dynatrace'
-        name: Run GHCR cleanup
+      - name: Clean up dynatrace-operator
         uses: ./.github/actions/cleanup-ghcr
         with:
           org: ${{ github.repository_owner }}
@@ -38,3 +38,14 @@ jobs:
           package-repo-type: "orgs"
           keep-days: "14"
           tags-to-keep: "^snapshot$,^snapshot-release-[0-9.-]+$"
+
+      - name: Clean up dynatrace-operator-bundle
+        uses: ./.github/actions/cleanup-ghcr
+        with:
+          org: ${{ github.repository_owner }}
+          package: "dynatrace-operator-bundle"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          dry-run: ${{ github.event.inputs.dry-run || 'false' }}
+          package-repo-type: "orgs"
+          keep-days: "14"
+          tags-to-keep: "^0.0.0-snapshot$,^0.0.0-snapshot-release-[0-9.-]+$,^[0-9.-]+$"

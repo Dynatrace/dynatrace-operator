@@ -19,7 +19,6 @@ import (
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
-	oneagentcontroller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -352,7 +351,7 @@ func TestReconcileComponents(t *testing.T) {
 		dk := dkBaser.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dk)
 
-		mockOneAgentReconciler := controllermock.NewReconciler(t)
+		mockOneAgentReconciler := newMockOneAgentReconciler(t)
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockInjectionReconciler := controllermock.NewReconciler(t)
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
@@ -369,19 +368,20 @@ func TestReconcileComponents(t *testing.T) {
 
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
-			oneAgentReconcilerBuilder:   createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 			logMonitoringReconciler:     mockLogMonitoringReconciler,
 			extensionReconciler:         mockExtensionReconciler,
 			istioReconciler:             mockIstioReconciler,
 			otelcReconciler:             mockOtelcReconciler,
 			kspmReconciler:              mockKSPMReconciler,
 			k8sEntityReconciler:         mockK8sEntityReconciler,
+			oneAgentReconciler:          mockOneAgentReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
 
 		var err error
-		expectReconcileError(t, mockOneAgentReconciler, &err)
+
+		expectReconcileError(t, mockOneAgentReconciler, &err, dk, mockedDtc, token.Tokens(nil))
 		expectReconcileError(t, mockActiveGateReconciler, &err)
 		expectReconcileError(t, mockInjectionReconciler, &err)
 		expectReconcileError(t, mockLogMonitoringReconciler, &err, mockedDtc, dk)
@@ -467,8 +467,8 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockProxyReconciler := newMockDynakubeReconciler(t)
 	mockProxyReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
-	mockOneAgentReconciler := controllermock.NewReconciler(t)
-	mockOneAgentReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
+	mockOneAgentReconciler := newMockOneAgentReconciler(t)
+	mockOneAgentReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil)
 
 	mockActiveGateReconciler := controllermock.NewReconciler(t)
 	mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
@@ -505,11 +505,11 @@ func TestReconcileDynaKube(t *testing.T) {
 		injectionReconcilerBuilder:   createInjectionReconcilerBuilder(mockInjectionReconciler),
 		istioReconciler:              mockIstioReconciler,
 		logMonitoringReconciler:      mockLogMonitoringReconciler,
-		oneAgentReconcilerBuilder:    createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 		otelcReconciler:              mockOtelcReconciler,
 		proxyReconciler:              mockProxyReconciler,
 		kspmReconciler:               mockKSPMReconciler,
 		k8sEntityReconciler:          mockK8sEntityReconciler,
+		oneAgentReconciler:           mockOneAgentReconciler,
 	}
 
 	request := reconcile.Request{
@@ -558,12 +558,6 @@ func TestReconcileDynaKube(t *testing.T) {
 
 func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) ag.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ dtclient.Client, _ token.Tokens) controllers.Reconciler {
-		return reconciler
-	}
-}
-
-func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagentcontroller.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynakube.DynaKube, _ token.Tokens, _ string) controllers.Reconciler {
 		return reconciler
 	}
 }
