@@ -1,5 +1,6 @@
 package supportarchive
 
+const KubernetesVersionFileName = "kubernetes-version.txt"
 const OperatorVersionFileName = "operator-version.txt"
 const SupportArchiveOutputFileName = "supportarchive_console.log"
 
