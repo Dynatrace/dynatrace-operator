@@ -113,21 +113,21 @@ func WaitForReplicas(edgeConnect edgeconnect.EdgeConnect, replicas *int32) featu
 		resources := envConfig.Client().Resources()
 
 		err := wait.For(conditions.New(resources).ResourceMatch(&edgeConnect, func(object k8s.Object) bool {
-			ec, isEdgeConnect := object.(*edgeconnect.EdgeConnect)
+			currEC, isCurrEC := object.(*edgeconnect.EdgeConnect)
 
-			if !isEdgeConnect {
+			if !isCurrEC {
 				return false
 			}
 
 			if replicas == nil {
-				return ec.Spec.Replicas == nil
+				return currEC.Spec.Replicas == nil
 			}
 
-			if ec.Spec.Replicas == nil {
+			if currEC.Spec.Replicas == nil {
 				return false
 			}
 
-			return *replicas == *ec.Spec.Replicas
+			return *replicas == *currEC.Spec.Replicas
 		}), wait.WithTimeout(5*time.Minute))
 
 		require.NoError(t, err)

@@ -212,7 +212,7 @@ test/e2e/cloudnative/withoutcsi:
 
 ## Runs TelemetryIngest related e2e tests
 test/e2e/telemetryingest:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_hpa" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_.*" $(SKIPCLEANUP)
 
 test/e2e/telemetryingest/public-active-gate:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_w_public_ag" $(SKIPCLEANUP)

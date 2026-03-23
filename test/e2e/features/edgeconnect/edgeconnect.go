@@ -340,7 +340,6 @@ func WithHPARegular(t *testing.T) features.Feature {
 }
 
 func WithHPARegularEnforceReplicas(t *testing.T) features.Feature {
-	// TODO change names on all tests
 	builder := features.New("edgeconnect-regular-with-hpa-regular-enforce-replicas")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
@@ -368,7 +367,6 @@ func WithHPARegularEnforceReplicas(t *testing.T) features.Feature {
 	ecComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
 
 	builder.Assess("check if EC has replica count set to 2", ecComponents.WaitForReplicas(testEdgeConnect, ptr.To(int32(2))))
-
 	builder.Assess("check if the EC deployment has replicas set to 2", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 2))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
@@ -390,7 +388,7 @@ func WithHPARegularEnforceReplicas(t *testing.T) features.Feature {
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, 3))
 	builder.Assess("check if EC still has replicas set to 2", ecComponents.WaitForReplicas(testEdgeConnect, ptr.To(int32(2))))
-	builder.Assess("check if the EC deployment replica count 2 is enforced by EC", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 2))
+	builder.Assess("check if the EC deployment replica count 2 is enforced", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 2))
 
 	builder.Assess("remove enforced replicas", updateReplicas(&testEdgeConnect, nil))
 	builder.Assess("check if EC has no replicas set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
@@ -429,7 +427,6 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 
 	builder.Assess("check if EC doesn't have any replica count set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-
 	builder.Assess("check if the EC deployment has replicas set to 1", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 1))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
@@ -485,7 +482,6 @@ func WithHPAProvisionerEnforceReplicas(t *testing.T) features.Feature {
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 
 	builder.Assess("check if EC has replica count set to 2", ecComponents.WaitForReplicas(testEdgeConnect, ptr.To(int32(2))))
-
 	builder.Assess("check if the EC deployment has replicas set to 2", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 2))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
@@ -644,6 +640,7 @@ func updateReplicas(testEdgeConnect *edgeconnect.EdgeConnect, replicas *int32) f
 		require.NoError(t, err)
 
 		testEdgeConnect.Spec.Replicas = replicas
+
 		err = envConfig.Client().Resources().Update(ctx, testEdgeConnect)
 		require.NoError(t, err)
 

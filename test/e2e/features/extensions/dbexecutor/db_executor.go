@@ -147,7 +147,7 @@ func WithHPAEnforceReplicas(t *testing.T) features.Feature {
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, 3))
 	builder.Assess("check if executor still has replicas set to 2", componentDynakube.WaitForDBExecutorReplicas(&testDynakube, testDatabaseID, ptr.To(int32(2))))
-	builder.Assess("check if the executor deployment replica count 2 is enforced by the dk", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, 2))
+	builder.Assess("check if the executor deployment replica count 2 is enforced", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, 2))
 
 	builder.Assess("remove enforced replicas", updateReplicas(&testDynakube, testDatabaseID, nil))
 	builder.Assess("check if executor has no replicas set", componentDynakube.WaitForDBExecutorReplicas(&testDynakube, testDatabaseID, nil))

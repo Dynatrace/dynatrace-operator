@@ -71,13 +71,13 @@ func WaitForSpecReplicas(name, namespace string, replicas int32) features.Func {
 			},
 		}
 		err := wait.For(conditions.New(resource).ResourceScaled(ss, func(object k8s.Object) int32 {
-			newSS, isNewSS := object.(*appsv1.StatefulSet)
+			currSS, isCurrSS := object.(*appsv1.StatefulSet)
 
-			if !isNewSS {
+			if !isCurrSS {
 				return 0
 			}
 
-			return *newSS.Spec.Replicas
+			return *currSS.Spec.Replicas
 		}, replicas), wait.WithTimeout(5*time.Minute))
 
 		require.NoError(t, err)

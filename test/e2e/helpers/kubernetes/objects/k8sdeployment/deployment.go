@@ -98,13 +98,13 @@ func WaitForSpecReplicas(name, namespace string, replicas int32) features.Func {
 			},
 		}
 		err := wait.For(conditions.New(resource).ResourceScaled(deployment, func(object k8s.Object) int32 {
-			deploy, ok := object.(*appsv1.Deployment)
+			currDeploy, isCurrDeploy := object.(*appsv1.Deployment)
 
-			if !ok {
+			if !isCurrDeploy {
 				return 0
 			}
 
-			return *deploy.Spec.Replicas
+			return *currDeploy.Spec.Replicas
 		}, replicas), wait.WithTimeout(DeploymentSpecReplicasTimeout))
 
 		require.NoError(t, err)

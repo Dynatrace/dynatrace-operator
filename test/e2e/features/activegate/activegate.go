@@ -117,7 +117,7 @@ func WithHPA(t *testing.T) features.Feature {
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if AG doesn't have any replica count set", dynakubeComponents.WaitForAGReplicas(&testDynakube, nil))
-	builder.Assess("check if the AG statefulset has replicas autoscaled to 3", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, 1))
+	builder.Assess("check if the AG statefulset has replicas autoscaled to 3", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, 3))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
@@ -137,6 +137,7 @@ func WithHPAEnforceReplicas(t *testing.T) features.Feature {
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	activeGateSSName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
+
 	builder.Assess("check if AG has replica count set to 2", dynakubeComponents.WaitForAGReplicas(&testDynakube, ptr.To(int32(2))))
 	builder.Assess("check if the AG statefulset has replicas set to 2", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, 2))
 
