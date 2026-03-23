@@ -15,6 +15,7 @@ const (
 
 	testTenantUUID  = "1234"
 	testTenantToken = "abcd"
+	testNetworkZone = "test-zone"
 )
 
 func Test_GetConnectionInfo(t *testing.T) {
@@ -38,11 +39,15 @@ func Test_GetConnectionInfo(t *testing.T) {
 		Endpoints:   testCommunicationEndpoint,
 	}
 
-	setupMockedClient := func(t *testing.T, networkZone string, response *connectionInfoJSONResponse, err error) *Client {
+	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *connectionInfoJSONResponse, err error) *Client {
 		req := coremock.NewAPIRequest(t)
 		req.EXPECT().
 			WithPaasToken().
 			Return(req).Once()
+		req.EXPECT().
+			WithQueryParams(params).
+			Return(req).
+			Once()
 		req.EXPECT().
 			Execute(&connectionInfoJSONResponse{}).
 			Run(func(model any) {
@@ -54,13 +59,13 @@ func Test_GetConnectionInfo(t *testing.T) {
 			}).
 			Return(err).Once()
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getOneAgentConnectionInfoURL(networkZone)).Return(req).Once()
+		client.EXPECT().GET(t.Context(), connectionInfoPath).Return(req).Once()
 
 		return NewClient(client, "", networkZone)
 	}
 
 	t.Run("no network zone", func(t *testing.T) {
-		client := setupMockedClient(t, "", oneAgentJSONResponse, nil)
+		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponse, nil)
 		connectionInfo, err := client.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
@@ -69,7 +74,11 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 
 	t.Run("with network zone", func(t *testing.T) {
-		client := setupMockedClient(t, "", oneAgentJSONResponse, nil)
+		params := map[string]string{
+			"networkZone":         testNetworkZone,
+			"defaultZoneFallback": "true",
+		}
+		client := setupMockedClient(t, params, testNetworkZone, oneAgentJSONResponse, nil)
 		connectionInfo, err := client.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
@@ -78,7 +87,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 
 	t.Run("with duplicates", func(t *testing.T) {
-		client := setupMockedClient(t, "", oneAgentJSONResponseWithDups, nil)
+		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponseWithDups, nil)
 		connectionInfo, err := client.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
@@ -92,7 +101,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 
 		expectedOneAgentConnectionInfo.Endpoints = ""
 
-		client := setupMockedClient(t, "", oneAgentJSONResponse, nil)
+		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponse, nil)
 		connectionInfo, err := client.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
@@ -101,7 +110,8 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 
 	t.Run("bad request error", func(t *testing.T) {
-		client := setupMockedClient(t, "", oneAgentJSONResponse, &core.HTTPError{StatusCode: 400, Message: "bad request"})
+		expectErr := &core.HTTPError{StatusCode: 400, Message: "bad request"}
+		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponse, expectErr)
 
 		_, err := client.GetConnectionInfo(ctx)
 		assert.NoError(t, err)
@@ -109,35 +119,9 @@ func Test_GetConnectionInfo(t *testing.T) {
 
 	t.Run("server error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		client := setupMockedClient(t, "", oneAgentJSONResponse, expectErr)
+		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponse, expectErr)
 
 		_, err := client.GetConnectionInfo(ctx)
 		assert.ErrorIs(t, err, expectErr)
 	})
-}
-
-func Test_getOneAgentConnectionInfoUrl(t *testing.T) {
-	tests := []struct {
-		name        string
-		networkZone string
-		want        string
-	}{
-		{
-			name:        "with network zone",
-			networkZone: "mynetworkzone",
-			want:        "/v1/deployment/installer/agent/connectioninfo?networkZone=mynetworkzone&defaultZoneFallback=true",
-		},
-		{
-			name:        "without network zone",
-			networkZone: "",
-			want:        "/v1/deployment/installer/agent/connectioninfo",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := getOneAgentConnectionInfoURL(tt.networkZone); got != tt.want {
-				t.Errorf("getOneAgentConnectionInfoURL() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }

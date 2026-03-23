@@ -2,10 +2,13 @@ package oneagent
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/pkg/errors"
+)
+
+const (
+	connectionInfoPath = "/v1/deployment/installer/agent/connectioninfo"
 )
 
 type ConnectionInfo struct {
@@ -24,7 +27,14 @@ type connectionInfoJSONResponse struct {
 func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
 	var resp connectionInfoJSONResponse
 
-	err := c.apiClient.GET(ctx, getOneAgentConnectionInfoURL(c.networkZone)).
+	params := map[string]string{}
+	if c.networkZone != "" {
+		params["networkZone"] = c.networkZone
+		params["defaultZoneFallback"] = "true"
+	}
+
+	err := c.apiClient.GET(ctx, connectionInfoPath).
+		WithQueryParams(params).
 		WithPaasToken().
 		Execute(&resp)
 
@@ -45,12 +55,4 @@ func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) 
 	}
 
 	return connectionInfo, nil
-}
-
-func getOneAgentConnectionInfoURL(networkZone string) string {
-	if networkZone != "" {
-		return fmt.Sprintf("/v1/deployment/installer/agent/connectioninfo?networkZone=%s&defaultZoneFallback=true", networkZone)
-	}
-
-	return "/v1/deployment/installer/agent/connectioninfo"
 }
