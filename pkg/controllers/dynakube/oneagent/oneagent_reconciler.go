@@ -11,8 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -42,34 +41,26 @@ const (
 	oldDsName             = "classic"
 )
 
-var _ ReconcilerBuilder = NewReconciler
+type connectionInfoReconciler interface {
+	Reconcile(ctx context.Context) error
+}
 
-type ReconcilerBuilder func(
+type versionReconciler interface {
+	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
+// NewReconciler initializes a new Reconciler instance
+func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
-	dtClient dynatrace.Client,
-	dynakube *dynakube.DynaKube,
-	tokens token.Tokens,
 	clusterID string,
-) controllers.Reconciler
-
-// NewReconciler initializes a new ReconcileOneAgent instance
-func NewReconciler( //nolint
-	client client.Client,
-	apiReader client.Reader,
-	dtClient dynatrace.Client,
-	dk *dynakube.DynaKube,
-	tokens token.Tokens,
-	clusterID string,
-) controllers.Reconciler {
+) *Reconciler {
 	return &Reconciler{
-		client:                   client,
-		apiReader:                apiReader,
-		clusterID:                clusterID,
-		dk:                       dk,
-		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient, dk),
-		versionReconciler:        version.NewReconciler(apiReader, dtClient, timeprovider.New().Freeze()),
-		tokens:                   tokens,
+		client:    client,
+		apiReader: apiReader,
+		clusterID: clusterID,
+		configmap: k8sconfigmap.Query(client, apiReader, log),
+		daemonset: k8sdaemonset.Query(client, apiReader, log),
 	}
 }
 
@@ -78,32 +69,43 @@ type Reconciler struct {
 	// that reads objects from the cache and writes to the apiserver
 	client                   client.Client
 	apiReader                client.Reader
-	connectionInfoReconciler controllers.Reconciler
-	versionReconciler        version.Reconciler
-	dk                       *dynakube.DynaKube
-	tokens                   token.Tokens
+	connectionInfoReconciler connectionInfoReconciler
+	versionReconciler        versionReconciler
+	configmap                k8sconfigmap.QueryObject
+	daemonset                k8sdaemonset.QueryObject
 	clusterID                string
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
 // and what is in the OneAgent.Spec
+//
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *Reconciler) Reconcile(ctx context.Context) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error {
 	log.Info("reconciling OneAgent")
 
-	err := r.versionReconciler.ReconcileOneAgent(ctx, r.dk)
+	versionReconciler := r.versionReconciler
+	if versionReconciler == nil {
+		versionReconciler = version.NewReconciler(r.apiReader, dtClient, timeprovider.New().Freeze())
+	}
+
+	connectionInfoReconciler := r.connectionInfoReconciler
+	if connectionInfoReconciler == nil {
+		connectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient, dk)
+	}
+
+	err := versionReconciler.ReconcileOneAgent(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.connectionInfoReconciler.Reconcile(ctx)
+	err = connectionInfoReconciler.Reconcile(ctx)
 	if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) { // This only informational
 		log.Info("OneAgents are not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
 
-		if r.dk.Spec.NetworkZone != "" {
-			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", r.dk.Spec.NetworkZone, "dynakube", r.dk.Name)
+		if dk.Spec.NetworkZone != "" {
+			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", dk.Spec.NetworkZone, "dynakube", dk.Name)
 		}
 	}
 
@@ -111,60 +113,60 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if !r.dk.OneAgent().IsDaemonsetRequired() {
-		return r.cleanUp(ctx)
+	if !dk.OneAgent().IsDaemonsetRequired() {
+		return r.cleanUp(ctx, dk)
 	}
 
-	err = dtpullsecret.NewReconciler(r.client, r.apiReader, r.dk, r.tokens).Reconcile(ctx)
+	err = dtpullsecret.NewReconciler(r.client, r.apiReader, dk, tokens).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
 
 	log.Info("At least one communication host is provided, deploying OneAgent")
 
-	err = r.createOneAgentTenantConnectionInfoConfigMap(ctx)
+	err = r.createOneAgentTenantConnectionInfoConfigMap(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.reconcileRollout(ctx)
+	err = r.reconcileRollout(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.updateInstancesStatus(ctx)
+	err = r.updateInstancesStatus(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*r.dk))
+	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*dk))
 
 	return nil
 }
 
-func (r *Reconciler) cleanUp(ctx context.Context) error {
+func (r *Reconciler) cleanUp(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("removing OneAgent daemonSet")
 
-	if meta.FindStatusCondition(*r.dk.Conditions(), oaConditionType) == nil {
+	if meta.FindStatusCondition(*dk.Conditions(), oaConditionType) == nil {
 		return nil // no condition == nothing is there to clean up
 	}
 
-	err := r.deleteOneAgentTenantConnectionInfoConfigMap(ctx)
+	err := r.deleteOneAgentTenantConnectionInfoConfigMap(ctx, dk)
 	if err != nil {
 		log.Error(err, "failed to cleanup oneagent connection-info configmap") // error shouldn't block another cleanup
 	}
 
-	meta.RemoveStatusCondition(r.dk.Conditions(), oaConditionType)
+	meta.RemoveStatusCondition(dk.Conditions(), oaConditionType)
 
 	// be careful with OneAgent Status cleanup, as some things (ConnectionInfo) are shared with injection.
 	// only cleanup things that are directly set in THIS reconciler
-	r.dk.Status.OneAgent.Instances = nil
-	r.dk.Status.OneAgent.LastInstanceStatusUpdate = nil
+	dk.Status.OneAgent.Instances = nil
+	dk.Status.OneAgent.LastInstanceStatusUpdate = nil
 
-	return r.removeOneAgentDaemonSet(ctx, r.dk)
+	return r.removeOneAgentDaemonSet(ctx, dk)
 }
 
-func (r *Reconciler) updateInstancesStatus(ctx context.Context) error {
+func (r *Reconciler) updateInstancesStatus(ctx context.Context, dk *dynakube.DynaKube) error {
 	updInterval := defaultUpdateInterval
 
 	if val := os.Getenv(updateEnvVar); val != "" {
@@ -177,13 +179,13 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context) error {
 	}
 
 	now := metav1.Now()
-	if timeprovider.TimeoutReached(r.dk.Status.OneAgent.LastInstanceStatusUpdate, &now, updInterval) {
-		err := r.reconcileInstanceStatuses(ctx, r.dk)
+	if timeprovider.TimeoutReached(dk.Status.OneAgent.LastInstanceStatusUpdate, &now, updInterval) {
+		err := r.reconcileInstanceStatuses(ctx, dk)
 		if err != nil {
 			return err
 		}
 
-		r.dk.Status.OneAgent.LastInstanceStatusUpdate = &now
+		dk.Status.OneAgent.LastInstanceStatusUpdate = &now
 
 		log.Info("oneagent instance statuses reconciled")
 	}
@@ -191,23 +193,21 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
-	configMapData := extractPublicData(r.dk)
+func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
+	configMapData := extractPublicData(dk)
 
-	configMap, err := k8sconfigmap.Build(r.dk,
-		r.dk.OneAgent().GetConnectionInfoConfigMapName(),
+	configMap, err := k8sconfigmap.Build(dk,
+		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		configMapData,
 	)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := k8sconfigmap.Query(r.client, r.apiReader, log)
-
-	_, err = query.CreateOrUpdate(ctx, configMap)
+	_, err = r.configmap.CreateOrUpdate(ctx, configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), oaConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), oaConditionType, err)
 
 		return err
 	}
@@ -215,14 +215,13 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	return nil
 }
 
-func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
-	cm, _ := k8sconfigmap.Build(r.dk,
-		r.dk.OneAgent().GetConnectionInfoConfigMapName(),
+func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
+	cm, _ := k8sconfigmap.Build(dk,
+		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		nil,
 	)
-	query := k8sconfigmap.Query(r.client, r.apiReader, log)
 
-	return query.Delete(ctx, cm)
+	return r.configmap.Delete(ctx, cm)
 }
 
 func extractPublicData(dk *dynakube.DynaKube) map[string]string {
@@ -239,38 +238,38 @@ func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 	return data
 }
 
-func (r *Reconciler) reconcileRollout(ctx context.Context) error {
+func (r *Reconciler) reconcileRollout(ctx context.Context, dk *dynakube.DynaKube) error {
 	// Define a new DaemonSet object
-	dsDesired, err := r.buildDesiredDaemonSet(r.dk)
+	dsDesired, err := r.buildDesiredDaemonSet(dk)
 	if err != nil {
 		log.Info("failed to get desired daemonset")
-		setDaemonSetGenerationFailedCondition(r.dk.Conditions())
+		setDaemonSetGenerationFailedCondition(dk.Conditions())
 
 		return err
 	}
 
 	// Set OneAgent instance as the owner and controller
-	if err := controllerutil.SetControllerReference(r.dk, dsDesired, scheme.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(dk, dsDesired, scheme.Scheme); err != nil {
 		return err
 	}
 
-	updated, err := k8sdaemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, dsDesired)
+	updated, err := r.daemonset.WithOwner(dk).CreateOrUpdate(ctx, dsDesired)
 	if err != nil {
 		log.Info("failed to roll out new OneAgent DaemonSet")
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), oaConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), oaConditionType, err)
 
 		return err
 	}
 
 	if updated {
 		log.Info("rolled out new OneAgent DaemonSet")
-		setDaemonSetCreatedCondition(r.dk.Conditions())
+		setDaemonSetCreatedCondition(dk.Conditions())
 
 		// remove old daemonset with feature in name
 		oldClassicDaemonset := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s", r.dk.Name, oldDsName),
-				Namespace: r.dk.Namespace,
+				Name:      fmt.Sprintf("%s-%s", dk.Name, oldDsName),
+				Namespace: dk.Namespace,
 			},
 		}
 
@@ -279,7 +278,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 			log.Info("removed oneagent daemonset with feature in name")
 		} else if !k8serrors.IsNotFound(err) {
 			log.Info("failed to remove oneagent daemonset with feature in name")
-			k8sconditions.SetKubeAPIError(r.dk.Conditions(), oaConditionType, err)
+			k8sconditions.SetKubeAPIError(dk.Conditions(), oaConditionType, err)
 
 			return err
 		}

@@ -46,6 +46,7 @@ packages:
       dynakubeReconciler:
       istioReconciler:
       logMonitoringReconciler:
+      oneAgentReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring:
     config:
       dir: "{{.InterfaceDir}}"
