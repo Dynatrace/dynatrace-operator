@@ -35,8 +35,6 @@ type Client interface {
 	// download a specific agent version
 	GetAgentVersions(ctx context.Context, os, installerType, flavor string) ([]string, error)
 
-	GetOneAgentConnectionInfo(ctx context.Context) (OneAgentConnectionInfo, error)
-
 	GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error)
 
 	// AsV2 is a temporary adapter to gradually migrate to the v2 client.
