@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -23,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
@@ -66,12 +68,10 @@ var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestReconciler(t *testing.T) {
 	t.Run("add injection", func(t *testing.T) {
-		expectedOneAgentConnectionInfo := dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID:  testUUID,
-				TenantToken: testTenantToken,
-				Endpoints:   testCommunicationEndpoint,
-			},
+		expectedOneAgentConnectionInfo := oneagentclient.ConnectionInfo{
+			TenantUUID:  testUUID,
+			TenantToken: testTenantToken,
+			Endpoints:   testCommunicationEndpoint,
 		}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -123,16 +123,18 @@ func TestReconciler(t *testing.T) {
 			dk,
 		)
 		dtClient := dtclientmock.NewClient(t)
+		oneAgentClient := oneagentclientmock.NewAPIClient(t)
+		oneAgentClient.EXPECT().GetConnectionInfo(t.Context()).Return(expectedOneAgentConnectionInfo, nil).Once()
 		versionClient := versionclientmock.NewAPIClient(t)
-		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
-		dtClient.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(expectedOneAgentConnectionInfo, nil)
-		dtClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		versionClient.EXPECT().GetLatestAgentVersion(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
+		dtClient.EXPECT().GetProcessModuleConfig(t.Context(), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 		settingsClient := settingsmock.NewAPIClient(t)
-		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
+		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+			OneAgent: oneAgentClient,
 			Settings: settingsClient,
 			Version:  versionClient,
-		}).Twice()
+		}).Times(3) // constructor of connectionInfoReconciler and enrichmentRulesReconciler + method versionReconciler.ReconcileCodeModules
 
 		rec := NewReconciler(clt, clt, dtClient, dk).(*Reconciler)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
@@ -178,7 +180,7 @@ func TestReconciler(t *testing.T) {
 		)
 		dtClient := dtclientmock.NewClient(t)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Twice()
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Times(3) // constructor of connectionInfoReconciler and enrichmentRulesReconciler + method versionReconciler.ReconcileCodeModules
 
 		rec := NewReconciler(clt, clt, dtClient, dk).(*Reconciler)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
@@ -229,8 +231,11 @@ func TestReconciler(t *testing.T) {
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
 		dtClient := dtclientmock.NewClient(t)
+		oneAgentClient := oneagentclientmock.NewAPIClient(t)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Once()
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+			OneAgent: oneAgentClient,
+			Settings: settingsClient}).Twice()
 
 		rec := NewReconciler(boomClient, boomClient, dtClient, dk).(*Reconciler)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
