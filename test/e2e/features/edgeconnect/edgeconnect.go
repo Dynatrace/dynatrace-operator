@@ -39,6 +39,11 @@ import (
 
 const caConfigMapName = "proxy-ca"
 
+var (
+	hpaScaleReplicas = ptr.To(int32(3))
+	hpaBaseReplicas  = ptr.To(int32(2))
+)
+
 func NormalModeFeature(t *testing.T) features.Feature {
 	builder := features.New("edgeconnect-install")
 
@@ -323,14 +328,14 @@ func WithHPARegular(t *testing.T) features.Feature {
 				Name:       testECname,
 				APIVersion: "apps/v1",
 			},
-			MinReplicas: ptr.To(int32(3)),
-			MaxReplicas: int32(3),
+			MinReplicas: hpaScaleReplicas,
+			MaxReplicas: *hpaScaleReplicas,
 		},
 	}
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if EC doesn't have any replica count set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment has replicas autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 3))
+	builder.Assess("check if the EC deployment has replicas autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaScaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
 	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
@@ -358,7 +363,7 @@ func WithHPARegularEnforceReplicas(t *testing.T) features.Feature {
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
 		ecComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		ecComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUID)),
-		ecComponents.WithReplicas(ptr.To(int32(2))),
+		ecComponents.WithReplicas(hpaBaseReplicas),
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
@@ -366,8 +371,8 @@ func WithHPARegularEnforceReplicas(t *testing.T) features.Feature {
 
 	ecComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
 
-	builder.Assess("check if EC has replica count set to 2", ecComponents.WaitForReplicas(testEdgeConnect, ptr.To(int32(2))))
-	builder.Assess("check if the EC deployment has replicas set to 2", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 2))
+	builder.Assess("check if EC has replica count set to 2", ecComponents.WaitForReplicas(testEdgeConnect, hpaBaseReplicas))
+	builder.Assess("check if the EC deployment has replicas set to 2", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaBaseReplicas))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -386,20 +391,19 @@ func WithHPARegularEnforceReplicas(t *testing.T) features.Feature {
 	}
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, 3))
-	builder.Assess("check if EC still has replicas set to 2", ecComponents.WaitForReplicas(testEdgeConnect, ptr.To(int32(2))))
-	builder.Assess("check if the EC deployment replica count 2 is enforced", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 2))
+	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, *hpaScaleReplicas))
+	builder.Assess("check if EC still has replicas set to 2", ecComponents.WaitForReplicas(testEdgeConnect, hpaBaseReplicas))
+	builder.Assess("check if the EC deployment replica count 2 is enforced", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaBaseReplicas))
 
 	builder.Assess("remove enforced replicas", updateReplicas(&testEdgeConnect, nil))
 	builder.Assess("check if EC has no replicas set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment was autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 3))
+	builder.Assess("check if the EC deployment was autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaScaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
 	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
 
 	return builder.Feature()
-
 }
 
 func WithHPAProvisioner(t *testing.T) features.Feature {
@@ -447,7 +451,7 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if EC doesn't have any replica count set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment has replicas autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 3))
+	builder.Assess("check if the EC deployment has replicas autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaScaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
 	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
@@ -481,8 +485,8 @@ func WithHPAProvisionerEnforceReplicas(t *testing.T) features.Feature {
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 
-	builder.Assess("check if EC has replica count set to 2", ecComponents.WaitForReplicas(testEdgeConnect, ptr.To(int32(2))))
-	builder.Assess("check if the EC deployment has replicas set to 2", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 2))
+	builder.Assess("check if EC has replica count set to 2", ecComponents.WaitForReplicas(testEdgeConnect, hpaBaseReplicas))
+	builder.Assess("check if the EC deployment has replicas set to 2", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaBaseReplicas))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -501,20 +505,19 @@ func WithHPAProvisionerEnforceReplicas(t *testing.T) features.Feature {
 	}
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, 3))
-	builder.Assess("check if EC still has replicas set to 2", ecComponents.WaitForReplicas(testEdgeConnect, ptr.To(int32(2))))
-	builder.Assess("check if the EC deployment replica count 2 is enforced by EC", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 2))
+	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, *hpaScaleReplicas))
+	builder.Assess("check if EC still has replicas set to 2", ecComponents.WaitForReplicas(testEdgeConnect, hpaBaseReplicas))
+	builder.Assess("check if the EC deployment replica count 2 is enforced by EC", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaBaseReplicas))
 
 	builder.Assess("remove enforced replicas", updateReplicas(&testEdgeConnect, nil))
 	builder.Assess("check if EC has no replicas set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment was autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 3))
+	builder.Assess("check if the EC deployment was autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaScaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
 	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
 
 	return builder.Feature()
-
 }
 
 // getTenantConfig for Provisioner and K8SAutomation modes, preserves the id of EdgeConnect configuration on the tenant

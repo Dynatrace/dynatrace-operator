@@ -111,7 +111,6 @@ func WaitForSpecReplicas(name, namespace string, replicas int32) features.Func {
 
 		return ctx
 	}
-
 }
 
 func WaitUntilReady(resource *resources.Resources, deployment *appsv1.Deployment) error {

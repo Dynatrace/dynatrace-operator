@@ -18,11 +18,14 @@ import (
 	"github.com/stretchr/testify/require"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
-
 	"k8s.io/utils/ptr"
-
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
+)
+
+var (
+	hpaScaleReplicas = ptr.To(int32(3))
+	hpaBaseReplicas  = ptr.To(int32(2))
 )
 
 func Feature(t *testing.T) features.Feature {
@@ -90,21 +93,20 @@ func WithHPA(t *testing.T) features.Feature {
 				Name:       testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID),
 				APIVersion: "apps/v1",
 			},
-			MinReplicas: ptr.To(int32(3)),
-			MaxReplicas: int32(3),
+			MinReplicas: hpaScaleReplicas,
+			MaxReplicas: *hpaScaleReplicas,
 		},
 	}
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if executor doesn't have any replica count set", componentDynakube.WaitForDBExecutorReplicas(&testDynakube, testDatabaseID, nil))
-	builder.Assess("check if the deployment has replicas set to 3", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, 3))
+	builder.Assess("check if the deployment has replicas set to 3", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, *hpaScaleReplicas))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.Teardown(k8shpa.Delete(testHPA))
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
-
 }
 
 func WithHPAEnforceReplicas(t *testing.T) features.Feature {
@@ -116,7 +118,7 @@ func WithHPAEnforceReplicas(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithExtensionsEECImageRef(),
-		componentDynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID, Replicas: ptr.To(int32(2))}),
+		componentDynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID, Replicas: hpaBaseReplicas}),
 		componentDynakube.WithExtensionsDBExecutorImageRef(),
 		componentDynakube.WithActiveGate(),
 	}
@@ -125,8 +127,8 @@ func WithHPAEnforceReplicas(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("check if executor has replicas count set to 2", componentDynakube.WaitForDBExecutorReplicas(&testDynakube, testDatabaseID, ptr.To(int32(2))))
-	builder.Assess("check if the executor deployment has replicas set to 2", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, 2))
+	builder.Assess("check if executor has replicas count set to 2", componentDynakube.WaitForDBExecutorReplicas(&testDynakube, testDatabaseID, hpaBaseReplicas))
+	builder.Assess("check if the executor deployment has replicas set to 2", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, *hpaBaseReplicas))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -145,23 +147,22 @@ func WithHPAEnforceReplicas(t *testing.T) features.Feature {
 	}
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, 3))
-	builder.Assess("check if executor still has replicas set to 2", componentDynakube.WaitForDBExecutorReplicas(&testDynakube, testDatabaseID, ptr.To(int32(2))))
-	builder.Assess("check if the executor deployment replica count 2 is enforced", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, 2))
+	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, *hpaScaleReplicas))
+	builder.Assess("check if executor still has replicas set to 2", componentDynakube.WaitForDBExecutorReplicas(&testDynakube, testDatabaseID, hpaBaseReplicas))
+	builder.Assess("check if the executor deployment replica count 2 is enforced", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, *hpaBaseReplicas))
 
 	builder.Assess("remove enforced replicas", updateReplicas(&testDynakube, testDatabaseID, nil))
 	builder.Assess("check if executor has no replicas set", componentDynakube.WaitForDBExecutorReplicas(&testDynakube, testDatabaseID, nil))
-	builder.Assess("check if the executor deployment was autoscaled to 3", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, 3))
+	builder.Assess("check if the executor deployment was autoscaled to 3", k8sdeployment.WaitForSpecReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, *hpaScaleReplicas))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.Teardown(k8shpa.Delete(testHPA))
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
-
 }
 
-func updateReplicas(dk *dynakube.DynaKube, dbId string, replicas *int32) features.Func {
+func updateReplicas(dk *dynakube.DynaKube, dbID string, replicas *int32) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		err := envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, dk)
 		require.NoError(t, err)
@@ -169,8 +170,9 @@ func updateReplicas(dk *dynakube.DynaKube, dbId string, replicas *int32) feature
 		dbs := dk.Spec.Extensions.Databases
 
 		for i := range dbs {
-			if dbs[i].ID == dbId {
+			if dbs[i].ID == dbID {
 				dbs[i].Replicas = replicas
+
 				break
 			}
 		}

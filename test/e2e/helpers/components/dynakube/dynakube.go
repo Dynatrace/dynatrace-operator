@@ -152,7 +152,6 @@ func WaitForAGReplicas(dk *dynakube.DynaKube, replicas *int32) features.Func {
 			}
 
 			return *replicas == *agReplicas
-
 		}), wait.WithTimeout(5*time.Minute))
 
 		require.NoError(t, err)
@@ -161,7 +160,7 @@ func WaitForAGReplicas(dk *dynakube.DynaKube, replicas *int32) features.Func {
 	}
 }
 
-func WaitForDBExecutorReplicas(dk *dynakube.DynaKube, dbId string, replicas *int32) features.Func {
+func WaitForDBExecutorReplicas(dk *dynakube.DynaKube, dbID string, replicas *int32) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
@@ -175,7 +174,7 @@ func WaitForDBExecutorReplicas(dk *dynakube.DynaKube, dbId string, replicas *int
 			var dbReplicas *int32
 
 			for _, db := range currDK.Spec.Extensions.Databases {
-				if db.ID == dbId {
+				if db.ID == dbID {
 					dbReplicas = db.Replicas
 				}
 			}
@@ -189,7 +188,6 @@ func WaitForDBExecutorReplicas(dk *dynakube.DynaKube, dbId string, replicas *int
 			}
 
 			return *replicas == *dbReplicas
-
 		}), wait.WithTimeout(5*time.Minute))
 
 		require.NoError(t, err)
@@ -220,7 +218,6 @@ func WaitForOtelCollectorReplicas(dk *dynakube.DynaKube, replicas *int32) featur
 			}
 
 			return *replicas == *otelcReplicas
-
 		}), wait.WithTimeout(5*time.Minute))
 
 		require.NoError(t, err)

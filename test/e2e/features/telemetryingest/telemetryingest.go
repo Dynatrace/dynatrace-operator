@@ -45,6 +45,11 @@ const (
 	TelemetryIngestTLSKey = "custom-cas/tls-telemetry-ingest.key"
 )
 
+var (
+	hpaScaleReplicas = ptr.To(int32(3))
+	hpaBaseReplicas  = ptr.To(int32(2))
+)
+
 // Rollout of OTel collector when no ActiveGate is configured in the Dynakube
 func WithPublicActiveGate(t *testing.T) features.Feature {
 	builder := features.New("telemetryingest-with-public-ag-components-rollout")
@@ -249,14 +254,14 @@ func WithHPA(t *testing.T) features.Feature {
 				Name:       testDynakube.OtelCollectorStatefulsetName(),
 				APIVersion: "apps/v1",
 			},
-			MinReplicas: ptr.To(int32(3)),
-			MaxReplicas: int32(3),
+			MinReplicas: hpaScaleReplicas,
+			MaxReplicas: *hpaScaleReplicas,
 		},
 	}
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if otelc doesn't have any replica count set", componentDynakube.WaitForOtelCollectorReplicas(&testDynakube, nil))
-	builder.Assess("check if the otelc statefulset has replicas set to 3", k8sstatefulset.WaitForSpecReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, 3))
+	builder.Assess("check if the otelc statefulset has replicas set to 3", k8sstatefulset.WaitForSpecReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *hpaScaleReplicas))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.Teardown(k8shpa.Delete(testHPA))
@@ -281,8 +286,8 @@ func WithHPAEnforceReplicas(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("check if otelc has replicas count set to 2", componentDynakube.WaitForOtelCollectorReplicas(&testDynakube, ptr.To(int32(2))))
-	builder.Assess("check if the otelc statefulset has replicas set to 2", k8sstatefulset.WaitForSpecReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, 2))
+	builder.Assess("check if otelc has replicas count set to 2", componentDynakube.WaitForOtelCollectorReplicas(&testDynakube, hpaBaseReplicas))
+	builder.Assess("check if the otelc statefulset has replicas set to 2", k8sstatefulset.WaitForSpecReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *hpaBaseReplicas))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -301,13 +306,13 @@ func WithHPAEnforceReplicas(t *testing.T) features.Feature {
 	}
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, 3))
-	builder.Assess("check if otelc still has replicas set to 2", componentDynakube.WaitForOtelCollectorReplicas(&testDynakube, ptr.To(int32(2))))
-	builder.Assess("check if the otelc statefulset replica count 2 is enforced", k8sstatefulset.WaitForSpecReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, 2))
+	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, *hpaScaleReplicas))
+	builder.Assess("check if otelc still has replicas set to 2", componentDynakube.WaitForOtelCollectorReplicas(&testDynakube, hpaBaseReplicas))
+	builder.Assess("check if the otelc statefulset replica count 2 is enforced", k8sstatefulset.WaitForSpecReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *hpaBaseReplicas))
 
 	builder.Assess("remove enforced replicas", updateReplicas(&testDynakube, nil))
 	builder.Assess("check if otelc has no replicas set", componentDynakube.WaitForOtelCollectorReplicas(&testDynakube, nil))
-	builder.Assess("check if the otelc statefulset was autoscaled to 3", k8sstatefulset.WaitForSpecReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, 3))
+	builder.Assess("check if the otelc statefulset was autoscaled to 3", k8sstatefulset.WaitForSpecReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *hpaScaleReplicas))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.Teardown(k8shpa.Delete(testHPA))

@@ -52,6 +52,11 @@ var (
 	}
 )
 
+var (
+	hpaScaleReplicas = ptr.To(int32(3))
+	hpaBaseReplicas  = ptr.To(int32(2))
+)
+
 // # With proxy
 //
 // Prerequisites: istio service mesh
@@ -110,20 +115,19 @@ func WithHPA(t *testing.T) features.Feature {
 				Name:       activeGateSSName,
 				APIVersion: "apps/v1",
 			},
-			MinReplicas: ptr.To(int32(3)),
-			MaxReplicas: int32(3),
+			MinReplicas: hpaScaleReplicas,
+			MaxReplicas: *hpaScaleReplicas,
 		},
 	}
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if AG doesn't have any replica count set", dynakubeComponents.WaitForAGReplicas(&testDynakube, nil))
-	builder.Assess("check if the AG statefulset has replicas autoscaled to 3", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, 3))
+	builder.Assess("check if the AG statefulset has replicas autoscaled to 3", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, *hpaScaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
-
 }
 
 func WithHPAEnforceReplicas(t *testing.T) features.Feature {
@@ -132,14 +136,14 @@ func WithHPAEnforceReplicas(t *testing.T) features.Feature {
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithActiveGateReplicas(ptr.To(int32(2))))
+		dynakubeComponents.WithActiveGateReplicas(hpaBaseReplicas))
 
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	activeGateSSName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
 
-	builder.Assess("check if AG has replica count set to 2", dynakubeComponents.WaitForAGReplicas(&testDynakube, ptr.To(int32(2))))
-	builder.Assess("check if the AG statefulset has replicas set to 2", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, 2))
+	builder.Assess("check if AG has replica count set to 2", dynakubeComponents.WaitForAGReplicas(&testDynakube, hpaBaseReplicas))
+	builder.Assess("check if the AG statefulset has replicas set to 2", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, *hpaBaseReplicas))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -152,19 +156,19 @@ func WithHPAEnforceReplicas(t *testing.T) features.Feature {
 				Name:       activeGateSSName,
 				APIVersion: "apps/v1",
 			},
-			MinReplicas: ptr.To(int32(3)),
-			MaxReplicas: int32(3),
+			MinReplicas: hpaScaleReplicas,
+			MaxReplicas: *hpaScaleReplicas,
 		},
 	}
 
 	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, 3))
-	builder.Assess("check if AG still has replicas set to 2", dynakubeComponents.WaitForAGReplicas(&testDynakube, ptr.To(int32(2))))
-	builder.Assess("check if the AG statefulset replica count is enforced to 2", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, 2))
+	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, *hpaScaleReplicas))
+	builder.Assess("check if AG still has replicas set to 2", dynakubeComponents.WaitForAGReplicas(&testDynakube, hpaBaseReplicas))
+	builder.Assess("check if the AG statefulset replica count is enforced to 2", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, *hpaBaseReplicas))
 
 	builder.Assess("remove enforced replicas", updateReplicas(&testDynakube, nil))
 	builder.Assess("check if AG has no replicas set", dynakubeComponents.WaitForAGReplicas(&testDynakube, nil))
-	builder.Assess("check if the AG statefulset was autoscaled to 3", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, 3))
+	builder.Assess("check if the AG statefulset was autoscaled to 3", k8sstatefulset.WaitForSpecReplicas(activeGateSSName, testDynakube.Namespace, *hpaScaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
