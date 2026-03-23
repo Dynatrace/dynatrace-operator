@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -25,6 +26,8 @@ import (
 const DeploymentAvailableTimeout = 5 * time.Minute
 
 const DeploymentReplicaFailureTimeout = 5 * time.Minute
+
+const DeploymentSpecReplicasTimeout = 5 * time.Minute
 
 type PodConsumer func(pod corev1.Pod)
 
@@ -83,6 +86,32 @@ func WaitFor(name string, namespace string) env.Func {
 
 		return ctx, WaitUntilReady(clientResources, deployment)
 	}
+}
+
+func WaitForSpecReplicas(name, namespace string, replicas int32) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		deployment := &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+		err := wait.For(conditions.New(resource).ResourceScaled(deployment, func(object k8s.Object) int32 {
+			deploy, ok := object.(*appsv1.Deployment)
+
+			if !ok {
+				return 0
+			}
+
+			return *deploy.Spec.Replicas
+		}, replicas), wait.WithTimeout(DeploymentSpecReplicasTimeout))
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+
 }
 
 func WaitUntilReady(resource *resources.Resources, deployment *appsv1.Deployment) error {

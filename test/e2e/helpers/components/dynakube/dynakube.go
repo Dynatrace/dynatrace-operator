@@ -130,6 +130,105 @@ func WaitForPhasePreviousVersion(dk prevDynakube.DynaKube, phase status.Deployme
 	}
 }
 
+func WaitForAGReplicas(dk *dynakube.DynaKube, replicas *int32) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		err := wait.For(conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
+			currDK, isCurrDK := object.(*dynakube.DynaKube)
+
+			if !isCurrDK {
+				return false
+			}
+
+			agReplicas := currDK.Spec.ActiveGate.Replicas
+
+			if replicas == nil {
+				return agReplicas == nil
+			}
+
+			if agReplicas == nil {
+				return false
+			}
+
+			return *replicas == *agReplicas
+
+		}), wait.WithTimeout(5*time.Minute))
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func WaitForDBExecutorReplicas(dk *dynakube.DynaKube, dbId string, replicas *int32) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		err := wait.For(conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
+			currDK, isCurrDK := object.(*dynakube.DynaKube)
+
+			if !isCurrDK {
+				return false
+			}
+
+			var dbReplicas *int32
+
+			for _, db := range currDK.Spec.Extensions.Databases {
+				if db.ID == dbId {
+					dbReplicas = db.Replicas
+				}
+			}
+
+			if replicas == nil {
+				return dbReplicas == nil
+			}
+
+			if dbReplicas == nil {
+				return false
+			}
+
+			return *replicas == *dbReplicas
+
+		}), wait.WithTimeout(5*time.Minute))
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func WaitForOtelCollectorReplicas(dk *dynakube.DynaKube, replicas *int32) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		err := wait.For(conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
+			currDK, isCurrDK := object.(*dynakube.DynaKube)
+
+			if !isCurrDK {
+				return false
+			}
+
+			otelcReplicas := currDK.Spec.Templates.OpenTelemetryCollector.Replicas
+
+			if replicas == nil {
+				return otelcReplicas == nil
+			}
+
+			if otelcReplicas == nil {
+				return false
+			}
+
+			return *replicas == *otelcReplicas
+
+		}), wait.WithTimeout(5*time.Minute))
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
 func create(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dk))

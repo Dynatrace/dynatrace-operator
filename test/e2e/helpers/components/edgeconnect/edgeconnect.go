@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -105,6 +106,38 @@ func WaitForPhase(edgeConnect edgeconnect.EdgeConnect, phase status.DeploymentPh
 
 		return ctx
 	}
+}
+
+func WaitForReplicas(edgeConnect edgeconnect.EdgeConnect, replicas *int32) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		err := wait.For(conditions.New(resources).ResourceMatch(&edgeConnect, func(object k8s.Object) bool {
+			ec, isEdgeConnect := object.(*edgeconnect.EdgeConnect)
+
+			if !isEdgeConnect {
+				return false
+			}
+
+			if replicas == nil {
+				return ec.Spec.Replicas == nil
+			}
+
+			if ec.Spec.Replicas == nil {
+				return false
+			}
+
+			return *replicas == *ec.Spec.Replicas
+		}), wait.WithTimeout(5*time.Minute))
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func WaitForDeploymentReplicas(edgeConnect edgeconnect.EdgeConnect, replicas int32) features.Func {
+	return k8sdeployment.WaitForSpecReplicas(edgeConnect.Name, edgeConnect.Namespace, replicas)
 }
 
 // CreateTenantConfig for Normal mode only, preserves the ID and OAuth Secret of EdgeConnect configuration on the tenant

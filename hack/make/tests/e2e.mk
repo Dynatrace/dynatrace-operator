@@ -51,6 +51,10 @@ test/e2e/activegate:
 test/e2e/activegate/proxy:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/istio -run "activegate" $(SKIPCLEANUP)
 
+## Runs ActiveGate HPA e2e test only
+test/e2e/activegate/hpa:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "activegate_hpa" $(SKIPCLEANUP)
+
 ## Runs ClassicFullStack e2e test only
 test/e2e/classic:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "classic"  $(SKIPCLEANUP)
@@ -123,6 +127,10 @@ test/e2e/extensions/upgrade:
 test/e2e/extensions/dbexecutor:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "extensions_db_executor" $(SKIPCLEANUP)
 
+## Runs DatabaseExecutor related HPA e2e tests
+test/e2e/extensions/dbexecutor/hpa:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "extensions_db_executor_hpa" $(SKIPCLEANUP)
+
 ## Runs Application Monitoring metadata-enrichment e2e test only
 test/e2e/applicationmonitoring/metadataenrichment:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "metadata_enrichment" $(SKIPCLEANUP)
@@ -171,6 +179,10 @@ test/e2e/edgeconnect/normal:
 test/e2e/edgeconnect/proxy:
 	$(GOTESTCMD) -timeout 20m  ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_proxy" $(SKIPCLEANUP)
 
+## Runs Edgeconnect e2e HPA test cases
+test/e2e/edgeconnect/hpa:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_hpa" $(SKIPCLEANUP)
+
 ## Runs e2e tests on gke-autopilot
 test/e2e/gke-autopilot:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "app_metadata_enrichment|app_read_only_csi_volume|app_read_only_csi_volume|app_without_csi|activegate" $(SKIPCLEANUP)
@@ -200,7 +212,7 @@ test/e2e/cloudnative/withoutcsi:
 
 ## Runs TelemetryIngest related e2e tests
 test/e2e/telemetryingest:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_.*" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_hpa" $(SKIPCLEANUP)
 
 test/e2e/telemetryingest/public-active-gate:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_w_public_ag" $(SKIPCLEANUP)
@@ -213,6 +225,10 @@ test/e2e/telemetryingest/otel-collector-endpoint-tls:
 
 test/e2e/telemetryingest/otel-collector-config-udpate:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_configuration_update" $(SKIPCLEANUP)
+
+## Runs TelemetryIngest related HPA e2e tests
+test/e2e/telemetryingest/hpa:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_hpa" $(SKIPCLEANUP)
 
 test/e2e/kspm:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm" $(SKIPCLEANUP)

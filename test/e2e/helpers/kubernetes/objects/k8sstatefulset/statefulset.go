@@ -60,3 +60,28 @@ func WaitFor(name string, namespace string) features.Func {
 		return ctx
 	}
 }
+
+func WaitForSpecReplicas(name, namespace string, replicas int32) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		ss := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+		err := wait.For(conditions.New(resource).ResourceScaled(ss, func(object k8s.Object) int32 {
+			newSS, isNewSS := object.(*appsv1.StatefulSet)
+
+			if !isNewSS {
+				return 0
+			}
+
+			return *newSS.Spec.Replicas
+		}, replicas), wait.WithTimeout(5*time.Minute))
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
