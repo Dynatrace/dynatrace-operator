@@ -127,7 +127,7 @@ test/e2e/extensions/upgrade:
 test/e2e/extensions/dbexecutor:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "extensions_db_executor" $(SKIPCLEANUP)
 
-## Runs DatabaseExecutor related HPA e2e tests
+## Runs DatabaseExecutor HPA e2e test only
 test/e2e/extensions/dbexecutor/hpa:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "extensions_db_executor_hpa" $(SKIPCLEANUP)
 
@@ -179,7 +179,7 @@ test/e2e/edgeconnect/normal:
 test/e2e/edgeconnect/proxy:
 	$(GOTESTCMD) -timeout 20m  ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_proxy" $(SKIPCLEANUP)
 
-## Runs Edgeconnect e2e HPA test cases
+## Runs EdgeConnect HPA e2e test only
 test/e2e/edgeconnect/hpa:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_hpa" $(SKIPCLEANUP)
 
@@ -226,7 +226,7 @@ test/e2e/telemetryingest/otel-collector-endpoint-tls:
 test/e2e/telemetryingest/otel-collector-config-udpate:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_configuration_update" $(SKIPCLEANUP)
 
-## Runs TelemetryIngest related HPA e2e tests
+## Runs TelemetryIngest HPA e2e test only
 test/e2e/telemetryingest/hpa:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_hpa" $(SKIPCLEANUP)
 
