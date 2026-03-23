@@ -17,16 +17,21 @@ type APIClient interface {
 	GetLatest(ctx context.Context, os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error
 	GetVersions(ctx context.Context, os, installerType, flavor string) ([]string, error)
 	GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error
+
+	GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error)
 }
 
 type Client struct {
-	apiClient   core.APIClient
+	apiClient core.APIClient
+
+	hostGroup   string
 	networkZone string
 }
 
-func NewClient(apiClient core.APIClient, networkZone string) *Client {
+func NewClient(apiClient core.APIClient, hostGroup, networkZone string) *Client {
 	return &Client{
 		apiClient:   apiClient,
+		hostGroup:   hostGroup,
 		networkZone: networkZone,
 	}
 }

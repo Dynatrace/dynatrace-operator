@@ -35,7 +35,7 @@ func TestGetLatest(t *testing.T) {
 		client := coremock.NewAPIClient(t)
 		client.EXPECT().GET(t.Context(), getLatestURL(installer.OsUnix, installer.TypePaaS)).Return(req).Once()
 
-		return NewClient(client, ""), file
+		return NewClient(client, "", ""), file
 	}
 
 	t.Run("file download successful", func(t *testing.T) {
@@ -66,7 +66,7 @@ func TestGet(t *testing.T) {
 		client := coremock.NewAPIClient(t)
 		client.EXPECT().GET(t.Context(), getURL(installer.OsUnix, installer.TypePaaS, "")).Return(req).Once()
 
-		return NewClient(client, "")
+		return NewClient(client, "", "")
 	}
 
 	t.Run("handle response correctly", func(t *testing.T) {
@@ -104,7 +104,7 @@ func TestGetVersions(t *testing.T) {
 		client := coremock.NewAPIClient(t)
 		client.EXPECT().GET(t.Context(), getVersionsURL(installer.OsUnix, installer.TypePaaS)).Return(req).Once()
 
-		return NewClient(client, "")
+		return NewClient(client, "", "")
 	}
 
 	t.Run("handle response correctly", func(t *testing.T) {

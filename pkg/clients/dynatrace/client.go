@@ -1,7 +1,6 @@
 package dynatrace
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
@@ -21,8 +20,6 @@ const (
 
 // Client is the interface for the Dynatrace REST API client.
 type Client interface {
-	GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error)
-
 	// AsV2 is a temporary adapter to gradually migrate to the v2 client.
 	AsV2() *ClientV2
 }

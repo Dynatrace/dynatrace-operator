@@ -124,17 +124,17 @@ func TestReconciler(t *testing.T) {
 		)
 		dtClient := dtclientmock.NewClient(t)
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
-		oneAgentClient.EXPECT().GetConnectionInfo(anyCtx).Return(expectedOneAgentConnectionInfo, nil).Once()
+		oneAgentClient.EXPECT().GetConnectionInfo(t.Context()).Return(expectedOneAgentConnectionInfo, nil).Once()
 		versionClient := versionclientmock.NewAPIClient(t)
-		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
-		dtClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		versionClient.EXPECT().GetLatestAgentVersion(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
+		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context(), mock.AnythingOfType("uint")).Return(&oneagentclient.ProcessModuleConfig{}, nil)
 		settingsClient := settingsmock.NewAPIClient(t)
-		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
+		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient,
 			Version:  versionClient,
-		}).Times(3) // constructor of connectionInfoReconciler and enrichmentRulesReconciler + method versionReconciler.ReconcileCodeModules
+		}).Times(4) // constructor of connectionInfoReconciler and enrichmentRulesReconciler + method versionReconciler.ReconcileCodeModules + bootstrapperconfig.NewSecretGenerator
 
 		rec := NewReconciler(clt, clt, dtClient, dk).(*Reconciler)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
@@ -232,7 +232,7 @@ func TestReconciler(t *testing.T) {
 
 		dtClient := dtclientmock.NewClient(t)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Twice()
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Times(3)
 
 		rec := NewReconciler(boomClient, boomClient, dtClient, dk).(*Reconciler)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
@@ -400,8 +400,10 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			tenantSecret,
 		)
 
+		oneAgentClient := oneagentclientmock.NewAPIClient(t)
+		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context(), mock.AnythingOfType("uint")).Return(&oneagentclient.ProcessModuleConfig{}, nil)
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oneAgentClient}).Once()
 
 		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
@@ -466,8 +468,10 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 			autoTLSSecret,
 		)
 
+		oneAgentClient := oneagentclientmock.NewAPIClient(t)
+		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&oneagentclient.ProcessModuleConfig{}, nil)
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oneAgentClient}).Twice()
 
 		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 

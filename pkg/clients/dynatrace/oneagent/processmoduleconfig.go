@@ -1,21 +1,21 @@
-package dynatrace
+package oneagent
 
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/pkg/errors"
 )
 
 const (
-	generalSectionName = "general"
-	hostGroupParamName = "hostgroup"
+	generalSectionName      = "general"
+	hostGroupParamName      = "hostgroup"
+	processModuleConfigPath = "/v1/deployment/installer/agent/processmoduleconfig"
 )
 
 type ProcessModuleConfig struct {
@@ -157,67 +157,42 @@ func (pmc ProcessModuleConfig) IsEmpty() bool {
 	return len(pmc.Properties) == 0
 }
 
-func (dtc *dynatraceClient) GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error) {
-	req, err := dtc.createProcessModuleConfigRequest(ctx, prevRevision)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error) {
+	var resp ProcessModuleConfig
 
-	resp, err := dtc.httpClient.Do(req)
+	err := c.apiClient.GET(ctx, processModuleConfigPath).
+		WithPaasToken().
+		WithQueryParams(map[string]string{
+			hostGroupParamName: c.hostGroup,
+			"revision":         strconv.FormatUint(uint64(prevRevision), 10),
+			"sections":         "general,agentType",
+		}).
+		Execute(&resp)
 
-	if dtc.checkProcessModuleConfigRequestStatus(resp) {
+	if checkProcessModuleConfigRequestStatus(err) {
 		return &ProcessModuleConfig{}, nil
 	}
 
 	if err != nil {
-		return nil, errors.WithMessage(err, "error while requesting process module config")
+		return &ProcessModuleConfig{}, errors.WithMessage(err, "error while requesting process module config")
 	}
 
-	defer utils.CloseBodyAfterRequest(resp)
-
-	responseData, err := dtc.getServerResponseData(resp)
-	if err != nil {
-		return nil, err
+	if len(resp.Properties) == 0 {
+		return &ProcessModuleConfig{}, errors.New("no properties available")
 	}
 
-	return NewProcessModuleConfig(responseData)
-}
-
-func (dtc *dynatraceClient) createProcessModuleConfigRequest(ctx context.Context, prevRevision uint) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, dtc.getProcessModuleConfigURL(), nil)
-	if err != nil {
-		return nil, errors.WithMessage(err, "error initializing http request")
-	}
-
-	query := req.URL.Query()
-	query.Add("revision", strconv.FormatUint(uint64(prevRevision), 10))
-
-	if dtc.hostGroup != "" {
-		query.Add(hostGroupParamName, dtc.hostGroup)
-	}
-
-	req.URL.RawQuery = query.Encode()
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", APITokenHeader+dtc.paasToken)
-
-	return req, nil
+	return &resp, err
 }
 
 // The endpoint used here is new therefore some tenants may not have it so we need to
 // handle it gracefully, by checking the status code of the request.
 // we also handle when there were no changes
-func (dtc *dynatraceClient) checkProcessModuleConfigRequestStatus(resp *http.Response) bool {
-	if resp == nil {
-		log.Info("problems checking response for processmoduleconfig endpoint")
-
+func checkProcessModuleConfigRequestStatus(err error) bool {
+	if core.IsNotModified(err) {
 		return true
 	}
 
-	if resp.StatusCode == http.StatusNotModified {
-		return true
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
+	if core.IsNotFound(err) {
 		log.Info("endpoint for ruxitagentproc.conf is not available on the cluster.")
 
 		return true
