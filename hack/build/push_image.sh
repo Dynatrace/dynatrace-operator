@@ -13,7 +13,7 @@ tag=${2}
 
 out_image="${image}:${tag}"
 
-if ! command -v docker 2>/dev/null; then
+if command -v podman &>/dev/null; then
   CONTAINER_CMD=podman
 else
   CONTAINER_CMD=docker

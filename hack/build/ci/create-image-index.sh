@@ -14,7 +14,7 @@ IFS=',' read -ra supported_architectures <<< "$arch"
 images=()
 echo "Creating image-index manifest for ${supported_architectures[*]}"
 
-if ! command -v docker 2>/dev/null; then
+if command -v podman &>/dev/null; then
   CONTAINER_CMD=podman
 else
   CONTAINER_CMD=docker

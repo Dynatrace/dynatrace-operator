@@ -24,7 +24,7 @@ out_image="${image}:${tag}"
 # directory required by docker copy command
 mkdir -p third_party_licenses
 
-if ! command -v docker 2>/dev/null; then
+if command -v podman &>/dev/null; then
   CONTAINER_CMD=podman
 else
   CONTAINER_CMD=docker
