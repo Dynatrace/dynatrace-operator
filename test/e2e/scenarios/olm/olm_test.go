@@ -15,6 +15,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
+const zeroVersion = "0.0.0"
+
 var (
 	testEnv env.Environment
 	cfg     *envconf.Config
@@ -25,11 +27,11 @@ func TestMain(m *testing.M) {
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		helpers.SetScheme,
-		operator.InstallLocal(false),
+		operator.InstallLocalBundle(zeroVersion),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
-		testEnv.Finish(operator.Uninstall(false))
+		testEnv.Finish(operator.UninstallBundle())
 	}
 
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {

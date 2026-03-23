@@ -68,7 +68,11 @@ bundle/push:
 
 .PHONY: bundle/install
 ## Deploy the bundle
-bundle/install: prerequisites/operator-sdk bundle/build bundle/push
+bundle/install: prerequisites/operator-sdk bundle/build bundle/push bundle/run
+
+.PHONE: bundle/run
+## Run the bundle
+bundle/run:
 	@kubectl get catalogsources.operators.coreos.com,subscriptions.operators.coreos.com &>/dev/null || { echo "required OLM resources not found" >&2; exit 2; }
 	$(OPERATOR_SDK) run bundle $(BUNDLE_IMG) --namespace dynatrace --timeout 5m
 

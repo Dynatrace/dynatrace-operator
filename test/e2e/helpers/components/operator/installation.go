@@ -57,8 +57,9 @@ func InstallLocal(withCSI bool) env.Func {
 func InstallLocalBundle(version string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		rootDir := project.RootDir()
-		// bundle/install
-		err := execMakeCommand(rootDir, "bundle/install", fmt.Sprintf("VERSION=%s", version))
+		// bundle/run
+		// TODO: remove tag
+		err := execMakeCommand(rootDir, "bundle/run", fmt.Sprintf("VERSION=%s", version), "TAG=snapshot")
 		if err != nil {
 			return ctx, err
 		}
@@ -66,6 +67,14 @@ func InstallLocalBundle(version string) env.Func {
 		withCSI := false
 
 		return VerifyInstall(ctx, envConfig, withCSI)
+	}
+}
+
+func UninstallBundle() env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		rootDir := project.RootDir()
+
+		return ctx, execMakeCommand(rootDir, "bundle/cleanup")
 	}
 }
 
