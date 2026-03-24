@@ -45,7 +45,7 @@ func Install(releaseTag string, withCSI bool) env.Func {
 func InstallLocal(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		if os.Getenv("OLM") == "true" {
-			err := installViaOLMLocalBundle("0.0.0")
+			err := installViaOLMLocalBundle()
 			if err != nil {
 				return ctx, err
 			}
@@ -60,8 +60,12 @@ func InstallLocal(withCSI bool) env.Func {
 	}
 }
 
-func installViaOLMLocalBundle(version string) error {
-	return execMakeCommand(project.RootDir(), "bundle/run", fmt.Sprintf("VERSION=%s", version))
+func installViaOLMLocalBundle() error {
+	err := execMakeCommand(project.RootDir(), "bundle/show-image-ref")
+	if err != nil {
+		return err
+	}
+	return execMakeCommand(project.RootDir(), "bundle/run")
 }
 
 func Uninstall(withCSI bool) env.Func {
