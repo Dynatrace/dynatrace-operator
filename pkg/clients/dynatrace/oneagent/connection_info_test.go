@@ -20,29 +20,29 @@ const (
 
 func Test_GetConnectionInfo(t *testing.T) {
 	ctx := t.Context()
-	oneAgentJSONResponse := &connectionInfoJSONResponse{
-		TenantUUID:                      testTenantUUID,
-		TenantToken:                     testTenantToken,
-		FormattedCommunicationEndpoints: testCommunicationEndpoint,
-	}
-
-	expectedOneAgentConnectionInfo := ConnectionInfo{
+	response := &ConnectionInfo{
 		TenantUUID:  testTenantUUID,
 		TenantToken: testTenantToken,
 		Endpoints:   testCommunicationEndpoint,
 	}
 
-	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *connectionInfoJSONResponse, err error) *Client {
+	expectedResponse := ConnectionInfo{
+		TenantUUID:  testTenantUUID,
+		TenantToken: testTenantToken,
+		Endpoints:   testCommunicationEndpoint,
+	}
+
+	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *ConnectionInfo, err error) *Client {
 		req := coremock.NewAPIRequest(t)
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(params).Return(req).Once()
 		req.EXPECT().
-			Execute(&connectionInfoJSONResponse{}).
+			Execute(&ConnectionInfo{}).
 			Run(func(model any) {
-				resp := model.(*connectionInfoJSONResponse)
+				resp := model.(*ConnectionInfo)
 				resp.TenantUUID = response.TenantUUID
 				resp.TenantToken = response.TenantToken
-				resp.FormattedCommunicationEndpoints = response.FormattedCommunicationEndpoints
+				resp.Endpoints = response.Endpoints
 			}).
 			Return(err).Once()
 		client := coremock.NewAPIClient(t)
@@ -52,12 +52,12 @@ func Test_GetConnectionInfo(t *testing.T) {
 	}
 
 	t.Run("no network zone", func(t *testing.T) {
-		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponse, nil)
+		client := setupMockedClient(t, map[string]string{}, "", response, nil)
 		connectionInfo, err := client.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
-		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
+		assert.Equal(t, expectedResponse, connectionInfo)
 	})
 
 	t.Run("with network zone", func(t *testing.T) {
@@ -65,29 +65,29 @@ func Test_GetConnectionInfo(t *testing.T) {
 			"networkZone":         testNetworkZone,
 			"defaultZoneFallback": "true",
 		}
-		client := setupMockedClient(t, params, testNetworkZone, oneAgentJSONResponse, nil)
+		client := setupMockedClient(t, params, testNetworkZone, response, nil)
 		connectionInfo, err := client.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
-		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
+		assert.Equal(t, expectedResponse, connectionInfo)
 	})
 
 	t.Run("no communication endpoints", func(t *testing.T) {
-		oneAgentJSONResponse.FormattedCommunicationEndpoints = ""
-		expectedOneAgentConnectionInfo.Endpoints = ""
+		response.Endpoints = ""
+		expectedResponse.Endpoints = ""
 
-		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponse, nil)
+		client := setupMockedClient(t, map[string]string{}, "", response, nil)
 		connectionInfo, err := client.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
-		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
+		assert.Equal(t, expectedResponse, connectionInfo)
 	})
 
 	t.Run("bad request error", func(t *testing.T) {
 		expectErr := &core.HTTPError{StatusCode: 400, Message: "bad request"}
-		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponse, expectErr)
+		client := setupMockedClient(t, map[string]string{}, "", response, expectErr)
 
 		_, err := client.GetConnectionInfo(ctx)
 		assert.NoError(t, err)
@@ -95,7 +95,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 
 	t.Run("server error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponse, expectErr)
+		client := setupMockedClient(t, map[string]string{}, "", response, expectErr)
 
 		_, err := client.GetConnectionInfo(ctx)
 		assert.ErrorIs(t, err, expectErr)
