@@ -105,7 +105,7 @@ func TestBuildJob(t *testing.T) {
 		assert.Empty(t, job.Spec.Selector) // the Job objects handles this by default, our generated MatchLabels wound't even work
 
 		assert.NotEmpty(t, job.Spec.Template.Spec.Tolerations)
-		assert.Equal(t, nodeName, job.Spec.Template.Spec.NodeName)
+		assert.Equal(t, createStrictNodeSelector(nodeName), job.Spec.Template.Spec.NodeSelector)
 		assert.False(t, *job.Spec.Template.Spec.AutomountServiceAccountToken)
 		assert.Equal(t, corev1.RestartPolicyOnFailure, job.Spec.Template.Spec.RestartPolicy)
 
