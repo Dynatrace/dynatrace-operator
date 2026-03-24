@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -89,8 +89,8 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	return marshaled, nil
 }
 
-func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKube) (*dtclient.ProcessModuleConfig, error) {
-	var pmConfig *dtclient.ProcessModuleConfig
+func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKube) (*oneagentclient.ProcessModuleConfig, error) {
+	var pmConfig *oneagentclient.ProcessModuleConfig
 
 	if !k8sconditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
 		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
@@ -111,7 +111,7 @@ func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKub
 
 			return nil, err
 		} else if err == nil && source.Data[pmc.InputFileName] != nil {
-			pmConfig, err = dtclient.NewProcessModuleConfig(source.Data[pmc.InputFileName])
+			pmConfig, err = oneagentclient.NewProcessModuleConfig(source.Data[pmc.InputFileName])
 			if err != nil {
 				log.Error(err, "could not unmarshal process module config from source secret, will recreate")
 			}
