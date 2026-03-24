@@ -229,6 +229,10 @@ jobs:
           echo "OCP_FIPS_STATUS=$OCP_FIPS_STATUS" >> $GITHUB_ENV
           echo "OCP_FIPS_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_FIPS_JOB_ID}" >> $GITHUB_ENV
 
+          echo "OCP_OLM_STATUS=$OCP_OLM_STATUS" >> $GITHUB_ENV
+          echo "OCP_OLM_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_JOB_ID}" >> $GITHUB_ENV
+
+
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
