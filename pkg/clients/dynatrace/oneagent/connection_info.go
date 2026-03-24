@@ -12,13 +12,19 @@ const (
 )
 
 type ConnectionInfo struct {
-	TenantUUID  string `json:"tenantUUID"`
-	TenantToken string `json:"tenantToken"`
-	Endpoints   string `json:"formattedCommunicationEndpoints"`
+	TenantUUID  string
+	TenantToken string
+	Endpoints   string
+}
+
+type connectionInfoJSONResponse struct {
+	TenantUUID                      string `json:"tenantUUID"`
+	TenantToken                     string `json:"tenantToken"`
+	FormattedCommunicationEndpoints string `json:"formattedCommunicationEndpoints"`
 }
 
 func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
-	var resp ConnectionInfo
+	var resp connectionInfoJSONResponse
 
 	params := map[string]string{}
 	if c.networkZone != "" {
@@ -41,5 +47,11 @@ func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) 
 		return ConnectionInfo{}, errors.WithStack(err)
 	}
 
-	return resp, nil
+	connectionInfo := ConnectionInfo{
+		TenantUUID:  resp.TenantUUID,
+		TenantToken: resp.TenantToken,
+		Endpoints:   resp.FormattedCommunicationEndpoints,
+	}
+
+	return connectionInfo, nil
 }
