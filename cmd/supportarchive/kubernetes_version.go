@@ -31,6 +31,7 @@ func (kvc kubernetesVersionCollector) Do() error {
 	serverVersion, err := kvc.discoveryClient.ServerVersion()
 	if err != nil {
 		logErrorf(kvc.log, err, "Failed to retrieve Kubernetes server version")
+
 		return err
 	}
 
