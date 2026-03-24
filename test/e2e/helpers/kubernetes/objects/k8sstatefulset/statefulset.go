@@ -61,7 +61,7 @@ func WaitFor(name string, namespace string) features.Func {
 	}
 }
 
-func WaitForSpecReplicas(name, namespace string, replicas int32) features.Func {
+func WaitForReplicas(name, namespace string, replicas int32) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		ss := &appsv1.StatefulSet{

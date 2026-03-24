@@ -19,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sconfigmap"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8shpa"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
@@ -27,9 +26,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -38,11 +34,6 @@ import (
 )
 
 const caConfigMapName = "proxy-ca"
-
-var (
-	hpaScaleReplicas = ptr.To(int32(3))
-	hpaBaseReplicas  = ptr.To(int32(2))
-)
 
 func NormalModeFeature(t *testing.T) features.Feature {
 	builder := features.New("edgeconnect-install")
@@ -288,238 +279,6 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func WithHPARegular(t *testing.T) features.Feature {
-	builder := features.New("edgeconnect-regualar-with-hpa-regular")
-
-	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
-
-	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
-
-	testECname := uuid.NewString()
-	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
-
-	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
-
-	testEdgeConnect := *ecComponents.New(
-		// this tenantConfigName should match with tenant edgeConnect tenantConfigName
-		ecComponents.WithName(testECname),
-		ecComponents.WithAPIServer(secretConfig.APIServer),
-		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
-		ecComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		ecComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUID)),
-	)
-
-	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
-
-	ecComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
-
-	builder.Assess("check if EC doesn't have any replica count set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment has replicas set to 1", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 1))
-
-	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-autoscaler",
-			Namespace: testEdgeConnect.Namespace,
-		},
-		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
-				Kind:       "Deployment",
-				Name:       testECname,
-				APIVersion: "apps/v1",
-			},
-			MinReplicas: hpaScaleReplicas,
-			MaxReplicas: *hpaScaleReplicas,
-		},
-	}
-
-	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if EC doesn't have any replica count set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment has replicas autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaScaleReplicas))
-
-	builder.Teardown(k8shpa.Delete(testHPA))
-	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
-	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
-
-	return builder.Feature()
-}
-
-func WithHPARegularEnforceReplicas(t *testing.T) features.Feature {
-	builder := features.New("edgeconnect-regular-with-hpa-regular-enforce-replicas")
-
-	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
-
-	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
-
-	testECname := uuid.NewString()
-	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
-
-	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
-
-	testEdgeConnect := *ecComponents.New(
-		// this tenantConfigName should match with tenant edgeConnect tenantConfigName
-		ecComponents.WithName(testECname),
-		ecComponents.WithAPIServer(secretConfig.APIServer),
-		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
-		ecComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		ecComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUID)),
-		ecComponents.WithReplicas(hpaBaseReplicas),
-	)
-
-	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
-
-	ecComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
-
-	builder.Assess("check if EC has replica count set to 2", ecComponents.WaitForReplicas(testEdgeConnect, hpaBaseReplicas))
-	builder.Assess("check if the EC deployment has replicas set to 2", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaBaseReplicas))
-
-	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-autoscaler",
-			Namespace: testEdgeConnect.Namespace,
-		},
-		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
-				Kind:       "Deployment",
-				Name:       testECname,
-				APIVersion: "apps/v1",
-			},
-			MinReplicas: ptr.To(int32(3)),
-			MaxReplicas: int32(3),
-		},
-	}
-
-	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, *hpaScaleReplicas))
-	builder.Assess("check if EC still has replicas set to 2", ecComponents.WaitForReplicas(testEdgeConnect, hpaBaseReplicas))
-	builder.Assess("check if the EC deployment replica count 2 is enforced", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaBaseReplicas))
-
-	builder.Assess("remove enforced replicas", updateReplicas(&testEdgeConnect, nil))
-	builder.Assess("check if EC has no replicas set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment was autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaScaleReplicas))
-
-	builder.Teardown(k8shpa.Delete(testHPA))
-	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
-	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
-
-	return builder.Feature()
-}
-
-func WithHPAProvisioner(t *testing.T) features.Feature {
-	builder := features.New("edgeconnect-with-hpa-provisioner")
-
-	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
-
-	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
-
-	testECname := uuid.NewString()
-	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
-
-	testEdgeConnect := *ecComponents.New(
-		ecComponents.WithName(testECname),
-		ecComponents.WithAPIServer(secretConfig.APIServer),
-		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
-		ecComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		ecComponents.WithOAuthResource(secretConfig.Resource),
-		ecComponents.WithProvisionerMode(true),
-		ecComponents.WithHostPattern(testHostPattern),
-	)
-
-	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
-
-	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
-
-	builder.Assess("check if EC doesn't have any replica count set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment has replicas set to 1", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, 1))
-
-	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-autoscaler",
-			Namespace: testEdgeConnect.Namespace,
-		},
-		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
-				Kind:       "Deployment",
-				Name:       testECname,
-				APIVersion: "apps/v1",
-			},
-			MinReplicas: ptr.To(int32(3)),
-			MaxReplicas: int32(3),
-		},
-	}
-
-	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if EC doesn't have any replica count set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment has replicas autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaScaleReplicas))
-
-	builder.Teardown(k8shpa.Delete(testHPA))
-	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
-	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
-
-	return builder.Feature()
-}
-
-func WithHPAProvisionerEnforceReplicas(t *testing.T) features.Feature {
-	builder := features.New("edgeconnect-with-hpa-provisioner-enforce-replicas")
-
-	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
-
-	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
-
-	testECname := uuid.NewString()
-	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
-
-	testEdgeConnect := *ecComponents.New(
-		ecComponents.WithName(testECname),
-		ecComponents.WithAPIServer(secretConfig.APIServer),
-		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
-		ecComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		ecComponents.WithOAuthResource(secretConfig.Resource),
-		ecComponents.WithProvisionerMode(true),
-		ecComponents.WithHostPattern(testHostPattern),
-		ecComponents.WithReplicas(ptr.To(int32(2))),
-	)
-
-	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
-
-	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
-
-	builder.Assess("check if EC has replica count set to 2", ecComponents.WaitForReplicas(testEdgeConnect, hpaBaseReplicas))
-	builder.Assess("check if the EC deployment has replicas set to 2", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaBaseReplicas))
-
-	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-autoscaler",
-			Namespace: testEdgeConnect.Namespace,
-		},
-		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
-				Kind:       "Deployment",
-				Name:       testECname,
-				APIVersion: "apps/v1",
-			},
-			MinReplicas: ptr.To(int32(3)),
-			MaxReplicas: int32(3),
-		},
-	}
-
-	builder.Assess("create hpa with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if HPA updated the replica count", k8shpa.WaitCurrentReplicas(testHPA, *hpaScaleReplicas))
-	builder.Assess("check if EC still has replicas set to 2", ecComponents.WaitForReplicas(testEdgeConnect, hpaBaseReplicas))
-	builder.Assess("check if the EC deployment replica count 2 is enforced by EC", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaBaseReplicas))
-
-	builder.Assess("remove enforced replicas", updateReplicas(&testEdgeConnect, nil))
-	builder.Assess("check if EC has no replicas set", ecComponents.WaitForReplicas(testEdgeConnect, nil))
-	builder.Assess("check if the EC deployment was autoscaled to 3", ecComponents.WaitForDeploymentReplicas(testEdgeConnect, *hpaScaleReplicas))
-
-	builder.Teardown(k8shpa.Delete(testHPA))
-	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
-	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
-
-	return builder.Feature()
-}
-
 // getTenantConfig for Provisioner and K8SAutomation modes, preserves the id of EdgeConnect configuration on the tenant
 func getTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *ecComponents.TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
@@ -631,20 +390,6 @@ func updateHostPatterns(testEdgeConnect *edgeconnect.EdgeConnect, hostPattern st
 			return isEC && ec.Status.DeploymentPhase == status.Running
 		}), wait.WithTimeout(timeout))
 
-		require.NoError(t, err)
-
-		return ctx
-	}
-}
-
-func updateReplicas(testEdgeConnect *edgeconnect.EdgeConnect, replicas *int32) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := envConfig.Client().Resources().Get(ctx, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect)
-		require.NoError(t, err)
-
-		testEdgeConnect.Spec.Replicas = replicas
-
-		err = envConfig.Client().Resources().Update(ctx, testEdgeConnect)
 		require.NoError(t, err)
 
 		return ctx

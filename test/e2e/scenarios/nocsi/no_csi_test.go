@@ -110,7 +110,7 @@ func TestNoCSI_edgeconnect_hpa_regular(t *testing.T) {
 }
 
 func TestNoCSI_edgeconnect_hpa_regular_enforce_replicas(t *testing.T) {
-	testEnv.Test(t, edgeconnect.WithHPARegularEnforceReplicas(t))
+	testEnv.Test(t, edgeconnect.WithHPAEnforceReplicasRegular(t))
 }
 
 func TestNoCSI_edgeconnect_hpa_provisioner(t *testing.T) {
@@ -118,7 +118,7 @@ func TestNoCSI_edgeconnect_hpa_provisioner(t *testing.T) {
 }
 
 func TestNoCSI_edgeconnect_hpa_provisioner_enforce_replicas(t *testing.T) {
-	testEnv.Test(t, edgeconnect.WithHPAProvisionerEnforceReplicas(t))
+	testEnv.Test(t, edgeconnect.WithHPAEnforceReplicasProvisioner(t))
 }
 
 func TestNoCSI_classic(t *testing.T) {

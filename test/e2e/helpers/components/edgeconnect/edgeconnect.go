@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -54,6 +53,17 @@ func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testE
 func Create(edgeConnect edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &edgeConnect))
+
+		return ctx
+	}
+}
+
+func Update(ec edgeconnect.EdgeConnect) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		var oldEC edgeconnect.EdgeConnect
+		require.NoError(t, environmentConfig.Client().Resources().Get(ctx, ec.Name, ec.Namespace, &oldEC))
+		ec.ResourceVersion = oldEC.ResourceVersion
+		require.NoError(t, environmentConfig.Client().Resources().Update(ctx, &ec))
 
 		return ctx
 	}
@@ -134,10 +144,6 @@ func WaitForReplicas(edgeConnect edgeconnect.EdgeConnect, replicas *int32) featu
 
 		return ctx
 	}
-}
-
-func WaitForDeploymentReplicas(edgeConnect edgeconnect.EdgeConnect, replicas int32) features.Func {
-	return k8sdeployment.WaitForSpecReplicas(edgeConnect.Name, edgeConnect.Namespace, replicas)
 }
 
 // CreateTenantConfig for Normal mode only, preserves the ID and OAuth Secret of EdgeConnect configuration on the tenant

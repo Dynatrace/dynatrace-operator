@@ -47,7 +47,7 @@ func Delete(hpa *autoscalingv1.HorizontalPodAutoscaler) features.Func {
 	}
 }
 
-func WaitCurrentReplicas(hpa *autoscalingv1.HorizontalPodAutoscaler, replicas int32) features.Func {
+func WaitForCurrentReplicas(hpa *autoscalingv1.HorizontalPodAutoscaler, replicas int32) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
