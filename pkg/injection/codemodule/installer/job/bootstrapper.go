@@ -91,6 +91,6 @@ func (inst *Installer) buildArgs(jobName, targetDir string) []string {
 // to ensure that the Job can only run on the same node as the CSI driver itself.
 func createStrictNodeSelector(nodeName string) map[string]string {
 	return map[string]string{
-		"kubernetes.io/hostname": nodeName,
+		corev1.LabelHostname: nodeName,
 	}
 }
