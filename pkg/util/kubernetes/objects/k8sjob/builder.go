@@ -42,9 +42,9 @@ func SetTolerations(tolerations []corev1.Toleration) builder.Option[*batchv1.Job
 	}
 }
 
-func SetNodeName(nodeName string) builder.Option[*batchv1.Job] {
+func SetNodeSelector(selector map[string]string) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
-		s.Spec.Template.Spec.NodeName = nodeName
+		s.Spec.Template.Spec.NodeSelector = selector
 	}
 }
 
