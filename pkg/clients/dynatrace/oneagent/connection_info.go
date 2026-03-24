@@ -15,6 +15,9 @@ type ConnectionInfo struct {
 	TenantUUID  string `json:"tenantUUID"`
 	TenantToken string `json:"tenantToken"`
 	Endpoints   string `json:"formattedCommunicationEndpoints"`
+	// NOTE: connectionInfoPath also returns
+	// communicationEndpoints []string (individual endpoints as a slice), but we only
+	// use the pre-formatted Endpoints string above. The slice is available if needed in the future.
 }
 
 func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
