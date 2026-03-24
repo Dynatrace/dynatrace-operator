@@ -100,7 +100,7 @@ jobs:
           if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
-  run-olm-in-ocp:
+  run-in-ocp-olm:
     name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
@@ -118,7 +118,7 @@ jobs:
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto
-          flc-environment: dto-ocp-olm-latest-flc
+          flc-environment: dto-ocp-olm-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
@@ -206,6 +206,9 @@ jobs:
           OCP_FIPS_CLUSTER_STATUS: ${{ needs.run-in-ocp-fips.outputs.cluster_status }}
           OCP_FIPS_JOB_ID: ${{ needs.run-in-ocp-fips.outputs.job_id }}
           OCP_FIPS_RESULT: ${{ needs.run-in-ocp-fips.result }}
+          OCP_OLM_CLUSTER_STATUS: ${{ needs.run-in-ocp-olm.outputs.cluster_status }}
+          OCP_OLM_JOB_ID: ${{ needs.run-in-ocp-olm.outputs.job_id }}
+          OCP_OLM_RESULT: ${{ needs.run-in-ocp-olm.result }}
         run: |
           get_emoji() {
             if [ "$1" = "skipped" ]; then
@@ -231,7 +234,6 @@ jobs:
 
           echo "OCP_OLM_STATUS=$OCP_OLM_STATUS" >> $GITHUB_ENV
           echo "OCP_OLM_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_JOB_ID}" >> $GITHUB_ENV
-
 
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
       - name: Notify failure in Slack
