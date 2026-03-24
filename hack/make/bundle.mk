@@ -26,15 +26,6 @@ endif
 # Default platform for bundles
 PLATFORM ?= openshift
 
-#Needed for the e2e pipeline to work
-BRANCH ?= $(shell git branch --show-current)
-TAG_BRANCH_SUFFIX ?= $(shell hack/build/ci/sanitize-branch-name.sh "${BRANCH}")
-ifneq ($(BRANCH), main)
-	TAG ?= snapshot-${TAG_BRANCH_SUFFIX}
-else
-	TAG ?= snapshot
-endif
-
 # Default bundle image with tag
 BUNDLE_IMG ?= $(REGISTRY)/$(REPOSITORY)/dynatrace-operator-bundle:$(VERSION)-$(TAG)
 
