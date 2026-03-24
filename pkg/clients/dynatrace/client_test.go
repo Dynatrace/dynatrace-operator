@@ -45,7 +45,7 @@ func TestProxy(t *testing.T) {
 	// in the subsequent subtests
 
 	t.Run("set correct proxy (both http and https)", func(t *testing.T) {
-		dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
+		dynatraceServer := createTestDynatraceServer(t, http.NotFoundHandler())
 		defer dynatraceServer.Close()
 
 		dtc := createTestDynatraceClient(*dynatraceServer)
@@ -59,7 +59,7 @@ func TestProxy(t *testing.T) {
 		checkProxyForURL(t, *transport, proxyRawURL, "https://working.url", false)
 	})
 	t.Run("set NO_PROXY", func(t *testing.T) {
-		dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
+		dynatraceServer := createTestDynatraceServer(t, http.NotFoundHandler())
 		defer dynatraceServer.Close()
 
 		dtc := createTestDynatraceClient(*dynatraceServer)
@@ -80,7 +80,7 @@ func TestProxy(t *testing.T) {
 		checkProxyForURL(t, *transport, proxyRawURL, "https://proxied.url", false)
 	})
 	t.Run("set incorrect proxy", func(t *testing.T) {
-		dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
+		dynatraceServer := createTestDynatraceServer(t, http.NotFoundHandler())
 		defer dynatraceServer.Close()
 
 		dtc := createTestDynatraceClient(*dynatraceServer)
@@ -93,7 +93,7 @@ func TestProxy(t *testing.T) {
 }
 
 func TestCerts(t *testing.T) {
-	dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
+	dynatraceServer := createTestDynatraceServer(t, http.NotFoundHandler())
 	defer dynatraceServer.Close()
 
 	dtc := createTestDynatraceClient(*dynatraceServer)

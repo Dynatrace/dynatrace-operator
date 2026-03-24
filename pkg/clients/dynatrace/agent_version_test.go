@@ -56,7 +56,7 @@ const (
 func TestGetLatestAgent(t *testing.T) {
 	ctx := context.Background()
 
-	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{t: t}, "")
+	dynatraceServer := createTestDynatraceServer(t, &ipHandler{t: t})
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
