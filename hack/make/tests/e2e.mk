@@ -50,10 +50,6 @@ test/e2e/no-csi:
 test/e2e/release:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release $(SKIPCLEANUP)
 
-## Run OLM related e2e tests only
-test/e2e/olm:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/olm $(SKIPCLEANUP)
-
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "activegate" $(SKIPCLEANUP)
