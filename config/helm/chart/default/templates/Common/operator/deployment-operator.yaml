@@ -38,6 +38,7 @@ spec:
     metadata:
       annotations:
         dynatrace.com/inject: "false"
+        kubectl.kubernetes.io/default-container: operator
       {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
         container.apparmor.security.beta.kubernetes.io/operator: runtime/default
       {{- end }}
@@ -56,7 +57,7 @@ spec:
       {{- if or $needsCertgen $needsMigrator }}
       initContainers:
       {{- if $needsCertgen }}
-        - name: certgen
+        - name: webhook-cert-generator
           image: {{ include "dynatrace-operator.image" . }}
           {{- with .Values.imageRef.pullPolicy }}
           imagePullPolicy: {{ . }}
@@ -78,7 +79,7 @@ spec:
             {{- toYaml .Values.operator.securityContext | nindent 12 }}
       {{- end }}
       {{- if $needsMigrator }}
-        - name: crd-storage-migration
+        - name: crd-storage-migrator
           image: {{ include "dynatrace-operator.image" . }}
           {{- with .Values.imageRef.pullPolicy }}
           imagePullPolicy: {{ . }}

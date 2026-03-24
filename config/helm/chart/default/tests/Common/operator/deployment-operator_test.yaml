@@ -73,7 +73,7 @@ tests:
           path: spec.template.spec
           value:
             initContainers:
-              - name: certgen
+              - name: webhook-cert-generator
                 image: image-name
                 args:
                   - certgen
@@ -102,7 +102,7 @@ tests:
                   capabilities:
                     drop:
                       - ALL
-              - name: crd-storage-migration
+              - name: crd-storage-migrator
                 image: image-name
                 args:
                   - crd-storage-migration
@@ -357,7 +357,7 @@ tests:
           path: spec.template.spec
           value:
             initContainers:
-              - name: crd-storage-migration
+              - name: crd-storage-migrator
                 image: image-name
                 args:
                   - crd-storage-migration
@@ -608,6 +608,7 @@ tests:
           path: spec.template.metadata.annotations
           value:
             dynatrace.com/inject: "false"
+            kubectl.kubernetes.io/default-container: operator
             testKey: testValue
 
   - it: should take custom labels in spec.template.metadata.labels path
