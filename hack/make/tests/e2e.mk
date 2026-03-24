@@ -30,7 +30,8 @@ test/e2e-publish:
 ## Run e2e but using OLM bundle instead of helm install
 test/olm-e2e-publish:
 	RC=0; \
-	make test/e2e/olm/publish || RC=1; \
+	OLM=true; \
+	make test/e2e/standard/publish || RC=1; \
 	exit $$RC
 
 ## Run standard e2e test only
