@@ -1,0 +1,150 @@
+name: Sync OpenAPI schema
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to checkout in the source repository"
+        required: true
+        type: string
+      schema_name:
+        description: "Schema name (maps to cluster-openapi-docs/documents/<name>/spec3.json)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  clone-source:
+    name: Clone source repository
+    runs-on:
+      - operator-e2e
+    outputs:
+      source-commit-sha: ${{ steps.clone.outputs.sha }}
+    steps:
+      - name: Clone source repository
+        id: clone
+        run: |
+          set -euo pipefail
+          repo_url="https://${SOURCE_USERNAME}:${SOURCE_ACCESS_TOKEN}@${SOURCE_REPO_URL}"
+
+          echo "Cloning source repository (branch: ${BRANCH})..."
+          git clone --depth 1 --branch "${BRANCH}" "${repo_url}" source-repo
+
+          sha=$(git -C source-repo rev-parse HEAD)
+          echo "Source commit SHA: ${sha}"
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+        env:
+          SOURCE_REPO_URL: ${{ secrets.API_SPEC_SOURCE_REPO_URL }}
+          SOURCE_ACCESS_TOKEN: ${{ secrets.API_SPEC_SOURCE_ACCESS_TOKEN }}
+          SOURCE_USERNAME: ${{ secrets.API_SPEC_SOURCE_USERNAME }}
+          BRANCH: ${{ inputs.branch }}
+
+      - name: Upload source schema
+        uses: actions/upload-artifact@v6
+        with:
+          name: source-schema
+          path: source-repo/documents/${{ inputs.schema_name }}/spec3.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Cleanup source clone
+        if: always()
+        run: rm -rf source-repo
+
+  sync-schema:
+    name: Sync OpenAPI schema
+    needs: clone-source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Download source schema
+        uses: actions/download-artifact@v8
+        with:
+          name: source-schema
+          path: source-repo/documents/${{ inputs.schema_name }}
+
+      - name: Compare and update schema
+        id: compare
+        run: |
+          set -euo pipefail
+
+          source_file="source-repo/documents/${SCHEMA_NAME}/spec3.json"
+          target_file="api/oapi/${SCHEMA_NAME}/spec3.json"
+
+          if [ ! -f "${source_file}" ]; then
+            echo "::error::Source file not found: ${source_file}"
+            exit 1
+          fi
+
+          mkdir -p "api/oapi/${SCHEMA_NAME}"
+
+          if [ -f "${target_file}" ] && diff -q "${source_file}" "${target_file}" > /dev/null 2>&1; then
+            echo "Schema '${SCHEMA_NAME}' is already up to date."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Schema '${SCHEMA_NAME}' has changed, updating..."
+            cp "${source_file}" "${target_file}"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          SCHEMA_NAME: ${{ inputs.schema_name }}
+
+      - name: Cleanup source clone
+        if: always()
+        run: rm -rf source-repo
+
+      - name: Remove example secrets from schema json
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          target_file="api/oapi/${SCHEMA_NAME}/spec3.json"
+
+          sed -E -i 's/(dt[^.]*)\.([A-Z0-9]{8})(\.([A-Z0-9]{64})?|)/example-token/g' "${target_file}"
+        env:
+          SCHEMA_NAME: ${{ inputs.schema_name }}
+
+      - name: Extract API versions
+        id: api-version
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          target_file="api/oapi/${SCHEMA_NAME}/spec3.json"
+
+          new_version=$(jq -r '.info.version // "unknown"' "${target_file}")
+          echo "new=${new_version}" >> "$GITHUB_OUTPUT"
+
+          old_version=$(git show HEAD:"${target_file}" 2>/dev/null | jq -r '.info.version // "unknown"' 2>/dev/null || echo "N/A")
+          echo "old=${old_version}" >> "$GITHUB_OUTPUT"
+        env:
+          SCHEMA_NAME: ${{ inputs.schema_name }}
+
+      - name: Create pull request
+        if: steps.compare.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
+        with:
+          base: main
+          delete-branch: true
+          branch: sync-openapi-schema/${{ inputs.schema_name }}
+          add-paths: |
+            api/oapi/*/spec3.json
+          title: "chore: sync OpenAPI schema ${{ inputs.schema_name }} from source (${{ inputs.branch }})"
+          commit-message: "chore: sync OpenAPI schema ${{ inputs.schema_name }} from source (${{ inputs.branch }})"
+          body: |
+            # Description
+            This PR updates the OpenAPI schema `${{ inputs.schema_name }}` from the source repository.
+
+            | | |
+            |---|---|
+            | **API version** | `${{ steps.api-version.outputs.old }}` → `${{ steps.api-version.outputs.new }}` |
+            | **Source branch** | `${{ inputs.branch }}` |
+            | **Source commit** | `${{ needs.clone-source.outputs.source-commit-sha }}` |
+            | **Schema path** | `api/oapi/${{ inputs.schema_name }}/spec3.json` |
+            | **Workflow run** | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
