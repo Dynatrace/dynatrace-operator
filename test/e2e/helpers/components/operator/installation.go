@@ -58,8 +58,7 @@ func InstallLocalBundle(version string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		rootDir := project.RootDir()
 		// bundle/run
-		// TODO: remove tag
-		err := execMakeCommand(rootDir, "bundle/run", fmt.Sprintf("VERSION=%s", version), "TAG=snapshot")
+		err := execMakeCommand(rootDir, "bundle/run", fmt.Sprintf("VERSION=%s", version))
 		if err != nil {
 			return ctx, err
 		}
