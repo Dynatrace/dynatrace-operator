@@ -65,6 +65,7 @@ func installViaOLMLocalBundle() error {
 	if err != nil {
 		return err
 	}
+
 	return execMakeCommand(project.RootDir(), "bundle/run")
 }
 
