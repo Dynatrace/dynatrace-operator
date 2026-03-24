@@ -74,6 +74,16 @@ func HasStatusCode(err error, statusCode int) bool {
 	return StatusCode(err) == statusCode
 }
 
+// IsBadRequest checks if the given error represents an HTTP 400 Bad Request error
+func IsBadRequest(err error) bool {
+	return HasStatusCode(err, http.StatusBadRequest)
+}
+
+// IsForbidden checks if the given error represents an HTTP 403 Forbidden error
+func IsForbidden(err error) bool {
+	return HasStatusCode(err, http.StatusForbidden)
+}
+
 // IsNotFound checks if the given error represents an HTTP 404 Not Found error
 func IsNotFound(err error) bool {
 	return HasStatusCode(err, http.StatusNotFound)

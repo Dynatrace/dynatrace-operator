@@ -92,7 +92,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 
 	connectionInfoReconciler := r.connectionInfoReconciler
 	if connectionInfoReconciler == nil {
-		connectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient, dk)
+		connectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient.AsV2().OneAgent, dk)
 	}
 
 	err := versionReconciler.ReconcileOneAgent(ctx, dk)

@@ -10,7 +10,7 @@ version=$1
 commit=$2
 debug=${3:-false}
 
-build_date="$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")"
+build_date="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 go_linker_args=(
   "-X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Version=${version}'"
   "-X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Commit=${commit}'"

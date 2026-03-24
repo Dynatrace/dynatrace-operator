@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -22,13 +22,13 @@ import (
 
 type reconciler struct {
 	client       client.Client
-	dtc          dtclient.Client
+	dtc          oneagent.APIClient
 	timeProvider *timeprovider.Provider
 	dk           *dynakube.DynaKube
 	secrets      k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dtc oneagent.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
 		dk:           dk,
@@ -96,7 +96,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 	k8sconditions.SetSecretOutdated(r.dk.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
-	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo(ctx)
+	connectionInfo, err := r.dtc.GetConnectionInfo(ctx)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), oaConnectionInfoConditionType, err)
 
@@ -114,7 +114,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return NoOneAgentCommunicationEndpointsError
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dk.OneAgent().GetTenantSecret(), connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.OneAgent().GetTenantSecret(), connectionInfo)
 	if err != nil {
 		return err
 	}
@@ -129,12 +129,12 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.OneAgentConnectionInfo) {
+func (r *reconciler) setDynakubeStatus(connectionInfo oneagent.ConnectionInfo) {
 	r.dk.Status.OneAgent.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
 	r.dk.Status.OneAgent.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 }
 
-func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
+func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo oneagent.ConnectionInfo) error {
 	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)
