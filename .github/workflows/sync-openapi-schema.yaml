@@ -46,7 +46,7 @@ jobs:
     needs: prepare
     if: needs.prepare.outputs.has_schemas == 'true'
     runs-on:
-      - self-hosted
+      - operator-e2e
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
