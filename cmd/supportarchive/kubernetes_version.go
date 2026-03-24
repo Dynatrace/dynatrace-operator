@@ -36,13 +36,13 @@ func (kvc kubernetesVersionCollector) Do() error {
 	}
 
 	versionString := fmt.Sprintf(
-		"major: %s\nminor: %s\ngitVersion: %s\ngitCommit: %s\ngitTreeState: %s\nbuildDate: %s\nplatform: %s\n",
+		"major: %s\nminor: %s\ngitVersion: %s\ngitCommit: %s\nbuildDate: %s\ngoVersion: %s\nplatform: %s\n",
 		serverVersion.Major,
 		serverVersion.Minor,
 		serverVersion.GitVersion,
 		serverVersion.GitCommit,
-		serverVersion.GitTreeState,
 		serverVersion.BuildDate,
+		serverVersion.GoVersion,
 		serverVersion.Platform,
 	)
 

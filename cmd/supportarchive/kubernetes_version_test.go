@@ -22,13 +22,13 @@ func TestKubernetesVersionCollector(t *testing.T) {
 	fakeClientSet := fakeclientset.NewClientset()
 	fakeDiscovery := fakeClientSet.Discovery().(*fakediscovery.FakeDiscovery)
 	fakeDiscovery.FakedServerVersion = &version.Info{
-		Major:        "1",
-		Minor:        "34",
-		GitVersion:   "v1.34.4-gke.1047000",
-		GitCommit:    "f726e501477d4f55aed8a5102d5cd49de506272b",
-		GitTreeState: "clean",
-		BuildDate:    "2026-01-01T13:37:00Z",
-		Platform:     "linux/amd64/go1.24.12 X:boringcrypto",
+		Major:      "1",
+		Minor:      "34",
+		GitVersion: "v1.34.4-gke.1047000",
+		GitCommit:  "f726e501477d4f55aed8a5102d5cd49de506272b",
+		BuildDate:  "2026-01-01T13:37:00Z",
+		GoVersion:  "go1.24.12",
+		Platform:   "linux/amd64",
 	}
 
 	versionCollector := newKubernetesVersionCollector(newSupportArchiveLogger(&logBuffer), archive, fakeDiscovery)
@@ -55,5 +55,6 @@ func TestKubernetesVersionCollector(t *testing.T) {
 	assert.Contains(t, logBuffer.String(), "Storing Kubernetes version")
 	assert.Contains(t, versionContent, "minor: 34")
 	assert.Contains(t, versionContent, "gitVersion: v1.34.4-gke.1047000")
-	assert.Contains(t, versionContent, "platform: linux/amd64/go1.24.12 X:boringcrypto")
+	assert.Contains(t, versionContent, "goVersion: go1.24.12")
+	assert.Contains(t, versionContent, "platform: linux/amd64")
 }
