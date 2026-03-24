@@ -77,6 +77,7 @@ func Uninstall(withCSI bool) env.Func {
 					return ctx, err
 				}
 			}
+
 			return ctx, execMakeCommand(rootDir, "undeploy", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		}
 	}
