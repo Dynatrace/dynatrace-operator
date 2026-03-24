@@ -36,7 +36,7 @@ else
 	CONTAINER_TOOL ?= docker
 endif
 
-## Display the image name used to deploy the helm chart
+## Display bundle image name used to deploy OLM bundle
 bundle/show-image-ref:
 	@echo $(BUNDLE_IMG)
 
