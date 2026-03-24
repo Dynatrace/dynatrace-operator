@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
+	"github.com/Dynatrace/dynatrace-operator/cmd/certgen"
 	"github.com/Dynatrace/dynatrace-operator/cmd/crdstoragemigration"
 	csiInit "github.com/Dynatrace/dynatrace-operator/cmd/csi/init"
 	"github.com/Dynatrace/dynatrace-operator/cmd/csi/livenessprobe"
@@ -37,9 +38,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var (
-	log = logd.Get().WithName("main")
-)
+var log = logd.Get().WithName("main")
 
 func newRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -64,6 +63,7 @@ func main() {
 		webhook.New(),
 		operator.New(),
 		crdstoragemigration.New(),
+		certgen.New(),
 		troubleshoot.New(),
 		supportArchive.New(),
 		startupProbe.New(),

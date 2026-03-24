@@ -60,7 +60,12 @@ spec:
           {{- end }}
           args:
             - crd-storage-migration
-            - --namespace={{ .Release.Namespace }}
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
           resources:
             requests:
               {{- toYaml (.Values.operator).requests | nindent 14 }}
