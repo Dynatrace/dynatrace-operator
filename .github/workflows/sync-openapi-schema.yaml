@@ -1,62 +1,91 @@
-name: Sync OpenAPI schema
+name: Sync OpenAPI schemas
 
 on:
   workflow_dispatch:
-    inputs:
-      branch:
-        description: "Branch to checkout in the source repository"
-        required: true
-        type: string
-      schema_name:
-        description: "Schema name (maps to cluster-openapi-docs/documents/<name>/spec3.json)"
-        required: true
-        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - api/oapi/sync-config.yaml
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  clone-source:
-    name: Clone source repository
-    runs-on:
-      - operator-e2e
+  prepare:
+    name: Read sync config
+    runs-on: ubuntu-latest
     outputs:
-      source-commit-sha: ${{ steps.clone.outputs.sha }}
+      matrix: ${{ steps.config.outputs.matrix }}
+      schemas_json: ${{ steps.config.outputs.schemas_json }}
+      has_schemas: ${{ steps.config.outputs.has_schemas }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Parse config into matrix
+        id: config
+        run: |
+          set -euo pipefail
+          schemas=$(yq -o=json -I=0 '.schemas // []' api/oapi/sync-config.yaml)
+          count=$(echo "${schemas}" | jq 'length')
+
+          if [ "${count}" -eq 0 ]; then
+            echo "No schemas configured, nothing to sync."
+            echo "has_schemas=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_schemas=true" >> "$GITHUB_OUTPUT"
+            echo "matrix={\"include\":${schemas}}" >> "$GITHUB_OUTPUT"
+            echo "schemas_json=${schemas}" >> "$GITHUB_OUTPUT"
+            echo "Schemas (${count}): ${schemas}"
+          fi
+
+  clone-source:
+    name: "Clone source: ${{ matrix.name }}"
+    needs: prepare
+    if: needs.prepare.outputs.has_schemas == 'true'
+    runs-on:
+      - self-hosted
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - name: Clone source repository
-        id: clone
         run: |
           set -euo pipefail
           repo_url="https://${SOURCE_USERNAME}:${SOURCE_ACCESS_TOKEN}@${SOURCE_REPO_URL}"
 
-          echo "Cloning source repository (branch: ${BRANCH})..."
-          git clone --depth 1 --branch "${BRANCH}" "${repo_url}" source-repo
+          echo "Cloning source repository (branch: ${{ matrix.branch }})..."
+          git clone --depth 1 --branch "${{ matrix.branch }}" "${repo_url}" source-repo
 
           sha=$(git -C source-repo rev-parse HEAD)
           echo "Source commit SHA: ${sha}"
-          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+
+          mkdir -p output
+          cp "source-repo/documents/${{ matrix.name }}/spec3.json" output/spec3.json
+          echo "${sha}" > output/source-sha.txt
         env:
           SOURCE_REPO_URL: ${{ secrets.API_SPEC_SOURCE_REPO_URL }}
           SOURCE_ACCESS_TOKEN: ${{ secrets.API_SPEC_SOURCE_ACCESS_TOKEN }}
           SOURCE_USERNAME: ${{ secrets.API_SPEC_SOURCE_USERNAME }}
-          BRANCH: ${{ inputs.branch }}
 
       - name: Upload source schema
         uses: actions/upload-artifact@v6
         with:
-          name: source-schema
-          path: source-repo/documents/${{ inputs.schema_name }}/spec3.json
+          name: source-schema-${{ matrix.name }}
+          path: output/
           if-no-files-found: error
           retention-days: 1
 
-      - name: Cleanup source clone
+      - name: Cleanup
         if: always()
-        run: rm -rf source-repo
+        run: rm -rf source-repo output
 
-  sync-schema:
-    name: Sync OpenAPI schema
-    needs: clone-source
+  sync-schemas:
+    name: Sync OpenAPI schemas
+    needs: [prepare, clone-source]
+    if: needs.prepare.outputs.has_schemas == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -65,86 +94,81 @@ jobs:
           ref: main
           persist-credentials: false
 
-      - name: Download source schema
+      - name: Download all source schemas
         uses: actions/download-artifact@v8
         with:
-          name: source-schema
-          path: source-repo/documents/${{ inputs.schema_name }}
+          pattern: source-schema-*
+          path: source-schemas
 
-      - name: Compare and update schema
-        id: compare
+      - name: Compare, update, and build PR body
+        id: sync
         run: |
           set -euo pipefail
 
-          source_file="source-repo/documents/${SCHEMA_NAME}/spec3.json"
-          target_file="api/oapi/${SCHEMA_NAME}/spec3.json"
+          changed=false
+          pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas from the source repository."$'\n\n'
+          pr_body+="| Schema | API version | Source branch | Source commit |"$'\n'
+          pr_body+="|---|---|---|---|"$'\n'
+          schemas_summary=""
 
-          if [ ! -f "${source_file}" ]; then
-            echo "::error::Source file not found: ${source_file}"
-            exit 1
-          fi
+          for row in $(echo '${{ needs.prepare.outputs.schemas_json }}' | jq -c '.[]'); do
+            name=$(echo "${row}" | jq -r '.name')
+            branch=$(echo "${row}" | jq -r '.branch')
 
-          mkdir -p "api/oapi/${SCHEMA_NAME}"
+            source_file="source-schemas/source-schema-${name}/spec3.json"
+            target_file="api/oapi/${name}/spec3.json"
+            sha_file="source-schemas/source-schema-${name}/source-sha.txt"
 
-          if [ -f "${target_file}" ] && diff -q "${source_file}" "${target_file}" > /dev/null 2>&1; then
-            echo "Schema '${SCHEMA_NAME}' is already up to date."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Schema '${SCHEMA_NAME}' has changed, updating..."
+            if [ ! -f "${source_file}" ]; then
+              echo "::error::Source file not found: ${source_file}"
+              exit 1
+            fi
+
+            source_sha=$(cat "${sha_file}")
+            mkdir -p "api/oapi/${name}"
+
+            if [ -f "${target_file}" ] && diff -q "${source_file}" "${target_file}" > /dev/null 2>&1; then
+              echo "Schema '${name}' is already up to date, skipping."
+              continue
+            fi
+
+            old_version=$(git show HEAD:"${target_file}" 2>/dev/null | jq -r '.info.version // "unknown"' 2>/dev/null || echo "N/A")
             cp "${source_file}" "${target_file}"
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+
+            # Remove example secrets
+            sed -E -i 's/(dt[^.]*)\.([A-Z0-9]{8})(\.([A-Z0-9]{64})?|)/example-token/g' "${target_file}"
+
+            new_version=$(jq -r '.info.version // "unknown"' "${target_file}")
+
+            pr_body+="| \`${name}\` | \`${old_version}\` → \`${new_version}\` | \`${branch}\` | \`${source_sha}\` |"$'\n'
+            schemas_summary+="${name}, "
+            changed=true
+          done
+
+          echo "changed=${changed}" >> "$GITHUB_OUTPUT"
+
+          if [ "${changed}" = "true" ]; then
+            schemas_summary="${schemas_summary%, }"
+            echo "schemas_summary=${schemas_summary}" >> "$GITHUB_OUTPUT"
+
+            pr_body+=$'\n'"| | |"$'\n'"|---|---|"$'\n'
+            pr_body+="| **Workflow run** | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |"$'\n'
+
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "pr_body<<${EOF}" >> "$GITHUB_OUTPUT"
+            echo "${pr_body}" >> "$GITHUB_OUTPUT"
+            echo "${EOF}" >> "$GITHUB_OUTPUT"
           fi
-        env:
-          SCHEMA_NAME: ${{ inputs.schema_name }}
-
-      - name: Cleanup source clone
-        if: always()
-        run: rm -rf source-repo
-
-      - name: Remove example secrets from schema json
-        if: steps.compare.outputs.changed == 'true'
-        run: |
-          set -euo pipefail
-          target_file="api/oapi/${SCHEMA_NAME}/spec3.json"
-
-          sed -E -i 's/(dt[^.]*)\.([A-Z0-9]{8})(\.([A-Z0-9]{64})?|)/example-token/g' "${target_file}"
-        env:
-          SCHEMA_NAME: ${{ inputs.schema_name }}
-
-      - name: Extract API versions
-        id: api-version
-        if: steps.compare.outputs.changed == 'true'
-        run: |
-          set -euo pipefail
-          target_file="api/oapi/${SCHEMA_NAME}/spec3.json"
-
-          new_version=$(jq -r '.info.version // "unknown"' "${target_file}")
-          echo "new=${new_version}" >> "$GITHUB_OUTPUT"
-
-          old_version=$(git show HEAD:"${target_file}" 2>/dev/null | jq -r '.info.version // "unknown"' 2>/dev/null || echo "N/A")
-          echo "old=${old_version}" >> "$GITHUB_OUTPUT"
-        env:
-          SCHEMA_NAME: ${{ inputs.schema_name }}
 
       - name: Create pull request
-        if: steps.compare.outputs.changed == 'true'
+        if: steps.sync.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
         with:
           base: main
           delete-branch: true
-          branch: sync-openapi-schema/${{ inputs.schema_name }}
+          branch: sync-openapi-schemas
           add-paths: |
             api/oapi/*/spec3.json
-          title: "chore: sync OpenAPI schema ${{ inputs.schema_name }} from source (${{ inputs.branch }})"
-          commit-message: "chore: sync OpenAPI schema ${{ inputs.schema_name }} from source (${{ inputs.branch }})"
-          body: |
-            # Description
-            This PR updates the OpenAPI schema `${{ inputs.schema_name }}` from the source repository.
-
-            | | |
-            |---|---|
-            | **API version** | `${{ steps.api-version.outputs.old }}` → `${{ steps.api-version.outputs.new }}` |
-            | **Source branch** | `${{ inputs.branch }}` |
-            | **Source commit** | `${{ needs.clone-source.outputs.source-commit-sha }}` |
-            | **Schema path** | `api/oapi/${{ inputs.schema_name }}/spec3.json` |
-            | **Workflow run** | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+          title: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
+          commit-message: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
+          body: ${{ steps.sync.outputs.pr_body }}
