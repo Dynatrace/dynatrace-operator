@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	corev1 "k8s.io/api/core/v1"
@@ -28,53 +27,49 @@ const (
 	noProxyFieldName      = "proxy-non-proxy-hosts"
 )
 
-var _ controllers.Reconciler = &Reconciler{}
-
 type Reconciler struct {
 	customPropertiesSource    *value.Source
-	dk                        *dynakube.DynaKube
 	customPropertiesOwnerName string
 	secrets                   k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, customPropertiesOwnerName string, customPropertiesSource *value.Source) *Reconciler {
 	return &Reconciler{
-		dk:                        dk,
 		customPropertiesSource:    customPropertiesSource,
 		customPropertiesOwnerName: customPropertiesOwnerName,
 		secrets:                   k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.customPropertiesSource == nil && !r.dk.NeedsCustomNoProxy() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), customPropertiesConditionType) == nil {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	if r.customPropertiesSource == nil && !dk.NeedsCustomNoProxy() {
+		if meta.FindStatusCondition(*dk.Conditions(), customPropertiesConditionType) == nil {
 			return nil
 		}
 
 		err := r.secrets.Delete(ctx,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      r.buildCustomPropertiesName(r.dk.Name),
-					Namespace: r.dk.Namespace}})
+					Name:      r.buildCustomPropertiesName(dk.Name),
+					Namespace: dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up custom properties secret")
 		}
 
-		meta.RemoveStatusCondition(r.dk.Conditions(), customPropertiesConditionType)
+		meta.RemoveStatusCondition(dk.Conditions(), customPropertiesConditionType)
 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	data, err := r.buildCustomPropertiesValue(ctx)
+	data, err := r.buildCustomPropertiesValue(ctx, dk)
 	if err != nil {
 		return err
 	} else if string(data) == "" {
 		return nil
 	}
 
-	customPropertiesSecret, err := k8ssecret.Build(r.dk,
-		r.buildCustomPropertiesName(r.dk.Name),
+	customPropertiesSecret, err := k8ssecret.Build(dk,
+		r.buildCustomPropertiesName(dk.Name),
 		map[string][]byte{
 			DataKey: data,
 		},
@@ -83,18 +78,18 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	_, err = r.secrets.WithOwner(r.dk).CreateOrUpdate(ctx, customPropertiesSecret)
+	_, err = r.secrets.WithOwner(dk).CreateOrUpdate(ctx, customPropertiesSecret)
 	if err != nil {
 		return err
 	}
 
-	k8sconditions.SetSecretCreated(r.dk.Conditions(), customPropertiesConditionType,
-		r.buildCustomPropertiesName(r.dk.Name))
+	k8sconditions.SetSecretCreated(dk.Conditions(), customPropertiesConditionType,
+		r.buildCustomPropertiesName(dk.Name))
 
 	return nil
 }
 
-func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context) ([]byte, error) {
+func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
 	value := ""
 
 	if r.customPropertiesSource != nil {
@@ -103,7 +98,7 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context) ([]byte, er
 		} else if r.customPropertiesSource.ValueFrom != "" {
 			customPropertiesSecret, err := r.secrets.Get(ctx, types.NamespacedName{
 				Name:      r.customPropertiesSource.ValueFrom,
-				Namespace: r.dk.Namespace})
+				Namespace: dk.Namespace})
 			if err != nil {
 				return nil, err
 			}
@@ -114,8 +109,8 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context) ([]byte, er
 
 	lines := strings.Split(value, "\n")
 
-	if r.dk.NeedsCustomNoProxy() {
-		lines = r.addNonProxyHostsSettingsToValue(lines)
+	if dk.NeedsCustomNoProxy() {
+		lines = r.addNonProxyHostsSettingsToValue(dk.FF().GetNoProxy(), lines)
 	}
 
 	value = strings.Join(lines, "\n")
@@ -123,9 +118,8 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context) ([]byte, er
 	return []byte(value), nil
 }
 
-func (r *Reconciler) addNonProxyHostsSettingsToValue(lines []string) []string {
-	noProxyValue := r.dk.FF().GetNoProxy()
-	noProxyValue = strings.ReplaceAll(noProxyValue, ",", "|")
+func (r *Reconciler) addNonProxyHostsSettingsToValue(ffNoProxy string, lines []string) []string {
+	noProxyValue := strings.ReplaceAll(ffNoProxy, ",", "|")
 	proxySettings := fmt.Sprintf("%s\n%s=%s", clientInternalSection, noProxyFieldName, noProxyValue)
 
 	found := false

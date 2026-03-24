@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/activegate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -31,7 +30,10 @@ const (
 	testDynakube = "test-dynakube"
 )
 
-var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+var (
+	anyCtx      = mock.MatchedBy(func(context.Context) bool { return true })
+	anyDynakube = mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })
+)
 
 var capabilitiesWithService = []activegate.CapabilityDisplayName{
 	activegate.RoutingCapability.DisplayName,
@@ -78,9 +80,9 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName) *dynakube.Dy
 	}
 }
 
-func getMockReconciler(t *testing.T, returnValue error) *reconcilermock.CapabilityReconciler {
-	mockReconciler := reconcilermock.NewCapabilityReconciler(t)
-	mockReconciler.EXPECT().Reconcile(anyCtx).Return(returnValue).Once()
+func getMockReconciler(t *testing.T, returnValue error) *mockDynakubeReconciler {
+	mockReconciler := newMockDynakubeReconciler(t)
+	mockReconciler.EXPECT().Reconcile(anyCtx, anyDynakube).Return(returnValue).Once()
 
 	return mockReconciler
 }
@@ -89,15 +91,13 @@ func TestNewReconciler(t *testing.T) {
 	r := NewReconciler(
 		fake.NewClientBuilder().Build(),
 		capability.NewMultiCapability(&dynakube.DynaKube{}),
-		&dynakube.DynaKube{},
-		reconcilermock.NewCapabilityReconciler(t),
-		reconcilermock.NewCapabilityReconciler(t),
-		reconcilermock.NewCapabilityReconciler(t),
-	).(*Reconciler)
+		newMockDynakubeReconciler(t),
+		newMockDynakubeReconciler(t),
+		newMockDynakubeReconciler(t),
+	)
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)
 	require.NotNil(t, r)
-	require.NotNil(t, r.dk)
 }
 
 func TestReconcile(t *testing.T) {
@@ -111,9 +111,9 @@ func TestReconcile(t *testing.T) {
 		mockStatefulSetReconciler := getMockReconciler(t, expectErr)
 		mockTLSSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), dk)
 		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("customPropertiesReconciler errors", func(t *testing.T) {
@@ -121,12 +121,12 @@ func TestReconcile(t *testing.T) {
 
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockCustompropertiesReconciler := getMockReconciler(t, expectErr)
-		mockStatefulSetReconciler := reconcilermock.NewCapabilityReconciler(t)
-		mockTLSSecretReconciler := reconcilermock.NewCapabilityReconciler(t)
+		mockStatefulSetReconciler := newMockDynakubeReconciler(t)
+		mockTLSSecretReconciler := newMockDynakubeReconciler(t)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), dk)
 		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("service gets created", func(t *testing.T) {
@@ -135,9 +135,9 @@ func TestReconcile(t *testing.T) {
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
 		mockTLSSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		service := corev1.Service{}
@@ -153,9 +153,9 @@ func TestReconcile(t *testing.T) {
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
 		mockTLSSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
 
-		require.NoError(t, r.Reconcile(t.Context()))
+		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		service := corev1.Service{}
 		err := clt.Get(t.Context(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}, &service)
@@ -205,9 +205,9 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 	for _, test := range tests {
 		clt := createClient()
-		r := &Reconciler{client: clt, capability: capability.NewMultiCapability(dk), dk: dk}
+		r := &Reconciler{client: clt, capability: capability.NewMultiCapability(dk)}
 
-		err := r.createOrUpdateService(t.Context())
+		err := r.createOrUpdateService(t.Context(), dk)
 		require.NoError(t, err)
 
 		service := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}}
@@ -219,7 +219,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, controllerutil.OperationResultUpdated, result)
 
-		err = r.createOrUpdateService(t.Context())
+		err = r.createOrUpdateService(t.Context(), dk)
 		require.NoError(t, err)
 
 		actualService := getService(t, clt)

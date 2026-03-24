@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -16,58 +15,58 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var _ controllers.Reconciler = &Reconciler{}
+var _ dynakubeReconciler = &Reconciler{}
+
+type dynakubeReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+}
 
 type Reconciler struct {
 	client                     client.Client
 	capability                 capability.Capability
-	statefulsetReconciler      controllers.Reconciler
-	customPropertiesReconciler controllers.Reconciler
-	tlsSecretReconciler        controllers.Reconciler
-	dk                         *dynakube.DynaKube
+	statefulsetReconciler      dynakubeReconciler
+	customPropertiesReconciler dynakubeReconciler
+	tlsSecretReconciler        dynakubeReconciler
 }
 
-func NewReconciler(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler, tlsSecretReconciler controllers.Reconciler) controllers.Reconciler { //nolint:revive
+func NewReconciler(clt client.Client, capability capability.Capability, statefulsetReconciler dynakubeReconciler, customPropertiesReconciler dynakubeReconciler, tlsSecretReconciler dynakubeReconciler) *Reconciler { //nolint:revive
 	return &Reconciler{
 		statefulsetReconciler:      statefulsetReconciler,
 		customPropertiesReconciler: customPropertiesReconciler,
 		tlsSecretReconciler:        tlsSecretReconciler,
 		capability:                 capability,
-		dk:                         dk,
 		client:                     clt,
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler, tlsSecretReconciler controllers.Reconciler) controllers.Reconciler
-
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	err := r.customPropertiesReconciler.Reconcile(ctx)
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	err := r.customPropertiesReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	err = r.createOrUpdateService(ctx)
+	err = r.createOrUpdateService(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.setAGServiceIPs(ctx)
+	err = r.setAGServiceIPs(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.tlsSecretReconciler.Reconcile(ctx)
+	err = r.tlsSecretReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.statefulsetReconciler.Reconcile(ctx)
+	err = r.statefulsetReconciler.Reconcile(ctx, dk)
 
 	return errors.WithStack(err)
 }
 
-func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
-	template := CreateService(r.dk)
+func (r *Reconciler) setAGServiceIPs(ctx context.Context, dk *dynakube.DynaKube) error {
+	template := CreateService(dk)
 	present := &corev1.Service{}
 
 	// retry because a Service created by the preceding createOrUpdateService call may not be immediately visible in the API.
@@ -77,21 +76,21 @@ func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
 			return errors.WithStack(err)
 		}
 
-		r.dk.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
+	dk.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
 
 		return nil
 	})
 }
 
-func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
-	desired := CreateService(r.dk)
+func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.DynaKube) error {
+	desired := CreateService(dk)
 	installed := &corev1.Service{}
 
 	err := r.client.Get(ctx, client.ObjectKeyFromObject(desired), installed)
 	if k8serrors.IsNotFound(err) {
-		log.Info("creating AG service", "dk", r.dk.Name)
+		log.Info("creating AG service", "dk", dk.Name)
 
-		err = controllerutil.SetControllerReference(r.dk, desired, r.client.Scheme())
+		err = controllerutil.SetControllerReference(dk, desired, r.client.Scheme())
 		if err != nil {
 			return errors.WithStack(err)
 		}

@@ -117,7 +117,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return r.cleanUp(ctx, dk)
 	}
 
-	err = dtpullsecret.NewReconciler(r.client, r.apiReader, dk, tokens).Reconcile(ctx)
+	err = dtpullsecret.NewReconciler(r.client, r.apiReader, tokens).Reconcile(ctx, dk)
 	if err != nil {
 		return err
 	}

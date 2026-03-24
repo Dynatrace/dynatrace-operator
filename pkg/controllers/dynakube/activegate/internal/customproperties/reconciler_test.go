@@ -30,8 +30,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 
-		r := NewReconciler(nil, nil, dk, "", &value.Source{})
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(nil, nil, "", &value.Source{})
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 	})
 
@@ -51,8 +51,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, nil)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, testOwner, nil)
+		err := r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 
@@ -89,8 +89,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, &valueSource)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, testOwner, &valueSource)
+		err := r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 
@@ -125,8 +125,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				DataKey: []byte(testValue),
 			},
 		})
-		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, &valueSource)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, testOwner, &valueSource)
+		err := r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 
@@ -148,8 +148,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, &valueSource)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, testOwner, &valueSource)
+		err := r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 
@@ -170,8 +170,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, &valueSource)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient, testOwner, &valueSource)
+		err := r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 
@@ -184,7 +184,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 
@@ -197,7 +197,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 
 		r.customPropertiesSource.Value = testKey
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 

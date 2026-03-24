@@ -71,10 +71,10 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, client.WithWatch, *dyna
 			Annotations: map[string]string{},
 		}}
 
-	r := NewReconciler(clt, clt, dk, capability.NewMultiCapability(dk))
+	r := NewReconciler(clt, clt, capability.NewMultiCapability(dk))
 	require.NotNil(t, r)
 
-	return r.(*Reconciler), clt, dk
+	return r, clt, dk
 }
 
 func getStatefulSet(t *testing.T, clt client.Client, dk *dynakube.DynaKube) *appsv1.StatefulSet {
@@ -98,19 +98,19 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("create statefulset", func(t *testing.T) {
 		r, clt, dk := createDefaultReconciler(t)
-		require.NoError(t, r.Reconcile(t.Context()))
+		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		_ = getStatefulSet(t, clt, dk)
 		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.StatefulSetCreatedReason, testName+"-activegate created")
 	})
 	t.Run("update statefulset", func(t *testing.T) {
 		r, clt, dk := createDefaultReconciler(t)
-		require.NoError(t, r.Reconcile(t.Context()))
+		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		_ = getStatefulSet(t, clt, dk)
 
 		dk.Spec.Proxy = &value.Source{Value: testValue}
-		require.NoError(t, r.Reconcile(t.Context()))
+		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		statefulSet := getStatefulSet(t, clt, dk)
 
@@ -133,7 +133,7 @@ func TestReconcile(t *testing.T) {
 		})
 		r.apiReader = fakeClient
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), dk)
 		require.Error(t, err)
 
 		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.KubeAPIErrorReason, "A problem occurred when using the Kubernetes API")
@@ -143,17 +143,17 @@ func TestReconcile(t *testing.T) {
 func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	ctx := t.Context()
 	r, clt, dk := createDefaultReconciler(t)
-	hash, err := r.calculateActiveGateConfigurationHash(ctx)
+	hash, err := r.calculateActiveGateConfigurationHash(ctx, dk)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
 	dk.Spec.ActiveGate.CustomProperties = &value.Source{Value: testValue}
-	hash, err = r.calculateActiveGateConfigurationHash(ctx)
+	hash, err = r.calculateActiveGateConfigurationHash(ctx, dk)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
 	dk.Spec.ActiveGate.CustomProperties = &value.Source{ValueFrom: testName}
-	hash, err = r.calculateActiveGateConfigurationHash(ctx)
+	hash, err = r.calculateActiveGateConfigurationHash(ctx, dk)
 	require.Error(t, err)
 	assert.Empty(t, hash)
 
@@ -168,22 +168,22 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	hash, err = r.calculateActiveGateConfigurationHash(ctx)
+	hash, err = r.calculateActiveGateConfigurationHash(ctx, dk)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 }
 
 func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	ctx := t.Context()
-	r, clt, _ := createDefaultReconciler(t)
-	hash, err := r.calculateActiveGateConfigurationHash(ctx)
+	r, clt, dk := createDefaultReconciler(t)
+	hash, err := r.calculateActiveGateConfigurationHash(ctx, dk)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
 	err = clt.Create(t.Context(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
-			Namespace: r.dk.Namespace,
+			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{
 			authtoken.ActiveGateAuthTokenName: []byte(testValue),
@@ -198,7 +198,7 @@ func TestManageStatefulSet(t *testing.T) {
 	t.Run("do not delete statefulset if custom labels were added", func(t *testing.T) {
 		r, clt, dk := createDefaultReconciler(t)
 
-		err := r.manageStatefulSet(ctx)
+		err := r.manageStatefulSet(ctx, dk)
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Namespace: dk.Namespace, Name: capability.BuildServiceName(dk.Name)}}
@@ -210,7 +210,7 @@ func TestManageStatefulSet(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, controllerutil.OperationResultUpdated, result)
 
-		err = r.manageStatefulSet(ctx)
+		err = r.manageStatefulSet(ctx, dk)
 		require.NoError(t, err)
 
 		actualStatefulSet := getStatefulSet(t, clt, dk)
@@ -219,7 +219,7 @@ func TestManageStatefulSet(t *testing.T) {
 	t.Run("update statefulset if selector differs", func(t *testing.T) {
 		r, clt, dk := createDefaultReconciler(t)
 
-		err := r.manageStatefulSet(ctx)
+		err := r.manageStatefulSet(ctx, dk)
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Namespace: dk.Namespace, Name: capability.BuildServiceName(dk.Name)}}
@@ -231,7 +231,7 @@ func TestManageStatefulSet(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, controllerutil.OperationResultUpdated, result)
 
-		err = r.manageStatefulSet(ctx)
+		err = r.manageStatefulSet(ctx, dk)
 		require.NoError(t, err)
 
 		actualStatefulSet := getStatefulSet(t, clt, dk)
@@ -281,13 +281,13 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 	}
 
 	mcap := capability.NewMultiCapability(dk)
-	reconciler := NewReconciler(clt, clt, dk, mcap)
+	reconciler := NewReconciler(clt, clt, mcap)
 
-	err := reconciler.Reconcile(ctx)
+	err := reconciler.Reconcile(ctx, dk)
 	require.NoError(t, err)
 
 	dk.Spec.ActiveGate.UseEphemeralVolume = true
-	err = reconciler.Reconcile(ctx)
+	err = reconciler.Reconcile(ctx, dk)
 	require.NoError(t, err)
 }
 
@@ -324,13 +324,13 @@ func TestReconcileReplicas(t *testing.T) {
 			dk.Spec.ActiveGate.Replicas = tc.specReplicas
 
 			if tc.existingReplicas != nil {
-				existing, err := r.buildDesiredStatefulSet(t.Context())
+				existing, err := r.buildDesiredStatefulSet(t.Context(), dk)
 				require.NoError(t, err)
 				existing.Spec.Replicas = tc.existingReplicas
 				require.NoError(t, c.Create(t.Context(), existing))
 			}
 
-			err := r.Reconcile(t.Context())
+			err := r.Reconcile(t.Context(), dk)
 			require.NoError(t, err)
 
 			sts := getStatefulSet(t, c, dk)

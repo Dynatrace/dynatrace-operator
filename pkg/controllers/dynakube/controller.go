@@ -84,8 +84,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 
-		activeGateReconcilerBuilder: activegate.NewReconciler,
-		injectionReconcilerBuilder:  injection.NewReconciler,
+		injectionReconcilerBuilder: injection.NewReconciler,
 
 		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
@@ -96,6 +95,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		istioReconciler:              istio.NewReconciler(kubeClient, apiReader),
 		logMonitoringReconciler:      logmonitoring.NewReconciler(kubeClient, apiReader),
 		oneAgentReconciler:           oneagent.NewReconciler(kubeClient, apiReader, clusterID),
+		activeGateReconciler:         activegate.NewReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -132,6 +132,10 @@ type oneAgentReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error
 }
 
+type activeGateReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error
+}
+
 // Controller reconciles a DynaKube object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -149,12 +153,12 @@ type Controller struct {
 	istioReconciler              istioReconciler
 	logMonitoringReconciler      logMonitoringReconciler
 	oneAgentReconciler           oneAgentReconciler
+	activeGateReconciler         activeGateReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
 
-	activeGateReconcilerBuilder activegate.ReconcilerBuilder
-	injectionReconcilerBuilder  injection.ReconcilerBuilder
+	injectionReconcilerBuilder injection.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string

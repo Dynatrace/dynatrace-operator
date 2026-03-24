@@ -48,13 +48,12 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 	}
 	r := &Reconciler{
-		dk: dk,
 		tokens: token.Tokens{
 			dtclient.PaasToken: &token.Token{Value: testPaasToken},
 		},
 	}
 
-	data, err := r.generateData()
+	data, err := r.generateData(dk)
 
 	require.NoError(t, err)
 	assert.NotNil(t, data)
