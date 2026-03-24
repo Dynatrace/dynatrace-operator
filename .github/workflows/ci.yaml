@@ -358,9 +358,6 @@ jobs:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build image metadata
-        uses: ./.github/actions/metadata
-        id: meta
       - name: Build and push OLM bundle
         run: |
           make bundle bundle/build bundle/push
