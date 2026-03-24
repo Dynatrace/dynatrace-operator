@@ -26,7 +26,10 @@ source ../ref/.github/scripts/prepare-e2e-secrets.sh
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
-if [[ -n "${TARGET_IMAGE}" ]]; then
+if [[ "${FLC_ENVIRONMENT}" ~= "olm" ]]; then
+  echo "run olm tests"
+  make test/olm-e2e-publish
+elif [[ -n "${TARGET_IMAGE}" ]]; then
   make IMAGE_URI="$TARGET_IMAGE" test/e2e-publish
 else
   echo "fall back to default branch target"
