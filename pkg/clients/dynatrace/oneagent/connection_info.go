@@ -18,9 +18,10 @@ type ConnectionInfo struct {
 }
 
 type connectionInfoJSONResponse struct {
-	TenantUUID                      string `json:"tenantUUID"`
-	TenantToken                     string `json:"tenantToken"`
-	FormattedCommunicationEndpoints string `json:"formattedCommunicationEndpoints"`
+	TenantUUID                      string   `json:"tenantUUID"`
+	TenantToken                     string   `json:"tenantToken"`
+	FormattedCommunicationEndpoints string   `json:"formattedCommunicationEndpoints"`
+	CommunicationEndpoints          []string `json:"communicationEndpoints"`
 }
 
 func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
