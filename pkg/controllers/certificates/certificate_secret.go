@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,16 +37,14 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 
 	switch {
 	case k8serrors.IsNotFound(err):
-		certSecret.secret, err = k8ssecret.Build(certSecret.owner,
-			buildSecretName(),
-			map[string][]byte{})
+		certSecret.secret, err = k8ssecret.Build(certSecret.owner, buildSecretName(), map[string][]byte{})
 		if err != nil {
-			return errors.WithStack(err)
+			return fmt.Errorf("build certificate secret: %w", err)
 		}
 
 		certSecret.existsInCluster = false
 	case err != nil:
-		return errors.WithStack(err)
+		return fmt.Errorf("get certificate secret: %w", err)
 	default:
 		certSecret.secret = secret
 		certSecret.existsInCluster = true
@@ -76,7 +73,7 @@ func (certSecret *certificateSecret) validateCertificates(namespace string) erro
 		Now:     time.Now(),
 	}
 	if err := certs.ValidateCerts(); err != nil {
-		return errors.WithStack(err)
+		return fmt.Errorf("validate certificates: %w", err)
 	}
 
 	certSecret.certificates = &certs
@@ -115,26 +112,30 @@ func (certSecret *certificateSecret) createOrUpdateIfNecessary(ctx context.Conte
 		return nil
 	}
 
-	var err error
-
 	certSecret.secret.Data = certSecret.certificates.Data
 	if certSecret.existsInCluster {
-		err = clt.Update(ctx, certSecret.secret)
+		if err := clt.Update(ctx, certSecret.secret); err != nil {
+			return fmt.Errorf("update certificates secret: %w", err)
+		}
 
 		log.Info("updated certificates secret")
-	} else {
-		err = clt.Create(ctx, certSecret.secret)
 
-		log.Info("created certificates secret")
+		return nil
 	}
 
-	return errors.WithStack(err)
+	if err := clt.Create(ctx, certSecret.secret); err != nil {
+		return fmt.Errorf("create certificates secret: %w", err)
+	}
+
+	log.Info("created certificates secret")
+
+	return nil
 }
 
 func (certSecret *certificateSecret) loadCombinedBundle() ([]byte, error) {
 	data, hasData := certSecret.secret.Data[RootCert]
 	if !hasData {
-		return nil, errors.New(errorCertificatesSecretEmpty)
+		return nil, errCertificatesSecretEmpty
 	}
 
 	if oldData, hasOldData := certSecret.secret.Data[RootCertOld]; hasOldData {

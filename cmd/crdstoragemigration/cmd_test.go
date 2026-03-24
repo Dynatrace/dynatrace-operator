@@ -14,12 +14,11 @@ func TestNew(t *testing.T) {
 		assert.Equal(t, use, cmd.Use)
 	})
 
-	t.Run("has namespace flag", func(t *testing.T) {
+	t.Run("has retry flag", func(t *testing.T) {
 		cmd := New()
 		require.NotNil(t, cmd)
 
-		flag := cmd.PersistentFlags().Lookup(namespaceFlagName)
+		flag := cmd.PersistentFlags().Lookup("retry")
 		require.NotNil(t, flag)
-		assert.Equal(t, namespaceFlagShorthand, flag.Shorthand)
 	})
 }
