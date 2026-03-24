@@ -23,13 +23,6 @@ func Test_GetConnectionInfo(t *testing.T) {
 	oneAgentJSONResponse := &connectionInfoJSONResponse{
 		TenantUUID:                      testTenantUUID,
 		TenantToken:                     testTenantToken,
-		CommunicationEndpoints:          []string{testCommunicationEndpoint},
-		FormattedCommunicationEndpoints: testCommunicationEndpoint,
-	}
-	oneAgentJSONResponseWithDups := &connectionInfoJSONResponse{
-		TenantUUID:                      testTenantUUID,
-		TenantToken:                     testTenantToken,
-		CommunicationEndpoints:          []string{testCommunicationEndpoint, testCommunicationEndpoint},
 		FormattedCommunicationEndpoints: testCommunicationEndpoint,
 	}
 
@@ -50,7 +43,6 @@ func Test_GetConnectionInfo(t *testing.T) {
 				resp.TenantUUID = response.TenantUUID
 				resp.TenantToken = response.TenantToken
 				resp.FormattedCommunicationEndpoints = response.FormattedCommunicationEndpoints
-				resp.CommunicationEndpoints = response.CommunicationEndpoints
 			}).
 			Return(err).Once()
 		client := coremock.NewAPIClient(t)
@@ -81,19 +73,8 @@ func Test_GetConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
 	})
 
-	t.Run("with duplicates", func(t *testing.T) {
-		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponseWithDups, nil)
-		connectionInfo, err := client.GetConnectionInfo(ctx)
-		require.NoError(t, err)
-		assert.NotNil(t, connectionInfo)
-
-		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
-	})
-
 	t.Run("no communication endpoints", func(t *testing.T) {
 		oneAgentJSONResponse.FormattedCommunicationEndpoints = ""
-		oneAgentJSONResponse.CommunicationEndpoints = []string{}
-
 		expectedOneAgentConnectionInfo.Endpoints = ""
 
 		client := setupMockedClient(t, map[string]string{}, "", oneAgentJSONResponse, nil)
