@@ -88,7 +88,7 @@ func (inst *Installer) buildArgs(jobName, targetDir string) []string {
 }
 
 // createStrictNodeSelector returns a selector that uses the standard "kubernetes.io/hostname" label
-// to ensure that the Job can only on the same node as the CSI driver itself.
+// to ensure that the Job can only run on the same node as the CSI driver itself.
 func createStrictNodeSelector(nodeName string) map[string]string {
 	return map[string]string{
 		"kubernetes.io/hostname": nodeName,
