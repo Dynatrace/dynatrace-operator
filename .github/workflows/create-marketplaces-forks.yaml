@@ -176,8 +176,6 @@ jobs:
       - name: Set IMAGE and prepare CSVs for ${{ env.MARKETPLACE }}
         env:
           VERSION: ${{ steps.meta.outputs.version }}
-          RHCC_USERNAME: ${{ secrets.RHCC_USERNAME }}
-          RHCC_PASSWORD: ${{ secrets.RHCC_PASSWORD }}
         run: bash .github/scripts/release/csv/prepare_marketplace_csv.sh
       - name: Post-process CSV for redhat marketplace
         if: matrix.marketplace == 'redhat'
