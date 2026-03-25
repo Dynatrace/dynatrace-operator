@@ -46,7 +46,7 @@ func InstallLocal(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		if os.Getenv("OLM") == "true" {
 			if withCSI {
-				fmt.Println("skipping CSI tests with OLM installation")  //nolint:forbidigo
+				fmt.Println("skipping CSI tests with OLM installation") //nolint:forbidigo
 				envConfig.WithSkipFeatureRegex(".*")
 
 				return ctx, nil
