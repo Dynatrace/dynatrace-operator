@@ -3,7 +3,6 @@ package oneagent
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -61,11 +60,10 @@ func TestGetProcessModuleConfig(t *testing.T) {
 	t.Run("hostGroup undefined", func(t *testing.T) {
 		params := map[string]string{
 			"hostgroup": hostGroup,
-			"revision":  "0",
 			"sections":  "general,agentType",
 		}
 		client := setupMockedClient(t, params, hostGroup, goodProcessModuleConfigResponse, nil)
-		resp, err := client.GetProcessModuleConfig(ctx, 0)
+		resp, err := client.GetProcessModuleConfig(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, uint(1), resp.Revision)
 		assert.Len(t, resp.Properties, 2)
@@ -76,14 +74,18 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		assert.Equal(t, "a", resp.Properties[1].Key)
 		assert.Equal(t, "b", resp.Properties[1].Value)
 	})
-}
 
-func TestSpecialProcessModuleConfigRequestStatus(t *testing.T) {
-	assert.False(t, checkProcessModuleConfigRequestStatus(nil))
-	assert.True(t, checkProcessModuleConfigRequestStatus(&core.HTTPError{StatusCode: http.StatusNotModified}))
-	assert.True(t, checkProcessModuleConfigRequestStatus(&core.HTTPError{StatusCode: http.StatusNotFound}))
-	assert.False(t, checkProcessModuleConfigRequestStatus(&core.HTTPError{StatusCode: http.StatusOK}))
-	assert.False(t, checkProcessModuleConfigRequestStatus(&core.HTTPError{StatusCode: http.StatusInternalServerError}))
+	t.Run("404 error", func(t *testing.T) {
+		expectErr := &core.HTTPError{StatusCode: 404, Message: "Not Found"}
+		params := map[string]string{
+			"sections": "general,agentType",
+		}
+
+		client := setupMockedClient(t, params, "", "{}", expectErr)
+		_, err := client.GetProcessModuleConfig(ctx)
+		require.Error(t, err)
+		assert.True(t, core.IsNotFound(err))
+	})
 }
 
 func TestAddHostGroup(t *testing.T) {

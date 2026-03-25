@@ -4,11 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/pkg/errors"
 )
 
@@ -157,11 +155,10 @@ func (pmc ProcessModuleConfig) IsEmpty() bool {
 	return len(pmc.Properties) == 0
 }
 
-func (c *Client) GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error) {
+func (c *Client) GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error) {
 	var resp ProcessModuleConfig
 
 	params := map[string]string{
-		"revision": strconv.FormatUint(uint64(prevRevision), 10),
 		"sections": "general,agentType",
 	}
 
@@ -174,10 +171,6 @@ func (c *Client) GetProcessModuleConfig(ctx context.Context, prevRevision uint) 
 		WithQueryParams(params).
 		Execute(&resp)
 
-	if checkProcessModuleConfigRequestStatus(err) {
-		return &ProcessModuleConfig{}, nil
-	}
-
 	if err != nil {
 		return &ProcessModuleConfig{}, errors.WithMessage(err, "error while requesting process module config")
 	}
@@ -187,23 +180,6 @@ func (c *Client) GetProcessModuleConfig(ctx context.Context, prevRevision uint) 
 	}
 
 	return &resp, nil
-}
-
-// The endpoint used here is new therefore some tenants may not have it so we need to
-// handle it gracefully, by checking the status code of the request.
-// we also handle when there were no changes
-func checkProcessModuleConfigRequestStatus(err error) bool {
-	if core.IsNotModified(err) {
-		return true
-	}
-
-	if core.IsNotFound(err) {
-		log.Info("endpoint for ruxitagentproc.conf is not available on the cluster.")
-
-		return true
-	}
-
-	return false
 }
 
 func NewProcessModuleConfig(response []byte) (*ProcessModuleConfig, error) {

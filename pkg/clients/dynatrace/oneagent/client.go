@@ -12,7 +12,7 @@ var log = logd.Get().WithName("dtclient-oneagent")
 type APIClient interface {
 	GetConnectionInfo(ctx context.Context) (ConnectionInfo, error)
 
-	GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error)
+	GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error)
 }
 
 type Client struct {

@@ -68,7 +68,7 @@ func TestPreparePMC(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -120,7 +120,7 @@ func TestPreparePMC(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -157,7 +157,7 @@ func TestPreparePMC(t *testing.T) {
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
 		expectedError := errors.New("API error")
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(nil, expectedError)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -188,7 +188,7 @@ func TestPreparePMC(t *testing.T) {
 		clt := fake.NewClient(dk) // No tenant secret
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -234,7 +234,7 @@ func TestPreparePMC(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)

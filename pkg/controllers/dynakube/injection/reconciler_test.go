@@ -127,7 +127,7 @@ func TestReconciler(t *testing.T) {
 		oneAgentClient.EXPECT().GetConnectionInfo(t.Context()).Return(expectedOneAgentConnectionInfo, nil).Once()
 		versionClient := versionclientmock.NewAPIClient(t)
 		versionClient.EXPECT().GetLatestAgentVersion(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
-		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 		settingsClient := settingsmock.NewAPIClient(t)
 		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
@@ -404,7 +404,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		)
 
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
-		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 		dtClient := dtclientmock.NewClient(t)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oneAgentClient}).Once()
 
@@ -472,7 +472,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 		)
 
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
-		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 		dtClient := dtclientmock.NewClient(t)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oneAgentClient}).Twice() // generateInitSecret x2
 

@@ -26,7 +26,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	if pmConfig == nil {
 		var err error
 
-		pmConfig, err = s.dtClient.GetProcessModuleConfig(ctx, 0)
+		pmConfig, err = s.dtClient.GetProcessModuleConfig(ctx)
 		if err != nil {
 			k8sconditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 
