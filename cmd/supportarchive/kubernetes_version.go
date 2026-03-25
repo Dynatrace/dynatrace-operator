@@ -1,10 +1,10 @@
 package supportarchive
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"k8s.io/client-go/discovery"
 )
 
@@ -28,25 +28,14 @@ func newKubernetesVersionCollector(log logd.Logger, supportArchive archiver, dis
 func (kvc kubernetesVersionCollector) Do() error {
 	logInfof(kvc.log, "Storing Kubernetes version into %s", KubernetesVersionFileName)
 
-	serverVersion, err := kvc.discoveryClient.ServerVersion()
+	serverVersion, err := k8sversion.GetFormattedServerVersion(kvc.discoveryClient)
 	if err != nil {
 		logErrorf(kvc.log, err, "Failed to retrieve Kubernetes server version")
 
 		return err
 	}
 
-	versionString := fmt.Sprintf(
-		"major: %s\nminor: %s\ngitVersion: %s\ngitCommit: %s\nbuildDate: %s\ngoVersion: %s\nplatform: %s\n",
-		serverVersion.Major,
-		serverVersion.Minor,
-		serverVersion.GitVersion,
-		serverVersion.GitCommit,
-		serverVersion.BuildDate,
-		serverVersion.GoVersion,
-		serverVersion.Platform,
-	)
-
-	if err := kvc.supportArchive.addFile(KubernetesVersionFileName, strings.NewReader(versionString)); err != nil {
+	if err := kvc.supportArchive.addFile(KubernetesVersionFileName, strings.NewReader(serverVersion)); err != nil {
 		return err
 	}
 

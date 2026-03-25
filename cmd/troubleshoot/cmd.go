@@ -70,6 +70,8 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func RunTroubleshootCmd(ctx context.Context, log logd.Logger, namespaceName string, kubeConfig *rest.Config) {
+	checkKubernetesVersion(log, kubeConfig)
+
 	apiReader, err := GetK8SClusterAPIReader(kubeConfig)
 	if err != nil {
 		return
