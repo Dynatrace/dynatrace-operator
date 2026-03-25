@@ -238,6 +238,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 		HostNetwork:                   true,
 		HostPID:                       true,
 		HostIPC:                       false,
+		SecurityContext:               buildPodSecurityContext(),
 		NodeSelector:                  b.nodeSelector(),
 		PriorityClassName:             b.priorityClassName(),
 		ServiceAccountName:            serviceAccountName,
@@ -540,4 +541,10 @@ func (b *builder) isRootFsReadonly() bool {
 	}
 
 	return true
+}
+
+func buildPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		FSGroup: ptr.To(userGroupID),
+	}
 }

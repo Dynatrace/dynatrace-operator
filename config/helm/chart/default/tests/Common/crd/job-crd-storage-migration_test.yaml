@@ -41,8 +41,13 @@ tests:
           path: spec.template.spec.containers[0].args
           content: crd-storage-migration
       - contains:
-          path: spec.template.spec.containers[0].args
-          content: --namespace=NAMESPACE
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
       - isNotEmpty:
           path: spec.template.spec.containers[0].resources.requests
       - isNotEmpty:

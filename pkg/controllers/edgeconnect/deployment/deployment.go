@@ -54,6 +54,7 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 					ImagePullSecrets:              prepareImagePullSecrets(ec),
 					ServiceAccountName:            ec.GetServiceAccountName(),
 					DeprecatedServiceAccount:      ec.GetServiceAccountName(),
+					SecurityContext:               buildPodSecurityContext(),
 					TerminationGracePeriodSeconds: ptr.To(int64(30)),
 					Volumes:                       prepareVolumes(ec),
 					NodeSelector:                  ec.Spec.NodeSelector,
@@ -168,6 +169,7 @@ func prepareConfigVolume(ec *edgeconnect.EdgeConnect) corev1.Volume {
 				Items: []corev1.KeyToPath{
 					{Key: consts.EdgeConnectConfigFileName, Path: consts.EdgeConnectConfigFileName},
 				},
+				DefaultMode: ptr.To(int32(0o640)),
 			},
 		},
 	}
@@ -188,5 +190,11 @@ func prepareResourceRequirements(ec *edgeconnect.EdgeConnect) corev1.ResourceReq
 	return corev1.ResourceRequirements{
 		Requests: requests,
 		Limits:   limits,
+	}
+}
+
+func buildPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		FSGroup: ptr.To(unprivilegedGroup),
 	}
 }

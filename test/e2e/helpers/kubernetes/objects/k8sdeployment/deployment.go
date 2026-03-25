@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -27,6 +28,8 @@ const DeploymentAvailableTimeout = 5 * time.Minute
 const DeploymentReplicaFailureTimeout = 5 * time.Minute
 
 type PodConsumer func(pod corev1.Pod)
+
+type MutateFn func(deploy *appsv1.Deployment)
 
 type Query struct {
 	ctx       context.Context
@@ -60,6 +63,23 @@ func (query *Query) ForEachPod(consumer PodConsumer) error {
 	return nil
 }
 
+func Update(name, namespace string, mFns ...MutateFn) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		deploy := &appsv1.Deployment{}
+		resource := envConfig.Client().Resources()
+
+		require.NoError(t, resource.Get(ctx, name, namespace, deploy))
+
+		for _, mFn := range mFns {
+			mFn(deploy)
+		}
+
+		require.NoError(t, resource.Update(ctx, deploy))
+
+		return ctx
+	}
+}
+
 func IsReady(name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
@@ -82,6 +102,31 @@ func WaitFor(name string, namespace string) env.Func {
 		}
 
 		return ctx, WaitUntilReady(clientResources, deployment)
+	}
+}
+
+func WaitForReplicas(name, namespace string, replicas int32) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		deployment := &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+		err := wait.For(conditions.New(resource).ResourceScaled(deployment, func(object k8s.Object) int32 {
+			currDeploy, isCurrDeploy := object.(*appsv1.Deployment)
+
+			if !isCurrDeploy {
+				return 0
+			}
+
+			return *currDeploy.Spec.Replicas
+		}, replicas), wait.WithTimeout(5*time.Minute))
+
+		require.NoError(t, err)
+
+		return ctx
 	}
 }
 

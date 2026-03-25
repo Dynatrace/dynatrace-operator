@@ -100,6 +100,12 @@ func WithCustomActiveGateImage(imageURI string) Option {
 	}
 }
 
+func WithActiveGateReplicas(replicas *int32) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.ActiveGate.Replicas = replicas
+	}
+}
+
 func WithMetadataEnrichment() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
@@ -268,6 +274,12 @@ func WithOTelCollectorImageRef() Option {
 			consts.OtelCollectorImageEnvVar,
 			consts.DefaultOtelCollectorImage,
 		)
+	}
+}
+
+func WithOTelCollectorReplicas(replicas *int32) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.OpenTelemetryCollector.Replicas = replicas
 	}
 }
 

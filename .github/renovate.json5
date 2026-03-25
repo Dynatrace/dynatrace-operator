@@ -16,9 +16,9 @@
   ],
   baseBranches: [
     "$default",
-    "release-1.6",
     "release-1.7",
     "release-1.8",
+    "release-1.9",
   ],
   enabledManagers: [
     "regex",
@@ -35,7 +35,7 @@
   automergeType: "pr",
   automerge: true,
   branchNameStrict: true,
-  hashedBranchLength: 54, // 63 character limit for label values with space for "snapshot-" prefix
+  hashedBranchLength: 27, // 63 character limit for label values with space for "dynatrace-operator.v0.0.0-snapshot-" prefix
   regexManagers: [
     {
       fileMatch: [
@@ -64,9 +64,9 @@
     {
       matchBaseBranches: [
         "$default",
-        "release-1.6",
         "release-1.7",
         "release-1.8",
+        "release-1.9",
       ],
       matchUpdateTypes: [
         "major",

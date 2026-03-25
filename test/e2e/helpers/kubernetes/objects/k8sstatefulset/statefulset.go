@@ -19,11 +19,30 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+type MutateFn func(ss *appsv1.StatefulSet)
+
 func Get(ctx context.Context, resource *resources.Resources, name, namespace string) (appsv1.StatefulSet, error) {
 	var stateFulSet appsv1.StatefulSet
 	err := resource.Get(ctx, name, namespace, &stateFulSet)
 
 	return stateFulSet, err
+}
+
+func Update(name, namespace string, mFns ...MutateFn) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ss := &appsv1.StatefulSet{}
+		resource := envConfig.Client().Resources()
+
+		require.NoError(t, resource.Get(ctx, name, namespace, ss))
+
+		for _, mFn := range mFns {
+			mFn(ss)
+		}
+
+		require.NoError(t, resource.Update(ctx, ss))
+
+		return ctx
+	}
 }
 
 func IsReady(name, namespace string) features.Func {
@@ -54,6 +73,31 @@ func WaitFor(name string, namespace string) features.Func {
 			return isStatefulSet && statefulSet.Status.Replicas == statefulSet.Status.ReadyReplicas
 		}), wait.WithTimeout(10*time.Minute))
 		// Default of 5 minutes can be a bit too short for the ActiveGate to startup
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func WaitForReplicas(name, namespace string, replicas int32) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		ss := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+		err := wait.For(conditions.New(resource).ResourceScaled(ss, func(object k8s.Object) int32 {
+			currSS, isCurrSS := object.(*appsv1.StatefulSet)
+
+			if !isCurrSS {
+				return 0
+			}
+
+			return *currSS.Spec.Replicas
+		}, replicas), wait.WithTimeout(5*time.Minute))
 
 		require.NoError(t, err)
 

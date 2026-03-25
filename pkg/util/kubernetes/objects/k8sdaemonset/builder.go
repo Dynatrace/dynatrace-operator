@@ -148,3 +148,9 @@ func SetUpdateStrategy(updateStartegy appsv1.DaemonSetUpdateStrategy) builder.Op
 		s.Spec.UpdateStrategy = updateStartegy
 	}
 }
+
+func SetSecurityContext(securityContext *corev1.PodSecurityContext) builder.Option[*appsv1.DaemonSet] {
+	return func(s *appsv1.DaemonSet) {
+		s.Spec.Template.Spec.SecurityContext = securityContext
+	}
+}

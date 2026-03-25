@@ -2,98 +2,99 @@ package certificates
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
 	SuccessDuration = 3 * time.Hour
 
-	secretPostfix                = "-certs"
-	errorCertificatesSecretEmpty = "certificates secret is empty"
+	initReconcileInterval = 5 * time.Second
+
+	secretPostfix = "-certs"
 )
 
-func Add(mgr manager.Manager, ns string) error {
+var errCertificatesSecretEmpty = errors.New("certificates secret is empty")
+
+func InitReconcile(ctx context.Context, clt client.Client, namespace string) error {
+	controller := newWebhookCertificateController(clt, clt)
+	request := ctrl.Request{NamespacedName: types.NamespacedName{Name: webhook.DeploymentName, Namespace: namespace}}
+
+	return wait.PollUntilContextCancel(ctx, initReconcileInterval, true, func(ctx context.Context) (bool, error) {
+		if _, err := controller.Reconcile(ctx, request); err != nil {
+			log.Error(err, "failed init reconcile")
+
+			return false, nil
+		}
+
+		return true, nil
+	})
+}
+
+func Add(mgr manager.Manager, namespace string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		Named("webhook-cert-controller").
-		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
-		Complete(newWebhookCertificateController(mgr, nil))
+		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, namespace)).
+		Complete(newWebhookCertificateController(mgr.GetClient(), mgr.GetAPIReader()))
 }
 
-func AddInit(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&appsv1.Deployment{}).
-		Named("webhook-boostrap-controller").
-		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
-		Complete(newWebhookCertificateController(mgr, cancelMgr))
-}
-
-func newWebhookCertificateController(mgr manager.Manager, cancelMgr context.CancelFunc) *WebhookCertificateController {
+func newWebhookCertificateController(clt client.Client, apiReader client.Reader) *WebhookCertificateController {
 	return &WebhookCertificateController{
-		cancelMgrFunc: cancelMgr,
-		client:        mgr.GetClient(),
-		apiReader:     mgr.GetAPIReader(),
+		client:    clt,
+		apiReader: apiReader,
 	}
 }
 
 type WebhookCertificateController struct {
-	client        client.Client
-	apiReader     client.Reader
-	cancelMgrFunc context.CancelFunc
-	namespace     string
+	client    client.Client
+	apiReader client.Reader
 }
 
-func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Info("reconciling webhook certificates",
-		"namespace", request.Namespace, "name", request.Name)
+func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
+	log.Info("reconciling webhook certificates", "namespace", request.Namespace, "name", request.Name)
 
-	controller.namespace = request.Namespace
+	webhookDeployment := &appsv1.Deployment{}
 
-	webhookDeployment := appsv1.Deployment{}
+	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: request.Namespace}, webhookDeployment); err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("no webhook deployment found, skipping webhook certificate generation")
 
-	err := controller.apiReader.Get(ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: controller.namespace}, &webhookDeployment)
-	if k8serrors.IsNotFound(err) {
-		log.Info("no webhook deployment found, skipping webhook certificate generation")
+			return ctrl.Result{}, nil
+		}
 
-		return reconcile.Result{}, nil
-	} else if err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+		return ctrl.Result{}, fmt.Errorf("get webhook deployment: %w", err)
 	}
 
 	mutatingWebhookConfiguration, validatingWebhookConfiguration := controller.getWebhooksConfigurations(ctx)
 
-	crd, err := controller.getCrd(ctx)
+	crd, err := controller.getCRD(ctx)
 	if err != nil {
-		log.Info("could not find CRD configuration")
-
-		return reconcile.Result{}, errors.WithStack(err)
+		return ctrl.Result{}, err
 	}
 
-	certSecret := newCertificateSecret(&webhookDeployment)
-
-	err = certSecret.setSecretFromReader(ctx, controller.apiReader, controller.namespace)
-	if err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+	certSecret := newCertificateSecret(webhookDeployment)
+	if err := certSecret.setSecretFromReader(ctx, controller.apiReader, webhookDeployment.Namespace); err != nil {
+		return ctrl.Result{}, err
 	}
 
-	err = certSecret.validateCertificates(controller.namespace)
-	if err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+	if err := certSecret.validateCertificates(webhookDeployment.Namespace); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	mutatingWebhookClientConfigs := getClientConfigsFromMutatingWebhook(mutatingWebhookConfiguration)
@@ -101,41 +102,38 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 
 	if controller.isUpToDate(certSecret, mutatingWebhookClientConfigs, validatingWebhookConfigConfigs, crd) {
 		log.Info("secret for certificates up to date, skipping update")
-		controller.cancelMgr()
 
-		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+		return ctrl.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
 	if err = certSecret.createOrUpdateIfNecessary(ctx, controller.client); err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+		return ctrl.Result{}, err
 	}
 
 	bundle, err := certSecret.loadCombinedBundle()
 	if err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+		return ctrl.Result{}, err
 	}
 
 	err = controller.updateClientConfigurations(ctx, bundle, mutatingWebhookClientConfigs, mutatingWebhookConfiguration)
 	if err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+		return ctrl.Result{}, err
 	}
 
 	err = controller.updateClientConfigurations(ctx, bundle, validatingWebhookConfigConfigs, validatingWebhookConfiguration)
 	if err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+		return ctrl.Result{}, err
 	}
 
 	if err = controller.updateCRDConfiguration(ctx, k8scrd.DynaKubeName, bundle); err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+		return ctrl.Result{}, err
 	}
 
 	if err = controller.updateCRDConfiguration(ctx, k8scrd.EdgeConnectName, bundle); err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+		return ctrl.Result{}, err
 	}
 
-	controller.cancelMgr()
-
-	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+	return ctrl.Result{RequeueAfter: SuccessDuration}, nil
 }
 
 func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crd *apiextensionsv1.CustomResourceDefinition) bool {
@@ -167,13 +165,6 @@ func (controller *WebhookCertificateController) getWebhooksConfigurations(ctx co
 	}
 
 	return mutatingWebhookConfiguration, validatingWebhookConfiguration
-}
-
-func (controller *WebhookCertificateController) cancelMgr() {
-	if controller.cancelMgrFunc != nil {
-		log.Info("stopping manager after certificates creation")
-		controller.cancelMgrFunc()
-	}
 }
 
 func (controller *WebhookCertificateController) getMutatingWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
@@ -210,17 +201,18 @@ func (controller *WebhookCertificateController) getValidatingWebhookConfiguratio
 	return &mutatingWebhook, nil
 }
 
-func (controller *WebhookCertificateController) getCrd(ctx context.Context) (*apiextensionsv1.CustomResourceDefinition, error) {
+func (controller *WebhookCertificateController) getCRD(ctx context.Context) (*apiextensionsv1.CustomResourceDefinition, error) {
 	var crd apiextensionsv1.CustomResourceDefinition
 	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get CRD: %w", err)
 	}
 
 	return &crd, nil
 }
 
 func (controller *WebhookCertificateController) updateClientConfigurations(ctx context.Context, bundle []byte,
-	webhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, webhookConfig client.Object) error {
+	webhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, webhookConfig client.Object,
+) error {
 	if webhookConfig == nil || reflect.ValueOf(webhookConfig).IsNil() {
 		return nil
 	}
@@ -230,7 +222,7 @@ func (controller *WebhookCertificateController) updateClientConfigurations(ctx c
 	}
 
 	if err := controller.client.Update(ctx, webhookConfig); err != nil {
-		return err
+		return fmt.Errorf("update webhook configuration %s: %w", webhookConfig.GetName(), err)
 	}
 
 	return nil
@@ -239,7 +231,7 @@ func (controller *WebhookCertificateController) updateClientConfigurations(ctx c
 func (controller *WebhookCertificateController) updateCRDConfiguration(ctx context.Context, crdName string, bundle []byte) error {
 	var crd apiextensionsv1.CustomResourceDefinition
 	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
-		return err
+		return fmt.Errorf("get CRD %s: %w", crdName, err)
 	}
 
 	if !hasConversionWebhook(crd) {
@@ -248,10 +240,9 @@ func (controller *WebhookCertificateController) updateCRDConfiguration(ctx conte
 		return nil
 	}
 
-	// update crd
 	crd.Spec.Conversion.Webhook.ClientConfig.CABundle = bundle
 	if err := controller.client.Update(ctx, &crd); err != nil {
-		return err
+		return fmt.Errorf("update CRD %s: %w", crdName, err)
 	}
 
 	return nil

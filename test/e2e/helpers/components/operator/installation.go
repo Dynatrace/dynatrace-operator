@@ -44,26 +44,53 @@ func Install(releaseTag string, withCSI bool) env.Func {
 // InstallLocal deploys the operator helm chart from filesystem.
 func InstallLocal(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		err := installViaHelm("", withCSI)
-		if err != nil {
-			return ctx, err
+		if os.Getenv("OLM") == "true" {
+			if withCSI {
+				fmt.Println("skipping CSI tests with OLM installation") //nolint:forbidigo
+				envConfig.WithSkipFeatureRegex(".*")
+
+				return ctx, nil
+			}
+			err := installViaOLMLocalBundle()
+			if err != nil {
+				return ctx, err
+			}
+		} else {
+			err := installViaHelm("", withCSI)
+			if err != nil {
+				return ctx, err
+			}
 		}
 
 		return VerifyInstall(ctx, envConfig, withCSI)
 	}
 }
 
+func installViaOLMLocalBundle() error {
+	err := execMakeCommand(project.RootDir(), "bundle/show-image-ref")
+	if err != nil {
+		return err
+	}
+
+	return execMakeCommand(project.RootDir(), "bundle/run")
+}
+
 func Uninstall(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		rootDir := project.RootDir()
-		if withCSI {
-			ctx, err := csi.CleanUpEachPod(DefaultNamespace)(ctx, envConfig)
-			if err != nil {
-				return ctx, err
-			}
-		}
 
-		return ctx, execMakeCommand(rootDir, "undeploy", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		if os.Getenv("OLM") == "true" {
+			return ctx, execMakeCommand(rootDir, "bundle/cleanup")
+		} else {
+			if withCSI {
+				ctx, err := csi.CleanUpEachPod(DefaultNamespace)(ctx, envConfig)
+				if err != nil {
+					return ctx, err
+				}
+			}
+
+			return ctx, execMakeCommand(rootDir, "undeploy", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		}
 	}
 }
 
