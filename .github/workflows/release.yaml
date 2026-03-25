@@ -247,7 +247,7 @@ jobs:
       - name: Login Helm to dockerhub
         shell: bash
         run: |
-          helm registry login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}" "registry.hub.docker.com"
+          helm registry login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}" "docker.io"
       - name: Login Docker to dockerhub
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
@@ -261,6 +261,7 @@ jobs:
           version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+          registry-url: docker.io
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
         with:
