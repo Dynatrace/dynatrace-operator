@@ -71,7 +71,7 @@ jobs:
           SOURCE_USERNAME: ${{ secrets.API_SPEC_SOURCE_USERNAME }}
 
       - name: Upload source schema
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: source-schema-${{ matrix.name }}
           path: output/
@@ -98,7 +98,7 @@ jobs:
           persist-credentials: false
 
       - name: Download all source schemas
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: source-schema-*
           path: source-schemas
