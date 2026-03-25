@@ -186,7 +186,7 @@ func (c *Client) GetProcessModuleConfig(ctx context.Context, prevRevision uint) 
 		return &ProcessModuleConfig{}, errors.New("no properties available")
 	}
 
-	return &resp, err
+	return &resp, nil
 }
 
 // The endpoint used here is new therefore some tenants may not have it so we need to
