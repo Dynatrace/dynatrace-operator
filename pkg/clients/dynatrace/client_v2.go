@@ -174,7 +174,7 @@ func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		Settings:   settings.NewClient(apiClient),
 		ActiveGate: activegate.NewClient(apiClient),
 		HostEvent:  hostevent.NewClient(apiClient, config.NetworkZone),
-		OneAgent:   oneagent.NewClient(apiClient, config.NetworkZone),
+		OneAgent:   oneagent.NewClient(apiClient, config.HostGroup, config.NetworkZone),
 		Version:    version.NewClient(apiClient),
 		Token:      token.NewClient(apiClient),
 	}, nil

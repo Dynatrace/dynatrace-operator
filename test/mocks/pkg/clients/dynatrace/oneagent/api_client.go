@@ -97,3 +97,65 @@ func (_c *APIClient_GetConnectionInfo_Call) RunAndReturn(run func(ctx context.Co
 	_c.Call.Return(run)
 	return _c
 }
+
+// GetProcessModuleConfig provides a mock function for the type APIClient
+func (_mock *APIClient) GetProcessModuleConfig(ctx context.Context) (*oneagent.ProcessModuleConfig, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetProcessModuleConfig")
+	}
+
+	var r0 *oneagent.ProcessModuleConfig
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (*oneagent.ProcessModuleConfig, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) *oneagent.ProcessModuleConfig); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*oneagent.ProcessModuleConfig)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// APIClient_GetProcessModuleConfig_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetProcessModuleConfig'
+type APIClient_GetProcessModuleConfig_Call struct {
+	*mock.Call
+}
+
+// GetProcessModuleConfig is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *APIClient_Expecter) GetProcessModuleConfig(ctx interface{}) *APIClient_GetProcessModuleConfig_Call {
+	return &APIClient_GetProcessModuleConfig_Call{Call: _e.mock.On("GetProcessModuleConfig", ctx)}
+}
+
+func (_c *APIClient_GetProcessModuleConfig_Call) Run(run func(ctx context.Context)) *APIClient_GetProcessModuleConfig_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_GetProcessModuleConfig_Call) Return(processModuleConfig *oneagent.ProcessModuleConfig, err error) *APIClient_GetProcessModuleConfig_Call {
+	_c.Call.Return(processModuleConfig, err)
+	return _c
+}
+
+func (_c *APIClient_GetProcessModuleConfig_Call) RunAndReturn(run func(ctx context.Context) (*oneagent.ProcessModuleConfig, error)) *APIClient_GetProcessModuleConfig_Call {
+	_c.Call.Return(run)
+	return _c
+}

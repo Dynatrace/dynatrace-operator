@@ -34,10 +34,6 @@ func (dtc *dynatraceClient) getOneAgentConnectionInfoURL() string {
 	return dtc.url + "/v1/deployment/installer/agent/connectioninfo"
 }
 
-func (dtc *dynatraceClient) getProcessModuleConfigURL() string {
-	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig?sections=general,agentType"
-}
-
 func appendTechnologies(url string, technologies []string) string {
 	for _, tech := range technologies {
 		url = fmt.Sprintf("%s&include=%s", url, tech)
