@@ -8,6 +8,8 @@ on:
     paths:
       - api/oapi/sync-config.yaml
 
+permissions: {}
+
 jobs:
   prepare:
     name: Read sync config
