@@ -170,7 +170,6 @@ func (c *Client) GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConf
 		WithPaasToken().
 		WithQueryParams(params).
 		Execute(&resp)
-
 	if err != nil {
 		return &ProcessModuleConfig{}, errors.WithMessage(err, "error while requesting process module config")
 	}
