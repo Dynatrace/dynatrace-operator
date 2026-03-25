@@ -55,6 +55,36 @@ func TestClient_Headers(t *testing.T) {
 	require.NoError(t, c.POST(t.Context(), "/test").WithRawBody([]byte("test")).Execute(nil))
 }
 
+func TestClient_WithHeader(t *testing.T) {
+	t.Run("override accept header", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "application/octet-stream", r.Header.Get("Accept"))
+		}))
+
+		defer s.Close()
+
+		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+		_, err := c.GET(t.Context(), "/test").
+			WithHeader("Accept", "application/octet-stream").
+			ExecuteRaw()
+		require.NoError(t, err)
+	})
+
+	t.Run("custom header", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "application/json", r.Header.Get("Accept"))
+			assert.Equal(t, "custom-value", r.Header.Get("X-Custom"))
+		}))
+		defer s.Close()
+
+		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+		_, err := c.GET(t.Context(), "/test").
+			WithHeader("X-Custom", "custom-value").
+			ExecuteRaw()
+		require.NoError(t, err)
+	})
+}
+
 func TestClient_URL(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/test", r.URL.Path)

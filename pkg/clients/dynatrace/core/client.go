@@ -42,6 +42,8 @@ type APIRequest interface {
 	WithTokenType(tokenType TokenType) APIRequest
 	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
+	// WithHeader sets a custom header for the request, overriding any default value
+	WithHeader(key, value string) APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
 	Execute(model any) error
 	// ExecuteRaw executes the request and returns the raw response data
@@ -72,6 +74,7 @@ type Request struct {
 
 	ctx       context.Context
 	query     url.Values
+	headers   http.Header
 	method    string
 	path      string
 	body      []byte
@@ -89,15 +92,18 @@ const (
 )
 
 func (c *Client) newRequest(ctx context.Context) *Request {
+	headers := make(http.Header)
+
 	query := make(url.Values)
 	if c.cfg.BaseURL != nil {
 		query = c.cfg.BaseURL.Query()
 	}
 
 	return &Request{
-		client: c,
-		ctx:    ctx,
-		query:  query,
+		headers: headers,
+		client:  c,
+		ctx:     ctx,
+		query:   query,
 	}
 }
 
@@ -191,6 +197,13 @@ func (r *Request) WithPaasToken() APIRequest {
 	return r
 }
 
+// WithHeader sets a custom header for the request, overriding existing value
+func (r *Request) WithHeader(key, value string) APIRequest {
+	r.headers.Set(key, value)
+
+	return r
+}
+
 // Execute executes the request and unmarshals the response into the provided model
 func (r *Request) Execute(model any) error {
 	body, err := r.doRequest()
@@ -264,7 +277,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 		return nil, fmt.Errorf("create HTTP request: %w", err)
 	}
 
-	setHeaders(req, r.client.cfg.UserAgent, r.getToken())
+	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
 
 	httpClient := r.client.cfg.HTTPClient
 	if httpClient == nil {
@@ -305,7 +318,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 }
 
 // setHeaders sets the common headers for the request
-func setHeaders(req *http.Request, userAgent, token string) {
+func setHeaders(req *http.Request, userAgent, token string, customHeaders http.Header) {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", apiTokenHeader+token)
 
@@ -315,6 +328,10 @@ func setHeaders(req *http.Request, userAgent, token string) {
 
 	if req.GetBody != nil {
 		req.Header.Set("Content-Type", "application/json")
+	}
+
+	for key, values := range customHeaders {
+		req.Header.Set(key, values[0])
 	}
 }
 
