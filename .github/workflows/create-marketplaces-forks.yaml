@@ -62,8 +62,8 @@ jobs:
           persist-credentials: false
       - name: Configure git identity
         run: |
-          git config --global user.name  "${{ secrets.TEAM_USER_NAME }}"
-          git config --global user.email "${{ secrets.TEAM_USER_EMAIL }}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
       - name: Derive version and branch name
         id: meta
         run: |
