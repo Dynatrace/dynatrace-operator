@@ -144,6 +144,65 @@ func (_c *APIRequest_ExecuteRaw_Call) RunAndReturn(run func() ([]byte, error)) *
 	return _c
 }
 
+// WithHeader provides a mock function for the type APIRequest
+func (_mock *APIRequest) WithHeader(key string, value string) core.APIRequest {
+	ret := _mock.Called(key, value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithHeader")
+	}
+
+	var r0 core.APIRequest
+	if returnFunc, ok := ret.Get(0).(func(string, string) core.APIRequest); ok {
+		r0 = returnFunc(key, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(core.APIRequest)
+		}
+	}
+	return r0
+}
+
+// APIRequest_WithHeader_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithHeader'
+type APIRequest_WithHeader_Call struct {
+	*mock.Call
+}
+
+// WithHeader is a helper method to define mock.On call
+//   - key string
+//   - value string
+func (_e *APIRequest_Expecter) WithHeader(key interface{}, value interface{}) *APIRequest_WithHeader_Call {
+	return &APIRequest_WithHeader_Call{Call: _e.mock.On("WithHeader", key, value)}
+}
+
+func (_c *APIRequest_WithHeader_Call) Run(run func(key string, value string)) *APIRequest_WithHeader_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *APIRequest_WithHeader_Call) Return(aPIRequest core.APIRequest) *APIRequest_WithHeader_Call {
+	_c.Call.Return(aPIRequest)
+	return _c
+}
+
+func (_c *APIRequest_WithHeader_Call) RunAndReturn(run func(key string, value string) core.APIRequest) *APIRequest_WithHeader_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithJSONBody provides a mock function for the type APIRequest
 func (_mock *APIRequest) WithJSONBody(body any) core.APIRequest {
 	ret := _mock.Called(body)

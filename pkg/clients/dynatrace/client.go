@@ -1,10 +1,8 @@
 package dynatrace
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -22,19 +20,6 @@ const (
 
 // Client is the interface for the Dynatrace REST API client.
 type Client interface {
-	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
-	GetLatestAgent(ctx context.Context, os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error
-
-	// GetAgent downloads a specific agent version and writes it to the given io.Writer
-	GetAgent(ctx context.Context, os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error
-
-	// GetAgentViaInstallerUrl downloads the agent from the user specified URL and writes it to the given io.Writer
-	GetAgentViaInstallerURL(ctx context.Context, url string, writer io.Writer) error
-
-	// GetAgentVersions on success returns an array of versions that can be used with GetAgent to
-	// download a specific agent version
-	GetAgentVersions(ctx context.Context, os, installerType, flavor string) ([]string, error)
-
 	// AsV2 is a temporary adapter to gradually migrate to the v2 client.
 	AsV2() *ClientV2
 }

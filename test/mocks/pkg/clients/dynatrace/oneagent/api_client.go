@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"context"
+	"io"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	mock "github.com/stretchr/testify/mock"
@@ -36,6 +37,105 @@ type APIClient_Expecter struct {
 
 func (_m *APIClient) EXPECT() *APIClient_Expecter {
 	return &APIClient_Expecter{mock: &_m.Mock}
+}
+
+// Get provides a mock function for the type APIClient
+func (_mock *APIClient) Get(ctx context.Context, os string, installerType string, flavor string, arch string, version string, technologies []string, skipMetadata bool, writer io.Writer) error {
+	ret := _mock.Called(ctx, os, installerType, flavor, arch, version, technologies, skipMetadata, writer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, []string, bool, io.Writer) error); ok {
+		r0 = returnFunc(ctx, os, installerType, flavor, arch, version, technologies, skipMetadata, writer)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// APIClient_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
+type APIClient_Get_Call struct {
+	*mock.Call
+}
+
+// Get is a helper method to define mock.On call
+//   - ctx context.Context
+//   - os string
+//   - installerType string
+//   - flavor string
+//   - arch string
+//   - version string
+//   - technologies []string
+//   - skipMetadata bool
+//   - writer io.Writer
+func (_e *APIClient_Expecter) Get(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}, arch interface{}, version interface{}, technologies interface{}, skipMetadata interface{}, writer interface{}) *APIClient_Get_Call {
+	return &APIClient_Get_Call{Call: _e.mock.On("Get", ctx, os, installerType, flavor, arch, version, technologies, skipMetadata, writer)}
+}
+
+func (_c *APIClient_Get_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string, arch string, version string, technologies []string, skipMetadata bool, writer io.Writer)) *APIClient_Get_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 string
+		if args[4] != nil {
+			arg4 = args[4].(string)
+		}
+		var arg5 string
+		if args[5] != nil {
+			arg5 = args[5].(string)
+		}
+		var arg6 []string
+		if args[6] != nil {
+			arg6 = args[6].([]string)
+		}
+		var arg7 bool
+		if args[7] != nil {
+			arg7 = args[7].(bool)
+		}
+		var arg8 io.Writer
+		if args[8] != nil {
+			arg8 = args[8].(io.Writer)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+			arg5,
+			arg6,
+			arg7,
+			arg8,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_Get_Call) Return(err error) *APIClient_Get_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *APIClient_Get_Call) RunAndReturn(run func(ctx context.Context, os string, installerType string, flavor string, arch string, version string, technologies []string, skipMetadata bool, writer io.Writer) error) *APIClient_Get_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // GetConnectionInfo provides a mock function for the type APIClient
@@ -98,6 +198,99 @@ func (_c *APIClient_GetConnectionInfo_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
+// GetLatest provides a mock function for the type APIClient
+func (_mock *APIClient) GetLatest(ctx context.Context, os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer) error {
+	ret := _mock.Called(ctx, os, installerType, flavor, arch, technologies, skipMetadata, writer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatest")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string, string, []string, bool, io.Writer) error); ok {
+		r0 = returnFunc(ctx, os, installerType, flavor, arch, technologies, skipMetadata, writer)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// APIClient_GetLatest_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLatest'
+type APIClient_GetLatest_Call struct {
+	*mock.Call
+}
+
+// GetLatest is a helper method to define mock.On call
+//   - ctx context.Context
+//   - os string
+//   - installerType string
+//   - flavor string
+//   - arch string
+//   - technologies []string
+//   - skipMetadata bool
+//   - writer io.Writer
+func (_e *APIClient_Expecter) GetLatest(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}, arch interface{}, technologies interface{}, skipMetadata interface{}, writer interface{}) *APIClient_GetLatest_Call {
+	return &APIClient_GetLatest_Call{Call: _e.mock.On("GetLatest", ctx, os, installerType, flavor, arch, technologies, skipMetadata, writer)}
+}
+
+func (_c *APIClient_GetLatest_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer)) *APIClient_GetLatest_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 string
+		if args[4] != nil {
+			arg4 = args[4].(string)
+		}
+		var arg5 []string
+		if args[5] != nil {
+			arg5 = args[5].([]string)
+		}
+		var arg6 bool
+		if args[6] != nil {
+			arg6 = args[6].(bool)
+		}
+		var arg7 io.Writer
+		if args[7] != nil {
+			arg7 = args[7].(io.Writer)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+			arg5,
+			arg6,
+			arg7,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_GetLatest_Call) Return(err error) *APIClient_GetLatest_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *APIClient_GetLatest_Call) RunAndReturn(run func(ctx context.Context, os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer) error) *APIClient_GetLatest_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetProcessModuleConfig provides a mock function for the type APIClient
 func (_mock *APIClient) GetProcessModuleConfig(ctx context.Context) (*oneagent.ProcessModuleConfig, error) {
 	ret := _mock.Called(ctx)
@@ -156,6 +349,149 @@ func (_c *APIClient_GetProcessModuleConfig_Call) Return(processModuleConfig *one
 }
 
 func (_c *APIClient_GetProcessModuleConfig_Call) RunAndReturn(run func(ctx context.Context) (*oneagent.ProcessModuleConfig, error)) *APIClient_GetProcessModuleConfig_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetVersions provides a mock function for the type APIClient
+func (_mock *APIClient) GetVersions(ctx context.Context, os string, installerType string, flavor string) ([]string, error) {
+	ret := _mock.Called(ctx, os, installerType, flavor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetVersions")
+	}
+
+	var r0 []string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) ([]string, error)); ok {
+		return returnFunc(ctx, os, installerType, flavor)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) []string); ok {
+		r0 = returnFunc(ctx, os, installerType, flavor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = returnFunc(ctx, os, installerType, flavor)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// APIClient_GetVersions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetVersions'
+type APIClient_GetVersions_Call struct {
+	*mock.Call
+}
+
+// GetVersions is a helper method to define mock.On call
+//   - ctx context.Context
+//   - os string
+//   - installerType string
+//   - flavor string
+func (_e *APIClient_Expecter) GetVersions(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}) *APIClient_GetVersions_Call {
+	return &APIClient_GetVersions_Call{Call: _e.mock.On("GetVersions", ctx, os, installerType, flavor)}
+}
+
+func (_c *APIClient_GetVersions_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string)) *APIClient_GetVersions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_GetVersions_Call) Return(strings []string, err error) *APIClient_GetVersions_Call {
+	_c.Call.Return(strings, err)
+	return _c
+}
+
+func (_c *APIClient_GetVersions_Call) RunAndReturn(run func(ctx context.Context, os string, installerType string, flavor string) ([]string, error)) *APIClient_GetVersions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetViaInstallerURL provides a mock function for the type APIClient
+func (_mock *APIClient) GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
+	ret := _mock.Called(ctx, url, writer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetViaInstallerURL")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, io.Writer) error); ok {
+		r0 = returnFunc(ctx, url, writer)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// APIClient_GetViaInstallerURL_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetViaInstallerURL'
+type APIClient_GetViaInstallerURL_Call struct {
+	*mock.Call
+}
+
+// GetViaInstallerURL is a helper method to define mock.On call
+//   - ctx context.Context
+//   - url string
+//   - writer io.Writer
+func (_e *APIClient_Expecter) GetViaInstallerURL(ctx interface{}, url interface{}, writer interface{}) *APIClient_GetViaInstallerURL_Call {
+	return &APIClient_GetViaInstallerURL_Call{Call: _e.mock.On("GetViaInstallerURL", ctx, url, writer)}
+}
+
+func (_c *APIClient_GetViaInstallerURL_Call) Run(run func(ctx context.Context, url string, writer io.Writer)) *APIClient_GetViaInstallerURL_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 io.Writer
+		if args[2] != nil {
+			arg2 = args[2].(io.Writer)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_GetViaInstallerURL_Call) Return(err error) *APIClient_GetViaInstallerURL_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *APIClient_GetViaInstallerURL_Call) RunAndReturn(run func(ctx context.Context, url string, writer io.Writer) error) *APIClient_GetViaInstallerURL_Call {
 	_c.Call.Return(run)
 	return _c
 }
