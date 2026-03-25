@@ -8,14 +8,12 @@ on:
     paths:
       - api/oapi/sync-config.yaml
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   prepare:
     name: Read sync config
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       matrix: ${{ steps.config.outputs.matrix }}
       schemas_json: ${{ steps.config.outputs.schemas_json }}
@@ -46,7 +44,7 @@ jobs:
     needs: prepare
     if: needs.prepare.outputs.has_schemas == 'true'
     runs-on:
-      - operator-e2e
+      - self-hosted
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
@@ -87,6 +85,9 @@ jobs:
     needs: [prepare, clone-source]
     if: needs.prepare.outputs.has_schemas == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
