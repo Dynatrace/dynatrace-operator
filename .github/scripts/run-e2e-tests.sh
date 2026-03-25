@@ -27,8 +27,8 @@ source ../ref/.github/scripts/prepare-e2e-secrets.sh
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
 if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
-  echo "run standard tests suite using OLM"
-  make test/e2e/standard/publish/olm
+  echo "run no csi tests suite using OLM"
+  make test/e2e/nocsi/publish/olm
 elif [[ -n "${TARGET_IMAGE}" ]]; then
   make IMAGE_URI="$TARGET_IMAGE" test/e2e-publish
 else
