@@ -200,7 +200,11 @@ linters:
         - name: add-constant
           disabled: true
         - name: var-naming
-          disabled: true
+          arguments:
+            - [] # AllowList
+            - ["DT", "EEC", "KSPM", "OLM"] # DenyList
+            - - skip-initialism-name-checks: false
+                upper-case-const: true
         - name: unused-receiver
           disabled: true
         - name: import-shadowing
