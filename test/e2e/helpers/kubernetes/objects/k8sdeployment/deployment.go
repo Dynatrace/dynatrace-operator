@@ -29,7 +29,7 @@ const DeploymentReplicaFailureTimeout = 5 * time.Minute
 
 type PodConsumer func(pod corev1.Pod)
 
-type Option func(deploy *appsv1.Deployment)
+type MutateFn func(deploy *appsv1.Deployment)
 
 type Query struct {
 	ctx       context.Context
@@ -63,17 +63,21 @@ func (query *Query) ForEachPod(consumer PodConsumer) error {
 	return nil
 }
 
-func (query *Query) Update(ops ...Option) error {
-	deploy := &appsv1.Deployment{}
-	if err := query.resource.Get(query.ctx, query.objectKey.Name, query.objectKey.Namespace, deploy); err != nil {
-		return err
-	}
+func Update(name, namespace string, mFns ...MutateFn) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		deploy := &appsv1.Deployment{}
+		resource := envConfig.Client().Resources()
 
-	for _, o := range ops {
-		o(deploy)
-	}
+		require.NoError(t, resource.Get(ctx, name, namespace, deploy))
 
-	return query.resource.Update(query.ctx, deploy)
+		for _, mFn := range mFns {
+			mFn(deploy)
+		}
+
+		require.NoError(t, resource.Update(ctx, deploy))
+
+		return ctx
+	}
 }
 
 func IsReady(name, namespace string) features.Func {

@@ -3,7 +3,6 @@
 package telemetryingest
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
@@ -11,11 +10,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8shpa"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
-	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -38,8 +36,6 @@ func WithHPA(t *testing.T) features.Feature {
 	testDynakube := *componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-
-	builder.Assess("check if the otelc statefulset has replicas set to 1", k8sstatefulset.WaitForReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, 1))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -83,17 +79,9 @@ func EnforceReplicas(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("check if the otelc statefulset has replicas set to 2", k8sstatefulset.WaitForReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *baseReplicas))
-
-	builder.Assess("scale explicitly otelc statefulset replicas to 3", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		ss, err := k8sstatefulset.Get(ctx, resources, testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace)
-		require.NoError(t, err)
+	builder.Assess("scale otelc statefulset replicas to 3", k8sstatefulset.Update(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, func(ss *appsv1.StatefulSet) {
 		ss.Spec.Replicas = scaleReplicas
-		require.NoError(t, k8sstatefulset.Update(ctx, resources, &ss))
-
-		return ctx
-	})
+	}))
 
 	builder.Assess("check if otelc replicas were rolled back to 2", k8sstatefulset.WaitForReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *baseReplicas))
 

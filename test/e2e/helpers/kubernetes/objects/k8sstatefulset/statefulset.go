@@ -19,6 +19,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+type MutateFn func(ss *appsv1.StatefulSet)
+
 func Get(ctx context.Context, resource *resources.Resources, name, namespace string) (appsv1.StatefulSet, error) {
 	var stateFulSet appsv1.StatefulSet
 	err := resource.Get(ctx, name, namespace, &stateFulSet)
@@ -26,15 +28,21 @@ func Get(ctx context.Context, resource *resources.Resources, name, namespace str
 	return stateFulSet, err
 }
 
-func Update(ctx context.Context, resource *resources.Resources, ss *appsv1.StatefulSet) error {
-	var oldSS appsv1.StatefulSet
-	if err := resource.Get(ctx, ss.Name, ss.Namespace, &oldSS); err != nil {
-		return err
+func Update(name, namespace string, mFns ...MutateFn) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ss := &appsv1.StatefulSet{}
+		resource := envConfig.Client().Resources()
+
+		require.NoError(t, resource.Get(ctx, name, namespace, ss))
+
+		for _, mFn := range mFns {
+			mFn(ss)
+		}
+
+		require.NoError(t, resource.Update(ctx, ss))
+
+		return ctx
 	}
-
-	ss.ResourceVersion = oldSS.ResourceVersion
-
-	return resource.Update(ctx, ss)
 }
 
 func IsReady(name, namespace string) features.Func {

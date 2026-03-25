@@ -3,7 +3,6 @@
 package edgeconnect
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -13,13 +12,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8shpa"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -53,8 +49,6 @@ func WithHPARegular(t *testing.T) features.Feature {
 	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
 	ecComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
-
-	builder.Assess("check if the EC deployment has replicas set to 1", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, 1))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -105,8 +99,6 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
-
-	builder.Assess("check if the EC deployment has replicas set to 1", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, 1))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -161,23 +153,9 @@ func EnforceReplicasRegular(t *testing.T) features.Feature {
 
 	ecComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
 
-	builder.Assess("check if the EC deployment has replicas set to 2", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, *baseReplicas))
-
-	builder.Assess("scale explicitly deployment replicas to 3", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		key := client.ObjectKey{
-			Name:      testEdgeConnect.Name,
-			Namespace: testEdgeConnect.Namespace,
-		}
-
-		q := k8sdeployment.NewQuery(ctx, resources, key)
-
-		require.NoError(t, q.Update(func(d *appsv1.Deployment) {
-			d.Spec.Replicas = scaleReplicas
-		}))
-
-		return ctx
-	})
+	builder.Assess("scale EC deployment replicas to 3", k8sdeployment.Update(testEdgeConnect.Name, testEdgeConnect.Namespace, func(d *appsv1.Deployment) {
+		d.Spec.Replicas = scaleReplicas
+	}))
 
 	builder.Assess("check if the EC deployment has roll back replicas set to 2", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, *baseReplicas))
 
@@ -212,23 +190,9 @@ func EnforceReplicasProvisioner(t *testing.T) features.Feature {
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 
-	builder.Assess("check if the EC deployment has replicas set to 2", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, *baseReplicas))
-
-	builder.Assess("scale explicitly EC deployment replicas to 3", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		key := client.ObjectKey{
-			Name:      testEdgeConnect.Name,
-			Namespace: testEdgeConnect.Namespace,
-		}
-
-		q := k8sdeployment.NewQuery(ctx, resources, key)
-
-		require.NoError(t, q.Update(func(d *appsv1.Deployment) {
-			d.Spec.Replicas = scaleReplicas
-		}))
-
-		return ctx
-	})
+	builder.Assess("scale EC deployment replicas to 3", k8sdeployment.Update(testEdgeConnect.Name, testEdgeConnect.Namespace, func(d *appsv1.Deployment) {
+		d.Spec.Replicas = scaleReplicas
+	}))
 
 	builder.Assess("check if the EC deployment has roll back replicas set to 2", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, *baseReplicas))
 

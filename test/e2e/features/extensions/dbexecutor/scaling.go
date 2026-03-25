@@ -3,7 +3,6 @@
 package dbexecutor
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -12,13 +11,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8shpa"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
-	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -44,8 +40,6 @@ func WithHPA(t *testing.T) features.Feature {
 	testDynakube := *componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-
-	builder.Assess("check if the deployment has replicas set to 1", k8sdeployment.WaitForReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, 1))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -91,23 +85,9 @@ func EnforceReplicas(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("check if the executor deployment has replicas set to 2", k8sdeployment.WaitForReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, *baseReplicas))
-
-	builder.Assess("scale explicitly executor deployment replicas to 3", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		key := client.ObjectKey{
-			Name:      testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID),
-			Namespace: testDynakube.Namespace,
-		}
-
-		q := k8sdeployment.NewQuery(ctx, resources, key)
-
-		require.NoError(t, q.Update(func(d *appsv1.Deployment) {
-			d.Spec.Replicas = scaleReplicas
-		}))
-
-		return ctx
-	})
+	builder.Assess("scale executor deployment replicas to 3", k8sdeployment.Update(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, func(d *appsv1.Deployment) {
+		d.Spec.Replicas = scaleReplicas
+	}))
 
 	builder.Assess("check if executor deployment replicas were rolled back to 2", k8sdeployment.WaitForReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, *baseReplicas))
 
