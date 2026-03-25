@@ -57,12 +57,12 @@ func TestNoCSI_activegate(t *testing.T) {
 	testEnv.Test(t, activegate.Feature(t, nil))
 }
 
-func TestNoCSI_activegate_hpa(t *testing.T) {
+func TestNoCSI_activegate_scaling_hpa(t *testing.T) {
 	testEnv.Test(t, activegate.WithHPA(t))
 }
 
-func TestNoCSI_activegate_hpa_enforce_replicas(t *testing.T) {
-	testEnv.Test(t, activegate.WithHPAEnforceReplicas(t))
+func TestNoCSI_activegate_scaling_enforce_replicas(t *testing.T) {
+	testEnv.Test(t, activegate.EnforceReplicas(t))
 }
 
 func TestNoCSI_metadata_enrichment(t *testing.T) {
@@ -105,20 +105,20 @@ func TestNoCSI_custom_edgeconnect(t *testing.T) {
 	testEnv.Test(t, edgeconnect.AutomationModeFeature(t))
 }
 
-func TestNoCSI_edgeconnect_hpa_regular(t *testing.T) {
+func TestNoCSI_edgeconnect_scaling_hpa_regular(t *testing.T) {
 	testEnv.Test(t, edgeconnect.WithHPARegular(t))
 }
 
-func TestNoCSI_edgeconnect_hpa_regular_enforce_replicas(t *testing.T) {
-	testEnv.Test(t, edgeconnect.WithHPAEnforceReplicasRegular(t))
+func TestNoCSI_edgeconnect_scaling_enforce_replicas_regular(t *testing.T) {
+	testEnv.Test(t, edgeconnect.EnforceReplicasRegular(t))
 }
 
-func TestNoCSI_edgeconnect_hpa_provisioner(t *testing.T) {
+func TestNoCSI_edgeconnect_scaling_hpa_provisioner(t *testing.T) {
 	testEnv.Test(t, edgeconnect.WithHPAProvisioner(t))
 }
 
-func TestNoCSI_edgeconnect_hpa_provisioner_enforce_replicas(t *testing.T) {
-	testEnv.Test(t, edgeconnect.WithHPAEnforceReplicasProvisioner(t))
+func TestNoCSI_edgeconnect_scaling_enforce_replicas_provisioner(t *testing.T) {
+	testEnv.Test(t, edgeconnect.EnforceReplicasProvisioner(t))
 }
 
 func TestNoCSI_classic(t *testing.T) {
@@ -166,12 +166,12 @@ func TestNoCSI_telemetryingest_configuration_update(t *testing.T) {
 	testEnv.Test(t, telemetryingest.OtelCollectorConfigUpdate(t))
 }
 
-func TestNoCSI_telemetryingest_hpa(t *testing.T) {
+func TestNoCSI_telemetryingest_scaling_hpa(t *testing.T) {
 	testEnv.Test(t, telemetryingest.WithHPA(t))
 }
 
-func TestNoCSI_telemetryingest_hpa_enforce_replicas(t *testing.T) {
-	testEnv.Test(t, telemetryingest.WithHPAEnforceReplicas(t))
+func TestNoCSI_telemetryingest_scaling_enforce_replicas(t *testing.T) {
+	testEnv.Test(t, telemetryingest.EnforceReplicas(t))
 }
 
 func TestNoCSI_kspm(t *testing.T) {
@@ -186,10 +186,10 @@ func TestNoCSI_extensions_db_executor(t *testing.T) {
 	testEnv.Test(t, dbexecutor.Feature(t))
 }
 
-func TestNoCSI_extensions_db_executor_hpa(t *testing.T) {
+func TestNoCSI_extensions_db_executor_scaling_hpa(t *testing.T) {
 	testEnv.Test(t, dbexecutor.WithHPA(t))
 }
 
-func TestNoCSI_extensions_db_executor_hpa_enforce_replicas(t *testing.T) {
-	testEnv.Test(t, dbexecutor.WithHPAEnforceReplicas(t))
+func TestNoCSI_extensions_db_executor_scaling_enforce_replicas(t *testing.T) {
+	testEnv.Test(t, dbexecutor.EnforceReplicas(t))
 }

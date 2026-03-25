@@ -26,6 +26,17 @@ func Get(ctx context.Context, resource *resources.Resources, name, namespace str
 	return stateFulSet, err
 }
 
+func Update(ctx context.Context, resource *resources.Resources, ss *appsv1.StatefulSet) error {
+	var oldSS appsv1.StatefulSet
+	if err := resource.Get(ctx, ss.Name, ss.Namespace, &oldSS); err != nil {
+		return err
+	}
+
+	ss.ResourceVersion = oldSS.ResourceVersion
+
+	return resource.Update(ctx, ss)
+}
+
 func IsReady(name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()

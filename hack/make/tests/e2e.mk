@@ -51,9 +51,9 @@ test/e2e/activegate:
 test/e2e/activegate/proxy:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/istio -run "activegate" $(SKIPCLEANUP)
 
-## Runs ActiveGate HPA e2e test only
-test/e2e/activegate/hpa:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "activegate_hpa" $(SKIPCLEANUP)
+## Runs ActiveGate scaling e2e test only
+test/e2e/activegate/scaling:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "activegate_scaling" $(SKIPCLEANUP)
 
 ## Runs ClassicFullStack e2e test only
 test/e2e/classic:
@@ -127,9 +127,9 @@ test/e2e/extensions/upgrade:
 test/e2e/extensions/dbexecutor:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "extensions_db_executor" $(SKIPCLEANUP)
 
-## Runs DatabaseExecutor HPA e2e test only
-test/e2e/extensions/dbexecutor/hpa:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "extensions_db_executor_hpa" $(SKIPCLEANUP)
+## Runs DatabaseExecutor scaling e2e test only
+test/e2e/extensions/dbexecutor/scaling:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "extensions_db_executor_scaling" $(SKIPCLEANUP)
 
 ## Runs Application Monitoring metadata-enrichment e2e test only
 test/e2e/applicationmonitoring/metadataenrichment:
@@ -179,9 +179,9 @@ test/e2e/edgeconnect/normal:
 test/e2e/edgeconnect/proxy:
 	$(GOTESTCMD) -timeout 20m  ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_proxy" $(SKIPCLEANUP)
 
-## Runs EdgeConnect HPA e2e test only
-test/e2e/edgeconnect/hpa:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_hpa" $(SKIPCLEANUP)
+## Runs EdgeConnect scaling e2e test only
+test/e2e/edgeconnect/scaling:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_scaling" $(SKIPCLEANUP)
 
 ## Runs e2e tests on gke-autopilot
 test/e2e/gke-autopilot:
@@ -226,9 +226,9 @@ test/e2e/telemetryingest/otel-collector-endpoint-tls:
 test/e2e/telemetryingest/otel-collector-config-udpate:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_configuration_update" $(SKIPCLEANUP)
 
-## Runs TelemetryIngest HPA e2e test only
-test/e2e/telemetryingest/hpa:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_hpa" $(SKIPCLEANUP)
+## Runs TelemetryIngest scaling e2e test only
+test/e2e/telemetryingest/scaling:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_scaling" $(SKIPCLEANUP)
 
 test/e2e/kspm:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm" $(SKIPCLEANUP)

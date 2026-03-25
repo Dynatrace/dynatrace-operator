@@ -58,17 +58,6 @@ func Create(edgeConnect edgeconnect.EdgeConnect) features.Func {
 	}
 }
 
-func Update(ec edgeconnect.EdgeConnect) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		var oldEC edgeconnect.EdgeConnect
-		require.NoError(t, environmentConfig.Client().Resources().Get(ctx, ec.Name, ec.Namespace, &oldEC))
-		ec.ResourceVersion = oldEC.ResourceVersion
-		require.NoError(t, environmentConfig.Client().Resources().Update(ctx, &ec))
-
-		return ctx
-	}
-}
-
 func Get(ec *edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		require.NoError(t, environmentConfig.Client().Resources().Get(ctx, ec.Name, ec.Namespace, ec))
@@ -110,34 +99,6 @@ func WaitForPhase(edgeConnect edgeconnect.EdgeConnect, phase status.DeploymentPh
 			ec, isEdgeConnect := object.(*edgeconnect.EdgeConnect)
 
 			return isEdgeConnect && ec.Status.DeploymentPhase == phase
-		}), wait.WithTimeout(5*time.Minute))
-
-		require.NoError(t, err)
-
-		return ctx
-	}
-}
-
-func WaitForReplicas(edgeConnect edgeconnect.EdgeConnect, replicas *int32) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-
-		err := wait.For(conditions.New(resources).ResourceMatch(&edgeConnect, func(object k8s.Object) bool {
-			currEC, isCurrEC := object.(*edgeconnect.EdgeConnect)
-
-			if !isCurrEC {
-				return false
-			}
-
-			if replicas == nil {
-				return currEC.Spec.Replicas == nil
-			}
-
-			if currEC.Spec.Replicas == nil {
-				return false
-			}
-
-			return *replicas == *currEC.Spec.Replicas
 		}), wait.WithTimeout(5*time.Minute))
 
 		require.NoError(t, err)
