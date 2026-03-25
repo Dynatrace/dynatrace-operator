@@ -108,3 +108,9 @@ func WithProxy(spec *proxy.Spec) Option {
 		ec.Spec.Proxy = spec
 	}
 }
+
+func WithReplicas(replicas *int32) Option {
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.Replicas = replicas
+	}
+}
