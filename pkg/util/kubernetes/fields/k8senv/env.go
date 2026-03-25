@@ -12,9 +12,9 @@ const (
 	CSIDataDir                  = "CSI_DATA_DIR"
 	PodNamespace                = "POD_NAMESPACE"
 	PodName                     = "POD_NAME"
-	DtOperatorImageEnvName      = "DT_OPERATOR_IMAGE"
-	DtOperatorPullSecretEnvName = "DT_OPERATOR_PULL_SECRET"
-	OlmOperatorNamespaceEnv     = "OLM_OPERATOR_NAMESPACE"
+	DTOperatorImageEnvName      = "DT_OPERATOR_IMAGE"
+	DTOperatorPullSecretEnvName = "DT_OPERATOR_PULL_SECRET"
+	OLMOperatorNamespaceEnv     = "OLM_OPERATOR_NAMESPACE"
 	AppVersion                  = "APP_VERSION"
 )
 

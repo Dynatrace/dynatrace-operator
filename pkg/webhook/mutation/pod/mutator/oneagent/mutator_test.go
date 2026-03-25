@@ -448,9 +448,9 @@ func TestAddOneAgentToContainer(t *testing.T) {
 		require.NotNil(t, preload)
 		assert.Contains(t, preload.Value, installPath)
 
-		storageEnv := k8senv.Find(container.Env, DtStorageEnv)
+		storageEnv := k8senv.Find(container.Env, DTStorageEnv)
 		require.NotNil(t, storageEnv)
-		assert.Contains(t, storageEnv.Value, DtStoragePath)
+		assert.Contains(t, storageEnv.Value, DTStoragePath)
 
 		assert.True(t, containerIsInjected(container, nil))
 	})

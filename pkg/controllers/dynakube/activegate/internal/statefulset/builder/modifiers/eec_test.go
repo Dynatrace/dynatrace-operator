@@ -13,7 +13,7 @@ func TestEecEnabled(t *testing.T) {
 		dk := getBaseDynakube()
 		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 
-		mod := NewEecVolumeModifier(dk)
+		mod := NewEECVolumeModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
@@ -22,7 +22,7 @@ func TestEecEnabled(t *testing.T) {
 		dk := getBaseDynakube()
 		dk.Spec.Extensions = nil
 
-		mod := NewEecVolumeModifier(dk)
+		mod := NewEECVolumeModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -33,7 +33,7 @@ func TestEecModify(t *testing.T) {
 		dk := getBaseDynakube()
 		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 
-		mod := NewEecVolumeModifier(dk)
+		mod := NewEECVolumeModifier(dk)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

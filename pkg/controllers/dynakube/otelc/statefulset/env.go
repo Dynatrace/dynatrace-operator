@@ -44,8 +44,8 @@ const (
 	envNoProxy          = "NO_PROXY"
 
 	// Volume names and paths
-	customEecTLSCertificatePath     = "/tls/custom/eec"
-	customEecTLSCertificateFullPath = customEecTLSCertificatePath + "/" + consts.TLSCrtDataName
+	customEECTLSCertificatePath     = "/tls/custom/eec"
+	customEECTLSCertificateFullPath = customEECTLSCertificatePath + "/" + consts.TLSCrtDataName
 )
 
 func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
@@ -86,8 +86,8 @@ func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
 					Key:                  consts.DatasourceTokenSecretKey,
 				}},
 			},
-			corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath},
-			corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEecTLSCertificateFullPath},
+			corev1.EnvVar{Name: envCertDir, Value: customEECTLSCertificatePath},
+			corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEECTLSCertificateFullPath},
 		)
 	}
 

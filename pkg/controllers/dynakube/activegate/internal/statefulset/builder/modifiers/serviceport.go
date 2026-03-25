@@ -61,7 +61,7 @@ func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 	prioritymap.Append(mod.envMap,
 		[]corev1.EnvVar{
 			{
-				Name:  consts.EnvDtDNSEntryPoint,
+				Name:  consts.EnvDTDNSEntryPoint,
 				Value: capability.BuildDNSEntryPoint(mod.dk),
 			},
 		},

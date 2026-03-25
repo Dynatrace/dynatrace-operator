@@ -919,11 +919,11 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes []string) *Control
 	mockedTokenClient := tokenclientmock.NewAPIClient(t)
 	mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(tokenScopes, nil)
 
-	fakeDtClient := dtclientmock.NewClient(t)
-	fakeDtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
+	fakeDTClient := dtclientmock.NewClient(t)
+	fakeDTClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
 
 	fakeBuilder := dtbuildermock.NewBuilder(t)
-	mockDynatraceClientBuild(fakeBuilder, fakeDtClient)
+	mockDynatraceClientBuild(fakeBuilder, fakeDTClient)
 
 	return &Controller{
 		client:                 fakeClient,

@@ -11,9 +11,9 @@ import (
 
 func setKSPMUsage(dk *dynakube.DynaKube, isUsed bool) {
 	if isUsed {
-		dk.Spec.Kspm = &kspm.Spec{}
+		dk.Spec.KSPM = &kspm.Spec{}
 	} else {
-		dk.Spec.Kspm = nil
+		dk.Spec.KSPM = nil
 	}
 }
 
@@ -23,7 +23,7 @@ func TestKspmEnabled(t *testing.T) {
 		enableKubeMonCapability(&dk)
 		setKSPMUsage(&dk, true)
 
-		mod := NewKspmModifier(dk)
+		mod := NewKSPMModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
@@ -33,7 +33,7 @@ func TestKspmEnabled(t *testing.T) {
 		enableKubeMonCapability(&dk)
 		setKSPMUsage(&dk, false)
 
-		mod := NewKspmModifier(dk)
+		mod := NewKSPMModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -42,7 +42,7 @@ func TestKspmEnabled(t *testing.T) {
 		dk := getBaseDynakube()
 		setKSPMUsage(&dk, true)
 
-		mod := NewKspmModifier(dk)
+		mod := NewKSPMModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -54,7 +54,7 @@ func TestKspmModify(t *testing.T) {
 		dk.KSPM().TokenSecretHash = "some-hash"
 		enableKubeMonCapability(&dk)
 		setKSPMUsage(&dk, true)
-		mod := NewKspmModifier(dk)
+		mod := NewKSPMModifier(dk)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

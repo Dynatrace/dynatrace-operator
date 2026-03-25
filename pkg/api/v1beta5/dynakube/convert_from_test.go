@@ -158,7 +158,7 @@ func TestConvertFrom(t *testing.T) {
 
 	t.Run("migrate kspm from latest to v1beta5", func(t *testing.T) {
 		from := getNewDynakubeBase()
-		from.Spec.Kspm = &kspmlatest.Spec{}
+		from.Spec.KSPM = &kspmlatest.Spec{}
 		to := DynaKube{}
 
 		err := to.ConvertFrom(&from)
@@ -216,14 +216,14 @@ func TestConvertFrom(t *testing.T) {
 
 	t.Run("migrate kspm templates from latest to v1beta5", func(t *testing.T) {
 		from := getNewDynakubeBase()
-		from.Spec.Templates.KspmNodeConfigurationCollector = getNewNodeConfigurationCollectorTemplateSpec()
+		from.Spec.Templates.KSPMNodeConfigurationCollector = getNewNodeConfigurationCollectorTemplateSpec()
 
 		to := DynaKube{}
 
 		err := to.ConvertFrom(&from)
 		require.NoError(t, err)
 
-		compareNodeConfigurationCollectorTemplateSpec(t, to.Spec.Templates.KspmNodeConfigurationCollector, from.Spec.Templates.KspmNodeConfigurationCollector)
+		compareNodeConfigurationCollectorTemplateSpec(t, to.Spec.Templates.KspmNodeConfigurationCollector, from.Spec.Templates.KSPMNodeConfigurationCollector)
 		compareBase(t, to, from)
 	})
 

@@ -55,7 +55,7 @@ func (r *Reconciler) reconcileSecret(ctx context.Context, dk *dynakube.DynaKube)
 	migrationNeeded := r.removeDeprecatedSecretAndConditionIfNeeded(ctx, existingSecret, dk)
 
 	if k8serrors.IsNotFound(err) || migrationNeeded {
-		newEecToken, err := dttoken.New(eecConsts.TokenSecretValuePrefix)
+		newEECToken, err := dttoken.New(eecConsts.TokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate eec token")
 			k8sconditions.SetSecretGenFailed(dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating eec token"))
@@ -71,7 +71,7 @@ func (r *Reconciler) reconcileSecret(ctx context.Context, dk *dynakube.DynaKube)
 			return err
 		}
 
-		newSecret, err := r.buildSecret(*newEecToken, *newOtelcToken, dk)
+		newSecret, err := r.buildSecret(*newEECToken, *newOtelcToken, dk)
 		if err != nil {
 			log.Info("failed to generate extension secret")
 			k8sconditions.SetSecretGenFailed(dk.Conditions(), secretConditionType, err)

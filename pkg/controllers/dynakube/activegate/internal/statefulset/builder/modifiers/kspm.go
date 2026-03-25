@@ -11,9 +11,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ volumeModifier = KspmModifier{}
-var _ volumeMountModifier = KspmModifier{}
-var _ builder.Modifier = KspmModifier{}
+var _ volumeModifier = KSPMModifier{}
+var _ volumeMountModifier = KSPMModifier{}
+var _ builder.Modifier = KSPMModifier{}
 
 const (
 	kspmTokenVolumeName           = "kspm-token"
@@ -21,21 +21,21 @@ const (
 	kspmTokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
 )
 
-func NewKspmModifier(dk dynakube.DynaKube) KspmModifier {
-	return KspmModifier{
+func NewKSPMModifier(dk dynakube.DynaKube) KSPMModifier {
+	return KSPMModifier{
 		dk: dk,
 	}
 }
 
-type KspmModifier struct {
+type KSPMModifier struct {
 	dk dynakube.DynaKube
 }
 
-func (mod KspmModifier) Enabled() bool {
+func (mod KSPMModifier) Enabled() bool {
 	return mod.dk.KSPM().IsEnabled() && mod.dk.ActiveGate().IsKubernetesMonitoringEnabled()
 }
 
-func (mod KspmModifier) Modify(sts *appsv1.StatefulSet) error {
+func (mod KSPMModifier) Modify(sts *appsv1.StatefulSet) error {
 	if sts.Spec.Template.Annotations == nil {
 		sts.Spec.Template.Annotations = map[string]string{}
 	}
@@ -48,7 +48,7 @@ func (mod KspmModifier) Modify(sts *appsv1.StatefulSet) error {
 	return nil
 }
 
-func (mod KspmModifier) getVolumes() []corev1.Volume {
+func (mod KSPMModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: kspmTokenVolumeName,
@@ -61,7 +61,7 @@ func (mod KspmModifier) getVolumes() []corev1.Volume {
 	}
 }
 
-func (mod KspmModifier) getVolumeMounts() []corev1.VolumeMount {
+func (mod KSPMModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			ReadOnly:  true,

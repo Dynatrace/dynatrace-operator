@@ -6,23 +6,23 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 )
 
-func (kspm *Kspm) SetName(name string) {
+func (kspm *KSPM) SetName(name string) {
 	kspm.name = name
 }
 
-func (kspm *Kspm) IsEnabled() bool {
+func (kspm *KSPM) IsEnabled() bool {
 	return kspm.Spec != nil
 }
 
-func (kspm *Kspm) GetTokenSecretName() string {
+func (kspm *KSPM) GetTokenSecretName() string {
 	return kspm.name + "-" + TokenSecretKey
 }
 
-func (kspm *Kspm) GetDaemonSetName() string {
+func (kspm *KSPM) GetDaemonSetName() string {
 	return kspm.name + consts.NodeCollectorNameSuffix
 }
 
-func (kspm *Kspm) GetUniqueMappedHostPaths() []string {
+func (kspm *KSPM) GetUniqueMappedHostPaths() []string {
 	tmpMappedHostPaths := append([]string{}, kspm.MappedHostPaths...)
 	slices.Sort(tmpMappedHostPaths)
 
