@@ -106,12 +106,6 @@ func Proxy(proxyURL string, noProxy string) Option {
 	}
 }
 
-func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
-	return func(req *http.Request) (*url.URL, error) {
-		return proxyConfig.ProxyFunc()(req.URL)
-	}
-}
-
 func Certs(certs []byte) Option {
 	return func(c *dynatraceClient) {
 		rootCAs, err := x509.SystemCertPool()

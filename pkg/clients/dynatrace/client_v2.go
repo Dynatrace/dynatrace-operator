@@ -2,6 +2,7 @@ package dynatrace
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -16,7 +17,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
+	"golang.org/x/net/http/httpproxy"
 )
+
+type NewFuncV2 func(baseURL string, options ...OptionV2) (*ClientV2, error)
+
+var _ NewFuncV2 = NewClientV2
 
 type ClientV2 struct {
 	Settings   settings.APIClient
@@ -36,6 +42,7 @@ type ConfigV2 struct {
 	DataIngestToken string
 	UserAgent       string
 	Proxy           string
+	NoProxy         string
 	NetworkZone     string
 	HostGroup       string
 	Timeout         time.Duration
@@ -79,6 +86,39 @@ func WithTLSConfig(tlsConfig *tls.Config) OptionV2 {
 	}
 }
 
+func WithSkipCertificateValidation(skip bool) OptionV2 {
+	return func(c *ConfigV2) {
+		if skip {
+			if c.TLSConfig == nil {
+				c.TLSConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
+			}
+
+			c.TLSConfig.InsecureSkipVerify = true
+		}
+	}
+}
+
+func WithCerts(certs []byte) OptionV2 {
+	return func(c *ConfigV2) {
+		rootCAs, err := x509.SystemCertPool()
+		if err != nil {
+			log.Info("couldn't read system certificates!")
+
+			return
+		}
+
+		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
+			log.Info("failed to append custom certs!")
+		}
+
+		if c.TLSConfig == nil {
+			c.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+		}
+
+		c.TLSConfig.RootCAs = rootCAs
+	}
+}
+
 // WithTimeout sets the request timeout
 func WithTimeout(timeout time.Duration) OptionV2 {
 	return func(c *ConfigV2) {
@@ -87,9 +127,10 @@ func WithTimeout(timeout time.Duration) OptionV2 {
 }
 
 // WithProxy sets the proxy URL
-func WithProxy(proxyURL string) OptionV2 {
+func WithProxy(proxyURL string, noProxy string) OptionV2 {
 	return func(c *ConfigV2) {
 		c.Proxy = proxyURL
+		c.NoProxy = noProxy
 	}
 }
 
@@ -116,8 +157,8 @@ func WithUserAgentSuffix(suffix string) OptionV2 {
 	}
 }
 
-// newClientV2 creates a new Dynatrace API client
-func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
+// NewClientV2 creates a new Dynatrace API client
+func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 	config := ConfigV2{
 		BaseURL:   baseURL,
 		UserAgent: operatorversion.UserAgent(),
@@ -149,7 +190,12 @@ func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 				return nil, fmt.Errorf("invalid proxy URL: %w", err)
 			}
 
-			transport.Proxy = http.ProxyURL(proxyURL)
+			proxyConfig := httpproxy.Config{
+				HTTPProxy:  proxyURL.String(),
+				HTTPSProxy: proxyURL.String(),
+				NoProxy:    config.NoProxy,
+			}
+			transport.Proxy = proxyWrapper(proxyConfig)
 		}
 
 		config.HTTPClient = &http.Client{
@@ -182,7 +228,7 @@ func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 
 func (dtc *dynatraceClient) AsV2() *ClientV2 {
 	// Fields are already validated by the v1 client constructor
-	v2, _ := newClientV2(
+	v2, _ := NewClientV2(
 		dtc.url,
 		WithUserAgentSuffix(dtc.userAgentSuffix),
 		WithAPIToken(dtc.apiToken),
@@ -195,9 +241,14 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 
 	// Placeholders to prevent deadcode elimination
 	// Will be used once the v1 HTTP client is no longer the default
-	_ = WithProxy("")
 	_ = WithTLSConfig(nil)
 	_ = WithTimeout(0)
 
 	return v2
+}
+
+func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
+	return func(req *http.Request) (*url.URL, error) {
+		return proxyConfig.ProxyFunc()(req.URL)
+	}
 }
