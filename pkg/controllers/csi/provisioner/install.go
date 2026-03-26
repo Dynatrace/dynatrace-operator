@@ -85,7 +85,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 			PathResolver:  provisioner.path,
 		}
 
-		urlInstaller := provisioner.urlInstallerBuilder(dtc, props)
+		urlInstaller := provisioner.urlInstallerBuilder(dtc.OneAgent, props)
 
 		return urlInstaller, nil
 	}
