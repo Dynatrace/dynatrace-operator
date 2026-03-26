@@ -38,6 +38,7 @@ spec:
     metadata:
       annotations:
         dynatrace.com/inject: "false"
+        kubectl.kubernetes.io/default-container: operator
       {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
         container.apparmor.security.beta.kubernetes.io/operator: runtime/default
       {{- end }}
@@ -51,11 +52,60 @@ spec:
         {{- toYaml .Values.operator.labels | nindent 8 }}
         {{- end }}
     spec:
+      {{- $needsCertgen := not (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+      {{- $needsMigrator := and .Release.IsUpgrade .Values.operator.crdStorageMigrationInitManager }}
+      {{- if or $needsCertgen $needsMigrator }}
+      initContainers:
+      {{- if $needsCertgen }}
+        - name: webhook-cert-generator
+          image: {{ include "dynatrace-operator.image" . }}
+          {{- with .Values.imageRef.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
+          args:
+            - certgen
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              {{- toYaml .Values.operator.requests | nindent 14 }}
+            limits:
+              {{- toYaml .Values.operator.limits | nindent 14 }}
+          securityContext:
+            {{- toYaml .Values.operator.securityContext | nindent 12 }}
+      {{- end }}
+      {{- if $needsMigrator }}
+        - name: crd-storage-migrator
+          image: {{ include "dynatrace-operator.image" . }}
+          {{- with .Values.imageRef.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
+          args:
+            - crd-storage-migration
+            - --retry
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              {{- toYaml .Values.operator.requests | nindent 14 }}
+            limits:
+              {{- toYaml .Values.operator.limits | nindent 14 }}
+          securityContext:
+            {{- toYaml .Values.operator.securityContext | nindent 12 }}
+      {{- end }}
+      {{- end }}
       containers:
         - name: operator
           args:
             - operator
-          # Replace this with the built image name
           image: {{ include "dynatrace-operator.image" . }}
           {{- with .Values.imageRef.pullPolicy }}
           imagePullPolicy: {{ . }}
@@ -65,8 +115,6 @@ spec:
             {{- include "dynatrace-operator.pull-secret-env" . | nindent 12 }}
             - name: DT_HOST_AVAILABILITY_DETECTION
               value: "{{ .Values.operator.hostAvailabilityDetection }}"
-            - name: DT_CRD_STORAGE_MIGRATION
-              value: "{{ .Values.operator.crdStorageMigrationInitManager }}"
             {{- if .Values.debugLogs }}
             - name: LOG_LEVEL
               value: "debug"

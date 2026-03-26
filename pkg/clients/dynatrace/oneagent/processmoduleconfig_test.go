@@ -1,12 +1,12 @@
-package dynatrace
+package oneagent
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,61 +32,60 @@ const (
 	hostGroup = "hg"
 )
 
-func TestCreateProcessModuleConfigRequest(t *testing.T) {
-	ctx := context.Background()
+func TestGetProcessModuleConfig(t *testing.T) {
+	setupMockedClient := func(t *testing.T, param map[string]string, hostGroup string, response string, err error) *Client {
+		req := coremock.NewAPIRequest(t)
+		req.EXPECT().
+			WithQueryParams(param).
+			Return(req).
+			Once()
+		req.EXPECT().
+			WithPaasToken().
+			Return(req).Once()
+		req.EXPECT().
+			Execute(&ProcessModuleConfig{}).
+			Run(func(model any) {
+				resp := model.(*ProcessModuleConfig)
+				err = json.Unmarshal([]byte(response), resp)
+				require.NoError(t, err)
+			}).
+			Return(err).Once()
+		client := coremock.NewAPIClient(t)
+		client.EXPECT().GET(t.Context(), processModuleConfigPath).Return(req).Once()
 
+		return NewClient(client, hostGroup, "")
+	}
+
+	ctx := t.Context()
 	t.Run("hostGroup undefined", func(t *testing.T) {
-		dc := &dynatraceClient{
-			paasToken: "token123",
+		params := map[string]string{
+			"hostgroup": hostGroup,
+			"sections":  "general,agentType",
 		}
-		require.NotNil(t, dc)
-
-		req, err := dc.createProcessModuleConfigRequest(ctx, 0)
+		client := setupMockedClient(t, params, hostGroup, goodProcessModuleConfigResponse, nil)
+		resp, err := client.GetProcessModuleConfig(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, "0", req.URL.Query().Get("revision"))
-		assert.Empty(t, req.URL.Query().Get(hostGroupParamName))
-		assert.Contains(t, req.Header.Get("Authorization"), dc.paasToken)
+		assert.Equal(t, uint(1), resp.Revision)
+		assert.Len(t, resp.Properties, 2)
+		assert.Equal(t, "general", resp.Properties[0].Section)
+		assert.Equal(t, "field", resp.Properties[0].Key)
+		assert.Equal(t, "test", resp.Properties[0].Value)
+		assert.Equal(t, "test", resp.Properties[1].Section)
+		assert.Equal(t, "a", resp.Properties[1].Key)
+		assert.Equal(t, "b", resp.Properties[1].Value)
 	})
-	t.Run("hostGroup defined", func(t *testing.T) {
-		dc := &dynatraceClient{
-			paasToken: "token123",
-			hostGroup: hostGroup,
+
+	t.Run("404 error", func(t *testing.T) {
+		expectErr := &core.HTTPError{StatusCode: 404, Message: "Not Found"}
+		params := map[string]string{
+			"sections": "general,agentType",
 		}
-		require.NotNil(t, dc)
 
-		req, err := dc.createProcessModuleConfigRequest(ctx, 0)
-		require.NoError(t, err)
-		assert.Equal(t, "0", req.URL.Query().Get("revision"))
-		assert.Equal(t, hostGroup, req.URL.Query().Get(hostGroupParamName))
-		assert.Contains(t, req.Header.Get("Authorization"), dc.paasToken)
+		client := setupMockedClient(t, params, "", "{}", expectErr)
+		_, err := client.GetProcessModuleConfig(ctx)
+		require.Error(t, err)
+		assert.True(t, core.IsNotFound(err))
 	})
-}
-
-func TestSpecialProcessModuleConfigRequestStatus(t *testing.T) {
-	dc := &dynatraceClient{}
-	require.NotNil(t, dc)
-
-	assert.True(t, dc.checkProcessModuleConfigRequestStatus(nil))
-	assert.True(t, dc.checkProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusNotModified}))
-	assert.True(t, dc.checkProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusNotFound}))
-	assert.False(t, dc.checkProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusOK}))
-	assert.False(t, dc.checkProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusInternalServerError}))
-}
-
-func TestReadResponseForProcessModuleConfig(t *testing.T) {
-	dc := &dynatraceClient{}
-	require.NotNil(t, dc)
-
-	processConfig, err := NewProcessModuleConfig([]byte(goodProcessModuleConfigResponse))
-	require.NoError(t, err)
-	assert.Equal(t, uint(1), processConfig.Revision)
-	require.Len(t, processConfig.Properties, 2)
-	assert.Equal(t, "general", processConfig.Properties[0].Section)
-	assert.Equal(t, "field", processConfig.Properties[0].Key)
-	assert.Equal(t, "test", processConfig.Properties[0].Value)
-	assert.Equal(t, "test", processConfig.Properties[1].Section)
-	assert.Equal(t, "a", processConfig.Properties[1].Key)
-	assert.Equal(t, "b", processConfig.Properties[1].Value)
 }
 
 func TestAddHostGroup(t *testing.T) {

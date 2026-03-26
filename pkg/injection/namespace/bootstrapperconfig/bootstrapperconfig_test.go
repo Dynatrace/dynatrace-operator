@@ -16,11 +16,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -59,7 +59,7 @@ var (
 
 func TestNewSecretGenerator(t *testing.T) {
 	client := fake.NewClient()
-	mockDTClient := dtclientmock.NewClient(t)
+	mockDTClient := oneagentclientmock.NewAPIClient(t)
 
 	secretGenerator := NewSecretGenerator(client, client, mockDTClient)
 	assert.NotNil(t, secretGenerator)
@@ -98,22 +98,21 @@ func TestGenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
 		require.NoError(t, err)
 		require.Equal(t, consts.BootstrapperInitSecretName, secret.Name)
 		assert.NotEmpty(t, secret.Data)
 
 		var sourceSecret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
 		require.NoError(t, err)
 
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
@@ -176,16 +175,15 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
 		require.NoError(t, err)
 		require.NotEmpty(t, secret)
 		assert.Equal(t, consts.BootstrapperInitSecretName, secret.Name)
@@ -201,7 +199,7 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		// check certs secret
 		var secretCerts corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: testNamespace}, &secretCerts)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: testNamespace}, &secretCerts)
 		require.NoError(t, err)
 		require.NotEmpty(t, secretCerts)
 		assert.Equal(t, consts.BootstrapperInitCertsSecretName, secretCerts.Name)
@@ -213,7 +211,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		require.True(t, ok)
 
 		var sourceSecret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
 		require.NoError(t, err)
 
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
@@ -276,16 +274,15 @@ func TestGenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
 		require.NoError(t, err)
 
 		require.NotEmpty(t, secret)
@@ -307,7 +304,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		require.True(t, ok)
 
 		var sourceSecret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
 		require.NoError(t, err)
 
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
@@ -340,12 +337,11 @@ func TestGenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk, nil)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
 		require.Error(t, err)
 
 		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
@@ -404,11 +400,11 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
 		require.Error(t, err)
 
 		for _, e := range []error{errBootstrapperConfigSecret, errBootstrapperCertsSecret} {
@@ -466,20 +462,20 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			})
 
-		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
 		require.Error(t, err)
 		require.ErrorIs(t, err, errBootstrapperConfigSecret)
 
 		var secretConfig corev1.Secret
-		err = failClient.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secretConfig)
+		err = failClient.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secretConfig)
 		require.Error(t, err)
 
 		var secretCerts corev1.Secret
-		err = failClient.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: testNamespace}, &secretCerts)
+		err = failClient.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: testNamespace}, &secretCerts)
 		require.NoError(t, err)
 		assert.NotEmpty(t, secretCerts.Data)
 	})
@@ -522,32 +518,32 @@ func TestCleanup(t *testing.T) {
 	}
 
 	var secretNS1 corev1.Secret
-	err := clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secretNS1)
+	err := clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secretNS1)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, secretNS1)
 	assert.Equal(t, consts.BootstrapperInitSecretName, secretNS1.Name)
 
 	var secretNS2 corev1.Secret
-	err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secretNS2)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secretNS2)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, secretNS2)
 	assert.Equal(t, consts.BootstrapperInitSecretName, secretNS2.Name)
 
-	err = Cleanup(context.Background(), clt, clt, namespaces, dk)
+	err = Cleanup(t.Context(), clt, clt, namespaces, dk)
 	require.NoError(t, err)
 
 	var deleted corev1.Secret
-	err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &deleted)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &deleted)
 	require.Error(t, err)
 	assert.True(t, errors.IsNotFound(err))
 
-	err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace2}, &deleted)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace2}, &deleted)
 	require.Error(t, err)
 	assert.True(t, errors.IsNotFound(err))
 
-	err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &deleted)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &deleted)
 	require.Error(t, err)
 	assert.True(t, errors.IsNotFound(err))
 	require.Nil(t, meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType))

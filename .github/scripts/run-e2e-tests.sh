@@ -26,7 +26,10 @@ source ../ref/.github/scripts/prepare-e2e-secrets.sh
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
-if [[ -n "${TARGET_IMAGE}" ]]; then
+if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
+  echo "run no csi tests suite using OLM"
+  make test/e2e/no-csi/publish/olm
+elif [[ -n "${TARGET_IMAGE}" ]]; then
   make IMAGE_URI="$TARGET_IMAGE" test/e2e-publish
 else
   echo "fall back to default branch target"

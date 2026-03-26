@@ -12,11 +12,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,9 +67,9 @@ func TestPreparePMC(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
-			Return(&dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
+			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -78,7 +78,7 @@ func TestPreparePMC(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
-		var pmConfig dtclient.ProcessModuleConfig
+		var pmConfig oneagentclient.ProcessModuleConfig
 		err = json.Unmarshal(result, &pmConfig)
 		require.NoError(t, err)
 		assert.Len(t, pmConfig.Properties, 5) // tenantToken, tenantUUID, endpoints, test-property, host-group
@@ -119,9 +119,9 @@ func TestPreparePMC(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
-			Return(&dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
+			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -130,7 +130,7 @@ func TestPreparePMC(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
-		var pmConfig dtclient.ProcessModuleConfig
+		var pmConfig oneagentclient.ProcessModuleConfig
 		err = json.Unmarshal(result, &pmConfig)
 		require.NoError(t, err)
 
@@ -155,9 +155,9 @@ func TestPreparePMC(t *testing.T) {
 
 		clt := fake.NewClient(dk)
 
-		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
 		expectedError := errors.New("API error")
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(nil, expectedError)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -187,9 +187,9 @@ func TestPreparePMC(t *testing.T) {
 
 		clt := fake.NewClient(dk) // No tenant secret
 
-		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
-			Return(&dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
+			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -233,9 +233,9 @@ func TestPreparePMC(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context(), uint(0)).
-			Return(&dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
+			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -271,7 +271,7 @@ func TestPreparePMC(t *testing.T) {
 		// Set condition as NOT outdated
 		k8sconditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")
 
-		cachedPMCData, _ := json.Marshal(&dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}})
+		cachedPMCData, _ := json.Marshal(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}})
 
 		sourceSecret := clientSecret(GetSourceConfigSecretName(dk.Name), testNamespace, map[string][]byte{
 			pmc.InputFileName: cachedPMCData,
@@ -290,7 +290,7 @@ func TestPreparePMC(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
 		// Should NOT call GetProcessModuleConfig when using cached data
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -300,7 +300,7 @@ func TestPreparePMC(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
-		var pmConfig dtclient.ProcessModuleConfig
+		var pmConfig oneagentclient.ProcessModuleConfig
 		err = json.Unmarshal(result, &pmConfig)
 		require.NoError(t, err)
 	})
@@ -323,7 +323,7 @@ func TestGetCachedPMC(t *testing.T) {
 		k8sconditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated")
 
 		clt := fake.NewClient(dk)
-		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -343,7 +343,7 @@ func TestGetCachedPMC(t *testing.T) {
 
 		k8sconditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")
 
-		cachedPMC := &dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}
+		cachedPMC := &oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}
 		cachedPMCData, _ := json.Marshal(cachedPMC)
 
 		sourceSecret := clientSecret(GetSourceConfigSecretName(dk.Name), testNamespace, map[string][]byte{
@@ -355,7 +355,7 @@ func TestGetCachedPMC(t *testing.T) {
 		})
 
 		clt := fake.NewClient(dk, sourceSecret, targetSecret)
-		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -376,7 +376,7 @@ func TestGetCachedPMC(t *testing.T) {
 		k8sconditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")
 
 		clt := fake.NewClient(dk) // No secrets
-		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -405,7 +405,7 @@ func TestGetCachedPMC(t *testing.T) {
 		})
 
 		clt := fake.NewClient(dk, sourceSecret, targetSecret)
-		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -430,7 +430,7 @@ func TestGetCachedPMC(t *testing.T) {
 		})
 
 		clt := fake.NewClient(dk, sourceSecret)
-		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -465,7 +465,7 @@ func TestGetCachedPMC(t *testing.T) {
 			},
 		})
 
-		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient := oneagentclientmock.NewAPIClient(t)
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
 

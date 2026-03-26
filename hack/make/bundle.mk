@@ -25,8 +25,9 @@ endif
 
 # Default platform for bundles
 PLATFORM ?= openshift
+
 # Default bundle image with tag
-BUNDLE_IMG ?= $(REGISTRY)/$(REPOSITORY)/dynatrace-operator-bundle:$(VERSION)
+BUNDLE_IMG ?= $(REGISTRY)/$(REPOSITORY)/dynatrace-operator-bundle:$(VERSION)-$(TAG)
 
 # CONTAINER_TOOL defines the container tool to be used for building images.
 ifneq ($(shell command -v podman),)
@@ -34,6 +35,10 @@ ifneq ($(shell command -v podman),)
 else
 	CONTAINER_TOOL ?= docker
 endif
+
+## Display bundle image name used to deploy OLM bundle
+bundle/show-image-ref:
+	@echo $(BUNDLE_IMG)
 
 .PHONY: bundle
 ## Generates bundle manifests and metadata, then validates generated files
@@ -54,7 +59,11 @@ bundle/push:
 
 .PHONY: bundle/install
 ## Deploy the bundle
-bundle/install: prerequisites/operator-sdk bundle/build bundle/push
+bundle/install: prerequisites/operator-sdk bundle/build bundle/push bundle/run
+
+.PHONE: bundle/run
+## Run the bundle
+bundle/run: prerequisites/operator-sdk
 	@kubectl get catalogsources.operators.coreos.com,subscriptions.operators.coreos.com &>/dev/null || { echo "required OLM resources not found" >&2; exit 2; }
 	$(OPERATOR_SDK) run bundle $(BUNDLE_IMG) --namespace dynatrace --timeout 5m
 

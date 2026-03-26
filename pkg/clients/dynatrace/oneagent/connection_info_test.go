@@ -48,7 +48,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 		client := coremock.NewAPIClient(t)
 		client.EXPECT().GET(t.Context(), connectionInfoPath).Return(req).Once()
 
-		return NewClient(client, networkZone)
+		return NewClient(client, "", networkZone)
 	}
 
 	t.Run("no network zone", func(t *testing.T) {

@@ -64,7 +64,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 	return k8sjob.Build(inst.props.Owner, name, container,
 		k8sjob.SetAnnotations(inst.props.CSIJob.Annotations),
 		k8sjob.SetPodAnnotations(annotations),
-		k8sjob.SetNodeName(inst.nodeName),
+		k8sjob.SetNodeSelector(createStrictNodeSelector(inst.nodeName)),
 		k8sjob.SetPullSecret(inst.props.PullSecrets...),
 		k8sjob.SetTolerations(inst.props.CSIJob.Tolerations),
 		k8sjob.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), inst.props.CSIJob.Labels),
@@ -84,5 +84,13 @@ func (inst *Installer) buildArgs(jobName, targetDir string) []string {
 		"--source=" + codeModuleSource,
 		"--target=" + targetDir,
 		"--work=" + inst.props.PathResolver.AgentJobWorkDirForJob(jobName),
+	}
+}
+
+// createStrictNodeSelector returns a selector that uses the standard "kubernetes.io/hostname" label
+// to ensure that the Job can only run on the same node as the CSI driver itself.
+func createStrictNodeSelector(nodeName string) map[string]string {
+	return map[string]string{
+		corev1.LabelHostname: nodeName,
 	}
 }

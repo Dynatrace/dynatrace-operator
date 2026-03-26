@@ -13,12 +13,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Run(ctx context.Context, clt client.Client, apiReader client.Reader, namespace string) error {
+func Run(ctx context.Context, clt client.Client, namespace string) error {
 	log.Info("starting CRD storage version storage migration")
 
 	var crd apiextensionsv1.CustomResourceDefinition
 
-	err := apiReader.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
+	err := clt.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("DynaKube CRD not found, skipping storage migration")
@@ -61,7 +61,7 @@ func Run(ctx context.Context, clt client.Client, apiReader client.Reader, namesp
 		Kind:    "DynaKubeList",
 	})
 
-	err = apiReader.List(ctx, dynakubeList, &client.ListOptions{
+	err = clt.List(ctx, dynakubeList, &client.ListOptions{
 		Namespace: namespace,
 	})
 	if err != nil {
