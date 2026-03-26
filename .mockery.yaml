@@ -117,6 +117,7 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
     interfaces:
       Builder:
+      BuilderV2:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:
