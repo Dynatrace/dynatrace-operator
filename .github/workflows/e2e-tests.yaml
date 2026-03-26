@@ -222,6 +222,7 @@ jobs:
           K8S_STATUS=$(get_emoji "${K8S_CLUSTER_STATUS}" "${K8S_RESULT}")
           OCP_STATUS=$(get_emoji "${OCP_CLUSTER_STATUS}" "${OCP_RESULT}")
           OCP_FIPS_STATUS=$(get_emoji "${OCP_FIPS_CLUSTER_STATUS}" "${OCP_FIPS_RESULT}")
+          OCP_OLM_STATUS=$(get_emoji "${OCP_OLM_CLUSTER_STATUS}" "${OCP_OLM_RESULT}")
 
           echo "K8S_STATUS=$K8S_STATUS" >> $GITHUB_ENV
           echo "K8S_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${K8S_JOB_ID}" >> $GITHUB_ENV
