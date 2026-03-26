@@ -123,7 +123,7 @@ func extractSymlink(targetDir, target string, header *tar.Header) error {
 	return nil
 }
 
-// isSafeToLink checks that the provided relative hard/sym link is NOT pointing outside of the `targetDir`
+// isSafeToLink checks that the provided relative hard or symbolic link is NOT pointing outside of the `targetDir`
 func isSafeToLink(symlink, targetDir, target string) bool {
 	if filepath.IsAbs(symlink) {
 		return false
