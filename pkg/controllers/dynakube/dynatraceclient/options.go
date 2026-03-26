@@ -1,4 +1,4 @@
-package dynatraceclient
+package dynatraceclient //nolint:dupl
 
 import (
 	"context"
