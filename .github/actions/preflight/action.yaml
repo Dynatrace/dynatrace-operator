@@ -18,10 +18,10 @@ inputs:
     required: true
   redhat-project-id:
     description: The id for the redhat project.
-    required: true
+    required: false
   pyxis-api-token:
     description: The pyxis api token
-    required: true
+    required: false
   should-submit:
     description: Whether to submit the results to Red Hat
     required: false
