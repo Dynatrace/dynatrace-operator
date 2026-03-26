@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
@@ -89,7 +88,6 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		oneAgentReconcilerBuilder:   oneagent.NewReconciler,
 		injectionReconcilerBuilder:  injection.NewReconciler,
 
-		apiMonitoringReconciler:      apimonitoring.NewReconciler(),
 		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
 		k8sEntityReconciler:          k8sentity.NewReconciler(),
@@ -111,10 +109,6 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Complete(controller)
-}
-
-type apiMonitoringReconciler interface {
-	Reconcile(ctx context.Context, dtc settings.APIClient, clusterLabel string, dk *dynakube.DynaKube) error
 }
 
 type istioReconciler interface {
@@ -142,7 +136,6 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder events.EventRecorder
 
-	apiMonitoringReconciler      apiMonitoringReconciler
 	extensionReconciler          dynakubeReconciler
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               dtSettingReconciler
