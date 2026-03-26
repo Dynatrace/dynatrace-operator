@@ -100,8 +100,12 @@ func extract(targetDir string, reader *tar.Reader, header *tar.Header, target st
 }
 
 func extractLink(targetDir, target string, header *tar.Header) error {
-	if err := os.Link(filepath.Join(targetDir, header.Linkname), target); err != nil {
-		return errors.WithStack(err)
+	if isSafeToSymlink(header.Linkname, targetDir, target) && isSafeToSymlink(header.Name, targetDir, target) {
+		if err := os.Link(filepath.Join(targetDir, header.Linkname), target); err != nil {
+			return errors.WithStack(err)
+		}
+	} else {
+		log.Info("found unsafe link that would point outside of the target dir", "linkName", header.Linkname)
 	}
 
 	return nil
