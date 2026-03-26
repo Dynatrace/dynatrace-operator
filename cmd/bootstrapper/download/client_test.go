@@ -9,9 +9,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	dtclientmocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,7 +32,7 @@ func TestNew(t *testing.T) {
 			Arch: "arch",
 		}
 		opts := []Option{
-			WithDTClient(dtClientTester(t, []dtclient.Option{}...)),
+			WithDTClient(dtClientTester(t, []dtclient.OptionV2{}...)),
 			WithInstaller(installerTester(t, props, nil)),
 		}
 		client := New(opts...)
@@ -40,12 +40,11 @@ func TestNew(t *testing.T) {
 		require.NotNil(t, client.newInstaller)
 		require.NotNil(t, client.newDTClient)
 
-		dtClient, err := client.newDTClient("url", "api", "paas", []dtclient.Option{}...)
+		dtClient, err := client.newDTClient("url", []dtclient.OptionV2{}...)
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)
-		require.IsType(t, &dtclientmocks.Client{}, dtClient)
 
-		installer := client.newInstaller(dtClient, props)
+		installer := client.newInstaller(dtClient.OneAgent, props)
 		require.NotNil(t, installer)
 		require.IsType(t, &installermock.Installer{}, installer)
 	})
@@ -60,7 +59,7 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 
 		opts := []Option{
-			WithDTClient(dtClientTester(t, []dtclient.Option{}...)),
+			WithDTClient(dtClientTester(t, []dtclient.OptionV2{}...)),
 			WithInstaller(installerTester(t, &url.Properties{}, nil)),
 		}
 		client := New(opts...)
@@ -81,7 +80,7 @@ func TestDo(t *testing.T) {
 		setupConfig(t, inputDir, config)
 
 		opts := []Option{
-			WithDTClient(dtClientTester(t, config.toDTClientOptions()...)),
+			WithDTClient(dtClientTester(t, config.toDTClientOptionsV2()...)),
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(true, nil)
 			})),
@@ -107,8 +106,8 @@ func TestDo(t *testing.T) {
 
 		setupConfig(t, inputDir, config)
 
-		expectedOpts := config.toDTClientOptions()
-		expectedOpts = append(expectedOpts, dtclient.Certs([]byte("cert")))
+		expectedOpts := config.toDTClientOptionsV2()
+		expectedOpts = append(expectedOpts, dtclient.WithCerts([]byte("cert")))
 
 		opts := []Option{
 			WithDTClient(dtClientTester(t, expectedOpts...)),
@@ -136,7 +135,7 @@ func TestDo(t *testing.T) {
 		expectedErr := errors.New("boom")
 
 		opts := []Option{
-			WithDTClient(dtClientTester(t, config.toDTClientOptions()...)),
+			WithDTClient(dtClientTester(t, config.toDTClientOptionsV2()...)),
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(false, expectedErr)
 			})),
@@ -154,7 +153,7 @@ type mockConfigFunc func(*installermock.Installer)
 func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockConfigFunc) url.NewFunc {
 	t.Helper()
 
-	return func(dtc dtclient.Client, props *url.Properties) installer.Installer {
+	return func(dtc oneagent.APIClient, props *url.Properties) installer.Installer {
 		require.NotNil(t, dtc)
 		require.NotEmpty(t, props)
 		require.Equal(t, *expectedProps, *props)
@@ -169,16 +168,14 @@ func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockC
 	}
 }
 
-func dtClientTester(t *testing.T, expectedOpts ...dtclient.Option) dtclient.NewFunc {
+func dtClientTester(t *testing.T, expectedOpts ...dtclient.OptionV2) dtclient.NewFuncV2 {
 	t.Helper()
 
-	return func(url, apiToken, paasToken string, opts ...dtclient.Option) (dtclient.Client, error) {
+	return func(url string, opts ...dtclient.OptionV2) (*dtclient.ClientV2, error) {
 		require.NotEmpty(t, url)
-		require.NotEmpty(t, apiToken)
-		require.NotEmpty(t, paasToken)
 
 		compareDTOptions(t, expectedOpts, opts)
 
-		return dtclientmocks.NewClient(t), nil
+		return dtclient.NewClientV2(url, opts...)
 	}
 }
