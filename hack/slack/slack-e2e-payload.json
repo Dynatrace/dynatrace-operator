@@ -147,41 +147,6 @@
               }
             ]
           }
-        ],
-        [
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "ocp-olm"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "link",
-                    "url": "${{ env.OCP_OLM_JOB_ID }}",
-                    "text": "tests "
-                  },
-                  {
-                    "type": "emoji",
-                    "name": "${{ env.OCP_OLM_STATUS }}"
-                  }
-                ]
-              }
-            ]
-          }
         ]
       ]
     },
