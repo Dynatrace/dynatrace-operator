@@ -345,16 +345,16 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
 	var componentErrors []error
 
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
+		componentErrors = append(componentErrors, err)
+	}
+
 	log.Info("start reconciling ActiveGate")
 
 	err := controller.reconcileActiveGate(ctx, dk, dynatraceClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
-		componentErrors = append(componentErrors, err)
-	}
-
-	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
 		componentErrors = append(componentErrors, err)
 	}
 
