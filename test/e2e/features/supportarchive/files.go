@@ -56,6 +56,7 @@ func newRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Re
 func (r requiredFiles) collectRequiredFiles() []string {
 	return slices.Concat(
 		[]string{
+			supportarchive.KubernetesVersionFileName,
 			supportarchive.OperatorVersionFileName,
 			supportarchive.TroublshootOutputFileName,
 			supportarchive.SupportArchiveOutputFileName,
