@@ -6,15 +6,13 @@
 # Additional env vars for non-community marketplaces: RHCC_USERNAME, RHCC_PASSWORD
 set -euo pipefail
 
+image_digest=$(skopeo inspect --override-os linux --override-arch amd64 "docker://docker.io/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
+
 case "${MARKETPLACE}" in
   community)
-    image_digest=$(skopeo inspect --override-os linux --override-arch amd64 "docker://docker.io/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
     export IMAGE="docker.io/dynatrace/dynatrace-operator@${image_digest}"
     ;;
   community-prod|certified|redhat)
-    image_digest=$(skopeo inspect --override-os linux --override-arch amd64 \
-      --username "${RHCC_USERNAME}" --password "${RHCC_PASSWORD}" \
-      "docker://registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" | jq -r '.Digest')
     export IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator@${image_digest}"
     ;;
   *)

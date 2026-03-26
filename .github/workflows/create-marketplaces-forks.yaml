@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment: Release
     strategy:
+      fail-fast: false
       matrix:
         include:
           - marketplace: community
@@ -45,27 +46,34 @@ jobs:
       FORK_REPOSITORY_URL: ${{ matrix.fork_repo }}
       MARKETPLACE: ${{ matrix.marketplace }}
     steps:
-      - name: Checkout dynatrace-operator at base branch (team user)
+      - name: Checkout workflow scripts
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.TEAM_USER_TOKEN }}
+          persist-credentials: false
+      - name: Checkout dynatrace-operator at release-branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.branch || github.event.pull_request.base.ref }}
+          path: release-src
           fetch-depth: 0
           token: ${{ secrets.TEAM_USER_TOKEN }}
           persist-credentials: false
       - name: Configure git identity
         run: |
-          git config --global user.name  "${{ secrets.TEAM_USER_NAME }}"
-          git config --global user.email "${{ secrets.TEAM_USER_EMAIL }}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
       - name: Derive version and branch name
         id: meta
         run: |
           set -euo pipefail
           echo "Base ref: $BASE_REF"
 
-          versions_dirs="$(ls -d config/olm/kubernetes/*/ 2>/dev/null || true)"
+          versions_dirs="$(ls -d release-src/config/olm/kubernetes/*/ 2>/dev/null || true)"
           if [ -z "$versions_dirs" ]; then
-            echo "ERROR: No bundle directories found under config/olm/kubernetes"
-            ls -R config/olm || true
+            echo "ERROR: No bundle directories found under release-src/config/olm/kubernetes"
+            ls -R release-src/config/olm || true
             exit 1
           fi
 
@@ -128,13 +136,13 @@ jobs:
           mkdir -p "${operator_dir}"
 
           # Copy bundle files
-          cp -rf "../config/olm/${bundle_source}/${VERSION}/manifests" "${operator_dir}/"
-          cp -rf "../config/olm/${bundle_source}/${VERSION}/metadata" "${operator_dir}/"
+          cp -rf "${GITHUB_WORKSPACE}/release-src/config/olm/${bundle_source}/${VERSION}/manifests" "${operator_dir}/"
+          cp -rf "${GITHUB_WORKSPACE}/release-src/config/olm/${bundle_source}/${VERSION}/metadata" "${operator_dir}/"
 
           # Create Dockerfile for community marketplaces
           if [ "${MARKETPLACE}" = "community" ] || [ "${MARKETPLACE}" = "community-prod" ]; then
             echo "Creating Dockerfile for ${MARKETPLACE}"
-            origin_dockerfile="../config/olm/kubernetes/${VERSION}/bundle.Dockerfile"
+            origin_dockerfile="${GITHUB_WORKSPACE}/release-src/config/olm/kubernetes/${VERSION}/bundle.Dockerfile"
             target_dockerfile="${operator_dir}/Dockerfile"
           fi
 
@@ -168,8 +176,6 @@ jobs:
       - name: Set IMAGE and prepare CSVs for ${{ env.MARKETPLACE }}
         env:
           VERSION: ${{ steps.meta.outputs.version }}
-          RHCC_USERNAME: ${{ secrets.RHCC_USERNAME }}
-          RHCC_PASSWORD: ${{ secrets.RHCC_PASSWORD }}
         run: bash .github/scripts/release/csv/prepare_marketplace_csv.sh
       - name: Post-process CSV for redhat marketplace
         if: matrix.marketplace == 'redhat'
