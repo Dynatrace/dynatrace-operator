@@ -2,23 +2,29 @@ package dynakube
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/pkg/errors"
 )
 
 func (controller *Controller) reconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, dtc dynatrace.Client) error {
+	var errs []error
+
 	// this is a temporary fix, setupAutomaticAPIMonitoring will try to create/update the k8s connection setting if we do not beforehand check for the ME for this cluster.
 	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtc.AsV2().Settings, dk); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	reconciler := controller.activeGateReconcilerBuilder(controller.client, controller.apiReader, dk, dtc, controller.tokens)
 
 	err := reconciler.Reconcile(ctx)
 	if err != nil {
-		return errors.WithMessage(err, "failed to reconcile ActiveGate")
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
 
 	controller.setupAutomaticAPIMonitoring(ctx, dtc, dk)

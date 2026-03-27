@@ -78,7 +78,7 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		err := controller.reconcileActiveGate(t.Context(), dk, mockDTClient)
 		require.Error(t, err)
-		require.Equal(t, "failed to reconcile ActiveGate: BOOM", err.Error())
+		require.Equal(t, "BOOM", err.Error())
 	})
 	t.Run("reconcile disabled automatic kubernetes api monitoring", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
