@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - feat/api-spec-automation
     paths:
       - api/oapi/sync-config.yaml
 
@@ -57,7 +56,7 @@ jobs:
       - name: Clone source repository
         run: |
           set -euo pipefail
-          urlencoded_token=$(jq -sRr @uri <<< "${SOURCE_ACCESS_TOKEN}")
+          urlencoded_token=$(printf '%s' "${SOURCE_ACCESS_TOKEN}" | jq -sRr @uri)
           repo_url="https://${SOURCE_USERNAME}:${urlencoded_token}@${SOURCE_REPO_URL}"
 
           echo "Cloning source repository (branch: ${BRANCH})..."
