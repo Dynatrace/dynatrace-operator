@@ -49,7 +49,7 @@ jobs:
     if: needs.prepare.outputs.has_schemas == 'true'
     environment: bitbucket
     runs-on:
-      - self-hosted
+      - operator-e2e
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
