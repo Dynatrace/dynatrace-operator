@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -25,24 +24,22 @@ const (
 
 type k8sResourceCollector struct {
 	collectorCommon
-	discoveryClient discovery.DiscoveryInterface
-	context         context.Context
-	apiReader       client.Reader
-	namespace       string
-	appName         string
+	context   context.Context
+	apiReader client.Reader
+	namespace string
+	appName   string
 }
 
-func newK8sObjectCollector(context context.Context, log logd.Logger, supportArchive archiver, namespace string, appName string, apiReader client.Reader, discoveryClient discovery.DiscoveryInterface) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newK8sObjectCollector(context context.Context, log logd.Logger, supportArchive archiver, namespace string, appName string, apiReader client.Reader) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return k8sResourceCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		context:         context,
-		namespace:       namespace,
-		appName:         appName,
-		apiReader:       apiReader,
-		discoveryClient: discoveryClient,
+		context:   context,
+		namespace: namespace,
+		appName:   appName,
+		apiReader: apiReader,
 	}
 }
 

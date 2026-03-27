@@ -376,7 +376,9 @@ jobs:
       - name: Run preflight
         uses: ./.github/actions/preflight
         with:
+          version: snapshot
+          registry: ${{ env.IMAGE_REGISTRY }}
           platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
-          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          repository: ${{ env.IMAGE_NAME }}
           report-name: "preflight.json"
           should-submit: "false"
