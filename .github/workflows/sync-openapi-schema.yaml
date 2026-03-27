@@ -57,7 +57,9 @@ jobs:
         run: |
           set -euo pipefail
           urlencoded_token=$(printf '%s' "${SOURCE_ACCESS_TOKEN}" | jq -sRr @uri)
-          repo_url="https://${SOURCE_USERNAME}:${urlencoded_token}@${SOURCE_REPO_URL}"
+          clean_url="${SOURCE_REPO_URL#https://}"
+          clean_url="${clean_url#http://}"
+          repo_url="https://${SOURCE_USERNAME}:${urlencoded_token}@${clean_url}"
 
           echo "Cloning source repository (branch: ${BRANCH})..."
           git clone --depth 1 --branch "${BRANCH}" "${repo_url}" source-repo
