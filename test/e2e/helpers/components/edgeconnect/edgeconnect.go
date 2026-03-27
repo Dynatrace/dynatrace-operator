@@ -110,7 +110,7 @@ func WaitForPhase(edgeConnect edgeconnect.EdgeConnect, phase status.DeploymentPh
 // CreateTenantConfig for Normal mode only, preserves the ID and OAuth Secret of EdgeConnect configuration on the tenant
 func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig, testHostPattern string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := BuildEcClient(ctx, clientSecret)
+		ecClt, err := BuildECClient(ctx, clientSecret)
 		require.NoError(t, err)
 
 		edgeConnectRequest := edgeconnectClient.NewRequest(ecName, []string{testHostPattern}, []edgeconnect.HostMapping{}, "")
@@ -132,7 +132,7 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 	}
 }
 
-func BuildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconnectClient.Client, error) {
+func BuildECClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconnectClient.Client, error) {
 	clt, err := edgeconnectClient.NewClient(
 		secret.OauthClientID,
 		secret.OauthClientSecret,
@@ -163,7 +163,7 @@ func BuildOAuthClientSecretName(secretName string) string {
 
 func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := BuildEcClient(ctx, clientSecret)
+		ecClt, err := BuildECClient(ctx, clientSecret)
 		require.NoError(t, err)
 
 		err = ecClt.DeleteEdgeConnect(edgeConnectTenantConfig.ID)
@@ -173,9 +173,9 @@ func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenant
 	}
 }
 
-func CheckEcExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
+func CheckECExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := BuildEcClient(ctx, clientSecret)
+		ecClt, err := BuildECClient(ctx, clientSecret)
 		require.NoError(t, err)
 
 		_, err = ecClt.GetEdgeConnect(edgeConnectTenantConfig.ID)
