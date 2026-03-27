@@ -1,8 +1,8 @@
 package otelcgen
 
 const (
-	OtlpGrpcPort = 4317
-	OtlpHTTPPort = 4318
+	OTLPGrpcPort = 4317
+	OTLPHTTPPort = 4318
 
 	JaegerGrpcPort          = 14250
 	JaegerThriftBinaryPort  = 6832

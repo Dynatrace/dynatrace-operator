@@ -7,10 +7,10 @@ import (
 
 func (c *Config) buildReceiverComponent(componentID component.ID) component.Config {
 	switch componentID {
-	case OtlpID:
+	case OTLPID:
 		return map[string]any{"protocols": map[string]any{
-			"grpc": &ServerConfig{TLSSetting: c.buildTLSSetting(), Endpoint: c.buildEndpoint(OtlpGrpcPort)},
-			"http": &ServerConfig{TLSSetting: c.buildTLSSetting(), Endpoint: c.buildEndpoint(OtlpHTTPPort)},
+			"grpc": &ServerConfig{TLSSetting: c.buildTLSSetting(), Endpoint: c.buildEndpoint(OTLPGrpcPort)},
+			"http": &ServerConfig{TLSSetting: c.buildTLSSetting(), Endpoint: c.buildEndpoint(OTLPHTTPPort)},
 		}}
 	case JaegerID:
 		return map[string]any{"protocols": map[string]any{
@@ -55,8 +55,8 @@ func (c *Config) buildReceivers() (map[component.ID]component.Config, error) {
 			receivers[ZipkinID] = c.buildReceiverComponent(ZipkinID)
 		case JaegerProtocol:
 			receivers[JaegerID] = c.buildReceiverComponent(JaegerID)
-		case OtlpProtocol:
-			receivers[OtlpID] = c.buildReceiverComponent(OtlpID)
+		case OTLPProtocol:
+			receivers[OTLPID] = c.buildReceiverComponent(OTLPID)
 		default:
 			return nil, errors.Errorf("unknown protocol: %s", p)
 		}

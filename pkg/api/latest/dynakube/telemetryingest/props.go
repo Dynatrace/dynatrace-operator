@@ -47,12 +47,12 @@ func (ts *TelemetryIngest) IsEnabled() bool {
 	return ts.Spec != nil
 }
 
-func (ts *TelemetryIngest) IsOtlpEnabled() bool {
+func (ts *TelemetryIngest) IsOTLPEnabled() bool {
 	if !ts.IsEnabled() {
 		return false
 	}
 
-	return slices.Contains(ts.GetProtocols(), otelcgen.OtlpProtocol)
+	return slices.Contains(ts.GetProtocols(), otelcgen.OTLPProtocol)
 }
 
 func (ts *TelemetryIngest) IsJaegerEnabled() bool {
