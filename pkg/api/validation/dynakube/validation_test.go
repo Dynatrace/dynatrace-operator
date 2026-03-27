@@ -228,9 +228,9 @@ func assertDeniedWithInterceptor(t *testing.T, funcs interceptor.Funcs, errMessa
 	}
 }
 
-func assertUpdateDenied(t *testing.T, errMessages []string, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, other ...client.Object) {
+func assertUpdateDenied(t *testing.T, errMessages []string, oldDK *dynakube.DynaKube, newDK *dynakube.DynaKube, other ...client.Object) {
 	t.Helper()
-	_, err := runUpdateValidators(t, oldDk, newDk, other...)
+	_, err := runUpdateValidators(t, oldDK, newDK, other...)
 	require.Error(t, err)
 
 	for _, errMsg := range errMessages {
@@ -266,17 +266,17 @@ func assertAllowedWithInterceptor(t *testing.T, funcs interceptor.Funcs, dk *dyn
 	return warnings, err
 }
 
-func assertUpdateAllowed(t *testing.T, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, other ...client.Object) (admission.Warnings, error) {
+func assertUpdateAllowed(t *testing.T, oldDK *dynakube.DynaKube, newDK *dynakube.DynaKube, other ...client.Object) (admission.Warnings, error) {
 	t.Helper()
-	warnings, err := runUpdateValidators(t, oldDk, newDk, other...)
+	warnings, err := runUpdateValidators(t, oldDK, newDK, other...)
 	assert.NoError(t, err)
 
 	return warnings, err
 }
 
-func assertUpdateAllowedWithoutWarnings(t *testing.T, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, other ...client.Object) {
+func assertUpdateAllowedWithoutWarnings(t *testing.T, oldDK *dynakube.DynaKube, newDK *dynakube.DynaKube, other ...client.Object) {
 	t.Helper()
-	warnings, _ := assertUpdateAllowed(t, oldDk, newDk, other...)
+	warnings, _ := assertUpdateAllowed(t, oldDK, newDK, other...)
 	assert.Empty(t, warnings)
 }
 
@@ -308,7 +308,7 @@ func runValidatorsWithInterceptor(t *testing.T, dk *dynakube.DynaKube, funcs int
 	return validator.ValidateCreate(t.Context(), dk)
 }
 
-func runUpdateValidators(t *testing.T, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, other ...client.Object) (admission.Warnings, error) {
+func runUpdateValidators(t *testing.T, oldDK *dynakube.DynaKube, newDK *dynakube.DynaKube, other ...client.Object) (admission.Warnings, error) {
 	clt := fake.NewClient()
 	if other != nil {
 		clt = fake.NewClient(other...)
@@ -319,5 +319,5 @@ func runUpdateValidators(t *testing.T, oldDk *dynakube.DynaKube, newDk *dynakube
 		modules:   installconfig.GetModules(),
 	}
 
-	return validator.ValidateUpdate(t.Context(), oldDk, newDk)
+	return validator.ValidateUpdate(t.Context(), oldDK, newDK)
 }

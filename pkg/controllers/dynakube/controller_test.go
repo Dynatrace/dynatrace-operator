@@ -434,14 +434,14 @@ func TestReconcileComponents(t *testing.T) {
 
 func TestReconcileDynaKube(t *testing.T) {
 	ctx := t.Context()
-	baseDk := &dynakube.DynaKube{
+	baseDK := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
 	}
 
-	fakeClient := fake.NewClient(baseDk, createCRD(t), createAPISecret())
+	fakeClient := fake.NewClient(baseDK, createCRD(t), createAPISecret())
 	mockClient := dtclientmock.NewClient(t)
 	mockedTokenClient := tokenclientmock.NewAPIClient(t)
 	mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return([]string{
@@ -525,7 +525,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	})
 
 	t.Run("reconcile the controller with istio enabled", func(t *testing.T) {
-		dk := baseDk.DeepCopy()
+		dk := baseDK.DeepCopy()
 		dk.Spec.APIURL = testAPIURL
 		dk.Spec.EnableIstio = true
 
@@ -541,7 +541,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	})
 
 	t.Run("reconciling the controller with istio enabled (but without valid API URL) should fail", func(t *testing.T) {
-		dk := baseDk.DeepCopy()
+		dk := baseDK.DeepCopy()
 		dk.Spec.EnableIstio = true
 
 		fakeClient := fake.NewClientWithIndex(dk, createAPISecret())
