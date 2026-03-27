@@ -509,6 +509,7 @@ import (
       log.Info("kubernetes version", "version", ...)
   }
   ```
+
 - Include **enough context fields** in log messages to be useful during troubleshooting.
   Reviewers frequently ask for additional fields (e.g. Go version, resource name, namespace). When in doubt, add more rather than less.
 
