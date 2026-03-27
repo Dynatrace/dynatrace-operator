@@ -13,9 +13,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/util/retry"
 )
 
-var errMissingKubeSystemUUID = goerrors.New("no kube-system namespace UUID given")
+var (
+	errMissingKubeSystemUUID = goerrors.New("no kube-system namespace UUID given")
+	errNotAvailableME        = goerrors.New("kubernetes cluster MEID not yet available after settings creation")
+)
 
 // meIDConditionType is the condition type used to cache the Kubernetes Cluster Monitored Entity ID in the DynaKube status.
 const meIDConditionType = "MonitoredEntity"
@@ -70,7 +74,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *
 	if objectID != "" {
 		// On first run the monitored entity only becomes available after the settings object is created.
 		// Refresh the MEID immediately to avoid requiring an extra reconciliation cycle.
-		if err := r.refreshClusterMEID(ctx, dtc, dk); err != nil {
+		if err := r.refreshMEIDWithRetry(ctx, dtc, dk); err != nil {
 			return err
 		}
 	}
@@ -114,18 +118,13 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtc settings.APIClient, 
 	return nil
 }
 
-// refreshClusterMEID unconditionally fetches and stores the Kubernetes Cluster Monitored Entity ID.
+// refreshMEIDWithRetry unconditionally fetches and stores the Kubernetes Cluster Monitored Entity ID.
 // Used after settings creation to avoid waiting for the next reconciliation cycle.
 // Retries up to maxRefreshRetries times with retryInterval between attempts, because the ME
 // may not be available immediately after the settings object is created.
-func (r *Reconciler) refreshClusterMEID(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error {
-	const (
-		maxRefreshRetries = 5
-		retryInterval     = 2 * time.Second
-	)
-
-	for attempt := range maxRefreshRetries {
-		log.Info("refreshing kubernetes cluster MEID", "attempt", attempt)
+func (r *Reconciler) refreshMEIDWithRetry(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error {
+	return retry.OnError(retry.DefaultRetry, func(err error) bool { return errors.Is(err, errNotAvailableME) }, func() error {
+		log.Info("refreshing kubernetes cluster MEID")
 
 		k8sEntity, err := dtc.GetK8sClusterME(ctx, dk.Status.KubeSystemUUID)
 		if err != nil {
@@ -142,14 +141,10 @@ func (r *Reconciler) refreshClusterMEID(ctx context.Context, dtc settings.APICli
 			return nil
 		}
 
-		log.Info("kubernetes cluster MEID not yet available after settings creation, will retry", "attempt", attempt)
+		log.Info(errNotAvailableME.Error())
 
-		if attempt < maxRefreshRetries {
-			time.Sleep(retryInterval)
-		}
-	}
-
-	return goerrors.New("kubernetes cluster MEID not available after settings creation")
+		return errNotAvailableME
+	})
 }
 
 func (r *Reconciler) createK8sConnectionSettingIfAbsent(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) (string, error) {

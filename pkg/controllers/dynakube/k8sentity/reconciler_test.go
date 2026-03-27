@@ -287,6 +287,65 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 	})
 }
 
+func TestRefreshMEIDWithRetry(t *testing.T) {
+	const (
+		meID       = "KUBERNETES_CLUSTER-119C75CCDA94799F"
+		systemUUID = "2132143215"
+		objectID   = "2141rfa3sjvnsk"
+	)
+
+	t.Run("no retry on success", func(t *testing.T) {
+		dk := newDynaKube()
+		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		setSystemUUID(dk, systemUUID)
+		dtClient := settingsmock.NewAPIClient(t)
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(me, nil)
+
+		r := NewReconciler()
+		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
+		require.NoError(t, err)
+		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
+		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+	})
+
+	t.Run("retry on missing", func(t *testing.T) {
+		dk := newDynaKube()
+		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		setSystemUUID(dk, systemUUID)
+		dtClient := settingsmock.NewAPIClient(t)
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil).Once()
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(me, nil).Once()
+
+		r := NewReconciler()
+		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
+		require.NoError(t, err)
+		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
+		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+	})
+
+	t.Run("error after no success for 5 tries", func(t *testing.T) {
+		dk := newDynaKube()
+		setSystemUUID(dk, systemUUID)
+		dtClient := settingsmock.NewAPIClient(t)
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil).Times(5)
+
+		r := NewReconciler()
+		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
+		require.Error(t, err)
+	})
+
+	t.Run("instant return on random error", func(t *testing.T) {
+		dk := newDynaKube()
+		setSystemUUID(dk, systemUUID)
+		dtClient := settingsmock.NewAPIClient(t)
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, errors.New("BOOM"))
+
+		r := NewReconciler()
+		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
+		require.Error(t, err)
+	})
+}
+
 func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 	const (
 		meID   = "KUBERNETES_CLUSTER-119C75CCDA94799F"

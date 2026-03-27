@@ -42,7 +42,6 @@ import (
 )
 
 const (
-	testUID       = "test-uid"
 	testAPIToken  = "test-api-token"
 	testUUID      = "test-uuid"
 	testHost      = "test-host"
