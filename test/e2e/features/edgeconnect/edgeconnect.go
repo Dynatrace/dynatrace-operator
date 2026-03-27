@@ -282,7 +282,7 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 // getTenantConfig for Provisioner and K8SAutomation modes, preserves the id of EdgeConnect configuration on the tenant
 func getTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *ecComponents.TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildECClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
 		require.NoError(t, err)
 
 		ecs, err := ecClt.GetEdgeConnects(ecName)
@@ -304,7 +304,7 @@ func getTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeC
 
 func checkHostPatternOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *ecComponents.TenantConfig, hostPattern func() string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildECClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
 		require.NoError(t, err)
 
 		ec, err := ecClt.GetEdgeConnect(edgeConnectTenantConfig.ID)
@@ -319,7 +319,7 @@ func checkHostPatternOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConn
 
 func checkECNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *ecComponents.TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildECClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
 		require.NoError(t, err)
 
 		_, err = ecClt.GetEdgeConnect(edgeConnectTenantConfig.ID)
@@ -333,7 +333,7 @@ func checkECNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConn
 
 func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildECClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
 		require.NoError(t, err)
 
 		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
@@ -350,7 +350,7 @@ func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testE
 
 func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildECClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
 		require.NoError(t, err)
 
 		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
