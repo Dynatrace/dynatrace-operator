@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - feat/api-spec-automation
     paths:
       - api/oapi/sync-config.yaml
 
