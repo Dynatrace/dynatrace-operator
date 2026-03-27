@@ -44,20 +44,24 @@ func NoUpdateMEID(t *testing.T) features.Feature {
 	}
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakubeComponents.New(
+	prevDynaKube := *dynakubeComponents.New(
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL))
 
 	builder := features.New("meid-no-update")
 
 	prevME := &settings.K8sClusterME{}
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	assessME(builder, &testDynakube, prevME)
-	dynakubeComponents.Delete(builder, helpers.LevelAssess, testDynakube)
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, prevDynaKube)
+	assessME(builder, &prevDynaKube, prevME)
+	dynakubeComponents.Delete(builder, helpers.LevelAssess, prevDynaKube)
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	reAssessME(builder, &testDynakube, prevME)
-	dynakubeComponents.Delete(builder, helpers.LevelAssess, testDynakube)
+	nextDynaKube := *dynakubeComponents.New(
+		dynakubeComponents.WithName("overwrite"),
+		dynakubeComponents.WithActiveGate(),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL))
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, nextDynaKube)
+	reAssessME(builder, &nextDynaKube, prevME)
+	dynakubeComponents.Delete(builder, helpers.LevelAssess, nextDynaKube)
 
 	return builder.Feature()
 }
