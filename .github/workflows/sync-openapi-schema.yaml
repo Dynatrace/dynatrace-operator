@@ -46,6 +46,7 @@ jobs:
     name: "Clone source: ${{ matrix.name }}"
     needs: prepare
     if: needs.prepare.outputs.has_schemas == 'true'
+    environment: bitbucket
     runs-on:
       - self-hosted
     strategy:
@@ -55,7 +56,8 @@ jobs:
       - name: Clone source repository
         run: |
           set -euo pipefail
-          repo_url="https://${SOURCE_USERNAME}:${SOURCE_ACCESS_TOKEN}@${SOURCE_REPO_URL}"
+          urlencoded_token=$(jq -sRr @uri <<< "${SOURCE_ACCESS_TOKEN}")
+          repo_url="https://${SOURCE_USERNAME}:${urlencoded_token}@${SOURCE_REPO_URL}"
 
           echo "Cloning source repository (branch: ${BRANCH})..."
           git clone --depth 1 --branch "${BRANCH}" "${repo_url}" source-repo
@@ -68,8 +70,8 @@ jobs:
           echo "${sha}" > output/source-sha.txt
         env:
           SOURCE_REPO_URL: ${{ secrets.API_SPEC_SOURCE_REPO_URL }}
-          SOURCE_ACCESS_TOKEN: ${{ secrets.API_SPEC_SOURCE_ACCESS_TOKEN }}
-          SOURCE_USERNAME: ${{ secrets.API_SPEC_SOURCE_USERNAME }}
+          SOURCE_ACCESS_TOKEN: ${{ secrets.BITBUCKET_ACCESS_TOKEN }}
+          SOURCE_USERNAME: ${{ secrets.BITBUCKET_USERNAME }}
           BRANCH: ${{ matrix.branch }}
           SCHEMA_NAME: ${{ matrix.name }}
 
