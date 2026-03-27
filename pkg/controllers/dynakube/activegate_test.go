@@ -27,7 +27,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		},
 	}
 
-	t.Run("no active-gate configured => nothing happens (only call active-gate reconciler)", func(t *testing.T) {
+	t.Run("no active-gate configured => only reconciler k8sentity info, nothing happens (only call active-gate reconciler)", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
 		dk.Spec.ActiveGate = activegate.Spec{}
 
@@ -36,13 +36,21 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
+		settingsClient := &settings.Client{}
+		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
+
+		mockEntityReconciler := newMockDtSettingReconciler(t)
+		mockEntityReconciler.EXPECT().Reconcile(anyCtx, settingsClient, dk).Return(nil)
+
 		controller := &Controller{
 			client:                      fakeClient,
 			apiReader:                   fakeClient,
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			k8sEntityReconciler:         mockEntityReconciler,
 		}
 
-		err := controller.reconcileActiveGate(t.Context(), dk, nil)
+		err := controller.reconcileActiveGate(t.Context(), dk, mockDTClient)
 		require.NoError(t, err)
 	})
 	t.Run("no active-gate configured => active-gate reconcile returns error => returns error", func(t *testing.T) {
@@ -54,13 +62,21 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
+		settingsClient := &settings.Client{}
+		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
+
+		mockEntityReconciler := newMockDtSettingReconciler(t)
+		mockEntityReconciler.EXPECT().Reconcile(anyCtx, settingsClient, dk).Return(nil)
+
 		controller := &Controller{
 			client:                      fakeClient,
 			apiReader:                   fakeClient,
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			k8sEntityReconciler:         mockEntityReconciler,
 		}
 
-		err := controller.reconcileActiveGate(t.Context(), dk, nil)
+		err := controller.reconcileActiveGate(t.Context(), dk, mockDTClient)
 		require.Error(t, err)
 		require.Equal(t, "failed to reconcile ActiveGate: BOOM", err.Error())
 	})
@@ -89,14 +105,20 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
+		settingsClient := &settings.Client{}
+		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
+
+		mockEntityReconciler := newMockDtSettingReconciler(t)
+		mockEntityReconciler.EXPECT().Reconcile(anyCtx, settingsClient, dk).Return(nil)
+
 		controller := &Controller{
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			apiMonitoringReconciler:     newMockApiMonitoringReconciler(t),
+			k8sEntityReconciler:         mockEntityReconciler,
 		}
 
-		mockClient := dtclientmock.NewClient(t)
-
-		err := controller.reconcileActiveGate(t.Context(), dk, mockClient)
+		err := controller.reconcileActiveGate(t.Context(), dk, mockDTClient)
 		require.NoError(t, err)
 	})
 	t.Run("reconcile automatic kubernetes api monitoring", func(t *testing.T) {
@@ -122,6 +144,11 @@ func TestReconcileActiveGate(t *testing.T) {
 		}
 
 		settingsClient := &settings.Client{}
+		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Twice()
+
+		mockEntityReconciler := newMockDtSettingReconciler(t)
+		mockEntityReconciler.EXPECT().Reconcile(anyCtx, settingsClient, dk).Return(nil).Twice()
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
@@ -132,12 +159,10 @@ func TestReconcileActiveGate(t *testing.T) {
 		controller := &Controller{
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			apiMonitoringReconciler:     mockAPIMonitoringReconciler,
+			k8sEntityReconciler:         mockEntityReconciler,
 		}
 
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
-
-		err := controller.reconcileActiveGate(t.Context(), dk, mockClient)
+		err := controller.reconcileActiveGate(t.Context(), dk, mockDTClient)
 		require.NoError(t, err)
 	})
 	t.Run("reconcile automatic kubernetes api monitoring with custom cluster name", func(t *testing.T) {
@@ -166,6 +191,11 @@ func TestReconcileActiveGate(t *testing.T) {
 		}
 
 		settingsClient := &settings.Client{}
+		mockDTClient := dtclientmock.NewClient(t)
+		mockDTClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Twice()
+
+		mockEntityReconciler := newMockDtSettingReconciler(t)
+		mockEntityReconciler.EXPECT().Reconcile(anyCtx, settingsClient, dk).Return(nil).Twice()
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
@@ -176,12 +206,10 @@ func TestReconcileActiveGate(t *testing.T) {
 		controller := &Controller{
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			apiMonitoringReconciler:     mockAPIMonitoringReconciler,
+			k8sEntityReconciler:         mockEntityReconciler,
 		}
 
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
-
-		err := controller.reconcileActiveGate(t.Context(), dk, mockClient)
+		err := controller.reconcileActiveGate(t.Context(), dk, mockDTClient)
 		require.NoError(t, err)
 	})
 }

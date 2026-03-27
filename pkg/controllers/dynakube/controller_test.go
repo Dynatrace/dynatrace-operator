@@ -382,7 +382,6 @@ func TestReconcileComponents(t *testing.T) {
 
 		var err error
 		expectReconcileError(t, mockOneAgentReconciler, &err)
-		expectReconcileError(t, mockActiveGateReconciler, &err)
 		expectReconcileError(t, mockInjectionReconciler, &err)
 		expectReconcileError(t, mockLogMonitoringReconciler, &err, mockedDtc, dk)
 		expectReconcileError(t, mockExtensionReconciler, &err, dk)
@@ -422,7 +421,6 @@ func TestReconcileComponents(t *testing.T) {
 		}
 
 		var err error
-		expectReconcileError(t, mockActiveGateReconciler, &err)
 		expectReconcileError(t, mockExtensionReconciler, &err, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
 		expectReconcileError(t, k8sEntityReconciler, &err, &settings.Client{}, dk)

@@ -9,6 +9,11 @@ import (
 )
 
 func (controller *Controller) reconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, dtc dynatrace.Client) error {
+	// this is a temporary fix, setupAutomaticAPIMonitoring will try to create/update the k8s connection setting if we do not beforehand check for the ME for this cluster.
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtc.AsV2().Settings, dk); err != nil {
+		return err
+	}
+
 	reconciler := controller.activeGateReconcilerBuilder(controller.client, controller.apiReader, dk, dtc, controller.tokens)
 
 	err := reconciler.Reconcile(ctx)
@@ -30,9 +35,18 @@ func (controller *Controller) setupAutomaticAPIMonitoring(ctx context.Context, d
 			clusterLabel = dk.Name
 		}
 
-		err := controller.apiMonitoringReconciler.Reconcile(ctx, dtc.AsV2().Settings, clusterLabel, dk)
+		settingsClient := dtc.AsV2().Settings
+
+		err := controller.apiMonitoringReconciler.Reconcile(ctx, settingsClient, clusterLabel, dk)
 		if err != nil {
 			log.Error(err, "could not create setting")
+
+			return
+		}
+
+		// this is a temporary fix, apiMonitoringReconciler will only create the k8s connection setting, but will not set the ME related info that the setting creation causes.
+		if err := controller.k8sEntityReconciler.Reconcile(ctx, settingsClient, dk); err != nil {
+			log.Error(err, "could not reconcile k8s entity after setting creation")
 		}
 	}
 }
