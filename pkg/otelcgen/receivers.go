@@ -9,12 +9,12 @@ func (c *Config) buildReceiverComponent(componentID component.ID) component.Conf
 	switch componentID {
 	case OTLPID:
 		return map[string]any{"protocols": map[string]any{
-			"grpc": &ServerConfig{TLSSetting: c.buildTLSSetting(), Endpoint: c.buildEndpoint(OTLPGrpcPort)},
+			"grpc": &ServerConfig{TLSSetting: c.buildTLSSetting(), Endpoint: c.buildEndpoint(OTLPGRPCPort)},
 			"http": &ServerConfig{TLSSetting: c.buildTLSSetting(), Endpoint: c.buildEndpoint(OTLPHTTPPort)},
 		}}
 	case JaegerID:
 		return map[string]any{"protocols": map[string]any{
-			"grpc":           &ServerConfig{Endpoint: c.buildEndpoint(JaegerGrpcPort), TLSSetting: c.buildTLSSetting()},
+			"grpc":           &ServerConfig{Endpoint: c.buildEndpoint(JaegerGRPCPort), TLSSetting: c.buildTLSSetting()},
 			"thrift_binary":  &ServerConfig{Endpoint: c.buildEndpoint(JaegerThriftBinaryPort)},
 			"thrift_compact": &ServerConfig{Endpoint: c.buildEndpoint(JaegerThriftCompactPort)},
 			"thrift_http":    &ServerConfig{Endpoint: c.buildEndpoint(JaegerThriftHTTPPort), TLSSetting: c.buildTLSSetting()},
