@@ -78,7 +78,7 @@ func (c *Client) GetVersions(ctx context.Context, os, installerType, flavor stri
 	var resp versionsResponse
 
 	params := map[string]string{
-		flavor: flavor,
+		"flavor": flavor,
 	}
 
 	oaArch := determineArch(installerType)
