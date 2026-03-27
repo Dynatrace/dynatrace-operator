@@ -101,19 +101,19 @@ func TestReconcile(t *testing.T) {
 		// 1. reconcileClusterMEID: no ME found yet (settings object not yet created)
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
-			Return(settings.K8sClusterME{}, nil).Once() // this Once() is needed, otherwise the second EXPECT for this func will do nothing -> test fails
+			Return(settings.K8sClusterME{}, nil).Once()
 		// 2. createObjectIDIfNotExists: no settings exist yet, create them
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
-			Return(me.ID, nil)
+			Return(me.ID, nil).Once()
 		// 3. refreshClusterMEID: ME is now available after settings were created
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
-			Return(me, nil)
+			Return(me, nil).Once()
 		// 4. reconcile app transition schema
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
-			Return(settings.TotalCountSettingsResponse{}, nil)
+			Return(settings.TotalCountSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesAppSetting(anyCtx, me.ID).
 			Return("some-id", nil).Once()
@@ -135,7 +135,7 @@ func TestReconcile(t *testing.T) {
 		// 1. reconcileClusterMEID: no ME found yet (settings object not yet created)
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
-			Return(me, nil).Once() // this Once() is needed, otherwise the second EXPECT for this func will do nothing -> test fails
+			Return(me, nil).Once()
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), dtClient, dk)
 		require.NoError(t, err)
@@ -154,15 +154,14 @@ func TestReconcile(t *testing.T) {
 		// 1. reconcileClusterMEID: no ME found yet (settings object not yet created)
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
-			Return(settings.K8sClusterME{}, nil).Once() // this Once() is needed, otherwise the second EXPECT for this func will do nothing -> test fails
-		// 2. createObjectIDIfNotExists: no settings exist yet, create them
+			Return(settings.K8sClusterME{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
-			Return(me.ID, nil)
+			Return(me.ID, nil).Once()
 		// 3. refreshClusterMEID: ME is now available after settings were created
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
-			Return(me, nil)
+			Return(me, nil).Once()
 
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), dtClient, dk)
@@ -198,7 +197,7 @@ func TestReconcileMEID(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
-			Return(me, nil)
+			Return(me, nil).Once()
 
 		r := NewReconciler()
 		err := r.reconcileMEID(t.Context(), dtClient, dk)
@@ -211,7 +210,7 @@ func TestReconcileMEID(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
 		dtClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil)
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil).Once()
 
 		r := NewReconciler()
 		err := r.reconcileMEID(t.Context(), dtClient, dk)
@@ -246,7 +245,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, dk.Name, systemUUID, "").
-			Return(objectID, nil)
+			Return(objectID, nil).Once()
 
 		r := NewReconciler()
 		actual, err := r.createK8sConnectionSettingIfAbsent(t.Context(), dtClient, dk)
@@ -262,7 +261,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, specialName, systemUUID, "").
-			Return(objectID, nil)
+			Return(objectID, nil).Once()
 
 		r := NewReconciler()
 		actual, err := r.createK8sConnectionSettingIfAbsent(t.Context(), dtClient, dk)
@@ -277,7 +276,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, dk.Name, systemUUID, "").
-			Return("", errors.New("boom"))
+			Return("", errors.New("boom")).Once()
 
 		r := NewReconciler()
 		actual, err := r.createK8sConnectionSettingIfAbsent(t.Context(), dtClient, dk)
@@ -299,7 +298,7 @@ func TestRefreshMEIDWithRetry(t *testing.T) {
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
 		setSystemUUID(dk, systemUUID)
 		dtClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(me, nil)
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(me, nil).Once()
 
 		r := NewReconciler()
 		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
@@ -338,7 +337,7 @@ func TestRefreshMEIDWithRetry(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
 		dtClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, errors.New("BOOM"))
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, errors.New("BOOM")).Once()
 
 		r := NewReconciler()
 		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
@@ -373,7 +372,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
-			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
+			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil).Once()
 
 		r := NewReconciler()
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)
@@ -391,7 +390,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
-			Return(settings.TotalCountSettingsResponse{}, expectErr)
+			Return(settings.TotalCountSettingsResponse{}, expectErr).Once()
 
 		r := NewReconciler()
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)
@@ -409,10 +408,10 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
-			Return(settings.TotalCountSettingsResponse{}, nil)
+			Return(settings.TotalCountSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesAppSetting(anyCtx, me.ID).
-			Return("", expectErr)
+			Return("", expectErr).Once()
 
 		r := NewReconciler()
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)
@@ -430,10 +429,10 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
-			Return(settings.TotalCountSettingsResponse{}, nil)
+			Return(settings.TotalCountSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesAppSetting(anyCtx, me.ID).
-			Return("test", nil)
+			Return("test", nil).Once()
 
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)
 		require.NoError(t, err)
