@@ -49,12 +49,11 @@ type APIRequest interface {
 }
 
 type Config struct {
-	BaseURL         *url.URL
-	HTTPClient      *http.Client
-	UserAgent       string
-	APIToken        string
-	PaasToken       string
-	DataIngestToken string
+	BaseURL    *url.URL
+	HTTPClient *http.Client
+	UserAgent  string
+	APIToken   string
+	PaasToken  string
 }
 
 type Client struct {
@@ -85,7 +84,6 @@ type TokenType int
 const (
 	TokenTypeAPI TokenType = iota
 	TokenTypePaaS
-	TokenTypeDataIngest
 )
 
 func (c *Client) newRequest(ctx context.Context) *Request {
@@ -216,8 +214,6 @@ func (r *Request) getToken() string {
 	switch r.tokenType {
 	case TokenTypePaaS:
 		return r.client.cfg.PaasToken
-	case TokenTypeDataIngest:
-		return r.client.cfg.DataIngestToken
 	default:
 		return r.client.cfg.APIToken
 	}

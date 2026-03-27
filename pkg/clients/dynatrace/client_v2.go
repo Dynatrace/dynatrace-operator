@@ -28,17 +28,16 @@ type ClientV2 struct {
 }
 
 type ConfigV2 struct {
-	HTTPClient      *http.Client
-	TLSConfig       *tls.Config
-	BaseURL         string
-	APIToken        string
-	PaasToken       string
-	DataIngestToken string
-	UserAgent       string
-	Proxy           string
-	NetworkZone     string
-	HostGroup       string
-	Timeout         time.Duration
+	HTTPClient  *http.Client
+	TLSConfig   *tls.Config
+	BaseURL     string
+	APIToken    string
+	PaasToken   string
+	UserAgent   string
+	Proxy       string
+	NetworkZone string
+	HostGroup   string
+	Timeout     time.Duration
 }
 
 // OptionV2 is a functional option for configuring the dtClient
@@ -55,13 +54,6 @@ func WithAPIToken(token string) OptionV2 {
 func WithPaasToken(token string) OptionV2 {
 	return func(c *ConfigV2) {
 		c.PaasToken = token
-	}
-}
-
-// WithDataIngestToken sets the data ingest token
-func WithDataIngestToken(token string) OptionV2 {
-	return func(c *ConfigV2) {
-		c.DataIngestToken = token
 	}
 }
 
@@ -162,12 +154,11 @@ func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 	}
 
 	apiClient := core.NewClient(core.Config{
-		BaseURL:         parsedURL,
-		HTTPClient:      config.HTTPClient,
-		UserAgent:       config.UserAgent,
-		APIToken:        config.APIToken,
-		PaasToken:       config.PaasToken,
-		DataIngestToken: config.DataIngestToken,
+		BaseURL:    parsedURL,
+		HTTPClient: config.HTTPClient,
+		UserAgent:  config.UserAgent,
+		APIToken:   config.APIToken,
+		PaasToken:  config.PaasToken,
 	})
 
 	return &ClientV2{
@@ -187,7 +178,6 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 		WithUserAgentSuffix(dtc.userAgentSuffix),
 		WithAPIToken(dtc.apiToken),
 		WithPaasToken(dtc.paasToken),
-		WithDataIngestToken(""),
 		WithNetworkZone(dtc.networkZone),
 		WithHostGroup(dtc.hostGroup),
 		WithHTTPClient(dtc.httpClient),
