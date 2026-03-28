@@ -28,21 +28,17 @@ const (
 )
 
 type Reconciler struct {
-	customPropertiesSource    *value.Source
-	customPropertiesOwnerName string
-	secrets                   k8ssecret.QueryObject
+	secrets k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, customPropertiesOwnerName string, customPropertiesSource *value.Source) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		customPropertiesSource:    customPropertiesSource,
-		customPropertiesOwnerName: customPropertiesOwnerName,
-		secrets:                   k8ssecret.Query(clt, apiReader, log),
+		secrets: k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	if r.customPropertiesSource == nil && !dk.NeedsCustomNoProxy() {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) error {
+	if customPropertiesSource == nil && !dk.NeedsCustomNoProxy() {
 		if meta.FindStatusCondition(*dk.Conditions(), customPropertiesConditionType) == nil {
 			return nil
 		}
@@ -50,7 +46,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		err := r.secrets.Delete(ctx,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      r.buildCustomPropertiesName(dk.Name),
+					Name:      r.buildCustomPropertiesName(dk.Name, customPropertiesOwnerName),
 					Namespace: dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up custom properties secret")
@@ -61,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	data, err := r.buildCustomPropertiesValue(ctx, dk)
+	data, err := r.buildCustomPropertiesValue(ctx, dk, customPropertiesSource)
 	if err != nil {
 		return err
 	} else if string(data) == "" {
@@ -69,7 +65,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	}
 
 	customPropertiesSecret, err := k8ssecret.Build(dk,
-		r.buildCustomPropertiesName(dk.Name),
+		r.buildCustomPropertiesName(dk.Name, customPropertiesOwnerName),
 		map[string][]byte{
 			DataKey: data,
 		},
@@ -84,38 +80,38 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	}
 
 	k8sconditions.SetSecretCreated(dk.Conditions(), customPropertiesConditionType,
-		r.buildCustomPropertiesName(dk.Name))
+		r.buildCustomPropertiesName(dk.Name, customPropertiesOwnerName))
 
 	return nil
 }
 
-func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
-	value := ""
+func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context, dk *dynakube.DynaKube, customPropertiesSource *value.Source) ([]byte, error) {
+	customPropertiesValue := ""
 
-	if r.customPropertiesSource != nil {
-		if r.customPropertiesSource.Value != "" {
-			value = r.customPropertiesSource.Value
-		} else if r.customPropertiesSource.ValueFrom != "" {
+	if customPropertiesSource != nil {
+		if customPropertiesSource.Value != "" {
+			customPropertiesValue = customPropertiesSource.Value
+		} else if customPropertiesSource.ValueFrom != "" {
 			customPropertiesSecret, err := r.secrets.Get(ctx, types.NamespacedName{
-				Name:      r.customPropertiesSource.ValueFrom,
+				Name:      customPropertiesSource.ValueFrom,
 				Namespace: dk.Namespace})
 			if err != nil {
 				return nil, err
 			}
 
-			value = string(customPropertiesSecret.Data[DataKey])
+			customPropertiesValue = string(customPropertiesSecret.Data[DataKey])
 		}
 	}
 
-	lines := strings.Split(value, "\n")
+	lines := strings.Split(customPropertiesValue, "\n")
 
 	if dk.NeedsCustomNoProxy() {
 		lines = r.addNonProxyHostsSettingsToValue(dk.FF().GetNoProxy(), lines)
 	}
 
-	value = strings.Join(lines, "\n")
+	customPropertiesValue = strings.Join(lines, "\n")
 
-	return []byte(value), nil
+	return []byte(customPropertiesValue), nil
 }
 
 func (r *Reconciler) addNonProxyHostsSettingsToValue(ffNoProxy string, lines []string) []string {
@@ -140,6 +136,6 @@ func (r *Reconciler) addNonProxyHostsSettingsToValue(ffNoProxy string, lines []s
 	return lines
 }
 
-func (r *Reconciler) buildCustomPropertiesName(name string) string {
-	return fmt.Sprintf("%s-%s-%s", name, r.customPropertiesOwnerName, Suffix)
+func (r *Reconciler) buildCustomPropertiesName(name string, customPropertiesOwnerName string) string {
+	return fmt.Sprintf("%s-%s-%s", name, customPropertiesOwnerName, Suffix)
 }

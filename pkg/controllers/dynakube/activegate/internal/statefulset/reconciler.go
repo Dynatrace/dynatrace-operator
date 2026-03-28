@@ -21,27 +21,24 @@ import (
 )
 
 type Reconciler struct {
-	client     client.Client
-	apiReader  client.Reader
-	capability capability.Capability
-	modifiers  []builder.Modifier
+	client    client.Client
+	apiReader client.Reader
+	modifiers []builder.Modifier
 }
 
 func NewReconciler(
 	clt client.Client,
 	apiReader client.Reader,
-	capability capability.Capability,
 ) *Reconciler {
 	return &Reconciler{
-		client:     clt,
-		apiReader:  apiReader,
-		capability: capability,
-		modifiers:  []builder.Modifier{},
+		client:    clt,
+		apiReader: apiReader,
+		modifiers: []builder.Modifier{},
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	err := r.manageStatefulSet(ctx, dk)
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) error {
+	err := r.manageStatefulSet(ctx, dk, agCapability)
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
 
@@ -51,8 +48,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	return nil
 }
 
-func (r *Reconciler) manageStatefulSet(ctx context.Context, dk *dynakube.DynaKube) error {
-	desiredSts, err := r.buildDesiredStatefulSet(ctx, dk)
+func (r *Reconciler) manageStatefulSet(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) error {
+	desiredSts, err := r.buildDesiredStatefulSet(ctx, dk, agCapability)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
@@ -71,15 +68,15 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context, dk *dynakube.DynaKub
 	return nil
 }
 
-func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube) (*appsv1.StatefulSet, error) {
+func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (*appsv1.StatefulSet, error) {
 	kubeUID := types.UID(dk.Status.KubeSystemUUID)
 
-	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash(ctx, dk)
+	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 	if err != nil {
 		return nil, err
 	}
 
-	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *dk, r.capability)
+	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *dk, agCapability)
 
 	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
 	if err != nil {
@@ -93,8 +90,8 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	return desiredSts, nil
 }
 
-func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
-	customPropertyData, err := r.getCustomPropertyValue(ctx, dk)
+func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (string, error) {
+	customPropertyData, err := r.getCustomPropertyValue(ctx, dk, agCapability)
 	if err != nil {
 		return "", err
 	}
@@ -116,12 +113,12 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
 }
 
-func (r *Reconciler) getCustomPropertyValue(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
-	if !needsCustomPropertyHash(r.capability.Properties().CustomProperties) {
+func (r *Reconciler) getCustomPropertyValue(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (string, error) {
+	if !needsCustomPropertyHash(agCapability.Properties().CustomProperties) {
 		return "", nil
 	}
 
-	customPropertyData, err := r.getDataFromCustomProperty(ctx, dk, r.capability.Properties().CustomProperties)
+	customPropertyData, err := r.getDataFromCustomProperty(ctx, dk, agCapability.Properties().CustomProperties)
 	if err != nil {
 		return "", err
 	}

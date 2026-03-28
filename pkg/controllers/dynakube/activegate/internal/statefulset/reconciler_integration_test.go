@@ -54,12 +54,12 @@ func TestStatefulSet(t *testing.T) {
 	})
 
 	mcap := capability.NewMultiCapability(&dk)
-	reconciler := NewReconciler(clt, clt, mcap)
+	reconciler := NewReconciler(clt, clt)
 
-	err := reconciler.Reconcile(ctx, &dk)
+	err := reconciler.Reconcile(ctx, &dk, mcap)
 	require.NoError(t, err)
 
 	dk.Spec.ActiveGate.UseEphemeralVolume = true
-	err = reconciler.Reconcile(ctx, &dk)
+	err = reconciler.Reconcile(ctx, &dk, mcap)
 	require.NoError(t, err)
 }

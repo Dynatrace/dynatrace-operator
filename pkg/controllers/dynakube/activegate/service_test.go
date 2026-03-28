@@ -1,24 +1,26 @@
-package capability
+package activegate
 
 import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
 	testComponentFeature = "test-component-feature"
-	testNamespace        = "test-namespace"
-	testName             = "test-name"
 	testAPIURL           = "https://demo.dev.dynatracelabs.com/api"
 )
 
@@ -71,26 +73,78 @@ func TestCreateService(t *testing.T) {
 		serviceSpec := service.Spec
 		assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 		assert.Equal(t, expectedSelector, serviceSpec.Selector)
-	})
 
-	t.Run("check AG service if metrics-ingest disabled", func(t *testing.T) {
-		dk := createTestDynaKube()
-		capability.SwitchCapability(dk, activegate.RoutingCapability, true)
-
-		service := CreateService(dk)
 		ports := service.Spec.Ports
-
 		assert.Contains(t, ports, agHTTPSPort)
 		assert.Contains(t, ports, agHTTPPort)
 	})
-	t.Run("check AG service if metrics-ingest enabled", func(t *testing.T) {
-		dk := createTestDynaKube()
-		capability.SwitchCapability(dk, activegate.MetricsIngestCapability, true)
+}
 
-		service := CreateService(dk)
-		ports := service.Spec.Ports
+func TestCreateOrUpdateService(t *testing.T) {
+	dk := createTestDynaKube()
+	dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
+		activegate.RoutingCapability.DisplayName,
+		activegate.KubeMonCapability.DisplayName,
+		activegate.MetricsIngestCapability.DisplayName,
+		activegate.DynatraceAPICapability.DisplayName,
+	}
 
-		assert.Contains(t, ports, agHTTPSPort)
-		assert.Contains(t, ports, agHTTPPort)
-	})
+	getService := func(t *testing.T, clt client.Client) *corev1.Service {
+		t.Helper()
+		service := &corev1.Service{}
+		err := clt.Get(t.Context(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}, service)
+		require.NoError(t, err)
+
+		return service
+	}
+
+	tests := []struct {
+		name   string
+		mutate func(*corev1.Service)
+	}{
+		{
+			"ports get updated",
+			func(svc *corev1.Service) {
+				svc.Spec.Ports = []corev1.ServicePort{}
+			},
+		},
+		{
+			"labels get updated",
+			func(svc *corev1.Service) {
+				svc.Labels = map[string]string{}
+			},
+		},
+		{
+			"selector gets updated",
+			func(svc *corev1.Service) {
+				svc.Spec.Selector = map[string]string{}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		clt := fake.NewClient()
+		r := &Reconciler{client: clt}
+
+		err := r.createOrUpdateService(t.Context(), dk)
+		require.NoError(t, err)
+
+		service := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}}
+		result, err := controllerutil.CreateOrUpdate(t.Context(), clt, service, func() error {
+			test.mutate(service)
+
+			return nil
+		})
+		require.NoError(t, err)
+		require.Equal(t, controllerutil.OperationResultUpdated, result)
+
+		err = r.createOrUpdateService(t.Context(), dk)
+		require.NoError(t, err)
+
+		actualService := getService(t, clt)
+		desiredService := CreateService(dk)
+		assert.Equal(t, desiredService.Labels, actualService.Labels)
+		assert.Equal(t, desiredService.Spec, actualService.Spec)
+		assert.NotEqual(t, actualService, service)
+	}
 }

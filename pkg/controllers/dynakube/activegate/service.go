@@ -1,4 +1,4 @@
-package capability
+package activegate
 
 import (
 	"context"
@@ -7,62 +7,27 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var _ dynakubeReconciler = &Reconciler{}
-
-type dynakubeReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
-}
-
-type Reconciler struct {
-	client                     client.Client
-	capability                 capability.Capability
-	statefulsetReconciler      dynakubeReconciler
-	customPropertiesReconciler dynakubeReconciler
-	tlsSecretReconciler        dynakubeReconciler
-}
-
-func NewReconciler(clt client.Client, capability capability.Capability, statefulsetReconciler dynakubeReconciler, customPropertiesReconciler dynakubeReconciler, tlsSecretReconciler dynakubeReconciler) *Reconciler { //nolint:revive
-	return &Reconciler{
-		statefulsetReconciler:      statefulsetReconciler,
-		customPropertiesReconciler: customPropertiesReconciler,
-		tlsSecretReconciler:        tlsSecretReconciler,
-		capability:                 capability,
-		client:                     clt,
-	}
-}
-
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	err := r.customPropertiesReconciler.Reconcile(ctx, dk)
-	if err != nil {
-		return errors.WithStack(err)
+func (r *Reconciler) deleteService(ctx context.Context, dk *dynakube.DynaKube) error {
+	svc := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      capability.BuildServiceName(dk.Name),
+			Namespace: dk.Namespace,
+		},
 	}
 
-	err = r.createOrUpdateService(ctx, dk)
-	if err != nil {
-		return err
-	}
-
-	err = r.setAGServiceIPs(ctx, dk)
-	if err != nil {
-		return err
-	}
-
-	err = r.tlsSecretReconciler.Reconcile(ctx, dk)
-	if err != nil {
-		return err
-	}
-
-	err = r.statefulsetReconciler.Reconcile(ctx, dk)
-
-	return errors.WithStack(err)
+	return client.IgnoreNotFound(r.services.Delete(ctx, &svc))
 }
 
 func (r *Reconciler) setAGServiceIPs(ctx context.Context, dk *dynakube.DynaKube) error {
@@ -124,4 +89,42 @@ func (r *Reconciler) portsAreOutdated(installedService, desiredService *corev1.S
 func (r *Reconciler) labelsAreOutdated(installedService, desiredService *corev1.Service) bool {
 	return !maps.Equal(installedService.Labels, desiredService.Labels) ||
 		!maps.Equal(installedService.Spec.Selector, desiredService.Spec.Selector)
+}
+
+func CreateService(dk *dynakube.DynaKube) *corev1.Service {
+	ports := []corev1.ServicePort{
+		{
+			Name:       consts.HTTPSServicePortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       consts.HTTPSServicePort,
+			TargetPort: intstr.FromString(consts.HTTPSServicePortName),
+		},
+		{
+			Name:       consts.HTTPServicePortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       consts.HTTPServicePort,
+			TargetPort: intstr.FromString(consts.HTTPServicePortName),
+		},
+	}
+
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      capability.BuildServiceName(dk.Name),
+			Namespace: dk.Namespace,
+			Labels:    coreLabels.BuildLabels(),
+		},
+		Spec: corev1.ServiceSpec{
+			Type:     corev1.ServiceTypeClusterIP,
+			Selector: buildSelectorLabels(dk.Name),
+			Ports:    ports,
+		},
+	}
+}
+
+func buildSelectorLabels(dynakubeName string) map[string]string {
+	appLabels := k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, dynakubeName, "", "")
+
+	return appLabels.BuildMatchLabels()
 }

@@ -9,7 +9,6 @@ import (
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
-	capabilityInternal "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/tls"
@@ -25,7 +24,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,15 +46,11 @@ type pullSecretReconciler interface {
 }
 
 type statefulsetReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
-}
-
-type capabilityReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) error
 }
 
 type customPropertiesReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) error
 }
 
 type tlsReconciler interface {
@@ -64,44 +58,36 @@ type tlsReconciler interface {
 }
 
 type Reconciler struct {
-	authTokenReconciler            authTokenReconciler
-	istioReconciler                istioReconciler
-	connectionReconciler           connectionReconciler
-	versionReconcilerFunc          func(dtc dtclient.Client) version.Reconciler
-	pullSecretReconciler           pullSecretReconciler
-	statefulsetReconcilerFunc      func(capability capability.Capability) statefulsetReconciler
-	capabilityReconcilerFunc       func(capability capability.Capability, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler customPropertiesReconciler, tlsSecretReconciler tlsReconciler) capabilityReconciler
-	customPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *value.Source) customPropertiesReconciler
-	tlsReconcilerFunc              func() tlsReconciler
-	configMaps                     k8sconfigmap.QueryObject
-	services                       k8sservice.QueryObject
-	statefulSets                   k8sstatefulset.QueryObject
+	client                     client.Client
+	authTokenReconciler        authTokenReconciler
+	istioReconciler            istioReconciler
+	connectionReconciler       connectionReconciler
+	versionReconcilerFunc      func(dtc dtclient.Client) version.Reconciler
+	pullSecretReconciler       pullSecretReconciler
+	statefulsetReconciler      statefulsetReconciler
+	customPropertiesReconciler customPropertiesReconciler
+	tlsSecretReconciler        tlsReconciler
+	configMaps                 k8sconfigmap.QueryObject
+	services                   k8sservice.QueryObject
+	statefulSets               k8sstatefulset.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
+		client:               clt,
 		authTokenReconciler:  authtoken.NewReconciler(clt, apiReader),
 		istioReconciler:      istio.NewReconciler(clt, apiReader),
 		connectionReconciler: agconnectioninfo.NewReconciler(clt, apiReader),
 		versionReconcilerFunc: func(dtc dtclient.Client) version.Reconciler {
 			return version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
 		},
-		pullSecretReconciler: dtpullsecret.NewReconciler(clt, apiReader),
-		customPropertiesReconcilerFunc: func(customPropertiesOwnerName string, customPropertiesSource *value.Source) customPropertiesReconciler {
-			return customproperties.NewReconciler(clt, apiReader, customPropertiesOwnerName, customPropertiesSource)
-		},
-		statefulsetReconcilerFunc: func(capability capability.Capability) statefulsetReconciler {
-			return statefulset.NewReconciler(clt, apiReader, capability)
-		},
-		tlsReconcilerFunc: func() tlsReconciler {
-			return tls.NewReconciler(clt, apiReader)
-		},
-		capabilityReconcilerFunc: func(capability capability.Capability, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler customPropertiesReconciler, tlsSecretReconciler tlsReconciler) capabilityReconciler {
-			return capabilityInternal.NewReconciler(clt, capability, statefulsetReconciler, customPropertiesReconciler, tlsSecretReconciler)
-		},
-		configMaps:   k8sconfigmap.Query(clt, apiReader, log),
-		services:     k8sservice.Query(clt, apiReader, log),
-		statefulSets: k8sstatefulset.Query(clt, apiReader, log),
+		pullSecretReconciler:       dtpullsecret.NewReconciler(clt, apiReader),
+		customPropertiesReconciler: customproperties.NewReconciler(clt, apiReader),
+		statefulsetReconciler:      statefulset.NewReconciler(clt, apiReader),
+		tlsSecretReconciler:        tls.NewReconciler(clt, apiReader),
+		configMaps:                 k8sconfigmap.Query(clt, apiReader, log),
+		services:                   k8sservice.Query(clt, apiReader, log),
+		statefulSets:               k8sstatefulset.Query(clt, apiReader, log),
 	}
 }
 
@@ -205,13 +191,29 @@ func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 }
 
 func (r *Reconciler) createCapability(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) error {
-	customPropertiesReconcilerInstance := r.customPropertiesReconcilerFunc(dk.ActiveGate().GetServiceAccountOwner(), agCapability.Properties().CustomProperties)
-	statefulsetReconcilerInstance := r.statefulsetReconcilerFunc(agCapability)
-	tlsSecretReconciler := r.tlsReconcilerFunc()
+	err := r.customPropertiesReconciler.Reconcile(ctx, dk, dk.ActiveGate().GetServiceAccountOwner(), agCapability.Properties().CustomProperties)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 
-	capabilityReconcilerInstance := r.capabilityReconcilerFunc(agCapability, statefulsetReconcilerInstance, customPropertiesReconcilerInstance, tlsSecretReconciler)
+	err = r.createOrUpdateService(ctx, dk)
+	if err != nil {
+		return err
+	}
 
-	return capabilityReconcilerInstance.Reconcile(ctx, dk)
+	err = r.setAGServiceIPs(ctx, dk)
+	if err != nil {
+		return err
+	}
+
+	err = r.tlsSecretReconciler.Reconcile(ctx, dk)
+	if err != nil {
+		return err
+	}
+
+	err = r.statefulsetReconciler.Reconcile(ctx, dk, agCapability)
+
+	return errors.WithStack(err)
 }
 
 func (r *Reconciler) deleteCapability(ctx context.Context, dk *dynakube.DynaKube) error {
@@ -225,23 +227,11 @@ func (r *Reconciler) deleteCapability(ctx context.Context, dk *dynakube.DynaKube
 
 	// we must run tls reconciler to ensure that the TLS secret is deleted
 	// TODO: consider to not mix two different patterns
-	tlsSecretReconciler := r.tlsReconcilerFunc()
-	if err := tlsSecretReconciler.Reconcile(ctx, dk); err != nil {
+	if err := r.tlsSecretReconciler.Reconcile(ctx, dk); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (r *Reconciler) deleteService(ctx context.Context, dk *dynakube.DynaKube) error {
-	svc := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildServiceName(dk.Name),
-			Namespace: dk.Namespace,
-		},
-	}
-
-	return client.IgnoreNotFound(r.services.Delete(ctx, &svc))
 }
 
 func (r *Reconciler) deleteStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {

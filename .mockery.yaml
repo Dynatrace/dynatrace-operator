@@ -76,17 +76,8 @@ packages:
       connectionReconciler:
       pullSecretReconciler:
       statefulsetReconciler:
-      capabilityReconciler:
       customPropertiesReconciler:
       tlsReconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/capability:
-    config:
-      dir: "{{.InterfaceDir}}"
-      pkgname: "{{.SrcPackageName}}"
-      structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
-      filename: "mock_reconcilers_test.go"
-    interfaces:
-      dynakubeReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
