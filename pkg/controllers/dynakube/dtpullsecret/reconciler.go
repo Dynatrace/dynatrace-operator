@@ -20,20 +20,18 @@ const (
 )
 
 type Reconciler struct {
-	tokens       token.Tokens
 	timeprovider *timeprovider.Provider
 	secrets      k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, tokens token.Tokens) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		tokens:       tokens,
 		timeprovider: timeprovider.New(),
 		secrets:      k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
 	if !dk.OneAgent().IsDaemonsetRequired() && !dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
@@ -52,7 +50,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		k8sconditions.SetSecretOutdated(dk.Conditions(), PullSecretConditionType,
 			extendWithPullSecretSuffix(dk.Name)+" is not present or outdated")
 
-		err := r.reconcilePullSecret(ctx, dk)
+		err := r.reconcilePullSecret(ctx, dk, tokens)
 		if err != nil {
 			log.Info("could not reconcile pull secret")
 
@@ -76,8 +74,8 @@ func (r *Reconciler) deleteSecret(ctx context.Context, dk *dynakube.DynaKube, se
 	return nil
 }
 
-func (r *Reconciler) reconcilePullSecret(ctx context.Context, dk *dynakube.DynaKube) error {
-	pullSecretData, err := r.generateData(dk)
+func (r *Reconciler) reconcilePullSecret(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
+	pullSecretData, err := r.generateData(dk, tokens)
 	if err != nil {
 		return errors.WithMessage(err, "could not generate pull secret data")
 	}

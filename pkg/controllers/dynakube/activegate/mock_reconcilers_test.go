@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -304,16 +305,16 @@ func (_m *mockPullSecretReconciler) EXPECT() *mockPullSecretReconciler_Expecter 
 }
 
 // Reconcile provides a mock function for the type mockPullSecretReconciler
-func (_mock *mockPullSecretReconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ret := _mock.Called(ctx, dk)
+func (_mock *mockPullSecretReconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
+	ret := _mock.Called(ctx, dk, tokens)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
-		r0 = returnFunc(ctx, dk)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube, token.Tokens) error); ok {
+		r0 = returnFunc(ctx, dk, tokens)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -328,11 +329,12 @@ type mockPullSecretReconciler_Reconcile_Call struct {
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *mockPullSecretReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}) *mockPullSecretReconciler_Reconcile_Call {
-	return &mockPullSecretReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk)}
+//   - tokens token.Tokens
+func (_e *mockPullSecretReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}, tokens interface{}) *mockPullSecretReconciler_Reconcile_Call {
+	return &mockPullSecretReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, tokens)}
 }
 
-func (_c *mockPullSecretReconciler_Reconcile_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube)) *mockPullSecretReconciler_Reconcile_Call {
+func (_c *mockPullSecretReconciler_Reconcile_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens)) *mockPullSecretReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -342,9 +344,14 @@ func (_c *mockPullSecretReconciler_Reconcile_Call) Run(run func(ctx context.Cont
 		if args[1] != nil {
 			arg1 = args[1].(*dynakube.DynaKube)
 		}
+		var arg2 token.Tokens
+		if args[2] != nil {
+			arg2 = args[2].(token.Tokens)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -355,7 +362,7 @@ func (_c *mockPullSecretReconciler_Reconcile_Call) Return(err error) *mockPullSe
 	return _c
 }
 
-func (_c *mockPullSecretReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube) error) *mockPullSecretReconciler_Reconcile_Call {
+func (_c *mockPullSecretReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error) *mockPullSecretReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

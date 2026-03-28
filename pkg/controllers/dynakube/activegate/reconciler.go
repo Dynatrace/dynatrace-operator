@@ -44,7 +44,7 @@ type connectionReconciler interface {
 }
 
 type pullSecretReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error
 }
 
 type statefulsetReconciler interface {
@@ -68,7 +68,7 @@ type Reconciler struct {
 	istioReconciler                istioReconciler
 	connectionReconciler           connectionReconciler
 	versionReconcilerFunc          func(dtc dtclient.Client) version.Reconciler
-	pullSecretReconcilerFunc       func(tokens token.Tokens) pullSecretReconciler
+	pullSecretReconciler           pullSecretReconciler
 	statefulsetReconcilerFunc      func(capability capability.Capability) statefulsetReconciler
 	capabilityReconcilerFunc       func(capability capability.Capability, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler customPropertiesReconciler, tlsSecretReconciler tlsReconciler) capabilityReconciler
 	customPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *value.Source) customPropertiesReconciler
@@ -86,9 +86,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		versionReconcilerFunc: func(dtc dtclient.Client) version.Reconciler {
 			return version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
 		},
-		pullSecretReconcilerFunc: func(tokens token.Tokens) pullSecretReconciler {
-			return dtpullsecret.NewReconciler(clt, apiReader, tokens)
-		},
+		pullSecretReconciler: dtpullsecret.NewReconciler(clt, apiReader),
 		customPropertiesReconcilerFunc: func(customPropertiesOwnerName string, customPropertiesSource *value.Source) customPropertiesReconciler {
 			return customproperties.NewReconciler(clt, apiReader, customPropertiesOwnerName, customPropertiesSource)
 		},
@@ -137,7 +135,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return err
 	}
 
-	err = r.pullSecretReconcilerFunc(tokens).Reconcile(ctx, dk)
+	err = r.pullSecretReconciler.Reconcile(ctx, dk, tokens)
 	if err != nil {
 		return err
 	}

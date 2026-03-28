@@ -47,6 +47,7 @@ var (
 	anyCtx      = mock.MatchedBy(func(context.Context) bool { return true })
 	anyDynakube = mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })
 	anyAgClient = mock.MatchedBy(func(apiClient agclient.APIClient) bool { return true })
+	anyTokens   = mock.MatchedBy(func(token.Tokens) bool { return true })
 
 	testKubeSystemNamespace = &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -89,7 +90,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			istioReconciler:                createIstioReconcilerMock(t),
 			connectionReconciler:           mockConnectionReconcileOnce(t),
 			versionReconcilerFunc:          createMockVersionReconcilerFunc(t),
-			pullSecretReconcilerFunc:       createMockPullSecretReconcilerFunc(t),
+			pullSecretReconciler:           mockPullSecretReconcileOnce(t),
 			statefulsetReconcilerFunc:      createMockStatefulsetReconcilerFunc(t),
 			capabilityReconcilerFunc:       createCapabilityReconcilerFunc(clt),
 			customPropertiesReconcilerFunc: createMockCustomPropertiesReconcilerFunc(t),
@@ -126,7 +127,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			istioReconciler:                createIstioReconcilerMock(t),
 			connectionReconciler:           mockConnectionReconcileOnce(t),
 			versionReconcilerFunc:          createMockVersionReconcilerFunc(t),
-			pullSecretReconcilerFunc:       createMockPullSecretReconcilerFunc(t),
+			pullSecretReconciler:           mockPullSecretReconcileOnce(t),
 			statefulsetReconcilerFunc:      createMockStatefulsetReconcilerFuncUnexpected(t),
 			capabilityReconcilerFunc:       createMockCapabilityReconcilerFuncUnexpected(t),
 			customPropertiesReconcilerFunc: createMockCustomPropertiesReconcilerFuncUnexpected(t),
@@ -158,7 +159,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
-		r.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 
 		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, true), nil)
 		require.NoError(t, err)
@@ -176,7 +177,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
-		r.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		err = r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
 		require.NoError(t, err)
 
@@ -210,7 +211,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		proxyReconciler := &Reconciler{
 			authTokenReconciler:            mockAuthTokenReconcileOnce(t),
-			pullSecretReconcilerFunc:       createMockPullSecretReconcilerFunc(t),
+			pullSecretReconciler:           mockPullSecretReconcileOnce(t),
 			connectionReconciler:           mockConnectionReconcileOnce(t),
 			versionReconcilerFunc:          createMockVersionReconcilerFunc(t),
 			istioReconciler:                createIstioReconcilerMock(t),
@@ -227,7 +228,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		noProxyReconciler := &Reconciler{
 			authTokenReconciler:            mockAuthTokenReconcileOnce(t),
-			pullSecretReconcilerFunc:       createMockPullSecretReconcilerFunc(t),
+			pullSecretReconciler:           mockPullSecretReconcileOnce(t),
 			connectionReconciler:           mockConnectionReconcileOnce(t),
 			versionReconcilerFunc:          createMockVersionReconcilerFunc(t),
 			istioReconciler:                createIstioReconcilerMock(t),
@@ -263,7 +264,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
-		r.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, true), nil)
@@ -324,7 +325,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
-		r.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
@@ -356,7 +357,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
-		r.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
@@ -388,7 +389,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
-		r.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
@@ -420,7 +421,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
-		r.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
@@ -439,7 +440,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		instance.Spec.ActiveGate = activegate.Spec{}
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
-		r.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err = r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
@@ -457,7 +458,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		instance.Spec.Extensions = nil
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
-		r.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err = r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
@@ -531,7 +532,7 @@ func TestServiceCreation(t *testing.T) {
 			reconciler := NewReconciler(fakeClient, fakeClient)
 			reconciler.connectionReconciler = mockConnectionReconcileOnce(t)
 			reconciler.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
-			reconciler.pullSecretReconcilerFunc = createMockPullSecretReconcilerFunc(t)
+			reconciler.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 			reconciler.istioReconciler = createIstioReconcilerMock(t)
 
 			dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
@@ -585,7 +586,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 		r := &Reconciler{
 			authTokenReconciler:            mockAuthTokenReconcileOnce(t),
-			pullSecretReconcilerFunc:       createMockPullSecretReconcilerFunc(t),
+			pullSecretReconciler:           mockPullSecretReconcileOnce(t),
 			connectionReconciler:           mockConnectionReconcileOnce(t),
 			versionReconcilerFunc:          createMockVersionReconcilerFunc(t),
 			istioReconciler:                createIstioReconcilerMock(t),
@@ -631,7 +632,7 @@ func mockPullSecretReconcileOnce(t *testing.T) pullSecretReconciler {
 	t.Helper()
 
 	reconciler := newMockPullSecretReconciler(t)
-	reconciler.EXPECT().Reconcile(anyCtx, anyDynakube).Return(nil).Once()
+	reconciler.EXPECT().Reconcile(anyCtx, anyDynakube, anyTokens).Return(nil).Once()
 
 	return reconciler
 }
@@ -666,12 +667,6 @@ func mockTLSReconcileOnce(t *testing.T) tlsReconciler {
 func createMockVersionReconcilerFunc(t *testing.T) func(dtc dtclient.Client) version.Reconciler {
 	return func(dtc dtclient.Client) version.Reconciler {
 		return mockVersionReconcileOnce(t)
-	}
-}
-
-func createMockPullSecretReconcilerFunc(t *testing.T) func(tokens token.Tokens) pullSecretReconciler {
-	return func(tokens token.Tokens) pullSecretReconciler {
-		return mockPullSecretReconcileOnce(t)
 	}
 }
 
