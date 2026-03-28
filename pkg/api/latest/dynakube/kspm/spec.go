@@ -22,6 +22,9 @@ type Kspm struct {
 
 type Spec struct {
 	// MappedHostPaths define the host paths that are mounted to the container.
+	// Must not contain duplicates.
+	// +kubebuilder:validation:Optional
+	// +listType=set
 	MappedHostPaths []string `json:"mappedHostPaths,omitempty"`
 }
 

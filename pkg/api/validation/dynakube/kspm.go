@@ -51,7 +51,7 @@ func noMappedHostPaths(_ context.Context, _ *Validator, dk *dynakube.DynaKube) s
 		return ""
 	}
 
-	if len(dk.KSPM().GetUniqueMappedHostPaths()) == 0 {
+	if len(dk.KSPM().MappedHostPaths) == 0 {
 		return warningKSPMNoHostPaths
 	}
 
@@ -63,9 +63,9 @@ func mappedHostPathsWithRootPath(_ context.Context, _ *Validator, dk *dynakube.D
 		return ""
 	}
 
-	mappedHostPaths := dk.KSPM().GetUniqueMappedHostPaths()
+	mappedHostPaths := dk.KSPM().MappedHostPaths
 
-	if slices.Index(mappedHostPaths, "/") != -1 && len(mappedHostPaths) > 1 {
+	if slices.Contains(mappedHostPaths, "/") && len(mappedHostPaths) > 1 {
 		return errorKSPMRootHostPath
 	}
 
@@ -77,9 +77,7 @@ func relativeMappedHostPaths(_ context.Context, _ *Validator, dk *dynakube.DynaK
 		return ""
 	}
 
-	mappedHostPaths := dk.KSPM().GetUniqueMappedHostPaths()
-
-	for _, path := range mappedHostPaths {
+	for _, path := range dk.KSPM().MappedHostPaths {
 		if !filepath.IsAbs(path) {
 			return fmt.Sprintf(errorKSPMRelativeHostPath, path)
 		}

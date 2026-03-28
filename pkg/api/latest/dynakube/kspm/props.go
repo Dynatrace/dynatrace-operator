@@ -23,8 +23,8 @@ func (kspm *Kspm) GetDaemonSetName() string {
 }
 
 func (kspm *Kspm) GetUniqueMappedHostPaths() []string {
-	tmpMappedHostPaths := append([]string{}, kspm.MappedHostPaths...)
-	slices.Sort(tmpMappedHostPaths)
+	mappedHostPaths := slices.Clone(kspm.MappedHostPaths)
+	slices.Sort(mappedHostPaths)
 
-	return slices.Compact(tmpMappedHostPaths)
+	return slices.Compact(mappedHostPaths)
 }
