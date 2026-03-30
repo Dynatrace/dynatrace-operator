@@ -237,7 +237,7 @@ func (r *Request) ExecuteRaw() ([]byte, error) {
 	return r.doRequest()
 }
 
-// ExecuteWriter executes the request and writes the response body to the provided writer. Implicitly setting the Accept header to application/octet-stream
+// ExecuteWriter executes the request and writes the response body to the provided writer.
 func (r *Request) ExecuteWriter(writer io.Writer) error {
 	return r.doRequestStream(writer)
 }
