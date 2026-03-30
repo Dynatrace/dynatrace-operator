@@ -22,6 +22,15 @@ const (
 )
 
 func TestGetLatest(t *testing.T) {
+	args := GetLatestArgs{
+		Os:            installer.OsUnix,
+		InstallerType: installer.TypePaaS,
+		Flavor:        arch.FlavorMultidistro,
+		Arch:          "arch",
+		Technologies:  nil,
+		SkipMetadata:  false,
+	}
+
 	setupClient := func(t *testing.T, response []byte, rawErr error) (*Client, *os.File) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
@@ -46,7 +55,7 @@ func TestGetLatest(t *testing.T) {
 
 	t.Run("file download successful", func(t *testing.T) {
 		oaClient, file := setupClient(t, []byte(agentResponse), nil)
-		err := oaClient.GetLatest(t.Context(), installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
+		err := oaClient.GetLatest(t.Context(), args, file)
 		require.NoError(t, err)
 
 		resp, err := os.ReadFile(file.Name())
@@ -56,12 +65,22 @@ func TestGetLatest(t *testing.T) {
 
 	t.Run("agent not found error", func(t *testing.T) {
 		oaClient, file := setupClient(t, nil, &core.HTTPError{StatusCode: 404, Message: "Not found"})
-		err := oaClient.GetLatest(t.Context(), installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
+		err := oaClient.GetLatest(t.Context(), args, file)
 		require.Error(t, err)
 	})
 }
 
 func TestGet(t *testing.T) {
+	args := GetArgs{
+		Os:            installer.OsUnix,
+		InstallerType: installer.TypePaaS,
+		Version:       "",
+		Flavor:        "",
+		Arch:          "",
+		Technologies:  nil,
+		SkipMetadata:  false,
+	}
+
 	setupClient := func(t *testing.T, response []byte, rawErr error) (*Client, *os.File) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
@@ -86,7 +105,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("handle response correctly", func(t *testing.T) {
 		oaClient, file := setupClient(t, []byte(versionedAgentResponse), nil)
-		err := oaClient.Get(t.Context(), installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, file)
+		err := oaClient.Get(t.Context(), args, file)
 		require.NoError(t, err)
 
 		resp, err := os.ReadFile(file.Name())
@@ -96,13 +115,18 @@ func TestGet(t *testing.T) {
 
 	t.Run("handle server error", func(t *testing.T) {
 		oaClient, file := setupClient(t, nil, &core.HTTPError{StatusCode: 404, Message: "Not found"})
-		err := oaClient.Get(t.Context(), installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, file)
+		err := oaClient.Get(t.Context(), args, file)
 
 		require.True(t, core.IsNotFound(err))
 	})
 }
 
 func TestGetVersions(t *testing.T) {
+	args := GetVersionsArgs{
+		Os:            installer.OsUnix,
+		InstallerType: installer.TypePaaS,
+		Flavor:        "",
+	}
 	var responseString = []string{"1.123.1", "1.123.2", "1.123.3", "1.123.4"}
 
 	setupClient := func(t *testing.T, execErr error) *Client {
@@ -126,7 +150,7 @@ func TestGetVersions(t *testing.T) {
 
 	t.Run("handle response correctly", func(t *testing.T) {
 		oaClient := setupClient(t, nil)
-		availableVersions, err := oaClient.GetVersions(t.Context(), installer.OsUnix, installer.TypePaaS, "")
+		availableVersions, err := oaClient.GetVersions(t.Context(), args)
 
 		require.NoError(t, err)
 		assert.Len(t, availableVersions, 4)
@@ -138,7 +162,7 @@ func TestGetVersions(t *testing.T) {
 
 	t.Run("handle server error", func(t *testing.T) {
 		oaClient := setupClient(t, &core.HTTPError{StatusCode: 400, Message: "test-error"})
-		availableVersions, err := oaClient.GetVersions(t.Context(), installer.OsUnix, installer.TypePaaS, "")
+		availableVersions, err := oaClient.GetVersions(t.Context(), args)
 
 		require.Empty(t, availableVersions)
 		require.Error(t, err)
