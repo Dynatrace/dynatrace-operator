@@ -90,7 +90,7 @@ func WithSkipCertificateValidation(skip bool) OptionV2 {
 	return func(c *ConfigV2) {
 		if skip {
 			if c.TLSConfig == nil {
-				c.TLSConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
+				c.TLSConfig = &tls.Config{}
 			}
 
 			c.TLSConfig.InsecureSkipVerify = true
@@ -112,7 +112,7 @@ func WithCerts(certs []byte) OptionV2 {
 		}
 
 		if c.TLSConfig == nil {
-			c.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+			c.TLSConfig = &tls.Config{}
 		}
 
 		c.TLSConfig.RootCAs = rootCAs
