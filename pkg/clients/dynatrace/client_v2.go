@@ -127,7 +127,7 @@ func WithTimeout(timeout time.Duration) OptionV2 {
 }
 
 // WithProxy sets the proxy URL
-func WithProxy(proxyURL string, noProxy string) OptionV2 {
+func WithProxy(proxyURL, noProxy string) OptionV2 {
 	return func(c *ConfigV2) {
 		c.Proxy = proxyURL
 		c.NoProxy = noProxy
