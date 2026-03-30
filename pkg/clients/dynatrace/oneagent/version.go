@@ -15,9 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-//
-// TODO: the `arch` params should be removed and instead always the "github.com/Dynatrace/dynatrace-operator/pkg/arch" should be used
-
 // Get gets the agent package for the given OS, installer type, flavor, arch and version.
 func (c *Client) Get(ctx context.Context, os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
