@@ -27,7 +27,7 @@ func (r *Reconciler) deleteService(ctx context.Context, dk *dynakube.DynaKube) e
 		},
 	}
 
-	return client.IgnoreNotFound(r.services.Delete(ctx, &svc))
+	return client.IgnoreNotFound(r.client.Delete(ctx, &svc))
 }
 
 func (r *Reconciler) setAGServiceIPs(ctx context.Context, dk *dynakube.DynaKube) error {

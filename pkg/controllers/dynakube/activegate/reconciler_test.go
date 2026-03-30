@@ -19,8 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
@@ -84,15 +82,14 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 
 		r := &Reconciler{
 			client:                     clt,
+			apiReader:                  clt,
 			authTokenReconciler:        mockAuthTokenReconcileOnce(t),
 			istioReconciler:            createIstioReconcilerMock(t),
 			connectionReconciler:       mockConnectionReconcileOnce(t),
-			versionReconcilerFunc:      createMockVersionReconcilerFunc(t),
+			versionReconciler:          mockVersionReconcileOnce(t),
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconciler,
 			configMaps:                 k8sconfigmap.Query(clt, clt, log),
-			services:                   k8sservice.Query(clt, clt, log),
-			statefulSets:               k8sstatefulset.Query(clt, clt, log),
 		}
 
 		err := r.Reconcile(t.Context(), buildDynakube(), createMockDtClient(t, false), nil)
@@ -109,16 +106,15 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 
 		r := &Reconciler{
 			client:                     clt,
+			apiReader:                  clt,
 			authTokenReconciler:        mockAuthTokenReconcileOnce(t),
 			istioReconciler:            createIstioReconcilerMock(t),
 			connectionReconciler:       mockConnectionReconcileOnce(t),
-			versionReconcilerFunc:      createMockVersionReconcilerFunc(t),
+			versionReconciler:          mockVersionReconcileOnce(t),
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        tlsSecretReconciler,
 			configMaps:                 k8sconfigmap.Query(clt, clt, log),
-			services:                   k8sservice.Query(clt, clt, log),
-			statefulSets:               k8sstatefulset.Query(clt, clt, log),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
@@ -135,17 +131,16 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 
 		r := &Reconciler{
 			client:                     clt,
+			apiReader:                  clt,
 			authTokenReconciler:        mockAuthTokenReconcileOnce(t),
 			istioReconciler:            createIstioReconcilerMock(t),
 			connectionReconciler:       mockConnectionReconcileOnce(t),
-			versionReconcilerFunc:      createMockVersionReconcilerFunc(t),
+			versionReconciler:          mockVersionReconcileOnce(t),
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
 			statefulsetReconciler:      statefulsetReconciler,
 			configMaps:                 k8sconfigmap.Query(clt, clt, log),
-			services:                   k8sservice.Query(clt, clt, log),
-			statefulSets:               k8sstatefulset.Query(clt, clt, log),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
@@ -183,17 +178,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		r := &Reconciler{
 			client:                     clt,
+			apiReader:                  clt,
 			authTokenReconciler:        mockAuthTokenReconcileOnce(t),
 			istioReconciler:            createIstioReconcilerMock(t),
 			connectionReconciler:       mockConnectionReconcileOnce(t),
-			versionReconcilerFunc:      createMockVersionReconcilerFunc(t),
+			versionReconciler:          mockVersionReconcileOnce(t),
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
 			configMaps:                 k8sconfigmap.Query(clt, clt, log),
-			services:                   k8sservice.Query(clt, clt, log),
-			statefulSets:               k8sstatefulset.Query(clt, clt, log),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
@@ -219,18 +213,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 		clt := fake.NewClient()
 
 		r := Reconciler{
-			client:                clt,
-			authTokenReconciler:   mockAuthTokenReconcileOnce(t),
-			istioReconciler:       createIstioReconcilerMock(t),
-			connectionReconciler:  mockConnectionReconcileOnce(t),
-			versionReconcilerFunc: createMockVersionReconcilerFunc(t),
-			pullSecretReconciler:  mockPullSecretReconcileOnce(t),
+			client:               clt,
+			apiReader:            clt,
+			authTokenReconciler:  mockAuthTokenReconcileOnce(t),
+			istioReconciler:      createIstioReconcilerMock(t),
+			connectionReconciler: mockConnectionReconcileOnce(t),
+			versionReconciler:    mockVersionReconcileOnce(t),
+			pullSecretReconciler: mockPullSecretReconcileOnce(t),
 			// statefulsetReconciler: panic if called
 			// customPropertiesReconciler: panic if called
 			tlsSecretReconciler: mockTLSReconcileOnce(t),
 			configMaps:          k8sconfigmap.Query(clt, clt, log),
-			services:            k8sservice.Query(clt, clt, log),
-			statefulSets:        k8sstatefulset.Query(clt, clt, log),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
@@ -253,7 +246,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
-		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 
@@ -271,7 +264,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// remove AG from spec
 		dk.Spec.ActiveGate = activegate.Spec{}
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
-		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		err = r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
@@ -307,34 +300,32 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		proxyReconciler := &Reconciler{
 			client:                     fakeClient,
+			apiReader:                  fakeClient,
 			authTokenReconciler:        mockAuthTokenReconcileOnce(t),
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			connectionReconciler:       mockConnectionReconcileOnce(t),
-			versionReconcilerFunc:      createMockVersionReconcilerFunc(t),
+			versionReconciler:          mockVersionReconcileOnce(t),
 			istioReconciler:            createIstioReconcilerMock(t),
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
 			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
-			services:                   k8sservice.Query(fakeClient, fakeClient, log),
-			statefulSets:               k8sstatefulset.Query(fakeClient, fakeClient, log),
 		}
 		err := proxyReconciler.Reconcile(t.Context(), dkWithProxy, createMockDtClient(t, false), nil)
 		require.NoError(t, err)
 
 		noProxyReconciler := &Reconciler{
 			client:                     fakeClient,
+			apiReader:                  fakeClient,
 			authTokenReconciler:        mockAuthTokenReconcileOnce(t),
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			connectionReconciler:       mockConnectionReconcileOnce(t),
-			versionReconcilerFunc:      createMockVersionReconcilerFunc(t),
+			versionReconciler:          mockVersionReconcileOnce(t),
 			istioReconciler:            createIstioReconcilerMock(t),
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
 			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
-			services:                   k8sservice.Query(fakeClient, fakeClient, log),
-			statefulSets:               k8sstatefulset.Query(fakeClient, fakeClient, log),
 		}
 
 		err = noProxyReconciler.Reconcile(t.Context(), dkNoProxy, createMockDtClient(t, false), nil)
@@ -359,7 +350,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
-		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
@@ -420,7 +411,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
-		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
@@ -452,7 +443,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
-		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
@@ -484,7 +475,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
-		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
@@ -516,7 +507,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient)
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
-		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
@@ -535,7 +526,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		// remove AG from spec
 		instance.Spec.ActiveGate = activegate.Spec{}
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
-		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
@@ -553,7 +544,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		// disable extensions
 		instance.Spec.Extensions = nil
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
-		r.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
@@ -627,7 +618,7 @@ func TestServiceCreation(t *testing.T) {
 
 			reconciler := NewReconciler(fakeClient, fakeClient)
 			reconciler.connectionReconciler = mockConnectionReconcileOnce(t)
-			reconciler.versionReconcilerFunc = createMockVersionReconcilerFunc(t)
+			reconciler.versionReconciler = mockVersionReconcileOnce(t)
 			reconciler.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 			reconciler.istioReconciler = createIstioReconcilerMock(t)
 
@@ -682,17 +673,16 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 		r := &Reconciler{
 			client:                     fakeClient,
+			apiReader:                  fakeClient,
 			authTokenReconciler:        mockAuthTokenReconcileOnce(t),
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			connectionReconciler:       mockConnectionReconcileOnce(t),
-			versionReconcilerFunc:      createMockVersionReconcilerFunc(t),
+			versionReconciler:          mockVersionReconcileOnce(t),
 			istioReconciler:            createIstioReconcilerMock(t),
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
 			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
-			services:                   k8sservice.Query(fakeClient, fakeClient, log),
-			statefulSets:               k8sstatefulset.Query(fakeClient, fakeClient, log),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, true), nil)
@@ -758,12 +748,6 @@ func mockTLSReconcileOnce(t *testing.T) tlsReconciler {
 	reconciler.EXPECT().Reconcile(anyCtx, anyDynakube).Return(nil).Once()
 
 	return reconciler
-}
-
-func createMockVersionReconcilerFunc(t *testing.T) func(dtc dtclient.Client) version.Reconciler {
-	return func(dtc dtclient.Client) version.Reconciler {
-		return mockVersionReconcileOnce(t)
-	}
 }
 
 func mockVersionReconcileOnce(t *testing.T) version.Reconciler {

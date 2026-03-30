@@ -10,30 +10,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type QueryObject struct {
-	query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList]
-}
+func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList] {
+	return query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList]{
+		Target:     &appsv1.StatefulSet{},
+		ListTarget: &appsv1.StatefulSetList{},
+		ToList: func(list *appsv1.StatefulSetList) []*appsv1.StatefulSet {
+			out := make([]*appsv1.StatefulSet, len(list.Items))
+			for i, item := range list.Items {
+				out[i] = &item
+			}
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) QueryObject {
-	return QueryObject{
-		query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList]{
-			Target:     &appsv1.StatefulSet{},
-			ListTarget: &appsv1.StatefulSetList{},
-			ToList: func(list *appsv1.StatefulSetList) []*appsv1.StatefulSet {
-				out := make([]*appsv1.StatefulSet, len(list.Items))
-				for i, item := range list.Items {
-					out[i] = &item
-				}
-
-				return out
-			},
-			IsEqual:      isEqual,
-			MustRecreate: mustRecreate,
-
-			KubeClient: kubeClient,
-			KubeReader: kubeReader,
-			Log:        log,
+			return out
 		},
+		IsEqual:      isEqual,
+		MustRecreate: mustRecreate,
+
+		KubeClient: kubeClient,
+		KubeReader: kubeReader,
+		Log:        log,
 	}
 }
 

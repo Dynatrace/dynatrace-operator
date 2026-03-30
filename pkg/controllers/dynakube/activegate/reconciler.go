@@ -19,8 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,6 +39,9 @@ type connectionReconciler interface {
 	Reconcile(ctx context.Context, agClient agclient.APIClient, dk *dynakube.DynaKube) error
 }
 
+type versionReconciler interface {
+	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
+}
 type pullSecretReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error
 }
@@ -58,36 +59,31 @@ type tlsReconciler interface {
 }
 
 type Reconciler struct {
+	apiReader                  client.Reader
 	client                     client.Client
 	authTokenReconciler        authTokenReconciler
 	istioReconciler            istioReconciler
 	connectionReconciler       connectionReconciler
-	versionReconcilerFunc      func(dtc dtclient.Client) version.Reconciler
+	versionReconciler          versionReconciler
 	pullSecretReconciler       pullSecretReconciler
 	statefulsetReconciler      statefulsetReconciler
 	customPropertiesReconciler customPropertiesReconciler
 	tlsSecretReconciler        tlsReconciler
 	configMaps                 k8sconfigmap.QueryObject
-	services                   k8sservice.QueryObject
-	statefulSets               k8sstatefulset.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		client:               clt,
-		authTokenReconciler:  authtoken.NewReconciler(clt, apiReader),
-		istioReconciler:      istio.NewReconciler(clt, apiReader),
-		connectionReconciler: agconnectioninfo.NewReconciler(clt, apiReader),
-		versionReconcilerFunc: func(dtc dtclient.Client) version.Reconciler {
-			return version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
-		},
+		client:                     clt,
+		apiReader:                  apiReader,
+		authTokenReconciler:        authtoken.NewReconciler(clt, apiReader),
+		istioReconciler:            istio.NewReconciler(clt, apiReader),
+		connectionReconciler:       agconnectioninfo.NewReconciler(clt, apiReader),
 		pullSecretReconciler:       dtpullsecret.NewReconciler(clt, apiReader),
 		customPropertiesReconciler: customproperties.NewReconciler(clt, apiReader),
 		statefulsetReconciler:      statefulset.NewReconciler(clt, apiReader),
 		tlsSecretReconciler:        tls.NewReconciler(clt, apiReader),
 		configMaps:                 k8sconfigmap.Query(clt, apiReader, log),
-		services:                   k8sservice.Query(clt, apiReader, log),
-		statefulSets:               k8sstatefulset.Query(clt, apiReader, log),
 	}
 }
 
@@ -116,7 +112,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return err
 	}
 
-	err = r.versionReconcilerFunc(dtClient).ReconcileActiveGate(ctx, dk)
+	if r.versionReconciler == nil {
+		r.versionReconciler = version.NewReconciler(r.apiReader, dtClient, timeprovider.New().Freeze())
+	}
+
+	err = r.versionReconciler.ReconcileActiveGate(ctx, dk)
 	if err != nil {
 		return err
 	}
@@ -242,5 +242,5 @@ func (r *Reconciler) deleteStatefulset(ctx context.Context, dk *dynakube.DynaKub
 		},
 	}
 
-	return client.IgnoreNotFound(r.statefulSets.Delete(ctx, &sts))
+	return client.IgnoreNotFound(r.client.Delete(ctx, &sts))
 }
