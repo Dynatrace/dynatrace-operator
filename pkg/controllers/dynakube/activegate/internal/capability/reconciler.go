@@ -70,7 +70,7 @@ func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
 	template := CreateService(r.dk)
 	present := &corev1.Service{}
 
-	return retry.OnError(retry.DefaultRetry, k8serrors.IsNotFound, func() error {
+	return retry.OnError(retry.DefaultBackoff, k8serrors.IsNotFound, func() error {
 		err := r.client.Get(ctx, client.ObjectKeyFromObject(template), present)
 		if err != nil {
 			return errors.WithStack(err)
