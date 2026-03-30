@@ -70,6 +70,7 @@ func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
 	template := CreateService(r.dk)
 	present := &corev1.Service{}
 
+	// retry because a Service created by the preceding createOrUpdateService call may not be immediately visible in the API.
 	return retry.OnError(retry.DefaultBackoff, k8serrors.IsNotFound, func() error {
 		err := r.client.Get(ctx, client.ObjectKeyFromObject(template), present)
 		if err != nil {
