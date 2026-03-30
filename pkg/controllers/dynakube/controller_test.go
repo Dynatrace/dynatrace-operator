@@ -381,8 +381,8 @@ func TestReconcileComponents(t *testing.T) {
 		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
 
 		var err error
-		expectReconcileError(t, mockOneAgentReconciler, &err)
 		expectReconcileError(t, mockActiveGateReconciler, &err)
+		expectReconcileError(t, mockOneAgentReconciler, &err)
 		expectReconcileError(t, mockInjectionReconciler, &err)
 		expectReconcileError(t, mockLogMonitoringReconciler, &err, mockedDtc, dk)
 		expectReconcileError(t, mockExtensionReconciler, &err, dk)

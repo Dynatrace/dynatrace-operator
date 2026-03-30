@@ -354,10 +354,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
-	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
-		componentErrors = append(componentErrors, err)
-	}
-
 	if err := controller.extensionReconciler.Reconcile(ctx, dk); err != nil {
 		log.Info("could not reconcile Extensions")
 
