@@ -1,7 +1,6 @@
 package oneagent
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -108,15 +107,17 @@ func (c *Client) GetViaInstallerURL(ctx context.Context, url string, writer io.W
 }
 
 func makeRequestForBinary(req core.APIRequest, writer io.Writer) (string, error) {
-	body, err := req.WithHeader("Accept", "application/octet-stream").ExecuteRaw()
+	hash := sha256.New()
+	multiWriter := io.MultiWriter(writer, hash)
+
+	err := req.
+		WithHeader("Accept", "application/octet-stream").
+		ExecuteWriter(multiWriter)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	hash := sha256.New()
-	_, err = io.Copy(writer, io.TeeReader(bytes.NewReader(body), hash))
-
-	return hex.EncodeToString(hash.Sum(nil)), err
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func getURL(os, installerType, version string) string {

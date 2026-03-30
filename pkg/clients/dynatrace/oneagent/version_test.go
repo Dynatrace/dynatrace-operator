@@ -2,6 +2,8 @@ package oneagent
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"io"
 	"os"
 	"testing"
 
@@ -20,15 +22,21 @@ const (
 )
 
 func TestGetLatest(t *testing.T) {
-	setupClient := func(t *testing.T, rawResponse []byte, rawErr error) (*Client, *os.File) {
+	setupClient := func(t *testing.T, response []byte, rawErr error) (*Client, *os.File) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
+
+		hash := sha256.New()
+		multiWriter := io.MultiWriter(file, hash)
 
 		req := coremock.NewAPIRequest(t)
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithHeader("Accept", "application/octet-stream").Return(req).Once()
-		req.EXPECT().ExecuteRaw().Return(rawResponse, rawErr).Once()
+		req.EXPECT().ExecuteWriter(multiWriter).Run(func(writer io.Writer) {
+			_, copyErr := io.Copy(writer, bytes.NewReader(response))
+			require.NoError(t, copyErr)
+		}).Return(rawErr).Once()
 
 		client := coremock.NewAPIClient(t)
 		client.EXPECT().GET(t.Context(), getLatestURL(installer.OsUnix, installer.TypePaaS)).Return(req).Once()
@@ -54,32 +62,41 @@ func TestGetLatest(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	setupClient := func(t *testing.T, rawResponse []byte, rawErr error) *Client {
+	setupClient := func(t *testing.T, response []byte, rawErr error) (*Client, *os.File) {
+		file, err := os.CreateTemp(t.TempDir(), "installer")
+		require.NoError(t, err)
+
+		hash := sha256.New()
+		multiWriter := io.MultiWriter(file, hash)
+
 		req := coremock.NewAPIRequest(t)
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithHeader(mock.Anything, mock.Anything).Return(req).Once()
-		req.EXPECT().ExecuteRaw().Return(rawResponse, rawErr).Once()
+		req.EXPECT().ExecuteWriter(multiWriter).Run(func(writer io.Writer) {
+			_, copyErr := io.Copy(writer, bytes.NewReader(response))
+			require.NoError(t, copyErr)
+		}).Return(rawErr).Once()
 
 		client := coremock.NewAPIClient(t)
 		client.EXPECT().GET(t.Context(), getURL(installer.OsUnix, installer.TypePaaS, "")).Return(req).Once()
 
-		return NewClient(client, "", "")
+		return NewClient(client, "", ""), file
 	}
 
 	t.Run("handle response correctly", func(t *testing.T) {
-		oaClient := setupClient(t, []byte(versionedAgentResponse), nil)
-		readWriter := bytes.NewBuffer([]byte{})
-		err := oaClient.Get(t.Context(), installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, readWriter)
-
+		oaClient, file := setupClient(t, []byte(versionedAgentResponse), nil)
+		err := oaClient.Get(t.Context(), installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, file)
 		require.NoError(t, err)
-		assert.Equal(t, versionedAgentResponse, readWriter.String())
+
+		resp, err := os.ReadFile(file.Name())
+		require.NoError(t, err)
+		assert.Equal(t, versionedAgentResponse, string(resp))
 	})
 
 	t.Run("handle server error", func(t *testing.T) {
-		oaClient := setupClient(t, nil, &core.HTTPError{StatusCode: 404, Message: "Not found"})
-		readWriter := bytes.NewBuffer([]byte{})
-		err := oaClient.Get(t.Context(), installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, readWriter)
+		oaClient, file := setupClient(t, nil, &core.HTTPError{StatusCode: 404, Message: "Not found"})
+		err := oaClient.Get(t.Context(), installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, file)
 
 		require.True(t, core.IsNotFound(err))
 	})

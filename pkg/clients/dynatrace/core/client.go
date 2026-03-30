@@ -48,6 +48,8 @@ type APIRequest interface {
 	Execute(model any) error
 	// ExecuteRaw executes the request and returns the raw response data
 	ExecuteRaw() ([]byte, error)
+	// ExecuteWriter executes the request and writes the response body to the provided writer
+	ExecuteWriter(writer io.Writer) error
 }
 
 type Config struct {
@@ -225,6 +227,11 @@ func (r *Request) ExecuteRaw() ([]byte, error) {
 	return r.doRequest()
 }
 
+// ExecuteWriter executes the request and writes the response body to the provided writer. Implicitly setting the Accept header to application/octet-stream
+func (r *Request) ExecuteWriter(writer io.Writer) error {
+	return r.doRequestStream(writer)
+}
+
 func (r *Request) getToken() string {
 	switch r.tokenType {
 	case TokenTypePaaS:
@@ -255,6 +262,72 @@ func (r *Request) withMethod(method string) APIRequest {
 	r.method = method
 
 	return r
+}
+
+func (r *Request) doRequestStream(writer io.Writer) (err error) {
+	if r.err != nil {
+		return r.err
+	}
+
+	reqURL, err := r.buildURL()
+	if err != nil {
+		return fmt.Errorf("build URL: %w", err)
+	}
+
+	var bodyReader io.Reader
+	if r.body != nil {
+		bodyReader = bytes.NewReader(r.body)
+	}
+
+	req, err := http.NewRequestWithContext(r.ctx, r.method, reqURL.String(), bodyReader)
+	if err != nil {
+		return fmt.Errorf("create HTTP request: %w", err)
+	}
+
+	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
+
+	httpClient := r.client.cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	loggerArgs := createLoggerArgs(r.body)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("HTTP request: %w", err)
+	}
+
+	defer func() {
+		if errClose := resp.Body.Close(); errClose != nil {
+			err = errors.Join(err, errClose)
+		}
+	}()
+
+	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
+	statusCodeThreshold := 201
+	if r.method == http.MethodDelete {
+		statusCodeThreshold = 299
+	}
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return fmt.Errorf("read error response body: %w", readErr)
+		}
+
+		log.Debug("API request", loggerArgs(resp, body)...)
+
+		return handleErrorResponse(resp, body)
+	}
+
+	log.Debug("API request", loggerArgs(resp, nil)...)
+
+	if _, err = io.Copy(writer, resp.Body); err != nil {
+		return fmt.Errorf("stream response body: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Request) doRequest() (body []byte, err error) {

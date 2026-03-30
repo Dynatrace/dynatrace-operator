@@ -198,6 +198,55 @@ func TestClient_ExecuteRaw(t *testing.T) {
 	})
 }
 
+func TestClient_ExecuteWriter(t *testing.T) {
+	const responseBody = "binary-blob-content"
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/fail":
+			w.WriteHeader(http.StatusTeapot)
+			_, _ = w.Write([]byte(`{"error":{}}`))
+		default:
+			_, _ = w.Write([]byte(responseBody))
+		}
+	}))
+	defer s.Close()
+
+	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+
+	t.Run("streams response body to writer", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := c.GET(t.Context(), "/test").ExecuteWriter(&buf)
+		require.NoError(t, err)
+		assert.Equal(t, responseBody, buf.String())
+	})
+
+	t.Run("returns error and writes nothing on non-2xx", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := c.GET(t.Context(), "/fail").ExecuteWriter(&buf)
+		require.Error(t, err)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns error on missing base URL", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := new(Client).GET(t.Context(), "/test").ExecuteWriter(&buf)
+		require.EqualError(t, err, "build URL: missing base URL")
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns error on broken writer", func(t *testing.T) {
+		err := c.GET(t.Context(), "/test").ExecuteWriter(brokenWriter{})
+		require.ErrorContains(t, err, "stream response body")
+	})
+}
+
+type brokenWriter struct{}
+
+func (brokenWriter) Write(_ []byte) (int, error) {
+	return 0, io.ErrClosedPipe
+}
+
 func TestHandleErrorResponse_SingleServerError(t *testing.T) {
 	resp := newTestResponse(400, "/test", `{"error":{"code":400,"message":"bad request"}}`)
 	err := handleErrorResponse(resp, []byte(`{"error":{"code":400,"message":"bad request"}}`))
