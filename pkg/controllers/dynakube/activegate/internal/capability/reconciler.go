@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -69,14 +70,17 @@ func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
 	template := CreateService(r.dk)
 	present := &corev1.Service{}
 
-	err := r.client.Get(ctx, client.ObjectKeyFromObject(template), present)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	// retry because a Service created by the preceding createOrUpdateService call may not be immediately visible in the API.
+	return retry.OnError(retry.DefaultBackoff, k8serrors.IsNotFound, func() error {
+		err := r.client.Get(ctx, client.ObjectKeyFromObject(template), present)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 
-	r.dk.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
+		r.dk.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
 
-	return nil
+		return nil
+	})
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context) error {

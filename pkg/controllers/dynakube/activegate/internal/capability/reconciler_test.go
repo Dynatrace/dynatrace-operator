@@ -16,9 +16,12 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -225,4 +228,103 @@ func TestCreateOrUpdateService(t *testing.T) {
 		assert.Equal(t, desiredService.Spec, actualService.Spec)
 		assert.NotEqual(t, actualService, service)
 	}
+}
+
+func TestSetAGServiceIPs(t *testing.T) {
+	t.Run("sets ServiceIPs from existing service ClusterIPs", func(t *testing.T) {
+		dk := buildDynakube(capabilitiesWithService)
+		expectedIPs := []string{"10.0.0.1", "fd00::1"}
+
+		svc := CreateService(dk)
+		svc.Spec.ClusterIPs = expectedIPs
+
+		clt := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(svc).
+			Build()
+
+		r := &Reconciler{client: clt, dk: dk}
+
+		err := r.setAGServiceIPs(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, expectedIPs, dk.Status.ActiveGate.ServiceIPs)
+	})
+
+	t.Run("returns error when service does not exist", func(t *testing.T) {
+		dk := buildDynakube(capabilitiesWithService)
+
+		clt := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			Build()
+
+		r := &Reconciler{client: clt, dk: dk}
+
+		err := r.setAGServiceIPs(t.Context())
+		require.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+
+	t.Run("retry if not there", func(t *testing.T) {
+		dk := buildDynakube(capabilitiesWithService)
+		expectedIPs := []string{"10.0.0.1", "fd00::1"}
+
+		svc := CreateService(dk)
+		svc.Spec.ClusterIPs = expectedIPs
+		expectedAttempts := 2
+		attemptCounter := 0
+
+		clt := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithInterceptorFuncs(interceptor.Funcs{
+				Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+					if attemptCounter < expectedAttempts {
+						attemptCounter++
+
+						return k8serrors.NewNotFound(schema.GroupResource{}, "test")
+					}
+					svc.DeepCopyInto(obj.(*corev1.Service))
+
+					return nil
+				},
+				List: func(ctx context.Context, client client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
+					return errors.New("UNEXPECTED")
+				},
+				Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+					return errors.New("UNEXPECTED")
+				},
+				Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+					return errors.New("UNEXPECTED")
+				},
+				Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+					return errors.New("UNEXPECTED")
+				},
+			}).
+			Build()
+
+		r := &Reconciler{client: clt, dk: dk}
+
+		err := r.setAGServiceIPs(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, expectedIPs, dk.Status.ActiveGate.ServiceIPs)
+		assert.Equal(t, expectedAttempts, attemptCounter)
+	})
+
+	t.Run("clears ServiceIPs when service has no ClusterIPs", func(t *testing.T) {
+		dk := buildDynakube(capabilitiesWithService)
+		dk.Status.ActiveGate.ServiceIPs = []string{"10.0.0.1"}
+
+		svc := CreateService(dk)
+		// ClusterIPs intentionally left empty
+
+		clt := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(svc).
+			Build()
+
+		r := &Reconciler{client: clt, dk: dk}
+
+		err := r.setAGServiceIPs(t.Context())
+		require.NoError(t, err)
+		assert.Empty(t, dk.Status.ActiveGate.ServiceIPs)
+	})
 }
