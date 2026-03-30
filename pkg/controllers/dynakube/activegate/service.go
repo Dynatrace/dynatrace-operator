@@ -41,7 +41,7 @@ func (r *Reconciler) setAGServiceIPs(ctx context.Context, dk *dynakube.DynaKube)
 			return errors.WithStack(err)
 		}
 
-	dk.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
+		dk.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
 
 		return nil
 	})
