@@ -118,7 +118,7 @@ func (c *Client) GetVersions(ctx context.Context, args GetVersionsArgs) ([]strin
 }
 
 func (c *Client) GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
-	apiRequest := c.apiClient.GET(ctx, url)
+	apiRequest := c.apiClient.GET(ctx, url).WithoutToken()
 
 	sha256, err := makeRequestForBinary(apiRequest, writer)
 	if err != nil {

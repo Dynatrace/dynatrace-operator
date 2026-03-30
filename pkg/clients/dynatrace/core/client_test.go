@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -112,11 +111,10 @@ func TestClient_Errors(t *testing.T) {
 }
 
 func TestClient_TokenTypes(t *testing.T) {
-	var expectToken string
+	var expectAuthHeader string
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := strings.TrimPrefix(r.Header.Get("Authorization"), apiTokenHeader)
-		assert.Equal(t, expectToken, token)
+		assert.Equal(t, expectAuthHeader, r.Header.Get("Authorization"))
 	}))
 	defer s.Close()
 
@@ -128,18 +126,23 @@ func TestClient_TokenTypes(t *testing.T) {
 	})
 
 	t.Run("default", func(t *testing.T) {
-		expectToken = "api"
+		expectAuthHeader = "Api-Token api"
 		assert.NoError(t, c.GET(t.Context(), "/test").Execute(nil))
 	})
 
 	t.Run("paas", func(t *testing.T) {
-		expectToken = "paas"
+		expectAuthHeader = "Api-Token paas"
 		assert.NoError(t, c.GET(t.Context(), "/test").WithPaasToken().Execute(nil))
 	})
 
 	t.Run("data ingest", func(t *testing.T) {
-		expectToken = "data-ingest"
+		expectAuthHeader = "Api-Token data-ingest"
 		assert.NoError(t, c.GET(t.Context(), "/test").WithTokenType(TokenTypeDataIngest).Execute(nil))
+	})
+
+	t.Run("without token", func(t *testing.T) {
+		expectAuthHeader = ""
+		assert.NoError(t, c.GET(t.Context(), "/test").WithoutToken().Execute(nil))
 	})
 }
 

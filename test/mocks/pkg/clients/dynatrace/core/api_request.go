@@ -618,3 +618,49 @@ func (_c *APIRequest_WithTokenType_Call) RunAndReturn(run func(tokenType core.To
 	_c.Call.Return(run)
 	return _c
 }
+
+// WithoutToken provides a mock function for the type APIRequest
+func (_mock *APIRequest) WithoutToken() core.APIRequest {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithoutToken")
+	}
+
+	var r0 core.APIRequest
+	if returnFunc, ok := ret.Get(0).(func() core.APIRequest); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(core.APIRequest)
+		}
+	}
+	return r0
+}
+
+// APIRequest_WithoutToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithoutToken'
+type APIRequest_WithoutToken_Call struct {
+	*mock.Call
+}
+
+// WithoutToken is a helper method to define mock.On call
+func (_e *APIRequest_Expecter) WithoutToken() *APIRequest_WithoutToken_Call {
+	return &APIRequest_WithoutToken_Call{Call: _e.mock.On("WithoutToken")}
+}
+
+func (_c *APIRequest_WithoutToken_Call) Run(run func()) *APIRequest_WithoutToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *APIRequest_WithoutToken_Call) Return(aPIRequest core.APIRequest) *APIRequest_WithoutToken_Call {
+	_c.Call.Return(aPIRequest)
+	return _c
+}
+
+func (_c *APIRequest_WithoutToken_Call) RunAndReturn(run func() core.APIRequest) *APIRequest_WithoutToken_Call {
+	_c.Call.Return(run)
+	return _c
+}

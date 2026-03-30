@@ -42,6 +42,8 @@ type APIRequest interface {
 	WithTokenType(tokenType TokenType) APIRequest
 	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
+	// WithoutToken explicitly disables authentication for the request
+	WithoutToken() APIRequest
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
@@ -91,6 +93,7 @@ const (
 	TokenTypeAPI TokenType = iota
 	TokenTypePaaS
 	TokenTypeDataIngest
+	TokenTypeNone
 )
 
 func (c *Client) newRequest(ctx context.Context) *Request {
@@ -199,6 +202,13 @@ func (r *Request) WithPaasToken() APIRequest {
 	return r
 }
 
+// WithoutToken explicitly disables authentication for the request
+func (r *Request) WithoutToken() APIRequest {
+	r.tokenType = TokenTypeNone
+
+	return r
+}
+
 // WithHeader sets a custom header for the request, overriding existing value
 func (r *Request) WithHeader(key, value string) APIRequest {
 	r.headers.Set(key, value)
@@ -238,6 +248,8 @@ func (r *Request) getToken() string {
 		return r.client.cfg.PaasToken
 	case TokenTypeDataIngest:
 		return r.client.cfg.DataIngestToken
+	case TokenTypeNone:
+		return ""
 	default:
 		return r.client.cfg.APIToken
 	}
@@ -393,7 +405,10 @@ func (r *Request) doRequest() (body []byte, err error) {
 // setHeaders sets the common headers for the request
 func setHeaders(req *http.Request, userAgent, token string, customHeaders http.Header) {
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", apiTokenHeader+token)
+
+	if token != "" {
+		req.Header.Set("Authorization", apiTokenHeader+token)
+	}
 
 	if userAgent != "" {
 		req.Header.Set("User-Agent", userAgent)
