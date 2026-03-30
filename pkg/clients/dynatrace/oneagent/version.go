@@ -32,6 +32,7 @@ func (c *Client) Get(ctx context.Context, args GetArgs, writer io.Writer) error 
 	}
 
 	apiRequest := c.apiClient.GET(ctx, getURL(args.Os, args.InstallerType, args.Version)).
+		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
 			"arch":         args.Arch,
@@ -64,6 +65,7 @@ func (c *Client) GetLatest(ctx context.Context, args GetLatestArgs, writer io.Wr
 	}
 
 	apiRequest := c.apiClient.GET(ctx, getLatestURL(args.Os, args.InstallerType)).
+		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
 			"arch":         args.Arch,

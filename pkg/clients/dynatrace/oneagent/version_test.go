@@ -39,6 +39,7 @@ func TestGetLatest(t *testing.T) {
 		multiWriter := io.MultiWriter(file, hash)
 
 		req := coremock.NewAPIRequest(t)
+		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithHeader("Accept", "application/octet-stream").Return(req).Once()
@@ -89,6 +90,7 @@ func TestGet(t *testing.T) {
 		multiWriter := io.MultiWriter(file, hash)
 
 		req := coremock.NewAPIRequest(t)
+		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithHeader(mock.Anything, mock.Anything).Return(req).Once()
