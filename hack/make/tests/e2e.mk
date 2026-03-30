@@ -9,6 +9,10 @@ test/e2e/%/publish:
 test/e2e/%/debug:
 	@make SKIPCLEANUP="-args --fail-fast" $(@D)
 
+## Start a test but using OLM bundle instead of helm install
+test/e2e/%/olm:
+	@make OLM=true $(@D)
+
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \

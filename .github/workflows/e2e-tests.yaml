@@ -100,6 +100,46 @@ jobs:
           if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
+  run-in-ocp-olm:
+    name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }})
+    environment: E2E
+    runs-on:
+      - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ job.check_run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Run e2e test
+        id: run_e2e_test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto
+          flc-environment: dto-ocp-olm-flc
+          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine cluster status
+        if: failure()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
+        run: |
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
+            exit 1
+          fi
   run-in-ocp-fips:
     name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
     environment: E2E
@@ -145,7 +185,7 @@ jobs:
   notify-slack:
     name: Notify test results in Slack
     environment: E2E
-    needs: [ "run-in-k8s", "run-in-ocp", "run-in-ocp-fips" ]
+    needs: [ "run-in-k8s", "run-in-ocp", "run-in-ocp-fips", "run-in-ocp-olm"]
     runs-on: ubuntu-24.04
     if: ${{ always() }}
     steps:
@@ -166,6 +206,9 @@ jobs:
           OCP_FIPS_CLUSTER_STATUS: ${{ needs.run-in-ocp-fips.outputs.cluster_status }}
           OCP_FIPS_JOB_ID: ${{ needs.run-in-ocp-fips.outputs.job_id }}
           OCP_FIPS_RESULT: ${{ needs.run-in-ocp-fips.result }}
+          OCP_OLM_CLUSTER_STATUS: ${{ needs.run-in-ocp-olm.outputs.cluster_status }}
+          OCP_OLM_JOB_ID: ${{ needs.run-in-ocp-olm.outputs.job_id }}
+          OCP_OLM_RESULT: ${{ needs.run-in-ocp-olm.result }}
         run: |
           get_emoji() {
             if [ "$1" = "skipped" ]; then
@@ -179,6 +222,7 @@ jobs:
           K8S_STATUS=$(get_emoji "${K8S_CLUSTER_STATUS}" "${K8S_RESULT}")
           OCP_STATUS=$(get_emoji "${OCP_CLUSTER_STATUS}" "${OCP_RESULT}")
           OCP_FIPS_STATUS=$(get_emoji "${OCP_FIPS_CLUSTER_STATUS}" "${OCP_FIPS_RESULT}")
+          OCP_OLM_STATUS=$(get_emoji "${OCP_OLM_CLUSTER_STATUS}" "${OCP_OLM_RESULT}")
 
           echo "K8S_STATUS=$K8S_STATUS" >> $GITHUB_ENV
           echo "K8S_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${K8S_JOB_ID}" >> $GITHUB_ENV
@@ -188,6 +232,9 @@ jobs:
 
           echo "OCP_FIPS_STATUS=$OCP_FIPS_STATUS" >> $GITHUB_ENV
           echo "OCP_FIPS_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_FIPS_JOB_ID}" >> $GITHUB_ENV
+
+          echo "OCP_OLM_STATUS=$OCP_OLM_STATUS" >> $GITHUB_ENV
+          echo "OCP_OLM_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_JOB_ID}" >> $GITHUB_ENV
 
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
       - name: Notify failure in Slack
