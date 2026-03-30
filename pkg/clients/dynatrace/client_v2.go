@@ -49,45 +49,55 @@ type ConfigV2 struct {
 }
 
 // OptionV2 is a functional option for configuring the dtClient
-type OptionV2 func(*ConfigV2)
+type OptionV2 func(*ConfigV2) error
 
 // WithAPIToken sets the API token
 func WithAPIToken(token string) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		c.APIToken = token
+
+		return nil
 	}
 }
 
 // WithPaasToken sets the PaaS token
 func WithPaasToken(token string) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		c.PaasToken = token
+
+		return nil
 	}
 }
 
 // WithDataIngestToken sets the data ingest token
 func WithDataIngestToken(token string) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		c.DataIngestToken = token
+
+		return nil
 	}
 }
 
 // WithHTTPClient sets a custom HTTP dtClient
 func WithHTTPClient(httpClient *http.Client) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		c.HTTPClient = httpClient
+
+		return nil
 	}
 }
 
 // WithTLSConfig sets custom TLS configuration
 func WithTLSConfig(tlsConfig *tls.Config) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		c.TLSConfig = tlsConfig
+
+		return nil
 	}
 }
 
 func WithSkipCertificateValidation(skip bool) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		if skip {
 			if c.TLSConfig == nil {
 				c.TLSConfig = &tls.Config{}
@@ -95,20 +105,20 @@ func WithSkipCertificateValidation(skip bool) OptionV2 {
 
 			c.TLSConfig.InsecureSkipVerify = true
 		}
+
+		return nil
 	}
 }
 
 func WithCerts(certs []byte) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		rootCAs, err := x509.SystemCertPool()
 		if err != nil {
-			log.Info("couldn't read system certificates!")
-
-			return
+			return fmt.Errorf("couldn't read system certificates: %w", err)
 		}
 
 		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-			log.Info("failed to append custom certs!")
+			return fmt.Errorf("failed to append custom certs")
 		}
 
 		if c.TLSConfig == nil {
@@ -116,44 +126,56 @@ func WithCerts(certs []byte) OptionV2 {
 		}
 
 		c.TLSConfig.RootCAs = rootCAs
+
+		return nil
 	}
 }
 
 // WithTimeout sets the request timeout
 func WithTimeout(timeout time.Duration) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		c.Timeout = timeout
+
+		return nil
 	}
 }
 
 // WithProxy sets the proxy URL
 func WithProxy(proxyURL, noProxy string) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		c.Proxy = proxyURL
 		c.NoProxy = noProxy
+
+		return nil
 	}
 }
 
 // WithNetworkZone sets the network zone
 func WithNetworkZone(networkZone string) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		c.NetworkZone = networkZone
+
+		return nil
 	}
 }
 
 // WithHostGroup sets the host group
 func WithHostGroup(hostGroup string) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		c.HostGroup = hostGroup
+
+		return nil
 	}
 }
 
 // WithUserAgentSuffix appends a suffix (comment) to the default user agent.
 func WithUserAgentSuffix(suffix string) OptionV2 {
-	return func(c *ConfigV2) {
+	return func(c *ConfigV2) error {
 		if suffix != "" {
 			c.UserAgent += " " + suffix
 		}
+
+		return nil
 	}
 }
 
@@ -166,7 +188,9 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 	}
 
 	for _, opt := range options {
-		opt(&config)
+		if err := opt(&config); err != nil {
+			return nil, err
+		}
 	}
 
 	parsedURL, err := url.Parse(config.BaseURL)
