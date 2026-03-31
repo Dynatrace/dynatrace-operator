@@ -2,10 +2,18 @@ package download
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
+	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -101,13 +109,14 @@ func TestDo(t *testing.T) {
 			Arch: "arch",
 		}
 		os.MkdirAll(inputDir, os.ModePerm)
-		err := os.WriteFile(filepath.Join(inputDir, ca.TrustedCertsInputFile), []byte("cert"), 0600)
+		cert := fakeCert(t)
+		err := os.WriteFile(filepath.Join(inputDir, ca.TrustedCertsInputFile), cert, 0600)
 		require.NoError(t, err)
 
 		setupConfig(t, inputDir, config)
 
 		expectedOpts := config.toDTClientOptionsV2()
-		expectedOpts = append(expectedOpts, dtclient.WithCerts([]byte("cert")))
+		expectedOpts = append(expectedOpts, dtclient.WithCerts(cert))
 
 		opts := []Option{
 			WithDTClient(dtClientTester(t, expectedOpts...)),
@@ -178,4 +187,23 @@ func dtClientTester(t *testing.T, expectedOpts ...dtclient.OptionV2) dtclient.Ne
 
 		return dtclient.NewClientV2(url, opts...)
 	}
+}
+
+func fakeCert(t *testing.T) []byte {
+	t.Helper()
+
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "test"},
+		NotBefore:    time.Now().Add(-10 * time.Second),
+		NotAfter:     time.Now().Add(10 * time.Second),
+	}
+
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
 }
