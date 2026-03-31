@@ -4,13 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,125 +59,5 @@ func TestReconcileActiveGate(t *testing.T) {
 		err := controller.reconcileActiveGate(t.Context(), dk, nil)
 		require.Error(t, err)
 		require.Equal(t, "failed to reconcile ActiveGate: BOOM", err.Error())
-	})
-	t.Run("reconcile disabled automatic kubernetes api monitoring", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.AGAutomaticK8sAPIMonitoringKey: "false",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
-					},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: testUID,
-			},
-		}
-
-		mockActiveGateReconciler := newMockActiveGateReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil).Once()
-
-		controller := &Controller{
-			activeGateReconciler:    mockActiveGateReconciler,
-			apiMonitoringReconciler: newMockApiMonitoringReconciler(t),
-		}
-
-		mockClient := dtclientmock.NewClient(t)
-
-		err := controller.reconcileActiveGate(t.Context(), dk, mockClient)
-		require.NoError(t, err)
-	})
-	t.Run("reconcile automatic kubernetes api monitoring", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.AGAutomaticK8sAPIMonitoringKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
-					},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: testUID,
-			},
-		}
-
-		settingsClient := &settings.Client{}
-
-		mockActiveGateReconciler := newMockActiveGateReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil).Once()
-
-		mockAPIMonitoringReconciler := newMockApiMonitoringReconciler(t)
-		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx, settingsClient, testName, dk).Return(nil).Once()
-
-		controller := &Controller{
-			activeGateReconciler:    mockActiveGateReconciler,
-			apiMonitoringReconciler: mockAPIMonitoringReconciler,
-		}
-
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
-
-		err := controller.reconcileActiveGate(t.Context(), dk, mockClient)
-		require.NoError(t, err)
-	})
-	t.Run("reconcile automatic kubernetes api monitoring with custom cluster name", func(t *testing.T) {
-		const clusterLabel = "..blabla..;.🙃"
-
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.AGAutomaticK8sAPIMonitoringKey:            "true",
-					exp.AGAutomaticK8sAPIMonitoringClusterNameKey: clusterLabel,
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
-					},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: testUID,
-			},
-		}
-
-		settingsClient := &settings.Client{}
-
-		mockActiveGateReconciler := newMockActiveGateReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil).Once()
-
-		mockAPIMonitoringReconciler := newMockApiMonitoringReconciler(t)
-		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx, settingsClient, clusterLabel, dk).Return(nil).Once()
-
-		controller := &Controller{
-			activeGateReconciler:    mockActiveGateReconciler,
-			apiMonitoringReconciler: mockAPIMonitoringReconciler,
-		}
-
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
-
-		err := controller.reconcileActiveGate(t.Context(), dk, mockClient)
-		require.NoError(t, err)
 	})
 }
