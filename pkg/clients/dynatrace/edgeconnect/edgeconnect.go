@@ -105,6 +105,7 @@ func (c *client) CreateEdgeConnect(ctx context.Context, request *Request) (Creat
 	return response, nil
 }
 
+// UpdateEdgeConnect updates existing edge connect
 func (c *client) UpdateEdgeConnect(ctx context.Context, edgeConnectID string, request *Request) error {
 	if edgeConnectID == "" {
 		return errors.New("no EdgeConnect ID given")
@@ -118,6 +119,7 @@ func (c *client) UpdateEdgeConnect(ctx context.Context, edgeConnectID string, re
 	return nil
 }
 
+// GetEdgeConnects get list of edge connects
 func (c *client) GetEdgeConnects(ctx context.Context, name string) (ListResponse, error) {
 	var response ListResponse
 

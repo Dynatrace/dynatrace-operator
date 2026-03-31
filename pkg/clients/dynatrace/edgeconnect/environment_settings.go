@@ -39,6 +39,7 @@ type EnvironmentSettingsResponse struct {
 	PageSize   int                  `json:"pageSize"`
 }
 
+// GetConnectionSettings get connection settings
 func (c *client) GetConnectionSettings(ctx context.Context) ([]EnvironmentSetting, error) {
 	qp := map[string]string{
 		"schemaIds": KubernetesConnectionSchemaID,
@@ -55,6 +56,7 @@ func (c *client) GetConnectionSettings(ctx context.Context) ([]EnvironmentSettin
 	return response.Items, nil
 }
 
+// CreateConnectionSetting create connection setting
 func (c *client) CreateConnectionSetting(ctx context.Context, es EnvironmentSetting) error {
 	err := c.apiClient.POST(ctx, settingsObjectsPath).WithOAuthToken().WithJSONBody([]EnvironmentSetting{es}).Execute(nil)
 	if err != nil {
@@ -64,6 +66,7 @@ func (c *client) CreateConnectionSetting(ctx context.Context, es EnvironmentSett
 	return nil
 }
 
+// UpdateConnectionSetting update connection setting
 func (c *client) UpdateConnectionSetting(ctx context.Context, es EnvironmentSetting) error {
 	err := c.apiClient.PUT(ctx, fmt.Sprintf(settingsObjectsIDPath, *es.ObjectID)).WithOAuthToken().WithJSONBody(es).Execute(nil)
 	if err != nil {
@@ -73,6 +76,7 @@ func (c *client) UpdateConnectionSetting(ctx context.Context, es EnvironmentSett
 	return nil
 }
 
+// DeleteConnectionSetting deletes connection setting
 func (c *client) DeleteConnectionSetting(ctx context.Context, objectID string) error {
 	if objectID == "" {
 		return errors.New("no connection setting object id given")
