@@ -57,6 +57,10 @@ func TestNoCSI_activegate(t *testing.T) {
 	testEnv.Test(t, activegate.Feature(t, nil))
 }
 
+func TestNoCSI_no_update_meid(t *testing.T) {
+	testEnv.Test(t, activegate.NoUpdateMEID(t))
+}
+
 func TestNoCSI_activegate_scaling_hpa(t *testing.T) {
 	testEnv.Test(t, activegate.WithHPA(t))
 }

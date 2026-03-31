@@ -41,7 +41,6 @@ packages:
       structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
       filename: "mock_reconcilers_test.go"
     interfaces:
-      apiMonitoringReconciler:
       dtSettingReconciler:
       dynakubeReconciler:
       istioReconciler:

@@ -67,7 +67,7 @@ func (b *builder) addClusterIDEnv(envVarMap *prioritymap.Map) {
 }
 
 func (b *builder) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {
-	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDtDeploymentMetadata, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDTDeploymentMetadata, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		},
@@ -77,7 +77,7 @@ func (b *builder) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {
 }
 
 func (b *builder) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
-	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDtOperatorVersion, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDTOperatorVersion, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		},
@@ -87,14 +87,14 @@ func (b *builder) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
 }
 
 func (b *builder) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
-	addDefaultValueSource(envVarMap, connectioninfo.EnvDtTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+	addDefaultValueSource(envVarMap, connectioninfo.EnvDTTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.TenantUUIDKey,
 		Optional: ptr.To(false),
 	}})
-	addDefaultValueSource(envVarMap, connectioninfo.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+	addDefaultValueSource(envVarMap, connectioninfo.EnvDTServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		},

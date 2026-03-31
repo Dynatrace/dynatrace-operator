@@ -36,7 +36,7 @@ func TestVolumes(t *testing.T) {
 
 		expectedVolumeMount := corev1.VolumeMount{
 			Name:      extensionControllerTLSVolumeName,
-			MountPath: customEecTLSCertificatePath,
+			MountPath: customEECTLSCertificatePath,
 			ReadOnly:  true,
 		}
 

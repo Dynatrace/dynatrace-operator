@@ -81,7 +81,7 @@ func (dk *DynaKube) PullSecretNames() []string {
 		names = append(names, dk.Spec.CustomPullSecret)
 	}
 
-	if helmPullSecret := os.Getenv(k8senv.DtOperatorPullSecretEnvName); helmPullSecret != "" && !slices.Contains(names, helmPullSecret) {
+	if helmPullSecret := os.Getenv(k8senv.DTOperatorPullSecretEnvName); helmPullSecret != "" && !slices.Contains(names, helmPullSecret) {
 		names = append(names, helmPullSecret)
 	}
 

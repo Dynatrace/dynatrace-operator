@@ -20,14 +20,14 @@ func TestTooManyAGReplicas(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Kspm:   &kspm.Spec{},
+					KSPM:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{
 								Repository: "repo/image",
 								Tag:        "version",
@@ -53,10 +53,10 @@ func TestTooManyAGReplicas(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Kspm:       &kspm.Spec{},
+					KSPM:       &kspm.Spec{},
 					ActiveGate: activeGate,
 					Templates: dynakube.TemplatesSpec{
-						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{
 								Repository: "repo/image",
 								Tag:        "version",
@@ -75,14 +75,14 @@ func TestMissingKSPMDependency(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Kspm:   &kspm.Spec{},
+					KSPM:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{
 								Repository: "repo/image",
 								Tag:        "version",
@@ -99,12 +99,12 @@ func TestMissingKSPMDependency(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Kspm: &kspm.Spec{
+					KSPM: &kspm.Spec{
 						MappedHostPaths: []string{"/"},
 					},
 					ActiveGate: activegate.Spec{},
 					Templates: dynakube.TemplatesSpec{
-						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{
 								Repository: "repo/image",
 								Tag:        "version",
@@ -127,7 +127,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Kspm: &kspm.Spec{
+					KSPM: &kspm.Spec{
 						MappedHostPaths: []string{"/"},
 					},
 					ActiveGate: activegate.Spec{
@@ -136,7 +136,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{
 								Repository: "repo/image",
 								Tag:        "version",
@@ -159,12 +159,12 @@ func TestMissingKSPMDependency(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Kspm: &kspm.Spec{
+					KSPM: &kspm.Spec{
 						MappedHostPaths: []string{"/"},
 					},
 					ActiveGate: activegate.Spec{},
 					Templates: dynakube.TemplatesSpec{
-						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{
 								Repository: "repo/image",
 								Tag:        "version",
@@ -183,14 +183,14 @@ func TestMissingKSPMImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Kspm:   &kspm.Spec{},
+					KSPM:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{
 								Repository: "repo/image",
 								Tag:        "version",
@@ -208,7 +208,7 @@ func TestMissingKSPMImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Kspm:   &kspm.Spec{},
+					KSPM:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -225,14 +225,14 @@ func TestMissingKSPMImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Kspm:   &kspm.Spec{},
+					KSPM:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{
 								Repository: "repo/image",
 							},
@@ -249,14 +249,14 @@ func TestMissingKSPMImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Kspm:   &kspm.Spec{},
+					KSPM:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{
 								Tag: "version",
 							},
@@ -276,7 +276,7 @@ func TestMappedHostPath(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
-				Kspm:   &kspm.Spec{},
+				KSPM:   &kspm.Spec{},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
@@ -288,7 +288,7 @@ func TestMappedHostPath(t *testing.T) {
 					},
 				},
 				Templates: dynakube.TemplatesSpec{
-					KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 						ImageRef: image.Ref{
 							Repository: "repo/image",
 							Tag:        "version",
@@ -306,25 +306,25 @@ func TestMappedHostPath(t *testing.T) {
 
 	t.Run("single root path", func(t *testing.T) {
 		dk := getDynakube()
-		dk.Spec.Kspm.MappedHostPaths = []string{"/"}
+		dk.Spec.KSPM.MappedHostPaths = []string{"/"}
 		assertAllowedWithoutWarnings(t, &dk)
 	})
 
 	t.Run("many paths", func(t *testing.T) {
 		dk := getDynakube()
-		dk.Spec.Kspm.MappedHostPaths = []string{"/a", "/b"}
+		dk.Spec.KSPM.MappedHostPaths = []string{"/a", "/b"}
 		assertAllowedWithoutWarnings(t, &dk)
 	})
 
 	t.Run("many paths with root directory", func(t *testing.T) {
 		dk := getDynakube()
-		dk.Spec.Kspm.MappedHostPaths = []string{"/a", "/b", "/"}
+		dk.Spec.KSPM.MappedHostPaths = []string{"/a", "/b", "/"}
 		assertDenied(t, []string{errorKSPMRootHostPath}, &dk)
 	})
 
 	t.Run("relative path", func(t *testing.T) {
 		dk := getDynakube()
-		dk.Spec.Kspm.MappedHostPaths = []string{"/a", "b"}
+		dk.Spec.KSPM.MappedHostPaths = []string{"/a", "b"}
 		assertDenied(t, []string{fmt.Sprintf(errorKSPMRelativeHostPath, "b")}, &dk)
 	})
 }

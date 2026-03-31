@@ -26,6 +26,6 @@ func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
 	return kubeSystemNamespace.UID, nil
 }
 
-func IsDeployedViaOlm() bool {
-	return os.Getenv(k8senv.OlmOperatorNamespaceEnv) != ""
+func IsDeployedViaOLM() bool {
+	return os.Getenv(k8senv.OLMOperatorNamespaceEnv) != ""
 }

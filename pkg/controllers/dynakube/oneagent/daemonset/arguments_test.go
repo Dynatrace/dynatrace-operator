@@ -351,7 +351,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 		assert.Contains(t, podSpecs.Containers[0].Args, arg)
 	}
 
-	assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-host-property=OperatorVersion=$(%s)", deploymentmetadata.EnvDtOperatorVersion))
+	assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-host-property=OperatorVersion=$(%s)", deploymentmetadata.EnvDTOperatorVersion))
 
 	// deprecated
 	t.Run("has proxy arg", func(t *testing.T) {
