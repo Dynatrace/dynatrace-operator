@@ -2,6 +2,7 @@ package daemonset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
@@ -31,6 +32,10 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededCapabilities
 
+	if dk.Spec.Templates.LogMonitoring != nil {
+		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, containerName)
+	}
+
 	container := corev1.Container{
 		Name:            containerName,
 		Image:           dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
@@ -38,7 +43,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 		VolumeMounts:    getVolumeMounts(tenantUUID),
 		Env:             getEnvs(),
 		Resources:       dk.LogMonitoring().Template().Resources,
-		SecurityContext: &securityContext,
+		SecurityContext: securityContext,
 	}
 
 	return container
@@ -47,6 +52,10 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededInitCapabilities
+
+	if dk.Spec.Templates.LogMonitoring != nil {
+		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, initContainerName)
+	}
 
 	container := corev1.Container{
 		Name:            initContainerName,
@@ -57,14 +66,14 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container 
 		Env:             getInitEnvs(dk),
 		Args:            getInitArgs(dk),
 		Resources:       dk.LogMonitoring().Template().Resources,
-		SecurityContext: &securityContext,
+		SecurityContext: securityContext,
 	}
 
 	return container
 }
 
-func getBaseSecurityContext(dk dynakube.DynaKube) corev1.SecurityContext {
-	securityContext := corev1.SecurityContext{
+func getBaseSecurityContext(dk dynakube.DynaKube) *corev1.SecurityContext {
+	securityContext := &corev1.SecurityContext{
 		Privileged:               ptr.To(false),
 		ReadOnlyRootFilesystem:   ptr.To(true),
 		AllowPrivilegeEscalation: ptr.To(false),
