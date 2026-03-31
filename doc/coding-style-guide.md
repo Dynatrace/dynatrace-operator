@@ -360,22 +360,6 @@ As such, you declare them at the package level and, in doing so, imply that your
   }
   ```
 
-- When converting from an architecture-dependent integer type (e.g., result of `strconv.Atoi` which returns `int`) to a smaller fixed-width type (`int32`, `int16`), always add a **bounds check**.
-  Without it the conversion silently overflows on 64-bit systems and is flagged by `gosec`.
-
-  ```go
-  // ✓
-  val, err := strconv.Atoi(s)
-  if err != nil || val > math.MaxInt32 || val < math.MinInt32 {
-      return fmt.Errorf("value out of int32 range: %q", s)
-  }
-  result := int32(val)
-
-  // ✗ silent overflow, gosec violation
-  val, _ := strconv.Atoi(s)
-  result := int32(val)
-  ```
-
 ### Don'ts
 
 - Do not put full errors (`err.Error()`) into condition messages, as it could lead to unexpected reconcile loops if the error message changes on every x occurrence.
