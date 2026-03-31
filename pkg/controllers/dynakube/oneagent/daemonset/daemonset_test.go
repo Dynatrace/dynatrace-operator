@@ -1082,9 +1082,9 @@ func TestInitContainerSpec(t *testing.T) {
 		dk: dk,
 	}
 
-	require.NoError(t, os.Setenv(k8senv.DtOperatorImageEnvName, testOperatorImageName))
+	require.NoError(t, os.Setenv(k8senv.DTOperatorImageEnvName, testOperatorImageName))
 	spec := dsBuilder.initContainerSpec()
-	require.NoError(t, os.Unsetenv(k8senv.DtOperatorImageEnvName))
+	require.NoError(t, os.Unsetenv(k8senv.DTOperatorImageEnvName))
 
 	assert.Equal(t, testOperatorImageName, spec.Image)
 	assert.Equal(t, initContainerName, spec.Name)

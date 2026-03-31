@@ -109,7 +109,7 @@ func Feature(t *testing.T) features.Feature {
 
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 	edgeconnectComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
-	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckEcExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
+	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckECExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	// check if components are running
 	builder.Assess("active gate pod is running", k8sstatefulset.IsReady(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))

@@ -104,7 +104,7 @@ func addOneAgentToContainer(dk dynakube.DynaKube, container *corev1.Container, n
 	addVolumeMounts(container, installPath)
 	addDeploymentMetadataEnv(container, dk)
 	addPreloadEnv(container, installPath)
-	addDtStorageEnv(container)
+	addDTStorageEnv(container)
 
 	if dk.Spec.NetworkZone != "" {
 		addNetworkZoneEnv(container, dk.Spec.NetworkZone)

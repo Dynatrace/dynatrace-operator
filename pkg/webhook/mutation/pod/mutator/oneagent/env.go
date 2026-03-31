@@ -72,16 +72,16 @@ func addPreloadEnv(container *corev1.Container, installPath string) {
 	}
 }
 
-func addDtStorageEnv(container *corev1.Container) {
-	storageEnv := k8senv.Find(container.Env, DtStorageEnv)
+func addDTStorageEnv(container *corev1.Container) {
+	storageEnv := k8senv.Find(container.Env, DTStorageEnv)
 	if storageEnv != nil {
 		return
 	}
 
 	container.Env = append(container.Env,
 		corev1.EnvVar{
-			Name:  DtStorageEnv,
-			Value: DtStoragePath,
+			Name:  DTStorageEnv,
+			Value: DTStoragePath,
 		})
 }
 

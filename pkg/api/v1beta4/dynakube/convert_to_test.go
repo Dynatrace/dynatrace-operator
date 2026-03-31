@@ -176,8 +176,8 @@ func TestConvertTo(t *testing.T) {
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
 
-		assert.NotNil(t, to.Spec.Kspm)
-		assert.Equal(t, []string{"/"}, to.Spec.Kspm.MappedHostPaths)
+		assert.NotNil(t, to.Spec.KSPM)
+		assert.Equal(t, []string{"/"}, to.Spec.KSPM.MappedHostPaths)
 		compareBase(t, from, to)
 	})
 
@@ -219,7 +219,7 @@ func TestConvertTo(t *testing.T) {
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
 
-		compareNodeConfigurationCollectorTemplateSpec(t, from.Spec.Templates.KspmNodeConfigurationCollector, to.Spec.Templates.KspmNodeConfigurationCollector)
+		compareNodeConfigurationCollectorTemplateSpec(t, from.Spec.Templates.KspmNodeConfigurationCollector, to.Spec.Templates.KSPMNodeConfigurationCollector)
 		compareBase(t, from, to)
 	})
 

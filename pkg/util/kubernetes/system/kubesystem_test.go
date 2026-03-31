@@ -35,19 +35,19 @@ func TestGetUID(t *testing.T) {
 
 func TestIsDeployedViaOLM(t *testing.T) {
 	t.Run("returns true when OLM_OPERATOR_NAMESPACE is set", func(t *testing.T) {
-		t.Setenv(k8senv.OlmOperatorNamespaceEnv, "operators")
+		t.Setenv(k8senv.OLMOperatorNamespaceEnv, "operators")
 
-		assert.True(t, IsDeployedViaOlm())
+		assert.True(t, IsDeployedViaOLM())
 	})
 
 	t.Run("returns false when OLM_OPERATOR_NAMESPACE is not set", func(t *testing.T) {
 		// t.Setenv is not used here, so the env var is simply absent
-		assert.False(t, IsDeployedViaOlm())
+		assert.False(t, IsDeployedViaOLM())
 	})
 
 	t.Run("returns false when OLM_OPERATOR_NAMESPACE is empty", func(t *testing.T) {
-		t.Setenv(k8senv.OlmOperatorNamespaceEnv, "")
+		t.Setenv(k8senv.OLMOperatorNamespaceEnv, "")
 
-		assert.False(t, IsDeployedViaOlm())
+		assert.False(t, IsDeployedViaOLM())
 	})
 }

@@ -143,7 +143,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
-		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, true), nil).(*Reconciler)
+		r := NewReconciler(fakeClient, fakeClient, dk, createMockDTClient(t, true), nil).(*Reconciler)
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
@@ -241,7 +241,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
-		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, true), nil).(*Reconciler)
+		r := NewReconciler(fakeClient, fakeClient, dk, createMockDTClient(t, true), nil).(*Reconciler)
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
@@ -278,7 +278,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
-		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, false), nil).(*Reconciler)
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDTClient(t, false), nil).(*Reconciler)
 		r.connectionReconciler = controllermock.NewReconciler(t)
 		r.versionReconciler = versionmock.NewReconciler(t)
 		r.pullSecretReconciler = controllermock.NewReconciler(t)
@@ -308,7 +308,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
-		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil).(*Reconciler)
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDTClient(t, true), nil).(*Reconciler)
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
@@ -340,7 +340,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
-		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil).(*Reconciler)
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDTClient(t, true), nil).(*Reconciler)
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
@@ -372,7 +372,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
-		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil).(*Reconciler)
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDTClient(t, true), nil).(*Reconciler)
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
@@ -404,7 +404,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
-		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil).(*Reconciler)
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDTClient(t, true), nil).(*Reconciler)
 		r.connectionReconciler = mockGenericReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockGenericReconcileOnce(t)
@@ -478,7 +478,7 @@ func TestServiceCreation(t *testing.T) {
 		return activegateService
 	}
 
-	dynatraceClient := createMockDtClient(t, true)
+	dynatraceClient := createMockDTClient(t, true)
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -616,7 +616,7 @@ func createIstioReconcilerMock(t *testing.T) istioReconciler {
 	return rec
 }
 
-func createMockDtClient(t *testing.T, authTokenRouteRequired bool) *dtclientmock.Client {
+func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dtclientmock.Client {
 	t.Helper()
 
 	dtc := dtclientmock.NewClient(t)

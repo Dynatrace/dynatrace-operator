@@ -202,8 +202,8 @@ func WithExtensionsEECImageRef() Option {
 		if setImageRefFromEnvs(
 			dk,
 			&dk.Spec.Templates.ExtensionExecutionController.ImageRef,
-			consts.EecImageEnvVar,
-			consts.DefaultEecImage,
+			consts.EECImageEnvVar,
+			consts.DefaultEECImage,
 		) {
 			// Disable legacy mounts when using a non-default image
 			dk.Annotations["feature.dynatrace.com/use-eec-legacy-mounts"] = "false"
@@ -231,7 +231,7 @@ func WithLogMonitoringImageRef() Option {
 
 func WithKSPM() Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.Kspm = &kspm.Spec{}
+		dk.Spec.KSPM = &kspm.Spec{}
 	}
 }
 
@@ -239,7 +239,7 @@ func WithKSPMImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
 			dk,
-			&dk.Spec.Templates.KspmNodeConfigurationCollector.ImageRef,
+			&dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef,
 			consts.KSPMImageEnvVar,
 			consts.DefaultKSPMImage,
 		)

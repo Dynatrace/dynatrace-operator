@@ -54,8 +54,8 @@ func (b *builder) arguments() ([]string, error) {
 }
 
 func appendImmutableImageArgs(argMap *prioritymap.Map) {
-	argMap.Append(argumentPrefix+"set-tenant", fmt.Sprintf("$(%s)", connectioninfo.EnvDtTenant))
-	argMap.Append(argumentPrefix+"set-server", fmt.Sprintf("{$(%s)}", connectioninfo.EnvDtServer))
+	argMap.Append(argumentPrefix+"set-tenant", fmt.Sprintf("$(%s)", connectioninfo.EnvDTTenant))
+	argMap.Append(argumentPrefix+"set-server", fmt.Sprintf("{$(%s)}", connectioninfo.EnvDTServer))
 }
 
 func (b *builder) appendHostInjectArgs(argMap *prioritymap.Map) {
@@ -65,7 +65,7 @@ func (b *builder) appendHostInjectArgs(argMap *prioritymap.Map) {
 }
 
 func appendOperatorVersionArg(argMap *prioritymap.Map) {
-	argMap.Append(argumentPrefix+"set-host-property", fmt.Sprintf("OperatorVersion=$(%s)", deploymentmetadata.EnvDtOperatorVersion))
+	argMap.Append(argumentPrefix+"set-host-property", fmt.Sprintf("OperatorVersion=$(%s)", deploymentmetadata.EnvDTOperatorVersion))
 }
 
 func (b *builder) appendNetworkZoneArg(argMap *prioritymap.Map) {

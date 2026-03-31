@@ -16,7 +16,7 @@ func TestGetContainer(t *testing.T) {
 	t.Run("get main container", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{},
+				KSPM: &kspm.Spec{},
 			},
 		}
 		mainContainer := getContainer(dk, tenant)
@@ -39,7 +39,7 @@ func TestGetContainer(t *testing.T) {
 		expectedTag := "my-test-tag"
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{},
+				KSPM: &kspm.Spec{},
 			},
 		}
 		dk.KSPM().ImageRef = image.Ref{
