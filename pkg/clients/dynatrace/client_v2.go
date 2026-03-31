@@ -3,6 +3,7 @@ package dynatrace
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -118,7 +119,7 @@ func WithCerts(certs []byte) OptionV2 {
 		}
 
 		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-			return fmt.Errorf("failed to append custom certs")
+			return errors.New("failed to append custom certs")
 		}
 
 		if c.TLSConfig == nil {
