@@ -100,7 +100,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, createSuccessfulInstaller(t))
-		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
+		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -113,7 +113,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("dynakube with version, unknown issue with dtc => fail before installer creation", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
-		prov.dynatraceClientBuilder = mockFailingDtClientBuilder(t)
+		prov.dynatraceClientBuilder = mockFailingDTClientBuilder(t)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
@@ -129,7 +129,7 @@ func TestReconcile(t *testing.T) {
 		unavailableInstaller := installermock.NewInstaller(t)
 		unavailableInstaller.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, dtclient.ServerError{Code: http.StatusServiceUnavailable})
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
-		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
+		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -410,7 +410,7 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 	}
 }
 
-func mockFailingDtClientBuilder(t *testing.T) dynatraceclient.Builder {
+func mockFailingDTClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
@@ -422,7 +422,7 @@ func mockFailingDtClientBuilder(t *testing.T) dynatraceclient.Builder {
 	return mockDtcBuilder
 }
 
-func mockSuccessfulDtClientBuilder(t *testing.T) dynatraceclient.Builder {
+func mockSuccessfulDTClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)

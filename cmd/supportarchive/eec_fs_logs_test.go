@@ -45,7 +45,7 @@ func TestFsLog(t *testing.T) {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
-					k8slabel.AppNameLabel:      LabelEecPodName,
+					k8slabel.AppNameLabel:      LabelEECPodName,
 					k8slabel.AppManagedByLabel: "dynatrace-operator",
 				},
 				Name:      eecPodName,

@@ -33,8 +33,8 @@ const (
 	// Env variable names
 	envTenantID                     = "TenantId"
 	envServerURL                    = "ServerUrl"
-	envEecTokenPath                 = "EecTokenPath"
-	envEecIngestPort                = "EecIngestPort"
+	envEECTokenPath                 = "EecTokenPath"
+	envEECIngestPort                = "EecIngestPort"
 	envExtensionsModuleExecPathName = "ExtensionsModuleExecPath"
 	envDsInstallDirName             = "DsInstallDir"
 	envK8sClusterID                 = "K8sClusterUID"
@@ -49,8 +49,8 @@ const (
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + activeGateTrustedCertSecretKeyPath
-	envEecHTTPSCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
-	envEecHTTPSPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
+	envEECHTTPSCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
+	envEECHTTPSPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
 	eecTokenMountPath                  = "/secrets/tokens"
 	customCertificateMountPath         = "/secrets/extensions"
@@ -252,15 +252,15 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	containerEnvs := []corev1.EnvVar{
 		{Name: envTenantID, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID},
 		{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ":443"},
-		{Name: envEecTokenPath, Value: prefix + eecTokenMountPath + "/" + eecConsts.TokenSecretKey},
-		{Name: envEecIngestPort, Value: strconv.Itoa(consts.ExtensionsDatasourceTargetPort)},
+		{Name: envEECTokenPath, Value: prefix + eecTokenMountPath + "/" + eecConsts.TokenSecretKey},
+		{Name: envEECIngestPort, Value: strconv.Itoa(consts.ExtensionsDatasourceTargetPort)},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceURL, Value: serviceURLScheme + dk.Extensions().GetServiceNameFQDN()},
 		{Name: envDSTokenPath, Value: prefix + eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey},
-		{Name: envHTTPSCertPathPem, Value: prefix + envEecHTTPSCertPathPem},
-		{Name: envHTTPSPrivKeyPathPem, Value: prefix + envEecHTTPSPrivKeyPathPem},
+		{Name: envHTTPSCertPathPem, Value: prefix + envEECHTTPSCertPathPem},
+		{Name: envHTTPSPrivKeyPathPem, Value: prefix + envEECHTTPSPrivKeyPathPem},
 	}
 
 	if dk.ActiveGate().HasCaCert() {

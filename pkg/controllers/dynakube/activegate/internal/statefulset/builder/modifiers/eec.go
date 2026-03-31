@@ -11,9 +11,9 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-var _ volumeModifier = EecModifier{}
-var _ volumeMountModifier = EecModifier{}
-var _ builder.Modifier = EecModifier{}
+var _ volumeModifier = EECModifier{}
+var _ volumeMountModifier = EECModifier{}
+var _ builder.Modifier = EECModifier{}
 
 const (
 	eecVolumeName = "eec-token"
@@ -21,21 +21,21 @@ const (
 	eecFile       = "eec.token"
 )
 
-func NewEecVolumeModifier(dk dynakube.DynaKube) EecModifier {
-	return EecModifier{
+func NewEECVolumeModifier(dk dynakube.DynaKube) EECModifier {
+	return EECModifier{
 		dk: dk,
 	}
 }
 
-type EecModifier struct {
+type EECModifier struct {
 	dk dynakube.DynaKube
 }
 
-func (mod EecModifier) Enabled() bool {
+func (mod EECModifier) Enabled() bool {
 	return mod.dk.Extensions().IsAnyEnabled()
 }
 
-func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {
+func (mod EECModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := k8scontainer.FindInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
@@ -43,7 +43,7 @@ func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {
 	return nil
 }
 
-func (mod EecModifier) getVolumes() []corev1.Volume {
+func (mod EECModifier) getVolumes() []corev1.Volume {
 	mode := ptr.To(int32(0o640))
 
 	return []corev1.Volume{
@@ -66,7 +66,7 @@ func (mod EecModifier) getVolumes() []corev1.Volume {
 	}
 }
 
-func (mod EecModifier) getVolumeMounts() []corev1.VolumeMount {
+func (mod EECModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			ReadOnly:  true,

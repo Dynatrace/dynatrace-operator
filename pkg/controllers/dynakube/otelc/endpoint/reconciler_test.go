@@ -49,7 +49,7 @@ func TestConfigMapCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var apiEndpointConfigMap corev1.ConfigMap
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.OtlpAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.OTLPAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
 		require.NoError(t, err)
 		assert.NotEmpty(t, apiEndpointConfigMap)
 		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType))
@@ -58,12 +58,12 @@ func TestConfigMapCreation(t *testing.T) {
 
 	t.Run("removes config map if exists but we don't need it", func(t *testing.T) {
 		dk := createDynaKube(false)
-		k8sconditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.OtlpAPIEndpointConfigMapName)
+		k8sconditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.OTLPAPIEndpointConfigMapName)
 
 		objs := []client.Object{
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      consts.OtlpAPIEndpointConfigMapName,
+					Name:      consts.OTLPAPIEndpointConfigMapName,
 					Namespace: dk.Namespace,
 				},
 			},
@@ -76,7 +76,7 @@ func TestConfigMapCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var apiEndpointConfigmap corev1.ConfigMap
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.OtlpAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigmap)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.OTLPAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigmap)
 
 		require.Error(t, err)
 		assert.Empty(t, apiEndpointConfigmap)
@@ -124,7 +124,7 @@ func Test_generateData(t *testing.T) {
 			objs := []client.Object{
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      consts.OtlpAPIEndpointConfigMapName,
+						Name:      consts.OTLPAPIEndpointConfigMapName,
 						Namespace: dk.Namespace,
 					},
 				},

@@ -221,7 +221,7 @@ func getTestPodWithInjectionDisabledOnContainer() *corev1.Pod {
 func createTestWebhook(t *testing.T, injectionHandler, otlpHandler handler.Handler, objects ...client.Object) *webhook {
 	t.Helper()
 
-	t.Setenv(k8senv.DtOperatorImageEnvName, testWebhookImage)
+	t.Setenv(k8senv.DTOperatorImageEnvName, testWebhookImage)
 
 	decoder := admission.NewDecoder(scheme.Scheme)
 

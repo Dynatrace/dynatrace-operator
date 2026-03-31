@@ -32,7 +32,7 @@ func TestReconcile(t *testing.T) {
 		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: meID}}
 
 		if withKSPM {
-			dk.Spec.Kspm = &kspm.Spec{}
+			dk.Spec.KSPM = &kspm.Spec{}
 		}
 
 		return dk
@@ -202,7 +202,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: meID}}
 
 		if withKSPM {
-			dk.Spec.Kspm = &kspm.Spec{}
+			dk.Spec.KSPM = &kspm.Spec{}
 		}
 
 		return dk

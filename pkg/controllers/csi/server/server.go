@@ -43,7 +43,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const DefaultMaxGrpcRequests = 20
+const DefaultMaxGRPCRequests = 20
 
 var counter atomic.Int32
 
@@ -99,12 +99,12 @@ func (srv *Server) Start(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to start server")
 	}
 
-	maxGrpcRequests, err := strconv.ParseInt(os.Getenv("GRPC_MAX_REQUESTS_LIMIT"), 10, 32)
+	maxGRPCRequests, err := strconv.ParseInt(os.Getenv("GRPC_MAX_REQUESTS_LIMIT"), 10, 32)
 	if err != nil {
-		maxGrpcRequests = DefaultMaxGrpcRequests
+		maxGRPCRequests = DefaultMaxGRPCRequests
 	}
 
-	server := grpc.NewServer(grpc.UnaryInterceptor(grpcLimiter(int32(maxGrpcRequests))))
+	server := grpc.NewServer(grpc.UnaryInterceptor(grpcLimiter(int32(maxGRPCRequests))))
 
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
@@ -290,7 +290,7 @@ func (srv *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeReques
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
+func grpcLimiter(maxGRPCRequests int32) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		var methodName string
 
@@ -334,8 +334,8 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 		counter.Add(1)
 		defer counter.Add(-1)
 
-		if counter.Load() > maxGrpcRequests {
-			msg := fmt.Sprintf("rate limit exceeded, current value %d more than max %d", counter.Load(), DefaultMaxGrpcRequests)
+		if counter.Load() > maxGRPCRequests {
+			msg := fmt.Sprintf("rate limit exceeded, current value %d more than max %d", counter.Load(), DefaultMaxGRPCRequests)
 
 			log.Info(msg, logValues...)
 

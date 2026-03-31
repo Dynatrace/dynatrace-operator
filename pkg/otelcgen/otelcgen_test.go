@@ -12,7 +12,7 @@ import (
 func TestNewConfigFull(t *testing.T) {
 	cfg, err := NewConfig(
 		"test",
-		Protocols{OtlpProtocol, JaegerProtocol, StatsdProtocol, ZipkinProtocol},
+		Protocols{OTLPProtocol, JaegerProtocol, StatsdProtocol, ZipkinProtocol},
 		WithCA("/run/opensignals/cacerts/certs"),
 		WithSystemCAs(true),
 		WithAPIToken("test-token"),
