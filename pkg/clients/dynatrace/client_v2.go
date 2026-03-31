@@ -216,9 +216,7 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 				HTTPSProxy: proxyURL.String(),
 				NoProxy:    config.NoProxy,
 			}
-			transport.Proxy = func(req *http.Request) (*url.URL, error) {
-				return proxyConfig.ProxyFunc()(req.URL)
-			}
+			transport.Proxy = proxyWrapper(proxyConfig)
 		}
 
 		config.HTTPClient = &http.Client{
@@ -268,4 +266,10 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 	_ = WithTimeout(0)
 
 	return v2
+}
+
+func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
+	return func(req *http.Request) (*url.URL, error) {
+		return proxyConfig.ProxyFunc()(req.URL)
+	}
 }
