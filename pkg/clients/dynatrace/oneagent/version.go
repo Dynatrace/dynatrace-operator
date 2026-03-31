@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type GetArgs struct {
+type GetParams struct {
 	Os            string
 	InstallerType string
 	Flavor        string
@@ -26,7 +26,7 @@ type GetArgs struct {
 }
 
 // Get gets the agent package for the given OS, installer type, flavor, arch and version.
-func (c *Client) Get(ctx context.Context, args GetArgs, writer io.Writer) error {
+func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) error {
 	if len(args.Os) == 0 || len(args.InstallerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
@@ -49,17 +49,8 @@ func (c *Client) Get(ctx context.Context, args GetArgs, writer io.Writer) error 
 	return errors.WithStack(err)
 }
 
-type GetLatestArgs struct {
-	Os            string
-	InstallerType string
-	Flavor        string
-	Arch          string
-	Technologies  []string
-	SkipMetadata  bool
-}
-
 // GetLatest gets the latest agent package for the given OS, installer type, flavor and arch.
-func (c *Client) GetLatest(ctx context.Context, args GetLatestArgs, writer io.Writer) error {
+func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer) error {
 	if len(args.Os) == 0 || len(args.InstallerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
@@ -86,14 +77,8 @@ type versionsResponse struct {
 	AvailableVersions []string `json:"availableVersions"`
 }
 
-type GetVersionsArgs struct {
-	Os            string
-	InstallerType string
-	Flavor        string
-}
-
 // GetVersions gets available agent versions for the given OS, installer type and flavor.
-func (c *Client) GetVersions(ctx context.Context, args GetVersionsArgs) ([]string, error) {
+func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, error) {
 	if len(args.Os) == 0 || len(args.InstallerType) == 0 {
 		return nil, errors.New("os or installerType is empty")
 	}

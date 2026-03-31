@@ -40,7 +40,7 @@ func (_m *APIClient) EXPECT() *APIClient_Expecter {
 }
 
 // Get provides a mock function for the type APIClient
-func (_mock *APIClient) Get(ctx context.Context, args oneagent.GetArgs, writer io.Writer) error {
+func (_mock *APIClient) Get(ctx context.Context, args oneagent.GetParams, writer io.Writer) error {
 	ret := _mock.Called(ctx, args, writer)
 
 	if len(ret) == 0 {
@@ -48,7 +48,7 @@ func (_mock *APIClient) Get(ctx context.Context, args oneagent.GetArgs, writer i
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, oneagent.GetArgs, io.Writer) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, oneagent.GetParams, io.Writer) error); ok {
 		r0 = returnFunc(ctx, args, writer)
 	} else {
 		r0 = ret.Error(0)
@@ -63,21 +63,21 @@ type APIClient_Get_Call struct {
 
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
-//   - args oneagent.GetArgs
+//   - args oneagent.GetParams
 //   - writer io.Writer
 func (_e *APIClient_Expecter) Get(ctx interface{}, args interface{}, writer interface{}) *APIClient_Get_Call {
 	return &APIClient_Get_Call{Call: _e.mock.On("Get", ctx, args, writer)}
 }
 
-func (_c *APIClient_Get_Call) Run(run func(ctx context.Context, args oneagent.GetArgs, writer io.Writer)) *APIClient_Get_Call {
+func (_c *APIClient_Get_Call) Run(run func(ctx context.Context, args oneagent.GetParams, writer io.Writer)) *APIClient_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 oneagent.GetArgs
+		var arg1 oneagent.GetParams
 		if args[1] != nil {
-			arg1 = args[1].(oneagent.GetArgs)
+			arg1 = args[1].(oneagent.GetParams)
 		}
 		var arg2 io.Writer
 		if args[2] != nil {
@@ -97,7 +97,7 @@ func (_c *APIClient_Get_Call) Return(err error) *APIClient_Get_Call {
 	return _c
 }
 
-func (_c *APIClient_Get_Call) RunAndReturn(run func(ctx context.Context, args oneagent.GetArgs, writer io.Writer) error) *APIClient_Get_Call {
+func (_c *APIClient_Get_Call) RunAndReturn(run func(ctx context.Context, args oneagent.GetParams, writer io.Writer) error) *APIClient_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -163,7 +163,7 @@ func (_c *APIClient_GetConnectionInfo_Call) RunAndReturn(run func(ctx context.Co
 }
 
 // GetLatest provides a mock function for the type APIClient
-func (_mock *APIClient) GetLatest(ctx context.Context, args oneagent.GetLatestArgs, writer io.Writer) error {
+func (_mock *APIClient) GetLatest(ctx context.Context, args oneagent.GetParams, writer io.Writer) error {
 	ret := _mock.Called(ctx, args, writer)
 
 	if len(ret) == 0 {
@@ -171,7 +171,7 @@ func (_mock *APIClient) GetLatest(ctx context.Context, args oneagent.GetLatestAr
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, oneagent.GetLatestArgs, io.Writer) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, oneagent.GetParams, io.Writer) error); ok {
 		r0 = returnFunc(ctx, args, writer)
 	} else {
 		r0 = ret.Error(0)
@@ -186,21 +186,21 @@ type APIClient_GetLatest_Call struct {
 
 // GetLatest is a helper method to define mock.On call
 //   - ctx context.Context
-//   - args oneagent.GetLatestArgs
+//   - args oneagent.GetParams
 //   - writer io.Writer
 func (_e *APIClient_Expecter) GetLatest(ctx interface{}, args interface{}, writer interface{}) *APIClient_GetLatest_Call {
 	return &APIClient_GetLatest_Call{Call: _e.mock.On("GetLatest", ctx, args, writer)}
 }
 
-func (_c *APIClient_GetLatest_Call) Run(run func(ctx context.Context, args oneagent.GetLatestArgs, writer io.Writer)) *APIClient_GetLatest_Call {
+func (_c *APIClient_GetLatest_Call) Run(run func(ctx context.Context, args oneagent.GetParams, writer io.Writer)) *APIClient_GetLatest_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 oneagent.GetLatestArgs
+		var arg1 oneagent.GetParams
 		if args[1] != nil {
-			arg1 = args[1].(oneagent.GetLatestArgs)
+			arg1 = args[1].(oneagent.GetParams)
 		}
 		var arg2 io.Writer
 		if args[2] != nil {
@@ -220,7 +220,7 @@ func (_c *APIClient_GetLatest_Call) Return(err error) *APIClient_GetLatest_Call 
 	return _c
 }
 
-func (_c *APIClient_GetLatest_Call) RunAndReturn(run func(ctx context.Context, args oneagent.GetLatestArgs, writer io.Writer) error) *APIClient_GetLatest_Call {
+func (_c *APIClient_GetLatest_Call) RunAndReturn(run func(ctx context.Context, args oneagent.GetParams, writer io.Writer) error) *APIClient_GetLatest_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -288,7 +288,7 @@ func (_c *APIClient_GetProcessModuleConfig_Call) RunAndReturn(run func(ctx conte
 }
 
 // GetVersions provides a mock function for the type APIClient
-func (_mock *APIClient) GetVersions(ctx context.Context, args oneagent.GetVersionsArgs) ([]string, error) {
+func (_mock *APIClient) GetVersions(ctx context.Context, args oneagent.GetParams) ([]string, error) {
 	ret := _mock.Called(ctx, args)
 
 	if len(ret) == 0 {
@@ -297,17 +297,17 @@ func (_mock *APIClient) GetVersions(ctx context.Context, args oneagent.GetVersio
 
 	var r0 []string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, oneagent.GetVersionsArgs) ([]string, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, oneagent.GetParams) ([]string, error)); ok {
 		return returnFunc(ctx, args)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, oneagent.GetVersionsArgs) []string); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, oneagent.GetParams) []string); ok {
 		r0 = returnFunc(ctx, args)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, oneagent.GetVersionsArgs) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, oneagent.GetParams) error); ok {
 		r1 = returnFunc(ctx, args)
 	} else {
 		r1 = ret.Error(1)
@@ -322,20 +322,20 @@ type APIClient_GetVersions_Call struct {
 
 // GetVersions is a helper method to define mock.On call
 //   - ctx context.Context
-//   - args oneagent.GetVersionsArgs
+//   - args oneagent.GetParams
 func (_e *APIClient_Expecter) GetVersions(ctx interface{}, args interface{}) *APIClient_GetVersions_Call {
 	return &APIClient_GetVersions_Call{Call: _e.mock.On("GetVersions", ctx, args)}
 }
 
-func (_c *APIClient_GetVersions_Call) Run(run func(ctx context.Context, args oneagent.GetVersionsArgs)) *APIClient_GetVersions_Call {
+func (_c *APIClient_GetVersions_Call) Run(run func(ctx context.Context, args oneagent.GetParams)) *APIClient_GetVersions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 oneagent.GetVersionsArgs
+		var arg1 oneagent.GetParams
 		if args[1] != nil {
-			arg1 = args[1].(oneagent.GetVersionsArgs)
+			arg1 = args[1].(oneagent.GetParams)
 		}
 		run(
 			arg0,
@@ -350,7 +350,7 @@ func (_c *APIClient_GetVersions_Call) Return(strings []string, err error) *APICl
 	return _c
 }
 
-func (_c *APIClient_GetVersions_Call) RunAndReturn(run func(ctx context.Context, args oneagent.GetVersionsArgs) ([]string, error)) *APIClient_GetVersions_Call {
+func (_c *APIClient_GetVersions_Call) RunAndReturn(run func(ctx context.Context, args oneagent.GetParams) ([]string, error)) *APIClient_GetVersions_Call {
 	_c.Call.Return(run)
 	return _c
 }
