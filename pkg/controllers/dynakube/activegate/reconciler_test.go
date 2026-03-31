@@ -92,7 +92,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			configMaps:                 k8sconfigmap.Query(clt, clt, log),
 		}
 
-		err := r.Reconcile(t.Context(), buildDynakube(), createMockDtClient(t, false), nil)
+		err := r.Reconcile(t.Context(), buildDynakube(), createMockDTClient(t, false), nil)
 		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("tlsReconciler errors", func(t *testing.T) {
@@ -117,7 +117,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			configMaps:                 k8sconfigmap.Query(clt, clt, log),
 		}
 
-		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
+		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
 		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("tlsReconciler errors", func(t *testing.T) {
@@ -143,7 +143,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			configMaps:                 k8sconfigmap.Query(clt, clt, log),
 		}
 
-		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
+		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
 		require.ErrorIs(t, err, expectErr)
 	})
 }
@@ -190,7 +190,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			configMaps:                 k8sconfigmap.Query(clt, clt, log),
 		}
 
-		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
+		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
 		require.NoError(t, err)
 	})
 	t.Run("ALL sub reconciler (except the capability ones) runs if AG is not enabled, but was enabled before, so to clean up", func(t *testing.T) {
@@ -226,7 +226,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			configMaps:          k8sconfigmap.Query(clt, clt, log),
 		}
 
-		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
+		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
 		require.NoError(t, err)
 	})
 	t.Run("Create AG capability (creation and deletion)", func(t *testing.T) {
@@ -250,7 +250,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r.istioReconciler = createIstioReconcilerMock(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 
-		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, true), nil)
+		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -267,7 +267,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
-		err = r.Reconcile(t.Context(), dk, createMockDtClient(t, false), nil)
+		err = r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
 		require.NoError(t, err)
 
 		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
@@ -311,7 +311,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
 			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
 		}
-		err := proxyReconciler.Reconcile(t.Context(), dkWithProxy, createMockDtClient(t, false), nil)
+		err := proxyReconciler.Reconcile(t.Context(), dkWithProxy, createMockDTClient(t, false), nil)
 		require.NoError(t, err)
 
 		noProxyReconciler := &Reconciler{
@@ -328,7 +328,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
 		}
 
-		err = noProxyReconciler.Reconcile(t.Context(), dkNoProxy, createMockDtClient(t, false), nil)
+		err = noProxyReconciler.Reconcile(t.Context(), dkNoProxy, createMockDTClient(t, false), nil)
 		require.NoError(t, err)
 	})
 	t.Run("Reconciles Kubernetes Monitoring", func(t *testing.T) {
@@ -354,7 +354,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
-		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, true), nil)
+		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
 		var statefulSet appsv1.StatefulSet
@@ -415,7 +415,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
-		err := r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
+		err := r.Reconcile(t.Context(), instance, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -447,7 +447,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
-		err := r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
+		err := r.Reconcile(t.Context(), instance, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -479,7 +479,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
-		err := r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
+		err := r.Reconcile(t.Context(), instance, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -511,7 +511,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
-		err := r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
+		err := r.Reconcile(t.Context(), instance, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -530,7 +530,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
-		err = r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
+		err = r.Reconcile(t.Context(), instance, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
 		var service1 corev1.Service
@@ -548,7 +548,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
-		err = r.Reconcile(t.Context(), instance, createMockDtClient(t, true), nil)
+		err = r.Reconcile(t.Context(), instance, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
 		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
@@ -685,7 +685,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
 		}
 
-		err := r.Reconcile(t.Context(), dk, createMockDtClient(t, true), nil)
+		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
 		var actual corev1.ConfigMap
