@@ -51,8 +51,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(buildActiveGateSecret(*dk, testTenantUUID))
 		dtc := agclientmock.NewAPIClient(t)
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtc, dk)
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.ActiveGate.ConnectionInfo)
 		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, activeGateConnectionInfoConditionType))
@@ -70,8 +70,8 @@ func TestReconcile(t *testing.T) {
 		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtc, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateConnectionInfoConditionType)
@@ -100,10 +100,10 @@ func TestReconcile(t *testing.T) {
 			Endpoints:  testOutdated,
 		}
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk).(*reconciler)
+		r := NewReconciler(fakeClient, fakeClient)
 		r.timeProvider.Set(r.timeProvider.Now().Add(time.Minute * 20))
 
-		err := r.Reconcile(ctx)
+		err := r.Reconcile(ctx, dtc, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateConnectionInfoConditionType)
@@ -135,8 +135,8 @@ func TestReconcile(t *testing.T) {
 			Endpoints:  testOutdated,
 		}
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtc, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateConnectionInfoConditionType)
@@ -162,8 +162,8 @@ func TestReconcile(t *testing.T) {
 		dtc := agclientmock.NewAPIClient(t)
 		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtc, dk)
 		require.Error(t, err)
 
 		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateConnectionInfoConditionType)

@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,13 +29,13 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClientWithIndex(dk)
 
-		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
+		mockActiveGateReconciler := newMockActiveGateReconciler(t)
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil).Once()
 
 		controller := &Controller{
-			client:                      fakeClient,
-			apiReader:                   fakeClient,
-			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			client:               fakeClient,
+			apiReader:            fakeClient,
+			activeGateReconciler: mockActiveGateReconciler,
 		}
 
 		err := controller.reconcileActiveGate(t.Context(), dk, nil)
@@ -47,13 +47,13 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClientWithIndex(dk)
 
-		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
+		mockActiveGateReconciler := newMockActiveGateReconciler(t)
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(errors.New("BOOM")).Once()
 
 		controller := &Controller{
-			client:                      fakeClient,
-			apiReader:                   fakeClient,
-			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			client:               fakeClient,
+			apiReader:            fakeClient,
+			activeGateReconciler: mockActiveGateReconciler,
 		}
 
 		err := controller.reconcileActiveGate(t.Context(), dk, nil)
