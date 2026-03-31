@@ -216,14 +216,6 @@ Reasoning for these rules:
   - Fetching and recalculating the hash for each component where a `Secret/ConfigMap` is used would be fine if we only had a few of them, but we have 15+.
     - Why not use the cache? -> Using the built-in cache of the `Client` had caused problems in the past (the cache was not up to date), which could lead to inconsistency.
 
-### Replica count and HPA compatibility
-
-When a `StatefulSet` or `Deployment` may be managed by an HPA (Horizontal Pod Autoscaler), the replica count in the live resource will differ from what the operator builds from the CR spec.
-If replicas are included in the spec hash used for equality comparisons, the hash will always differ and trigger a spurious update loop.
-
-- **Separate replica enforcement from hash-based equality.** The hash should cover the desired shape of the workload, not the currently observed replica count.
-- When the CR explicitly sets replicas, enforce them. When it does not (i.e., `nil`), leave the replicas to the HPA and skip enforcement.
-
 ### Example
 
 Do this:
