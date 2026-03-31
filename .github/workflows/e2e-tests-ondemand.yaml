@@ -60,6 +60,8 @@ jobs:
             platform: ocp
           - version: 4-20
             platform: ocp
+          - version: 4-20-olm
+            platform: ocp
     environment: E2E
     runs-on:
       - operator-e2e

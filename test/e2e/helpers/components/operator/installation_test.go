@@ -114,7 +114,7 @@ func TestGetHelmOptions(t *testing.T) {
 
 	t.Run("no image found", func(t *testing.T) {
 		tempDir := t.TempDir()
-		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho make[1] Entering directory"), os.ModePerm)) //nolint:gosec
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho make: Entering directory"), os.ModePerm)) //nolint:gosec
 		t.Setenv("PATH", tempDir+":"+os.Getenv("PATH"))
 
 		imageRef = "" // clear cache
