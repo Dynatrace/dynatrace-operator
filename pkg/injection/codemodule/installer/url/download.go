@@ -31,7 +31,7 @@ func (installer Installer) downloadLatestOneAgent(ctx context.Context, tmpFile *
 	log.Info("downloading latest OneAgent package", "props", installer.props)
 
 	return installer.dtc.GetLatest(ctx, oneagent.GetParams{
-		Os:            installer.props.Os,
+		OS:            installer.props.OS,
 		InstallerType: installer.props.Type,
 		Flavor:        installer.props.Flavor,
 		Technologies:  installer.props.Technologies,
@@ -46,7 +46,7 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 
 	err := installer.dtc.Get(ctx,
 		oneagent.GetParams{
-			Os:            installer.props.Os,
+			OS:            installer.props.OS,
 			InstallerType: installer.props.Type,
 			Flavor:        installer.props.Flavor,
 			Version:       installer.props.TargetVersion,
@@ -58,7 +58,7 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 	if err != nil {
 		availableVersions, getVersionsError := installer.dtc.GetVersions(ctx,
 			oneagent.GetParams{
-				Os:            installer.props.Os,
+				OS:            installer.props.OS,
 				InstallerType: installer.props.Type,
 				Flavor:        installer.props.Flavor,
 			},

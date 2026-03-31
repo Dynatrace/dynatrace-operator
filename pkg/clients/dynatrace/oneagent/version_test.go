@@ -23,7 +23,7 @@ const (
 
 func TestGetLatest(t *testing.T) {
 	args := GetParams{
-		Os:            installer.OsUnix,
+		OS:            installer.OsUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        arch.FlavorMultidistro,
 		Technologies:  nil,
@@ -73,7 +73,7 @@ func TestGetLatest(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	args := GetParams{
-		Os:            installer.OsUnix,
+		OS:            installer.OsUnix,
 		InstallerType: installer.TypePaaS,
 		Version:       "",
 		Flavor:        "",
@@ -125,7 +125,7 @@ func TestGet(t *testing.T) {
 
 func TestGetVersions(t *testing.T) {
 	args := GetParams{
-		Os:            installer.OsUnix,
+		OS:            installer.OsUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        "",
 	}

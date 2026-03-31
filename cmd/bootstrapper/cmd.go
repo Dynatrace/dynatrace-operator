@@ -79,7 +79,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		inputDir, _ := cmd.Flags().GetString(configure.InputFolderFlag)
 
 		props := url.Properties{
-			Os:            installer.OsUnix,
+			OS:            installer.OsUnix,
 			Type:          installer.TypePaaS,
 			Flavor:        flavor,
 			Arch:          arch.Arch,

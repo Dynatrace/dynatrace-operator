@@ -16,7 +16,7 @@ import (
 )
 
 type Properties struct {
-	Os            string
+	OS            string
 	Arch          string
 	Type          string
 	Flavor        string

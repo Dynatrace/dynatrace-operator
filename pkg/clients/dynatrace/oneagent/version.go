@@ -16,7 +16,7 @@ import (
 )
 
 type GetParams struct {
-	Os            string
+	OS            string
 	InstallerType string
 	Flavor        string
 	Version       string
@@ -26,11 +26,11 @@ type GetParams struct {
 
 // Get gets the agent package for the given OS, installer type, flavor, arch and version.
 func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) error {
-	if len(args.Os) == 0 || len(args.InstallerType) == 0 {
+	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
 
-	apiRequest := c.apiClient.GET(ctx, getURL(args.Os, args.InstallerType, args.Version)).
+	apiRequest := c.apiClient.GET(ctx, getURL(args.OS, args.InstallerType, args.Version)).
 		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
@@ -42,7 +42,7 @@ func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) erro
 
 	sha256, err := makeRequestForBinary(apiRequest, writer)
 	if err == nil {
-		log.Info("downloaded agent file", "os", args.Os, "type", args.InstallerType, "flavor", args.Flavor, "arch", arch.Arch, "technologies", args.Technologies, "sha256", sha256)
+		log.Info("downloaded agent file", "os", args.OS, "type", args.InstallerType, "flavor", args.Flavor, "arch", arch.Arch, "technologies", args.Technologies, "sha256", sha256)
 	}
 
 	return errors.WithStack(err)
@@ -50,11 +50,11 @@ func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) erro
 
 // GetLatest gets the latest agent package for the given OS, installer type, flavor and arch.
 func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer) error {
-	if len(args.Os) == 0 || len(args.InstallerType) == 0 {
+	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
 
-	apiRequest := c.apiClient.GET(ctx, getLatestURL(args.Os, args.InstallerType)).
+	apiRequest := c.apiClient.GET(ctx, getLatestURL(args.OS, args.InstallerType)).
 		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
@@ -66,7 +66,7 @@ func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer
 
 	sha256, err := makeRequestForBinary(apiRequest, writer)
 	if err == nil {
-		log.Info("downloaded agent file", "os", args.Os, "type", args.InstallerType, "flavor", args.Flavor, "arch", arch.Arch, "technologies", args.Technologies, "sha256", sha256)
+		log.Info("downloaded agent file", "os", args.OS, "type", args.InstallerType, "flavor", args.Flavor, "arch", arch.Arch, "technologies", args.Technologies, "sha256", sha256)
 	}
 
 	return errors.WithStack(err)
@@ -78,7 +78,7 @@ type versionsResponse struct {
 
 // GetVersions gets available agent versions for the given OS, installer type and flavor.
 func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, error) {
-	if len(args.Os) == 0 || len(args.InstallerType) == 0 {
+	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
 		return nil, errors.New("os or installerType is empty")
 	}
 
@@ -93,7 +93,7 @@ func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, err
 		params["arch"] = oaArch
 	}
 
-	err := c.apiClient.GET(ctx, getVersionsURL(args.Os, args.InstallerType)).
+	err := c.apiClient.GET(ctx, getVersionsURL(args.OS, args.InstallerType)).
 		WithQueryParams(params).
 		WithPaasToken().
 		Execute(&resp)

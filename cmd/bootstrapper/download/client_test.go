@@ -35,7 +35,7 @@ func TestNew(t *testing.T) {
 
 	t.Run("options", func(t *testing.T) {
 		props := &url.Properties{
-			Os:   "os",
+			OS:   "os",
 			Arch: "arch",
 		}
 		opts := []Option{
@@ -78,7 +78,7 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
 		props := &url.Properties{
-			Os:   "os",
+			OS:   "os",
 			Arch: "arch",
 		}
 		setupConfig(t, inputDir, config)
@@ -100,7 +100,7 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
 		props := &url.Properties{
-			Os:   "os",
+			OS:   "os",
 			Arch: "arch",
 		}
 		os.MkdirAll(inputDir, os.ModePerm)
@@ -127,7 +127,7 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
 		props := &url.Properties{
-			Os:   "os",
+			OS:   "os",
 			Arch: "arch",
 		}
 		setupConfig(t, inputDir, config)

@@ -29,7 +29,7 @@ const (
 
 func TestInstallAgentFromUrl(t *testing.T) {
 	getParams := oneagentclient.GetParams{
-		Os:            installer.OsUnix,
+		OS:            installer.OsUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        arch.FlavorMultidistro,
 		Version:       "",
@@ -62,7 +62,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		installer := &Installer{
 			dtc: dtc,
 			props: &Properties{
-				Os:     installer.OsUnix,
+				OS:     installer.OsUnix,
 				Type:   installer.TypePaaS,
 				Flavor: arch.FlavorMultidistro,
 			},
@@ -89,7 +89,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			dtc:       dtc,
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
-				Os:     installer.OsUnix,
+				OS:     installer.OsUnix,
 				Type:   installer.TypePaaS,
 				Flavor: arch.FlavorMultidistro,
 			},
@@ -123,7 +123,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			dtc:       dtc,
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
-				Os:            installer.OsUnix,
+				OS:            installer.OsUnix,
 				Type:          installer.TypePaaS,
 				Flavor:        arch.FlavorMultidistro,
 				TargetVersion: testVersion,
@@ -152,7 +152,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			dtc:       dtc,
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
-				Os:            installer.OsUnix,
+				OS:            installer.OsUnix,
 				Type:          installer.TypePaaS,
 				Flavor:        arch.FlavorMultidistro,
 				TargetVersion: VersionLatest,
