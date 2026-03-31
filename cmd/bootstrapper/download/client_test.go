@@ -31,7 +31,6 @@ func TestNew(t *testing.T) {
 		client := New()
 
 		assert.NotNil(t, client.newInstaller)
-		assert.NotNil(t, client.newDTClient)
 	})
 
 	t.Run("options", func(t *testing.T) {
@@ -40,15 +39,13 @@ func TestNew(t *testing.T) {
 			Arch: "arch",
 		}
 		opts := []Option{
-			WithDTClient(dtClientTester(t, []dtclient.OptionV2{}...)),
 			WithInstaller(installerTester(t, props, nil)),
 		}
 		client := New(opts...)
 
 		require.NotNil(t, client.newInstaller)
-		require.NotNil(t, client.newDTClient)
 
-		dtClient, err := client.newDTClient("url", []dtclient.OptionV2{}...)
+		dtClient, err := dtclient.NewClientV2("url", []dtclient.OptionV2{}...)
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)
 
@@ -67,7 +64,6 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 
 		opts := []Option{
-			WithDTClient(dtClientTester(t, []dtclient.OptionV2{}...)),
 			WithInstaller(installerTester(t, &url.Properties{}, nil)),
 		}
 		client := New(opts...)
@@ -88,7 +84,6 @@ func TestDo(t *testing.T) {
 		setupConfig(t, inputDir, config)
 
 		opts := []Option{
-			WithDTClient(dtClientTester(t, config.toDTClientOptionsV2()...)),
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(true, nil)
 			})),
@@ -115,11 +110,7 @@ func TestDo(t *testing.T) {
 
 		setupConfig(t, inputDir, config)
 
-		expectedOpts := config.toDTClientOptionsV2()
-		expectedOpts = append(expectedOpts, dtclient.WithCerts(cert))
-
 		opts := []Option{
-			WithDTClient(dtClientTester(t, expectedOpts...)),
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(true, nil)
 			})),
@@ -144,7 +135,6 @@ func TestDo(t *testing.T) {
 		expectedErr := errors.New("boom")
 
 		opts := []Option{
-			WithDTClient(dtClientTester(t, config.toDTClientOptionsV2()...)),
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(false, expectedErr)
 			})),
@@ -174,18 +164,6 @@ func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockC
 		}
 
 		return mock
-	}
-}
-
-func dtClientTester(t *testing.T, expectedOpts ...dtclient.OptionV2) dtclient.NewFuncV2 {
-	t.Helper()
-
-	return func(url string, opts ...dtclient.OptionV2) (*dtclient.ClientV2, error) {
-		require.NotEmpty(t, url)
-
-		compareDTOptions(t, expectedOpts, opts)
-
-		return dtclient.NewClientV2(url, opts...)
 	}
 }
 

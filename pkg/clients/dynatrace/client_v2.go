@@ -21,10 +21,6 @@ import (
 	"golang.org/x/net/http/httpproxy"
 )
 
-type NewFuncV2 func(baseURL string, options ...OptionV2) (*ClientV2, error)
-
-var _ NewFuncV2 = NewClientV2
-
 type ClientV2 struct {
 	Settings   settings.APIClient
 	ActiveGate activegate.APIClient

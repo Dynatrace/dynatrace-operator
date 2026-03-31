@@ -13,7 +13,6 @@ import (
 
 type Client struct {
 	newInstaller url.NewFunc
-	newDTClient  dtclient.NewFuncV2
 }
 
 type Option func(*Client)
@@ -24,16 +23,9 @@ func WithInstaller(builder url.NewFunc) Option {
 	}
 }
 
-func WithDTClient(builder dtclient.NewFuncV2) Option {
-	return func(cl *Client) {
-		cl.newDTClient = builder
-	}
-}
-
 func New(options ...Option) *Client {
 	cl := &Client{
 		newInstaller: url.NewURLInstaller,
-		newDTClient:  dtclient.NewClientV2,
 	}
 
 	for _, opt := range options {
@@ -78,7 +70,7 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, err
 		options = append(options, dtclient.WithCerts(certs))
 	}
 
-	client, err := cl.newDTClient(config.URL, options...)
+	client, err := dtclient.NewClientV2(config.URL, options...)
 	if err != nil {
 		return nil, err
 	}
