@@ -21,9 +21,10 @@ import (
 )
 
 type Reconciler struct {
-	client    client.Client
-	apiReader client.Reader
-	modifiers []builder.Modifier
+	client       client.Client
+	apiReader    client.Reader
+	modifiers    []builder.Modifier
+	statefulsets k8sstatefulset.QueryObject
 }
 
 func NewReconciler(
@@ -31,9 +32,10 @@ func NewReconciler(
 	apiReader client.Reader,
 ) *Reconciler {
 	return &Reconciler{
-		client:    clt,
-		apiReader: apiReader,
-		modifiers: []builder.Modifier{},
+		client:       clt,
+		apiReader:    apiReader,
+		modifiers:    []builder.Modifier{},
+		statefulsets: k8sstatefulset.Query(clt, apiReader, log),
 	}
 }
 
@@ -56,7 +58,7 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context, dk *dynakube.DynaKub
 		return err
 	}
 
-	updated, err := k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(dk).CreateOrUpdate(ctx, desiredSts)
+	updated, err := r.statefulsets.WithOwner(dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
