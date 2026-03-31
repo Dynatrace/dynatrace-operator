@@ -34,6 +34,7 @@ func TestGetLatest(t *testing.T) {
 	setupClient := func(t *testing.T, response []byte, rawErr error) (*Client, *os.File) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, file.Close()) })
 
 		hash := sha256.New()
 		multiWriter := io.MultiWriter(file, hash)
@@ -85,6 +86,7 @@ func TestGet(t *testing.T) {
 	setupClient := func(t *testing.T, response []byte, rawErr error) (*Client, *os.File) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, file.Close()) })
 
 		hash := sha256.New()
 		multiWriter := io.MultiWriter(file, hash)
