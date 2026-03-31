@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/deployment"
@@ -58,7 +58,7 @@ type oauthCredentialsType struct {
 	clientSecret string
 }
 
-type edgeConnectClientBuilderType func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (edgeconnectClient.Client, error)
+type edgeConnectClientBuilderType func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (edgeconnectClient.APIClient, error)
 
 // Controller reconciles an EdgeConnect object
 type Controller struct {
@@ -160,7 +160,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		return err
 	}
 
-	tenantEdgeConnect, err := getEdgeConnectByName(edgeConnectClient, ec.Name)
+	tenantEdgeConnect, err := getEdgeConnectByName(ctx, edgeConnectClient, ec.Name)
 	if err != nil {
 		_log.Debug("failed to get EdgeConnect by name")
 
@@ -185,7 +185,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 	}
 
 	if ec.IsK8SAutomationEnabled() && ec.IsProvisionerModeEnabled() {
-		err = controller.deleteConnectionSetting(edgeConnectClient, ec)
+		err = controller.deleteConnectionSetting(ctx, edgeConnectClient, ec)
 		if err != nil {
 			_log.Info("reconcile deletion: Deleting connection setting failed")
 
@@ -193,17 +193,17 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		}
 	}
 
-	return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
+	return edgeConnectClient.DeleteEdgeConnect(ctx, tenantEdgeConnect.ID)
 }
 
-func (controller *Controller) deleteConnectionSetting(edgeConnectClient edgeconnectClient.Client, ec *edgeconnect.EdgeConnect) error {
-	envSetting, err := GetConnectionSetting(edgeConnectClient, ec.Name, ec.Namespace, ec.Status.KubeSystemUID)
+func (controller *Controller) deleteConnectionSetting(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, ec *edgeconnect.EdgeConnect) error {
+	envSetting, err := GetConnectionSetting(ctx, edgeConnectClient, ec.Name, ec.Namespace, ec.Status.KubeSystemUID)
 	if err != nil {
 		return err
 	}
 
 	if (envSetting != edgeconnectClient.EnvironmentSetting{}) {
-		err = edgeConnectClient.DeleteConnectionSetting(*envSetting.ObjectID)
+		err = edgeConnectClient.DeleteConnectionSetting(ctx, *envSetting.ObjectID)
 		if err != nil {
 			return err
 		}
@@ -425,7 +425,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		return err
 	}
 
-	tenantEdgeConnect, err := getEdgeConnectByName(edgeConnectClient, ec.Name)
+	tenantEdgeConnect, err := getEdgeConnectByName(ctx, edgeConnectClient, ec.Name)
 	if err != nil {
 		return err
 	}
@@ -445,7 +445,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		if edgeConnectIDFromSecret == "" {
 			_log.Info("EdgeConnect has to be recreated due to missing secret")
 
-			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
+			if err := edgeConnectClient.DeleteEdgeConnect(ctx, tenantEdgeConnect.ID); err != nil {
 				return err
 			}
 
@@ -453,7 +453,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		} else if tenantEdgeConnect.ID != edgeConnectIDFromSecret {
 			_log.Info("EdgeConnect has to be recreated due to invalid Id")
 
-			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
+			if err := edgeConnectClient.DeleteEdgeConnect(ctx, tenantEdgeConnect.ID); err != nil {
 				return err
 			}
 
@@ -478,7 +478,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 	return controller.createOrUpdateEdgeConnectDeploymentAndSettings(ctx, ec)
 }
 
-func (controller *Controller) buildEdgeConnectClient(ctx context.Context, ec *edgeconnect.EdgeConnect) (edgeconnectClient.Client, error) {
+func (controller *Controller) buildEdgeConnectClient(ctx context.Context, ec *edgeconnect.EdgeConnect) (edgeconnectClient.APIClient, error) {
 	oauthCredentials, err := controller.getOauthCredentials(ctx, ec)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -514,8 +514,8 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgec
 	return oauthCredentialsType{clientID: oauthClientID, clientSecret: oauthClientSecret}, nil
 }
 
-func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
-	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (edgeconnectClient.Client, error) {
+func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.APIClient, error) {
+	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (edgeconnectClient.APIClient, error) {
 		oauthScopes := []string{
 			"app-engine:edge-connects:read",
 			"app-engine:edge-connects:write",
@@ -526,27 +526,21 @@ func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oaut
 			oauthScopes = append(oauthScopes, "settings:objects:read", "settings:objects:write")
 		}
 
-		edgeConnectClient, err := edgeconnectClient.NewClient(
-			oauthCredentials.clientID,
-			oauthCredentials.clientSecret,
+		return edgeconnectClient.NewClient(
+			edgeconnectClient.WithContext(ctx),
+			edgeconnectClient.WithClientID(oauthCredentials.clientID),
+			edgeconnectClient.WithClientSecret(oauthCredentials.clientSecret),
 			edgeconnectClient.WithBaseURL("https://"+ec.Spec.APIServer),
 			edgeconnectClient.WithTokenURL(ec.Spec.OAuth.Endpoint),
 			edgeconnectClient.WithOauthScopes(oauthScopes),
-			edgeconnectClient.WithContext(ctx),
-			edgeconnectClient.WithCustomCA(customCA),
-		)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		return edgeConnectClient, nil
+			edgeconnectClient.WithCustomCA(customCA))
 	}
 }
 
-func getEdgeConnectByName(edgeConnectClient edgeconnectClient.Client, name string) (edgeconnectClient.GetResponse, error) {
+func getEdgeConnectByName(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, name string) (edgeconnectClient.GetResponse, error) {
 	_log := log.WithValues("name", name)
 
-	ecs, err := edgeConnectClient.GetEdgeConnects(name)
+	ecs, err := edgeConnectClient.GetEdgeConnects(ctx, name)
 	if err != nil {
 		log.Debug("Unable to get EdgeConnect object")
 
@@ -602,10 +596,10 @@ func (controller *Controller) getEdgeConnectIDFromClientSecret(ctx context.Conte
 	return id, nil
 }
 
-func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnectClient.Client, ec *edgeconnect.EdgeConnect) error {
+func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, ec *edgeconnect.EdgeConnect) error {
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name)
 
-	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeconnectClient.NewRequest(ec.Name, ec.HostPatterns(), ec.HostMappings(), ""))
+	createResponse, err := edgeConnectClient.CreateEdgeConnect(ctx, edgeconnectClient.NewRequest(ec.Name, ec.HostPatterns(), ec.HostMappings(), ""))
 	if err != nil {
 		_log.Debug("creating EdgeConnect failed")
 
@@ -639,7 +633,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 	return nil
 }
 
-func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnectClient edgeconnectClient.Client, ec *edgeconnect.EdgeConnect) error {
+func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, ec *edgeconnect.EdgeConnect) error {
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name)
 
 	secret, err := controller.secrets.Get(ctx, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace})
@@ -663,7 +657,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 		return err
 	}
 
-	edgeConnectResponse, err := edgeConnectClient.GetEdgeConnect(id)
+	edgeConnectResponse, err := edgeConnectClient.GetEdgeConnect(ctx, id)
 	if err != nil {
 		_log.Debug("EdgeConnect object not found")
 
@@ -678,7 +672,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 
 	log.Debug("updating EdgeConnect", "name", ec.Name)
 
-	err = edgeConnectClient.UpdateEdgeConnect(id, edgeconnectClient.NewRequest(ec.Name, ec.HostPatterns(), ec.HostMappings(), oauthClientID))
+	err = edgeConnectClient.UpdateEdgeConnect(ctx, id, edgeconnectClient.NewRequest(ec.Name, ec.HostPatterns(), ec.HostMappings(), oauthClientID))
 	if err != nil {
 		_log.Debug("updating EdgeConnect failed")
 
@@ -734,7 +728,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 			return err
 		}
 
-		err = controller.createOrUpdateConnectionSetting(edgeConnectClient, ec, edgeConnectToken)
+		err = controller.createOrUpdateConnectionSetting(ctx, edgeConnectClient, ec, edgeConnectToken)
 		if err != nil {
 			_log.Debug("creating EdgeConnect connection setting failed")
 
@@ -747,10 +741,10 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 	return nil
 }
 
-func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient edgeconnectClient.Client, ec *edgeconnect.EdgeConnect, latestToken string) error {
+func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, ec *edgeconnect.EdgeConnect, latestToken string) error {
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name)
 
-	envSetting, err := GetConnectionSetting(edgeConnectClient, ec.Name, ec.Namespace, ec.Status.KubeSystemUID)
+	envSetting, err := GetConnectionSetting(ctx, edgeConnectClient, ec.Name, ec.Namespace, ec.Status.KubeSystemUID)
 	if err != nil {
 		_log.Info("Failed getting EdgeConnect connection setting object")
 
@@ -760,7 +754,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 	if (envSetting == edgeconnectClient.EnvironmentSetting{}) {
 		_log.Debug("Creating edgeconnectClient connection setting object...")
 
-		err = edgeConnectClient.CreateConnectionSetting(
+		err = edgeConnectClient.CreateConnectionSetting(ctx,
 			edgeconnectClient.EnvironmentSetting{
 				SchemaID: edgeconnectClient.KubernetesConnectionSchemaID,
 				Scope:    edgeconnectClient.KubernetesConnectionScope,
@@ -782,7 +776,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 			_log.Debug("Updating EdgeConnect connection setting object...")
 
 			envSetting.Value.Token = latestToken
-			err = edgeConnectClient.UpdateConnectionSetting(envSetting)
+			err = edgeConnectClient.UpdateConnectionSetting(ctx, envSetting)
 		}
 
 		if err != nil {
@@ -884,8 +878,8 @@ func (controller *Controller) getToken(ctx context.Context, ec *edgeconnect.Edge
 	return "", ErrTokenNotFound
 }
 
-func GetConnectionSetting(edgeConnectClient edgeconnectClient.Client, name, namespace, uid string) (edgeconnectClient.EnvironmentSetting, error) {
-	connectionSettings, err := edgeConnectClient.GetConnectionSettings()
+func GetConnectionSetting(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, name, namespace, uid string) (edgeconnectClient.EnvironmentSetting, error) {
+	connectionSettings, err := edgeConnectClient.GetConnectionSettings(ctx)
 	if err != nil {
 		return edgeconnectClient.EnvironmentSetting{}, err
 	}

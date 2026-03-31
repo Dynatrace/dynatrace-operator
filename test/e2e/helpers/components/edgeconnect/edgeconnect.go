@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -116,7 +116,7 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 		edgeConnectRequest := edgeconnectClient.NewRequest(ecName, []string{testHostPattern}, []edgeconnect.HostMapping{}, "")
 		edgeConnectRequest.ManagedByDynatraceOperator = false
 
-		res, err := ecClt.CreateEdgeConnect(edgeConnectRequest)
+		res, err := ecClt.CreateEdgeConnect(ctx, edgeConnectRequest)
 		require.NoError(t, err)
 		assert.Equal(t, ecName, res.Name)
 
@@ -132,10 +132,11 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 	}
 }
 
-func BuildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconnectClient.Client, error) {
+func BuildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconnectClient.APIClient, error) {
 	clt, err := edgeconnectClient.NewClient(
-		secret.OauthClientID,
-		secret.OauthClientSecret,
+		edgeconnectClient.WithContext(ctx),
+		edgeconnectClient.WithClientID(secret.OauthClientID),
+		edgeconnectClient.WithClientSecret(secret.OauthClientSecret),
 		edgeconnectClient.WithBaseURL("https://"+secret.APIServer),
 		edgeconnectClient.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		edgeconnectClient.WithOauthScopes([]string{
@@ -146,7 +147,6 @@ func BuildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeco
 			"settings:objects:read",
 			"settings:objects:write",
 		}),
-		edgeconnectClient.WithContext(ctx),
 		// Disable keep-alive to prevent dropped network packets in GitHub Actions environment
 		edgeconnectClient.WithKeepAlive(false),
 	)
@@ -166,7 +166,7 @@ func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenant
 		ecClt, err := BuildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
 
-		err = ecClt.DeleteEdgeConnect(edgeConnectTenantConfig.ID)
+		err = ecClt.DeleteEdgeConnect(ctx, edgeConnectTenantConfig.ID)
 		require.NoError(t, err)
 
 		return ctx
@@ -178,7 +178,7 @@ func CheckEcExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnect
 		ecClt, err := BuildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
 
-		_, err = ecClt.GetEdgeConnect(edgeConnectTenantConfig.ID)
+		_, err = ecClt.GetEdgeConnect(ctx, edgeConnectTenantConfig.ID)
 		require.NoError(t, err)
 
 		return ctx

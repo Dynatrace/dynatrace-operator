@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	ecComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/edgeconnect"
@@ -285,7 +285,7 @@ func getTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeC
 		ecClt, err := ecComponents.BuildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
 
-		ecs, err := ecClt.GetEdgeConnects(ecName)
+		ecs, err := ecClt.GetEdgeConnects(ctx, ecName)
 		require.NoError(t, err)
 
 		assert.LessOrEqual(t, len(ecs.EdgeConnects), 1, "Found multiple EdgeConnect objects with the same tenantConfigName", "count", ecs.EdgeConnects)
@@ -307,7 +307,7 @@ func checkHostPatternOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConn
 		ecClt, err := ecComponents.BuildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
 
-		ec, err := ecClt.GetEdgeConnect(edgeConnectTenantConfig.ID)
+		ec, err := ecClt.GetEdgeConnect(ctx, edgeConnectTenantConfig.ID)
 		require.NoError(t, err)
 
 		host := hostPattern()
@@ -322,7 +322,7 @@ func checkEcNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConn
 		ecClt, err := ecComponents.BuildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
 
-		_, err = ecClt.GetEdgeConnect(edgeConnectTenantConfig.ID)
+		_, err = ecClt.GetEdgeConnect(ctx, edgeConnectTenantConfig.ID)
 		// err.Message: Unknown key: eb27ac05-c0c7-4d88-9bb1-804b39e3429b
 		// err.Code: 404
 		require.Error(t, err)
@@ -338,7 +338,7 @@ func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testE
 
 		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
 
-		envSetting, err := controller.GetConnectionSetting(ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
+		envSetting, err := controller.GetConnectionSetting(ctx, ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
 		require.NoError(t, err)
 
 		assert.Equal(t, testEdgeConnect.Name, envSetting.Value.Name)
@@ -355,7 +355,7 @@ func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, te
 
 		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
 
-		se, err := controller.GetConnectionSetting(ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
+		se, err := controller.GetConnectionSetting(ctx, ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
 		require.NoError(t, err)
 		assert.Equal(t, edgeconnectClient.EnvironmentSetting{}, se)
 
