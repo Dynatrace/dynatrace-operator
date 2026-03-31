@@ -419,6 +419,10 @@ func setHeaders(req *http.Request, userAgent, token string, customHeaders http.H
 	}
 
 	for key, values := range customHeaders {
+		if len(values) == 0 {
+			continue
+		}
+
 		req.Header.Set(key, values[0])
 	}
 }

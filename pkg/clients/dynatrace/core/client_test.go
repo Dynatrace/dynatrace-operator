@@ -82,6 +82,19 @@ func TestClient_WithHeader(t *testing.T) {
 			ExecuteRaw()
 		require.NoError(t, err)
 	})
+
+	t.Run("empty string value", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Empty(t, r.Header.Get("X-Empty"))
+		}))
+		defer s.Close()
+
+		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+		_, err := c.GET(t.Context(), "/test").
+			WithHeader("X-Empty", "").
+			ExecuteRaw()
+		require.NoError(t, err)
+	})
 }
 
 func TestClient_URL(t *testing.T) {
