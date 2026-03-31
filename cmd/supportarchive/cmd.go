@@ -160,6 +160,7 @@ func runCollectors(log logd.Logger, supportArchive archiver) error {
 		newFsLogCollector(ctx, kubeConfig, &DefaultExecutor{}, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
 		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
+		newNodeTaintAnalysisCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader),
 		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
 	}
 

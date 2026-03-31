@@ -11,6 +11,8 @@ const CRDDirectoryName = "crds"
 const WebhookConfigurationsDirectoryName = "webhook_configurations"
 const ManifestsFileExtension = ".yaml"
 
+const NodeTaintAnalysisFileName = "node-taint-analysis.txt"
+
 const CRDKindName = "CustomResourceDefinition"
 const ValidatingWebhookConfigurationKind = "ValidatingWebhookConfiguration"
 const MutatingWebhookConfigurationKind = "MutatingWebhookConfiguration"
