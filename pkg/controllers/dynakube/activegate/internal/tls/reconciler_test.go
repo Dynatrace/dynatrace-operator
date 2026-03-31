@@ -31,13 +31,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		_, err = r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetTLSSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetTLSSecretName(),
 		})
 
 		require.Error(t, err)
@@ -60,13 +60,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		_, err = r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetTLSSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetTLSSecretName(),
 		})
 
 		require.Error(t, err)
@@ -91,13 +91,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		_, err = r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetTLSSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetTLSSecretName(),
 		})
 
 		require.Error(t, err)
@@ -119,18 +119,18 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		agTLSSecret, err := r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetTLSSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetTLSSecretName(),
 		})
 
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(r.dk.Status.Conditions, conditionType)
+		condition := meta.FindStatusCondition(dk.Status.Conditions, conditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, fmt.Sprintf("%s created", agTLSSecret.Name), condition.Message)
@@ -151,25 +151,25 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		_, err = r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetAutoTLSSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetAutoTLSSecretName(),
 		})
 		require.NoError(t, err)
 
 		dk.Annotations = make(map[string]string)
 		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
 
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		_, err = r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetAutoTLSSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetAutoTLSSecretName(),
 		})
 		require.Error(t, err)
 
