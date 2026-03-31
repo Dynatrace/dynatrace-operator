@@ -269,7 +269,8 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 }
 
 func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
+	proxyFunc := proxyConfig.ProxyFunc()
 	return func(req *http.Request) (*url.URL, error) {
-		return proxyConfig.ProxyFunc()(req.URL)
+		return proxyFunc(req.URL)
 	}
 }
