@@ -38,8 +38,6 @@ type APIRequest interface {
 	WithJSONBody(body any) APIRequest
 	// WithRawBody sets the request body as raw bytes
 	WithRawBody(body []byte) APIRequest
-	// WithTokenType sets the token type to use for authentication
-	WithTokenType(tokenType TokenType) APIRequest
 	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
