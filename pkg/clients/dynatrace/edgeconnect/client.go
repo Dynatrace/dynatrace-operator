@@ -108,7 +108,7 @@ func WithTokenURL(url string) func(*builder) {
 	}
 }
 
-func WithOauthScopes(scopes []string) func(*builder) {
+func WithOAuthScopes(scopes []string) func(*builder) {
 	return func(b *builder) {
 		b.oauthCfg.Scopes = scopes
 	}
@@ -132,7 +132,7 @@ func WithContext(ctx context.Context) func(*builder) {
 	}
 }
 
-func (b builder) buildCoreClient() (core.APIClient, error) {
+func (b *builder) buildCoreClient() (core.APIClient, error) {
 	parsedURL, err := url.Parse(b.baseURL)
 	if err != nil {
 		return nil, errors.WithStack(err)

@@ -95,6 +95,7 @@ func TestClient_TokenTypes(t *testing.T) {
 		APIToken:        "api",
 		PaasToken:       "paas",
 		DataIngestToken: "data-ingest",
+		OAuthToken:      "oauth",
 	})
 
 	t.Run("default", func(t *testing.T) {
@@ -110,6 +111,11 @@ func TestClient_TokenTypes(t *testing.T) {
 	t.Run("data ingest", func(t *testing.T) {
 		expectToken = "data-ingest"
 		assert.NoError(t, c.GET(t.Context(), "/test").WithTokenType(TokenTypeDataIngest).Execute(nil))
+	})
+
+	t.Run("oauth", func(t *testing.T) {
+		expectToken = "oauth"
+		assert.NoError(t, c.GET(t.Context(), "/test").WithOAuthToken().Execute(nil))
 	})
 }
 

@@ -532,7 +532,7 @@ func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oaut
 			edgeconnectClient.WithClientSecret(oauthCredentials.clientSecret),
 			edgeconnectClient.WithBaseURL("https://"+ec.Spec.APIServer),
 			edgeconnectClient.WithTokenURL(ec.Spec.OAuth.Endpoint),
-			edgeconnectClient.WithOauthScopes(oauthScopes),
+			edgeconnectClient.WithOAuthScopes(oauthScopes),
 			edgeconnectClient.WithCustomCA(customCA))
 	}
 }

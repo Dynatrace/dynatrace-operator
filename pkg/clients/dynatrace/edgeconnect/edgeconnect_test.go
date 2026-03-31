@@ -139,7 +139,6 @@ func TestDeleteEdgeConnect(t *testing.T) {
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().Execute(nil).Return(errTest).Once()
-		// TODO use string paths instead of consts
 		apiClient.EXPECT().DELETE(mock.Anything, fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		err := mockClient.DeleteEdgeConnect(t.Context(), edgeConnectID)

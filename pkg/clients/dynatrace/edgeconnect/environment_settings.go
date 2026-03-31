@@ -58,14 +58,8 @@ func (c *client) GetConnectionSettings(ctx context.Context) ([]EnvironmentSettin
 func (c *client) CreateConnectionSetting(ctx context.Context, es EnvironmentSetting) error {
 	err := c.apiClient.POST(ctx, settingsObjectsPath).WithOAuthToken().WithJSONBody([]EnvironmentSetting{es}).Execute(nil)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create connection setting")
+		return errors.Wrap(err, "failed to create connection setting")
 	}
-
-	// TODO getSettingsAPIResponseData it can return StatusNoContent 204 which is not handled by the core client, that checks just 200,201 and for DELETE 299
-	// _, err = c.getSettingsAPIResponseData(response)
-	// if err != nil {
-	//	return errors.WithMessage(err, "error reading response data")
-	// }
 
 	return nil
 }
@@ -73,14 +67,8 @@ func (c *client) CreateConnectionSetting(ctx context.Context, es EnvironmentSett
 func (c *client) UpdateConnectionSetting(ctx context.Context, es EnvironmentSetting) error {
 	err := c.apiClient.PUT(ctx, fmt.Sprintf(settingsObjectsIDPath, *es.ObjectID)).WithOAuthToken().WithJSONBody(es).Execute(nil)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update connection setting")
+		return errors.Wrap(err, "failed to update connection setting")
 	}
-
-	// s.a previous
-	// _, err = c.getSettingsAPIResponseData(response)
-	// if err != nil {
-	//	return errors.WithMessage(err, "error reading response data")
-	// }
 
 	return nil
 }
@@ -92,7 +80,7 @@ func (c *client) DeleteConnectionSetting(ctx context.Context, objectID string) e
 
 	err := c.apiClient.DELETE(ctx, fmt.Sprintf(settingsObjectsIDPath, objectID)).WithOAuthToken().Execute(nil)
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete connection setting")
+		return errors.Wrap(err, "failed to delete connection setting")
 	}
 
 	return nil

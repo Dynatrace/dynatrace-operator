@@ -139,7 +139,7 @@ func BuildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeco
 		edgeconnectClient.WithClientSecret(secret.OauthClientSecret),
 		edgeconnectClient.WithBaseURL("https://"+secret.APIServer),
 		edgeconnectClient.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		edgeconnectClient.WithOauthScopes([]string{
+		edgeconnectClient.WithOAuthScopes([]string{
 			"app-engine:edge-connects:read",
 			"app-engine:edge-connects:write",
 			"app-engine:edge-connects:delete",

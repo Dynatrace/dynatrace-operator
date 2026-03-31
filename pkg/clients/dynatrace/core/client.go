@@ -57,6 +57,7 @@ type Config struct {
 	APIToken        string
 	PaasToken       string
 	DataIngestToken string
+	OAuthToken      string
 }
 
 type Client struct {
@@ -228,7 +229,7 @@ func (r *Request) getToken() string {
 	case TokenTypeDataIngest:
 		return r.client.cfg.DataIngestToken
 	case TokenTypeOAuth:
-		return "" // Should be set by the oauth http client
+		return r.client.cfg.OAuthToken
 	default:
 		return r.client.cfg.APIToken
 	}

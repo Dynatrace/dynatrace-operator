@@ -1008,7 +1008,6 @@ func mockNewEdgeConnectClientUpdate(edgeConnectClient *edgeconnectmock.APIClient
 		)
 
 		// CreateEdgeConnect creates edge connect
-		// TODO is there another way to use the mocks ?
 		edgeConnectClient.On("UpdateEdgeConnect", mock.Anything, testCreatedID, edgeconnectClient.NewRequest(testName, toHostPatterns, testHostMappings, testCreatedOauthClientID)).Return(nil)
 
 		edgeConnectClient.On("GetConnectionSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
