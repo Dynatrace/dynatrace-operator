@@ -80,7 +80,6 @@ func NewRequest(name string, hostPatterns []string, hostMappings []edgeconnect.H
 // GetEdgeConnect returns edge connect if it exists
 func (c *client) GetEdgeConnect(ctx context.Context, edgeConnectID string) (GetResponse, error) {
 	if edgeConnectID == "" {
-		// Maybe move errros to variables?
 		return GetResponse{}, errors.New("no EdgeConnect ID given")
 	}
 
@@ -108,7 +107,6 @@ func (c *client) CreateEdgeConnect(ctx context.Context, request *Request) (Creat
 
 func (c *client) UpdateEdgeConnect(ctx context.Context, edgeConnectID string, request *Request) error {
 	if edgeConnectID == "" {
-		// Maybe move errros to variables?
 		return errors.New("no EdgeConnect ID given")
 	}
 
