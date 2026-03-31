@@ -21,7 +21,6 @@ import (
 )
 
 type Reconciler struct {
-	client       client.Client
 	apiReader    client.Reader
 	modifiers    []builder.Modifier
 	statefulsets k8sstatefulset.QueryObject
@@ -32,7 +31,6 @@ func NewReconciler(
 	apiReader client.Reader,
 ) *Reconciler {
 	return &Reconciler{
-		client:       clt,
 		apiReader:    apiReader,
 		modifiers:    []builder.Modifier{},
 		statefulsets: k8sstatefulset.Query(clt, apiReader, log),
