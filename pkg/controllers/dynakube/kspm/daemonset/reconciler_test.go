@@ -258,7 +258,7 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "test-url",
-			Kspm:   kspmSpec,
+			KSPM:   kspmSpec,
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,
@@ -271,7 +271,7 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 					TenantUUID: "test-tenant",
 				},
 			},
-			Kspm: kspm.Status{
+			KSPM: kspm.Status{
 				TokenSecretHash: "some-hash",
 			},
 		},

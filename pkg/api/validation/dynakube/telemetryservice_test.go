@@ -75,7 +75,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []otelcgen.Protocol{
 							otelcgen.ZipkinProtocol,
-							otelcgen.OtlpProtocol,
+							otelcgen.OTLPProtocol,
 							"unknown",
 						},
 					},
@@ -93,7 +93,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []otelcgen.Protocol{
 							otelcgen.ZipkinProtocol,
-							otelcgen.OtlpProtocol,
+							otelcgen.OTLPProtocol,
 							"unknown1",
 							"unknown2",
 						},

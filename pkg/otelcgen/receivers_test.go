@@ -62,7 +62,7 @@ func TestNewConfig(t *testing.T) {
 	t.Run("with otlp protocol only with tls key and tls cert", func(t *testing.T) {
 		cfg, err := NewConfig(
 			"test",
-			Protocols{OtlpProtocol},
+			Protocols{OTLPProtocol},
 			WithTLS("/run/opensignals/tls/tls.crt", "/run/opensignals/tls/tls.key"),
 			WithReceivers(),
 		)

@@ -49,17 +49,17 @@ type Protocols []Protocol
 const (
 	JaegerProtocol Protocol = "jaeger"
 	ZipkinProtocol Protocol = "zipkin"
-	OtlpProtocol   Protocol = "otlp"
+	OTLPProtocol   Protocol = "otlp"
 	StatsdProtocol Protocol = "statsd"
 )
 
 var (
 	JaegerID = component.MustNewID(string(JaegerProtocol))
-	OtlpID   = component.MustNewID(string(OtlpProtocol))
+	OTLPID   = component.MustNewID(string(OTLPProtocol))
 	StatsdID = component.MustNewID(string(StatsdProtocol))
 	ZipkinID = component.MustNewID(string(ZipkinProtocol))
 
-	RegisteredProtocols = Protocols{OtlpProtocol, JaegerProtocol, StatsdProtocol, ZipkinProtocol}
+	RegisteredProtocols = Protocols{OTLPProtocol, JaegerProtocol, StatsdProtocol, ZipkinProtocol}
 )
 
 type Config struct {
@@ -157,8 +157,8 @@ func (c *Config) protocolsToIDs() []component.ID {
 			ids = append(ids, ZipkinID)
 		case StatsdProtocol:
 			ids = append(ids, StatsdID)
-		case OtlpProtocol:
-			ids = append(ids, OtlpID)
+		case OTLPProtocol:
+			ids = append(ids, OTLPID)
 		}
 	}
 

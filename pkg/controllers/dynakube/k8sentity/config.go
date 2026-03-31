@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logd.Get().WithName("monitored-entities")
+	log = logd.Get().WithName("automatic-api-monitoring")
 )

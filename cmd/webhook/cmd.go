@@ -125,7 +125,7 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func startCertificateWatcher(webhookManager manager.Manager, namespace string) error {
-	if !system.IsDeployedViaOlm() {
+	if !system.IsDeployedViaOLM() {
 		watcher, err := certificates.NewCertificateWatcher(webhookManager, namespace, webhook.SecretCertsName)
 		if err != nil {
 			return err

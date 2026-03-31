@@ -56,6 +56,7 @@ func newRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Re
 func (r requiredFiles) collectRequiredFiles() []string {
 	return slices.Concat(
 		[]string{
+			supportarchive.KubernetesVersionFileName,
 			supportarchive.OperatorVersionFileName,
 			supportarchive.TroublshootOutputFileName,
 			supportarchive.SupportArchiveOutputFileName,
@@ -113,7 +114,7 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 	pods := k8spod.List(r.ctx, r.t, r.resources, r.dk.Namespace)
 
 	podList := filter(pods.Items, func(pod corev1.Pod) bool {
-		return pod.Labels[k8slabel.AppNameLabel] == supportarchive.LabelEecPodName && pod.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
+		return pod.Labels[k8slabel.AppNameLabel] == supportarchive.LabelEECPodName && pod.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
 	})
 
 	for _, pod := range podList {

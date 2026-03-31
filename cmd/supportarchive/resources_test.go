@@ -22,8 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	fakediscovery "k8s.io/client-go/discovery/fake"
-	fakeclientset "k8s.io/client-go/kubernetes/fake"
 )
 
 const testOperatorNamespace = "dynatrace"
@@ -135,12 +133,7 @@ func TestManifestCollector_Success(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	client := fakeclientset.NewClientset()
-
-	client.Resources = getResourceLists()
-	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
-
-	require.NoError(t, newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery).Do())
+	require.NoError(t, newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do())
 	assertNoErrorOnClose(t, supportArchive)
 
 	expectedFiles := []string{
@@ -188,10 +181,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	client := fakeclientset.NewClientset()
-	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
-
-	err := newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery).Do()
+	err := newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do()
 	require.NoError(t, err)
 	assertNoErrorOnClose(t, supportArchive)
 
@@ -268,13 +258,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	client := fakeclientset.NewClientset()
-
-	client.Resources = getResourceLists()
-
-	fakeDiscovery := client.Discovery().(*fakediscovery.FakeDiscovery)
-
-	collector := newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery)
+	collector := newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt)
 	require.NoError(t, collector.Do())
 	assertNoErrorOnClose(t, supportArchive)
 
@@ -321,33 +305,4 @@ func objectMeta(name string) metav1.ObjectMeta {
 
 func expectedFilename(objname string) string {
 	return fmt.Sprintf("%s/%s", ManifestsDirectoryName, objname)
-}
-
-func getResourceLists() []*metav1.APIResourceList {
-	stable := metav1.APIResourceList{
-		GroupVersion: "v1",
-		APIResources: []metav1.APIResource{
-			{Name: "pods", Namespaced: true, Kind: "Pod"},
-			{Name: "services", Namespaced: true, Kind: "Service"},
-			{Name: "namespaces", Namespaced: false, Kind: "Namespace"},
-		},
-	}
-	dk := metav1.APIResourceList{
-		GroupVersion: crdNameSuffix + "/" + "v1beta6",
-		APIResources: []metav1.APIResource{
-			{Version: "v1beta6", Group: crdNameSuffix, Name: "dynakubes", Namespaced: true, Kind: "DynaKube"},
-		},
-	}
-	ec := metav1.APIResourceList{
-		GroupVersion: crdNameSuffix + "/" + "v1alpha1",
-		APIResources: []metav1.APIResource{
-			{Version: "v1alpha2", Group: crdNameSuffix, Name: "edgeconnects", Namespaced: true, Kind: "EdgeConnect"},
-		},
-	}
-
-	return []*metav1.APIResourceList{
-		&stable,
-		&dk,
-		&ec,
-	}
 }

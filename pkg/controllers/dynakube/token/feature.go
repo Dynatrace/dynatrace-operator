@@ -152,7 +152,7 @@ func getFeaturesForDataIngest() []Feature {
 				tokenclient.ScopeLogsIngest,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.TelemetryIngest().IsOtlpEnabled()
+				return dk.TelemetryIngest().IsOTLPEnabled()
 			},
 		},
 		{

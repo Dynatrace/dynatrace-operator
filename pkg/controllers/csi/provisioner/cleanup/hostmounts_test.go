@@ -42,8 +42,8 @@ func TestRemoveHostMounts(t *testing.T) {
 	t.Run("relevant dk -> remove only orphans", func(t *testing.T) {
 		cleaner := createCleaner(t)
 		dks := []dynakube.DynaKube{
-			createHostMonDk(t, "hostmon", apiURL1),
-			createCloudNativeDk(t, "cloudnative", apiURL2),
+			createHostMonDK(t, "hostmon", apiURL1),
+			createCloudNativeDK(t, "cloudnative", apiURL2),
 		}
 		folders := []string{
 			cleaner.path.OldOsAgentDir(tenantUUID1),
@@ -118,8 +118,8 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 	t.Run("not-relevant dk -> no relevant dirs", func(t *testing.T) {
 		cleaner := createCleaner(t)
 		dks := []dynakube.DynaKube{
-			createAppMonDk(t, "appmon1", apiURL1),
-			createAppMonDk(t, "appmon2", apiURL2),
+			createAppMonDK(t, "appmon1", apiURL1),
+			createAppMonDK(t, "appmon2", apiURL2),
 		}
 
 		relevantDirs := cleaner.collectRelevantHostDirs(dks)
@@ -130,8 +130,8 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 	t.Run("relevant dks, but not existing -> current path always added", func(t *testing.T) {
 		cleaner := createCleaner(t)
 		dks := []dynakube.DynaKube{
-			createHostMonDk(t, "hostmon", apiURL1),
-			createCloudNativeDk(t, "cloudnative", apiURL2),
+			createHostMonDK(t, "hostmon", apiURL1),
+			createCloudNativeDK(t, "cloudnative", apiURL2),
 		}
 
 		relevantDirs := cleaner.collectRelevantHostDirs(dks)
@@ -147,9 +147,9 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 	t.Run("relevant dk -> relevant dirs, deprecated(tenantUUID) location dir included if exists", func(t *testing.T) {
 		cleaner := createCleaner(t)
 		dks := []dynakube.DynaKube{
-			createHostMonDk(t, "hostmon", apiURL1),
-			createCloudNativeDk(t, "cloudnative", apiURL2),
-			createAppMonDk(t, "appmon", apiURL1),
+			createHostMonDK(t, "hostmon", apiURL1),
+			createCloudNativeDK(t, "cloudnative", apiURL2),
+			createAppMonDK(t, "appmon", apiURL1),
 		}
 
 		cleaner.createDeprecatedHostDirs(t, tenantUUID1)
@@ -167,19 +167,19 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 	})
 }
 
-func createHostMonDk(t *testing.T, name, apiURL string) dynakube.DynaKube {
+func createHostMonDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
 	t.Helper()
 
-	dk := createBaseDk(t, name, apiURL)
+	dk := createBaseDK(t, name, apiURL)
 	dk.Spec.OneAgent.HostMonitoring = &oneagent.HostInjectSpec{}
 
 	return dk
 }
 
-func createCloudNativeDk(t *testing.T, name, apiURL string) dynakube.DynaKube {
+func createCloudNativeDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
 	t.Helper()
 
-	dk := createBaseDk(t, name, apiURL)
+	dk := createBaseDK(t, name, apiURL)
 	dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 
 	return dk

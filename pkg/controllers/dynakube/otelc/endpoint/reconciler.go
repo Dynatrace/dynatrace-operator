@@ -36,7 +36,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		defer meta.RemoveStatusCondition(dk.Conditions(), configMapConditionType)
 
 		configMap, _ := k8sconfigmap.Build(dk,
-			consts.OtlpAPIEndpointConfigMapName,
+			consts.OTLPAPIEndpointConfigMapName,
 			nil,
 		)
 
@@ -69,7 +69,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKu
 	}
 
 	configMap, err := k8sconfigmap.Build(dk,
-		consts.OtlpAPIEndpointConfigMapName,
+		consts.OTLPAPIEndpointConfigMapName,
 		configMapData,
 		k8sconfigmap.SetLabels(k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()),
 	)

@@ -52,7 +52,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 func runInPod(kubeCfg *rest.Config) error {
 	namespace := k8senv.DefaultNamespace()
-	isOLM := system.IsDeployedViaOlm()
+	isOLM := system.IsDeployedViaOLM()
 
 	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM)
 	if err != nil {
@@ -65,7 +65,7 @@ func runInPod(kubeCfg *rest.Config) error {
 func runLocally(ctx context.Context, kubeCfg *rest.Config) error {
 	namespace := os.Getenv(k8senv.PodNamespace)
 
-	if !system.IsDeployedViaOlm() {
+	if !system.IsDeployedViaOLM() {
 		clt, err := client.New(kubeCfg, client.Options{Scheme: scheme.Scheme})
 		if err != nil {
 			return err

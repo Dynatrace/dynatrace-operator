@@ -150,7 +150,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			},
 			corev1.VolumeMount{
 				Name:      extensionControllerTLSVolumeName,
-				MountPath: customEecTLSCertificatePath,
+				MountPath: customEECTLSCertificatePath,
 				ReadOnly:  true,
 			},
 		)
