@@ -26,7 +26,6 @@ func TestGetLatest(t *testing.T) {
 		Os:            installer.OsUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        arch.FlavorMultidistro,
-		Arch:          "arch",
 		Technologies:  nil,
 		SkipMetadata:  false,
 	}
@@ -78,7 +77,6 @@ func TestGet(t *testing.T) {
 		InstallerType: installer.TypePaaS,
 		Version:       "",
 		Flavor:        "",
-		Arch:          "",
 		Technologies:  nil,
 		SkipMetadata:  false,
 	}

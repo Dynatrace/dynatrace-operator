@@ -32,7 +32,6 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		Os:            installer.OsUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        arch.FlavorMultidistro,
-		Arch:          "",
 		Version:       "",
 		Technologies:  nil,
 		SkipMetadata:  false,

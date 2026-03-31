@@ -19,7 +19,6 @@ type GetParams struct {
 	Os            string
 	InstallerType string
 	Flavor        string
-	Arch          string
 	Version       string
 	Technologies  []string
 	SkipMetadata  bool
@@ -35,7 +34,7 @@ func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) erro
 		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
-			"arch":         args.Arch,
+			"arch":         arch.Arch,
 			"bitness":      "64",
 			"skipMetadata": strconv.FormatBool(args.SkipMetadata),
 		}).
@@ -43,7 +42,7 @@ func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) erro
 
 	sha256, err := makeRequestForBinary(apiRequest, writer)
 	if err == nil {
-		log.Info("downloaded agent file", "os", args.Os, "type", args.InstallerType, "flavor", args.Flavor, "arch", args.Arch, "technologies", args.Technologies, "sha256", sha256)
+		log.Info("downloaded agent file", "os", args.Os, "type", args.InstallerType, "flavor", args.Flavor, "arch", arch.Arch, "technologies", args.Technologies, "sha256", sha256)
 	}
 
 	return errors.WithStack(err)
@@ -59,7 +58,7 @@ func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer
 		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
-			"arch":         args.Arch,
+			"arch":         arch.Arch,
 			"bitness":      "64",
 			"skipMetadata": strconv.FormatBool(args.SkipMetadata),
 		}).
@@ -67,7 +66,7 @@ func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer
 
 	sha256, err := makeRequestForBinary(apiRequest, writer)
 	if err == nil {
-		log.Info("downloaded agent file", "os", args.Os, "type", args.InstallerType, "flavor", args.Flavor, "arch", args.Arch, "technologies", args.Technologies, "sha256", sha256)
+		log.Info("downloaded agent file", "os", args.Os, "type", args.InstallerType, "flavor", args.Flavor, "arch", arch.Arch, "technologies", args.Technologies, "sha256", sha256)
 	}
 
 	return errors.WithStack(err)
