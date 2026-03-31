@@ -102,7 +102,9 @@ func Proxy(proxyURL string, noProxy string) Option {
 			HTTPSProxy: parsedURL.String(),
 			NoProxy:    noProxy,
 		}
-		transport.Proxy = proxyWrapper(proxyConfig)
+		transport.Proxy = func(req *http.Request) (*url.URL, error) {
+			return proxyConfig.ProxyFunc()(req.URL)
+		}
 	}
 }
 

@@ -187,15 +187,11 @@ func addProxy(transport *http.Transport, proxy string, noProxy string) (*http.Tr
 		HTTPSProxy: proxyURL.String(),
 		NoProxy:    noProxy,
 	}
-	transport.Proxy = proxyWrapper(proxyConfig)
-
-	return transport, nil
-}
-
-func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
-	return func(req *http.Request) (*url.URL, error) {
+	transport.Proxy = func(req *http.Request) (*url.URL, error) {
 		return proxyConfig.ProxyFunc()(req.URL)
 	}
+
+	return transport, nil
 }
 
 func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transport, error) {
