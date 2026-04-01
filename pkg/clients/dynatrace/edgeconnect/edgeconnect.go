@@ -85,7 +85,7 @@ func (c *client) GetEdgeConnect(ctx context.Context, edgeConnectID string) (GetR
 
 	var response GetResponse
 
-	err := c.apiClient.GET(ctx, fmt.Sprintf(edgeConnectPath, edgeConnectID)).Execute(&response)
+	err := c.apiClient.GET(ctx, fmt.Sprintf(edgeConnectPath, edgeConnectID)).WithOAuthToken().Execute(&response)
 	if err != nil {
 		return GetResponse{}, errors.Wrap(err, "failed to get EdgeConnect")
 	}

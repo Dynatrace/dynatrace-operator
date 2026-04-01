@@ -14,6 +14,44 @@ const edgeConnectID = "test-id"
 
 var edgeConnectRequest = NewRequest("InternalServices", []string{"*.internal.org"}, []edgeconnect.HostMapping{}, "dt0s02.AIOUP56P")
 
+func TestGetEdgeConnect(t *testing.T) {
+	t.Run("get edge connect", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+		request := coremock.NewAPIRequest(t)
+		request.EXPECT().WithOAuthToken().Return(request).Once()
+		request.EXPECT().Execute(new(GetResponse)).Run(func(obj any) {
+			target := obj.(*GetResponse)
+			target.Name = "test-name"
+		}).Return(nil).Once()
+		apiClient.EXPECT().GET(mock.Anything, fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
+		mockClient := NewClientFromAPIClient(apiClient)
+		got, err := mockClient.GetEdgeConnect(t.Context(), edgeConnectID)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		require.Equal(t, "test-name", got.Name)
+	})
+
+	t.Run("fail to get edge connect", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+		request := coremock.NewAPIRequest(t)
+		request.EXPECT().WithOAuthToken().Return(request).Once()
+		request.EXPECT().Execute(new(GetResponse)).Return(errTest).Once()
+		apiClient.EXPECT().GET(mock.Anything, fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
+		mockClient := NewClientFromAPIClient(apiClient)
+		got, err := mockClient.GetEdgeConnect(t.Context(), edgeConnectID)
+		require.ErrorIs(t, err, errTest)
+		require.Equal(t, GetResponse{}, got)
+	})
+
+	t.Run("fail if no edge connect id", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+		mockClient := NewClientFromAPIClient(apiClient)
+		got, err := mockClient.GetEdgeConnect(t.Context(), "")
+		require.EqualError(t, err, "no EdgeConnect ID given")
+		require.Equal(t, GetResponse{}, got)
+	})
+}
+
 func TestCreateEdgeConnect(t *testing.T) {
 	t.Run("create edge connect", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
