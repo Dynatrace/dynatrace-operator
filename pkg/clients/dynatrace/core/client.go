@@ -38,8 +38,6 @@ type APIRequest interface {
 	WithJSONBody(body any) APIRequest
 	// WithRawBody sets the request body as raw bytes
 	WithRawBody(body []byte) APIRequest
-	// WithTokenType sets the token type to use for authentication
-	WithTokenType(tokenType TokenType) APIRequest
 	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
 	// WithOAuthToken sets the token type to OAuth
@@ -57,13 +55,12 @@ type APIRequest interface {
 }
 
 type Config struct {
-	BaseURL         *url.URL
-	HTTPClient      *http.Client
-	UserAgent       string
-	APIToken        string
-	PaasToken       string
-	DataIngestToken string
-	OAuthToken      string
+	BaseURL    *url.URL
+	HTTPClient *http.Client
+	UserAgent  string
+	APIToken   string
+	PaasToken  string
+	OAuthToken string
 }
 
 type Client struct {
@@ -95,7 +92,6 @@ type TokenType int
 const (
 	TokenTypeAPI TokenType = iota
 	TokenTypePaaS
-	TokenTypeDataIngest
 	TokenTypeOAuth
 	TokenTypeNone
 )
@@ -256,8 +252,6 @@ func (r *Request) getToken() string {
 	switch r.tokenType {
 	case TokenTypePaaS:
 		return r.client.cfg.PaasToken
-	case TokenTypeDataIngest:
-		return r.client.cfg.DataIngestToken
 	case TokenTypeOAuth:
 		return r.client.cfg.OAuthToken
 	case TokenTypeNone:
