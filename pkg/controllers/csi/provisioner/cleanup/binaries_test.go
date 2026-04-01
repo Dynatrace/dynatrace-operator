@@ -18,7 +18,7 @@ func TestRemoveUnusedBinaries(t *testing.T) {
 		cleaner := createCleaner(t)
 
 		// Setup latest bin -> should NOT be removed
-		dk := createAppMonDk(t, "appmon", "url")
+		dk := createAppMonDK(t, "appmon", "url")
 		relevantBin := cleaner.path.AgentSharedBinaryDirForAgent("1.2.3")
 		require.NoError(t, os.MkdirAll(relevantBin, os.ModePerm))
 		require.NoError(t, os.MkdirAll(cleaner.path.DynaKubeDir(dk.Name), os.ModePerm))
@@ -209,7 +209,7 @@ func TestCollectRelevantLatestBins(t *testing.T) {
 		cleaner := createCleaner(t)
 
 		relevantBins := cleaner.collectRelevantLatestBins([]dynakube.DynaKube{
-			createHostMonDk(t, "hostmon", "url"),
+			createHostMonDK(t, "hostmon", "url"),
 		})
 
 		require.Empty(t, relevantBins)
@@ -217,7 +217,7 @@ func TestCollectRelevantLatestBins(t *testing.T) {
 
 	t.Run("relevant dk -> try to resolve symlink", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dk := createAppMonDk(t, "appmon", "url")
+		dk := createAppMonDK(t, "appmon", "url")
 		relevantBin := cleaner.path.AgentSharedBinaryDirForAgent("1.2.3")
 		require.NoError(t, os.MkdirAll(relevantBin, os.ModePerm))
 		require.NoError(t, os.MkdirAll(cleaner.path.DynaKubeDir(dk.Name), os.ModePerm))
@@ -258,8 +258,8 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 	t.Run("dk -> don't remove", func(t *testing.T) {
 		cleaner := createCleaner(t)
 		dks := []dynakube.DynaKube{
-			createCloudNativeDk(t, "cloudnative", "-"),
-			createAppMonDk(t, "appmon", "-"),
+			createCloudNativeDK(t, "cloudnative", "-"),
+			createAppMonDK(t, "appmon", "-"),
 		}
 
 		binDirs := []string{dks[0].Name, dks[1].Name, "test1", "test2"}
@@ -287,8 +287,8 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 	t.Run("dk.Name == tenantUUID -> don't remove", func(t *testing.T) {
 		cleaner := createCleaner(t)
 		dks := []dynakube.DynaKube{
-			createCloudNativeDk(t, "cloudnative", "-"),
-			createAppMonDk(t, "appmon", "-"),
+			createCloudNativeDK(t, "cloudnative", "-"),
+			createAppMonDK(t, "appmon", "-"),
 		}
 
 		binDirs := []string{dks[0].Name, dks[1].Name, "test1", "test2"}
@@ -320,16 +320,16 @@ func mockMountPoints(t *testing.T, cleaner *Cleaner, mountPoints ...mount.MountP
 	cleaner.mounter = mount.NewFakeMounter(mountPoints)
 }
 
-func createAppMonDk(t *testing.T, name, apiURL string) dynakube.DynaKube {
+func createAppMonDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
 	t.Helper()
 
-	dk := createBaseDk(t, name, apiURL)
+	dk := createBaseDK(t, name, apiURL)
 	dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 
 	return dk
 }
 
-func createBaseDk(t *testing.T, name, apiURL string) dynakube.DynaKube {
+func createBaseDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
 	t.Helper()
 
 	return dynakube.DynaKube{

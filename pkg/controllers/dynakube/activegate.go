@@ -9,30 +9,10 @@ import (
 )
 
 func (controller *Controller) reconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, dtc dynatrace.Client) error {
-	reconciler := controller.activeGateReconcilerBuilder(controller.client, controller.apiReader, dk, dtc, controller.tokens)
-
-	err := reconciler.Reconcile(ctx)
+	err := controller.activeGateReconciler.Reconcile(ctx, dk, dtc, controller.tokens)
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")
 	}
 
-	controller.setupAutomaticAPIMonitoring(ctx, dtc, dk)
-
 	return nil
-}
-
-func (controller *Controller) setupAutomaticAPIMonitoring(ctx context.Context, dtc dynatrace.Client, dk *dynakube.DynaKube) {
-	if dk.Status.KubeSystemUUID != "" &&
-		dk.FF().IsAutomaticK8sAPIMonitoring() &&
-		dk.ActiveGate().IsKubernetesMonitoringEnabled() {
-		clusterLabel := dk.FF().GetAutomaticK8sAPIMonitoringClusterName()
-		if clusterLabel == "" {
-			clusterLabel = dk.Name
-		}
-
-		err := controller.apiMonitoringReconciler.Reconcile(ctx, dtc.AsV2().Settings, clusterLabel, dk)
-		if err != nil {
-			log.Error(err, "could not create setting")
-		}
-	}
 }

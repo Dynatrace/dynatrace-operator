@@ -99,21 +99,21 @@ func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, 
 
 	dkServiceName := dk.TelemetryIngest().GetServiceName()
 
-	for _, otherDk := range dkList.Items {
-		if otherDk.Name == dk.Name {
+	for _, otherDK := range dkList.Items {
+		if otherDK.Name == dk.Name {
 			continue
 		}
 
-		if !otherDk.TelemetryIngest().IsEnabled() {
+		if !otherDK.TelemetryIngest().IsEnabled() {
 			continue
 		}
 
-		otherDkServiceName := otherDk.TelemetryIngest().GetServiceName()
+		otherDKServiceName := otherDK.TelemetryIngest().GetServiceName()
 
-		if otherDkServiceName == dkServiceName {
-			log.Info(errorTelemetryIngestServiceNameInUse, "other dynakube name", otherDk.Name, "other telemetry service name", otherDkServiceName, "namespace", otherDk.Namespace)
+		if otherDKServiceName == dkServiceName {
+			log.Info(errorTelemetryIngestServiceNameInUse, "other dynakube name", otherDK.Name, "other telemetry service name", otherDKServiceName, "namespace", otherDK.Namespace)
 
-			return fmt.Sprintf("%s Conflicting Dynakube: %s. Conflicting telemetry service name: %s", errorTelemetryIngestServiceNameInUse, otherDk.Name, otherDkServiceName)
+			return fmt.Sprintf("%s Conflicting Dynakube: %s. Conflicting telemetry service name: %s", errorTelemetryIngestServiceNameInUse, otherDK.Name, otherDKServiceName)
 		}
 	}
 

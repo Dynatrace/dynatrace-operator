@@ -63,9 +63,9 @@ func TestEnvironmentVariables(t *testing.T) {
 		potentiallyOverriddenEnvVars := []corev1.EnvVar{
 			{Name: dtNodeName, Value: testValue},
 			{Name: dtClusterID, Value: testValue},
-			{Name: deploymentmetadata.EnvDtDeploymentMetadata, Value: testValue},
-			{Name: deploymentmetadata.EnvDtOperatorVersion, Value: testValue},
-			{Name: connectioninfo.EnvDtTenant, Value: testValue},
+			{Name: deploymentmetadata.EnvDTDeploymentMetadata, Value: testValue},
+			{Name: deploymentmetadata.EnvDTOperatorVersion, Value: testValue},
+			{Name: connectioninfo.EnvDTTenant, Value: testValue},
 			{Name: proxyEnv, Value: testValue},
 			{Name: oneagentReadOnlyMode, Value: testValue},
 		}
@@ -77,9 +77,9 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assertEnvVarNameAndValue(t, envVars, dtNodeName, testValue)
 		assertEnvVarNameAndValue(t, envVars, dtClusterID, testValue)
-		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDtDeploymentMetadata, testValue)
-		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDtOperatorVersion, testValue)
-		assertEnvVarNameAndValue(t, envVars, connectioninfo.EnvDtTenant, testValue)
+		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDTDeploymentMetadata, testValue)
+		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDTOperatorVersion, testValue)
+		assertEnvVarNameAndValue(t, envVars, connectioninfo.EnvDTTenant, testValue)
 		assertEnvVarNameAndValue(t, envVars, proxyEnv, testValue)
 		assertEnvVarNameAndValue(t, envVars, oneagentReadOnlyMode, testValue)
 	})
@@ -144,8 +144,8 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 }
 
 func assertDeploymentMetadataEnv(t *testing.T, envs []corev1.EnvVar, dynakubeName string) {
-	env := k8senv.Find(envs, deploymentmetadata.EnvDtDeploymentMetadata)
-	assert.Equal(t, deploymentmetadata.EnvDtDeploymentMetadata, env.Name)
+	env := k8senv.Find(envs, deploymentmetadata.EnvDTDeploymentMetadata)
+	assert.Equal(t, deploymentmetadata.EnvDTDeploymentMetadata, env.Name)
 	assert.Equal(t,
 		deploymentmetadata.GetDeploymentMetadataConfigMapName(dynakubeName),
 		env.ValueFrom.ConfigMapKeyRef.Name,
@@ -174,8 +174,8 @@ func TestAddConnectionInfoEnvs(t *testing.T) {
 }
 
 func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.DynaKube) {
-	env := k8senv.Find(envs, connectioninfo.EnvDtTenant)
-	assert.Equal(t, connectioninfo.EnvDtTenant, env.Name)
+	env := k8senv.Find(envs, connectioninfo.EnvDTTenant)
+	assert.Equal(t, connectioninfo.EnvDTTenant, env.Name)
 	assert.Equal(t,
 		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,
@@ -185,8 +185,8 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.Dy
 		env.ValueFrom.ConfigMapKeyRef.Key,
 	)
 
-	env = k8senv.Find(envs, connectioninfo.EnvDtServer)
-	assert.Equal(t, connectioninfo.EnvDtServer, env.Name)
+	env = k8senv.Find(envs, connectioninfo.EnvDTServer)
+	assert.Equal(t, connectioninfo.EnvDTServer, env.Name)
 	assert.Equal(t,
 		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,

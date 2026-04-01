@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	"io"
 	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -140,6 +141,116 @@ func (_c *APIRequest_ExecuteRaw_Call) Return(bytes []byte, err error) *APIReques
 }
 
 func (_c *APIRequest_ExecuteRaw_Call) RunAndReturn(run func() ([]byte, error)) *APIRequest_ExecuteRaw_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ExecuteWriter provides a mock function for the type APIRequest
+func (_mock *APIRequest) ExecuteWriter(writer io.Writer) error {
+	ret := _mock.Called(writer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ExecuteWriter")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(io.Writer) error); ok {
+		r0 = returnFunc(writer)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// APIRequest_ExecuteWriter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecuteWriter'
+type APIRequest_ExecuteWriter_Call struct {
+	*mock.Call
+}
+
+// ExecuteWriter is a helper method to define mock.On call
+//   - writer io.Writer
+func (_e *APIRequest_Expecter) ExecuteWriter(writer interface{}) *APIRequest_ExecuteWriter_Call {
+	return &APIRequest_ExecuteWriter_Call{Call: _e.mock.On("ExecuteWriter", writer)}
+}
+
+func (_c *APIRequest_ExecuteWriter_Call) Run(run func(writer io.Writer)) *APIRequest_ExecuteWriter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 io.Writer
+		if args[0] != nil {
+			arg0 = args[0].(io.Writer)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *APIRequest_ExecuteWriter_Call) Return(err error) *APIRequest_ExecuteWriter_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *APIRequest_ExecuteWriter_Call) RunAndReturn(run func(writer io.Writer) error) *APIRequest_ExecuteWriter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithHeader provides a mock function for the type APIRequest
+func (_mock *APIRequest) WithHeader(key string, value string) core.APIRequest {
+	ret := _mock.Called(key, value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithHeader")
+	}
+
+	var r0 core.APIRequest
+	if returnFunc, ok := ret.Get(0).(func(string, string) core.APIRequest); ok {
+		r0 = returnFunc(key, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(core.APIRequest)
+		}
+	}
+	return r0
+}
+
+// APIRequest_WithHeader_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithHeader'
+type APIRequest_WithHeader_Call struct {
+	*mock.Call
+}
+
+// WithHeader is a helper method to define mock.On call
+//   - key string
+//   - value string
+func (_e *APIRequest_Expecter) WithHeader(key interface{}, value interface{}) *APIRequest_WithHeader_Call {
+	return &APIRequest_WithHeader_Call{Call: _e.mock.On("WithHeader", key, value)}
+}
+
+func (_c *APIRequest_WithHeader_Call) Run(run func(key string, value string)) *APIRequest_WithHeader_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *APIRequest_WithHeader_Call) Return(aPIRequest core.APIRequest) *APIRequest_WithHeader_Call {
+	_c.Call.Return(aPIRequest)
+	return _c
+}
+
+func (_c *APIRequest_WithHeader_Call) RunAndReturn(run func(key string, value string) core.APIRequest) *APIRequest_WithHeader_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -451,6 +562,52 @@ func (_c *APIRequest_WithRawQueryParams_Call) Return(aPIRequest core.APIRequest)
 }
 
 func (_c *APIRequest_WithRawQueryParams_Call) RunAndReturn(run func(params url.Values) core.APIRequest) *APIRequest_WithRawQueryParams_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithoutToken provides a mock function for the type APIRequest
+func (_mock *APIRequest) WithoutToken() core.APIRequest {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithoutToken")
+	}
+
+	var r0 core.APIRequest
+	if returnFunc, ok := ret.Get(0).(func() core.APIRequest); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(core.APIRequest)
+		}
+	}
+	return r0
+}
+
+// APIRequest_WithoutToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithoutToken'
+type APIRequest_WithoutToken_Call struct {
+	*mock.Call
+}
+
+// WithoutToken is a helper method to define mock.On call
+func (_e *APIRequest_Expecter) WithoutToken() *APIRequest_WithoutToken_Call {
+	return &APIRequest_WithoutToken_Call{Call: _e.mock.On("WithoutToken")}
+}
+
+func (_c *APIRequest_WithoutToken_Call) Run(run func()) *APIRequest_WithoutToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *APIRequest_WithoutToken_Call) Return(aPIRequest core.APIRequest) *APIRequest_WithoutToken_Call {
+	_c.Call.Return(aPIRequest)
+	return _c
+}
+
+func (_c *APIRequest_WithoutToken_Call) RunAndReturn(run func() core.APIRequest) *APIRequest_WithoutToken_Call {
 	_c.Call.Return(run)
 	return _c
 }

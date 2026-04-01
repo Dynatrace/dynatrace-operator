@@ -32,8 +32,8 @@ func proxyValueTester(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, testProxyData, proxy)
 
-	emptyDk := dynakube.DynaKube{}
-	proxy, err = emptyDk.Proxy(t.Context(), nil)
+	emptyDK := dynakube.DynaKube{}
+	proxy, err = emptyDK.Proxy(t.Context(), nil)
 	require.NoError(t, err)
 	assert.Empty(t, proxy)
 }

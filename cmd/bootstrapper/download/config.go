@@ -24,23 +24,28 @@ type Config struct {
 	SkipCertCheck bool `json:"skipCertCheck"`
 }
 
-func (c Config) toDTClientOptions() []dtclient.Option {
-	options := []dtclient.Option{}
+func (c Config) toDTClientOptionsV2() []dtclient.OptionV2 {
+	var options []dtclient.OptionV2
+
+	if c.APIToken != "" {
+		options = append(options, dtclient.WithAPIToken(c.APIToken))
+		options = append(options, dtclient.WithPaasToken(c.APIToken))
+	}
 
 	if c.HostGroup != "" {
-		options = append(options, dtclient.HostGroup(c.HostGroup))
+		options = append(options, dtclient.WithHostGroup(c.HostGroup))
 	}
 
 	if c.NetworkZone != "" {
-		options = append(options, dtclient.NetworkZone(c.NetworkZone))
+		options = append(options, dtclient.WithNetworkZone(c.NetworkZone))
 	}
 
 	if c.Proxy != "" {
-		options = append(options, dtclient.Proxy(c.Proxy, c.NoProxy))
+		options = append(options, dtclient.WithProxy(c.Proxy, c.NoProxy))
 	}
 
 	if c.SkipCertCheck {
-		options = append(options, dtclient.SkipCertificateValidation(c.SkipCertCheck))
+		options = append(options, dtclient.WithSkipCertificateValidation(c.SkipCertCheck))
 	}
 
 	return options

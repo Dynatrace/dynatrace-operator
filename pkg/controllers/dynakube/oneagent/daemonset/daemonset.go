@@ -262,7 +262,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 
 func (b *builder) initContainerSpec() corev1.Container {
 	return corev1.Container{
-		Image:           os.Getenv(k8senv.DtOperatorImageEnvName),
+		Image:           os.Getenv(k8senv.DTOperatorImageEnvName),
 		ImagePullPolicy: b.dk.OneAgent().GetImagePullPolicy(),
 		Name:            initContainerName,
 		Env:             b.initContainerEnvVars(),

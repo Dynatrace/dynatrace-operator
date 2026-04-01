@@ -10,7 +10,7 @@ const (
 	TokenSecretKey = "kspm-token"
 )
 
-type Kspm struct {
+type KSPM struct {
 	*Spec
 	*Status
 	*NodeConfigurationCollectorSpec

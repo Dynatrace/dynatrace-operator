@@ -193,9 +193,9 @@ func addProxy(transport *http.Transport, proxy string, noProxy string) (*http.Tr
 }
 
 func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
-	return func(req *http.Request) (*url.URL, error) {
-		return proxyConfig.ProxyFunc()(req.URL)
-	}
+	proxyFunc := proxyConfig.ProxyFunc()
+
+	return func(req *http.Request) (*url.URL, error) { return proxyFunc(req.URL) }
 }
 
 func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transport, error) {

@@ -255,10 +255,10 @@ func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	prioritymap.Append(statefulSetBuilder.envMap, []corev1.EnvVar{
-		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
-		{Name: consts.EnvDtIDSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
-		{Name: consts.EnvDtIDSeedClusterID, Value: string(statefulSetBuilder.kubeUID)},
-		{Name: deploymentmetadata.EnvDtDeploymentMetadata, ValueFrom: &corev1.EnvVarSource{
+		{Name: consts.EnvDTCapabilities, Value: statefulSetBuilder.capability.ArgName()},
+		{Name: consts.EnvDTIDSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
+		{Name: consts.EnvDTIDSeedClusterID, Value: string(statefulSetBuilder.kubeUID)},
+		{Name: deploymentmetadata.EnvDTDeploymentMetadata, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
@@ -267,15 +267,15 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 				Optional: ptr.To(false),
 			},
 		}},
-		{Name: consts.EnvDtHTTPPort, Value: strconv.Itoa(consts.HTTPContainerPort)},
+		{Name: consts.EnvDTHTTPPort, Value: strconv.Itoa(consts.HTTPContainerPort)},
 	})
 
 	if statefulSetBuilder.capability.Properties().Group != "" {
-		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
+		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDTGroup, Value: statefulSetBuilder.capability.Properties().Group})
 	}
 
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
-		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
+		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDTNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
 
 	prioritymap.Append(statefulSetBuilder.envMap, statefulSetBuilder.capability.Properties().Env, prioritymap.WithPriority(customEnvPriority))

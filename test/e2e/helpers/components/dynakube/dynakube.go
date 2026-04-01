@@ -37,9 +37,9 @@ func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, level featur
 	VerifyStartup(builder, level, dk)
 }
 
-func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDk prevDynakube.DynaKube) {
-	CreatePreviousVersion(builder, level, secretConfig.APIToken, secretConfig.DataIngestToken, prevDk)
-	VerifyStartupPreviousVersion(builder, level, prevDk)
+func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDK prevDynakube.DynaKube) {
+	CreatePreviousVersion(builder, level, secretConfig.APIToken, secretConfig.DataIngestToken, prevDK)
+	VerifyStartupPreviousVersion(builder, level, prevDK)
 }
 
 func Create(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken string, testDynakube dynakube.DynaKube) {
@@ -56,24 +56,24 @@ func Update(builder *features.FeatureBuilder, level features.Level, testDynakube
 	builder.WithStep("dynakube updated", level, update(testDynakube))
 }
 
-func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken string, prevDk prevDynakube.DynaKube) {
+func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken string, prevDK prevDynakube.DynaKube) {
 	if apiToken != "" || dataIngestToken != "" {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, prevDk.Name, prevDk.Namespace))
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, prevDK.Name, prevDK.Namespace))
 	}
 	builder.WithStep(
-		fmt.Sprintf("'%s' dynakube created", prevDk.Name),
+		fmt.Sprintf("'%s' dynakube created", prevDK.Name),
 		level,
-		createPreviousVersion(prevDk))
+		createPreviousVersion(prevDK))
 }
 
-func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level features.Level, prevDk prevDynakube.DynaKube) {
-	if prevDk.OneAgent().IsDaemonsetRequired() {
-		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(prevDk.OneAgent().GetDaemonsetName(), prevDk.Namespace))
+func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level features.Level, prevDK prevDynakube.DynaKube) {
+	if prevDK.OneAgent().IsDaemonsetRequired() {
+		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(prevDK.OneAgent().GetDaemonsetName(), prevDK.Namespace))
 	}
 	builder.WithStep(
-		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", prevDk.Name),
+		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", prevDK.Name),
 		level,
-		WaitForPhasePreviousVersion(prevDk, status.Running))
+		WaitForPhasePreviousVersion(prevDK, status.Running))
 }
 
 func Delete(builder *features.FeatureBuilder, level features.Level, dk dynakube.DynaKube) {

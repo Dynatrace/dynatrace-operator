@@ -405,9 +405,9 @@ func TestKSPMPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Kspm: &kspm.Spec{},
+			KSPM: &kspm.Spec{},
 			Templates: dynakube.TemplatesSpec{
-				KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+				KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 					ImageRef: image.Ref{
 						Repository: "test",
 						Tag:        "test-tag",
@@ -468,7 +468,7 @@ func TestDynakubePhaseChanges(t *testing.T) {
 
 			LogMonitoring: &logmonitoring.Spec{},
 
-			Kspm: &kspm.Spec{},
+			KSPM: &kspm.Spec{},
 
 			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 		},

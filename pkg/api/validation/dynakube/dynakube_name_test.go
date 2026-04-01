@@ -57,8 +57,8 @@ func TestNameTooLong(t *testing.T) {
 		{"max + 1 databases", 33, dynakube.DynaKubeSpec{Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "a"}}}}, 32},
 		{"max otelc", 38, dynakube.DynaKubeSpec{TelemetryIngest: &telemetryingest.Spec{}}, 0},
 		{"max + 1 otelc", 39, dynakube.DynaKubeSpec{TelemetryIngest: &telemetryingest.Spec{}}, 38},
-		{"max kspm", 35, dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}, 0},
-		{"max + 1 kspm", 36, dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}, 35},
+		{"max kspm", 35, dynakube.DynaKubeSpec{KSPM: &kspm.Spec{}}, 0},
+		{"max + 1 kspm", 36, dynakube.DynaKubeSpec{KSPM: &kspm.Spec{}}, 35},
 	}
 
 	for _, test := range testCases {
@@ -86,8 +86,8 @@ func TestNameTooLong(t *testing.T) {
 					ImageRef: image.Ref{Repository: "otelc/image", Tag: "latest"},
 				}
 			}
-			if dk.Spec.Kspm != nil {
-				dk.Spec.Templates.KspmNodeConfigurationCollector = kspm.NodeConfigurationCollectorSpec{
+			if dk.Spec.KSPM != nil {
+				dk.Spec.Templates.KSPMNodeConfigurationCollector = kspm.NodeConfigurationCollectorSpec{
 					ImageRef: image.Ref{Repository: "otelc/image", Tag: "latest"},
 				}
 				dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{

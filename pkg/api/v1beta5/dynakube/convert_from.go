@@ -67,7 +67,7 @@ func (dst *DynaKube) fromLogMonitoringSpec(src *dynakubelatest.DynaKube) {
 }
 
 func (dst *DynaKube) fromKspmSpec(src *dynakubelatest.DynaKube) {
-	if src.Spec.Kspm != nil {
+	if src.Spec.KSPM != nil {
 		dst.Spec.Kspm = &kspm.Spec{}
 	}
 }
@@ -102,7 +102,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 
 func (dst *DynaKube) fromTemplatesSpec(src *dynakubelatest.DynaKube) {
 	dst.Spec.Templates.LogMonitoring = fromLogMonitoringTemplate(src.Spec.Templates.LogMonitoring)
-	dst.Spec.Templates.KspmNodeConfigurationCollector = fromKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KspmNodeConfigurationCollector)
+	dst.Spec.Templates.KspmNodeConfigurationCollector = fromKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KSPMNodeConfigurationCollector)
 	dst.Spec.Templates.OpenTelemetryCollector = fromOpenTelemetryCollectorTemplate(src, src.Spec.Templates.OpenTelemetryCollector)
 	dst.Spec.Templates.ExtensionExecutionController = fromExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
 }
@@ -226,7 +226,7 @@ func (dst *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
 			})
 	}
 
-	dst.Status.Kspm.TokenSecretHash = src.Status.Kspm.TokenSecretHash
+	dst.Status.Kspm.TokenSecretHash = src.Status.KSPM.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 	dst.Status.DynatraceAPI = DynatraceAPIStatus{
 		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,

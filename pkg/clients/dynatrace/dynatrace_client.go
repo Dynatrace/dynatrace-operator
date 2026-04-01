@@ -2,8 +2,6 @@ package dynatrace
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -110,31 +108,6 @@ func (dtc *dynatraceClient) makeRequestAndUnmarshal(ctx context.Context, url str
 	}
 
 	return json.Unmarshal(responseData, &response)
-}
-
-func (dtc *dynatraceClient) makeRequestForBinary(ctx context.Context, url string, token tokenType, writer io.Writer) (string, error) {
-	resp, err := dtc.makeRequest(ctx, url, token)
-	if err != nil {
-		return "", err
-	}
-
-	defer utils.CloseBodyAfterRequest(resp)
-
-	if resp.StatusCode != http.StatusOK {
-		var errorResponse serverErrorResponse
-
-		err = json.NewDecoder(resp.Body).Decode(&errorResponse)
-		if err != nil {
-			return "", err
-		}
-
-		return "", errors.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
-	}
-
-	hash := sha256.New()
-	_, err = io.Copy(writer, io.TeeReader(resp.Body, hash))
-
-	return hex.EncodeToString(hash.Sum(nil)), err
 }
 
 func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int, headers http.Header) error {

@@ -119,7 +119,7 @@ func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk dynak
 	require.NoError(t, err)
 
 	var apiEndpointConfigMap corev1.ConfigMap
-	err = clt.Get(ctx, types.NamespacedName{Name: consts.OtlpAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
+	err = clt.Get(ctx, types.NamespacedName{Name: consts.OTLPAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
 	require.NoError(t, err)
 	var ok bool
 	dtEndpoint, ok = apiEndpointConfigMap.Data["DT_ENDPOINT"]

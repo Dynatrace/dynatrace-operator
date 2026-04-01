@@ -592,7 +592,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "n/a"
+                    "text": "ocp_4-20-olm"
                   }
                 ]
               }
@@ -605,8 +605,13 @@
                 "type": "rich_text_section",
                 "elements": [
                   {
-                    "type": "text",
-                    "text": "n/a"
+                    "type": "link",
+                    "url": "${{ env.OCP_4_20_OLM_RUN_ID_URL }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.OCP_4_20_OLM_EMOJI }}"
                   }
                 ]
               }

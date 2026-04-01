@@ -53,7 +53,7 @@ func TestEnvironmentVariables(t *testing.T) {
 				Key:                  consts.DatasourceTokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEECTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 	})
 	t.Run("environment variables with trustedCA", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
@@ -69,7 +69,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEecTLSCertificateFullPath})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEECTLSCertificateFullPath})
 	})
 	t.Run("environment variables for open signal configuration", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -99,7 +99,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assert.Equal(t, corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OtlpAPIEndpointConfigMapName},
+				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OTLPAPIEndpointConfigMapName},
 				Key:                  envDTendpoint,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])

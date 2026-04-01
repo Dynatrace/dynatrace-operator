@@ -200,7 +200,9 @@ linters:
         - name: add-constant
           disabled: true
         - name: var-naming
-          disabled: true
+          arguments:
+            - [] # AllowList
+            - ["DT", "EEC", "KSPM", "OLM", "OTLP", "DK", "EC", "GRPC"] # DenyList
         - name: unused-receiver
           disabled: true
         - name: import-shadowing

@@ -40,7 +40,7 @@ func TestMissingDatabaseExecutorImage(t *testing.T) {
 }
 
 func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
-	baseDk := &dynakube.DynaKube{
+	baseDK := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -68,7 +68,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 	}
 
 	t.Run("no databases defined => no error", func(t *testing.T) {
-		dk := baseDk.DeepCopy()
+		dk := baseDK.DeepCopy()
 
 		assertAllowedWithoutWarnings(t, dk)
 	})
@@ -91,7 +91,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 			},
 		}
 
-		dk := baseDk.DeepCopy()
+		dk := baseDK.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
 		assertAllowedWithWarnings(t, 2, dk)
@@ -103,7 +103,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 			Volumes:      []corev1.Volume{},
 			VolumeMounts: []corev1.VolumeMount{},
 		}
-		dk := baseDk.DeepCopy()
+		dk := baseDK.DeepCopy()
 
 		defaultVolumeMount := databases.GetDefaultVolumeMounts(dk)[0]
 		volumeName := "some-volume"
@@ -133,7 +133,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 			},
 		}
 
-		dk := baseDk.DeepCopy()
+		dk := baseDK.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
 		expectedErrors := []string{
@@ -144,7 +144,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 }
 
 func TestUnusedVolumes(t *testing.T) {
-	baseDk := &dynakube.DynaKube{
+	baseDK := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -179,7 +179,7 @@ func TestUnusedVolumes(t *testing.T) {
 			dbSpec.Volumes = append(dbSpec.Volumes, corev1.Volume{Name: name})
 		}
 
-		dk := baseDk.DeepCopy()
+		dk := baseDK.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
 		expectedErrors := []string{
@@ -198,7 +198,7 @@ func TestUnusedVolumes(t *testing.T) {
 			dbSpec.VolumeMounts = append(dbSpec.VolumeMounts, corev1.VolumeMount{Name: name, MountPath: path})
 		}
 
-		dk := baseDk.DeepCopy()
+		dk := baseDK.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
 		assertAllowedWithWarnings(t, 2, dk)

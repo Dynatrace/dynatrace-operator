@@ -23,8 +23,8 @@ import (
 const (
 	testDynakubeName       = "dynakube"
 	testNamespaceName      = "dynatrace"
-	testEecImageRepository = "repo/dynatrace-eec"
-	testEecImageTag        = "1.289.0"
+	testEECImageRepository = "repo/dynatrace-eec"
+	testEECImageTag        = "1.289.0"
 	testTenantUUID         = "abc12345"
 	testKubeSystemUUID     = "12345"
 )
@@ -169,8 +169,8 @@ func getTestDynakube() *dynakube.DynaKube {
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: image.Ref{
-						Repository: testEecImageRepository,
-						Tag:        testEecImageTag,
+						Repository: testEECImageRepository,
+						Tag:        testEECImageTag,
 					},
 				},
 			},
