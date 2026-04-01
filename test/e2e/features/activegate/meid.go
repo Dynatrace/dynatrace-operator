@@ -60,7 +60,7 @@ func NoUpdateMEID(t *testing.T) features.Feature {
 	prevME := &settings.K8sClusterME{}
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, *prevDynaKube)
 	assessME(builder, prevDynaKube, prevME)
-	dynakubeComponents.Delete(builder, helpers.LevelAssess, *nextDynaKube)
+	dynakubeComponents.Delete(builder, helpers.LevelAssess, *prevDynaKube)
 
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, *nextDynaKube)
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, *nextDynaKube)
