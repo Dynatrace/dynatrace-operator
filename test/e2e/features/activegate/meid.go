@@ -63,6 +63,7 @@ func NoUpdateMEID(t *testing.T) features.Feature {
 	dynakubeComponents.Delete(builder, helpers.LevelAssess, *nextDynaKube)
 
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, *nextDynaKube)
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, *nextDynaKube)
 	reAssessME(builder, nextDynaKube, prevME)
 
 	return builder.Feature()
