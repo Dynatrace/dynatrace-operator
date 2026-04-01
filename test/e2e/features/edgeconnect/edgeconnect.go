@@ -65,6 +65,8 @@ func NormalModeFeature(t *testing.T) features.Feature {
 	builder.Assess("delete EdgeConnect CR", ecComponents.Delete(testEdgeConnect))
 	builder.Assess("check if EC configuration is deleted on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 
+	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
+
 	return builder.Feature()
 }
 

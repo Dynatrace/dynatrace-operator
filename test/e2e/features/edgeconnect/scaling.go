@@ -69,7 +69,6 @@ func WithHPARegular(t *testing.T) features.Feature {
 	builder.Assess("check if the EC deployment has replicas autoscaled to 3", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, *scaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
-	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
 
 	return builder.Feature()
@@ -119,8 +118,6 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 	builder.Assess("check if the EC deployment has replicas autoscaled to 3", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, *scaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
-	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
-	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
 
 	return builder.Feature()
 }
@@ -158,7 +155,6 @@ func EnforceReplicasRegular(t *testing.T) features.Feature {
 
 	builder.Assess("check if the EC deployment has roll back replicas set to 2", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, *baseReplicas))
 
-	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
 
 	return builder.Feature()
@@ -194,9 +190,6 @@ func EnforceReplicasProvisioner(t *testing.T) features.Feature {
 	}))
 
 	builder.Assess("check if the EC deployment has roll back replicas set to 2", k8sdeployment.WaitForReplicas(testEdgeConnect.Name, testEdgeConnect.Namespace, *baseReplicas))
-
-	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
-	builder.Teardown(ecComponents.DeleteTenantConfig(secretConfig, edgeConnectTenantConfig))
 
 	return builder.Feature()
 }
