@@ -459,8 +459,9 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("metrics-ingest env", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		capability.SwitchCapability(&dk, activegate.RoutingCapability, false)
-		capability.SwitchCapability(&dk, activegate.MetricsIngestCapability, true)
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
+			activegate.MetricsIngestCapability.DisplayName,
+		}
 
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)

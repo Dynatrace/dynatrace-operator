@@ -32,11 +32,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
+		r := NewReconciler(fakeClient, fakeClient)
+
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
-
-		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
@@ -60,11 +60,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 				return expectErr
 			},
 		})
-		r := NewReconciler(fake.NewClient(), fakeErrorClient, dk, token.Tokens{
+		r := NewReconciler(fake.NewClient(), fakeErrorClient)
+
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
-
-		err := r.Reconcile(t.Context())
 		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("Error when tenant UUID is missing", func(t *testing.T) {
@@ -78,11 +78,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
+		r := NewReconciler(fakeClient, fakeClient)
+
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
-
-		err := r.Reconcile(t.Context())
 		require.Error(t, err)
 	})
 	t.Run("Error when creating secret", func(t *testing.T) {
@@ -94,11 +94,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		})
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeErrorClient, fakeClient, dk, token.Tokens{
+		r := NewReconciler(fakeErrorClient, fakeClient)
+
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
-
-		err := r.Reconcile(t.Context())
 		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("Create does not reconcile with custom pull secret", func(t *testing.T) {
@@ -110,8 +110,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
-		r := NewReconciler(nil, nil, dk, nil)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(nil, nil)
+		err := r.Reconcile(t.Context(), dk, nil)
 
 		require.NoError(t, err)
 	})
@@ -119,11 +119,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		expectedJSON := `{"auths":{"test-api-url":{"username":"test-tenant","password":"test-value","auth":"dGVzdC10ZW5hbnQ6dGVzdC12YWx1ZQ=="}}}`
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
+		r := NewReconciler(fakeClient, fakeClient)
+
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
-
-		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
@@ -143,11 +143,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 		expectedJSON := `{"auths":{"test-api-url":{"username":"test-tenant","password":"test-value","auth":"dGVzdC10ZW5hbnQ6dGVzdC12YWx1ZQ=="}}}`
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
+		tokens := token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
-		})
+		}
 
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, tokens)
 
 		require.NoError(t, err)
 
@@ -164,7 +165,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		r.timeprovider.Set(r.timeprovider.Now().Add(1 * time.Hour))
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), dk, tokens)
 
 		require.NoError(t, err)
 
@@ -182,11 +183,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Reconciliation only runs every 15 min", func(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
+		tokens := token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
-		})
+		}
 
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, tokens)
 
 		require.NoError(t, err)
 
@@ -202,7 +204,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		require.NoError(t, err)
 
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), dk, tokens)
 
 		require.NoError(t, err)
 
@@ -217,11 +219,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Cleanup works", func(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
+		tokens := token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
-		})
+		}
 
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, tokens)
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
@@ -234,7 +237,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		dk.Spec.OneAgent = oneagent.Spec{}
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), dk, tokens)
 		require.NoError(t, err)
 
 		err = fakeClient.Get(t.Context(),

@@ -17,6 +17,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	apiToken  = "some-API-token"
+	paasToken = "some-PaaS-token"
+)
+
 var (
 	flavorURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
 		installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro+"a", arch.Arch)
@@ -67,8 +72,6 @@ func TestMakeRequest(t *testing.T) {
 }
 
 func TestGetResponseOrServerError(t *testing.T) {
-	ctx := context.Background()
-
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
 	defer dynatraceServer.Close()
 
@@ -81,17 +84,6 @@ func TestGetResponseOrServerError(t *testing.T) {
 	}
 
 	require.NotNil(t, dc)
-	t.Run("happy path", func(t *testing.T) {
-		reqURL := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-		resp, err := dc.makeRequest(ctx, reqURL, dynatraceAPIToken)
-		require.NoError(t, err)
-		assert.NotNil(t, resp)
-
-		body, err := dc.getServerResponseData(resp)
-		require.NoError(t, err)
-		assert.NotNil(t, body, "response body available")
-	})
-
 	t.Run("valid JSON response", func(t *testing.T) {
 		response := []byte(`{"error": {"code": 401, "message": "Unauthorized request"}}`)
 
@@ -180,22 +172,13 @@ func dynatraceServerHandler(t *testing.T) http.HandlerFunc {
 		if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
 			writeError(w, http.StatusUnauthorized)
 		} else {
-			handleRequest(r, w)
+			handleRequest(w)
 		}
 	}
 }
 
-func handleRequest(request *http.Request, writer http.ResponseWriter) {
-	agentVersions := fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", installer.OsUnix, installer.TypePaaS)
-
-	switch request.URL.Path {
-	case agentVersions:
-		handleAvailableAgentVersions(request, writer)
-	case "/v1/deployment/installer/agent/connectioninfo":
-		handleOACommunicationEndpoints(request, writer)
-	default:
-		writeError(writer, http.StatusBadRequest)
-	}
+func handleRequest(writer http.ResponseWriter) {
+	writeError(writer, http.StatusBadRequest)
 }
 
 func writeError(w http.ResponseWriter, status int) {
@@ -216,18 +199,6 @@ func createTestDynatraceServer(t *testing.T, handler http.Handler) *httptest.Ser
 	dynatraceServer := httptest.NewServer(handler)
 
 	return dynatraceServer
-}
-
-func createTestDynatraceClientWithFunc(t *testing.T, handler http.HandlerFunc) (*httptest.Server, Client) {
-	dynatraceServer := httptest.NewServer(handler)
-
-	skipCert := SkipCertificateValidation(true)
-	dynatraceClient, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
-
-	require.NoError(t, err)
-	require.NotNil(t, dynatraceClient)
-
-	return dynatraceServer, dynatraceClient
 }
 
 func testServerErrors(t *testing.T) {
@@ -293,26 +264,4 @@ func handleInvalidRequest(request *http.Request, writer http.ResponseWriter) {
 func writeServerErrorResponse(w http.ResponseWriter, status int, srvErrResp string) {
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(srvErrResp))
-}
-
-func handleOACommunicationEndpoints(request *http.Request, writer http.ResponseWriter) {
-	commHostOutput := []byte(`{
-		"tenantUUID": "string",
-		"tenantToken": "string",
-		"communicationEndpoints": [
-		  "http://host1.domain.com",
-		  "https://host2.domain.com",
-		  "http://host3.domain.com",
-		  "http://12.0.9.1",
-		  "http://12.0.10.1"
-		]
-	}`)
-
-	switch request.Method {
-	case http.MethodGet:
-		writer.WriteHeader(http.StatusOK)
-		_, _ = writer.Write(commHostOutput)
-	default:
-		writeError(writer, http.StatusMethodNotAllowed)
-	}
 }

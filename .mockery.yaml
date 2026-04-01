@@ -46,6 +46,7 @@ packages:
       istioReconciler:
       logMonitoringReconciler:
       oneAgentReconciler:
+      activeGateReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring:
     config:
       dir: "{{.InterfaceDir}}"
@@ -70,7 +71,13 @@ packages:
       structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
       filename: "mock_reconcilers_test.go"
     interfaces:
+      authTokenReconciler:
       istioReconciler:
+      connectionReconciler:
+      pullSecretReconciler:
+      statefulsetReconciler:
+      customPropertiesReconciler:
+      tlsReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
@@ -116,6 +123,7 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
     interfaces:
       Builder:
+      BuilderV2:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:
