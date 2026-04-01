@@ -23,6 +23,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
@@ -49,7 +50,7 @@ const (
 	longRequeueDuration    = 30 * time.Minute
 )
 
-type urlInstallerBuilder func(dtclient.Client, *url.Properties) installer.Installer
+type urlInstallerBuilder func(oneagent.APIClient, *url.Properties) installer.Installer
 type imageInstallerBuilder func(context.Context, *image.Properties) (installer.Installer, error)
 type jobInstallerBuilder func(context.Context, *job.Properties) installer.Installer
 
@@ -58,7 +59,7 @@ type OneAgentProvisioner struct {
 	apiReader  client.Reader
 	kubeClient client.Client
 
-	dynatraceClientBuilder dynatraceclient.Builder
+	dynatraceClientBuilder dynatraceclient.BuilderV2
 	urlInstallerBuilder    urlInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
 	jobInstallerBuilder    jobInstallerBuilder
@@ -74,7 +75,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		apiReader:              mgr.GetAPIReader(),
 		kubeClient:             mgr.GetClient(),
 		path:                   path,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
+		dynatraceClientBuilder: dynatraceclient.NewBuilderV2(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewURLInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
 		jobInstallerBuilder:    job.NewInstaller,
@@ -173,7 +174,7 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) er
 	return nil
 }
 
-func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube.DynaKube) (dtclient.Client, error) {
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube.DynaKube) (*dtclient.ClientV2, error) {
 	tokenReader := token.NewReader(provisioner.apiReader, &dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)

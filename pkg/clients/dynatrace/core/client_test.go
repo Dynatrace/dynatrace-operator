@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,6 +54,49 @@ func TestClient_Headers(t *testing.T) {
 	require.NoError(t, c.POST(t.Context(), "/test").WithRawBody([]byte("test")).Execute(nil))
 }
 
+func TestClient_WithHeader(t *testing.T) {
+	t.Run("override accept header", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "application/octet-stream", r.Header.Get("Accept"))
+		}))
+
+		defer s.Close()
+
+		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+		_, err := c.GET(t.Context(), "/test").
+			WithHeader("Accept", "application/octet-stream").
+			ExecuteRaw()
+		require.NoError(t, err)
+	})
+
+	t.Run("custom header", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "application/json", r.Header.Get("Accept"))
+			assert.Equal(t, "custom-value", r.Header.Get("X-Custom"))
+		}))
+		defer s.Close()
+
+		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+		_, err := c.GET(t.Context(), "/test").
+			WithHeader("X-Custom", "custom-value").
+			ExecuteRaw()
+		require.NoError(t, err)
+	})
+
+	t.Run("empty string value", func(t *testing.T) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Empty(t, r.Header.Get("X-Empty"))
+		}))
+		defer s.Close()
+
+		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+		_, err := c.GET(t.Context(), "/test").
+			WithHeader("X-Empty", "").
+			ExecuteRaw()
+		require.NoError(t, err)
+	})
+}
+
 func TestClient_URL(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/test", r.URL.Path)
@@ -82,11 +124,10 @@ func TestClient_Errors(t *testing.T) {
 }
 
 func TestClient_TokenTypes(t *testing.T) {
-	var expectToken string
+	var expectAuthHeader string
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := strings.TrimPrefix(r.Header.Get("Authorization"), apiTokenHeader)
-		assert.Equal(t, expectToken, token)
+		assert.Equal(t, expectAuthHeader, r.Header.Get("Authorization"))
 	}))
 	defer s.Close()
 
@@ -98,18 +139,23 @@ func TestClient_TokenTypes(t *testing.T) {
 	})
 
 	t.Run("default", func(t *testing.T) {
-		expectToken = "api"
+		expectAuthHeader = "Api-Token api"
 		assert.NoError(t, c.GET(t.Context(), "/test").Execute(nil))
 	})
 
 	t.Run("paas", func(t *testing.T) {
-		expectToken = "paas"
+		expectAuthHeader = "Api-Token paas"
 		assert.NoError(t, c.GET(t.Context(), "/test").WithPaasToken().Execute(nil))
 	})
 
 	t.Run("data ingest", func(t *testing.T) {
-		expectToken = "data-ingest"
+		expectAuthHeader = "Api-Token data-ingest"
 		assert.NoError(t, c.GET(t.Context(), "/test").WithTokenType(TokenTypeDataIngest).Execute(nil))
+	})
+
+	t.Run("without token", func(t *testing.T) {
+		expectAuthHeader = ""
+		assert.NoError(t, c.GET(t.Context(), "/test").WithoutToken().Execute(nil))
 	})
 }
 
@@ -166,6 +212,55 @@ func TestClient_ExecuteRaw(t *testing.T) {
 		require.Error(t, err)
 		assert.JSONEq(t, `{"error":{}}`, string(body))
 	})
+}
+
+func TestClient_ExecuteWriter(t *testing.T) {
+	const responseBody = "binary-blob-content"
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/fail":
+			w.WriteHeader(http.StatusTeapot)
+			_, _ = w.Write([]byte(`{"error":{}}`))
+		default:
+			_, _ = w.Write([]byte(responseBody))
+		}
+	}))
+	defer s.Close()
+
+	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+
+	t.Run("streams response body to writer", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := c.GET(t.Context(), "/test").ExecuteWriter(&buf)
+		require.NoError(t, err)
+		assert.Equal(t, responseBody, buf.String())
+	})
+
+	t.Run("returns error and writes nothing on non-2xx", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := c.GET(t.Context(), "/fail").ExecuteWriter(&buf)
+		require.Error(t, err)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns error on missing base URL", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := new(Client).GET(t.Context(), "/test").ExecuteWriter(&buf)
+		require.EqualError(t, err, "build URL: missing base URL")
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns error on broken writer", func(t *testing.T) {
+		err := c.GET(t.Context(), "/test").ExecuteWriter(brokenWriter{})
+		require.ErrorContains(t, err, "stream response body")
+	})
+}
+
+type brokenWriter struct{}
+
+func (brokenWriter) Write(_ []byte) (int, error) {
+	return 0, io.ErrClosedPipe
 }
 
 func TestHandleErrorResponse_SingleServerError(t *testing.T) {
