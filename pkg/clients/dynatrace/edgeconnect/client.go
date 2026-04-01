@@ -155,10 +155,13 @@ func (b *builder) buildCoreClient() (core.APIClient, error) {
 		ot.Base = &http.Transport{}
 	}
 
+	t, ok := ot.Base.(*http.Transport)
+	if !ok {
+		return nil, errors.New("unexpected base transport type")
+	}
+
 	if b.disableKeepAlives {
-		if t, ok := ot.Base.(*http.Transport); ok {
-			t.DisableKeepAlives = true
-		}
+		t.DisableKeepAlives = true
 	}
 
 	if b.customCA != nil {
@@ -171,13 +174,11 @@ func (b *builder) buildCoreClient() (core.APIClient, error) {
 			return nil, errors.New("failed to append custom certs")
 		}
 
-		if t, ok := ot.Base.(*http.Transport); ok {
-			if t.TLSClientConfig == nil {
-				t.TLSClientConfig = &tls.Config{}
-			}
-
-			t.TLSClientConfig.RootCAs = rootCAs
+		if t.TLSClientConfig == nil {
+			t.TLSClientConfig = &tls.Config{}
 		}
+
+		t.TLSClientConfig.RootCAs = rootCAs
 	}
 
 	b.cfg.HTTPClient = httpClient
