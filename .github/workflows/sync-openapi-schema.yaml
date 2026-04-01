@@ -59,6 +59,7 @@ jobs:
           urlencoded_token=$(printf '%s' "${SOURCE_ACCESS_TOKEN}" | jq -sRr @uri)
           clean_url="${SOURCE_REPO_URL#https://}"
           clean_url="${clean_url#http://}"
+
           repo_url="https://${SOURCE_USERNAME}:${urlencoded_token}@${clean_url}"
 
           echo "Cloning source repository (branch: ${BRANCH})..."
@@ -125,9 +126,9 @@ jobs:
             name=$(echo "${row}" | jq -r '.name')
             branch=$(echo "${row}" | jq -r '.branch')
 
-            source_file="source-schemas/source-schema-${name}/spec3.json"
+            source_file="source-schema-${name}/spec3.json"
             target_file="api/oapi/${name}/spec3.json"
-            sha_file="source-schemas/source-schema-${name}/source-sha.txt"
+            sha_file="source-schema-${name}/source-sha.txt"
 
             if [ ! -f "${source_file}" ]; then
               echo "::error::Source file not found: ${source_file}"
