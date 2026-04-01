@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"k8s.io/utils/ptr"
 )
 
 // Environment API
@@ -68,7 +69,13 @@ func (c *client) CreateConnectionSetting(ctx context.Context, es EnvironmentSett
 
 // UpdateConnectionSetting update connection setting
 func (c *client) UpdateConnectionSetting(ctx context.Context, es EnvironmentSetting) error {
-	err := c.apiClient.PUT(ctx, fmt.Sprintf(settingsObjectsIDPath, *es.ObjectID)).WithOAuthToken().WithJSONBody(es).Execute(nil)
+	objectID := ptr.Deref(es.ObjectID, "")
+
+	if objectID == "" {
+		return errors.New("no connection setting object id given")
+	}
+
+	err := c.apiClient.PUT(ctx, fmt.Sprintf(settingsObjectsIDPath, objectID)).WithOAuthToken().WithJSONBody(es).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to update connection setting")
 	}

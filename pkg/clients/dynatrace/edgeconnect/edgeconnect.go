@@ -77,7 +77,7 @@ func NewRequest(name string, hostPatterns []string, hostMappings []edgeconnect.H
 	}
 }
 
-// GetEdgeConnect returns edge connect if it exists
+// GetEdgeConnect returns EdgeConnect if it exists
 func (c *client) GetEdgeConnect(ctx context.Context, edgeConnectID string) (GetResponse, error) {
 	if edgeConnectID == "" {
 		return GetResponse{}, errors.New("no EdgeConnect ID given")
@@ -93,19 +93,19 @@ func (c *client) GetEdgeConnect(ctx context.Context, edgeConnectID string) (GetR
 	return response, nil
 }
 
-// CreateEdgeConnect creates new edge connect
+// CreateEdgeConnect creates new EdgeConnect
 func (c *client) CreateEdgeConnect(ctx context.Context, request *Request) (CreateResponse, error) {
 	var response CreateResponse
 
 	err := c.apiClient.POST(ctx, edgeConnectsAPIPath).WithOAuthToken().WithJSONBody(request).Execute(&response)
 	if err != nil {
-		return CreateResponse{}, errors.Wrap(err, "creating EdgeConnect failed")
+		return CreateResponse{}, errors.Wrap(err, "failed to create EdgeConnect")
 	}
 
 	return response, nil
 }
 
-// UpdateEdgeConnect updates existing edge connect
+// UpdateEdgeConnect updates existing EdgeConnect
 func (c *client) UpdateEdgeConnect(ctx context.Context, edgeConnectID string, request *Request) error {
 	if edgeConnectID == "" {
 		return errors.New("no EdgeConnect ID given")
@@ -113,13 +113,13 @@ func (c *client) UpdateEdgeConnect(ctx context.Context, edgeConnectID string, re
 
 	err := c.apiClient.PUT(ctx, fmt.Sprintf(edgeConnectPath, edgeConnectID)).WithOAuthToken().WithJSONBody(request).Execute(nil)
 	if err != nil {
-		return errors.Wrap(err, "updating EdgeConnect failed")
+		return errors.Wrap(err, "failed to update EdgeConnect")
 	}
 
 	return nil
 }
 
-// GetEdgeConnects get list of edge connects
+// GetEdgeConnects get list of EdgeConnects
 func (c *client) GetEdgeConnects(ctx context.Context, name string) (ListResponse, error) {
 	var response ListResponse
 
@@ -136,7 +136,7 @@ func (c *client) GetEdgeConnects(ctx context.Context, name string) (ListResponse
 	return response, nil
 }
 
-// DeleteEdgeConnect deletes edge connect using DELETE method for give edgeConnectId
+// DeleteEdgeConnect deletes EdgeConnect using DELETE method for given edgeConnectId
 func (c *client) DeleteEdgeConnect(ctx context.Context, edgeConnectID string) error {
 	if edgeConnectID == "" {
 		return errors.New("no EdgeConnect ID given")
@@ -144,7 +144,7 @@ func (c *client) DeleteEdgeConnect(ctx context.Context, edgeConnectID string) er
 
 	err := c.apiClient.DELETE(ctx, fmt.Sprintf(edgeConnectPath, edgeConnectID)).WithOAuthToken().Execute(nil)
 	if err != nil {
-		return errors.Wrap(err, "deleting EdgeConnect failed")
+		return errors.Wrap(err, "failed to delete EdgeConnect")
 	}
 
 	return nil

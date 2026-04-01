@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,7 +14,7 @@ const edgeConnectID = "test-id"
 var edgeConnectRequest = NewRequest("InternalServices", []string{"*.internal.org"}, []edgeconnect.HostMapping{}, "dt0s02.AIOUP56P")
 
 func TestGetEdgeConnect(t *testing.T) {
-	t.Run("get edge connect", func(t *testing.T) {
+	t.Run("get EdgeConnect", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
@@ -23,7 +22,7 @@ func TestGetEdgeConnect(t *testing.T) {
 			target := obj.(*GetResponse)
 			target.Name = "test-name"
 		}).Return(nil).Once()
-		apiClient.EXPECT().GET(mock.Anything, fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
+		apiClient.EXPECT().GET(t.Context(), fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		got, err := mockClient.GetEdgeConnect(t.Context(), edgeConnectID)
 		require.NoError(t, err)
@@ -31,19 +30,19 @@ func TestGetEdgeConnect(t *testing.T) {
 		require.Equal(t, "test-name", got.Name)
 	})
 
-	t.Run("fail to get edge connect", func(t *testing.T) {
+	t.Run("fail to get EdgeConnect", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().Execute(new(GetResponse)).Return(errTest).Once()
-		apiClient.EXPECT().GET(mock.Anything, fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
+		apiClient.EXPECT().GET(t.Context(), fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		got, err := mockClient.GetEdgeConnect(t.Context(), edgeConnectID)
 		require.ErrorIs(t, err, errTest)
 		require.Equal(t, GetResponse{}, got)
 	})
 
-	t.Run("fail if no edge connect id", func(t *testing.T) {
+	t.Run("fail if no EdgeConnect id", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		mockClient := NewClientFromAPIClient(apiClient)
 		got, err := mockClient.GetEdgeConnect(t.Context(), "")
@@ -53,7 +52,7 @@ func TestGetEdgeConnect(t *testing.T) {
 }
 
 func TestCreateEdgeConnect(t *testing.T) {
-	t.Run("create edge connect", func(t *testing.T) {
+	t.Run("create EdgeConnect", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
@@ -62,7 +61,7 @@ func TestCreateEdgeConnect(t *testing.T) {
 			target := obj.(*CreateResponse)
 			target.Name = edgeConnectRequest.Name
 		}).Return(nil).Once()
-		apiClient.EXPECT().POST(mock.Anything, "/platform/app-engine/edge-connect/v1/edge-connects").Return(request).Once()
+		apiClient.EXPECT().POST(t.Context(), "/platform/app-engine/edge-connect/v1/edge-connects").Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		got, err := mockClient.CreateEdgeConnect(t.Context(), edgeConnectRequest)
 		require.NoError(t, err)
@@ -70,13 +69,13 @@ func TestCreateEdgeConnect(t *testing.T) {
 		require.Equal(t, edgeConnectRequest.Name, got.Name)
 	})
 
-	t.Run("fail to create edge connect", func(t *testing.T) {
+	t.Run("fail to create EdgeConnect", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().WithJSONBody(edgeConnectRequest).Return(request).Once()
 		request.EXPECT().Execute(new(CreateResponse)).Return(errTest).Once()
-		apiClient.EXPECT().POST(mock.Anything, "/platform/app-engine/edge-connect/v1/edge-connects").Return(request).Once()
+		apiClient.EXPECT().POST(t.Context(), "/platform/app-engine/edge-connect/v1/edge-connects").Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		got, err := mockClient.CreateEdgeConnect(t.Context(), edgeConnectRequest)
 		require.ErrorIs(t, err, errTest)
@@ -85,31 +84,31 @@ func TestCreateEdgeConnect(t *testing.T) {
 }
 
 func TestUpdateEdgeConnect(t *testing.T) {
-	t.Run("update edge connect", func(t *testing.T) {
+	t.Run("update EdgeConnect", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().WithJSONBody(edgeConnectRequest).Return(request).Once()
 		request.EXPECT().Execute(nil).Return(nil).Once()
-		apiClient.EXPECT().PUT(mock.Anything, fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
+		apiClient.EXPECT().PUT(t.Context(), fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		err := mockClient.UpdateEdgeConnect(t.Context(), edgeConnectID, edgeConnectRequest)
 		require.NoError(t, err)
 	})
 
-	t.Run("fail to update edge connect", func(t *testing.T) {
+	t.Run("fail to update EdgeConnect", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().WithJSONBody(edgeConnectRequest).Return(request).Once()
 		request.EXPECT().Execute(nil).Return(errTest).Once()
-		apiClient.EXPECT().PUT(mock.Anything, fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
+		apiClient.EXPECT().PUT(t.Context(), fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		err := mockClient.UpdateEdgeConnect(t.Context(), edgeConnectID, edgeConnectRequest)
 		require.ErrorIs(t, err, errTest)
 	})
 
-	t.Run("fail if no edge connect id", func(t *testing.T) {
+	t.Run("fail if no EdgeConnect id", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		mockClient := NewClientFromAPIClient(apiClient)
 		err := mockClient.UpdateEdgeConnect(t.Context(), "", edgeConnectRequest)
@@ -125,7 +124,7 @@ func TestGetEdgeConnects(t *testing.T) {
 		"filter":     fmt.Sprintf("name='%s'", name),
 	}
 
-	t.Run("get edge connects", func(t *testing.T) {
+	t.Run("get EdgeConnects", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
@@ -137,7 +136,7 @@ func TestGetEdgeConnects(t *testing.T) {
 				{Name: name},
 			}
 		}).Return(nil).Once()
-		apiClient.EXPECT().GET(mock.Anything, "/platform/app-engine/edge-connect/v1/edge-connects").Return(request).Once()
+		apiClient.EXPECT().GET(t.Context(), "/platform/app-engine/edge-connect/v1/edge-connects").Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		got, err := mockClient.GetEdgeConnects(t.Context(), name)
 		require.NoError(t, err)
@@ -146,13 +145,13 @@ func TestGetEdgeConnects(t *testing.T) {
 		require.Len(t, got.EdgeConnects, 1)
 	})
 
-	t.Run("fail to get edge connects", func(t *testing.T) {
+	t.Run("fail to get EdgeConnects", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().WithQueryParams(ecQp).Return(request).Once()
 		request.EXPECT().Execute(new(ListResponse)).Return(errTest).Once()
-		apiClient.EXPECT().GET(mock.Anything, "/platform/app-engine/edge-connect/v1/edge-connects").Return(request).Once()
+		apiClient.EXPECT().GET(t.Context(), "/platform/app-engine/edge-connect/v1/edge-connects").Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		got, err := mockClient.GetEdgeConnects(t.Context(), name)
 		require.ErrorIs(t, err, errTest)
@@ -161,29 +160,29 @@ func TestGetEdgeConnects(t *testing.T) {
 }
 
 func TestDeleteEdgeConnect(t *testing.T) {
-	t.Run("delete edge connect", func(t *testing.T) {
+	t.Run("delete EdgeConnect", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().Execute(nil).Return(nil).Once()
-		apiClient.EXPECT().DELETE(mock.Anything, fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
+		apiClient.EXPECT().DELETE(t.Context(), fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		err := mockClient.DeleteEdgeConnect(t.Context(), edgeConnectID)
 		require.NoError(t, err)
 	})
 
-	t.Run("fail to delete edge connect", func(t *testing.T) {
+	t.Run("fail to delete EdgeConnect", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().Execute(nil).Return(errTest).Once()
-		apiClient.EXPECT().DELETE(mock.Anything, fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
+		apiClient.EXPECT().DELETE(t.Context(), fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", edgeConnectID)).Return(request).Once()
 		mockClient := NewClientFromAPIClient(apiClient)
 		err := mockClient.DeleteEdgeConnect(t.Context(), edgeConnectID)
 		require.ErrorIs(t, err, errTest)
 	})
 
-	t.Run("fail if no edge connect id", func(t *testing.T) {
+	t.Run("fail if no EdgeConnect id", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		mockClient := NewClientFromAPIClient(apiClient)
 		err := mockClient.DeleteEdgeConnect(t.Context(), "")

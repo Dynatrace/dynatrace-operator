@@ -889,7 +889,7 @@ func mockNewEdgeConnectClientCreate(edgeConnectClient *edgeconnectmock.APIClient
 			nil,
 		)
 
-		// CreateEdgeConnect creates edge connect
+		// CreateEdgeConnect creates EdgeConnect
 		edgeConnectClient.On("CreateEdgeConnect", mock.Anything, edgeconnectClient.NewRequest(testName, hostPatterns, testHostMappings, "")).Return(
 			edgeconnectClient.CreateResponse{
 				ID:                  testCreatedID,
@@ -925,7 +925,7 @@ func mockNewEdgeConnectClientRecreate(edgeConnectClient *edgeconnectmock.APIClie
 		)
 
 		edgeConnectClient.On("DeleteEdgeConnect", mock.Anything, id).Return(nil)
-		// CreateEdgeConnect creates edge connect
+		// CreateEdgeConnect creates EdgeConnect
 		edgeConnectClient.On("CreateEdgeConnect", mock.Anything, edgeconnectClient.NewRequest(testName, testHostPatterns, testHostMappings, "")).Return(
 			edgeconnectClient.CreateResponse{
 				ID:                  testCreatedID,
@@ -1007,7 +1007,7 @@ func mockNewEdgeConnectClientUpdate(edgeConnectClient *edgeconnectmock.APIClient
 			nil,
 		)
 
-		// CreateEdgeConnect creates edge connect
+		// CreateEdgeConnect creates EdgeConnect
 		edgeConnectClient.On("UpdateEdgeConnect", mock.Anything, testCreatedID, edgeconnectClient.NewRequest(testName, toHostPatterns, testHostMappings, testCreatedOauthClientID)).Return(nil)
 
 		edgeConnectClient.On("GetConnectionSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
@@ -1091,7 +1091,7 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 }
 
 func TestController_newEdgeConnectClient(t *testing.T) {
-	t.Run("New Edge Connect APIClient with scopes including k8s automation extra scopes", func(t *testing.T) {
+	t.Run("New EdgeConnect APIClient with scopes including k8s automation extra scopes", func(t *testing.T) {
 		ec := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 		ecClient := newEdgeConnectClient()
 		require.NotNil(t, ecClient)
@@ -1101,7 +1101,7 @@ func TestController_newEdgeConnectClient(t *testing.T) {
 		// assert.Equal(t, []string{"app-engine:edge-connects:read", "app-engine:edge-connects:write", "app-engine:edge-connects:delete", "oauth2:clients:manage", "settings:objects:read", "settings:objects:write"}, actualClient.GetScopes())
 	})
 
-	t.Run("New Edge Connect APIClient with min scopes and without k8s automation", func(t *testing.T) {
+	t.Run("New EdgeConnect APIClient with min scopes and without k8s automation", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,

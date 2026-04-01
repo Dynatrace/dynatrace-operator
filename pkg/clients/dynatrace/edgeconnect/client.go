@@ -15,19 +15,19 @@ import (
 
 // APIClient is the interface for the Dynatrace EdgeConnect REST API client.
 type APIClient interface {
-	// GetEdgeConnect return details of single edge connect
+	// GetEdgeConnect return details of single EdgeConnect
 	GetEdgeConnect(ctx context.Context, edgeConnectID string) (GetResponse, error)
 
-	// CreateEdgeConnect creates edge connect
+	// CreateEdgeConnect creates EdgeConnect
 	CreateEdgeConnect(ctx context.Context, request *Request) (CreateResponse, error)
 
-	// UpdateEdgeConnect updates edge connect
+	// UpdateEdgeConnect updates EdgeConnect
 	UpdateEdgeConnect(ctx context.Context, edgeConnectID string, request *Request) error
 
-	// DeleteEdgeConnect deletes edge connect
+	// DeleteEdgeConnect deletes EdgeConnect
 	DeleteEdgeConnect(ctx context.Context, edgeConnectID string) error
 
-	// GetEdgeConnects returns list of edge connects
+	// GetEdgeConnects returns list of EdgeConnects
 	GetEdgeConnects(ctx context.Context, name string) (ListResponse, error)
 
 	// GetConnectionSettings returns all connection setting objects
@@ -135,7 +135,7 @@ func WithContext(ctx context.Context) func(*builder) {
 func (b *builder) buildCoreClient() (core.APIClient, error) {
 	parsedURL, err := url.Parse(b.baseURL)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrap(err, "failed to parse base url")
 	}
 
 	b.cfg.BaseURL = parsedURL
@@ -143,7 +143,7 @@ func (b *builder) buildCoreClient() (core.APIClient, error) {
 	httpClient := b.oauthCfg.Client(b.ctx)
 
 	if httpClient == nil {
-		return nil, errors.New("can't create http client for edge connect")
+		return nil, errors.New("failed to create http client for EdgeConnect")
 	}
 
 	ot, ok := httpClient.Transport.(*oauth2.Transport)
@@ -164,19 +164,20 @@ func (b *builder) buildCoreClient() (core.APIClient, error) {
 	if b.customCA != nil {
 		rootCAs, err := x509.SystemCertPool()
 		if err != nil {
-			return nil, errors.Wrap(err, "read system certificates")
+			return nil, errors.Wrap(err, "failed to read system certificates")
 		}
 
 		if ok := rootCAs.AppendCertsFromPEM(b.customCA); !ok {
-			return nil, errors.New("append custom certs")
+			return nil, errors.New("failed to append custom certs")
 		}
 
-		t := ot.Base.(*http.Transport)
-		if t.TLSClientConfig == nil {
-			t.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
-		}
+		if t, ok := ot.Base.(*http.Transport); ok {
+			if t.TLSClientConfig == nil {
+				t.TLSClientConfig = &tls.Config{}
+			}
 
-		t.TLSClientConfig.RootCAs = rootCAs
+			t.TLSClientConfig.RootCAs = rootCAs
+		}
 	}
 
 	b.cfg.HTTPClient = httpClient
