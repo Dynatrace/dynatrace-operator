@@ -10,35 +10,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type options struct {
+type optionsV2 struct {
 	ctx  context.Context
-	Opts []dtclient.Option
+	Opts []dtclient.OptionV2
 }
 
-func newOptions(ctx context.Context) *options {
-	return &options{
-		Opts: []dtclient.Option{},
+func newOptionsV2(ctx context.Context) *optionsV2 {
+	return &optionsV2{
+		Opts: []dtclient.OptionV2{},
 		ctx:  ctx,
 	}
 }
 
-func (opts *options) appendNetworkZone(networkZone string) {
+func (opts *optionsV2) appendNetworkZone(networkZone string) {
 	if networkZone != "" {
-		opts.Opts = append(opts.Opts, dtclient.NetworkZone(networkZone))
+		opts.Opts = append(opts.Opts, dtclient.WithNetworkZone(networkZone))
 	}
 }
 
-func (opts *options) appendHostGroup(hostGroup string) {
+func (opts *optionsV2) appendHostGroup(hostGroup string) {
 	if hostGroup != "" {
-		opts.Opts = append(opts.Opts, dtclient.HostGroup(hostGroup))
+		opts.Opts = append(opts.Opts, dtclient.WithHostGroup(hostGroup))
 	}
 }
 
-func (opts *options) appendCertCheck(skipCertCheck bool) {
-	opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(skipCertCheck))
+func (opts *optionsV2) appendCertCheck(skipCertCheck bool) {
+	opts.Opts = append(opts.Opts, dtclient.WithSkipCertificateValidation(skipCertCheck))
 }
 
-func (opts *options) appendProxySettings(apiReader client.Reader, dk *dynakube.DynaKube) error {
+func (opts *optionsV2) appendProxySettings(apiReader client.Reader, dk *dynakube.DynaKube) error {
 	if dk == nil || !dk.HasProxy() {
 		return nil
 	}
@@ -53,20 +53,20 @@ func (opts *options) appendProxySettings(apiReader client.Reader, dk *dynakube.D
 	return nil
 }
 
-func (opts *options) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dtclient.Option, error) {
-	var proxyOption dtclient.Option
+func (opts *optionsV2) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dtclient.OptionV2, error) {
+	var proxyOption dtclient.OptionV2
 
 	proxyURL, err := dk.Proxy(opts.ctx, apiReader)
 	if err != nil {
 		return proxyOption, err
 	}
 
-	proxyOption = dtclient.Proxy(proxyURL, dk.FF().GetNoProxy())
+	proxyOption = dtclient.WithProxy(proxyURL, dk.FF().GetNoProxy())
 
 	return proxyOption, nil
 }
 
-func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts string, namespace string) error {
+func (opts *optionsV2) appendTrustedCerts(apiReader client.Reader, trustedCerts string, namespace string) error {
 	if trustedCerts != "" {
 		certs := &corev1.ConfigMap{}
 		if err := apiReader.Get(opts.ctx, client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
@@ -77,7 +77,7 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
 
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dynakube.TrustedCAKey])))
+		opts.Opts = append(opts.Opts, dtclient.WithCerts([]byte(certs.Data[dynakube.TrustedCAKey])))
 	}
 
 	return nil

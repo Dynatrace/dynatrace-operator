@@ -2,6 +2,7 @@ package oneagent
 
 import (
 	"context"
+	"io"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -11,6 +12,11 @@ var log = logd.Get().WithName("dtclient-oneagent")
 
 type APIClient interface {
 	GetConnectionInfo(ctx context.Context) (ConnectionInfo, error)
+
+	Get(ctx context.Context, args GetParams, writer io.Writer) error
+	GetLatest(ctx context.Context, args GetParams, writer io.Writer) error
+	GetVersions(ctx context.Context, args GetParams) ([]string, error)
+	GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error
 
 	GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error)
 }

@@ -2,16 +2,24 @@ package download
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
+	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	dtclientmocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -23,29 +31,25 @@ func TestNew(t *testing.T) {
 		client := New()
 
 		assert.NotNil(t, client.newInstaller)
-		assert.NotNil(t, client.newDTClient)
 	})
 
 	t.Run("options", func(t *testing.T) {
 		props := &url.Properties{
-			Os:   "os",
+			OS:   "os",
 			Arch: "arch",
 		}
 		opts := []Option{
-			WithDTClient(dtClientTester(t, []dtclient.Option{}...)),
 			WithInstaller(installerTester(t, props, nil)),
 		}
 		client := New(opts...)
 
 		require.NotNil(t, client.newInstaller)
-		require.NotNil(t, client.newDTClient)
 
-		dtClient, err := client.newDTClient("url", "api", "paas", []dtclient.Option{}...)
+		dtClient, err := dtclient.NewClientV2("url", []dtclient.OptionV2{}...)
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)
-		require.IsType(t, &dtclientmocks.Client{}, dtClient)
 
-		installer := client.newInstaller(dtClient, props)
+		installer := client.newInstaller(dtClient.OneAgent, props)
 		require.NotNil(t, installer)
 		require.IsType(t, &installermock.Installer{}, installer)
 	})
@@ -60,7 +64,6 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 
 		opts := []Option{
-			WithDTClient(dtClientTester(t, []dtclient.Option{}...)),
 			WithInstaller(installerTester(t, &url.Properties{}, nil)),
 		}
 		client := New(opts...)
@@ -75,13 +78,12 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
 		props := &url.Properties{
-			Os:   "os",
+			OS:   "os",
 			Arch: "arch",
 		}
 		setupConfig(t, inputDir, config)
 
 		opts := []Option{
-			WithDTClient(dtClientTester(t, config.toDTClientOptions()...)),
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(true, nil)
 			})),
@@ -98,20 +100,17 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
 		props := &url.Properties{
-			Os:   "os",
+			OS:   "os",
 			Arch: "arch",
 		}
 		os.MkdirAll(inputDir, os.ModePerm)
-		err := os.WriteFile(filepath.Join(inputDir, ca.TrustedCertsInputFile), []byte("cert"), 0600)
+		cert := fakeCert(t)
+		err := os.WriteFile(filepath.Join(inputDir, ca.TrustedCertsInputFile), cert, 0600)
 		require.NoError(t, err)
 
 		setupConfig(t, inputDir, config)
 
-		expectedOpts := config.toDTClientOptions()
-		expectedOpts = append(expectedOpts, dtclient.Certs([]byte("cert")))
-
 		opts := []Option{
-			WithDTClient(dtClientTester(t, expectedOpts...)),
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(true, nil)
 			})),
@@ -128,7 +127,7 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
 		props := &url.Properties{
-			Os:   "os",
+			OS:   "os",
 			Arch: "arch",
 		}
 		setupConfig(t, inputDir, config)
@@ -136,7 +135,6 @@ func TestDo(t *testing.T) {
 		expectedErr := errors.New("boom")
 
 		opts := []Option{
-			WithDTClient(dtClientTester(t, config.toDTClientOptions()...)),
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(false, expectedErr)
 			})),
@@ -154,7 +152,7 @@ type mockConfigFunc func(*installermock.Installer)
 func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockConfigFunc) url.NewFunc {
 	t.Helper()
 
-	return func(dtc dtclient.Client, props *url.Properties) installer.Installer {
+	return func(dtc oneagent.APIClient, props *url.Properties) installer.Installer {
 		require.NotNil(t, dtc)
 		require.NotEmpty(t, props)
 		require.Equal(t, *expectedProps, *props)
@@ -169,16 +167,21 @@ func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockC
 	}
 }
 
-func dtClientTester(t *testing.T, expectedOpts ...dtclient.Option) dtclient.NewFunc {
+func fakeCert(t *testing.T) []byte {
 	t.Helper()
 
-	return func(url, apiToken, paasToken string, opts ...dtclient.Option) (dtclient.Client, error) {
-		require.NotEmpty(t, url)
-		require.NotEmpty(t, apiToken)
-		require.NotEmpty(t, paasToken)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
 
-		compareDTOptions(t, expectedOpts, opts)
-
-		return dtclientmocks.NewClient(t), nil
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "test"},
+		NotBefore:    time.Now().Add(-10 * time.Second),
+		NotAfter:     time.Now().Add(10 * time.Second),
 	}
+
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
 }

@@ -18,29 +18,29 @@ func TestToDTClientOptions(t *testing.T) {
 	type testCase struct {
 		title string
 		in    Config
-		out   []dtclient.Option
+		out   []dtclient.OptionV2
 	}
 
 	tests := []testCase{
 		{
 			title: "host group propagated",
 			in:    Config{HostGroup: "host"},
-			out:   []dtclient.Option{dtclient.HostGroup("host")},
+			out:   []dtclient.OptionV2{dtclient.WithHostGroup("host")},
 		},
 		{
 			title: "network zone propagated",
 			in:    Config{NetworkZone: "network"},
-			out:   []dtclient.Option{dtclient.NetworkZone("network")},
+			out:   []dtclient.OptionV2{dtclient.WithNetworkZone("network")},
 		},
 		{
 			title: "proxy propagated",
 			in:    Config{Proxy: "proxy", NoProxy: "no-proxy"},
-			out:   []dtclient.Option{dtclient.Proxy("proxy", "no-proxy")},
+			out:   []dtclient.OptionV2{dtclient.WithProxy("proxy", "no-proxy")},
 		},
 		{
 			title: "skip cert check propagated",
 			in:    Config{SkipCertCheck: true},
-			out:   []dtclient.Option{dtclient.SkipCertificateValidation(true)},
+			out:   []dtclient.OptionV2{dtclient.WithSkipCertificateValidation(true)},
 		},
 		{
 			title: "everything propagated",
@@ -51,18 +51,18 @@ func TestToDTClientOptions(t *testing.T) {
 				NoProxy:       "no-proxy",
 				SkipCertCheck: true,
 			},
-			out: []dtclient.Option{
-				dtclient.HostGroup("host"),
-				dtclient.NetworkZone("network"),
-				dtclient.Proxy("proxy", "no-proxy"),
-				dtclient.SkipCertificateValidation(true),
+			out: []dtclient.OptionV2{
+				dtclient.WithHostGroup("host"),
+				dtclient.WithNetworkZone("network"),
+				dtclient.WithProxy("proxy", "no-proxy"),
+				dtclient.WithSkipCertificateValidation(true),
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.title, func(t *testing.T) {
-			options := test.in.toDTClientOptions()
+			options := test.in.toDTClientOptionsV2()
 
 			compareDTOptions(t, test.out, options)
 		})
@@ -129,7 +129,7 @@ func setupConfig(t *testing.T, inputDir string, config Config) {
 	require.NoError(t, err)
 }
 
-func compareDTOptions(t *testing.T, opts1 []dtclient.Option, opts2 []dtclient.Option) {
+func compareDTOptions(t *testing.T, opts1 []dtclient.OptionV2, opts2 []dtclient.OptionV2) {
 	require.Len(t, opts1, len(opts2))
 	for i := range opts1 {
 		expected := getNameOfCalledFunc(t, opts1[i])
@@ -138,7 +138,7 @@ func compareDTOptions(t *testing.T, opts1 []dtclient.Option, opts2 []dtclient.Op
 	}
 }
 
-func getNameOfCalledFunc(t *testing.T, option dtclient.Option) string {
+func getNameOfCalledFunc(t *testing.T, option dtclient.OptionV2) string {
 	t.Helper()
 
 	funcPath := strings.Split(runtime.FuncForPC(reflect.ValueOf(option).Pointer()).Name(), ".")
