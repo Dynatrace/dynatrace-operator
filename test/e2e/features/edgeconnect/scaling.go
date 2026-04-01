@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	ecComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8shpa"
@@ -48,7 +47,7 @@ func WithHPARegular(t *testing.T) features.Feature {
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
 	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
-	ecComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
+	ecComponents.Install(builder, nil, testEdgeConnect)
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -96,7 +95,7 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 		ecComponents.WithHostPattern(testHostPattern),
 	)
 
-	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
+	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 
@@ -151,7 +150,7 @@ func EnforceReplicasRegular(t *testing.T) features.Feature {
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
 	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
-	ecComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
+	ecComponents.Install(builder, nil, testEdgeConnect)
 
 	builder.Assess("scale EC deployment replicas to 3", k8sdeployment.Update(testEdgeConnect.Name, testEdgeConnect.Namespace, func(d *appsv1.Deployment) {
 		d.Spec.Replicas = scaleReplicas
@@ -186,7 +185,7 @@ func EnforceReplicasProvisioner(t *testing.T) features.Feature {
 		ecComponents.WithReplicas(baseReplicas),
 	)
 
-	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
+	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 

@@ -5,7 +5,6 @@ package kspm
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
@@ -30,17 +29,13 @@ func Feature(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, &testDynakube))
-
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -67,15 +62,11 @@ func OptionalScopes(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	componentDynakube.InstallWithoutSettingsScopes(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.InstallWithoutSettingsScopes(builder, &secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
-
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
 }

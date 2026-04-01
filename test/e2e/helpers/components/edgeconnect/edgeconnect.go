@@ -32,15 +32,20 @@ type TenantConfig struct {
 	Secret tenant.EdgeConnectSecret
 }
 
-func Install(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.EdgeConnectSecret, testEdgeConnect edgeconnect.EdgeConnect) {
+// Install creates a tenant secret and waits until the EdgeConnect is Running.
+// It also registers the deletion of these resources in reverse order.
+func Install(builder *features.FeatureBuilder, secretConfig *tenant.EdgeConnectSecret, ec edgeconnect.EdgeConnect) {
 	if secretConfig != nil {
-		builder.WithStep("create edgeconnect client Secret", level, tenant.CreateClientSecret(secretConfig, BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+		builder.WithStep("create edgeconnect client Secret", features.LevelAssess, tenant.CreateClientSecret(secretConfig, BuildOAuthClientSecretName(ec.Name), ec.Namespace))
 	}
 	builder.WithStep(
-		fmt.Sprintf("'%s' edgeconnect created", testEdgeConnect.Name),
-		level,
-		Create(testEdgeConnect))
-	VerifyStartup(builder, level, testEdgeConnect)
+		fmt.Sprintf("'%s' edgeconnect created", ec.Name),
+		features.LevelAssess,
+		Create(ec))
+	VerifyStartup(builder, features.LevelAssess, ec)
+	// The secret is required for correct cleanup, so always delete it last
+	builder.WithTeardown("edgeconnect deleted", Delete(ec))
+	builder.WithTeardown("delete edgeconnect client Secret", tenant.DeleteTenantSecret(BuildOAuthClientSecretName(ec.Name), ec.Namespace))
 }
 
 func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testEdgeConnect edgeconnect.EdgeConnect) {

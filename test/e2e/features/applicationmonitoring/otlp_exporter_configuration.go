@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
@@ -111,13 +110,13 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 	}
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+
 	for _, tc := range testCases {
 		builder.Assess(fmt.Sprintf("%s: Installing sample app", tc.name), tc.app.Install())
 		builder.Assess(fmt.Sprintf("%s: Checking sample app", tc.name), tc.assess(tc.app, tc.expectedBaseEndpoint))
 		builder.WithTeardown(fmt.Sprintf("%s: Uninstalling sample app", tc.name), tc.app.Uninstall())
 	}
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }
