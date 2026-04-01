@@ -566,59 +566,6 @@ func (_c *APIRequest_WithRawQueryParams_Call) RunAndReturn(run func(params url.V
 	return _c
 }
 
-// WithTokenType provides a mock function for the type APIRequest
-func (_mock *APIRequest) WithTokenType(tokenType core.TokenType) core.APIRequest {
-	ret := _mock.Called(tokenType)
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithTokenType")
-	}
-
-	var r0 core.APIRequest
-	if returnFunc, ok := ret.Get(0).(func(core.TokenType) core.APIRequest); ok {
-		r0 = returnFunc(tokenType)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.APIRequest)
-		}
-	}
-	return r0
-}
-
-// APIRequest_WithTokenType_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithTokenType'
-type APIRequest_WithTokenType_Call struct {
-	*mock.Call
-}
-
-// WithTokenType is a helper method to define mock.On call
-//   - tokenType core.TokenType
-func (_e *APIRequest_Expecter) WithTokenType(tokenType interface{}) *APIRequest_WithTokenType_Call {
-	return &APIRequest_WithTokenType_Call{Call: _e.mock.On("WithTokenType", tokenType)}
-}
-
-func (_c *APIRequest_WithTokenType_Call) Run(run func(tokenType core.TokenType)) *APIRequest_WithTokenType_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 core.TokenType
-		if args[0] != nil {
-			arg0 = args[0].(core.TokenType)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *APIRequest_WithTokenType_Call) Return(aPIRequest core.APIRequest) *APIRequest_WithTokenType_Call {
-	_c.Call.Return(aPIRequest)
-	return _c
-}
-
-func (_c *APIRequest_WithTokenType_Call) RunAndReturn(run func(tokenType core.TokenType) core.APIRequest) *APIRequest_WithTokenType_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // WithoutToken provides a mock function for the type APIRequest
 func (_mock *APIRequest) WithoutToken() core.APIRequest {
 	ret := _mock.Called()
