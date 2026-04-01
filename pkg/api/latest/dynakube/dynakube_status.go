@@ -46,8 +46,8 @@ type DynaKubeStatus struct { //nolint:revive
 	// This annotation will cause the component to be restarted if the proxy changes.
 	ProxyURLHash string `json:"proxyURLHash,omitempty"`
 
-	// Observed state of Dynatrace API
-	DynatraceAPI DynatraceAPIStatus `json:"dynatraceApi,omitempty"`
+	// Observed state of Dynatrace API, only meant to be stored in memory.
+	Tenant TenantStatus `json:"tenant,omitempty"`
 
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
@@ -67,9 +67,15 @@ type DynaKubeStatus struct { //nolint:revive
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-type DynatraceAPIStatus struct {
-	// Time of the last token request
-	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
+type TenantStatus struct {
+	// APIThrottler is only meant to be used in memory and not persisted in the DynaKube
+	APIThrottler *APIThrottler `json:"-"`
+}
+
+type APIThrottler struct {
+	LastRequestTimestamp metav1.Time
+	PrevConfig           string
+	Enabled              bool
 }
 
 func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
@@ -100,4 +106,21 @@ func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) erro
 	}
 
 	return errors.WithStack(err)
+}
+
+func (dk *DynaKube) DefaultRequeueAfter() time.Duration {
+	if dk.Status.Tenant.APIThrottler == nil {
+		return dk.APIRequestThreshold()
+	}
+
+	nextRequeue := dk.Status.Tenant.APIThrottler.LastRequestTimestamp.Add(dk.APIRequestThreshold()).Sub(metav1.Now().Time)
+	if nextRequeue <= 0 {
+		return time.Second
+	}
+
+	return nextRequeue
+}
+
+func (dk *DynaKube) IsDTAPIThrottled() bool {
+	return dk.Status.Tenant.APIThrottler.Enabled
 }

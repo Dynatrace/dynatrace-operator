@@ -7,8 +7,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 )
 
 type VerificationError struct {
@@ -22,15 +21,15 @@ func (v VerificationError) Error() string {
 type Tokens map[string]*Token
 
 func (tokens Tokens) APIToken() *Token {
-	return tokens.getToken(dtclient.APIToken)
+	return tokens.getToken(dynatrace.APIToken)
 }
 
 func (tokens Tokens) PaasToken() *Token {
-	return tokens.getToken(dtclient.PaasToken)
+	return tokens.getToken(dynatrace.PaasToken)
 }
 
 func (tokens Tokens) DataIngestToken() *Token {
-	return tokens.getToken(dtclient.DataIngestToken)
+	return tokens.getToken(dynatrace.DataIngestToken)
 }
 
 func (tokens Tokens) getToken(tokenName string) *Token {
@@ -43,15 +42,15 @@ func (tokens Tokens) getToken(tokenName string) *Token {
 }
 
 func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
-	_, hasPaasToken := tokens[dtclient.PaasToken]
+	_, hasPaasToken := tokens[dynatrace.PaasToken]
 
 	for _, token := range tokens {
 		switch token.Type {
-		case dtclient.APIToken:
+		case dynatrace.APIToken:
 			token.addFeatures(getFeaturesForAPIToken(hasPaasToken))
-		case dtclient.PaasToken:
+		case dynatrace.PaasToken:
 			token.addFeatures(getFeaturesForPaaSToken())
-		case dtclient.DataIngestToken:
+		case dynatrace.DataIngestToken:
 			token.addFeatures(getFeaturesForDataIngest())
 		}
 	}
@@ -59,7 +58,7 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) (map[string]bool, error) {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dynatrace.Client, dk dynakube.DynaKube) (map[string]bool, error) {
 	collectedScopeErrors := make([]error, 0)
 	collectedMissingOptionalScopes := map[string]bool{}
 
@@ -97,7 +96,7 @@ func concatErrors(errs []error) error {
 		return nil
 	}
 
-	apiStatus := dynatraceapi.NoError
+	apiStatus := dynatrace.NoError
 
 	var concatenatedError strings.Builder
 	for index, err := range errs {
@@ -107,13 +106,13 @@ func concatErrors(errs []error) error {
 			concatenatedError.WriteString("\n\t")
 		}
 
-		if apiStatus == dynatraceapi.NoError && dynatraceapi.IsUnreachable(err) {
-			apiStatus = dynatraceapi.StatusCode(err)
+		if apiStatus == dynatrace.NoError && dynatrace.IsUnreachable(err) {
+			apiStatus = dynatrace.StatusCode(err)
 		}
 	}
 
-	if apiStatus != dynatraceapi.NoError {
-		return dtclient.ServerError{
+	if apiStatus != dynatrace.NoError {
+		return dynatrace.ServerError{
 			Code:    apiStatus,
 			Message: concatenatedError.String(),
 		}
@@ -123,7 +122,7 @@ func concatErrors(errs []error) error {
 }
 
 func CheckForDataIngestToken(tokens Tokens) bool {
-	dataIngestToken, hasDataIngestToken := tokens[dtclient.DataIngestToken]
+	dataIngestToken, hasDataIngestToken := tokens[dynatrace.DataIngestToken]
 
 	return hasDataIngestToken && len(dataIngestToken.Value) != 0
 }

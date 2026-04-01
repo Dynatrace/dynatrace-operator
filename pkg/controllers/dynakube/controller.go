@@ -14,10 +14,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/internal/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
@@ -34,7 +34,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,8 +49,7 @@ import (
 )
 
 const (
-	fastRequeueInterval    = 1 * time.Minute
-	defaultRequeueInterval = 15 * time.Minute
+	fastRequeueInterval = 1 * time.Minute
 
 	controllerName = "dynakube-controller"
 )
@@ -83,6 +81,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		operatorNamespace:      os.Getenv(k8senv.PodNamespace),
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
+		dtAPIThrottler:         dynatraceapi.NewThrottler(),
 
 		injectionReconcilerBuilder: injection.NewReconciler,
 
@@ -140,9 +139,10 @@ type activeGateReconciler interface {
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client        client.Client
-	apiReader     client.Reader
-	eventRecorder events.EventRecorder
+	client         client.Client
+	apiReader      client.Reader
+	eventRecorder  events.EventRecorder
+	dtAPIThrottler dynatraceapi.Throttler
 
 	extensionReconciler          dynakubeReconciler
 	k8sEntityReconciler          dtSettingReconciler
@@ -181,6 +181,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	} else if dk == nil {
 		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
+		controller.dtAPIThrottler.Delete(request.Name)
 
 		return reconcile.Result{}, nil
 	}
@@ -196,7 +197,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	oldStatus := *dk.Status.DeepCopy()
-	controller.requeueAfter = defaultRequeueInterval
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
@@ -233,9 +233,9 @@ func (controller *Controller) handleError(
 	oldStatus dynakube.DynaKubeStatus,
 ) (reconcile.Result, error) {
 	switch {
-	case dynatraceapi.IsUnreachable(reconcileErr):
+	case dtclient.IsUnreachable(reconcileErr):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
-			"errorCode", dynatraceapi.StatusCode(reconcileErr), "errorMessage", dynatraceapi.Message(reconcileErr))
+			"errorCode", dtclient.StatusCode(reconcileErr), "errorMessage", dtclient.Message(reconcileErr))
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastRequeueInterval}, nil
 
@@ -269,6 +269,7 @@ func (controller *Controller) handleError(
 	}
 
 	log.Info("finished DynaKube reconcile", "namespace", dk.Namespace, "name", dk.Name, "requeueAfter", controller.requeueAfter.String())
+	controller.dtAPIThrottler.Store(dk)
 
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }
@@ -290,6 +291,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return err
 	}
 
+	controller.requeueAfter = dk.DefaultRequeueAfter()
 	dk.Status.KubeSystemUUID = controller.clusterID
 
 	log.Info("start reconciling deployment meta data")
@@ -319,6 +321,11 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	}
 
 	controller.tokens = tokens
+
+	err = controller.dtAPIThrottler.Init(ctx, controller.apiReader, dk, tokens)
+	if err != nil {
+		return nil, err
+	}
 
 	dynatraceClientBuilder := controller.dynatraceClientBuilder.
 		SetDynakube(*dk).
@@ -457,10 +464,10 @@ func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient 
 }
 
 func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
-	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
+	if dk.IsDTAPIThrottled() {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",
-			dk.Status.DynatraceAPI.LastTokenScopeRequest,
+			dk.Status.Tenant.APIThrottler.LastRequestTimestamp,
 			dk.APIRequestThreshold()))
 
 		return lastErrorFromCondition(&dk.Status)
@@ -474,9 +481,6 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 	}
 
 	log.Info("token verified")
-
-	dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
-
 	controller.updateOptionalScopesConditions(&dk.Status, optionalScopes)
 
 	return nil

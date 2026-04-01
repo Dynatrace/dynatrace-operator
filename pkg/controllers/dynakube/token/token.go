@@ -12,8 +12,8 @@ import (
 )
 
 type Token struct {
-	Type     string
-	Value    string
+	Type     string `json:"type"`
+	Value    string `json:"value"`
 	Features []Feature
 }
 

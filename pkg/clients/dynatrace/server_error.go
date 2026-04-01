@@ -1,8 +1,14 @@
 package dynatrace
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
+)
+
+const (
+	NoError = 0
 )
 
 type serverErrorResponse struct {
@@ -39,4 +45,31 @@ func (e ServerError) Error() string {
 	}
 
 	return sb.String()
+}
+
+func IsUnreachable(err error) bool {
+	var serverErr ServerError
+	if errors.As(err, &serverErr) && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable) {
+		return true
+	}
+
+	return false
+}
+
+func StatusCode(err error) int {
+	var serverErr ServerError
+	if errors.As(err, &serverErr) {
+		return serverErr.Code
+	}
+
+	return 0
+}
+
+func Message(err error) string {
+	var serverErr ServerError
+	if errors.As(err, &serverErr) {
+		return serverErr.Message
+	}
+
+	return ""
 }
