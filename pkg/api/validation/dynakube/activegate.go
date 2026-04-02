@@ -3,10 +3,10 @@ package validation
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -66,30 +66,12 @@ func mutuallyExclusiveActiveGatePVsettings(_ context.Context, _ *Validator, dk *
 	return ""
 }
 
-func activeGateRollingUpdateWithOldK8sVersion(_ context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func activeGateRollingUpdateWithOldK8sVersion(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.Spec.ActiveGate.RollingUpdate == nil {
 		return ""
 	}
 
-	if dv.versionChecker == nil {
-		return ""
-	}
-
-	serverVersion, err := dv.versionChecker.ServerVersion()
-	if err != nil {
-		log.Error(err, "failed to get kubernetes server version")
-
-		return ""
-	}
-
-	minor, err := strconv.Atoi(serverVersion.Minor)
-	if err != nil {
-		log.Error(err, "failed to parse kubernetes minor version", "minor", serverVersion.Minor)
-
-		return ""
-	}
-
-	if minor < minK8sMinorVersionForRollingUpdate {
+	if k8sversion.GetMinorVersion() < minK8sMinorVersionForRollingUpdate {
 		return warningActiveGateRollingUpdateOldK8sVersion
 	}
 
