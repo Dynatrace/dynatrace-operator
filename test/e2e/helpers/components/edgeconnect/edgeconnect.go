@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/pkg/errors"
@@ -133,13 +134,13 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 }
 
 func BuildClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconnectClient.APIClient, error) {
-	clt, err := edgeconnectClient.NewClient(
-		edgeconnectClient.WithContext(ctx),
-		edgeconnectClient.WithClientID(secret.OauthClientID),
-		edgeconnectClient.WithClientSecret(secret.OauthClientSecret),
-		edgeconnectClient.WithBaseURL("https://"+secret.APIServer),
-		edgeconnectClient.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		edgeconnectClient.WithOAuthScopes([]string{
+	oAuthClient, err := dynatrace.NewOAuthClient(
+		"https://"+secret.APIServer,
+		dynatrace.WithContext(ctx),
+		dynatrace.WithClientID(secret.OauthClientID),
+		dynatrace.WithClientSecret(secret.OauthClientSecret),
+		dynatrace.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
+		dynatrace.WithOAuthScopes([]string{
 			"app-engine:edge-connects:read",
 			"app-engine:edge-connects:write",
 			"app-engine:edge-connects:delete",
@@ -148,13 +149,14 @@ func BuildClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconn
 			"settings:objects:write",
 		}),
 		// Disable keep-alive to prevent dropped network packets in GitHub Actions environment
-		edgeconnectClient.WithKeepAlive(false),
+		dynatrace.WithOAuthBaseOptions(dynatrace.WithKeepAlive(false)),
 	)
+
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return clt, nil
+	return oAuthClient.EdgeConnect, nil
 }
 
 func BuildOAuthClientSecretName(secretName string) string {

@@ -31,7 +31,7 @@ var qp = map[string]string{
 
 var errTest = errors.New("test-error")
 
-func TestGetConnectionSettings(t *testing.T) {
+func TestGetEnvironmentSettings(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
@@ -44,8 +44,8 @@ func TestGetConnectionSettings(t *testing.T) {
 			}
 		}).Return(nil).Once()
 		apiClient.EXPECT().GET(t.Context(), "/platform/classic/environment-api/v2/settings/objects").Return(request).Once()
-		mockClient := NewClientFromAPIClient(apiClient)
-		got, err := mockClient.GetConnectionSettings(t.Context())
+		mockClient := NewClient(apiClient)
+		got, err := mockClient.GetEnvironmentSettings(t.Context())
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		require.Len(t, got, 1)
@@ -59,14 +59,14 @@ func TestGetConnectionSettings(t *testing.T) {
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().WithQueryParams(qp).Return(request).Once()
 		apiClient.EXPECT().GET(t.Context(), "/platform/classic/environment-api/v2/settings/objects").Return(request).Once()
-		mockClient := NewClientFromAPIClient(apiClient)
-		got, err := mockClient.GetConnectionSettings(t.Context())
+		mockClient := NewClient(apiClient)
+		got, err := mockClient.GetEnvironmentSettings(t.Context())
 		require.ErrorIs(t, err, errTest)
 		require.Nil(t, got)
 	})
 }
 
-func TestCreateConnectionSetting(t *testing.T) {
+func TestCreateEnvironmentSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
@@ -74,8 +74,8 @@ func TestCreateConnectionSetting(t *testing.T) {
 		request.EXPECT().WithJSONBody([]EnvironmentSetting{testEnvironmentSetting}).Return(request).Once()
 		request.EXPECT().Execute(nil).Return(nil).Once()
 		apiClient.EXPECT().POST(t.Context(), "/platform/classic/environment-api/v2/settings/objects").Return(request).Once()
-		mockClient := NewClientFromAPIClient(apiClient)
-		err := mockClient.CreateConnectionSetting(t.Context(), testEnvironmentSetting)
+		mockClient := NewClient(apiClient)
+		err := mockClient.CreateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.NoError(t, err)
 	})
 
@@ -86,13 +86,13 @@ func TestCreateConnectionSetting(t *testing.T) {
 		request.EXPECT().WithJSONBody([]EnvironmentSetting{testEnvironmentSetting}).Return(request).Once()
 		request.EXPECT().Execute(nil).Return(errTest).Once()
 		apiClient.EXPECT().POST(t.Context(), "/platform/classic/environment-api/v2/settings/objects").Return(request).Once()
-		mockClient := NewClientFromAPIClient(apiClient)
-		err := mockClient.CreateConnectionSetting(t.Context(), testEnvironmentSetting)
+		mockClient := NewClient(apiClient)
+		err := mockClient.CreateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.ErrorIs(t, err, errTest)
 	})
 }
 
-func TestUpdateConnectionSetting(t *testing.T) {
+func TestUpdateEnvironmentSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
@@ -100,8 +100,8 @@ func TestUpdateConnectionSetting(t *testing.T) {
 		request.EXPECT().WithJSONBody(testEnvironmentSetting).Return(request).Once()
 		request.EXPECT().Execute(nil).Return(nil).Once()
 		apiClient.EXPECT().PUT(t.Context(), fmt.Sprintf("/platform/classic/environment-api/v2/settings/objects/%s", testObjectID)).Return(request).Once()
-		mockClient := NewClientFromAPIClient(apiClient)
-		err := mockClient.UpdateConnectionSetting(t.Context(), testEnvironmentSetting)
+		mockClient := NewClient(apiClient)
+		err := mockClient.UpdateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.NoError(t, err)
 	})
 
@@ -112,35 +112,35 @@ func TestUpdateConnectionSetting(t *testing.T) {
 		request.EXPECT().WithJSONBody(testEnvironmentSetting).Return(request).Once()
 		request.EXPECT().Execute(nil).Return(errTest).Once()
 		apiClient.EXPECT().PUT(t.Context(), fmt.Sprintf("/platform/classic/environment-api/v2/settings/objects/%s", testObjectID)).Return(request).Once()
-		mockClient := NewClientFromAPIClient(apiClient)
-		err := mockClient.UpdateConnectionSetting(t.Context(), testEnvironmentSetting)
+		mockClient := NewClient(apiClient)
+		err := mockClient.UpdateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.ErrorIs(t, err, errTest)
 	})
 
 	t.Run("No object id given", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
-		mockClient := NewClientFromAPIClient(apiClient)
-		err := mockClient.UpdateConnectionSetting(t.Context(), EnvironmentSetting{})
-		require.EqualError(t, err, "no connection setting object id given")
+		mockClient := NewClient(apiClient)
+		err := mockClient.UpdateEnvironmentSetting(t.Context(), EnvironmentSetting{})
+		require.EqualError(t, err, "no environment setting object id given")
 	})
 
 	t.Run("No object id given", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
-		mockClient := NewClientFromAPIClient(apiClient)
-		err := mockClient.UpdateConnectionSetting(t.Context(), EnvironmentSetting{ObjectID: ptr.To("")})
-		require.EqualError(t, err, "no connection setting object id given")
+		mockClient := NewClient(apiClient)
+		err := mockClient.UpdateEnvironmentSetting(t.Context(), EnvironmentSetting{ObjectID: ptr.To("")})
+		require.EqualError(t, err, "no environment setting object id given")
 	})
 }
 
-func TestDeleteConnectionSetting(t *testing.T) {
+func TestDeleteEnvironmentSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().Execute(nil).Return(nil).Once()
 		apiClient.EXPECT().DELETE(t.Context(), fmt.Sprintf("/platform/classic/environment-api/v2/settings/objects/%s", testObjectID)).Return(request).Once()
-		mockClient := NewClientFromAPIClient(apiClient)
-		err := mockClient.DeleteConnectionSetting(t.Context(), *testEnvironmentSetting.ObjectID)
+		mockClient := NewClient(apiClient)
+		err := mockClient.DeleteEnvironmentSetting(t.Context(), *testEnvironmentSetting.ObjectID)
 		require.NoError(t, err)
 	})
 
@@ -150,15 +150,15 @@ func TestDeleteConnectionSetting(t *testing.T) {
 		request.EXPECT().WithOAuthToken().Return(request).Once()
 		request.EXPECT().Execute(nil).Return(errTest).Once()
 		apiClient.EXPECT().DELETE(t.Context(), fmt.Sprintf("/platform/classic/environment-api/v2/settings/objects/%s", testObjectID)).Return(request).Once()
-		mockClient := NewClientFromAPIClient(apiClient)
-		err := mockClient.DeleteConnectionSetting(t.Context(), *testEnvironmentSetting.ObjectID)
+		mockClient := NewClient(apiClient)
+		err := mockClient.DeleteEnvironmentSetting(t.Context(), *testEnvironmentSetting.ObjectID)
 		require.ErrorIs(t, err, errTest)
 	})
 
 	t.Run("No object id given", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
-		mockClient := NewClientFromAPIClient(apiClient)
-		err := mockClient.DeleteConnectionSetting(t.Context(), "")
-		require.EqualError(t, err, "no connection setting object id given")
+		mockClient := NewClient(apiClient)
+		err := mockClient.DeleteEnvironmentSetting(t.Context(), "")
+		require.EqualError(t, err, "no environment setting object id given")
 	})
 }

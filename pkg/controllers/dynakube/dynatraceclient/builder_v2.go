@@ -91,7 +91,7 @@ func (dynatraceClientBuilder builderV2) Build(ctx context.Context) (*dtclient.Cl
 		paasToken = apiToken
 	}
 
-	opts.Opts = append(opts.Opts, dtclient.WithUserAgentSuffix(dynatraceClientBuilder.userAgentSuffix))
+	opts.Opts = append(opts.Opts, dtclient.WithV2UserAgentSuffix(dynatraceClientBuilder.userAgentSuffix))
 
 	opts.Opts = append(opts.Opts, dtclient.WithAPIToken(apiToken))
 	opts.Opts = append(opts.Opts, dtclient.WithPaasToken(paasToken))

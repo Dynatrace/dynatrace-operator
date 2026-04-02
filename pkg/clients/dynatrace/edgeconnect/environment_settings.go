@@ -40,8 +40,8 @@ type EnvironmentSettingsResponse struct {
 	PageSize   int                  `json:"pageSize"`
 }
 
-// GetConnectionSettings get connection settings
-func (c *client) GetConnectionSettings(ctx context.Context) ([]EnvironmentSetting, error) {
+// GetEnvironmentSettings get environment settings
+func (c *client) GetEnvironmentSettings(ctx context.Context) ([]EnvironmentSetting, error) {
 	qp := map[string]string{
 		"schemaIds": KubernetesConnectionSchemaID,
 		"scopes":    KubernetesConnectionScope,
@@ -57,41 +57,41 @@ func (c *client) GetConnectionSettings(ctx context.Context) ([]EnvironmentSettin
 	return response.Items, nil
 }
 
-// CreateConnectionSetting create connection setting
-func (c *client) CreateConnectionSetting(ctx context.Context, es EnvironmentSetting) error {
+// CreateEnvironmentSetting create environment setting
+func (c *client) CreateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
 	err := c.apiClient.POST(ctx, settingsObjectsPath).WithOAuthToken().WithJSONBody([]EnvironmentSetting{es}).Execute(nil)
 	if err != nil {
-		return errors.Wrap(err, "failed to create connection setting")
+		return errors.Wrap(err, "failed to create environment setting")
 	}
 
 	return nil
 }
 
-// UpdateConnectionSetting update connection setting
-func (c *client) UpdateConnectionSetting(ctx context.Context, es EnvironmentSetting) error {
+// UpdateEnvironmentSetting update environment setting
+func (c *client) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
 	objectID := ptr.Deref(es.ObjectID, "")
 
 	if objectID == "" {
-		return errors.New("no connection setting object id given")
+		return errors.New("no environment setting object id given")
 	}
 
 	err := c.apiClient.PUT(ctx, fmt.Sprintf(settingsObjectsIDPath, objectID)).WithOAuthToken().WithJSONBody(es).Execute(nil)
 	if err != nil {
-		return errors.Wrap(err, "failed to update connection setting")
+		return errors.Wrap(err, "failed to update environment setting")
 	}
 
 	return nil
 }
 
-// DeleteConnectionSetting deletes connection setting
-func (c *client) DeleteConnectionSetting(ctx context.Context, objectID string) error {
+// DeleteEnvironmentSetting deletes environment setting
+func (c *client) DeleteEnvironmentSetting(ctx context.Context, objectID string) error {
 	if objectID == "" {
-		return errors.New("no connection setting object id given")
+		return errors.New("no environment setting object id given")
 	}
 
 	err := c.apiClient.DELETE(ctx, fmt.Sprintf(settingsObjectsIDPath, objectID)).WithOAuthToken().Execute(nil)
 	if err != nil {
-		return errors.Wrap(err, "failed to delete connection setting")
+		return errors.Wrap(err, "failed to delete environment setting")
 	}
 
 	return nil

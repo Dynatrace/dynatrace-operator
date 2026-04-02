@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
@@ -203,7 +204,7 @@ func (controller *Controller) deleteConnectionSetting(ctx context.Context, edgeC
 	}
 
 	if (envSetting != edgeconnectClient.EnvironmentSetting{}) {
-		err = edgeConnectClient.DeleteConnectionSetting(ctx, *envSetting.ObjectID)
+		err = edgeConnectClient.DeleteEnvironmentSetting(ctx, *envSetting.ObjectID)
 		if err != nil {
 			return err
 		}
@@ -526,14 +527,20 @@ func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oaut
 			oauthScopes = append(oauthScopes, "settings:objects:read", "settings:objects:write")
 		}
 
-		return edgeconnectClient.NewClient(
-			edgeconnectClient.WithContext(ctx),
-			edgeconnectClient.WithClientID(oauthCredentials.clientID),
-			edgeconnectClient.WithClientSecret(oauthCredentials.clientSecret),
-			edgeconnectClient.WithBaseURL("https://"+ec.Spec.APIServer),
-			edgeconnectClient.WithTokenURL(ec.Spec.OAuth.Endpoint),
-			edgeconnectClient.WithOAuthScopes(oauthScopes),
-			edgeconnectClient.WithCustomCA(customCA))
+		oAuthClients, err := dynatrace.NewOAuthClient(
+			"https://"+ec.Spec.APIServer,
+			dynatrace.WithContext(ctx),
+			dynatrace.WithClientID(oauthCredentials.clientID),
+			dynatrace.WithClientSecret(oauthCredentials.clientSecret),
+			dynatrace.WithTokenURL(ec.Spec.OAuth.Endpoint),
+			dynatrace.WithOAuthScopes(oauthScopes),
+			dynatrace.WithOAuthUserAgentSuffix("edgeconnect"),
+			dynatrace.WithOAuthBaseOptions(dynatrace.WithCerts(customCA)))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed tot create edge connect client")
+		}
+
+		return oAuthClients.EdgeConnect, nil
 	}
 }
 
@@ -754,7 +761,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Contex
 	if (envSetting == edgeconnectClient.EnvironmentSetting{}) {
 		_log.Debug("Creating edgeconnectClient connection setting object...")
 
-		err = edgeConnectClient.CreateConnectionSetting(ctx,
+		err = edgeConnectClient.CreateEnvironmentSetting(ctx,
 			edgeconnectClient.EnvironmentSetting{
 				SchemaID: edgeconnectClient.KubernetesConnectionSchemaID,
 				Scope:    edgeconnectClient.KubernetesConnectionScope,
@@ -776,7 +783,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Contex
 			_log.Debug("Updating EdgeConnect connection setting object...")
 
 			envSetting.Value.Token = latestToken
-			err = edgeConnectClient.UpdateConnectionSetting(ctx, envSetting)
+			err = edgeConnectClient.UpdateEnvironmentSetting(ctx, envSetting)
 		}
 
 		if err != nil {
@@ -879,7 +886,7 @@ func (controller *Controller) getToken(ctx context.Context, ec *edgeconnect.Edge
 }
 
 func GetConnectionSetting(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, name, namespace, uid string) (edgeconnectClient.EnvironmentSetting, error) {
-	connectionSettings, err := edgeConnectClient.GetConnectionSettings(ctx)
+	connectionSettings, err := edgeConnectClient.GetEnvironmentSettings(ctx)
 	if err != nil {
 		return edgeconnectClient.EnvironmentSetting{}, err
 	}

@@ -38,63 +38,6 @@ func (_m *APIClient) EXPECT() *APIClient_Expecter {
 	return &APIClient_Expecter{mock: &_m.Mock}
 }
 
-// CreateConnectionSetting provides a mock function for the type APIClient
-func (_mock *APIClient) CreateConnectionSetting(ctx context.Context, es edgeconnect.EnvironmentSetting) error {
-	ret := _mock.Called(ctx, es)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateConnectionSetting")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, edgeconnect.EnvironmentSetting) error); ok {
-		r0 = returnFunc(ctx, es)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// APIClient_CreateConnectionSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateConnectionSetting'
-type APIClient_CreateConnectionSetting_Call struct {
-	*mock.Call
-}
-
-// CreateConnectionSetting is a helper method to define mock.On call
-//   - ctx context.Context
-//   - es edgeconnect.EnvironmentSetting
-func (_e *APIClient_Expecter) CreateConnectionSetting(ctx interface{}, es interface{}) *APIClient_CreateConnectionSetting_Call {
-	return &APIClient_CreateConnectionSetting_Call{Call: _e.mock.On("CreateConnectionSetting", ctx, es)}
-}
-
-func (_c *APIClient_CreateConnectionSetting_Call) Run(run func(ctx context.Context, es edgeconnect.EnvironmentSetting)) *APIClient_CreateConnectionSetting_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 edgeconnect.EnvironmentSetting
-		if args[1] != nil {
-			arg1 = args[1].(edgeconnect.EnvironmentSetting)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *APIClient_CreateConnectionSetting_Call) Return(err error) *APIClient_CreateConnectionSetting_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *APIClient_CreateConnectionSetting_Call) RunAndReturn(run func(ctx context.Context, es edgeconnect.EnvironmentSetting) error) *APIClient_CreateConnectionSetting_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // CreateEdgeConnect provides a mock function for the type APIClient
 func (_mock *APIClient) CreateEdgeConnect(ctx context.Context, request *edgeconnect.Request) (edgeconnect.CreateResponse, error) {
 	ret := _mock.Called(ctx, request)
@@ -161,44 +104,44 @@ func (_c *APIClient_CreateEdgeConnect_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
-// DeleteConnectionSetting provides a mock function for the type APIClient
-func (_mock *APIClient) DeleteConnectionSetting(ctx context.Context, objectID string) error {
-	ret := _mock.Called(ctx, objectID)
+// CreateEnvironmentSetting provides a mock function for the type APIClient
+func (_mock *APIClient) CreateEnvironmentSetting(ctx context.Context, es edgeconnect.EnvironmentSetting) error {
+	ret := _mock.Called(ctx, es)
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeleteConnectionSetting")
+		panic("no return value specified for CreateEnvironmentSetting")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = returnFunc(ctx, objectID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, edgeconnect.EnvironmentSetting) error); ok {
+		r0 = returnFunc(ctx, es)
 	} else {
 		r0 = ret.Error(0)
 	}
 	return r0
 }
 
-// APIClient_DeleteConnectionSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteConnectionSetting'
-type APIClient_DeleteConnectionSetting_Call struct {
+// APIClient_CreateEnvironmentSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateEnvironmentSetting'
+type APIClient_CreateEnvironmentSetting_Call struct {
 	*mock.Call
 }
 
-// DeleteConnectionSetting is a helper method to define mock.On call
+// CreateEnvironmentSetting is a helper method to define mock.On call
 //   - ctx context.Context
-//   - objectID string
-func (_e *APIClient_Expecter) DeleteConnectionSetting(ctx interface{}, objectID interface{}) *APIClient_DeleteConnectionSetting_Call {
-	return &APIClient_DeleteConnectionSetting_Call{Call: _e.mock.On("DeleteConnectionSetting", ctx, objectID)}
+//   - es edgeconnect.EnvironmentSetting
+func (_e *APIClient_Expecter) CreateEnvironmentSetting(ctx interface{}, es interface{}) *APIClient_CreateEnvironmentSetting_Call {
+	return &APIClient_CreateEnvironmentSetting_Call{Call: _e.mock.On("CreateEnvironmentSetting", ctx, es)}
 }
 
-func (_c *APIClient_DeleteConnectionSetting_Call) Run(run func(ctx context.Context, objectID string)) *APIClient_DeleteConnectionSetting_Call {
+func (_c *APIClient_CreateEnvironmentSetting_Call) Run(run func(ctx context.Context, es edgeconnect.EnvironmentSetting)) *APIClient_CreateEnvironmentSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 edgeconnect.EnvironmentSetting
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(edgeconnect.EnvironmentSetting)
 		}
 		run(
 			arg0,
@@ -208,12 +151,12 @@ func (_c *APIClient_DeleteConnectionSetting_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *APIClient_DeleteConnectionSetting_Call) Return(err error) *APIClient_DeleteConnectionSetting_Call {
+func (_c *APIClient_CreateEnvironmentSetting_Call) Return(err error) *APIClient_CreateEnvironmentSetting_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *APIClient_DeleteConnectionSetting_Call) RunAndReturn(run func(ctx context.Context, objectID string) error) *APIClient_DeleteConnectionSetting_Call {
+func (_c *APIClient_CreateEnvironmentSetting_Call) RunAndReturn(run func(ctx context.Context, es edgeconnect.EnvironmentSetting) error) *APIClient_CreateEnvironmentSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -275,64 +218,59 @@ func (_c *APIClient_DeleteEdgeConnect_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
-// GetConnectionSettings provides a mock function for the type APIClient
-func (_mock *APIClient) GetConnectionSettings(ctx context.Context) ([]edgeconnect.EnvironmentSetting, error) {
-	ret := _mock.Called(ctx)
+// DeleteEnvironmentSetting provides a mock function for the type APIClient
+func (_mock *APIClient) DeleteEnvironmentSetting(ctx context.Context, objectID string) error {
+	ret := _mock.Called(ctx, objectID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetConnectionSettings")
+		panic("no return value specified for DeleteEnvironmentSetting")
 	}
 
-	var r0 []edgeconnect.EnvironmentSetting
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]edgeconnect.EnvironmentSetting, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []edgeconnect.EnvironmentSetting); ok {
-		r0 = returnFunc(ctx)
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = returnFunc(ctx, objectID)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]edgeconnect.EnvironmentSetting)
-		}
+		r0 = ret.Error(0)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
-// APIClient_GetConnectionSettings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetConnectionSettings'
-type APIClient_GetConnectionSettings_Call struct {
+// APIClient_DeleteEnvironmentSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteEnvironmentSetting'
+type APIClient_DeleteEnvironmentSetting_Call struct {
 	*mock.Call
 }
 
-// GetConnectionSettings is a helper method to define mock.On call
+// DeleteEnvironmentSetting is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *APIClient_Expecter) GetConnectionSettings(ctx interface{}) *APIClient_GetConnectionSettings_Call {
-	return &APIClient_GetConnectionSettings_Call{Call: _e.mock.On("GetConnectionSettings", ctx)}
+//   - objectID string
+func (_e *APIClient_Expecter) DeleteEnvironmentSetting(ctx interface{}, objectID interface{}) *APIClient_DeleteEnvironmentSetting_Call {
+	return &APIClient_DeleteEnvironmentSetting_Call{Call: _e.mock.On("DeleteEnvironmentSetting", ctx, objectID)}
 }
 
-func (_c *APIClient_GetConnectionSettings_Call) Run(run func(ctx context.Context)) *APIClient_GetConnectionSettings_Call {
+func (_c *APIClient_DeleteEnvironmentSetting_Call) Run(run func(ctx context.Context, objectID string)) *APIClient_DeleteEnvironmentSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
 }
 
-func (_c *APIClient_GetConnectionSettings_Call) Return(environmentSettings []edgeconnect.EnvironmentSetting, err error) *APIClient_GetConnectionSettings_Call {
-	_c.Call.Return(environmentSettings, err)
+func (_c *APIClient_DeleteEnvironmentSetting_Call) Return(err error) *APIClient_DeleteEnvironmentSetting_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *APIClient_GetConnectionSettings_Call) RunAndReturn(run func(ctx context.Context) ([]edgeconnect.EnvironmentSetting, error)) *APIClient_GetConnectionSettings_Call {
+func (_c *APIClient_DeleteEnvironmentSetting_Call) RunAndReturn(run func(ctx context.Context, objectID string) error) *APIClient_DeleteEnvironmentSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -469,59 +407,64 @@ func (_c *APIClient_GetEdgeConnects_Call) RunAndReturn(run func(ctx context.Cont
 	return _c
 }
 
-// UpdateConnectionSetting provides a mock function for the type APIClient
-func (_mock *APIClient) UpdateConnectionSetting(ctx context.Context, es edgeconnect.EnvironmentSetting) error {
-	ret := _mock.Called(ctx, es)
+// GetEnvironmentSettings provides a mock function for the type APIClient
+func (_mock *APIClient) GetEnvironmentSettings(ctx context.Context) ([]edgeconnect.EnvironmentSetting, error) {
+	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for UpdateConnectionSetting")
+		panic("no return value specified for GetEnvironmentSettings")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, edgeconnect.EnvironmentSetting) error); ok {
-		r0 = returnFunc(ctx, es)
-	} else {
-		r0 = ret.Error(0)
+	var r0 []edgeconnect.EnvironmentSetting
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]edgeconnect.EnvironmentSetting, error)); ok {
+		return returnFunc(ctx)
 	}
-	return r0
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []edgeconnect.EnvironmentSetting); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]edgeconnect.EnvironmentSetting)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
-// APIClient_UpdateConnectionSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateConnectionSetting'
-type APIClient_UpdateConnectionSetting_Call struct {
+// APIClient_GetEnvironmentSettings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEnvironmentSettings'
+type APIClient_GetEnvironmentSettings_Call struct {
 	*mock.Call
 }
 
-// UpdateConnectionSetting is a helper method to define mock.On call
+// GetEnvironmentSettings is a helper method to define mock.On call
 //   - ctx context.Context
-//   - es edgeconnect.EnvironmentSetting
-func (_e *APIClient_Expecter) UpdateConnectionSetting(ctx interface{}, es interface{}) *APIClient_UpdateConnectionSetting_Call {
-	return &APIClient_UpdateConnectionSetting_Call{Call: _e.mock.On("UpdateConnectionSetting", ctx, es)}
+func (_e *APIClient_Expecter) GetEnvironmentSettings(ctx interface{}) *APIClient_GetEnvironmentSettings_Call {
+	return &APIClient_GetEnvironmentSettings_Call{Call: _e.mock.On("GetEnvironmentSettings", ctx)}
 }
 
-func (_c *APIClient_UpdateConnectionSetting_Call) Run(run func(ctx context.Context, es edgeconnect.EnvironmentSetting)) *APIClient_UpdateConnectionSetting_Call {
+func (_c *APIClient_GetEnvironmentSettings_Call) Run(run func(ctx context.Context)) *APIClient_GetEnvironmentSettings_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 edgeconnect.EnvironmentSetting
-		if args[1] != nil {
-			arg1 = args[1].(edgeconnect.EnvironmentSetting)
-		}
 		run(
 			arg0,
-			arg1,
 		)
 	})
 	return _c
 }
 
-func (_c *APIClient_UpdateConnectionSetting_Call) Return(err error) *APIClient_UpdateConnectionSetting_Call {
-	_c.Call.Return(err)
+func (_c *APIClient_GetEnvironmentSettings_Call) Return(environmentSettings []edgeconnect.EnvironmentSetting, err error) *APIClient_GetEnvironmentSettings_Call {
+	_c.Call.Return(environmentSettings, err)
 	return _c
 }
 
-func (_c *APIClient_UpdateConnectionSetting_Call) RunAndReturn(run func(ctx context.Context, es edgeconnect.EnvironmentSetting) error) *APIClient_UpdateConnectionSetting_Call {
+func (_c *APIClient_GetEnvironmentSettings_Call) RunAndReturn(run func(ctx context.Context) ([]edgeconnect.EnvironmentSetting, error)) *APIClient_GetEnvironmentSettings_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -585,6 +528,63 @@ func (_c *APIClient_UpdateEdgeConnect_Call) Return(err error) *APIClient_UpdateE
 }
 
 func (_c *APIClient_UpdateEdgeConnect_Call) RunAndReturn(run func(ctx context.Context, edgeConnectID string, request *edgeconnect.Request) error) *APIClient_UpdateEdgeConnect_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateEnvironmentSetting provides a mock function for the type APIClient
+func (_mock *APIClient) UpdateEnvironmentSetting(ctx context.Context, es edgeconnect.EnvironmentSetting) error {
+	ret := _mock.Called(ctx, es)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateEnvironmentSetting")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, edgeconnect.EnvironmentSetting) error); ok {
+		r0 = returnFunc(ctx, es)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// APIClient_UpdateEnvironmentSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateEnvironmentSetting'
+type APIClient_UpdateEnvironmentSetting_Call struct {
+	*mock.Call
+}
+
+// UpdateEnvironmentSetting is a helper method to define mock.On call
+//   - ctx context.Context
+//   - es edgeconnect.EnvironmentSetting
+func (_e *APIClient_Expecter) UpdateEnvironmentSetting(ctx interface{}, es interface{}) *APIClient_UpdateEnvironmentSetting_Call {
+	return &APIClient_UpdateEnvironmentSetting_Call{Call: _e.mock.On("UpdateEnvironmentSetting", ctx, es)}
+}
+
+func (_c *APIClient_UpdateEnvironmentSetting_Call) Run(run func(ctx context.Context, es edgeconnect.EnvironmentSetting)) *APIClient_UpdateEnvironmentSetting_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 edgeconnect.EnvironmentSetting
+		if args[1] != nil {
+			arg1 = args[1].(edgeconnect.EnvironmentSetting)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_UpdateEnvironmentSetting_Call) Return(err error) *APIClient_UpdateEnvironmentSetting_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *APIClient_UpdateEnvironmentSetting_Call) RunAndReturn(run func(ctx context.Context, es edgeconnect.EnvironmentSetting) error) *APIClient_UpdateEnvironmentSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
