@@ -34,7 +34,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, logOutput, "No OOMKilled ActiveGate containers found.")
+		assert.Contains(t, logOutput, "No OOMKilled containers found.")
 		assert.NotContains(t, logOutput, "was OOMKilled")
 	})
 
@@ -63,7 +63,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, logOutput, "No OOMKilled ActiveGate containers found.")
+		assert.Contains(t, logOutput, "No OOMKilled containers found.")
 		assert.NotContains(t, logOutput, "was OOMKilled")
 	})
 
@@ -103,7 +103,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 		assert.Contains(t, logOutput, "activegate")
 		assert.Contains(t, logOutput, "OOMKilled")
 		assert.Contains(t, logOutput, "137")
-		assert.NotContains(t, logOutput, "No OOMKilled ActiveGate containers found.")
+		assert.NotContains(t, logOutput, "No OOMKilled containers found.")
 	})
 
 	t.Run("multiple pods, one OOMKilled", func(t *testing.T) {
@@ -155,7 +155,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, logOutput, "dynakube-activegate-0")
 		assert.Contains(t, logOutput, "OOMKilled")
-		assert.NotContains(t, logOutput, "No OOMKilled ActiveGate containers found.")
+		assert.NotContains(t, logOutput, "No OOMKilled containers found.")
 	})
 
 	t.Run("pod with non-OOMKilled termination reason", func(t *testing.T) {
@@ -190,7 +190,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, logOutput, "No OOMKilled ActiveGate containers found.")
+		assert.Contains(t, logOutput, "No OOMKilled containers found.")
 		assert.NotContains(t, logOutput, "was OOMKilled")
 	})
 }

@@ -16,7 +16,7 @@ const activeGateCheckLoggerName = "activegate"
 func checkActiveGates(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	log := baseLog.WithName(activeGateCheckLoggerName)
 
-	err := checkOOMKilled(ctx, log, apiReader, dk)
+	err := checkActiveGateOOM(ctx, log, apiReader, dk)
 	if err != nil {
 		logErrorf(log, "Failed to check ActiveGate pods: %v", err)
 
@@ -26,21 +26,27 @@ func checkActiveGates(ctx context.Context, baseLog logd.Logger, apiReader client
 	return nil
 }
 
-func checkOOMKilled(ctx context.Context, log logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
-	logNewCheckf(log, "Checking ActiveGate pods")
+func checkActiveGateOOM(ctx context.Context, log logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
+	labels := map[string]string{
+		k8slabel.AppNameLabel:      k8slabel.ActiveGateComponentLabel,
+		k8slabel.AppCreatedByLabel: dk.Name,
+		k8slabel.AppManagedByLabel: version.AppName,
+	}
+
+	return checkOOMKilled(ctx, log, apiReader, dk.Namespace, labels)
+}
+
+func checkOOMKilled(ctx context.Context, log logd.Logger, apiReader client.Reader, namespace string, labels map[string]string) error {
+	logNewCheckf(log, "Checking pods")
 
 	podList := &corev1.PodList{}
 
 	err := apiReader.List(ctx, podList,
-		client.InNamespace(dk.Namespace),
-		client.MatchingLabels{
-			k8slabel.AppNameLabel:      k8slabel.ActiveGateComponentLabel,
-			k8slabel.AppCreatedByLabel: dk.Name,
-			k8slabel.AppManagedByLabel: version.AppName,
-		},
+		client.InNamespace(namespace),
+		client.MatchingLabels(labels),
 	)
 	if err != nil {
-		logWarningf(log, "Failed to list ActiveGate pods: %v", err)
+		logWarningf(log, "Failed to list pods: %v", err)
 
 		return err
 	}
@@ -60,7 +66,7 @@ func checkOOMKilled(ctx context.Context, log logd.Logger, apiReader client.Reade
 	}
 
 	if !oomKilledFound {
-		logOkf(log, "No OOMKilled ActiveGate containers found.")
+		logOkf(log, "No OOMKilled containers found.")
 	}
 
 	return nil
