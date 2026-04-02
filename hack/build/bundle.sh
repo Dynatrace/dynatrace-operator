@@ -52,11 +52,6 @@ rm -rf manifests
 
 "${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir pkg/api/
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --output-dir . --version "${VERSION}" "${SDK_PARAMS[@]}"
-# Add missing aggregated ClusterRole and binding. This fixes the issue of missing cluster permissions in the CSV.
-# operator-sdk looks at the RBAC on disk, but aggregated roles are rendered in the cluster.
-# https://github.com/operator-framework/operator-lifecycle-manager/issues/2757
-yq 'select(.kind=="ClusterRole")|select(.metadata.name=="dynatrace-kubernetes-monitoring")|.' "config/deploy/${PLATFORM}/${PLATFORM}.yaml" > manifests/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrole.yaml
-yq 'select(.kind=="ClusterRoleBinding")|select(.metadata.name=="dynatrace-kubernetes-monitoring")|.' "config/deploy/${PLATFORM}/${PLATFORM}.yaml" > manifests/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
 
 # Set important metadata
 yq -i ".metadata.annotations[\"olm.skipRange\"] = \"<${VERSION}\"" manifests/dynatrace-operator.clusterserviceversion.yaml
