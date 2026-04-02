@@ -68,9 +68,9 @@ jobs:
           sha=$(git -C source-repo rev-parse HEAD)
           echo "Source commit SHA: ${sha}"
 
-          mkdir -p output
-          cp "source-repo/documents/${SCHEMA_NAME}/spec3.json" output/spec3.json
-          echo "${sha}" > output/source-sha.txt
+          mkdir -p "output/source-schema-${SCHEMA_NAME}"
+          cp "source-repo/documents/${SCHEMA_NAME}/spec3.json" "output/source-schema-${SCHEMA_NAME}/spec3.json"
+          echo "${sha}" > "output/source-schema-${SCHEMA_NAME}/source-sha.txt"
         env:
           SOURCE_REPO_URL: ${{ secrets.API_SPEC_SOURCE_REPO_URL }}
           SOURCE_ACCESS_TOKEN: ${{ secrets.BITBUCKET_ACCESS_TOKEN }}
@@ -110,6 +110,7 @@ jobs:
         with:
           pattern: source-schema-*
           path: source-schemas
+          merge-multiple: true
 
       - name: Compare, update, and build PR body
         id: sync
