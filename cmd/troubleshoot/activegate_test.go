@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -27,10 +28,12 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 	t.Run("no ActiveGate pods found", func(t *testing.T) {
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 
+		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkActiveGateOOMKilled(context.Background(), logger, clt, dk)
+			err = checkActiveGates(context.Background(), logger, clt, dk)
 		})
 
+		require.NoError(t, err)
 		assert.Contains(t, logOutput, "No OOMKilled ActiveGate containers found.")
 		assert.NotContains(t, logOutput, "was OOMKilled")
 	})
@@ -54,10 +57,12 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(pod).Build()
 
+		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkActiveGateOOMKilled(context.Background(), logger, clt, dk)
+			err = checkActiveGates(context.Background(), logger, clt, dk)
 		})
 
+		require.NoError(t, err)
 		assert.Contains(t, logOutput, "No OOMKilled ActiveGate containers found.")
 		assert.NotContains(t, logOutput, "was OOMKilled")
 	})
@@ -88,10 +93,12 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(pod).Build()
 
+		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkActiveGateOOMKilled(context.Background(), logger, clt, dk)
+			err = checkActiveGates(context.Background(), logger, clt, dk)
 		})
 
+		require.NoError(t, err)
 		assert.Contains(t, logOutput, "dynakube-activegate-0")
 		assert.Contains(t, logOutput, "activegate")
 		assert.Contains(t, logOutput, "OOMKilled")
@@ -140,10 +147,12 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(oomPod, healthyPod).Build()
 
+		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkActiveGateOOMKilled(context.Background(), logger, clt, dk)
+			err = checkActiveGates(context.Background(), logger, clt, dk)
 		})
 
+		require.NoError(t, err)
 		assert.Contains(t, logOutput, "dynakube-activegate-0")
 		assert.Contains(t, logOutput, "OOMKilled")
 		assert.NotContains(t, logOutput, "No OOMKilled ActiveGate containers found.")
@@ -175,10 +184,12 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(pod).Build()
 
+		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkActiveGateOOMKilled(context.Background(), logger, clt, dk)
+			err = checkActiveGates(context.Background(), logger, clt, dk)
 		})
 
+		require.NoError(t, err)
 		assert.Contains(t, logOutput, "No OOMKilled ActiveGate containers found.")
 		assert.NotContains(t, logOutput, "was OOMKilled")
 	})

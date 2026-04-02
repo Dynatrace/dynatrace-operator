@@ -141,7 +141,10 @@ func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader cl
 		return err
 	}
 
-	checkActiveGateOOMKilled(ctx, log, apiReader, &dk)
+	err = checkActiveGates(ctx, log, apiReader, &dk)
+	if err != nil {
+		return err
+	}
 
 	return checkProxySettings(ctx, log, apiReader, &dk)
 }

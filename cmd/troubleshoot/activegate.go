@@ -13,10 +13,21 @@ import (
 
 const activeGateCheckLoggerName = "activegate"
 
-func checkActiveGateOOMKilled(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) {
+func checkActiveGates(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	log := baseLog.WithName(activeGateCheckLoggerName)
 
-	logNewCheckf(log, "Checking ActiveGate pods for OOMKilled containers ...")
+	err := checkOOMKilled(ctx, log, apiReader, dk)
+	if err != nil {
+		logErrorf(log, "Failed to check ActiveGate pods: %v", err)
+
+		return err
+	}
+
+	return nil
+}
+
+func checkOOMKilled(ctx context.Context, log logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
+	logNewCheckf(log, "Checking ActiveGate pods")
 
 	podList := &corev1.PodList{}
 
@@ -31,7 +42,7 @@ func checkActiveGateOOMKilled(ctx context.Context, baseLog logd.Logger, apiReade
 	if err != nil {
 		logWarningf(log, "Failed to list ActiveGate pods: %v", err)
 
-		return
+		return err
 	}
 
 	oomKilledFound := false
@@ -51,6 +62,8 @@ func checkActiveGateOOMKilled(ctx context.Context, baseLog logd.Logger, apiReade
 	if !oomKilledFound {
 		logOkf(log, "No OOMKilled ActiveGate containers found.")
 	}
+
+	return nil
 }
 
 func isOOMKilled(state corev1.ContainerState) bool {
