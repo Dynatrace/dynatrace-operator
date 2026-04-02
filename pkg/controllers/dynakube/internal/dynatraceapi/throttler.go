@@ -56,7 +56,9 @@ func (dt Throttler) Store(dk *dynakube.DynaKube) {
 		dk.Status.Tenant.APIThrottler = &dynakube.APIThrottler{}
 	}
 
-	dk.Status.Tenant.APIThrottler.LastRequestTimestamp = metav1.Now()
+	if !dk.Status.Tenant.APIThrottler.Enabled {
+		dk.Status.Tenant.APIThrottler.LastRequestTimestamp = metav1.Now()
+	}
 
 	dt[dk.Name] = dk.Status.Tenant.APIThrottler
 }
