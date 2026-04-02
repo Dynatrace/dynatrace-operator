@@ -1,7 +1,6 @@
 package troubleshoot
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -30,7 +29,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			err = checkActiveGates(context.Background(), logger, clt, dk)
+			err = checkActiveGates(t.Context(), logger, clt, dk)
 		})
 
 		require.NoError(t, err)
@@ -59,7 +58,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			err = checkActiveGates(context.Background(), logger, clt, dk)
+			err = checkActiveGates(t.Context(), logger, clt, dk)
 		})
 
 		require.NoError(t, err)
@@ -95,7 +94,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			err = checkActiveGates(context.Background(), logger, clt, dk)
+			err = checkActiveGates(t.Context(), logger, clt, dk)
 		})
 
 		require.NoError(t, err)
@@ -149,7 +148,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			err = checkActiveGates(context.Background(), logger, clt, dk)
+			err = checkActiveGates(t.Context(), logger, clt, dk)
 		})
 
 		require.NoError(t, err)
@@ -186,7 +185,7 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 		var err error
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			err = checkActiveGates(context.Background(), logger, clt, dk)
+			err = checkActiveGates(t.Context(), logger, clt, dk)
 		})
 
 		require.NoError(t, err)
