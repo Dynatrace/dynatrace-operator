@@ -59,7 +59,7 @@ func newWebhook( //nolint:revive
 	decoder admission.Decoder,
 	webhookNamespace string,
 	isOpenshift bool) (*webhook, error) {
-	webhookImage := os.Getenv(k8senv.DtOperatorImageEnvName)
+	webhookImage := os.Getenv(k8senv.DTOperatorImageEnvName)
 	if webhookImage == "" {
 		return nil, errors.New("DT_OPERATOR_IMAGE env var is not set, cannot determine webhook container image")
 	}
@@ -85,7 +85,7 @@ func newWebhook( //nolint:revive
 		apiReader:        apiReader,
 		recorder:         eventRecorder,
 		webhookNamespace: webhookNamespace,
-		deployedViaOLM:   system.IsDeployedViaOlm(),
+		deployedViaOLM:   system.IsDeployedViaOLM(),
 		decoder:          decoder,
 	}, nil
 }

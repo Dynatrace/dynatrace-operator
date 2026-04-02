@@ -147,7 +147,7 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 				Protocol:   corev1.ProtocolTCP,
 				TargetPort: intstr.FromInt32(zipkinPort),
 			})
-		case otelcgen.OtlpProtocol:
+		case otelcgen.OTLPProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:        otlpGRPCPortName,

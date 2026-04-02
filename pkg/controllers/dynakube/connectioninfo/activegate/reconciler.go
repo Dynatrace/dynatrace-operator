@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -20,41 +19,37 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type reconciler struct {
-	agClient     agclient.APIClient
+type Reconciler struct {
 	timeProvider *timeprovider.Provider
-	dk           *dynakube.DynaKube
 	secrets      k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, agClient agclient.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
-	return &reconciler{
-		dk:           dk,
-		agClient:     agClient,
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
+	return &Reconciler{
 		timeProvider: timeprovider.New(),
 		secrets:      k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.ActiveGate().IsEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), activeGateConnectionInfoConditionType) == nil {
+func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.APIClient, dk *dynakube.DynaKube) error {
+	if !dk.ActiveGate().IsEnabled() {
+		if meta.FindStatusCondition(*dk.Conditions(), activeGateConnectionInfoConditionType) == nil {
 			return nil
 		}
 
-		r.dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{}
+		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{}
 
-		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}})
+		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up ActiveGate tenant-secret")
 		}
 
-		meta.RemoveStatusCondition(r.dk.Conditions(), activeGateConnectionInfoConditionType)
+		meta.RemoveStatusCondition(dk.Conditions(), activeGateConnectionInfoConditionType)
 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	err := r.reconcileConnectionInfo(ctx)
+	err := r.reconcileConnectionInfo(ctx, dk, agClient)
 	if err != nil {
 		return err
 	}
@@ -62,47 +57,47 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	return err
 }
 
-func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	secretNamespacedName := types.NamespacedName{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}
+func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.APIClient) error {
+	secretNamespacedName := types.NamespacedName{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace}
 
-	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, activeGateConnectionInfoConditionType) {
+	if !k8sconditions.IsOutdated(r.timeProvider, dk, activeGateConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
 
-		condition := meta.FindStatusCondition(*r.dk.Conditions(), activeGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), activeGateConnectionInfoConditionType)
 		if isSecretPresent {
 			log.Info(dynakube.GetCacheValidMessage(
 				"activegate connection info update",
 				condition.LastTransitionTime,
-				r.dk.APIRequestThreshold()))
+				dk.APIRequestThreshold()))
 
 			return nil
 		}
 	}
 
-	k8sconditions.SetSecretOutdated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
+	k8sconditions.SetSecretOutdated(dk.Conditions(), activeGateConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
-	connectionInfo, err := r.agClient.GetConnectionInfo(ctx)
+	connectionInfo, err := agClient.GetConnectionInfo(ctx)
 	if err != nil {
-		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
+		k8sconditions.SetDynatraceAPIError(dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
 		return errors.WithMessage(err, "failed to get ActiveGate connection info")
 	}
 
-	r.setDynakubeStatus(connectionInfo)
+	r.setDynakubeStatus(dk, connectionInfo)
 
 	if len(connectionInfo.Endpoints) == 0 {
 		log.Info("tenant has no endpoints", "tenant", connectionInfo.TenantUUID)
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dk.ActiveGate().GetTenantSecretName(), connectionInfo)
+	err = r.createTenantTokenSecret(ctx, dk, dk.ActiveGate().GetTenantSecretName(), connectionInfo)
 	if err != nil {
 		return err
 	}
 
-	r.dk.Status.ActiveGate.ConnectionInfo.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.TenantToken)
+	dk.Status.ActiveGate.ConnectionInfo.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.TenantToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate TenantTokenHash")
 	}
@@ -112,13 +107,13 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) setDynakubeStatus(connectionInfo agclient.ConnectionInfo) {
-	r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
-	r.dk.Status.ActiveGate.ConnectionInfo.Endpoints = connectionInfo.Endpoints
+func (r *Reconciler) setDynakubeStatus(dk *dynakube.DynaKube, connectionInfo agclient.ConnectionInfo) {
+	dk.Status.ActiveGate.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
+	dk.Status.ActiveGate.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 }
 
-func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo agclient.ConnectionInfo) error {
-	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo.TenantToken)
+func (r *Reconciler) createTenantTokenSecret(ctx context.Context, dk *dynakube.DynaKube, secretName string, connectionInfo agclient.ConnectionInfo) error {
+	secret, err := connectioninfo.BuildTenantSecret(dk, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -126,12 +121,12 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	_, err = r.secrets.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
 		return err
 	}
 
-	k8sconditions.SetSecretCreated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secret.Name)
+	k8sconditions.SetSecretCreated(dk.Conditions(), activeGateConnectionInfoConditionType, secret.Name)
 
 	return nil
 }

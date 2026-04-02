@@ -80,8 +80,8 @@ func IsThirdGenAPIUrl(_ context.Context, _ *Validator, dk *dynakube.DynaKube) st
 	return ""
 }
 
-func IsMutatedAPIURL(_ context.Context, _ *Validator, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string {
-	if oldDk.Spec.APIURL != newDk.Spec.APIURL {
+func IsMutatedAPIURL(_ context.Context, _ *Validator, oldDK *dynakube.DynaKube, newDK *dynakube.DynaKube) string {
+	if oldDK.Spec.APIURL != newDK.Spec.APIURL {
 		return errorMutatedAPIURL
 	}
 

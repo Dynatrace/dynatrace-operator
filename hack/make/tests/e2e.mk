@@ -51,6 +51,10 @@ test/e2e/release:
 test/e2e/activegate:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "activegate" $(SKIPCLEANUP)
 
+## Runs ActiveGate e2e test only
+test/e2e/activegate/no-update-meid:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "no_update_meid" $(SKIPCLEANUP)
+
 ## Runs ActiveGate proxy e2e test only
 test/e2e/activegate/proxy:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/istio -run "activegate" $(SKIPCLEANUP)

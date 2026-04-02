@@ -21,8 +21,8 @@ const (
 
 	TenantSecretVolumeName = "connection-info-secret"
 
-	EnvDtServer = "DT_SERVER"
-	EnvDtTenant = "DT_TENANT"
+	EnvDTServer = "DT_SERVER"
+	EnvDTTenant = "DT_TENANT"
 )
 
 func IsTenantSecretPresent(ctx context.Context, secrets k8ssecret.QueryObject, secretNamespacedName types.NamespacedName, log logd.Logger) (bool, error) {

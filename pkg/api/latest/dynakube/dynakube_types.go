@@ -86,7 +86,7 @@ type DynaKubeSpec struct { //nolint:revive
 
 	// General configuration about the KSPM feature.
 	// +kubebuilder:validation:Optional
-	Kspm *kspm.Spec `json:"kspm,omitempty"`
+	KSPM *kspm.Spec `json:"kspm,omitempty"`
 
 	// Configuration for thresholding Dynatrace API requests.
 	// +kubebuilder:validation:Optional
@@ -168,7 +168,7 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	LogMonitoring *logmonitoring.TemplateSpec `json:"logMonitoring,omitempty"`
 	// +kubebuilder:validation:Optional
-	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
+	KSPMNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
 	// +kubebuilder:validation:Optional
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
 	// +kubebuilder:validation:Optional

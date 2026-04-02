@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
@@ -21,35 +20,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ controllers.Reconciler = &Reconciler{}
-
 type Reconciler struct {
-	client     client.Client
-	dk         *dynakube.DynaKube
-	apiReader  client.Reader
-	capability capability.Capability
-	modifiers  []builder.Modifier
+	apiReader    client.Reader
+	modifiers    []builder.Modifier
+	statefulsets k8sstatefulset.QueryObject
 }
 
 func NewReconciler(
 	clt client.Client,
 	apiReader client.Reader,
-	dk *dynakube.DynaKube,
-	capability capability.Capability,
-) controllers.Reconciler {
+) *Reconciler {
 	return &Reconciler{
-		client:     clt,
-		apiReader:  apiReader,
-		dk:         dk,
-		capability: capability,
-		modifiers:  []builder.Modifier{},
+		apiReader:    apiReader,
+		modifiers:    []builder.Modifier{},
+		statefulsets: k8sstatefulset.Query(clt, apiReader, log),
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, capability capability.Capability) controllers.Reconciler
-
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	err := r.manageStatefulSet(ctx)
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) error {
+	err := r.manageStatefulSet(ctx, dk, agCapability)
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
 
@@ -59,55 +48,55 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
-	desiredSts, err := r.buildDesiredStatefulSet(ctx)
+func (r *Reconciler) manageStatefulSet(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) error {
+	desiredSts, err := r.buildDesiredStatefulSet(ctx, dk, agCapability)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return err
 	}
 
-	updated, err := k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
+	updated, err := r.statefulsets.WithOwner(dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return err
 	} else if updated {
-		k8sconditions.SetStatefulSetCreated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+		k8sconditions.SetStatefulSetCreated(dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.StatefulSet, error) {
-	kubeUID := types.UID(r.dk.Status.KubeSystemUUID)
+func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (*appsv1.StatefulSet, error) {
+	kubeUID := types.UID(dk.Status.KubeSystemUUID)
 
-	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash(ctx)
+	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 	if err != nil {
 		return nil, err
 	}
 
-	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dk, r.capability)
+	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *dk, agCapability)
 
 	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = k8sstatefulset.ResolveAndSetReplicas(ctx, r.apiReader, desiredSts, r.dk.Spec.ActiveGate.Replicas); err != nil {
+	if err = k8sstatefulset.ResolveAndSetReplicas(ctx, r.apiReader, desiredSts, dk.Spec.ActiveGate.Replicas); err != nil {
 		return nil, err
 	}
 
 	return desiredSts, nil
 }
 
-func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context) (string, error) {
-	customPropertyData, err := r.getCustomPropertyValue(ctx)
+func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (string, error) {
+	customPropertyData, err := r.getCustomPropertyValue(ctx, dk, agCapability)
 	if err != nil {
 		return "", err
 	}
 
-	authTokenData, err := r.getAuthTokenValue(ctx)
+	authTokenData, err := r.getAuthTokenValue(ctx, dk)
 	if err != nil {
 		return "", err
 	}
@@ -124,12 +113,12 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context) (
 	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
 }
 
-func (r *Reconciler) getCustomPropertyValue(ctx context.Context) (string, error) {
-	if !needsCustomPropertyHash(r.capability.Properties().CustomProperties) {
+func (r *Reconciler) getCustomPropertyValue(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (string, error) {
+	if !needsCustomPropertyHash(agCapability.Properties().CustomProperties) {
 		return "", nil
 	}
 
-	customPropertyData, err := r.getDataFromCustomProperty(ctx, r.capability.Properties().CustomProperties)
+	customPropertyData, err := r.getDataFromCustomProperty(ctx, dk, agCapability.Properties().CustomProperties)
 	if err != nil {
 		return "", err
 	}
@@ -137,12 +126,12 @@ func (r *Reconciler) getCustomPropertyValue(ctx context.Context) (string, error)
 	return customPropertyData, nil
 }
 
-func (r *Reconciler) getAuthTokenValue(ctx context.Context) (string, error) {
-	if !r.dk.ActiveGate().IsEnabled() {
+func (r *Reconciler) getAuthTokenValue(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	if !dk.ActiveGate().IsEnabled() {
 		return "", nil
 	}
 
-	authTokenData, err := r.getDataFromAuthTokenSecret(ctx)
+	authTokenData, err := r.getDataFromAuthTokenSecret(ctx, dk)
 	if err != nil {
 		return "", err
 	}
@@ -150,16 +139,16 @@ func (r *Reconciler) getAuthTokenValue(ctx context.Context) (string, error) {
 	return authTokenData, nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, customProperties *value.Source) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, dk *dynakube.DynaKube, customProperties *value.Source) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
+		return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
 
 	return customProperties.Value, nil
 }
 
-func (r *Reconciler) getDataFromAuthTokenSecret(ctx context.Context) (string, error) {
-	return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName, log)
+func (r *Reconciler) getDataFromAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
 func needsCustomPropertyHash(customProperties *value.Source) bool {

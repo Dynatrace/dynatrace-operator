@@ -56,13 +56,13 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
-		movedDk := createDynakubeWithAppInject("moved-dk", convertToLabelSelector(labels))
+		movedDK := createDynakubeWithAppInject("moved-dk", convertToLabelSelector(labels))
 		nsLabels := map[string]string{
-			dtwebhook.InjectionInstanceLabel: movedDk.Name,
+			dtwebhook.InjectionInstanceLabel: movedDK.Name,
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
-		clt := fake.NewClient(movedDk, namespace)
-		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", movedDk)
+		clt := fake.NewClient(movedDK, namespace)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", movedDK)
 
 		err := dm.MapFromDynakube()
 
@@ -75,14 +75,14 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
-		conflictingDk := createDynakubeWithAppInject("conflicting-dk", convertToLabelSelector(labels))
+		conflictingDK := createDynakubeWithAppInject("conflicting-dk", convertToLabelSelector(labels))
 		nsLabels := map[string]string{
 			dtwebhook.InjectionInstanceLabel: dk.Name,
 			"test":                           "selector",
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
-		clt := fake.NewClient(dk, conflictingDk, namespace)
-		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", conflictingDk)
+		clt := fake.NewClient(dk, conflictingDK, namespace)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", conflictingDK)
 
 		err := dm.MapFromDynakube()
 

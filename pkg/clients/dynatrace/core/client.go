@@ -38,23 +38,26 @@ type APIRequest interface {
 	WithJSONBody(body any) APIRequest
 	// WithRawBody sets the request body as raw bytes
 	WithRawBody(body []byte) APIRequest
-	// WithTokenType sets the token type to use for authentication
-	WithTokenType(tokenType TokenType) APIRequest
 	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
+	// WithoutToken explicitly disables authentication for the request
+	WithoutToken() APIRequest
+	// WithHeader sets a custom header for the request, overriding any default value
+	WithHeader(key, value string) APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
 	Execute(model any) error
 	// ExecuteRaw executes the request and returns the raw response data
 	ExecuteRaw() ([]byte, error)
+	// ExecuteWriter executes the request and writes the response body to the provided writer
+	ExecuteWriter(writer io.Writer) error
 }
 
 type Config struct {
-	BaseURL         *url.URL
-	HTTPClient      *http.Client
-	UserAgent       string
-	APIToken        string
-	PaasToken       string
-	DataIngestToken string
+	BaseURL    *url.URL
+	HTTPClient *http.Client
+	UserAgent  string
+	APIToken   string
+	PaasToken  string
 }
 
 type Client struct {
@@ -72,6 +75,7 @@ type Request struct {
 
 	ctx       context.Context
 	query     url.Values
+	headers   http.Header
 	method    string
 	path      string
 	body      []byte
@@ -85,19 +89,22 @@ type TokenType int
 const (
 	TokenTypeAPI TokenType = iota
 	TokenTypePaaS
-	TokenTypeDataIngest
+	TokenTypeNone
 )
 
 func (c *Client) newRequest(ctx context.Context) *Request {
+	headers := make(http.Header)
+
 	query := make(url.Values)
 	if c.cfg.BaseURL != nil {
 		query = c.cfg.BaseURL.Query()
 	}
 
 	return &Request{
-		client: c,
-		ctx:    ctx,
-		query:  query,
+		headers: headers,
+		client:  c,
+		ctx:     ctx,
+		query:   query,
 	}
 }
 
@@ -191,6 +198,20 @@ func (r *Request) WithPaasToken() APIRequest {
 	return r
 }
 
+// WithoutToken explicitly disables authentication for the request
+func (r *Request) WithoutToken() APIRequest {
+	r.tokenType = TokenTypeNone
+
+	return r
+}
+
+// WithHeader sets a custom header for the request, overriding existing value
+func (r *Request) WithHeader(key, value string) APIRequest {
+	r.headers.Set(key, value)
+
+	return r
+}
+
 // Execute executes the request and unmarshals the response into the provided model
 func (r *Request) Execute(model any) error {
 	body, err := r.doRequest()
@@ -212,12 +233,17 @@ func (r *Request) ExecuteRaw() ([]byte, error) {
 	return r.doRequest()
 }
 
+// ExecuteWriter executes the request and writes the response body to the provided writer.
+func (r *Request) ExecuteWriter(writer io.Writer) error {
+	return r.doRequestStream(writer)
+}
+
 func (r *Request) getToken() string {
 	switch r.tokenType {
 	case TokenTypePaaS:
 		return r.client.cfg.PaasToken
-	case TokenTypeDataIngest:
-		return r.client.cfg.DataIngestToken
+	case TokenTypeNone:
+		return ""
 	default:
 		return r.client.cfg.APIToken
 	}
@@ -244,6 +270,72 @@ func (r *Request) withMethod(method string) APIRequest {
 	return r
 }
 
+func (r *Request) doRequestStream(writer io.Writer) (err error) {
+	if r.err != nil {
+		return r.err
+	}
+
+	reqURL, err := r.buildURL()
+	if err != nil {
+		return fmt.Errorf("build URL: %w", err)
+	}
+
+	var bodyReader io.Reader
+	if r.body != nil {
+		bodyReader = bytes.NewReader(r.body)
+	}
+
+	req, err := http.NewRequestWithContext(r.ctx, r.method, reqURL.String(), bodyReader)
+	if err != nil {
+		return fmt.Errorf("create HTTP request: %w", err)
+	}
+
+	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
+
+	httpClient := r.client.cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	loggerArgs := createLoggerArgs(r.body)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("HTTP request: %w", err)
+	}
+
+	defer func() {
+		if errClose := resp.Body.Close(); errClose != nil {
+			err = errors.Join(err, errClose)
+		}
+	}()
+
+	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
+	statusCodeThreshold := 201
+	if r.method == http.MethodDelete {
+		statusCodeThreshold = 299
+	}
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return fmt.Errorf("read error response body: %w", readErr)
+		}
+
+		log.Debug("API request", loggerArgs(resp, body)...)
+
+		return handleErrorResponse(resp, body)
+	}
+
+	log.Debug("API request", loggerArgs(resp, nil)...)
+
+	if _, err = io.Copy(writer, resp.Body); err != nil {
+		return fmt.Errorf("stream response body: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Request) doRequest() (body []byte, err error) {
 	if r.err != nil {
 		return nil, r.err
@@ -264,7 +356,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 		return nil, fmt.Errorf("create HTTP request: %w", err)
 	}
 
-	setHeaders(req, r.client.cfg.UserAgent, r.getToken())
+	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
 
 	httpClient := r.client.cfg.HTTPClient
 	if httpClient == nil {
@@ -305,9 +397,12 @@ func (r *Request) doRequest() (body []byte, err error) {
 }
 
 // setHeaders sets the common headers for the request
-func setHeaders(req *http.Request, userAgent, token string) {
+func setHeaders(req *http.Request, userAgent, token string, customHeaders http.Header) {
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", apiTokenHeader+token)
+
+	if token != "" {
+		req.Header.Set("Authorization", apiTokenHeader+token)
+	}
 
 	if userAgent != "" {
 		req.Header.Set("User-Agent", userAgent)
@@ -315,6 +410,14 @@ func setHeaders(req *http.Request, userAgent, token string) {
 
 	if req.GetBody != nil {
 		req.Header.Set("Content-Type", "application/json")
+	}
+
+	for key, values := range customHeaders {
+		if len(values) == 0 {
+			continue
+		}
+
+		req.Header.Set(key, values[0])
 	}
 }
 

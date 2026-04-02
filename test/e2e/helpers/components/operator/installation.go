@@ -221,7 +221,7 @@ func getImageRef(rootDir string) (string, error) {
 		stdout.Reset()
 		for _, line := range lines {
 			// make prints things to stdout, e.g. make[1]: Entering directory
-			if !strings.HasPrefix(line, "make[") {
+			if !strings.HasPrefix(line, "make") {
 				stdout.WriteString(line)
 			}
 		}

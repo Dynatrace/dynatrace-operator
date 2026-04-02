@@ -385,22 +385,22 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		capEnv := k8senv.Find(envs, consts.EnvDtCapabilities)
+		capEnv := k8senv.Find(envs, consts.EnvDTCapabilities)
 		require.NotNil(t, capEnv)
 		assert.Equal(t, multiCapability.ArgName(), capEnv.Value)
 
-		namespaceEnv := k8senv.Find(envs, consts.EnvDtIDSeedNamespace)
+		namespaceEnv := k8senv.Find(envs, consts.EnvDTIDSeedNamespace)
 		require.NotNil(t, namespaceEnv)
 		assert.Equal(t, dk.Namespace, namespaceEnv.Value)
 
-		idEnv := k8senv.Find(envs, consts.EnvDtIDSeedClusterID)
+		idEnv := k8senv.Find(envs, consts.EnvDTIDSeedClusterID)
 		require.NotNil(t, idEnv)
 		assert.Equal(t, testKubeUID, idEnv.Value)
 
-		dtHTTPPortEnv := k8senv.Find(envs, consts.EnvDtHTTPPort)
+		dtHTTPPortEnv := k8senv.Find(envs, consts.EnvDTHTTPPort)
 		require.NotNil(t, dtHTTPPortEnv)
 
-		metadataEnv := k8senv.Find(envs, deploymentmetadata.EnvDtDeploymentMetadata)
+		metadataEnv := k8senv.Find(envs, deploymentmetadata.EnvDTDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
 		assert.NotEmpty(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
 		assert.Equal(t, deploymentmetadata.ActiveGateMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
@@ -451,7 +451,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		groupEnv := k8senv.Find(envs, consts.EnvDtGroup)
+		groupEnv := k8senv.Find(envs, consts.EnvDTGroup)
 		require.NotNil(t, groupEnv)
 		assert.Equal(t, multiCapability.Properties().Group, groupEnv.Value)
 	})
@@ -459,8 +459,9 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("metrics-ingest env", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		capability.SwitchCapability(&dk, activegate.RoutingCapability, false)
-		capability.SwitchCapability(&dk, activegate.MetricsIngestCapability, true)
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
+			activegate.MetricsIngestCapability.DisplayName,
+		}
 
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
@@ -468,7 +469,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		dtHTTPPortEnv := k8senv.Find(envs, consts.EnvDtHTTPPort)
+		dtHTTPPortEnv := k8senv.Find(envs, consts.EnvDTHTTPPort)
 		require.NotNil(t, dtHTTPPortEnv)
 		assert.Equal(t, strconv.Itoa(consts.HTTPContainerPort), dtHTTPPortEnv.Value)
 	})
@@ -483,7 +484,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		zoneEnv := k8senv.Find(envs, consts.EnvDtNetworkZone)
+		zoneEnv := k8senv.Find(envs, consts.EnvDTNetworkZone)
 		require.NotNil(t, zoneEnv)
 		assert.Equal(t, dk.Spec.NetworkZone, zoneEnv.Value)
 	})

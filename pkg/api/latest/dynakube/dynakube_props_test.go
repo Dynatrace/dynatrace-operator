@@ -144,7 +144,7 @@ func TestImagePullSecretReferences(t *testing.T) {
 	})
 
 	t.Run("includes Helm pull secret from env var", func(t *testing.T) {
-		t.Setenv(k8senv.DtOperatorPullSecretEnvName, helmPullSecret)
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, helmPullSecret)
 		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName}}
 		refs := dk.ImagePullSecretReferences()
 		assert.Len(t, refs, 2)
@@ -153,7 +153,7 @@ func TestImagePullSecretReferences(t *testing.T) {
 	})
 
 	t.Run("does not duplicate helm pull secret when it matches DynaKube customPullSecret", func(t *testing.T) {
-		t.Setenv(k8senv.DtOperatorPullSecretEnvName, customPullSecret)
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, customPullSecret)
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
@@ -165,7 +165,7 @@ func TestImagePullSecretReferences(t *testing.T) {
 	})
 
 	t.Run("includes both DynaKube customPullSecret and helm pull secret", func(t *testing.T) {
-		t.Setenv(k8senv.DtOperatorPullSecretEnvName, helmPullSecret)
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, helmPullSecret)
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},

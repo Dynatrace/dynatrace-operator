@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
@@ -85,10 +84,8 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 
-		activeGateReconcilerBuilder: activegate.NewReconciler,
-		injectionReconcilerBuilder:  injection.NewReconciler,
+		injectionReconcilerBuilder: injection.NewReconciler,
 
-		apiMonitoringReconciler:      apimonitoring.NewReconciler(),
 		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
 		k8sEntityReconciler:          k8sentity.NewReconciler(),
@@ -98,6 +95,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		istioReconciler:              istio.NewReconciler(kubeClient, apiReader),
 		logMonitoringReconciler:      logmonitoring.NewReconciler(kubeClient, apiReader),
 		oneAgentReconciler:           oneagent.NewReconciler(kubeClient, apiReader, clusterID),
+		activeGateReconciler:         activegate.NewReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -111,10 +109,6 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Complete(controller)
-}
-
-type apiMonitoringReconciler interface {
-	Reconcile(ctx context.Context, dtc settings.APIClient, clusterLabel string, dk *dynakube.DynaKube) error
 }
 
 type istioReconciler interface {
@@ -138,6 +132,10 @@ type oneAgentReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error
 }
 
+type activeGateReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error
+}
+
 // Controller reconciles a DynaKube object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -146,7 +144,6 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder events.EventRecorder
 
-	apiMonitoringReconciler      apiMonitoringReconciler
 	extensionReconciler          dynakubeReconciler
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               dtSettingReconciler
@@ -156,12 +153,12 @@ type Controller struct {
 	istioReconciler              istioReconciler
 	logMonitoringReconciler      logMonitoringReconciler
 	oneAgentReconciler           oneAgentReconciler
+	activeGateReconciler         activeGateReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
 
-	activeGateReconcilerBuilder activegate.ReconcilerBuilder
-	injectionReconcilerBuilder  injection.ReconcilerBuilder
+	injectionReconcilerBuilder injection.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -349,16 +346,16 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
 	var componentErrors []error
 
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
+		componentErrors = append(componentErrors, err)
+	}
+
 	log.Info("start reconciling ActiveGate")
 
 	err := controller.reconcileActiveGate(ctx, dk, dynatraceClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
-		componentErrors = append(componentErrors, err)
-	}
-
-	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
 		componentErrors = append(componentErrors, err)
 	}
 

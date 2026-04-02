@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
@@ -26,37 +25,31 @@ const (
 	AuthTokenRotationInterval = time.Hour*24*30 - AuthTokenBuffer
 )
 
-var _ controllers.Reconciler = &Reconciler{}
-
 type Reconciler struct {
-	dk       *dynakube.DynaKube
-	agClient agclient.APIClient
-	secrets  k8ssecret.QueryObject
+	secrets k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, agClient agclient.APIClient) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		dk:       dk,
-		agClient: agClient,
-		secrets:  k8ssecret.Query(clt, apiReader, log),
+		secrets: k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.ActiveGate().IsEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType) == nil {
+func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.APIClient, dk *dynakube.DynaKube) error {
+	if !dk.ActiveGate().IsEnabled() {
+		if meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType) == nil {
 			return nil
 		}
 
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
+		defer meta.RemoveStatusCondition(dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 
-		secret, _ := k8ssecret.Build(r.dk, r.dk.ActiveGate().GetAuthTokenSecretName(), nil)
-		_ = r.deleteSecret(ctx, secret)
+		secret, _ := k8ssecret.Build(dk, dk.ActiveGate().GetAuthTokenSecretName(), nil)
+		_ = r.deleteSecret(ctx, dk, secret)
 
 		return nil
 	}
 
-	err := r.reconcileAuthTokenSecret(ctx)
+	err := r.reconcileAuthTokenSecret(ctx, dk, agClient)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create activeGateAuthToken secret")
 	}
@@ -64,16 +57,16 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
-	secret, err := r.secrets.Get(ctx, client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: r.dk.Namespace})
+func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.APIClient) error {
+	secret, err := r.secrets.Get(ctx, client.ObjectKey{Name: dk.ActiveGate().GetAuthTokenSecretName(), Namespace: dk.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating activeGateAuthToken secret")
 
-			return r.ensureAuthTokenSecret(ctx)
+			return r.ensureAuthTokenSecret(ctx, dk, agClient)
 		}
 
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return errors.WithStack(err)
 	}
@@ -81,33 +74,33 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 	if isSecretOutdated(secret) {
 		log.Info("activeGateAuthToken is outdated, creating new one")
 
-		k8sconditions.SetSecretOutdated(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret is outdated, update in progress")
+		k8sconditions.SetSecretOutdated(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret is outdated, update in progress")
 
-		if err := r.deleteSecret(ctx, secret); err != nil {
+		if err := r.deleteSecret(ctx, dk, secret); err != nil {
 			return errors.WithStack(err)
 		}
 
-		return r.ensureAuthTokenSecret(ctx)
+		return r.ensureAuthTokenSecret(ctx, dk, agClient)
 	}
 
-	r.conditionSetSecretCreated(secret) // update message once a day
+	r.conditionSetSecretCreated(dk, secret) // update message once a day
 
 	return nil
 }
 
-func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context) error {
-	agSecretData, err := r.getActiveGateAuthToken(ctx)
+func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.APIClient) error {
+	agSecretData, err := r.getActiveGateAuthToken(ctx, dk, agClient)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to create secret '%s'", r.dk.ActiveGate().GetAuthTokenSecretName())
+		return errors.WithMessagef(err, "failed to create secret '%s'", dk.ActiveGate().GetAuthTokenSecretName())
 	}
 
-	return r.createSecret(ctx, agSecretData)
+	return r.createSecret(ctx, dk, agSecretData)
 }
 
-func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]byte, error) {
-	authTokenInfo, err := r.agClient.GetAuthToken(ctx, r.dk.Name)
+func (r *Reconciler) getActiveGateAuthToken(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.APIClient) (map[string][]byte, error) {
+	authTokenInfo, err := agClient.GetAuthToken(ctx, dk.Name)
 	if err != nil {
-		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
@@ -117,33 +110,33 @@ func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]b
 	}, nil
 }
 
-func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]byte) error {
-	secretName := r.dk.ActiveGate().GetAuthTokenSecretName()
+func (r *Reconciler) createSecret(ctx context.Context, dk *dynakube.DynaKube, secretData map[string][]byte) error {
+	secretName := dk.ActiveGate().GetAuthTokenSecretName()
 
-	secret, err := k8ssecret.Build(r.dk,
+	secret, err := k8ssecret.Build(dk,
 		secretName,
 		secretData)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return errors.WithStack(err)
 	}
 
-	err = r.secrets.WithOwner(r.dk).Create(ctx, secret)
+	err = r.secrets.WithOwner(dk).Create(ctx, secret)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return errors.Errorf("failed to create secret '%s': %v", secretName, err)
 	}
 
-	r.conditionSetSecretCreated(secret)
+	r.conditionSetSecretCreated(dk, secret)
 
 	return nil
 }
 
-func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) error {
+func (r *Reconciler) deleteSecret(ctx context.Context, dk *dynakube.DynaKube, secret *corev1.Secret) error {
 	if err := r.secrets.Delete(ctx, secret); err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return err
 	}
@@ -155,11 +148,11 @@ func isSecretOutdated(secret *corev1.Secret) bool {
 	return secret.CreationTimestamp.Add(AuthTokenRotationInterval).Before(time.Now())
 }
 
-func (r *Reconciler) conditionSetSecretCreated(secret *corev1.Secret) {
+func (r *Reconciler) conditionSetSecretCreated(dk *dynakube.DynaKube, secret *corev1.Secret) {
 	lifespan := time.Since(secret.CreationTimestamp.Time)
 	days := strconv.Itoa(int(lifespan.Hours() / 24))
 	tokenAllParts := strings.Split(string(secret.Data[ActiveGateAuthTokenName]), ".")
 	tokenPublicPart := strings.Join(tokenAllParts[:2], ".")
 
-	setAuthSecretCreated(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
+	setAuthSecretCreated(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
 }

@@ -59,14 +59,14 @@ func TestReconcile(t *testing.T) {
 
 		agCl := agclientmock.NewAPIClient(t)
 		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
-		r := NewReconciler(clt, clt, dk, agCl)
+		r := NewReconciler(clt, clt)
 
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
 
 		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
 		})
 		require.NoError(t, err)
 
@@ -83,10 +83,10 @@ func TestReconcile(t *testing.T) {
 
 		agCl := agclientmock.NewAPIClient(t)
 		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Twice()
-		r := NewReconciler(clt, clt, dk, agCl)
+		r := NewReconciler(clt, clt)
 
 		// create secret
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
@@ -95,8 +95,8 @@ func TestReconcile(t *testing.T) {
 		firstTransition := condition.LastTransitionTime
 
 		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
@@ -114,7 +114,7 @@ func TestReconcile(t *testing.T) {
 		time.Sleep(1 * time.Second)
 
 		// update secret
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
 
 		condition = meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
@@ -123,8 +123,8 @@ func TestReconcile(t *testing.T) {
 		secondTransition := condition.LastTransitionTime
 
 		authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
@@ -142,10 +142,10 @@ func TestReconcile(t *testing.T) {
 
 		agCl := agclientmock.NewAPIClient(t)
 		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
-		r := NewReconciler(clt, clt, dk, agCl)
+		r := NewReconciler(clt, clt)
 
 		// create secret
-		err := r.Reconcile(t.Context())
+		err := r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
@@ -154,8 +154,8 @@ func TestReconcile(t *testing.T) {
 		firstTransition := condition.LastTransitionTime
 
 		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
 		})
 
 		require.NoError(t, err)
@@ -174,7 +174,7 @@ func TestReconcile(t *testing.T) {
 		time.Sleep(1 * time.Second)
 
 		// do not update secret
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
 
 		condition = meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
@@ -183,8 +183,8 @@ func TestReconcile(t *testing.T) {
 		secondTransition := condition.LastTransitionTime
 
 		authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: r.dk.Namespace,
-			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
+			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
