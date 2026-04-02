@@ -344,9 +344,9 @@ As such, you declare them at the package level and, in doing so, imply that your
   }
   defer conn.Close()   // only reached when open() succeeded
 
+  conn, err := open()
   // ✗ cleanup runs even if open() failed
   defer conn.Close()
-  conn, err := open()
   if err != nil {
       return err
   }
