@@ -195,6 +195,7 @@ func NewOAuthClient(baseURL string, options ...OAuthOption) (*OAuthClient, error
 	apiClient := core.NewClient(core.Config{
 		BaseURL:    parsedURL,
 		HTTPClient: oAuthHTTPClient,
+		UserAgent:  config.UserAgent,
 	})
 
 	return &OAuthClient{
