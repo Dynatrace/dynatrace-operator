@@ -2,11 +2,6 @@ name: Sync OpenAPI schemas
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - api/oapi/sync-config.yaml
 
 permissions: {}
 
