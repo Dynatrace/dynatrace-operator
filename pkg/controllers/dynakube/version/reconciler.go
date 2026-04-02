@@ -103,7 +103,7 @@ func (r *reconciler) needsUpdate(updater StatusUpdater, dk *dynakube.DynaKube) b
 	}
 
 	if dk.IsDTAPIThrottled() {
-		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
+		log.Info("skipping version status updater, api throttling is on", "updater", updater.Name())
 
 		return false
 	}
