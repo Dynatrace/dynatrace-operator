@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -17,6 +18,10 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 	errorActiveGateInvalidPVCConfiguration = ` DynaKube specifies a PVC for the ActiveGate while ephemeral volume is also enabled. These settings are mutually exclusive, please choose only one.`
 
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
+
+	warningActiveGateRollingUpdateOldK8sVersion = `ActiveGate rollingUpdate setting requires Kubernetes version 1.35 or higher. The current cluster version is below 1.35, so the rollingUpdate setting will be ignored.`
+
+	minK8sMinorVersionForRollingUpdate = 35
 )
 
 func invalidActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -56,6 +61,34 @@ func mutuallyExclusiveActiveGatePVsettings(_ context.Context, _ *Validator, dk *
 		log.Info("requested dynakube specifies mutually exclusive VolumeClaimTemplate settings for ActiveGate.", "name", dk.Name, "namespace", dk.Namespace)
 
 		return errorActiveGateInvalidPVCConfiguration
+	}
+
+	return ""
+}
+
+func activeGateRollingUpdateWithOldK8sVersion(_ context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	if dk.Spec.ActiveGate.RollingUpdate == nil {
+		return ""
+	}
+
+	if dv.versionChecker == nil {
+		return ""
+	}
+
+	serverVersion, err := dv.versionChecker.ServerVersion()
+	if err != nil {
+		log.Error(err, "failed to get kubernetes server version")
+		return ""
+	}
+
+	minor, err := strconv.Atoi(serverVersion.Minor)
+	if err != nil {
+		log.Error(err, "failed to parse kubernetes minor version", "minor", serverVersion.Minor)
+		return ""
+	}
+
+	if minor < minK8sMinorVersionForRollingUpdate {
+		return warningActiveGateRollingUpdateOldK8sVersion
 	}
 
 	return ""

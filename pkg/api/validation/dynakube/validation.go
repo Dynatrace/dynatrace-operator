@@ -11,13 +11,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type Validator struct {
-	apiReader client.Reader
-	modules   installconfig.Modules
+	apiReader      client.Reader
+	versionChecker discovery.ServerVersionInterface
+	modules        installconfig.Modules
 }
 
 var (
@@ -78,6 +81,7 @@ var (
 		extensionsWithoutK8SMonitoring,
 		hostPathDatabaseVolumeFound,
 		disabledMetadataEnrichmentForInjectionModes,
+		activeGateRollingUpdateWithOldK8sVersion,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,
@@ -87,11 +91,19 @@ var (
 type validatorFunc func(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string
 type updateValidatorFunc func(ctx context.Context, dv *Validator, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string
 
-func New(apiReader client.Reader) admission.Validator[runtime.Object] {
-	return &Validator{
+func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.Object] {
+	v := &Validator{
 		apiReader: apiReader,
 		modules:   installconfig.GetModules(),
 	}
+
+	if cfg != nil {
+		if discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg); err == nil {
+			v.versionChecker = discoveryClient
+		}
+	}
+
+	return v
 }
 
 func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
