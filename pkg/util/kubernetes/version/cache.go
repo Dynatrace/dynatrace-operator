@@ -79,7 +79,7 @@ func (c *versionInfoCache) getMinorVersion() int {
 	c.mutex.Lock()
 
 	if err := c.refreshMinorVersion(); err != nil {
-		log.Error(err, "kubernetes version lookup for apparmor setting failed")
+		log.Error(err, "kubernetes version lookup failed")
 	}
 
 	minorVersion := c.minorVersion
