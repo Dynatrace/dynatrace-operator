@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,17 +12,13 @@ import (
 
 func TestRun(t *testing.T) {
 	testImage := "some.registry.com:1.2.3.4-5"
-	timeProvider := timeprovider.New().Freeze()
 
-	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
+	t.Run("set source at the end, if no error", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
+		versionReconciler := reconciler{}
 		updater := newCustomImageUpdater(t, target, testImage)
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 		assert.Equal(t, testImage, target.ImageID)
 		assert.Equal(t, string(status.CustomImageVersionSource), target.Version)
@@ -31,28 +26,22 @@ func TestRun(t *testing.T) {
 
 	t.Run("set source and probe at the end, if invalid custom image", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
+		versionReconciler := reconciler{}
 		updater := newCustomImageUpdater(t, target, "incorrect-uri")
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 		assert.Equal(t, string(status.CustomImageVersionSource), target.Version)
 	})
 	t.Run("autoUpdate disabled, runs if status is empty or source changes", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
+		versionReconciler := reconciler{}
 		updater := newDefaultUpdater(t, target, false)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
@@ -74,16 +63,13 @@ func TestRun(t *testing.T) {
 
 	t.Run("autoUpdate disabled, runs if status custom-version is set", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
+		versionReconciler := reconciler{}
 		updater := newCustomVersionUpdater(t, target, "123", false)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
 
 		// 2. call => it is custom version => should run
@@ -96,16 +82,13 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
+		versionReconciler := reconciler{}
 		updater := newClassicFullStackUpdater(t, target, false)
 		updater.On("CustomImage").Return("")
 		updater.On("CustomVersion").Return("")
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 		assert.Empty(t, target.Version)
 	})
@@ -113,15 +96,12 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
+		versionReconciler := reconciler{}
 		updater := newClassicFullStackUpdater(t, target, false)
 		updater.On("CustomImage").Return(testImage)
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 	})
 }

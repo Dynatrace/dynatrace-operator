@@ -19,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -113,7 +112,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 	}
 
 	if r.versionReconciler == nil {
-		r.versionReconciler = version.NewReconciler(r.apiReader, dtClient, timeprovider.New().Freeze())
+		r.versionReconciler = version.NewReconciler(r.apiReader, dtClient)
 	}
 
 	err = r.versionReconciler.ReconcileActiveGate(ctx, dk)

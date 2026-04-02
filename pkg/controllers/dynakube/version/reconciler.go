@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,17 +17,15 @@ type Reconciler interface {
 }
 
 type reconciler struct {
-	dtClient     dtclient.Client
-	timeProvider *timeprovider.Provider
+	dtClient dtclient.Client
 
 	apiReader client.Reader
 }
 
-func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvider *timeprovider.Provider) Reconciler {
+func NewReconciler(apiReader client.Reader, dtClient dtclient.Client) Reconciler {
 	return &reconciler{
-		apiReader:    apiReader,
-		timeProvider: timeProvider,
-		dtClient:     dtClient,
+		apiReader: apiReader,
+		dtClient:  dtClient,
 	}
 }
 
@@ -105,7 +102,7 @@ func (r *reconciler) needsUpdate(updater StatusUpdater, dk *dynakube.DynaKube) b
 		return true
 	}
 
-	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dk.APIRequestThreshold()) {
+	if dk.IsDTAPIThrottled() {
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 
 		return false
