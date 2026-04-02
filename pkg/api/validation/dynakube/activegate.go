@@ -78,12 +78,14 @@ func activeGateRollingUpdateWithOldK8sVersion(_ context.Context, dv *Validator, 
 	serverVersion, err := dv.versionChecker.ServerVersion()
 	if err != nil {
 		log.Error(err, "failed to get kubernetes server version")
+
 		return ""
 	}
 
 	minor, err := strconv.Atoi(serverVersion.Minor)
 	if err != nil {
 		log.Error(err, "failed to parse kubernetes minor version", "minor", serverVersion.Minor)
+
 		return ""
 	}
 
