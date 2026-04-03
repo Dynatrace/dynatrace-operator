@@ -104,9 +104,9 @@ func sanitizeBody(body []byte) string {
 
 	sanitized = bearerTokenRegex.ReplaceAllStringFunc(sanitized, func(s string) string {
 		// Only keep the "Bearer" prefix, hide the token
-		idx := strings.IndexByte(s, ' ')
+		before, _, _ := strings.Cut(s, " ")
 
-		return s[:idx] + " ***"
+		return before + " ***"
 	})
 
 	return sanitized
