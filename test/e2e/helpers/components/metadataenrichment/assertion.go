@@ -24,8 +24,8 @@ type Metadata struct {
 	WorkloadName string `json:"k8s.workload.name,omitempty"`
 
 	// deprecated fields, should exist only if enable-attributes-dt.kubernetes feature flag is enabled
-	DtWorkloadKind string `json:"dt.kubernetes.workload.kind,omitempty"`
-	DtWorkloadName string `json:"dt.kubernetes.workload.name,omitempty"`
+	DTWorkloadKind string `json:"dt.kubernetes.workload.kind,omitempty"`
+	DTWorkloadName string `json:"dt.kubernetes.workload.name,omitempty"`
 }
 
 func GetMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) Metadata {

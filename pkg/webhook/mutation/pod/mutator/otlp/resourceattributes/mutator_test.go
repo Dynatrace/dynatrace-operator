@@ -289,7 +289,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 
 	t.Run("without deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
-		dk.Annotations = map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "false"}
+		dk.Annotations = map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "false"}
 		runMutatorTests(t, *dk, tests, true)
 	})
 }
@@ -297,7 +297,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTestCase, removeDeprecatedAttr bool) { //nolint:revive
 	t.Helper()
 
-	removeDtKubernetesAnnotations := func(attributes map[string][]string) map[string][]string {
+	removeDTKubernetesAnnotations := func(attributes map[string][]string) map[string][]string {
 		attributesCopy := maps.Clone(attributes)
 		for containerName, attrs := range attributesCopy {
 			filteredAttrs := slices.DeleteFunc(attrs, func(attr string) bool {
@@ -312,7 +312,7 @@ func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTe
 	for _, tt := range tests {
 		wantAttributes := tt.wantAttributes
 		if removeDeprecatedAttr {
-			wantAttributes = removeDtKubernetesAnnotations(tt.wantAttributes)
+			wantAttributes = removeDTKubernetesAnnotations(tt.wantAttributes)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {

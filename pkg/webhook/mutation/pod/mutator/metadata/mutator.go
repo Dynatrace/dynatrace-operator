@@ -69,11 +69,11 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	}
 
 	withDeprecatedAttributesArg := arg.Arg{
-		Name:  bootstrapper.EnableAttributesDtKubernetesFlag,
+		Name:  bootstrapper.EnableAttributesDTKubernetesFlag,
 		Value: "false",
 	}
 
-	if request.DynaKube.FF().EnableAttributesDtKubernetes() {
+	if request.DynaKube.FF().EnableAttributesDTKubernetes() {
 		setDeprecatedAttributes(&attrs)
 
 		withDeprecatedAttributesArg.Value = "true"

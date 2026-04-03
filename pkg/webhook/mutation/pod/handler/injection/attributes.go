@@ -28,7 +28,7 @@ func addPodAttributes(request *dtwebhook.MutationRequest) error {
 		UserDefined: map[string]string{},
 	}
 
-	if request.DynaKube.FF().EnableAttributesDtKubernetes() {
+	if request.DynaKube.FF().EnableAttributesDTKubernetes() {
 		setDeprecatedAttributes(&attrs)
 	}
 

@@ -1,9 +1,9 @@
 package exp
 
 const (
-	EnrichmentEnableAttributesDtKubernetes = FFPrefix + "enable-attributes-dt.kubernetes"
+	EnrichmentEnableAttributesDTKubernetes = FFPrefix + "enable-attributes-dt.kubernetes"
 )
 
-func (ff *FeatureFlags) EnableAttributesDtKubernetes() bool {
-	return ff.getBoolWithDefault(EnrichmentEnableAttributesDtKubernetes, true)
+func (ff *FeatureFlags) EnableAttributesDTKubernetes() bool {
+	return ff.getBoolWithDefault(EnrichmentEnableAttributesDTKubernetes, true)
 }

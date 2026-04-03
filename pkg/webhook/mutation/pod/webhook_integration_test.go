@@ -324,7 +324,7 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 	}
 
 	if withoutDeprecatedAnnotations {
-		dk.Annotations[exp.EnrichmentEnableAttributesDtKubernetes] = "false"
+		dk.Annotations[exp.EnrichmentEnableAttributesDTKubernetes] = "false"
 	}
 
 	createDynaKube(t, clt, dk)
@@ -409,7 +409,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		testCases := []testCase{
 			{
 				name:                     "without deprecated annotations",
-				annotations:              map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "false"},
+				annotations:              map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "false"},
 				withDeprecatedAttributes: false,
 			},
 			{

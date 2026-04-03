@@ -44,10 +44,10 @@ func TestEnableAttributesDtKubernetes(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				EnrichmentEnableAttributesDtKubernetes: c.in,
+				EnrichmentEnableAttributesDTKubernetes: c.in,
 			}}
 
-			out := ff.EnableAttributesDtKubernetes()
+			out := ff.EnableAttributesDTKubernetes()
 
 			assert.Equal(t, c.out, out)
 		})

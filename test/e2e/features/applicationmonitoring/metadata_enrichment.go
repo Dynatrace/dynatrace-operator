@@ -246,11 +246,11 @@ func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) k8sdeployment.PodConsu
 
 func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		testPod := samplePod.ListPods(ctx, t, envConfig.Client().Resources()).Items[0]
 		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, envConfig.Client().Resources(), testPod)
 
-		assert.Equal(t, "pod", enrichmentMetadata.DtWorkloadKind)
-		assert.Equal(t, testPod.Name, enrichmentMetadata.DtWorkloadName)
+		assert.Equal(t, "pod", enrichmentMetadata.DTWorkloadKind)
+		assert.Equal(t, testPod.Name, enrichmentMetadata.DTWorkloadName)
 
 		return ctx
 	}
@@ -258,11 +258,11 @@ func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) feat
 
 func assessMetadataEnrichmentDoesNotHaveDeprecatedAttributes(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		testPod := samplePod.ListPods(ctx, t, envConfig.Client().Resources()).Items[0]
 		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, envConfig.Client().Resources(), testPod)
 
-		assert.Empty(t, enrichmentMetadata.DtWorkloadKind)
-		assert.Empty(t, enrichmentMetadata.DtWorkloadName)
+		assert.Empty(t, enrichmentMetadata.DTWorkloadKind)
+		assert.Empty(t, enrichmentMetadata.DTWorkloadName)
 
 		return ctx
 	}

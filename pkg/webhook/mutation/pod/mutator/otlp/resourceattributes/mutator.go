@@ -116,7 +116,7 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		"k8s.node.name":                "$(K8S_NODE_NAME)",
 	}
 
-	if request.DynaKube.FF().EnableAttributesDtKubernetes() {
+	if request.DynaKube.FF().EnableAttributesDTKubernetes() {
 		kubernetesMetaDataAttributes["dt.kubernetes.cluster.id"] = request.DynaKube.Status.KubeSystemUUID
 	}
 
@@ -128,7 +128,7 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		kubernetesMetaDataAttributes["k8s.workload.name"] = ownerInfo.Name
 	}
 
-	if ownerInfo != nil && request.DynaKube.FF().EnableAttributesDtKubernetes() {
+	if ownerInfo != nil && request.DynaKube.FF().EnableAttributesDTKubernetes() {
 		kubernetesMetaDataAttributes[metadata.DeprecatedWorkloadNameKey] = ownerInfo.Name
 		kubernetesMetaDataAttributes[metadata.DeprecatedWorkloadKindKey] = ownerInfo.Kind
 	}

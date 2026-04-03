@@ -25,7 +25,7 @@ const (
 	TargetVersionFlag                = "version"
 	FlavorFlag                       = "flavor"
 	MetadataEnrichmentFlag           = "metadata-enrichment"
-	EnableAttributesDtKubernetesFlag = "enable-attributes-dt-kubernetes"
+	EnableAttributesDTKubernetesFlag = "enable-attributes-dt-kubernetes"
 )
 
 var (
@@ -36,7 +36,7 @@ var (
 	flavor              string
 
 	needsMetadataEnrichment      bool
-	enableAttributesDtKubernetes bool
+	enableAttributesDTKubernetes bool
 
 	log = logd.Get().WithName("bootstrap")
 )
@@ -71,9 +71,9 @@ func AddFlags(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().Lookup(MetadataEnrichmentFlag).NoOptDefVal = "true"
 
-	cmd.PersistentFlags().BoolVar(&enableAttributesDtKubernetes, EnableAttributesDtKubernetesFlag, true, "(Optional) Should the deprecated attributes dt.kubernetes be added to the metadata enrichment.")
+	cmd.PersistentFlags().BoolVar(&enableAttributesDTKubernetes, EnableAttributesDTKubernetesFlag, true, "(Optional) Should the deprecated attributes dt.kubernetes be added to the metadata enrichment.")
 
-	cmd.PersistentFlags().Lookup(EnableAttributesDtKubernetesFlag).NoOptDefVal = "true"
+	cmd.PersistentFlags().Lookup(EnableAttributesDTKubernetesFlag).NoOptDefVal = "true"
 
 	configure.AddFlags(cmd)
 }
@@ -139,7 +139,7 @@ func runConfigure() error {
 	}
 
 	if needsMetadataEnrichment {
-		err := configure.EnrichWithMetadata(log.Logger, enableAttributesDtKubernetes)
+		err := configure.EnrichWithMetadata(log.Logger, enableAttributesDTKubernetes)
 		if err != nil {
 			log.Info("error during metadata enrichment")
 
