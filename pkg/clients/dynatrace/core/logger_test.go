@@ -62,7 +62,7 @@ func Test_loggerArgs(t *testing.T) {
 		},
 	}
 
-	requestBody := []byte("request " + token + " " + bearerToken)
+	requestBody := []byte("request " + token + "rest")
 	responseBody := []byte("response " + token + "rest")
 
 	tests := []struct {
@@ -83,7 +83,7 @@ func Test_loggerArgs(t *testing.T) {
 			levelRequest,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_body", "request " + publicPart + ".*** Bearer ***",
+				"request_body", "request " + publicPart + ".***rest",
 			},
 		},
 		{
@@ -91,7 +91,7 @@ func Test_loggerArgs(t *testing.T) {
 			levelResponse,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_body", "request " + publicPart + ".*** Bearer ***",
+				"request_body", "request " + publicPart + ".***rest",
 				"response_body", "response " + publicPart + ".***rest",
 			},
 		},
@@ -102,7 +102,7 @@ func Test_loggerArgs(t *testing.T) {
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
 				"request_headers", `{"Authorization":"Bearer ***","Request-Foo":"request-` + publicPart + `.***"}`,
 				"response_headers", `{"Response-Foo":"response-` + publicPart + `.***"}`,
-				"request_body", "request " + publicPart + ".*** Bearer ***",
+				"request_body", "request " + publicPart + ".***rest",
 				"response_body", "response " + publicPart + ".***rest",
 			},
 		},
@@ -132,6 +132,7 @@ func Test_loggerArgs(t *testing.T) {
 
 func Test_dumpValues(t *testing.T) {
 	token := strings.Repeat("a", 5) + "." + strings.Repeat("A", 8) + "." + strings.Repeat("B", 64)
+	authorizationToken := "test-token"
 
 	tests := []struct {
 		name         string
@@ -151,8 +152,8 @@ func Test_dumpValues(t *testing.T) {
 		{"multi value w canonicalize", http.Header{"x-foo": []string{"bar", "baz"}}, true, `{"X-Foo":["bar","baz"]}`},
 		{"multi value wo canonicalize", url.Values{"foo": []string{"bar", "baz"}}, false, `{"foo":["bar","baz"]}`},
 
-		{"mask secret w canonicalize", http.Header{"x-foo": []string{"Bearer " + token}}, true, `{"X-Foo":"Bearer ***"}`},
-		{"mask secret wo canonicalize", url.Values{"foo": []string{"Bearer " + token}}, false, `{"foo":"Bearer ***"}`},
+		{"mask secret w canonicalize", http.Header{"authorization": []string{"Bearer " + authorizationToken}, "request-foo": []string{"request-" + token}}, true, `{"Authorization":"Bearer ***","Request-Foo":"request-aaaaa.AAAAAAAA.***"}`},
+		{"mask secret wo canonicalize", url.Values{"authorization": []string{"Bearer " + authorizationToken}, "request-foo": []string{"request-" + token}}, false, `{"authorization":"Bearer ***","request-foo":"request-aaaaa.AAAAAAAA.***"}`},
 	}
 
 	for _, tt := range tests {
