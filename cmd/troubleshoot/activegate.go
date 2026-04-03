@@ -39,7 +39,6 @@ func checkActiveGateOOM(ctx context.Context, log logd.Logger, apiReader client.R
 }
 
 func checkOOMKilled(ctx context.Context, log logd.Logger, apiReader client.Reader, namespace string, labels map[string]string) error {
-
 	podList := &corev1.PodList{}
 
 	err := apiReader.List(ctx, podList,
