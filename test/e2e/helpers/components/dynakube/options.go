@@ -6,6 +6,7 @@ import (
 	"maps"
 	"os"
 	"strings"
+	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -19,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -197,13 +199,14 @@ func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 	}
 }
 
-func WithExtensionsEECImageRef() Option {
+func WithExtensionsEECImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
 		if setImageRefFromEnvs(
+			t,
 			dk,
 			&dk.Spec.Templates.ExtensionExecutionController.ImageRef,
 			consts.EECImageEnvVar,
-			consts.DefaultEECImage,
+			consts.DefaultEECRepo,
 		) {
 			// Disable legacy mounts when using a non-default image
 			dk.Annotations["feature.dynatrace.com/use-eec-legacy-mounts"] = "false"
@@ -217,14 +220,15 @@ func WithLogMonitoring() Option {
 	}
 }
 
-func WithLogMonitoringImageRef() Option {
+func WithLogMonitoringImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{}
 		setImageRefFromEnvs(
+			t,
 			dk,
 			&dk.Spec.Templates.LogMonitoring.ImageRef,
 			consts.LogMonitoringImageEnvVar,
-			consts.DefaultLogMonitoringImage,
+			consts.DefaultLogMonitoringRepo,
 		)
 	}
 }
@@ -235,13 +239,14 @@ func WithKSPM() Option {
 	}
 }
 
-func WithKSPMImageRef() Option {
+func WithKSPMImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
+			t,
 			dk,
 			&dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef,
 			consts.KSPMImageEnvVar,
-			consts.DefaultKSPMImage,
+			consts.DefaultKSPMRepo,
 		)
 	}
 }
@@ -266,13 +271,14 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 	}
 }
 
-func WithOTelCollectorImageRef() Option {
+func WithOTelCollectorImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
+			t,
 			dk,
 			&dk.Spec.Templates.OpenTelemetryCollector.ImageRef,
 			consts.OtelCollectorImageEnvVar,
-			consts.DefaultOtelCollectorImage,
+			consts.DefaultOtelCollectorRepo,
 		)
 	}
 }
@@ -292,33 +298,33 @@ func WithExtensionsDatabases(databases ...extensions.DatabaseSpec) Option {
 	}
 }
 
-func WithExtensionsDBExecutorImageRef() Option {
+func WithExtensionsDBExecutorImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
+			t,
 			dk,
 			&dk.Spec.Templates.SQLExtensionExecutor.ImageRef,
 			consts.DBExecutorImageEnvVar,
-			consts.DefaultDBExecutorImage,
+			consts.DefaultDBExecutorRepo,
 		)
 	}
 }
 
-// setImageRefFromEnvs populates the image.Ref from an environment variable with fallback.
-// If the image differs from the default value, the custom pull secret is set on the DynaKube.
-// Returns true, if the pull secret was set.
-func setImageRefFromEnvs(dk *dynakube.DynaKube, image *image.Ref, envVar, defaultValue string) bool {
-	value := os.Getenv(envVar)
-	if value == "" {
-		value = defaultValue
-	}
+func setImageRefFromEnvs(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, envVar, defaultRepo string) bool {
+	t.Helper()
 
-	image.Repository, image.Tag, _ = strings.Cut(value, ":")
-
-	if value != defaultValue {
+	envImage := os.Getenv(envVar)
+	if envImage != "" {
+		imageRef.Repository, imageRef.Tag, _ = strings.Cut(envImage, ":")
 		dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
+		t.Logf("using custom image from env %s: %s", envVar, envImage)
 
 		return true
 	}
+
+	uri := registry.GetLatestImageURI(t, defaultRepo)
+	imageRef.Repository, imageRef.Tag, _ = strings.Cut(uri, ":")
+	t.Logf("using latest image for %s: %s", defaultRepo, uri)
 
 	return false
 }

@@ -4,6 +4,7 @@ package registry
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"slices"
 	"strings"
@@ -17,45 +18,66 @@ import (
 )
 
 const (
-	agPublicECR = "public.ecr.aws/dynatrace/dynatrace-activegate"
-	oaPublicECR = "public.ecr.aws/dynatrace/dynatrace-oneagent"
-	cmPublicECR = "public.ecr.aws/dynatrace/dynatrace-codemodules"
+	AgPublicECR     = "public.ecr.aws/dynatrace/dynatrace-activegate"
+	OAPublicECR     = "public.ecr.aws/dynatrace/dynatrace-oneagent"
+	CMPublicECR     = "public.ecr.aws/dynatrace/dynatrace-codemodules"
+	EECPublicECR    = "public.ecr.aws/dynatrace/dynatrace-eec"
+	LogMonPublicECR = "public.ecr.aws/dynatrace/dynatrace-logmodule"
+	KSPMPublicECR   = "public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector"
+	OTelPublicECR   = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	DBExecPublicECR = "public.ecr.aws/dynatrace/dynatrace-database-datasource-executor"
 )
 
-var (
-	latestActiveGateURI string
-	latestOneAgentURI   string
-	latestCodeModuleURI string
-)
+// repoEnvVars maps ECR repository URIs to env var overrides for GetLatestImageURI.
+var repoEnvVars = map[string]string{
+	AgPublicECR: "E2E_AG_IMAGE",
+	OAPublicECR: "E2E_OA_IMAGE",
+	CMPublicECR: "E2E_ECR_CODEMODULES_IMAGE",
+}
+
+var latestImageURIs = map[string]string{}
+
+// GetLatestImageURI returns the latest image URI for the given repository.
+// If an env var override is registered for the repo, it is returned directly.
+// Results are cached per repo for the lifetime of the test binary.
+func GetLatestImageURI(t *testing.T, repoURI string) string {
+	t.Helper()
+
+	if envVar, ok := repoEnvVars[repoURI]; ok {
+		if val := os.Getenv(envVar); val != "" {
+			t.Logf("using image from env %s: %s", envVar, val)
+
+			return val
+		}
+	}
+
+	if uri, ok := latestImageURIs[repoURI]; ok {
+		return uri
+	}
+
+	uri := getLatestImageURI(t, repoURI)
+	latestImageURIs[repoURI] = uri
+	t.Logf("resolved latest image for %s: %s", repoURI, uri)
+
+	return uri
+}
 
 func GetLatestActiveGateImageURI(t *testing.T) string {
 	t.Helper()
 
-	if latestActiveGateURI == "" {
-		latestActiveGateURI = getLatestImageURI(t, agPublicECR)
-	}
-
-	return latestActiveGateURI
+	return GetLatestImageURI(t, AgPublicECR)
 }
 
 func GetLatestOneAgentImageURI(t *testing.T) string {
 	t.Helper()
 
-	if latestOneAgentURI == "" {
-		latestOneAgentURI = getLatestImageURI(t, oaPublicECR)
-	}
-
-	return latestOneAgentURI
+	return GetLatestImageURI(t, OAPublicECR)
 }
 
 func GetLatestCodeModulesImageURI(t *testing.T) string {
 	t.Helper()
 
-	if latestCodeModuleURI == "" {
-		latestCodeModuleURI = getLatestImageURI(t, cmPublicECR)
-	}
-
-	return latestCodeModuleURI
+	return GetLatestImageURI(t, CMPublicECR)
 }
 
 func getLatestImageURI(t *testing.T, repoURI string) string {

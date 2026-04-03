@@ -23,9 +23,9 @@ func Feature(t *testing.T) features.Feature {
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
-		componentDynakube.WithExtensionsEECImageRef(),
+		componentDynakube.WithExtensionsEECImageRef(t),
 		componentDynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
-		componentDynakube.WithExtensionsDBExecutorImageRef(),
+		componentDynakube.WithExtensionsDBExecutorImageRef(t),
 		componentDynakube.WithActiveGate(),
 	}
 
