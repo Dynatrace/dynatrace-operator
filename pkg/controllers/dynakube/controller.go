@@ -36,7 +36,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
-	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -110,8 +109,13 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.Service{}).
-		Owns(&istiov1beta1.ServiceEntry{}).
-		Owns(&istiov1beta1.VirtualService{}).
+		// Istio related resources are not registered as owned,
+		// because we can't be sure that they are present at Operator startup,
+		// istio could be installed later, or uninstalled while the Operator is present.
+		// this is unlikely, but we spam the logs if it happens and restarted would be needed.
+		// It is not worth the risk.
+		// Owns(&istiov1beta1.ServiceEntry{}).
+		// Owns(&istiov1beta1.VirtualService{}).
 		Complete(controller)
 }
 
