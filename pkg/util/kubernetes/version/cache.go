@@ -77,14 +77,13 @@ func (c *versionInfoCache) disableCacheForTest(minorVersion int) func() {
 
 func (c *versionInfoCache) getMinorVersion() int {
 	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	if err := c.refreshMinorVersion(); err != nil {
 		log.Error(err, "kubernetes version lookup failed")
 	}
 
 	minorVersion := c.minorVersion
-
-	c.mutex.Unlock()
 
 	return minorVersion
 }
