@@ -91,13 +91,26 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 //   - Private part is 64 base32 characters.
 var dtTokenRegex = regexp.MustCompile(`[a-z0-9]{5,}\.([A-Z0-7]{8}|[A-Z0-7]{24})\.[A-Z0-7]{64}`)
 
+// Detect bearer tokens. Uses [^\s"] to stop at whitespace or JSON double-quotes,
+// so the regex does not consume surrounding JSON structure when the body is serialised JSON.
+var bearerTokenRegex = regexp.MustCompile(`Bearer\s+[^\s"]+`)
+
 func sanitizeBody(body []byte) string {
-	return dtTokenRegex.ReplaceAllStringFunc(string(body), func(s string) string {
+	sanitized := dtTokenRegex.ReplaceAllStringFunc(string(body), func(s string) string {
 		// Only hide private part from output
 		idx := strings.LastIndexByte(s, '.')
 
 		return s[:idx] + ".***"
 	})
+
+	sanitized = bearerTokenRegex.ReplaceAllStringFunc(sanitized, func(s string) string {
+		// Only keep the "Bearer" prefix, hide the token
+		idx := strings.IndexByte(s, ' ')
+
+		return s[:idx] + " ***"
+	})
+
+	return sanitized
 }
 
 // Dump objects like http.Header or url.Values into a JSON string.
