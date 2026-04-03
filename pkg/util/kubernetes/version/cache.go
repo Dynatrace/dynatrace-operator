@@ -54,24 +54,24 @@ func GetMinorVersion() int {
 }
 
 func (c *versionInfoCache) disableCacheForTest(minorVersion int) func() {
-	versionInfo.mutex.Lock()
-	defer versionInfo.mutex.Unlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-	if versionInfo.disableLookup {
-		versionInfo.minorVersion = minorVersion
+	if c.disableLookup {
+		c.minorVersion = minorVersion
 		// Set the version, but only undo the first time
 		return func() {}
 	}
 
-	prevMinorVersion := versionInfo.minorVersion
-	versionInfo.minorVersion = minorVersion
-	versionInfo.disableLookup = true
+	prevMinorVersion := c.minorVersion
+	c.minorVersion = minorVersion
+	c.disableLookup = true
 
 	return func() {
-		versionInfo.mutex.Lock()
-		versionInfo.minorVersion = prevMinorVersion
-		versionInfo.disableLookup = false
-		versionInfo.mutex.Unlock()
+		c.mutex.Lock()
+		c.minorVersion = prevMinorVersion
+		c.disableLookup = false
+		c.mutex.Unlock()
 	}
 }
 
