@@ -14,6 +14,7 @@ import (
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
@@ -154,7 +155,7 @@ func MetadataEnrichmentDeprecatedAttributes(t *testing.T) features.Feature {
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 	)
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	dummyApp := sample.NewApp(t, &testDynakube, sample.WithName("dummy-app"))
 
