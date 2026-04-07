@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
@@ -49,15 +48,11 @@ func GenerateMetadata(t *testing.T) features.Feature {
 	testDynakube := *componentDynakube.New(options...)
 
 	// Register Dynakube install
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
 	builder.Assess("OneAgent started", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("Checking if all OneAgent pods have generated metadata", oneAgentHaveGeneratedMetadata(testDynakube))
-
-	// Register sample, dynakube and operator uninstall
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-	builder.WithTeardown("Deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -104,7 +99,7 @@ func getGeneratedMetadataFromPod(ctx context.Context, t *testing.T, resource *re
 }
 
 func parseGeneratedMetadata(text string) map[string]string {
-	var m = make(map[string]string)
+	m := make(map[string]string)
 
 	for line := range strings.Lines(text) {
 		l := strings.TrimSpace(line)

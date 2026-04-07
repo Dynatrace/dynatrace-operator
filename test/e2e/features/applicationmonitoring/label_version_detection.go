@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
@@ -123,16 +122,13 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		buildPreservedBuildLabelSampleApp(t, labelVersionDynakube),
 		buildInvalidBuildLabelSampleApp(t, labelVersionDynakube),
 	}
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, defaultDynakube)
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, labelVersionDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, defaultDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, labelVersionDynakube)
 
 	// Register actual test (+sample cleanup)
 	installSampleApplications(builder, sampleApps)
 	checkBuildLabels(builder, sampleApps)
 	teardownSampleApplications(builder, sampleApps)
-
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, defaultDynakube)
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, labelVersionDynakube)
 
 	return builder.Feature()
 }

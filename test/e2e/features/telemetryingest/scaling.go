@@ -5,7 +5,6 @@ package telemetryingest
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8shpa"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
@@ -35,7 +34,7 @@ func WithHPA(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -56,9 +55,7 @@ func WithHPA(t *testing.T) features.Feature {
 	builder.Assess("create HPA with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if the otelc statefulset has replicas set to 3", k8sstatefulset.WaitForReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *scaleReplicas))
 
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.Teardown(k8shpa.Delete(testHPA))
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -77,16 +74,13 @@ func EnforceReplicas(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("scale otelc statefulset replicas to 3", k8sstatefulset.Update(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, func(ss *appsv1.StatefulSet) {
 		ss.Spec.Replicas = scaleReplicas
 	}))
 
 	builder.Assess("check if otelc replicas were rolled back to 2", k8sstatefulset.WaitForReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *baseReplicas))
-
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
 }

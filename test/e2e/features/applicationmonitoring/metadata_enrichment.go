@@ -14,7 +14,6 @@ import (
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
@@ -133,7 +132,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	}
 
 	// dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	// Register actual test
 	for _, test := range testCases {
@@ -141,8 +140,6 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		builder.Assess(fmt.Sprintf("%s: Checking sample app", test.name), test.assess(test.app))
 		builder.WithTeardown(fmt.Sprintf("%s: Uninstalling sample app", test.name), test.app.Uninstall())
 	}
-
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }

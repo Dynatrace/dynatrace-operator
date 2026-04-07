@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -200,7 +201,7 @@ func (app *App) Install() features.Func {
 			ctx = app.installClusterRole(ctx, t, c)
 		}
 
-		require.NoError(t, resource.Create(ctx, app.scBase))
+		require.NoError(t, client.IgnoreAlreadyExists(resource.Create(ctx, app.scBase)))
 
 		object := app.build()
 		require.NoError(t, resource.Create(ctx, object))
@@ -230,7 +231,7 @@ func (app *App) InstallFail() features.Func {
 			ctx = app.installClusterRole(ctx, t, c)
 		}
 
-		require.NoError(t, resource.Create(ctx, app.scBase))
+		require.NoError(t, client.IgnoreAlreadyExists(resource.Create(ctx, app.scBase)))
 
 		object := app.build()
 		require.NoError(t, resource.Create(ctx, object))

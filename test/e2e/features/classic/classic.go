@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -25,9 +24,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithClassicFullstackSpec(&oneagent.HostInjectSpec{}),
 	)
 
-	// check if oneAgent pods startup and report as ready
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	return builder.Feature()
 }

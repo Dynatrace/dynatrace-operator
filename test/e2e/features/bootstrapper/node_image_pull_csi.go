@@ -46,7 +46,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, appMonDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, appMonDynakube)
 
 	builder.Assess("check if jobs completed", jobsAreCompleted(appMonDynakube))
 
@@ -58,7 +58,6 @@ func InstallWithCSI(t *testing.T) features.Feature {
 	builder.Assess("volumes are mounted correctly", codemodules.VolumesAreMountedCorrectly(*sampleApp))
 
 	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, appMonDynakube)
 
 	return builder.Feature()
 }
