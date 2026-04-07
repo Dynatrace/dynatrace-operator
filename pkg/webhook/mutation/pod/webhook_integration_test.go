@@ -128,10 +128,10 @@ func TestWebhook(t *testing.T) {
 
 	t.Run("success incl. enrichment rules, custom metadata and metadata annotation propagation", func(t *testing.T) {
 		t.Run("with deprecated annotations", func(t *testing.T) {
-			PropagationTest(t, clt, true)
+			PropagationTest(t, clt, false)
 		})
 		t.Run("without deprecated annotations", func(t *testing.T) {
-			PropagationTest(t, clt, false)
+			PropagationTest(t, clt, true)
 		})
 	})
 
