@@ -15,16 +15,16 @@ var (
 	metrics = pipeline.NewID(pipeline.SignalMetrics)
 	logs    = pipeline.NewID(pipeline.SignalLogs)
 
-	allowedPipelinesLogsReceiversIDs = []component.ID{OtlpID}
+	allowedPipelinesLogsReceiversIDs = []component.ID{OTLPID}
 
 	// based on
 	// stasd https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/d4372922ec79cb052c7f7e2fcc0fba9f492bd948/receiver/statsdreceiver/factory.go#L33
-	allowedPipelinesMetricsReceiversIDs = []component.ID{OtlpID, StatsdID}
+	allowedPipelinesMetricsReceiversIDs = []component.ID{OTLPID, StatsdID}
 
 	// based on
 	// zipkin https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/d4372922ec79cb052c7f7e2fcc0fba9f492bd948/receiver/zipkinreceiver/factory.go#L24
 	// jaeger https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/d4372922ec79cb052c7f7e2fcc0fba9f492bd948/receiver/jaegerreceiver/factory.go
-	allowedPipelinesTracesReceiversIDs = []component.ID{OtlpID, JaegerID, ZipkinID}
+	allowedPipelinesTracesReceiversIDs = []component.ID{OTLPID, JaegerID, ZipkinID}
 )
 
 // ServiceConfig defines the configurable components of the Service.

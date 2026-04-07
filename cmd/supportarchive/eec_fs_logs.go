@@ -22,7 +22,7 @@ const (
 	diagLogCollectorName = "fsLogCollector"
 	eecExtensionsPath    = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
 	fileNotFoundMarker   = "<NOT FOUND>"
-	LabelEecPodName      = "dynatrace-extension-controller"
+	LabelEECPodName      = "dynatrace-extension-controller"
 	eecContainerName     = "extension-controller"
 )
 
@@ -62,7 +62,7 @@ func (flc fsLogCollector) Name() string {
 func (flc fsLogCollector) getControllerPodList() (*corev1.PodList, error) {
 	ls := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			k8slabel.AppNameLabel:      LabelEecPodName,
+			k8slabel.AppNameLabel:      LabelEECPodName,
 			k8slabel.AppManagedByLabel: flc.appName,
 		},
 	}

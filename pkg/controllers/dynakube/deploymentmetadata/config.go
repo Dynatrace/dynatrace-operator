@@ -16,8 +16,8 @@ const (
 	CloudNativeDeploymentType           = "cloud_native_fullstack"
 	HostMonitoringDeploymentType        = "host_monitoring"
 
-	EnvDtDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
-	EnvDtOperatorVersion    = "DT_OPERATOR_VERSION"
+	EnvDTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
+	EnvDTOperatorVersion    = "DT_OPERATOR_VERSION"
 
 	OneAgentMetadataKey   = "oneagent"
 	ActiveGateMetadataKey = "activegate"

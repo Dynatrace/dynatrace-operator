@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/pkg/errors"
 )
 
@@ -35,24 +37,24 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 	}
 }
 
-func (r *Reconciler) generateData() (map[string][]byte, error) {
+func (r *Reconciler) generateData(dk *dynakube.DynaKube, tokens token.Tokens) (map[string][]byte, error) {
 	var registryToken string
 
-	registry, err := getImageRegistryFromAPIURL(r.dk.Spec.APIURL)
+	registry, err := getImageRegistryFromAPIURL(dk.Spec.APIURL)
 	if err != nil {
 		return nil, err
 	}
 
 	switch {
-	case r.tokens.PaasToken().Value != "":
-		registryToken = r.tokens.PaasToken().Value
-	case r.tokens.APIToken().Value != "":
-		registryToken = r.tokens.APIToken().Value
+	case tokens.PaasToken().Value != "":
+		registryToken = tokens.PaasToken().Value
+	case tokens.APIToken().Value != "":
+		registryToken = tokens.APIToken().Value
 	default:
 		return nil, errors.New("token secret does not contain a paas or api token, cannot generate docker config")
 	}
 
-	tenantUUID, err := r.dk.TenantUUID()
+	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		return nil, errors.WithMessage(err, "cannot generate docker config")
 	}

@@ -77,7 +77,7 @@ func (mod RawImageModifier) getEnvs() []corev1.EnvVar {
 
 func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
-		Name: connectioninfo.EnvDtTenant,
+		Name: connectioninfo.EnvDTTenant,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),
@@ -89,7 +89,7 @@ func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 
 func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
-		Name: connectioninfo.EnvDtServer,
+		Name: connectioninfo.EnvDTServer,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),

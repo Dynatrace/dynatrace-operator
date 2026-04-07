@@ -40,10 +40,10 @@ func (c *Cleaner) isMountPoint(file string) (bool, error) {
 func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 	relevantHostDirs := c.collectRelevantHostDirs(dks)
 
-	for _, hostDk := range fsState.hostDks {
+	for _, hostDK := range fsState.hostDks {
 		possibleHostDirs := []string{
-			c.path.OsAgentDir(hostDk),
-			c.path.OldOsAgentDir(hostDk),
+			c.path.OsAgentDir(hostDK),
+			c.path.OldOsAgentDir(hostDK),
 		}
 
 		for _, hostDir := range possibleHostDirs {

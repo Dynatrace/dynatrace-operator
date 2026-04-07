@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
@@ -35,7 +34,7 @@ func NoCSI(t *testing.T) features.Feature {
 		}),
 	)
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, dk)
+	dynakubeComponents.Install(builder, &secretConfig, dk)
 
 	sampleApp := sample.NewApp(t, &dk,
 		sample.AsDeployment(),
@@ -103,7 +102,6 @@ func NoCSI(t *testing.T) features.Feature {
 	builder.Teardown(sampleApp.Uninstall())
 	builder.Teardown(podSample.Uninstall())
 	builder.Teardown(randomUserSample.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, dk)
 
 	return builder.Feature()
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	edgeconnectComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
@@ -107,9 +106,9 @@ func Feature(t *testing.T) features.Feature {
 		})
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	edgeconnectComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
-	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckEcExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	edgeconnectComponents.Install(builder, nil, testEdgeConnect)
+	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckECExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	// check if components are running
 	builder.Assess("active gate pod is running", k8sstatefulset.IsReady(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
@@ -122,11 +121,8 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.WithTeardown("remove injected namespace", k8snamespace.Delete(testAppNameInjected))
 	builder.WithTeardown("remove NOT injected namespace", k8snamespace.Delete(testAppNameNotInjected))
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
-	builder.WithTeardown("remove edgeconnect CR", edgeconnectComponents.Delete(testEdgeConnect))
 	builder.Teardown(tenant.DeleteTenantSecret(edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 	builder.Teardown(edgeconnectComponents.DeleteTenantConfig(edgeconnectSecretConfig, edgeConnectTenantConfig))
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
 
 	return builder.Feature()

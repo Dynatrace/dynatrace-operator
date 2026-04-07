@@ -8,8 +8,8 @@ const (
 	TelemetryIngestTLSSecretName    = "telemetry-ingest-tls"
 	DevRegistryPullSecretName       = "devregistry"
 
-	DefaultEecImage           = "public.ecr.aws/dynatrace/dynatrace-eec:1.327.30.20251107-111521"
-	EecImageEnvVar            = "E2E_EEC_IMAGE"
+	DefaultEECImage           = "public.ecr.aws/dynatrace/dynatrace-eec:1.327.30.20251107-111521"
+	EECImageEnvVar            = "E2E_EEC_IMAGE"
 	DefaultLogMonitoringImage = "public.ecr.aws/dynatrace/dynatrace-logmodule:1.309.59.20250319-140247"
 	LogMonitoringImageEnvVar  = "E2E_LOGMON_IMAGE"
 	DefaultKSPMImage          = "public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector:1.5.2"

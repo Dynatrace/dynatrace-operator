@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
@@ -20,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
@@ -100,7 +100,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, createSuccessfulInstaller(t))
-		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
+		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -113,7 +113,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("dynakube with version, unknown issue with dtc => fail before installer creation", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
-		prov.dynatraceClientBuilder = mockFailingDtClientBuilder(t)
+		prov.dynatraceClientBuilder = mockFailingDTClientBuilder(t)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
@@ -129,7 +129,7 @@ func TestReconcile(t *testing.T) {
 		unavailableInstaller := installermock.NewInstaller(t)
 		unavailableInstaller.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, dtclient.ServerError{Code: http.StatusServiceUnavailable})
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
-		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
+		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -371,7 +371,7 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) urlInstallerBuilder {
 	t.Helper()
 
-	return func(_ dtclient.Client, _ *url.Properties) installer.Installer {
+	return func(_ oneagentclient.APIClient, _ *url.Properties) installer.Installer {
 		return mockedInstaller
 	}
 }
@@ -410,10 +410,10 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 	}
 }
 
-func mockFailingDtClientBuilder(t *testing.T) dynatraceclient.Builder {
+func mockFailingDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
 	t.Helper()
 
-	mockDtcBuilder := dtbuildermock.NewBuilder(t)
+	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
 	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)
@@ -422,14 +422,14 @@ func mockFailingDtClientBuilder(t *testing.T) dynatraceclient.Builder {
 	return mockDtcBuilder
 }
 
-func mockSuccessfulDtClientBuilder(t *testing.T) dynatraceclient.Builder {
+func mockSuccessfulDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
 	t.Helper()
 
-	mockDtcBuilder := dtbuildermock.NewBuilder(t)
+	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
 	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(dtclientmock.NewClient(t), nil)
+	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(&dtclient.ClientV2{}, nil)
 
 	return mockDtcBuilder
 }

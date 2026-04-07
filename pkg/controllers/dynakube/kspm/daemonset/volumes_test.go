@@ -44,7 +44,7 @@ func TestGetMounts(t *testing.T) {
 	t.Run("get volume mounts", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{},
+				KSPM: &kspm.Spec{},
 			},
 		}
 		mounts := getMounts(dk)
@@ -61,7 +61,7 @@ func TestGetMounts(t *testing.T) {
 	t.Run("get volume mounts with mapped paths", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{
+				KSPM: &kspm.Spec{
 					MappedHostPaths: []string{
 						hostPathA,
 						hostPathB,
@@ -77,7 +77,7 @@ func TestGetMounts(t *testing.T) {
 	t.Run("get volume mounts with duplicated mapped paths", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{
+				KSPM: &kspm.Spec{
 					MappedHostPaths: []string{
 						hostPathA,
 						hostPathB,
@@ -94,7 +94,7 @@ func TestGetMounts(t *testing.T) {
 
 	t.Run("get cert mount", func(t *testing.T) {
 		dk := getDynaKubeWithCerts(t)
-		dk.Spec.Kspm = &kspm.Spec{}
+		dk.Spec.KSPM = &kspm.Spec{}
 		mounts := getMounts(dk)
 
 		require.NotEmpty(t, mounts)
@@ -108,7 +108,7 @@ func TestGetMounts(t *testing.T) {
 
 	t.Run("get cert mount with automatic AG cert", func(t *testing.T) {
 		dk := getDynaKubeWithAutomaticCerts(t)
-		dk.Spec.Kspm = &kspm.Spec{}
+		dk.Spec.KSPM = &kspm.Spec{}
 		mounts := getMounts(dk)
 
 		require.NotEmpty(t, mounts)
@@ -154,7 +154,7 @@ func TestGetVolumes(t *testing.T) {
 	t.Run("get volumes", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{},
+				KSPM: &kspm.Spec{},
 			},
 		}
 		volumes := getVolumes(dk)
@@ -171,7 +171,7 @@ func TestGetVolumes(t *testing.T) {
 	t.Run("get volume mounts with mapped paths", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{
+				KSPM: &kspm.Spec{
 					MappedHostPaths: []string{
 						hostPathA,
 						hostPathB,
@@ -187,7 +187,7 @@ func TestGetVolumes(t *testing.T) {
 	t.Run("get volume mounts with duplicated mapped paths", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{
+				KSPM: &kspm.Spec{
 					MappedHostPaths: []string{
 						hostPathA,
 						hostPathB,
@@ -204,7 +204,7 @@ func TestGetVolumes(t *testing.T) {
 
 	t.Run("add cert volume", func(t *testing.T) {
 		dk := getDynaKubeWithCerts(t)
-		dk.Spec.Kspm = &kspm.Spec{}
+		dk.Spec.KSPM = &kspm.Spec{}
 		volumes := getVolumes(dk)
 
 		require.NotEmpty(t, volumes)
@@ -222,7 +222,7 @@ func TestGetVolumes(t *testing.T) {
 
 	t.Run("add cert volume with automatic AG cert", func(t *testing.T) {
 		dk := getDynaKubeWithAutomaticCerts(t)
-		dk.Spec.Kspm = &kspm.Spec{}
+		dk.Spec.KSPM = &kspm.Spec{}
 		volumes := getVolumes(dk)
 
 		require.NotEmpty(t, volumes)

@@ -78,6 +78,7 @@ var (
 		extensionsWithoutK8SMonitoring,
 		hostPathDatabaseVolumeFound,
 		disabledMetadataEnrichmentForInjectionModes,
+		activeGateRollingUpdateWithOldK8sVersion,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,
@@ -111,20 +112,20 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (war
 }
 
 func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
-	oldDk, err := getDynakube(oldObj)
+	oldDK, err := getDynakube(oldObj)
 	if err != nil {
 		return
 	}
 
-	newDk, err := getDynakube(newObj)
+	newDK, err := getDynakube(newObj)
 	if err != nil {
 		return
 	}
 
-	errMessages := v.runValidators(ctx, validatorErrorFuncs, newDk)
-	warnings = v.runValidators(ctx, validatorWarningFuncs, newDk)
+	errMessages := v.runValidators(ctx, validatorErrorFuncs, newDK)
+	warnings = v.runValidators(ctx, validatorWarningFuncs, newDK)
 
-	errMessages = append(errMessages, v.runUpdateValidators(ctx, updateValidatorErrorFuncs, oldDk, newDk)...)
+	errMessages = append(errMessages, v.runUpdateValidators(ctx, updateValidatorErrorFuncs, oldDK, newDK)...)
 
 	if len(errMessages) != 0 {
 		err = errors.New(validation.SumErrors(errMessages, "DynaKube"))
@@ -149,11 +150,11 @@ func (v *Validator) runValidators(ctx context.Context, validators []validatorFun
 	return results
 }
 
-func (v *Validator) runUpdateValidators(ctx context.Context, updateValidators []updateValidatorFunc, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) []string {
+func (v *Validator) runUpdateValidators(ctx context.Context, updateValidators []updateValidatorFunc, oldDK *dynakube.DynaKube, newDK *dynakube.DynaKube) []string {
 	results := []string{}
 
 	for _, validate := range updateValidators {
-		if errMsg := validate(ctx, v, oldDk, newDk); errMsg != "" {
+		if errMsg := validate(ctx, v, oldDK, newDK); errMsg != "" {
 			results = append(results, errMsg)
 		}
 	}
