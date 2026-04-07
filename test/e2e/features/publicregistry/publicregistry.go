@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
@@ -47,7 +46,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakube install - will verify OneAgent DaemonSet startup
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakube.Install(builder, &secretConfig, testDynakube)
 
 	// Install Sample apps - will check if CodeModule could be downloaded and mounted
 	builder.Assess("install sample app", sampleApp.Install())
@@ -58,7 +57,6 @@ func Feature(t *testing.T) features.Feature {
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }

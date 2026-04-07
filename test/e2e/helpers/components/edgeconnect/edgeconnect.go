@@ -5,6 +5,7 @@ package edgeconnect
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -33,15 +34,20 @@ type TenantConfig struct {
 	Secret tenant.EdgeConnectSecret
 }
 
-func Install(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.EdgeConnectSecret, testEdgeConnect edgeconnect.EdgeConnect) {
+// Install creates a tenant secret and waits until the EdgeConnect is Running.
+// It also registers the deletion of these resources in reverse order.
+func Install(builder *features.FeatureBuilder, secretConfig *tenant.EdgeConnectSecret, ec edgeconnect.EdgeConnect) {
 	if secretConfig != nil {
-		builder.WithStep("create edgeconnect client Secret", level, tenant.CreateClientSecret(secretConfig, BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+		builder.WithStep("create edgeconnect client Secret", features.LevelAssess, tenant.CreateClientSecret(secretConfig, BuildOAuthClientSecretName(ec.Name), ec.Namespace))
 	}
 	builder.WithStep(
-		fmt.Sprintf("'%s' edgeconnect created", testEdgeConnect.Name),
-		level,
-		Create(testEdgeConnect))
-	VerifyStartup(builder, level, testEdgeConnect)
+		fmt.Sprintf("'%s' edgeconnect created", ec.Name),
+		features.LevelAssess,
+		Create(ec))
+	VerifyStartup(builder, features.LevelAssess, ec)
+	// The secret is required for correct cleanup, so always delete it last
+	builder.WithTeardown("edgeconnect deleted", Delete(ec))
+	builder.WithTeardown("delete edgeconnect client Secret", tenant.DeleteTenantSecret(BuildOAuthClientSecretName(ec.Name), ec.Namespace))
 }
 
 func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testEdgeConnect edgeconnect.EdgeConnect) {
@@ -111,13 +117,13 @@ func WaitForPhase(edgeConnect edgeconnect.EdgeConnect, phase status.DeploymentPh
 // CreateTenantConfig for Normal mode only, preserves the ID and OAuth Secret of EdgeConnect configuration on the tenant
 func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig, testHostPattern string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := BuildClient(ctx, clientSecret)
+		clt, err := BuildClient(ctx, clientSecret)
 		require.NoError(t, err)
 
 		edgeConnectRequest := edgeconnectClient.NewRequest(ecName, []string{testHostPattern}, []edgeconnect.HostMapping{}, "")
 		edgeConnectRequest.ManagedByDynatraceOperator = false
 
-		res, err := ecClt.CreateEdgeConnect(ctx, edgeConnectRequest)
+		res, err := clt.CreateEdgeConnect(ctx, edgeConnectRequest)
 		require.NoError(t, err)
 		assert.Equal(t, ecName, res.Name)
 
@@ -165,10 +171,14 @@ func BuildOAuthClientSecretName(secretName string) string {
 
 func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := BuildClient(ctx, clientSecret)
+		clt, err := BuildClient(ctx, clientSecret)
 		require.NoError(t, err)
 
-		err = ecClt.DeleteEdgeConnect(ctx, edgeConnectTenantConfig.ID)
+		err = clt.DeleteEdgeConnect(ctx, edgeConnectTenantConfig.ID)
+		// TODO: use core.IsNotFound after edgeconnect client was refactored
+		if err != nil && strings.Contains(err.Error(), "server error 404: Unknown key") {
+			err = nil
+		}
 		require.NoError(t, err)
 
 		return ctx
@@ -177,10 +187,10 @@ func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenant
 
 func CheckECExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := BuildClient(ctx, clientSecret)
+		clt, err := BuildClient(ctx, clientSecret)
 		require.NoError(t, err)
 
-		_, err = ecClt.GetEdgeConnect(ctx, edgeConnectTenantConfig.ID)
+		_, err = clt.GetEdgeConnect(ctx, edgeConnectTenantConfig.ID)
 		require.NoError(t, err)
 
 		return ctx

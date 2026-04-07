@@ -38,7 +38,7 @@ func Feature(t *testing.T) features.Feature {
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsClassicName),
 	)
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, dynakubeClassicFullStack)
+	dynakubeComponents.Install(builder, &secretConfig, dynakubeClassicFullStack)
 	builder.Assess("install sample app", sampleAppClassic.Install())
 
 	// change dynakube to cloud native
@@ -54,7 +54,7 @@ func Feature(t *testing.T) features.Feature {
 	)
 	builder.Assess("create sample app namespace", sampleAppCloudNative.InstallNamespace())
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, dynakubeCloudNative)
+	dynakubeComponents.Install(builder, &secretConfig, dynakubeCloudNative)
 
 	// apply sample apps
 	builder.Assess("install sample app", sampleAppCloudNative.Install())
@@ -65,7 +65,6 @@ func Feature(t *testing.T) features.Feature {
 	// teardown
 	builder.Teardown(sampleAppCloudNative.Uninstall())
 	builder.Teardown(sampleAppClassic.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, dynakubeClassicFullStack)
 
 	return builder.Feature()
 }

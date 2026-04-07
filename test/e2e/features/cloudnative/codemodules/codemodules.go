@@ -21,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/istio"
@@ -97,7 +96,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -107,14 +106,12 @@ func InstallFromImage(t *testing.T) features.Feature {
 
 	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[1], appDynakube)
+	dynakubeComponents.Install(builder, &secretConfigs[1], appDynakube)
 	builder.Assess("storage size has not increased", diskUsageDoesNotIncrease(appDynakube.Namespace, storageMap))
 	builder.Assess("volumes are mounted correctly", VolumesAreMountedCorrectly(*sampleApp))
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, appDynakube)
 
 	return builder.Feature()
 }
@@ -164,7 +161,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -183,9 +180,6 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
-
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -243,7 +237,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -260,9 +254,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
 	builder.WithTeardown("custom tls secret exists", k8ssecret.Exists(agSecretName, cloudNativeDynakube.Namespace))
 
 	return builder.Feature()
@@ -296,7 +288,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -323,9 +315,6 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
-
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -381,7 +370,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -398,9 +387,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
 	builder.WithTeardown("deleted trusted CAs config map", k8sconfigmap.Delete(caConfigMap))
 	builder.WithTeardown("custom tls secret exists", k8ssecret.Exists(agSecretName, cloudNativeDynakube.Namespace))
 
@@ -446,7 +433,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -471,7 +458,6 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
 	builder.WithTeardown("deleted trusted CAs config map", k8sconfigmap.Delete(caConfigMap))

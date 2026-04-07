@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -28,7 +27,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 	)
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, appOnlyDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, appOnlyDynakube)
 
 	sampleApp := sample.NewApp(t, &appOnlyDynakube, sample.AsDeployment())
 	builder.Assess("install sample app", sampleApp.Install())
@@ -54,7 +53,6 @@ func WithoutCSI(t *testing.T) features.Feature {
 	builder.Teardown(sampleApp.Uninstall())
 	builder.Teardown(podSample.Uninstall())
 	builder.Teardown(randomUserSample.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, appOnlyDynakube)
 
 	return builder.Feature()
 }

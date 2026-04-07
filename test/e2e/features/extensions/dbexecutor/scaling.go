@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8shpa"
@@ -39,7 +38,7 @@ func WithHPA(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -60,9 +59,7 @@ func WithHPA(t *testing.T) features.Feature {
 	builder.Assess("create HPA with min replicas 3", k8shpa.Create(testHPA))
 	builder.Assess("check if the deployment has replicas set to 3", k8sdeployment.WaitForReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, *scaleReplicas))
 
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.Teardown(k8shpa.Delete(testHPA))
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -83,16 +80,13 @@ func EnforceReplicas(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("scale executor deployment replicas to 3", k8sdeployment.Update(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, func(d *appsv1.Deployment) {
 		d.Spec.Replicas = scaleReplicas
 	}))
 
 	builder.Assess("check if executor deployment replicas were rolled back to 2", k8sdeployment.WaitForReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, *baseReplicas))
-
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
 }
