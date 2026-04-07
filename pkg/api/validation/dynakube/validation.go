@@ -78,6 +78,7 @@ var (
 		extensionsWithoutK8SMonitoring,
 		hostPathDatabaseVolumeFound,
 		disabledMetadataEnrichmentForInjectionModes,
+		activeGateRollingUpdateWithOldK8sVersion,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

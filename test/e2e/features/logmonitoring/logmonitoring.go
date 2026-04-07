@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/logmonsettings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
@@ -72,17 +71,13 @@ func Feature(t *testing.T) features.Feature {
 		})
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("log agent started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("log monitoring conditions", checkConditions(testDynakube.Name, testDynakube.Namespace, true))
-
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
 
@@ -114,7 +109,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	componentDynakube.InstallWithoutSettingsScopes(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.InstallWithoutSettingsScopes(builder, &secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
@@ -129,10 +124,6 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	builder.Assess("log agent restarted", k8sdaemonset.WaitForDaemonset(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("log monitoring conditions with enabled scopes", checkConditions(testDynakube.Name, testDynakube.Namespace, true))
-
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
 }
