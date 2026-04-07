@@ -98,7 +98,7 @@ The DynaKube is a rather large CR, therefore its controller has many feature-spe
 - [`otelc`](./pkg/controllers/dynakube/otelc/): Manages OpenTelemetry Collector deployment
 - [`logmonitoring`](./pkg/controllers/dynakube/logmonitoring/): Handles log monitoring components
 - [`kspm`](./pkg/controllers/dynakube/kspm/): Manages Kubernetes Security Posture Management
-- [`apimonitoring`](./pkg/controllers/dynakube/apimonitoring/): Monitors Kubernetes API
+- [`k8sentity`](./pkg/controllers/dynakube/k8sentity/): Reconciles the Kubernetes Cluster Monitored Entity ID (MEID) and manages Kubernetes connection settings (`builtin:cloud.kubernetes`)
 - [`istio`](./pkg/controllers/dynakube/istio/): Handles Istio service mesh integration
 - [`proxy`](./pkg/controllers/dynakube/proxy/): Manages proxy configurations
 - [`deploymentmetadata`](./pkg/controllers/dynakube/deploymentmetadata/): Manages deployment metadata. This is a small amount of metadata about the Operator and the OneAgent deployment mode, provided to the OneAgents.
