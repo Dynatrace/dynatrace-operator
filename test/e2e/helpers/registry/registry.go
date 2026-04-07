@@ -57,7 +57,7 @@ func GetLatestImageURI(t *testing.T, repoURI string) string {
 
 	uri := getLatestImageURI(t, repoURI)
 	latestImageURIs[repoURI] = uri
-	t.Logf("resolved latest image for %s: %s", repoURI, uri)
+	t.Logf("resolved newest image for %s: %s", repoURI, uri)
 
 	return uri
 }

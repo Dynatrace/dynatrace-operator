@@ -324,7 +324,6 @@ func setImageRefFromEnvs(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Re
 
 	uri := registry.GetLatestImageURI(t, defaultRepo)
 	imageRef.Repository, imageRef.Tag, _ = strings.Cut(uri, ":")
-	t.Logf("using latest image for %s: %s", defaultRepo, uri)
 
 	return false
 }
