@@ -108,6 +108,14 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
+		Owns(&corev1.Service{}).
+		// Istio related resources are not registered as owned,
+		// because we can't be sure that they are present at Operator startup,
+		// istio could be installed later, or uninstalled while the Operator is present.
+		// this is unlikely, but we spam the logs if it happens and restarted would be needed.
+		// It is not worth the risk.
+		// Owns(&istiov1beta1.ServiceEntry{}).
+		// Owns(&istiov1beta1.VirtualService{}).
 		Complete(controller)
 }
 
