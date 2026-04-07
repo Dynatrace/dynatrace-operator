@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -151,7 +152,7 @@ func MetadataEnrichmentDeprecatedAttributes(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	testDynakube := *dynakubeComponents.New(
-		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/enable-attributes-dt.kubernetes": "false"}),
+		dynakubeComponents.WithAnnotations(map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "false"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
@@ -252,6 +253,9 @@ func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) feat
 		assert.Equal(t, "pod", enrichmentMetadata.DTWorkloadKind)
 		assert.Equal(t, testPod.Name, enrichmentMetadata.DTWorkloadName)
 
+		assert.Equal(t, "pod", enrichmentMetadata.WorkloadKind)
+		assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)
+
 		return ctx
 	}
 }
@@ -263,6 +267,9 @@ func assessMetadataEnrichmentDoesNotHaveDeprecatedAttributes(samplePod *sample.A
 
 		assert.Empty(t, enrichmentMetadata.DTWorkloadKind)
 		assert.Empty(t, enrichmentMetadata.DTWorkloadName)
+
+		assert.Equal(t, "pod", enrichmentMetadata.WorkloadKind)
+		assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)
 
 		return ctx
 	}
