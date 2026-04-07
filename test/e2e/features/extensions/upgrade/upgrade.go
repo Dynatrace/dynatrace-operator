@@ -43,7 +43,5 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("extension collector started after upgrade", k8sstatefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-
 	return builder.Feature()
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
@@ -39,7 +38,7 @@ func MigrateToImage(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, appDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, appDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -49,7 +48,7 @@ func MigrateToImage(t *testing.T) features.Feature {
 
 	appDynakube.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{AppInjectionSpec: *codeModulesAppInjectSpec(t)}
 
-	dynakubeComponents.Update(builder, helpers.LevelAssess, appDynakube)
+	dynakubeComponents.Update(builder, appDynakube)
 
 	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(appDynakube))
 
@@ -60,7 +59,6 @@ func MigrateToImage(t *testing.T) features.Feature {
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, appDynakube)
 
 	return builder.Feature()
 }
@@ -88,7 +86,7 @@ func MigrateToNodeImagePull(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, appDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, appDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -99,7 +97,7 @@ func MigrateToNodeImagePull(t *testing.T) features.Feature {
 	appDynakube.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{AppInjectionSpec: *codeModulesAppInjectSpec(t)}
 	appDynakube.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 
-	dynakubeComponents.Update(builder, helpers.LevelAssess, appDynakube)
+	dynakubeComponents.Update(builder, appDynakube)
 
 	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(appDynakube))
 
@@ -110,7 +108,6 @@ func MigrateToNodeImagePull(t *testing.T) features.Feature {
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, appDynakube)
 
 	return builder.Feature()
 }

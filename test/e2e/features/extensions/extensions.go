@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
@@ -49,17 +48,13 @@ func Feature(t *testing.T) features.Feature {
 		})
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
 	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
-
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
 

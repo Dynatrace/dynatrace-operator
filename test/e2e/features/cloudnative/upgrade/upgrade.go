@@ -46,7 +46,6 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
 	builder.Teardown(sampleApp.Uninstall())
-	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }
