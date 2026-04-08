@@ -34,6 +34,7 @@ type dynatraceClient struct {
 	hostGroup string
 
 	userAgentSuffix string
+	cacheEntryTTL   time.Duration
 }
 
 type tokenType int

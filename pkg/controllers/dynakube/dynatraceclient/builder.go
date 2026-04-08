@@ -84,6 +84,7 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (dtclient.Clien
 	}
 
 	opts.Opts = append(opts.Opts, dtclient.UserAgentSuffix(dynatraceClientBuilder.userAgentSuffix))
+	opts.Opts = append(opts.Opts, dtclient.CacheEntryTTL(dynatraceClientBuilder.dk.APIRequestThreshold()))
 
 	return dtclient.NewClient(dynatraceClientBuilder.dk.Spec.APIURL, apiToken, paasToken, opts.Opts...)
 }

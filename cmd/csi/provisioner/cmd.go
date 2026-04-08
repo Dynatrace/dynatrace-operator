@@ -2,8 +2,10 @@ package provisioner
 
 import (
 	"os"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/middleware"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -71,6 +73,10 @@ func run(*cobra.Command, []string) error {
 	if err != nil {
 		return err
 	}
+
+	// TODO: make configurable
+	// Added this here as a formality, the CSI driver makes no cacheable requests.
+	middleware.RunPeriodicCacheCleanup(signalHandler, time.Hour)
 
 	err = csiprovisioner.NewOneAgentProvisioner(csiManager, createCsiOptions()).SetupWithManager(csiManager)
 	if err != nil {

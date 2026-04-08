@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
@@ -31,17 +32,18 @@ type ClientV2 struct {
 }
 
 type ConfigV2 struct {
-	HTTPClient  *http.Client
-	TLSConfig   *tls.Config
-	BaseURL     string
-	APIToken    string
-	PaasToken   string
-	UserAgent   string
-	Proxy       string
-	NoProxy     string
-	NetworkZone string
-	HostGroup   string
-	Timeout     time.Duration
+	HTTPClient    *http.Client
+	TLSConfig     *tls.Config
+	BaseURL       string
+	APIToken      string
+	PaasToken     string
+	UserAgent     string
+	Proxy         string
+	NoProxy       string
+	NetworkZone   string
+	HostGroup     string
+	Timeout       time.Duration
+	CacheEntryTTL time.Duration
 }
 
 // OptionV2 is a functional option for configuring the dtClient
@@ -166,6 +168,18 @@ func WithUserAgentSuffix(suffix string) OptionV2 {
 	}
 }
 
+func WithCacheTTL(ttl time.Duration) OptionV2 {
+	return func(c *ConfigV2) error {
+		if ttl == 0 {
+			log.Debug("cache ttl is 0, no cache will be used")
+		}
+
+		c.CacheEntryTTL = ttl
+
+		return nil
+	}
+}
+
 // NewClientV2 creates a new Dynatrace API client
 func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 	config := ConfigV2{
@@ -210,7 +224,7 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		}
 
 		config.HTTPClient = &http.Client{
-			Transport: transport,
+			Transport: middleware.CacheRoundTripper(transport, config.CacheEntryTTL),
 		}
 	}
 
@@ -246,6 +260,7 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 		WithNetworkZone(dtc.networkZone),
 		WithHostGroup(dtc.hostGroup),
 		WithHTTPClient(dtc.httpClient),
+		WithCacheTTL(dtc.cacheEntryTTL),
 	)
 
 	// Placeholders to prevent deadcode elimination

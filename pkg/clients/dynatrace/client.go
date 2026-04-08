@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/middleware"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
 )
@@ -61,6 +62,9 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 	for _, opt := range opts {
 		opt(dc)
 	}
+
+	// not pretty...
+	dc.httpClient.Transport = middleware.CacheRoundTripper(dc.httpClient.Transport, dc.cacheEntryTTL)
 
 	return dc, nil
 }
@@ -143,5 +147,15 @@ func HostGroup(hostGroup string) Option {
 func UserAgentSuffix(suffix string) Option {
 	return func(c *dynatraceClient) {
 		c.userAgentSuffix = suffix
+	}
+}
+
+func CacheEntryTTL(ttl time.Duration) Option {
+	return func(c *dynatraceClient) {
+		if ttl == 0 {
+			log.Debug("cache ttl is 0, no cache will be used")
+		}
+
+		c.cacheEntryTTL = ttl
 	}
 }

@@ -3,8 +3,10 @@ package operator
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -59,7 +61,11 @@ func runInPod(kubeCfg *rest.Config) error {
 		return err
 	}
 
-	return errors.WithStack(operatorManager.Start(ctrl.SetupSignalHandler()))
+	signalHandler := ctrl.SetupSignalHandler()
+	// TODO: make configurable
+	middleware.RunPeriodicCacheCleanup(signalHandler, time.Hour)
+
+	return errors.WithStack(operatorManager.Start(signalHandler))
 }
 
 func runLocally(ctx context.Context, kubeCfg *rest.Config) error {
@@ -80,6 +86,9 @@ func runLocally(ctx context.Context, kubeCfg *rest.Config) error {
 	if err != nil {
 		return err
 	}
+	// TODO: make configurable
+	// Added this here as a formality, doesn't really make much sense to this while debugging
+	middleware.RunPeriodicCacheCleanup(ctx, time.Hour)
 
 	return errors.WithStack(operatorManager.Start(ctx))
 }
