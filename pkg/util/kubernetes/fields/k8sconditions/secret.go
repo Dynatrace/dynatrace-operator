@@ -41,4 +41,3 @@ func SetSecretGenFailed(conditions *[]metav1.Condition, conditionType string, er
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
-

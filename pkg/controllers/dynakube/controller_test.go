@@ -147,9 +147,9 @@ func TestHandleError(t *testing.T) {
 		oldDynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(oldDynakube)
 		controller := &Controller{
-			client:         fakeClient,
-			apiReader:      fakeClient,
-			requeueAfter:   12345 * time.Second,
+			client:       fakeClient,
+			apiReader:    fakeClient,
+			requeueAfter: 12345 * time.Second,
 		}
 		expectedDynakube := dynakubeBase.DeepCopy()
 		expectedDynakube.Status = dynakube.DynaKubeStatus{
@@ -308,70 +308,6 @@ func TestSetupTokensAndClient(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, dtc)
 		assertTokenCondition(t, dk, false)
-	})
-
-	t.Run("tokens ok, no change in token => calls throttled", func(t *testing.T) {
-		dk := dkBase.DeepCopy()
-		tokenSecret := tokenSecretBase.DeepCopy()
-		fakeClient := fake.NewClientWithIndex(dk, tokenSecret)
-
-		mockedDtc := dtclientmock.NewClient(t)
-		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDynatraceClientBuild(mockDtcBuilder, mockedDtc)
-
-		controller := &Controller{
-			client:                 fakeClient,
-			apiReader:              fakeClient,
-			dynatraceClientBuilder: mockDtcBuilder,
-		}
-
-		dtc, err := controller.setupTokensAndClient(ctx, dk)
-		require.NoError(t, err)
-		assert.NotNil(t, dtc)
-	})
-
-	t.Run("tokens ok, tokens change => call NOT throttled", func(t *testing.T) {
-		dk := dkBase.DeepCopy()
-		oldTokenSecret := tokenSecretBase.DeepCopy()
-		oldTokenSecret.Data[dtclient.APIToken] = []byte("old")
-		fakeClient := fake.NewClientWithIndex(dk, oldTokenSecret)
-
-		newTokenSecret := tokenSecretBase.DeepCopy()
-		fakeClient = fake.NewClientWithIndex(dk, newTokenSecret)
-
-		mockedDtc := mockDTClientWithTokenCalls()
-		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDynatraceClientBuild(mockDtcBuilder, mockedDtc)
-
-		controller := &Controller{
-			client:                 fakeClient,
-			apiReader:              fakeClient,
-			dynatraceClientBuilder: mockDtcBuilder,
-		}
-
-		dtc, err := controller.setupTokensAndClient(ctx, dk)
-		require.NoError(t, err)
-		assert.NotNil(t, dtc)
-	})
-
-	t.Run("tokens ok, tokens no change, old timestamp => call NOT throttled", func(t *testing.T) {
-		dk := dkBase.DeepCopy()
-		tokenSecret := tokenSecretBase.DeepCopy()
-		fakeClient := fake.NewClientWithIndex(dk, tokenSecret)
-
-		mockedDtc := mockDTClientWithTokenCalls()
-		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDynatraceClientBuild(mockDtcBuilder, mockedDtc)
-
-		controller := &Controller{
-			client:                 fakeClient,
-			apiReader:              fakeClient,
-			dynatraceClientBuilder: mockDtcBuilder,
-		}
-
-		dtc, err := controller.setupTokensAndClient(ctx, dk)
-		require.NoError(t, err)
-		assert.NotNil(t, dtc)
 	})
 }
 

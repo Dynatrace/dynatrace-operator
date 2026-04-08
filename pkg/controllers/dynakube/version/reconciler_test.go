@@ -175,20 +175,11 @@ func TestNeedsUpdate(t *testing.T) {
 	t.Run("needs", func(t *testing.T) {
 		dkCopy := dk.DeepCopy()
 		reconciler := reconciler{}
-		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(dkCopy, fake.NewClient(), nil), dkCopy))
+		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(dkCopy, fake.NewClient(), nil)))
 	})
 	t.Run("does not need", func(t *testing.T) {
 		r := reconciler{}
-		assert.False(t, r.needsUpdate(newOneAgentUpdater(&dynakube.DynaKube{}, fake.NewClient(), nil), &dynakube.DynaKube{}))
-	})
-	t.Run("does not need, because not old enough", func(t *testing.T) {
-		oldImage := "repo.com:tag@sha256:123"
-		newImage := "repo.com:tag"
-		updatedDynakube := dk.DeepCopy()
-		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
-		r := reconciler{}
-		assert.False(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
+		assert.False(t, r.needsUpdate(newOneAgentUpdater(&dynakube.DynaKube{}, fake.NewClient(), nil)))
 	})
 
 	t.Run("needs, because source changed", func(t *testing.T) {
@@ -196,7 +187,7 @@ func TestNeedsUpdate(t *testing.T) {
 		setOneAgentCustomImageStatus(updatedDynakube, "")
 
 		r := reconciler{}
-		assert.True(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
+		assert.True(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
 
 	t.Run("needs, because custom image changed", func(t *testing.T) {
@@ -207,7 +198,7 @@ func TestNeedsUpdate(t *testing.T) {
 		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
 
 		r := reconciler{}
-		assert.True(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
+		assert.True(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
 
 	t.Run("needs, because custom version changed", func(t *testing.T) {
@@ -218,7 +209,7 @@ func TestNeedsUpdate(t *testing.T) {
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
 
 		r := reconciler{}
-		assert.True(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
+		assert.True(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
 }
 

@@ -294,6 +294,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 	if err != nil {
 		return err
 	}
+
 	dk.Status.KubeSystemUUID = controller.clusterID
 
 	log.Info("start reconciling deployment meta data")

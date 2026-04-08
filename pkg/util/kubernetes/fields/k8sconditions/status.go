@@ -19,13 +19,3 @@ func SetStatusUpdated(conditions *[]metav1.Condition, conditionType, msg string)
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
-
-func SetStatusOutdated(conditions *[]metav1.Condition, conditionType, msg string) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  StatusOutdatedReason,
-		Message: msg,
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}

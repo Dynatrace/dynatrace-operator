@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	DaemonSetSetCreatedReason  = "DaemonSetCreated"
+	DaemonSetSetCreatedReason = "DaemonSetCreated"
 )
 
 func SetDaemonSetCreated(conditions *[]metav1.Condition, conditionType, name string) {
