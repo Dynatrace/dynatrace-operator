@@ -116,3 +116,84 @@ func TestIsTokenScopeVerificationAllowed(t *testing.T) {
 		})
 	}
 }
+
+func TestTenantRegistryPullSecretReferences(t *testing.T) {
+	const dkName = "test-dk"
+
+	t.Run("always returns only the tenant registry pull secret", func(t *testing.T) {
+		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName}}
+		refs := dk.TenantRegistryPullSecretReferences()
+		assert.Len(t, refs, 1)
+		assert.Equal(t, dk.TenantRegistryPullSecretName(), refs[0].Name)
+	})
+
+	t.Run("does not include customPullSecret even when set", func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			Spec:       DynaKubeSpec{CustomPullSecret: "my-custom-secret"},
+		}
+		refs := dk.TenantRegistryPullSecretReferences()
+		assert.Len(t, refs, 1)
+		assert.Equal(t, dk.TenantRegistryPullSecretName(), refs[0].Name)
+	})
+}
+
+func TestCustomPullSecretReferences(t *testing.T) {
+	const (
+		dkName           = "test-dk"
+		customPullSecret = "my-custom-secret"
+	)
+
+	t.Run("empty when no custom pull secret is set", func(t *testing.T) {
+		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName}}
+		refs := dk.CustomPullSecretReferences()
+		assert.Empty(t, refs)
+	})
+
+	t.Run("includes customPullSecret when set", func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
+		}
+		refs := dk.CustomPullSecretReferences()
+		assert.Len(t, refs, 1)
+		assert.Equal(t, customPullSecret, refs[0].Name)
+	})
+
+	t.Run("never contains the operator-generated tenant registry pull secret", func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
+		}
+		refs := dk.CustomPullSecretReferences()
+		assert.Len(t, refs, 1)
+		for _, ref := range refs {
+			assert.NotEqual(t, dk.TenantRegistryPullSecretName(), ref.Name)
+		}
+	})
+}
+
+func TestImagePullSecretReferences(t *testing.T) {
+	const (
+		dkName           = "test-dk"
+		customPullSecret = "my-custom-secret"
+	)
+
+	t.Run("only tenant pull secret when no custom pull secret is set", func(t *testing.T) {
+		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName}}
+		refs := dk.ImagePullSecretReferences()
+		assert.Len(t, refs, 1)
+		assert.Equal(t, dk.TenantRegistryPullSecretName(), refs[0].Name)
+	})
+
+	t.Run("includes DynaKube customPullSecret when set", func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
+		}
+		refs := dk.ImagePullSecretReferences()
+		assert.Len(t, refs, 2)
+		assert.Equal(t, dk.TenantRegistryPullSecretName(), refs[0].Name)
+		assert.Equal(t, customPullSecret, refs[1].Name)
+	})
+}

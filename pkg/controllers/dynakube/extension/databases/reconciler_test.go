@@ -201,6 +201,31 @@ func TestReconcileSpec(t *testing.T) {
 	})
 }
 
+func TestImagePullSecrets(t *testing.T) {
+	t.Run("custom pull secret is mounted", func(t *testing.T) {
+		dk := getTestDynakube() // getTestDynakube sets CustomPullSecret = testPullSecret
+		deploy := getReconciledDeployment(t, fakeClient(), dk)
+
+		assert.Contains(t, deploy.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: testPullSecret})
+	})
+
+	t.Run("tenant registry pull secret is not mounted", func(t *testing.T) {
+		dk := getTestDynakube()
+		deploy := getReconciledDeployment(t, fakeClient(), dk)
+
+		// Extension Databases do not pull from the tenant registry, so the operator-generated pull secret must not be mounted
+		assert.NotContains(t, deploy.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
+	})
+
+	t.Run("no pull secrets when no custom pull secret is set", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.CustomPullSecret = ""
+		deploy := getReconciledDeployment(t, fakeClient(), dk)
+
+		assert.Empty(t, deploy.Spec.Template.Spec.ImagePullSecrets)
+	})
+}
+
 func TestReconcileCondition(t *testing.T) {
 	t.Run("update observed generation", func(t *testing.T) {
 		dk := getTestDynakube()

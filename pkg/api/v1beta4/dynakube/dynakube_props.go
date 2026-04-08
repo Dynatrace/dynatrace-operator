@@ -54,14 +54,33 @@ func (dk *DynaKube) PullSecretName() string {
 		return dk.Spec.CustomPullSecret
 	}
 
+	return dk.TenantRegistryPullSecretName()
+}
+
+// TenantRegistryPullSecretName returns the name of the operator-generated pull secret
+// for the Dynatrace tenant registry (<dk-name>-pull-secret).
+func (dk *DynaKube) TenantRegistryPullSecretName() string {
 	return dk.Name + PullSecretSuffix
 }
 
-// PullSecretsNames returns the names of the pull secrets to be used for immutable images.
+// PullSecretsNames returns the names of all pull secrets (tenant registry + custom).
+// Used when pulling OneAgent/ActiveGate images from both tenant and custom registries.
 func (dk *DynaKube) PullSecretNames() []string {
 	names := []string{
-		dk.Name + PullSecretSuffix,
+		dk.TenantRegistryPullSecretName(),
 	}
+	names = append(names, dk.CustomPullSecretNames()...)
+
+	return names
+}
+
+// CustomPullSecretNames returns the names of the user-managed pull secrets only
+// (customPullSecret from the DynaKube spec), excluding the operator-generated tenant registry pull secret.
+// Use this for components that pull from public or user-managed registries only
+// (e.g. EEC, Extension Databases, OTel Collector, LogMonitoring, KSPM).
+func (dk *DynaKube) CustomPullSecretNames() []string {
+	var names []string
+
 	if dk.Spec.CustomPullSecret != "" {
 		names = append(names, dk.Spec.CustomPullSecret)
 	}
@@ -69,15 +88,34 @@ func (dk *DynaKube) PullSecretNames() []string {
 	return names
 }
 
-func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
-	imagePullSecrets := make([]corev1.LocalObjectReference, 0)
-	for _, pullSecretName := range dk.PullSecretNames() {
-		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{
-			Name: pullSecretName,
-		})
+// TenantRegistryPullSecretReferences returns image pull secret references for the operator-generated
+// tenant registry pull secret only (<dk-name>-pull-secret).
+// Use this only for ActiveGate and OneAgent, which pull from the Dynatrace tenant registry.
+func (dk *DynaKube) TenantRegistryPullSecretReferences() []corev1.LocalObjectReference {
+	return []corev1.LocalObjectReference{
+		{Name: dk.TenantRegistryPullSecretName()},
+	}
+}
+
+// CustomPullSecretReferences returns image pull secret references for the user-managed pull secrets only
+// (customPullSecret from the DynaKube spec), excluding the operator-generated tenant registry pull secret.
+// Use this for components that pull from public or user-managed registries only
+// (e.g. EEC, Extension Databases, OTel Collector, LogMonitoring, KSPM).
+func (dk *DynaKube) CustomPullSecretReferences() []corev1.LocalObjectReference {
+	names := dk.CustomPullSecretNames()
+	refs := make([]corev1.LocalObjectReference, len(names))
+
+	for i, name := range names {
+		refs[i].Name = name
 	}
 
-	return imagePullSecrets
+	return refs
+}
+
+// ImagePullSecretReferences returns image pull secret references for all pull secrets
+// (tenant registry + custom). Use this for ActiveGate and OneAgent.
+func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
+	return append(dk.TenantRegistryPullSecretReferences(), dk.CustomPullSecretReferences()...)
 }
 
 // Tokens returns the name of the Secret to be used for tokens.

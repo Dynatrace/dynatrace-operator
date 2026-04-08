@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			k8sdeployment.SetTolerations(r.dk.Spec.Templates.SQLExtensionExecutor.Tolerations),
 			k8sdeployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),
 			k8sdeployment.SetNodeSelector(dbSpec.NodeSelector),
-			k8sdeployment.SetImagePullSecrets(r.dk.ImagePullSecretReferences()),
+			k8sdeployment.SetImagePullSecrets(r.dk.CustomPullSecretReferences()),
 			k8sdeployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
 			k8sdeployment.SetSecurityContext(buildPodSecurityContext()),
 			k8sdeployment.SetContainer(buildContainer(r.dk, dbSpec)),
