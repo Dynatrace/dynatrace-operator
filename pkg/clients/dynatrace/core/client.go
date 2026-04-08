@@ -40,8 +40,6 @@ type APIRequest interface {
 	WithRawBody(body []byte) APIRequest
 	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
-	// WithOAuthToken sets the token type to OAuth
-	WithOAuthToken() APIRequest
 	// WithoutToken explicitly disables authentication for the request
 	WithoutToken() APIRequest
 	// WithHeader sets a custom header for the request, overriding any default value
@@ -92,7 +90,6 @@ type TokenType int
 const (
 	TokenTypeAPI TokenType = iota
 	TokenTypePaaS
-	TokenTypeOAuth
 	TokenTypeNone
 )
 
@@ -202,12 +199,6 @@ func (r *Request) WithPaasToken() APIRequest {
 	return r
 }
 
-func (r *Request) WithOAuthToken() APIRequest {
-	r.tokenType = TokenTypeOAuth
-
-	return r
-}
-
 // WithoutToken explicitly disables authentication for the request
 func (r *Request) WithoutToken() APIRequest {
 	r.tokenType = TokenTypeNone
@@ -252,8 +243,6 @@ func (r *Request) getToken() string {
 	switch r.tokenType {
 	case TokenTypePaaS:
 		return r.client.cfg.PaasToken
-	case TokenTypeOAuth:
-		return r.client.cfg.OAuthToken
 	case TokenTypeNone:
 		return ""
 	default:

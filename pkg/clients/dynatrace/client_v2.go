@@ -35,14 +35,12 @@ type ClientV2 struct {
 }
 
 type ConfigV2 struct {
-	HTTPClient  *http.Client
-	BaseURL     string
 	APIToken    string
 	PaasToken   string
 	NetworkZone string
 	HostGroup   string
 	UserAgent   string
-	baseOptions []BaseOption
+	httpOptions []HTTPOption
 }
 
 // OptionV2 is a functional option for configuring the v2 client
@@ -51,7 +49,6 @@ type OptionV2 func(*ConfigV2) error
 // NewClientV2 creates a new Dynatrace V2 API client
 func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 	config := ConfigV2{
-		BaseURL:   baseURL,
 		UserAgent: operatorversion.UserAgent(),
 	}
 
@@ -61,7 +58,7 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		}
 	}
 
-	parsedURL, err := url.Parse(config.BaseURL)
+	parsedURL, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid base URL: %w", err)
 	}
@@ -70,14 +67,14 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/") + "/api"
 	}
 
-	config.HTTPClient, err = newBaseClient(config.baseOptions...)
+	httpClient, err := newHTTPClient(config.httpOptions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create http client")
 	}
 
 	apiClient := core.NewClient(core.Config{
 		BaseURL:    parsedURL,
-		HTTPClient: config.HTTPClient,
+		HTTPClient: httpClient,
 		UserAgent:  config.UserAgent,
 		APIToken:   config.APIToken,
 		PaasToken:  config.PaasToken,
@@ -140,10 +137,10 @@ func WithV2UserAgentSuffix(suffix string) OptionV2 {
 	}
 }
 
-// WithV2BaseOptions adds the http base options
-func WithV2BaseOptions(options ...BaseOption) OptionV2 {
+// WithV2HTTPOptions adds the HTTP options
+func WithV2HTTPOptions(options ...HTTPOption) OptionV2 {
 	return func(c *ConfigV2) error {
-		c.baseOptions = append(c.baseOptions, options...)
+		c.httpOptions = append(c.httpOptions, options...)
 
 		return nil
 	}
@@ -154,12 +151,8 @@ type OAuthClient struct {
 }
 
 type OAuthConfig struct {
-	HTTPClient *http.Client
-	ctx        context.Context
 	clientcredentials.Config
-	BaseURL     string
-	UserAgent   string
-	baseOptions []BaseOption
+	httpOptions []HTTPOption
 }
 
 // OAuthOption is a functional option for configuring the OAuth client
@@ -167,35 +160,32 @@ type OAuthOption func(client *OAuthConfig) error
 
 // NewOAuthClient creates a new Dynatrace API OAuth client
 func NewOAuthClient(baseURL string, options ...OAuthOption) (*OAuthClient, error) {
-	config := OAuthConfig{
-		BaseURL:   baseURL,
-		UserAgent: operatorversion.UserAgent(),
-	}
+	config := &OAuthConfig{}
 
 	for _, opt := range options {
-		if err := opt(&config); err != nil {
+		if err := opt(config); err != nil {
 			return nil, err
 		}
 	}
 
-	parsedURL, err := url.Parse(config.BaseURL)
+	parsedURL, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid base URL: %w", err)
 	}
 
-	config.HTTPClient, err = newBaseClient(config.baseOptions...)
+	httpClient, err := newHTTPClient(config.httpOptions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create http client")
 	}
 
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, config.HTTPClient)
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 
 	oAuthHTTPClient := config.Client(ctx)
 
 	apiClient := core.NewClient(core.Config{
 		BaseURL:    parsedURL,
 		HTTPClient: oAuthHTTPClient,
-		UserAgent:  config.UserAgent,
+		UserAgent:  operatorversion.UserAgent(),
 	})
 
 	return &OAuthClient{
@@ -239,36 +229,16 @@ func WithOAuthScopes(scopes []string) OAuthOption {
 	}
 }
 
-// WithContext sets the context used for OAuth client configuration.
-func WithContext(ctx context.Context) OAuthOption {
+// WithOAuthHTTPOptions adds HTTP options for the OAuth client.
+func WithOAuthHTTPOptions(options ...HTTPOption) OAuthOption {
 	return func(c *OAuthConfig) error {
-		c.ctx = ctx
+		c.httpOptions = append(c.httpOptions, options...)
 
 		return nil
 	}
 }
 
-// WithOAuthUserAgentSuffix appends a suffix (comment) to the default user agent.
-func WithOAuthUserAgentSuffix(suffix string) OAuthOption {
-	return func(c *OAuthConfig) error {
-		if suffix != "" {
-			c.UserAgent += " " + suffix
-		}
-
-		return nil
-	}
-}
-
-// WithOAuthBaseOptions adds HTTP base options for the OAuth client.
-func WithOAuthBaseOptions(options ...BaseOption) OAuthOption {
-	return func(c *OAuthConfig) error {
-		c.baseOptions = append(c.baseOptions, options...)
-
-		return nil
-	}
-}
-
-type BaseConfig struct {
+type HTTPConfig struct {
 	HTTPClient        *http.Client
 	TLSConfig         *tls.Config
 	Proxy             string
@@ -277,12 +247,12 @@ type BaseConfig struct {
 	DisableKeepAlives bool
 }
 
-// BaseOption is a functional option for configuring the base HTTP client.
-type BaseOption func(*BaseConfig) error
+// HTTPOption is a functional option for configuring the HTTP client.
+type HTTPOption func(*HTTPConfig) error
 
-// newBaseClient creates an HTTP client configured with the provided base options.
-func newBaseClient(options ...BaseOption) (*http.Client, error) {
-	config := BaseConfig{
+// newHTTPClient creates an HTTP client configured with the provided options.
+func newHTTPClient(options ...HTTPOption) (*http.Client, error) {
+	config := HTTPConfig{
 		Timeout: 30 * time.Second,
 	}
 
@@ -335,8 +305,8 @@ func newBaseClient(options ...BaseOption) (*http.Client, error) {
 }
 
 // WithHTTPClient sets a custom HTTP client
-func WithHTTPClient(httpClient *http.Client) BaseOption {
-	return func(c *BaseConfig) error {
+func WithHTTPClient(httpClient *http.Client) HTTPOption {
+	return func(c *HTTPConfig) error {
 		c.HTTPClient = httpClient
 
 		return nil
@@ -344,8 +314,8 @@ func WithHTTPClient(httpClient *http.Client) BaseOption {
 }
 
 // WithTimeout sets the request timeout
-func WithTimeout(timeout time.Duration) BaseOption {
-	return func(c *BaseConfig) error {
+func WithTimeout(timeout time.Duration) HTTPOption {
+	return func(c *HTTPConfig) error {
 		c.Timeout = timeout
 
 		return nil
@@ -353,8 +323,8 @@ func WithTimeout(timeout time.Duration) BaseOption {
 }
 
 // WithProxy sets the proxy URL
-func WithProxy(proxyURL, noProxy string) BaseOption {
-	return func(c *BaseConfig) error {
+func WithProxy(proxyURL, noProxy string) HTTPOption {
+	return func(c *HTTPConfig) error {
 		c.Proxy = proxyURL
 		c.NoProxy = noProxy
 
@@ -363,8 +333,8 @@ func WithProxy(proxyURL, noProxy string) BaseOption {
 }
 
 // WithTLSConfig sets custom TLS configuration
-func WithTLSConfig(tlsConfig *tls.Config) BaseOption {
-	return func(c *BaseConfig) error {
+func WithTLSConfig(tlsConfig *tls.Config) HTTPOption {
+	return func(c *HTTPConfig) error {
 		c.TLSConfig = tlsConfig
 
 		return nil
@@ -372,8 +342,8 @@ func WithTLSConfig(tlsConfig *tls.Config) BaseOption {
 }
 
 // WithKeepAlive enables or disables HTTP keep-alives.
-func WithKeepAlive(keepAlive bool) BaseOption {
-	return func(c *BaseConfig) error {
+func WithKeepAlive(keepAlive bool) HTTPOption {
+	return func(c *HTTPConfig) error {
 		c.DisableKeepAlives = !keepAlive
 
 		return nil
@@ -381,8 +351,8 @@ func WithKeepAlive(keepAlive bool) BaseOption {
 }
 
 // WithSkipCertificateValidation skips TLS certificate validation when enabled.
-func WithSkipCertificateValidation(skip bool) BaseOption {
-	return func(c *BaseConfig) error {
+func WithSkipCertificateValidation(skip bool) HTTPOption {
+	return func(c *HTTPConfig) error {
 		if skip {
 			if c.TLSConfig == nil {
 				c.TLSConfig = &tls.Config{}
@@ -396,8 +366,8 @@ func WithSkipCertificateValidation(skip bool) BaseOption {
 }
 
 // WithCerts appends custom root certificates to the system certificate pool.
-func WithCerts(certs []byte) BaseOption {
-	return func(c *BaseConfig) error {
+func WithCerts(certs []byte) HTTPOption {
+	return func(c *HTTPConfig) error {
 		if len(certs) == 0 {
 			return nil
 		}
@@ -430,7 +400,7 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 		WithPaasToken(dtc.paasToken),
 		WithNetworkZone(dtc.networkZone),
 		WithHostGroup(dtc.hostGroup),
-		WithV2BaseOptions(WithHTTPClient(dtc.httpClient)),
+		WithV2HTTPOptions(WithHTTPClient(dtc.httpClient)),
 	)
 
 	// Placeholders to prevent deadcode elimination

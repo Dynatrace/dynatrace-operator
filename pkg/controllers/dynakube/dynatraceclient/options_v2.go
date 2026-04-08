@@ -35,7 +35,7 @@ func (opts *optionsV2) appendHostGroup(hostGroup string) {
 }
 
 func (opts *optionsV2) appendCertCheck(skipCertCheck bool) {
-	opts.Opts = append(opts.Opts, dtclient.WithV2BaseOptions(dtclient.WithSkipCertificateValidation(skipCertCheck)))
+	opts.Opts = append(opts.Opts, dtclient.WithV2HTTPOptions(dtclient.WithSkipCertificateValidation(skipCertCheck)))
 }
 
 func (opts *optionsV2) appendProxySettings(apiReader client.Reader, dk *dynakube.DynaKube) error {
@@ -61,7 +61,7 @@ func (opts *optionsV2) createProxyOption(apiReader client.Reader, dk *dynakube.D
 		return proxyOption, err
 	}
 
-	proxyOption = dtclient.WithV2BaseOptions(dtclient.WithProxy(proxyURL, dk.FF().GetNoProxy()))
+	proxyOption = dtclient.WithV2HTTPOptions(dtclient.WithProxy(proxyURL, dk.FF().GetNoProxy()))
 
 	return proxyOption, nil
 }
@@ -77,7 +77,7 @@ func (opts *optionsV2) appendTrustedCerts(apiReader client.Reader, trustedCerts 
 			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
 
-		opts.Opts = append(opts.Opts, dtclient.WithV2BaseOptions(dtclient.WithCerts([]byte(certs.Data[dynakube.TrustedCAKey]))))
+		opts.Opts = append(opts.Opts, dtclient.WithV2HTTPOptions(dtclient.WithCerts([]byte(certs.Data[dynakube.TrustedCAKey]))))
 	}
 
 	return nil

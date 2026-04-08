@@ -117,10 +117,10 @@ func WaitForPhase(edgeConnect edgeconnect.EdgeConnect, phase status.DeploymentPh
 // CreateTenantConfig for Normal mode only, preserves the ID and OAuth Secret of EdgeConnect configuration on the tenant
 func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig, testHostPattern string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		clt, err := BuildClient(ctx, clientSecret)
+		clt, err := BuildClient(clientSecret)
 		require.NoError(t, err)
 
-		edgeConnectRequest := edgeconnectClient.NewRequest(ecName, []string{testHostPattern}, []edgeconnect.HostMapping{}, "")
+		edgeConnectRequest := edgeconnectClient.NewCreateRequest(ecName, []string{testHostPattern}, []edgeconnect.HostMapping{})
 		edgeConnectRequest.ManagedByDynatraceOperator = false
 
 		res, err := clt.CreateEdgeConnect(ctx, edgeConnectRequest)
@@ -139,10 +139,9 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 	}
 }
 
-func BuildClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconnectClient.APIClient, error) {
+func BuildClient(secret tenant.EdgeConnectSecret) (edgeconnectClient.APIClient, error) {
 	oAuthClient, err := dynatrace.NewOAuthClient(
 		"https://"+secret.APIServer,
-		dynatrace.WithContext(ctx),
 		dynatrace.WithClientID(secret.OauthClientID),
 		dynatrace.WithClientSecret(secret.OauthClientSecret),
 		dynatrace.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
@@ -155,7 +154,7 @@ func BuildClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconn
 			"settings:objects:write",
 		}),
 		// Disable keep-alive to prevent dropped network packets in GitHub Actions environment
-		dynatrace.WithOAuthBaseOptions(dynatrace.WithKeepAlive(false)),
+		dynatrace.WithOAuthHTTPOptions(dynatrace.WithKeepAlive(false)),
 	)
 
 	if err != nil {
@@ -171,7 +170,7 @@ func BuildOAuthClientSecretName(secretName string) string {
 
 func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		clt, err := BuildClient(ctx, clientSecret)
+		clt, err := BuildClient(clientSecret)
 		require.NoError(t, err)
 
 		err = clt.DeleteEdgeConnect(ctx, edgeConnectTenantConfig.ID)
@@ -187,7 +186,7 @@ func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenant
 
 func CheckECExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		clt, err := BuildClient(ctx, clientSecret)
+		clt, err := BuildClient(clientSecret)
 		require.NoError(t, err)
 
 		_, err = clt.GetEdgeConnect(ctx, edgeConnectTenantConfig.ID)

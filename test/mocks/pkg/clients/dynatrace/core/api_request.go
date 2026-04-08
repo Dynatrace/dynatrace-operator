@@ -308,52 +308,6 @@ func (_c *APIRequest_WithJSONBody_Call) RunAndReturn(run func(body any) core.API
 	return _c
 }
 
-// WithOAuthToken provides a mock function for the type APIRequest
-func (_mock *APIRequest) WithOAuthToken() core.APIRequest {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithOAuthToken")
-	}
-
-	var r0 core.APIRequest
-	if returnFunc, ok := ret.Get(0).(func() core.APIRequest); ok {
-		r0 = returnFunc()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.APIRequest)
-		}
-	}
-	return r0
-}
-
-// APIRequest_WithOAuthToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithOAuthToken'
-type APIRequest_WithOAuthToken_Call struct {
-	*mock.Call
-}
-
-// WithOAuthToken is a helper method to define mock.On call
-func (_e *APIRequest_Expecter) WithOAuthToken() *APIRequest_WithOAuthToken_Call {
-	return &APIRequest_WithOAuthToken_Call{Call: _e.mock.On("WithOAuthToken")}
-}
-
-func (_c *APIRequest_WithOAuthToken_Call) Run(run func()) *APIRequest_WithOAuthToken_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *APIRequest_WithOAuthToken_Call) Return(aPIRequest core.APIRequest) *APIRequest_WithOAuthToken_Call {
-	_c.Call.Return(aPIRequest)
-	return _c
-}
-
-func (_c *APIRequest_WithOAuthToken_Call) RunAndReturn(run func() core.APIRequest) *APIRequest_WithOAuthToken_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // WithPaasToken provides a mock function for the type APIRequest
 func (_mock *APIRequest) WithPaasToken() core.APIRequest {
 	ret := _mock.Called()

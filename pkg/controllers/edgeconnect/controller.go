@@ -204,7 +204,7 @@ func (controller *Controller) deleteConnectionSetting(ctx context.Context, edgeC
 	}
 
 	if (envSetting != edgeconnectClient.EnvironmentSetting{}) {
-		err = edgeConnectClient.DeleteEnvironmentSetting(ctx, *envSetting.ObjectID)
+		err = edgeConnectClient.DeleteEnvironmentSetting(ctx, envSetting.ObjectID)
 		if err != nil {
 			return err
 		}
@@ -529,13 +529,11 @@ func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oaut
 
 		oAuthClients, err := dynatrace.NewOAuthClient(
 			"https://"+ec.Spec.APIServer,
-			dynatrace.WithContext(ctx),
 			dynatrace.WithClientID(oauthCredentials.clientID),
 			dynatrace.WithClientSecret(oauthCredentials.clientSecret),
 			dynatrace.WithTokenURL(ec.Spec.OAuth.Endpoint),
 			dynatrace.WithOAuthScopes(oauthScopes),
-			dynatrace.WithOAuthUserAgentSuffix("edgeconnect"),
-			dynatrace.WithOAuthBaseOptions(dynatrace.WithCerts(customCA)))
+			dynatrace.WithOAuthHTTPOptions(dynatrace.WithCerts(customCA)))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed tot create edge connect client")
 		}
@@ -544,31 +542,31 @@ func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oaut
 	}
 }
 
-func getEdgeConnectByName(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, name string) (edgeconnectClient.GetResponse, error) {
+func getEdgeConnectByName(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, name string) (edgeconnectClient.APIResponse, error) {
 	_log := log.WithValues("name", name)
 
-	ecs, err := edgeConnectClient.GetEdgeConnects(ctx, name)
+	ecs, err := edgeConnectClient.ListEdgeConnects(ctx, name)
 	if err != nil {
 		log.Debug("Unable to get EdgeConnect object")
 
-		return edgeconnectClient.GetResponse{}, errors.WithStack(err)
+		return edgeconnectClient.APIResponse{}, errors.WithStack(err)
 	}
 
-	if len(ecs.EdgeConnects) > 1 {
-		_log.Debug("Found multiple EdgeConnect objects with the same name", "count", ecs.EdgeConnects)
+	if len(ecs) > 1 {
+		_log.Debug("Found multiple EdgeConnect objects with the same name", "count", ecs)
 
-		return edgeconnectClient.GetResponse{}, errors.New("many EdgeConnects have the same name")
+		return edgeconnectClient.APIResponse{}, errors.New("many EdgeConnects have the same name")
 	}
 
-	if len(ecs.EdgeConnects) == 1 {
-		_log.Debug("Found one EdgeConnect objects with matching name", "count", ecs.EdgeConnects)
+	if len(ecs) == 1 {
+		_log.Debug("Found one EdgeConnect objects with matching name", "count", ecs)
 
-		return ecs.EdgeConnects[0], nil
+		return ecs[0], nil
 	}
 
-	_log.Debug("No EdgeConnect object found with matching name", "count", ecs.EdgeConnects)
+	_log.Debug("No EdgeConnect object found with matching name", "count", ecs)
 
-	return edgeconnectClient.GetResponse{}, nil
+	return edgeconnectClient.APIResponse{}, nil
 }
 
 func (controller *Controller) getEdgeConnectIDFromClientSecret(ctx context.Context, ec *edgeconnect.EdgeConnect) (string, error) {
@@ -606,7 +604,7 @@ func (controller *Controller) getEdgeConnectIDFromClientSecret(ctx context.Conte
 func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, ec *edgeconnect.EdgeConnect) error {
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name)
 
-	createResponse, err := edgeConnectClient.CreateEdgeConnect(ctx, edgeconnectClient.NewRequest(ec.Name, ec.HostPatterns(), ec.HostMappings(), ""))
+	createResponse, err := edgeConnectClient.CreateEdgeConnect(ctx, edgeconnectClient.NewCreateRequest(ec.Name, ec.HostPatterns(), ec.HostMappings()))
 	if err != nil {
 		_log.Debug("creating EdgeConnect failed")
 
@@ -679,7 +677,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 
 	log.Debug("updating EdgeConnect", "name", ec.Name)
 
-	err = edgeConnectClient.UpdateEdgeConnect(ctx, id, edgeconnectClient.NewRequest(ec.Name, ec.HostPatterns(), ec.HostMappings(), oauthClientID))
+	err = edgeConnectClient.UpdateEdgeConnect(ctx, id, edgeconnectClient.NewUpdateRequest(ec.Name, ec.HostPatterns(), ec.HostMappings(), oauthClientID))
 	if err != nil {
 		_log.Debug("updating EdgeConnect failed")
 
@@ -886,7 +884,7 @@ func (controller *Controller) getToken(ctx context.Context, ec *edgeconnect.Edge
 }
 
 func GetConnectionSetting(ctx context.Context, edgeConnectClient edgeconnectClient.APIClient, name, namespace, uid string) (edgeconnectClient.EnvironmentSetting, error) {
-	connectionSettings, err := edgeConnectClient.GetEnvironmentSettings(ctx)
+	connectionSettings, err := edgeConnectClient.ListEnvironmentSettings(ctx)
 	if err != nil {
 		return edgeconnectClient.EnvironmentSetting{}, err
 	}

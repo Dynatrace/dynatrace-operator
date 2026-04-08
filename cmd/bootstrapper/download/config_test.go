@@ -35,12 +35,12 @@ func TestToDTClientOptions(t *testing.T) {
 		{
 			title: "proxy propagated",
 			in:    Config{Proxy: "proxy", NoProxy: "no-proxy"},
-			out:   []dtclient.OptionV2{dtclient.WithV2BaseOptions(dtclient.WithProxy("proxy", "no-proxy"))},
+			out:   []dtclient.OptionV2{dtclient.WithV2HTTPOptions(dtclient.WithProxy("proxy", "no-proxy"))},
 		},
 		{
 			title: "skip cert check propagated",
 			in:    Config{SkipCertCheck: true},
-			out:   []dtclient.OptionV2{dtclient.WithV2BaseOptions(dtclient.WithSkipCertificateValidation(true))},
+			out:   []dtclient.OptionV2{dtclient.WithV2HTTPOptions(dtclient.WithSkipCertificateValidation(true))},
 		},
 		{
 			title: "everything propagated",
@@ -54,8 +54,8 @@ func TestToDTClientOptions(t *testing.T) {
 			out: []dtclient.OptionV2{
 				dtclient.WithHostGroup("host"),
 				dtclient.WithNetworkZone("network"),
-				dtclient.WithV2BaseOptions(dtclient.WithProxy("proxy", "no-proxy")),
-				dtclient.WithV2BaseOptions(dtclient.WithSkipCertificateValidation(true)),
+				dtclient.WithV2HTTPOptions(dtclient.WithProxy("proxy", "no-proxy")),
+				dtclient.WithV2HTTPOptions(dtclient.WithSkipCertificateValidation(true)),
 			},
 		},
 	}

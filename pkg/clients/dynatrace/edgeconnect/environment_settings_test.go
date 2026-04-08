@@ -2,18 +2,15 @@ package edgeconnect
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
-	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 )
 
 var testObjectID = "test-objectId"
 
 var testEnvironmentSetting = EnvironmentSetting{
-	ObjectID: &testObjectID,
+	ObjectID: testObjectID,
 	SchemaID: KubernetesConnectionSchemaID,
 	Scope:    KubernetesConnectionScope,
 	Value: EnvironmentSettingValue{
@@ -31,21 +28,17 @@ var qp = map[string]string{
 
 var errTest = errors.New("test-error")
 
-func TestGetEnvironmentSettings(t *testing.T) {
+func TestListEnvironmentSettings(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
-		request.EXPECT().WithOAuthToken().Return(request).Once()
+		apiClient, request, mockClient := newTestSetup(t)
+		expectGET(t, apiClient, request, settingsObjectsPath)
 		request.EXPECT().WithQueryParams(qp).Return(request).Once()
-		request.EXPECT().Execute(new(EnvironmentSettingsResponse)).Run(func(obj any) {
-			target := obj.(*EnvironmentSettingsResponse)
-			target.Items = []EnvironmentSetting{
+		request.EXPECT().Execute(new(environmentSettingsResponse)).Run(func(obj any) {
+			obj.(*environmentSettingsResponse).Items = []EnvironmentSetting{
 				testEnvironmentSetting,
 			}
 		}).Return(nil).Once()
-		apiClient.EXPECT().GET(t.Context(), "/platform/classic/environment-api/v2/settings/objects").Return(request).Once()
-		mockClient := NewClient(apiClient)
-		got, err := mockClient.GetEnvironmentSettings(t.Context())
+		got, err := mockClient.ListEnvironmentSettings(t.Context())
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		require.Len(t, got, 1)
@@ -53,14 +46,11 @@ func TestGetEnvironmentSettings(t *testing.T) {
 	})
 
 	t.Run("Server response NOK", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
-		request.EXPECT().Execute(new(EnvironmentSettingsResponse)).Return(errTest).Once()
-		request.EXPECT().WithOAuthToken().Return(request).Once()
+		apiClient, request, mockClient := newTestSetup(t)
+		expectGET(t, apiClient, request, settingsObjectsPath)
 		request.EXPECT().WithQueryParams(qp).Return(request).Once()
-		apiClient.EXPECT().GET(t.Context(), "/platform/classic/environment-api/v2/settings/objects").Return(request).Once()
-		mockClient := NewClient(apiClient)
-		got, err := mockClient.GetEnvironmentSettings(t.Context())
+		request.EXPECT().Execute(new(environmentSettingsResponse)).Return(errTest).Once()
+		got, err := mockClient.ListEnvironmentSettings(t.Context())
 		require.ErrorIs(t, err, errTest)
 		require.Nil(t, got)
 	})
@@ -68,25 +58,17 @@ func TestGetEnvironmentSettings(t *testing.T) {
 
 func TestCreateEnvironmentSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
-		request.EXPECT().WithOAuthToken().Return(request).Once()
-		request.EXPECT().WithJSONBody([]EnvironmentSetting{testEnvironmentSetting}).Return(request).Once()
+		apiClient, request, mockClient := newTestSetup(t)
+		expectPOST(t, apiClient, request, settingsObjectsPath, []EnvironmentSetting{testEnvironmentSetting})
 		request.EXPECT().Execute(nil).Return(nil).Once()
-		apiClient.EXPECT().POST(t.Context(), "/platform/classic/environment-api/v2/settings/objects").Return(request).Once()
-		mockClient := NewClient(apiClient)
 		err := mockClient.CreateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.NoError(t, err)
 	})
 
 	t.Run("Server response NOK", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
-		request.EXPECT().WithOAuthToken().Return(request).Once()
-		request.EXPECT().WithJSONBody([]EnvironmentSetting{testEnvironmentSetting}).Return(request).Once()
+		apiClient, request, mockClient := newTestSetup(t)
+		expectPOST(t, apiClient, request, settingsObjectsPath, []EnvironmentSetting{testEnvironmentSetting})
 		request.EXPECT().Execute(nil).Return(errTest).Once()
-		apiClient.EXPECT().POST(t.Context(), "/platform/classic/environment-api/v2/settings/objects").Return(request).Once()
-		mockClient := NewClient(apiClient)
 		err := mockClient.CreateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.ErrorIs(t, err, errTest)
 	})
@@ -94,70 +76,53 @@ func TestCreateEnvironmentSetting(t *testing.T) {
 
 func TestUpdateEnvironmentSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
-		request.EXPECT().WithOAuthToken().Return(request).Once()
-		request.EXPECT().WithJSONBody(testEnvironmentSetting).Return(request).Once()
+		apiClient, request, mockClient := newTestSetup(t)
+		expectPUT(t, apiClient, request, settingsObjectsIDPath+testObjectID, testEnvironmentSetting)
 		request.EXPECT().Execute(nil).Return(nil).Once()
-		apiClient.EXPECT().PUT(t.Context(), fmt.Sprintf("/platform/classic/environment-api/v2/settings/objects/%s", testObjectID)).Return(request).Once()
-		mockClient := NewClient(apiClient)
 		err := mockClient.UpdateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.NoError(t, err)
 	})
 
 	t.Run("Server response NOK", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
-		request.EXPECT().WithOAuthToken().Return(request).Once()
-		request.EXPECT().WithJSONBody(testEnvironmentSetting).Return(request).Once()
+		apiClient, request, mockClient := newTestSetup(t)
+		expectPUT(t, apiClient, request, settingsObjectsIDPath+testObjectID, testEnvironmentSetting)
 		request.EXPECT().Execute(nil).Return(errTest).Once()
-		apiClient.EXPECT().PUT(t.Context(), fmt.Sprintf("/platform/classic/environment-api/v2/settings/objects/%s", testObjectID)).Return(request).Once()
-		mockClient := NewClient(apiClient)
 		err := mockClient.UpdateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.ErrorIs(t, err, errTest)
 	})
 
 	t.Run("No object id given", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		mockClient := NewClient(apiClient)
+		_, _, mockClient := newTestSetup(t)
 		err := mockClient.UpdateEnvironmentSetting(t.Context(), EnvironmentSetting{})
 		require.EqualError(t, err, "no environment setting object id given")
 	})
 
 	t.Run("No object id given", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		mockClient := NewClient(apiClient)
-		err := mockClient.UpdateEnvironmentSetting(t.Context(), EnvironmentSetting{ObjectID: ptr.To("")})
+		_, _, mockClient := newTestSetup(t)
+		err := mockClient.UpdateEnvironmentSetting(t.Context(), EnvironmentSetting{ObjectID: ""})
 		require.EqualError(t, err, "no environment setting object id given")
 	})
 }
 
 func TestDeleteEnvironmentSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
-		request.EXPECT().WithOAuthToken().Return(request).Once()
+		apiClient, request, mockClient := newTestSetup(t)
+		expectDELETE(t, apiClient, request, settingsObjectsIDPath+testObjectID)
 		request.EXPECT().Execute(nil).Return(nil).Once()
-		apiClient.EXPECT().DELETE(t.Context(), fmt.Sprintf("/platform/classic/environment-api/v2/settings/objects/%s", testObjectID)).Return(request).Once()
-		mockClient := NewClient(apiClient)
-		err := mockClient.DeleteEnvironmentSetting(t.Context(), *testEnvironmentSetting.ObjectID)
+		err := mockClient.DeleteEnvironmentSetting(t.Context(), testEnvironmentSetting.ObjectID)
 		require.NoError(t, err)
 	})
 
 	t.Run("Server response NOK", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
-		request.EXPECT().WithOAuthToken().Return(request).Once()
+		apiClient, request, mockClient := newTestSetup(t)
+		expectDELETE(t, apiClient, request, settingsObjectsIDPath+testObjectID)
 		request.EXPECT().Execute(nil).Return(errTest).Once()
-		apiClient.EXPECT().DELETE(t.Context(), fmt.Sprintf("/platform/classic/environment-api/v2/settings/objects/%s", testObjectID)).Return(request).Once()
-		mockClient := NewClient(apiClient)
-		err := mockClient.DeleteEnvironmentSetting(t.Context(), *testEnvironmentSetting.ObjectID)
+		err := mockClient.DeleteEnvironmentSetting(t.Context(), testEnvironmentSetting.ObjectID)
 		require.ErrorIs(t, err, errTest)
 	})
 
 	t.Run("No object id given", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		mockClient := NewClient(apiClient)
+		_, _, mockClient := newTestSetup(t)
 		err := mockClient.DeleteEnvironmentSetting(t.Context(), "")
 		require.EqualError(t, err, "no environment setting object id given")
 	})

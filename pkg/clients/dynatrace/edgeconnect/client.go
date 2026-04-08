@@ -6,42 +6,42 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 )
 
-// APIClient is the interface for the Dynatrace EdgeConnect REST API client.
+// APIClient is the interface for the Dynatrace EdgeConnect REST API Client.
 type APIClient interface {
 	// GetEdgeConnect return details of single EdgeConnect
-	GetEdgeConnect(ctx context.Context, edgeConnectID string) (GetResponse, error)
+	GetEdgeConnect(ctx context.Context, id string) (APIResponse, error)
 
 	// CreateEdgeConnect creates EdgeConnect
-	CreateEdgeConnect(ctx context.Context, request *Request) (CreateResponse, error)
+	CreateEdgeConnect(ctx context.Context, request *Request) (APIResponse, error)
 
 	// UpdateEdgeConnect updates EdgeConnect
-	UpdateEdgeConnect(ctx context.Context, edgeConnectID string, request *Request) error
+	UpdateEdgeConnect(ctx context.Context, id string, request *Request) error
 
 	// DeleteEdgeConnect deletes EdgeConnect
-	DeleteEdgeConnect(ctx context.Context, edgeConnectID string) error
+	DeleteEdgeConnect(ctx context.Context, id string) error
 
-	// GetEdgeConnects returns list of EdgeConnects
-	GetEdgeConnects(ctx context.Context, name string) (ListResponse, error)
+	// ListEdgeConnects  list of EdgeConnects
+	ListEdgeConnects(ctx context.Context, name string) ([]APIResponse, error)
 
-	// GetEnvironmentSettings returns all connection setting objects
-	GetEnvironmentSettings(ctx context.Context) ([]EnvironmentSetting, error)
+	// ListEnvironmentSettings  list of environment setting objects
+	ListEnvironmentSettings(ctx context.Context) ([]EnvironmentSetting, error)
 
-	// CreateEnvironmentSetting creates a connection setting object
+	// CreateEnvironmentSetting creates environment setting object
 	CreateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error
 
-	// UpdateEnvironmentSetting updates a connection setting object
+	// UpdateEnvironmentSetting updates environment setting object
 	UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error
 
-	// DeleteEnvironmentSetting deletes a connection setting object
+	// DeleteEnvironmentSetting deletes environment setting object
 	DeleteEnvironmentSetting(ctx context.Context, objectID string) error
 }
 
-type client struct {
+type Client struct {
 	apiClient core.APIClient
 }
 
-func NewClient(apiClient core.APIClient) APIClient {
-	return &client{
+func NewClient(apiClient core.APIClient) *Client {
+	return &Client{
 		apiClient: apiClient,
 	}
 }

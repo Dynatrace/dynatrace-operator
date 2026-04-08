@@ -39,22 +39,22 @@ func (_m *APIClient) EXPECT() *APIClient_Expecter {
 }
 
 // CreateEdgeConnect provides a mock function for the type APIClient
-func (_mock *APIClient) CreateEdgeConnect(ctx context.Context, request *edgeconnect.Request) (edgeconnect.CreateResponse, error) {
+func (_mock *APIClient) CreateEdgeConnect(ctx context.Context, request *edgeconnect.Request) (edgeconnect.APIResponse, error) {
 	ret := _mock.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateEdgeConnect")
 	}
 
-	var r0 edgeconnect.CreateResponse
+	var r0 edgeconnect.APIResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *edgeconnect.Request) (edgeconnect.CreateResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *edgeconnect.Request) (edgeconnect.APIResponse, error)); ok {
 		return returnFunc(ctx, request)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *edgeconnect.Request) edgeconnect.CreateResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *edgeconnect.Request) edgeconnect.APIResponse); ok {
 		r0 = returnFunc(ctx, request)
 	} else {
-		r0 = ret.Get(0).(edgeconnect.CreateResponse)
+		r0 = ret.Get(0).(edgeconnect.APIResponse)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, *edgeconnect.Request) error); ok {
 		r1 = returnFunc(ctx, request)
@@ -94,12 +94,12 @@ func (_c *APIClient_CreateEdgeConnect_Call) Run(run func(ctx context.Context, re
 	return _c
 }
 
-func (_c *APIClient_CreateEdgeConnect_Call) Return(createResponse edgeconnect.CreateResponse, err error) *APIClient_CreateEdgeConnect_Call {
-	_c.Call.Return(createResponse, err)
+func (_c *APIClient_CreateEdgeConnect_Call) Return(aPIResponse edgeconnect.APIResponse, err error) *APIClient_CreateEdgeConnect_Call {
+	_c.Call.Return(aPIResponse, err)
 	return _c
 }
 
-func (_c *APIClient_CreateEdgeConnect_Call) RunAndReturn(run func(ctx context.Context, request *edgeconnect.Request) (edgeconnect.CreateResponse, error)) *APIClient_CreateEdgeConnect_Call {
+func (_c *APIClient_CreateEdgeConnect_Call) RunAndReturn(run func(ctx context.Context, request *edgeconnect.Request) (edgeconnect.APIResponse, error)) *APIClient_CreateEdgeConnect_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -162,8 +162,8 @@ func (_c *APIClient_CreateEnvironmentSetting_Call) RunAndReturn(run func(ctx con
 }
 
 // DeleteEdgeConnect provides a mock function for the type APIClient
-func (_mock *APIClient) DeleteEdgeConnect(ctx context.Context, edgeConnectID string) error {
-	ret := _mock.Called(ctx, edgeConnectID)
+func (_mock *APIClient) DeleteEdgeConnect(ctx context.Context, id string) error {
+	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteEdgeConnect")
@@ -171,7 +171,7 @@ func (_mock *APIClient) DeleteEdgeConnect(ctx context.Context, edgeConnectID str
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = returnFunc(ctx, edgeConnectID)
+		r0 = returnFunc(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -185,12 +185,12 @@ type APIClient_DeleteEdgeConnect_Call struct {
 
 // DeleteEdgeConnect is a helper method to define mock.On call
 //   - ctx context.Context
-//   - edgeConnectID string
-func (_e *APIClient_Expecter) DeleteEdgeConnect(ctx interface{}, edgeConnectID interface{}) *APIClient_DeleteEdgeConnect_Call {
-	return &APIClient_DeleteEdgeConnect_Call{Call: _e.mock.On("DeleteEdgeConnect", ctx, edgeConnectID)}
+//   - id string
+func (_e *APIClient_Expecter) DeleteEdgeConnect(ctx interface{}, id interface{}) *APIClient_DeleteEdgeConnect_Call {
+	return &APIClient_DeleteEdgeConnect_Call{Call: _e.mock.On("DeleteEdgeConnect", ctx, id)}
 }
 
-func (_c *APIClient_DeleteEdgeConnect_Call) Run(run func(ctx context.Context, edgeConnectID string)) *APIClient_DeleteEdgeConnect_Call {
+func (_c *APIClient_DeleteEdgeConnect_Call) Run(run func(ctx context.Context, id string)) *APIClient_DeleteEdgeConnect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -213,7 +213,7 @@ func (_c *APIClient_DeleteEdgeConnect_Call) Return(err error) *APIClient_DeleteE
 	return _c
 }
 
-func (_c *APIClient_DeleteEdgeConnect_Call) RunAndReturn(run func(ctx context.Context, edgeConnectID string) error) *APIClient_DeleteEdgeConnect_Call {
+func (_c *APIClient_DeleteEdgeConnect_Call) RunAndReturn(run func(ctx context.Context, id string) error) *APIClient_DeleteEdgeConnect_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -276,25 +276,25 @@ func (_c *APIClient_DeleteEnvironmentSetting_Call) RunAndReturn(run func(ctx con
 }
 
 // GetEdgeConnect provides a mock function for the type APIClient
-func (_mock *APIClient) GetEdgeConnect(ctx context.Context, edgeConnectID string) (edgeconnect.GetResponse, error) {
-	ret := _mock.Called(ctx, edgeConnectID)
+func (_mock *APIClient) GetEdgeConnect(ctx context.Context, id string) (edgeconnect.APIResponse, error) {
+	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetEdgeConnect")
 	}
 
-	var r0 edgeconnect.GetResponse
+	var r0 edgeconnect.APIResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (edgeconnect.GetResponse, error)); ok {
-		return returnFunc(ctx, edgeConnectID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (edgeconnect.APIResponse, error)); ok {
+		return returnFunc(ctx, id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) edgeconnect.GetResponse); ok {
-		r0 = returnFunc(ctx, edgeConnectID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) edgeconnect.APIResponse); ok {
+		r0 = returnFunc(ctx, id)
 	} else {
-		r0 = ret.Get(0).(edgeconnect.GetResponse)
+		r0 = ret.Get(0).(edgeconnect.APIResponse)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, edgeConnectID)
+		r1 = returnFunc(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -308,12 +308,12 @@ type APIClient_GetEdgeConnect_Call struct {
 
 // GetEdgeConnect is a helper method to define mock.On call
 //   - ctx context.Context
-//   - edgeConnectID string
-func (_e *APIClient_Expecter) GetEdgeConnect(ctx interface{}, edgeConnectID interface{}) *APIClient_GetEdgeConnect_Call {
-	return &APIClient_GetEdgeConnect_Call{Call: _e.mock.On("GetEdgeConnect", ctx, edgeConnectID)}
+//   - id string
+func (_e *APIClient_Expecter) GetEdgeConnect(ctx interface{}, id interface{}) *APIClient_GetEdgeConnect_Call {
+	return &APIClient_GetEdgeConnect_Call{Call: _e.mock.On("GetEdgeConnect", ctx, id)}
 }
 
-func (_c *APIClient_GetEdgeConnect_Call) Run(run func(ctx context.Context, edgeConnectID string)) *APIClient_GetEdgeConnect_Call {
+func (_c *APIClient_GetEdgeConnect_Call) Run(run func(ctx context.Context, id string)) *APIClient_GetEdgeConnect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -331,33 +331,35 @@ func (_c *APIClient_GetEdgeConnect_Call) Run(run func(ctx context.Context, edgeC
 	return _c
 }
 
-func (_c *APIClient_GetEdgeConnect_Call) Return(getResponse edgeconnect.GetResponse, err error) *APIClient_GetEdgeConnect_Call {
-	_c.Call.Return(getResponse, err)
+func (_c *APIClient_GetEdgeConnect_Call) Return(aPIResponse edgeconnect.APIResponse, err error) *APIClient_GetEdgeConnect_Call {
+	_c.Call.Return(aPIResponse, err)
 	return _c
 }
 
-func (_c *APIClient_GetEdgeConnect_Call) RunAndReturn(run func(ctx context.Context, edgeConnectID string) (edgeconnect.GetResponse, error)) *APIClient_GetEdgeConnect_Call {
+func (_c *APIClient_GetEdgeConnect_Call) RunAndReturn(run func(ctx context.Context, id string) (edgeconnect.APIResponse, error)) *APIClient_GetEdgeConnect_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetEdgeConnects provides a mock function for the type APIClient
-func (_mock *APIClient) GetEdgeConnects(ctx context.Context, name string) (edgeconnect.ListResponse, error) {
+// ListEdgeConnects provides a mock function for the type APIClient
+func (_mock *APIClient) ListEdgeConnects(ctx context.Context, name string) ([]edgeconnect.APIResponse, error) {
 	ret := _mock.Called(ctx, name)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetEdgeConnects")
+		panic("no return value specified for ListEdgeConnects")
 	}
 
-	var r0 edgeconnect.ListResponse
+	var r0 []edgeconnect.APIResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (edgeconnect.ListResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]edgeconnect.APIResponse, error)); ok {
 		return returnFunc(ctx, name)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) edgeconnect.ListResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []edgeconnect.APIResponse); ok {
 		r0 = returnFunc(ctx, name)
 	} else {
-		r0 = ret.Get(0).(edgeconnect.ListResponse)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]edgeconnect.APIResponse)
+		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = returnFunc(ctx, name)
@@ -367,19 +369,19 @@ func (_mock *APIClient) GetEdgeConnects(ctx context.Context, name string) (edgec
 	return r0, r1
 }
 
-// APIClient_GetEdgeConnects_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEdgeConnects'
-type APIClient_GetEdgeConnects_Call struct {
+// APIClient_ListEdgeConnects_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListEdgeConnects'
+type APIClient_ListEdgeConnects_Call struct {
 	*mock.Call
 }
 
-// GetEdgeConnects is a helper method to define mock.On call
+// ListEdgeConnects is a helper method to define mock.On call
 //   - ctx context.Context
 //   - name string
-func (_e *APIClient_Expecter) GetEdgeConnects(ctx interface{}, name interface{}) *APIClient_GetEdgeConnects_Call {
-	return &APIClient_GetEdgeConnects_Call{Call: _e.mock.On("GetEdgeConnects", ctx, name)}
+func (_e *APIClient_Expecter) ListEdgeConnects(ctx interface{}, name interface{}) *APIClient_ListEdgeConnects_Call {
+	return &APIClient_ListEdgeConnects_Call{Call: _e.mock.On("ListEdgeConnects", ctx, name)}
 }
 
-func (_c *APIClient_GetEdgeConnects_Call) Run(run func(ctx context.Context, name string)) *APIClient_GetEdgeConnects_Call {
+func (_c *APIClient_ListEdgeConnects_Call) Run(run func(ctx context.Context, name string)) *APIClient_ListEdgeConnects_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -397,22 +399,22 @@ func (_c *APIClient_GetEdgeConnects_Call) Run(run func(ctx context.Context, name
 	return _c
 }
 
-func (_c *APIClient_GetEdgeConnects_Call) Return(listResponse edgeconnect.ListResponse, err error) *APIClient_GetEdgeConnects_Call {
-	_c.Call.Return(listResponse, err)
+func (_c *APIClient_ListEdgeConnects_Call) Return(aPIResponses []edgeconnect.APIResponse, err error) *APIClient_ListEdgeConnects_Call {
+	_c.Call.Return(aPIResponses, err)
 	return _c
 }
 
-func (_c *APIClient_GetEdgeConnects_Call) RunAndReturn(run func(ctx context.Context, name string) (edgeconnect.ListResponse, error)) *APIClient_GetEdgeConnects_Call {
+func (_c *APIClient_ListEdgeConnects_Call) RunAndReturn(run func(ctx context.Context, name string) ([]edgeconnect.APIResponse, error)) *APIClient_ListEdgeConnects_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetEnvironmentSettings provides a mock function for the type APIClient
-func (_mock *APIClient) GetEnvironmentSettings(ctx context.Context) ([]edgeconnect.EnvironmentSetting, error) {
+// ListEnvironmentSettings provides a mock function for the type APIClient
+func (_mock *APIClient) ListEnvironmentSettings(ctx context.Context) ([]edgeconnect.EnvironmentSetting, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetEnvironmentSettings")
+		panic("no return value specified for ListEnvironmentSettings")
 	}
 
 	var r0 []edgeconnect.EnvironmentSetting
@@ -435,18 +437,18 @@ func (_mock *APIClient) GetEnvironmentSettings(ctx context.Context) ([]edgeconne
 	return r0, r1
 }
 
-// APIClient_GetEnvironmentSettings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEnvironmentSettings'
-type APIClient_GetEnvironmentSettings_Call struct {
+// APIClient_ListEnvironmentSettings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListEnvironmentSettings'
+type APIClient_ListEnvironmentSettings_Call struct {
 	*mock.Call
 }
 
-// GetEnvironmentSettings is a helper method to define mock.On call
+// ListEnvironmentSettings is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *APIClient_Expecter) GetEnvironmentSettings(ctx interface{}) *APIClient_GetEnvironmentSettings_Call {
-	return &APIClient_GetEnvironmentSettings_Call{Call: _e.mock.On("GetEnvironmentSettings", ctx)}
+func (_e *APIClient_Expecter) ListEnvironmentSettings(ctx interface{}) *APIClient_ListEnvironmentSettings_Call {
+	return &APIClient_ListEnvironmentSettings_Call{Call: _e.mock.On("ListEnvironmentSettings", ctx)}
 }
 
-func (_c *APIClient_GetEnvironmentSettings_Call) Run(run func(ctx context.Context)) *APIClient_GetEnvironmentSettings_Call {
+func (_c *APIClient_ListEnvironmentSettings_Call) Run(run func(ctx context.Context)) *APIClient_ListEnvironmentSettings_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -459,19 +461,19 @@ func (_c *APIClient_GetEnvironmentSettings_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *APIClient_GetEnvironmentSettings_Call) Return(environmentSettings []edgeconnect.EnvironmentSetting, err error) *APIClient_GetEnvironmentSettings_Call {
+func (_c *APIClient_ListEnvironmentSettings_Call) Return(environmentSettings []edgeconnect.EnvironmentSetting, err error) *APIClient_ListEnvironmentSettings_Call {
 	_c.Call.Return(environmentSettings, err)
 	return _c
 }
 
-func (_c *APIClient_GetEnvironmentSettings_Call) RunAndReturn(run func(ctx context.Context) ([]edgeconnect.EnvironmentSetting, error)) *APIClient_GetEnvironmentSettings_Call {
+func (_c *APIClient_ListEnvironmentSettings_Call) RunAndReturn(run func(ctx context.Context) ([]edgeconnect.EnvironmentSetting, error)) *APIClient_ListEnvironmentSettings_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateEdgeConnect provides a mock function for the type APIClient
-func (_mock *APIClient) UpdateEdgeConnect(ctx context.Context, edgeConnectID string, request *edgeconnect.Request) error {
-	ret := _mock.Called(ctx, edgeConnectID, request)
+func (_mock *APIClient) UpdateEdgeConnect(ctx context.Context, id string, request *edgeconnect.Request) error {
+	ret := _mock.Called(ctx, id, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateEdgeConnect")
@@ -479,7 +481,7 @@ func (_mock *APIClient) UpdateEdgeConnect(ctx context.Context, edgeConnectID str
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, string, *edgeconnect.Request) error); ok {
-		r0 = returnFunc(ctx, edgeConnectID, request)
+		r0 = returnFunc(ctx, id, request)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -493,13 +495,13 @@ type APIClient_UpdateEdgeConnect_Call struct {
 
 // UpdateEdgeConnect is a helper method to define mock.On call
 //   - ctx context.Context
-//   - edgeConnectID string
+//   - id string
 //   - request *edgeconnect.Request
-func (_e *APIClient_Expecter) UpdateEdgeConnect(ctx interface{}, edgeConnectID interface{}, request interface{}) *APIClient_UpdateEdgeConnect_Call {
-	return &APIClient_UpdateEdgeConnect_Call{Call: _e.mock.On("UpdateEdgeConnect", ctx, edgeConnectID, request)}
+func (_e *APIClient_Expecter) UpdateEdgeConnect(ctx interface{}, id interface{}, request interface{}) *APIClient_UpdateEdgeConnect_Call {
+	return &APIClient_UpdateEdgeConnect_Call{Call: _e.mock.On("UpdateEdgeConnect", ctx, id, request)}
 }
 
-func (_c *APIClient_UpdateEdgeConnect_Call) Run(run func(ctx context.Context, edgeConnectID string, request *edgeconnect.Request)) *APIClient_UpdateEdgeConnect_Call {
+func (_c *APIClient_UpdateEdgeConnect_Call) Run(run func(ctx context.Context, id string, request *edgeconnect.Request)) *APIClient_UpdateEdgeConnect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -527,7 +529,7 @@ func (_c *APIClient_UpdateEdgeConnect_Call) Return(err error) *APIClient_UpdateE
 	return _c
 }
 
-func (_c *APIClient_UpdateEdgeConnect_Call) RunAndReturn(run func(ctx context.Context, edgeConnectID string, request *edgeconnect.Request) error) *APIClient_UpdateEdgeConnect_Call {
+func (_c *APIClient_UpdateEdgeConnect_Call) RunAndReturn(run func(ctx context.Context, id string, request *edgeconnect.Request) error) *APIClient_UpdateEdgeConnect_Call {
 	_c.Call.Return(run)
 	return _c
 }

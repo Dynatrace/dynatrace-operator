@@ -2,17 +2,15 @@ package edgeconnect
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
-	"k8s.io/utils/ptr"
 )
 
 // Environment API
 const (
 	environmentAPIPath    = "/platform/classic/environment-api/v2"
 	settingsObjectsPath   = environmentAPIPath + "/settings/objects"
-	settingsObjectsIDPath = settingsObjectsPath + "/%s"
+	settingsObjectsIDPath = settingsObjectsPath + "/"
 )
 
 const (
@@ -21,7 +19,7 @@ const (
 )
 
 type EnvironmentSetting struct {
-	ObjectID *string                 `json:"objectId"`
+	ObjectID string                  `json:"objectId,omitempty"`
 	SchemaID string                  `json:"schemaId"`
 	Scope    string                  `json:"scope"`
 	Value    EnvironmentSettingValue `json:"value"`
@@ -34,22 +32,20 @@ type EnvironmentSettingValue struct {
 	Token     string `json:"token"`
 }
 
-type EnvironmentSettingsResponse struct {
-	Items      []EnvironmentSetting `json:"items"`
-	TotalCount int                  `json:"totalCount"`
-	PageSize   int                  `json:"pageSize"`
+type environmentSettingsResponse struct {
+	Items []EnvironmentSetting `json:"items"`
 }
 
-// GetEnvironmentSettings get environment settings
-func (c *client) GetEnvironmentSettings(ctx context.Context) ([]EnvironmentSetting, error) {
+// ListEnvironmentSettings get environment settings
+func (c *Client) ListEnvironmentSettings(ctx context.Context) ([]EnvironmentSetting, error) {
 	qp := map[string]string{
 		"schemaIds": KubernetesConnectionSchemaID,
 		"scopes":    KubernetesConnectionScope,
 	}
 
-	var response EnvironmentSettingsResponse
+	var response environmentSettingsResponse
 
-	err := c.apiClient.GET(ctx, settingsObjectsPath).WithOAuthToken().WithQueryParams(qp).Execute(&response)
+	err := c.apiClient.GET(ctx, settingsObjectsPath).WithoutToken().WithQueryParams(qp).Execute(&response)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get settings objects")
 	}
@@ -58,8 +54,8 @@ func (c *client) GetEnvironmentSettings(ctx context.Context) ([]EnvironmentSetti
 }
 
 // CreateEnvironmentSetting create environment setting
-func (c *client) CreateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
-	err := c.apiClient.POST(ctx, settingsObjectsPath).WithOAuthToken().WithJSONBody([]EnvironmentSetting{es}).Execute(nil)
+func (c *Client) CreateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
+	err := c.apiClient.POST(ctx, settingsObjectsPath).WithoutToken().WithJSONBody([]EnvironmentSetting{es}).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create environment setting")
 	}
@@ -68,14 +64,12 @@ func (c *client) CreateEnvironmentSetting(ctx context.Context, es EnvironmentSet
 }
 
 // UpdateEnvironmentSetting update environment setting
-func (c *client) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
-	objectID := ptr.Deref(es.ObjectID, "")
-
-	if objectID == "" {
+func (c *Client) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
+	if es.ObjectID == "" {
 		return errors.New("no environment setting object id given")
 	}
 
-	err := c.apiClient.PUT(ctx, fmt.Sprintf(settingsObjectsIDPath, objectID)).WithOAuthToken().WithJSONBody(es).Execute(nil)
+	err := c.apiClient.PUT(ctx, settingsObjectsIDPath+es.ObjectID).WithoutToken().WithJSONBody(es).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to update environment setting")
 	}
@@ -84,12 +78,12 @@ func (c *client) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSet
 }
 
 // DeleteEnvironmentSetting deletes environment setting
-func (c *client) DeleteEnvironmentSetting(ctx context.Context, objectID string) error {
+func (c *Client) DeleteEnvironmentSetting(ctx context.Context, objectID string) error {
 	if objectID == "" {
 		return errors.New("no environment setting object id given")
 	}
 
-	err := c.apiClient.DELETE(ctx, fmt.Sprintf(settingsObjectsIDPath, objectID)).WithOAuthToken().Execute(nil)
+	err := c.apiClient.DELETE(ctx, settingsObjectsIDPath+objectID).WithoutToken().Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete environment setting")
 	}

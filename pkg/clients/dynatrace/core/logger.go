@@ -91,13 +91,24 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 //   - Private part is 64 base32 characters.
 var dtTokenRegex = regexp.MustCompile(`[a-z0-9]{5,}\.([A-Z0-7]{8}|[A-Z0-7]{24})\.[A-Z0-7]{64}`)
 
+// Detect JWT tokens
+var jwtBearerTokenRegex = regexp.MustCompile(`[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+`)
+
 func sanitizeBody(body []byte) string {
-	return dtTokenRegex.ReplaceAllStringFunc(string(body), func(s string) string {
-		// Only hide private part from output
+	// Only hide private parts from output
+	sanitized := dtTokenRegex.ReplaceAllStringFunc(string(body), func(s string) string {
 		idx := strings.LastIndexByte(s, '.')
 
 		return s[:idx] + ".***"
 	})
+
+	sanitized = jwtBearerTokenRegex.ReplaceAllStringFunc(sanitized, func(s string) string {
+		idx := strings.LastIndexByte(s, '.')
+
+		return s[:idx] + ".***"
+	})
+
+	return sanitized
 }
 
 // Dump objects like http.Header or url.Values into a JSON string.
@@ -113,13 +124,6 @@ func dumpValues(header map[string][]string, canonicalize bool) string {
 	for key, values := range header {
 		if canonicalize {
 			key = textproto.CanonicalMIMEHeaderKey(key)
-		}
-
-		if strings.ToLower(key) == "authorization" && len(values) >= 1 {
-			before, _, _ := strings.Cut(values[0], " ")
-			data[key] = before + " ***"
-
-			continue
 		}
 
 		switch len(values) {
