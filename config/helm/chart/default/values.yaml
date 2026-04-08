@@ -132,6 +132,7 @@ webhook:
 
 csidriver:
   enabled: true
+  migrationMode: false # if true, the CSI driver DaemonSet is deployed without the provisioner container. This allows existing CSI-mounted pods to be gracefully unmounted while new pods receive ephemeral volume injection.
   nodeSelector: {}
   kubeletPath: "/var/lib/kubelet"
   existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one

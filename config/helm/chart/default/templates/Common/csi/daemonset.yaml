@@ -35,12 +35,14 @@ spec:
     metadata:
       annotations:
         dynatrace.com/inject: "false"
-        kubectl.kubernetes.io/default-container: provisioner
+        kubectl.kubernetes.io/default-container: {{ if .Values.csidriver.migrationMode }}server{{ else }}provisioner{{ end }}
         cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
         {{- if and (or .Values.csidriver.apparmor .Values.apparmor) (ne (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
         container.apparmor.security.beta.kubernetes.io/csi-init: runtime/default
         container.apparmor.security.beta.kubernetes.io/server: runtime/default
+        {{- if not .Values.csidriver.migrationMode }}
         container.apparmor.security.beta.kubernetes.io/provisioner: runtime/default
+        {{- end }}
         container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
         container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
         {{- end}}
@@ -154,6 +156,7 @@ spec:
         - mountPath: /data
           name: data-dir
           mountPropagation: Bidirectional
+    {{- if not .Values.csidriver.migrationMode }}
       - name: provisioner
         image: {{ include "dynatrace-operator.image" . }}
         {{- with .Values.imageRef.pullPolicy }}
@@ -235,7 +238,7 @@ spec:
           - mountPath: {{ include "dynatrace-operator.CSIMountPointDir" . }}
             name: mountpoint-dir # needed for garbage-collection
             readOnly: true
-
+    {{- end }}
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
