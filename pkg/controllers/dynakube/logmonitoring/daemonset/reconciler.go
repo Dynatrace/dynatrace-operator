@@ -64,7 +64,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	}
 
 	if updated {
-		k8sconditions.SetDaemonSetOutdated(dk.Conditions(), ConditionType, dk.LogMonitoring().GetDaemonSetName()) // needed to reset the timestamp
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, dk.LogMonitoring().GetDaemonSetName())
 	}
 

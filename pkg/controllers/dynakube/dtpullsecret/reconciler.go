@@ -46,16 +46,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, token
 		return nil
 	}
 
-	if k8sconditions.IsOutdated(r.timeprovider, dk, PullSecretConditionType) {
-		k8sconditions.SetSecretOutdated(dk.Conditions(), PullSecretConditionType,
-			extendWithPullSecretSuffix(dk.Name)+" is not present or outdated")
+	err := r.reconcilePullSecret(ctx, dk, tokens)
+	if err != nil {
+		log.Info("could not reconcile pull secret")
 
-		err := r.reconcilePullSecret(ctx, dk, tokens)
-		if err != nil {
-			log.Info("could not reconcile pull secret")
-
-			return errors.WithStack(err)
-		}
+		return errors.WithStack(err)
 	}
 
 	return nil

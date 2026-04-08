@@ -147,9 +147,9 @@ func TestHandleError(t *testing.T) {
 		oldDynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(oldDynakube)
 		controller := &Controller{
-			client:       fakeClient,
-			apiReader:    fakeClient,
-			requeueAfter: 12345 * time.Second,
+			client:         fakeClient,
+			apiReader:      fakeClient,
+			requeueAfter:   12345 * time.Second,
 		}
 		expectedDynakube := dynakubeBase.DeepCopy()
 		expectedDynakube.Status = dynakube.DynaKubeStatus{
@@ -213,12 +213,42 @@ func TestHandleError(t *testing.T) {
 
 func TestSetupTokensAndClient(t *testing.T) {
 	ctx := t.Context()
+
+	const (
+		tokenValue = "this-is-a-token"
+	)
+
 	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
 		},
 		Spec: dynakube.DynaKubeSpec{APIURL: "https://test123.dev.dynatracelabs.com/api"},
+	}
+	tokenSecretBase := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dkBase.Tokens(),
+			Namespace: dkBase.Namespace,
+		},
+		Data: map[string][]byte{
+			dtclient.APIToken: []byte(tokenValue),
+		},
+	}
+
+	mockDTClientWithTokenCalls := func() *dtclientmock.Client {
+		mockedTokenClient := tokenclientmock.NewAPIClient(t)
+		mockedTokenClient.EXPECT().GetScopes(anyCtx, tokenValue).Return([]string{
+			tokenclient.ScopeDataExport,
+			tokenclient.ScopeSettingsRead,
+			tokenclient.ScopeSettingsWrite,
+			tokenclient.ScopeInstallerDownload,
+			tokenclient.ScopeActiveGateTokenCreate,
+		}, nil).Once()
+
+		mockedDtc := dtclientmock.NewClient(t)
+		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient}).Once()
+
+		return mockedDtc
 	}
 
 	t.Run("no tokens => error + condition", func(t *testing.T) {
@@ -237,16 +267,8 @@ func TestSetupTokensAndClient(t *testing.T) {
 
 	t.Run("client builder error => error + condition", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
-		tokens := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.Tokens(),
-				Namespace: dk.Namespace,
-			},
-			Data: map[string][]byte{
-				dtclient.APIToken: []byte("this is a token"),
-			},
-		}
-		fakeClient := fake.NewClientWithIndex(dk, tokens)
+		tokenSecret := tokenSecretBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk, tokenSecret)
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDtcBuilder.EXPECT().SetDynakube(mock.AnythingOfType("dynakube.DynaKube")).Return(mockDtcBuilder).Once()
@@ -269,29 +291,10 @@ func TestSetupTokensAndClient(t *testing.T) {
 		// TODO: Make the pull-secret reconciler mockable, so we can improve this test.
 		dk := dkBase.DeepCopy()
 		dk.Spec.CustomPullSecret = "custom"
-		tokens := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.Tokens(),
-				Namespace: dk.Namespace,
-			},
-			Data: map[string][]byte{
-				dtclient.APIToken: []byte("this is a token"),
-			},
-		}
-		fakeClient := fake.NewClientWithIndex(dk, tokens)
+		tokenSecret := tokenSecretBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk, tokenSecret)
 
-		mockedTokenClient := tokenclientmock.NewAPIClient(t)
-		mockedTokenClient.EXPECT().GetScopes(anyCtx, "this is a token").Return([]string{
-			tokenclient.ScopeDataExport,
-			tokenclient.ScopeSettingsRead,
-			tokenclient.ScopeSettingsWrite,
-			tokenclient.ScopeInstallerDownload,
-			tokenclient.ScopeActiveGateTokenCreate,
-		}, nil).Once()
-
-		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
-
+		mockedDtc := mockDTClientWithTokenCalls()
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDynatraceClientBuild(mockDtcBuilder, mockedDtc)
 
@@ -305,6 +308,70 @@ func TestSetupTokensAndClient(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, dtc)
 		assertTokenCondition(t, dk, false)
+	})
+
+	t.Run("tokens ok, no change in token => calls throttled", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+		tokenSecret := tokenSecretBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk, tokenSecret)
+
+		mockedDtc := dtclientmock.NewClient(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
+		mockDynatraceClientBuild(mockDtcBuilder, mockedDtc)
+
+		controller := &Controller{
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
+		}
+
+		dtc, err := controller.setupTokensAndClient(ctx, dk)
+		require.NoError(t, err)
+		assert.NotNil(t, dtc)
+	})
+
+	t.Run("tokens ok, tokens change => call NOT throttled", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+		oldTokenSecret := tokenSecretBase.DeepCopy()
+		oldTokenSecret.Data[dtclient.APIToken] = []byte("old")
+		fakeClient := fake.NewClientWithIndex(dk, oldTokenSecret)
+
+		newTokenSecret := tokenSecretBase.DeepCopy()
+		fakeClient = fake.NewClientWithIndex(dk, newTokenSecret)
+
+		mockedDtc := mockDTClientWithTokenCalls()
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
+		mockDynatraceClientBuild(mockDtcBuilder, mockedDtc)
+
+		controller := &Controller{
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
+		}
+
+		dtc, err := controller.setupTokensAndClient(ctx, dk)
+		require.NoError(t, err)
+		assert.NotNil(t, dtc)
+	})
+
+	t.Run("tokens ok, tokens no change, old timestamp => call NOT throttled", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+		tokenSecret := tokenSecretBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk, tokenSecret)
+
+		mockedDtc := mockDTClientWithTokenCalls()
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
+		mockDynatraceClientBuild(mockDtcBuilder, mockedDtc)
+
+		controller := &Controller{
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
+		}
+
+		dtc, err := controller.setupTokensAndClient(ctx, dk)
+		require.NoError(t, err)
+		assert.NotNil(t, dtc)
 	})
 }
 
@@ -651,7 +718,6 @@ func TestTokenConditions(t *testing.T) {
 
 		require.Error(t, err)
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenVerificationFailedConditionMessage)
-		assert.Empty(t, dk.Status.DynatraceAPI.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
 	t.Run("token condition error is set if token verification fails", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -693,7 +759,6 @@ func TestTokenConditions(t *testing.T) {
 
 		require.Error(t, err)
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenVerificationFailedConditionMessage)
-		assert.Empty(t, dk.Status.DynatraceAPI.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
 	t.Run("token condition is set if required scopes are missing", func(t *testing.T) {
 		dk := &dynakube.DynaKube{

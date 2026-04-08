@@ -268,8 +268,8 @@ status:
   activeGate:
     connectionInfoStatus: {}
   codeModules: {}
-  dynatraceApi: {}
   kspm: {}
   metadataEnrichment: {}
   oneAgent:
     connectionInfoStatus: {}
+  tenant: {}

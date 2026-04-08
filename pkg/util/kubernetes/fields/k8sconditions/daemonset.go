@@ -7,7 +7,6 @@ import (
 
 const (
 	DaemonSetSetCreatedReason  = "DaemonSetCreated"
-	DaemonSetSetOutdatedReason = "DaemonSetOutdated"
 )
 
 func SetDaemonSetCreated(conditions *[]metav1.Condition, conditionType, name string) {
@@ -16,16 +15,6 @@ func SetDaemonSetCreated(conditions *[]metav1.Condition, conditionType, name str
 		Status:  metav1.ConditionTrue,
 		Reason:  DaemonSetSetCreatedReason,
 		Message: appendCreatedSuffix(name),
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}
-
-func SetDaemonSetOutdated(conditions *[]metav1.Condition, conditionType, name string) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  DaemonSetSetOutdatedReason,
-		Message: appendOutdatedSuffix(name),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

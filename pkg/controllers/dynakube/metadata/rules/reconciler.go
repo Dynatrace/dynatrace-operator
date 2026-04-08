@@ -40,12 +40,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, conditionType) {
-		return nil
-	}
-
-	k8sconditions.SetStatusOutdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are outdated in the status")
-
 	if !k8sconditions.IsOptionalScopeAvailable(r.dk, token.ConditionTypeAPITokenSettingsRead) {
 		log.Info("metadata-enrichment rules are not set in the status because the optional scope is not available", "scope", token.ScopeSettingsRead)
 		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are not set in the status because the optional 'settings.read' scope is not available")

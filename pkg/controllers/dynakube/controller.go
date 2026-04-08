@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
@@ -34,7 +33,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,8 +48,7 @@ import (
 )
 
 const (
-	fastRequeueInterval    = 1 * time.Minute
-	defaultRequeueInterval = 15 * time.Minute
+	fastRequeueInterval = 1 * time.Minute
 
 	controllerName = "dynakube-controller"
 )
@@ -203,8 +200,8 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		k8sevent.SendCRDVersionMismatch(controller.eventRecorder, dk)
 	}
 
+	controller.requeueAfter = dk.APIRequestThreshold()
 	oldStatus := *dk.Status.DeepCopy()
-	controller.requeueAfter = defaultRequeueInterval
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
@@ -241,9 +238,9 @@ func (controller *Controller) handleError(
 	oldStatus dynakube.DynaKubeStatus,
 ) (reconcile.Result, error) {
 	switch {
-	case dynatraceapi.IsUnreachable(reconcileErr):
+	case dtclient.IsUnreachable(reconcileErr):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
-			"errorCode", dynatraceapi.StatusCode(reconcileErr), "errorMessage", dynatraceapi.Message(reconcileErr))
+			"errorCode", dtclient.StatusCode(reconcileErr), "errorMessage", dtclient.Message(reconcileErr))
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastRequeueInterval}, nil
 
@@ -297,7 +294,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 	if err != nil {
 		return err
 	}
-
 	dk.Status.KubeSystemUUID = controller.clusterID
 
 	log.Info("start reconciling deployment meta data")
@@ -327,7 +323,6 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	}
 
 	controller.tokens = tokens
-
 	dynatraceClientBuilder := controller.dynatraceClientBuilder.
 		SetDynakube(*dk).
 		SetTokens(tokens)
@@ -465,15 +460,6 @@ func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient 
 }
 
 func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
-	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
-		log.Info(dynakube.GetCacheValidMessage(
-			"token verification",
-			dk.Status.DynatraceAPI.LastTokenScopeRequest,
-			dk.APIRequestThreshold()))
-
-		return lastErrorFromCondition(&dk.Status)
-	}
-
 	tokens := controller.tokens.AddFeatureScopesToTokens()
 
 	optionalScopes, err := tokens.VerifyScopes(ctx, dynatraceClient, *dk)
@@ -482,9 +468,6 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 	}
 
 	log.Info("token verified")
-
-	dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
-
 	controller.updateOptionalScopesConditions(&dk.Status, optionalScopes)
 
 	return nil

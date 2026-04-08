@@ -86,14 +86,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *
 // It uses time-based caching via the meIDConditionType condition; if the condition is still up to date,
 // the API call is skipped.
 func (r *Reconciler) reconcileMEID(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error {
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
-		log.Info("kubernetesClusterMEID not outdated, skipping reconciliation")
-
-		return nil
-	}
-
-	k8sconditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, "kubernetesClusterMEID is outdated in the status")
-
 	k8sEntity, err := dtc.GetK8sClusterME(ctx, dk.Status.KubeSystemUUID)
 	if err != nil {
 		log.Info("failed to retrieve MEs")

@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -56,14 +55,10 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID == "" {
-		k8sconditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
-
 		return errors.New("tenantUUID unknown")
 	}
 
 	if r.dk.Status.KubeSystemUUID == "" {
-		k8sconditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
-
 		return errors.New("kubeSystemUUID unknown")
 	}
 

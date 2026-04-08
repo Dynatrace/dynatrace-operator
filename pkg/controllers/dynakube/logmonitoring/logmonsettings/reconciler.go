@@ -31,12 +31,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *
 		return nil
 	}
 
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, ConditionType) {
-		return nil
-	}
-
-	_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
-
 	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead)
 	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite)
 
