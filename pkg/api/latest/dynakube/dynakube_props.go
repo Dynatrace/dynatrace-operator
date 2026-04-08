@@ -77,9 +77,8 @@ func (dk *DynaKube) TenantRegistryPullSecretName() string {
 }
 
 func (dk *DynaKube) PullSecretNames() []string {
-	names := []string{
-		dk.TenantRegistryPullSecretName(),
-	}
+	names := make([]string, 0, 1+len(dk.CustomPullSecretNames()))
+	names = append(names, dk.TenantRegistryPullSecretName())
 	names = append(names, dk.CustomPullSecretNames()...)
 
 	return names
