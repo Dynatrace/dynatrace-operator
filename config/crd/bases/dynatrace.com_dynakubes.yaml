@@ -7509,8 +7509,6 @@ spec:
                 type: string
               proxyURLHash:
                 type: string
-              tenant:
-                type: object
               updatedTimestamp:
                 format: date-time
                 type: string
