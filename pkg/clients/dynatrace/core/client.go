@@ -310,7 +310,7 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 		}
 	}()
 
-if !IsSuccessResponse(resp) {
+	if !IsSuccessResponse(resp) {
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
 			return fmt.Errorf("read error response body: %w", readErr)
@@ -443,7 +443,7 @@ func handleErrorResponse(resp *http.Response, body []byte) error {
 
 // IsSuccessResponse returns true when the HTTP response status code indicates
 // a successful operation. DELETE requests accept 200-299; all other methods
-// accept 200-201 (matching the legacy client behaviour).
+// accept 200-201 (matching the legacy client behavior).
 func IsSuccessResponse(resp *http.Response) bool {
 	statusCodeThreshold := 201
 	if resp.Request != nil && resp.Request.Method == http.MethodDelete {
