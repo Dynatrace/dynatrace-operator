@@ -145,7 +145,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func MetadataEnrichmentDeprecatedAttributes(t *testing.T) features.Feature {
+func MetadataEnrichmentWithoutDeprecatedAttributes(t *testing.T) features.Feature {
 	builder := features.New("metadata-enrichment-without-deprecated-attributes")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
