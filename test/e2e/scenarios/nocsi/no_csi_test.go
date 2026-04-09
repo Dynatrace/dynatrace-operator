@@ -73,8 +73,8 @@ func TestNoCSI_metadata_enrichment(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.MetadataEnrichment(t))
 }
 
-func TestNoCSI_metadata_enrichment_deprecated_attributes(t *testing.T) {
-	testEnv.Test(t, applicationmonitoring.MetadataEnrichmentDeprecatedAttributes(t))
+func TestNoCSI_metadata_enrichment_without_deprecated_attributes(t *testing.T) {
+	testEnv.Test(t, applicationmonitoring.MetadataEnrichmentWithoutDeprecatedAttributes(t))
 }
 
 func TestNoCSI_otlp_exporter_configuration(t *testing.T) {
