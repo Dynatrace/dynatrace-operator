@@ -44,9 +44,6 @@ type DynaKubeStatus struct { //nolint:revive
 	// This annotation will cause the component to be restarted if the proxy changes.
 	ProxyURLHash string `json:"proxyURLHash,omitempty"`
 
-	// Observed state of Dynatrace API, only meant to be stored in memory.
-	Tenant TenantStatus `json:"tenant,omitempty"`
-
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
@@ -64,8 +61,6 @@ type DynaKubeStatus struct { //nolint:revive
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
-
-type TenantStatus struct{}
 
 // SetPhase sets the status phase on the DynaKube object.
 func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
