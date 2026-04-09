@@ -41,10 +41,13 @@ func NewCacheRoundTripper(next http.RoundTripper, ttl time.Duration) http.RoundT
 
 		// send the actual request
 		resp, err := next.RoundTrip(r)
-		if err == nil && core.IsSuccessResponse(resp) {
+		switch {
+		case err != nil:
+			log.Debug("request errored, not caching it", "endpoint", r.URL, "err", err)
+		case !core.IsSuccessResponse(resp):
+			log.Debug("request was not successful, not caching it", "endpoint", r.URL, "statusCode", resp.StatusCode)
+		default:
 			cache.set(cacheKey, resp, ttl)
-		} else {
-			log.Debug("request was not successful, not caching it", "endpoint", r.URL, "statusCode", r.Response.StatusCode, "err", err)
 		}
 
 		return resp, err
