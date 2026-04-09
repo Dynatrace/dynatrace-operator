@@ -43,7 +43,8 @@ var latestImageURIs = map[string]string{}
 func GetLatestImageURI(t *testing.T, repoURI string) string {
 	t.Helper()
 
-	if envVar, ok := repoEnvVars[repoURI]; ok {
+	envVar, ok := repoEnvVars[repoURI]
+	if ok {
 		if val := os.Getenv(envVar); val != "" {
 			t.Logf("using image from env %s: %s", envVar, val)
 
