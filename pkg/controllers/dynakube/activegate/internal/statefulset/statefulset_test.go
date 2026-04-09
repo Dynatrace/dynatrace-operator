@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -497,10 +498,11 @@ func TestSecurityContexts(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := statefulsetBuilder.CreateStatefulSet(
+		activeGateBuilder := builder.NewBuilder(statefulsetBuilder.getBase())
+		sts, _ := activeGateBuilder.AddModifier(
 			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
 			modifiers.NewReadOnlyModifier(dk),
-		)
+		).Build()
 
 		require.NotEmpty(t, sts)
 		require.Truef(t, reflect.DeepEqual(sts.Spec.Template.Spec.InitContainers[0].SecurityContext, sts.Spec.Template.Spec.Containers[0].SecurityContext), "InitContainer and Container have different SecurityContexts")
@@ -620,10 +622,11 @@ func TestTempVolume(t *testing.T) {
 
 			multiCapability := capability.NewMultiCapability(&dk)
 			statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-			sts, _ := statefulsetBuilder.CreateStatefulSet(
+			activeGateBuilder := builder.NewBuilder(statefulsetBuilder.getBase())
+			sts, _ := activeGateBuilder.AddModifier(
 				modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
 				modifiers.NewReadOnlyModifier(dk),
-			)
+			).Build()
 
 			require.NotEmpty(t, sts)
 
@@ -660,10 +663,11 @@ func TestVolumeMounts(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := statefulsetBuilder.CreateStatefulSet(
+		activeGateBuilder := builder.NewBuilder(statefulsetBuilder.getBase())
+		sts, _ := activeGateBuilder.AddModifier(
 			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
 			modifiers.NewReadOnlyModifier(dk),
-		)
+		).Build()
 
 		require.NotEmpty(t, sts)
 

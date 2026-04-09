@@ -48,13 +48,9 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dk dynakube.Dyn
 	}
 }
 
-func (statefulSetBuilder Builder) CreateStatefulSet(mods ...builder.Modifier) (*appsv1.StatefulSet, error) {
+func (statefulSetBuilder Builder) CreateStatefulSet() (*appsv1.StatefulSet, error) {
 	activeGateBuilder := builder.NewBuilder(statefulSetBuilder.getBase())
-
-	if len(mods) == 0 {
-		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
-	}
-
+	mods := modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
 	sts, err := activeGateBuilder.AddModifier(mods...).Build()
 
 	return &sts, err
