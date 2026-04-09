@@ -2,6 +2,7 @@
 
 - [Coding style guide](#coding-style-guide)
   - [General](#general)
+  - [Visibility](#visibility)
   - [Function Parameter and Return-Value Order](#function-parameter-and-return-value-order)
   - [Cuddling of statements](#cuddling-of-statements)
   - [Go struct field alignment](#go-struct-field-alignment)
@@ -11,6 +12,7 @@
     - [A **Reconciler** is a struct that **INDIRECTLY** handles the reconcile Requests](#a-reconciler-is-a-struct-that-indirectly-handles-the-reconcile-requests)
   - [Secret/ConfigMap handling](#secretconfigmap-handling)
     - [Example](#example)
+  - [CRD and API Design](#crd-and-api-design)
   - [Errors](#errors)
     - [Do's](#dos)
     - [Don'ts](#donts)
@@ -48,6 +50,23 @@
 - Avoid using the `path` package for operations on filesystem paths. Use "path/filepath" package.
 - Apply appropriate [godoc comment formatting](https://go.dev/doc/comment) to ensure that editors can properly display it.
   Codegen markers should not be part of godoc unless it's not ergonomic to implement (as is the case for most CRD fields).
+- Avoid unnecessary `nil` checks before `continue` in range loops.
+  If the body of the loop already handles a `nil` value gracefully, a guard `if x == nil { continue }` only adds noise.
+
+## Visibility
+
+- Make symbols **unexported** (lowercase) whenever they are not needed outside of the package.
+  - This applies to functions, methods, types, and constants alike.
+  - Exported symbols form a public contract; every unnecessary export is a future maintenance burden.
+  - If you are adding a new symbol and only one package uses it, start with unexported and promote only when a second caller appears.
+
+```go
+// ✓ only used within the package — unexported
+func buildStatefulSet(dk *dynakube.DynaKube) *appsv1.StatefulSet { ... }
+
+// ✗ exported with no external caller
+func BuildStatefulSet(dk *dynakube.DynaKube) *appsv1.StatefulSet { ... }
+```
 
 ## Function Parameter and Return-Value Order
 
@@ -263,6 +282,25 @@ func (oa *OneAgent) GetConnectionInfoConfigMapName() string {
 // ...
 ```
 
+## CRD and API Design
+
+### Feature flag vs spec field
+
+If the CRD spec already has a dedicated field for a capability, **do not gate it behind a feature flag**.
+Add an `IsEnabled()` helper directly on the spec type instead:
+
+```go
+// ✓ — spec already owns OTLPExporterConfiguration, add helper there
+func (s *Spec) IsEnabled() bool {
+    return s != nil
+}
+
+// ✗ — don't use a feature flag to toggle something the spec already controls
+dk.FeatureFlag("enable-otlp-exporter")
+```
+
+Feature flags are for **cross-cutting behavior toggles** that have no natural home in the spec (e.g. experimental runtime options, rollout toggles).
+
 ## Errors
 
 ### Do's
@@ -279,6 +317,40 @@ As such, you declare them at the package level and, in doing so, imply that your
 - If an error is returned by an internal function and propagated, it must be propagated as is and must **not** be wrapped with `errors.WithStack()`.
   - The stacktrace is already complete when `errors.New` is called, wrapping it with `errors.WithStack()` convolutes it.
 - If the error is not propagated to the controller or reconciler, it should be logged at the point where it is not returned to the caller.
+- When there is no error to return, write **`return nil`** explicitly rather than returning a variable that happens to be `nil`.
+  Implicit nilness is harder to reason about and has caused subtle bugs.
+
+  ```go
+  // ✓ clear
+  if err != nil {
+      return err
+  }
+  return nil
+
+  // ✗ misleading — reader must track whether err could be non-nil here
+  return err
+  ```
+
+- Use `defer` with care:
+  - A `defer` for cleanup must only be placed **after** the operation that requires cleanup succeeds.
+    Placing it before or unconditionally means cleanup runs even when the resource was never acquired.
+  - A `defer` in a function that has **no early return** is redundant — remove it.
+
+  ```go
+  // ✓ defer placed after successful acquire
+  conn, err := open()
+  if err != nil {
+      return err
+  }
+  defer conn.Close()   // only reached when open() succeeded
+
+  conn, err := open()
+  // ✗ cleanup runs even if open() failed
+  defer conn.Close()
+  if err != nil {
+      return err
+  }
+  ```
 
 ### Don'ts
 
@@ -399,6 +471,23 @@ import (
 - Use the logger defined in the `dynatrace-operator/src/logger` and always give it a name.
   - The name of the logger (given via `.WithName("...")`) should use `-` to divide longer names.
   - Example: `var log = logger.Get().WithName("mutation-webhook")`
+- **Utility functions that emit logs should accept `log logd.Logger` as a parameter** rather than closing over the package-level `log`.
+  This makes the function independently testable, its output attributable to the right component, and avoids hidden coupling to the package global.
+
+  ```go
+  // ✓
+  func printKubernetesVersion(log logd.Logger, kubeConfig *rest.Config) {
+      log.Info("kubernetes version", "version", ...)
+  }
+
+  // ✗ hidden dependency on package-level log
+  func printKubernetesVersion(kubeConfig *rest.Config) {
+      log.Info("kubernetes version", "version", ...)
+  }
+  ```
+
+- Include **enough context fields** in log messages to be useful during troubleshooting.
+  Reviewers frequently ask for additional fields (e.g. Go version, resource name, namespace). When in doubt, add more rather than less.
 
 ### Don'ts
 
@@ -490,8 +579,9 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 - Defining (testing) `consts` per-test is preferred to defining (testing) `consts` per-package
   - Figuring out what is `myTestConst52` that is defined 3 files over and used by 12 tests is not fun to maintain and easy to follow.
 - Use `t.Run` and give a title that describes what you are testing in that run.
-- Use `t.Context` instead of `context.Background`.
-  - [Added in go 1.24](https://pkg.go.dev/testing#T.Context), so we don't really use it, update it where you change code
+- Use `t.Context` instead of `context.Background` **and** `context.TODO`.
+  - [Added in go 1.24](https://pkg.go.dev/testing#T.Context), so we don't really use it; update both whenever you touch the file.
+  - Both `context.Background()` and `context.TODO()` in tests are considered the same problem.
 - Use `<...>mock` as package import alias, in all cases, even if no alias would strictly be necessary.
   - Examples: `dtclientmock`, `controllermock`, `dtbuildermock`, `injectionmock`, `registrymock`
 - Mocks that are used in a single package should be defined in that package as `_test.go` files.
@@ -549,6 +639,28 @@ func TestMyFunction(t *testing.T) {
 - Don't name the testing helper functions/variables/constants in a way that could be confused with actual functions. (e.g. add `test` to the beginning)
 - Avoid magic ints/strings/... where possible, give names to your values and try to reuse them where possible
 - Don't use `.Maybe()` when mocking, have test specific mocks, so the calls are checked for you.
+- Do not hand-roll interface implementations for mocking. Use mockery-generated mocks with `.EXPECT()` to get explicit call verification.
+
+  ```go
+  // ✓
+  mockReconciler := reconcilermock.NewReconciler(t)
+  mockReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
+
+  // ✗ hand-rolled, no automatic verification of expected calls
+  type fakeReconciler struct{}
+  func (f *fakeReconciler) Reconcile(_ context.Context) error { return nil }
+  ```
+
+- When multiple test cases require the same base object (e.g. the same `DynaKube` shape), extract a **constructor function** within the test function rather than duplicating the struct literal inline.
+
+  ```go
+  // ✓ constructor defined once within the test, reused per t.Run
+  newTestDynakube := func(replicas int32) *dynakube.DynaKube {
+      return &dynakube.DynaKube{...}
+  }
+  ```
+
+- **Inline single-use timeouts.** Do not define a package-level `const` for a timeout that is only used in one test. Specify it inline to keep the test self-contained and consistent with the rest of the codebase.
 
 ## E2E testing guide
 
@@ -578,6 +690,18 @@ So here are some basic guidelines:
   - This eliminates lots of hardcoded strings and such
 - Don't reinvent the wheel, try to use what is already there.
   - If a helper function is almost fits your use case then first just try to "renovate the wheel" and make what is already there better :)
+- **Use Makefile defaults for versions and image tags** in E2E helpers — do not hardcode values like `0.0.1` or a specific image digest inline when the Makefile already defines a sensible default. Hardcoded values get forgotten and drift from reality.
+- **Prefer free functions over methods** in E2E helper packages.
+  If a helper does not need receiver state, make it a free function that returns a `features.Func`.
+  Apply consistently across analogous helpers (e.g. if you do it for deployments, do it for statefulsets too).
+
+  ```go
+  // ✓
+  func WaitForReplicas(name string, replicas int) features.Func { ... }
+
+  // ✗ unnecessary method — no receiver state used
+  func (h *Helper) WaitForReplicas(name string, replicas int) features.Func { ... }
+  ```
 
 ## Code Review
 

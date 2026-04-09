@@ -181,6 +181,40 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Equal(t, request.GetVolumeContext()[CSIVolumeAttributeModeField], volumeCfg.Mode)
 	})
 
+	t.Run("dk name with path traversal => rejected", func(t *testing.T) {
+		invalidNames := []string{
+			"../../some/path",
+			"../top-secret",
+			"illegal/../path",
+			"/etc/passwd",
+		}
+
+		for _, name := range invalidNames {
+			t.Run(name, func(t *testing.T) {
+				request := &csi.NodePublishVolumeRequest{
+					VolumeCapability: &csi.VolumeCapability{
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{},
+						},
+					},
+					VolumeId:   testVolumeID,
+					TargetPath: testTargetPath,
+					VolumeContext: map[string]string{
+						PodNameContextKey:               testPodUID,
+						PodNamespaceContextKey:          testNs,
+						CSIVolumeAttributeModeField:     "test",
+						CSIVolumeAttributeDynakubeField: name,
+					},
+				}
+				volumeCfg, err := ParseNodePublishVolumeRequest(request)
+
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "InvalidArgument")
+				assert.Empty(t, volumeCfg.DynakubeName)
+			})
+		}
+	})
+
 	t.Run("happy path", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
