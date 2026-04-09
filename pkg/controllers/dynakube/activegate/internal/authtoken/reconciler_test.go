@@ -92,7 +92,6 @@ func TestReconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
-		firstTransition := condition.LastTransitionTime
 
 		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: dk.Namespace,
@@ -110,9 +109,6 @@ func TestReconcile(t *testing.T) {
 
 		firstCreationTimestamp := authToken.CreationTimestamp
 
-		// let's "wait", small difference needed to compare LastTransitionTime
-		time.Sleep(1 * time.Second)
-
 		// update secret
 		err = r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
@@ -120,7 +116,6 @@ func TestReconcile(t *testing.T) {
 		condition = meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
-		secondTransition := condition.LastTransitionTime
 
 		authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: dk.Namespace,
@@ -133,7 +128,6 @@ func TestReconcile(t *testing.T) {
 		// token has been changed
 		assert.NotEqual(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
 		assert.NotEqual(t, firstCreationTimestamp, secondCreationTimestamp)
-		assert.NotEqual(t, secondTransition, firstTransition)
 	})
 	t.Run("reconcile valid auth token", func(t *testing.T) {
 		dk := newDynaKube()

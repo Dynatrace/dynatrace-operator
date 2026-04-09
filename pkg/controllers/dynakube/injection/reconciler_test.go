@@ -472,7 +472,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 		)
 
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
-		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Twice()
 		dtClient := dtclientmock.NewClient(t)
 		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oneAgentClient}).Twice() // generateInitSecret x2
 

@@ -86,7 +86,7 @@ func TestReconcile(t *testing.T) {
 		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
 			Version: versionClient,
 		})
-		mockLatestAgentVersion(versionClient, latestAgentVersion, 2)
+		mockLatestAgentVersion(versionClient, latestAgentVersion, 3)
 		mockLatestActiveGateVersion(versionClient, latestActiveGateVersion)
 
 		versionReconciler := reconciler{
@@ -109,11 +109,11 @@ func TestReconcile(t *testing.T) {
 		assertStatusBasedOnTenantRegistry(t, dk.OneAgent().GetDefaultImage(latestOneAgentVersion), latestOneAgentVersion, dkStatus.OneAgent.VersionStatus)
 		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.Version)
 
-		// no change if throttled
+		// API returns same version, no change expected
 		err = versionReconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 
-		// change if not throttled
+		// API returns new version, change expected
 		newerVersion := "2.0.0"
 		mockLatestAgentVersion(versionClient, newerVersion, 1)
 		err = versionReconciler.ReconcileCodeModules(ctx, dk)

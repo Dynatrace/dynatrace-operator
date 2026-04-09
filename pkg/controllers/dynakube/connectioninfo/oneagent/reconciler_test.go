@@ -179,32 +179,7 @@ func TestReconcile(t *testing.T) {
 
 		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason, dk.OneAgent().GetTenantSecret()+" created")
 	})
-	t.Run("do not update OneAgent connection info within timeout", func(t *testing.T) {
-		dk := getTestDynakube()
-		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
-		dtc := oneagentclientmock.NewAPIClient(t)
-
-		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
-			TenantUUID: testOutdated,
-			Endpoints:  testOutdated,
-		}
-		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
-
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
-		require.NoError(t, err)
-
-		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
-		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfo.Endpoints)
-
-		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
-		require.NoError(t, err)
-		assert.Equal(t, []byte(testOutdated), actualSecret.Data[connectioninfo.TenantTokenKey])
-
-		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason, "testing created")
-	})
-	t.Run("update OneAgent connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
+	t.Run("update OneAgent connection info if tenant secret is missing", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
 		dtc := oneagentclientmock.NewAPIClient(t)
@@ -229,33 +204,6 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
 		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason, dk.OneAgent().GetTenantSecret()+" created")
-	})
-
-	t.Run("update OneAgent connection info in case conditions is in 'False' state ", func(t *testing.T) {
-		dk := getTestDynakube()
-		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
-
-		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
-			TenantUUID: testOutdated,
-			Endpoints:  testOutdated,
-		}
-		setEmptyCommunicationHostsCondition(dk.Conditions())
-
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		err := r.Reconcile(ctx)
-		require.NoError(t, err)
-
-		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
-		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfo.Endpoints)
-
-		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
-		require.NoError(t, err)
-		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
-
-		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason)
 	})
 }
 
@@ -305,18 +253,6 @@ func getTestDynakube() *dynakube.DynaKube {
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
-		},
-	}
-}
-
-func buildOneAgentTenantSecret(dk *dynakube.DynaKube, token string) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.OneAgent().GetTenantSecret(),
-			Namespace: testNamespace,
-		},
-		Data: map[string][]byte{
-			connectioninfo.TenantTokenKey: []byte(token),
 		},
 	}
 }

@@ -3,7 +3,6 @@ package logmonsettings
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
@@ -117,59 +116,6 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Empty(t, dk.Conditions())
-	})
-
-	t.Run("update condition timestamp if outdated", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
-			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
-
-		dk := getDK()
-		setReadScope(t, dk)
-		setWriteScope(t, dk)
-
-		r := NewReconciler()
-		r.timeProvider.Set(time.Now().Add(time.Hour))
-
-		setExistsCondition(dk.Conditions())
-		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
-		require.NotNil(t, condition)
-
-		prevTS := condition.LastTransitionTime.Time
-
-		err := r.Reconcile(t.Context(), mockClient, dk)
-		require.NoError(t, err)
-
-		condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
-		require.NotNil(t, condition)
-
-		currentTS := condition.LastTransitionTime.Time
-
-		require.NotEqual(t, prevTS, currentTS)
-	})
-
-	t.Run("don't update condition timestamp if not outdated", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
-
-		dk := getDK()
-
-		r := NewReconciler()
-
-		setExistsCondition(dk.Conditions())
-		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
-		require.NotNil(t, condition)
-
-		prevTS := condition.LastTransitionTime.Time
-
-		err := r.Reconcile(t.Context(), mockClient, dk)
-		require.NoError(t, err)
-
-		condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
-		require.NotNil(t, condition)
-
-		currentTS := condition.LastTransitionTime.Time
-
-		require.Equal(t, currentTS, prevTS)
 	})
 }
 
