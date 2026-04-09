@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,6 +40,7 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
 	ctx := t.Context()
 
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
@@ -409,6 +411,47 @@ func TestReconcileReplicas(t *testing.T) {
 	}
 }
 
+func TestAppArmorAnnotationHandling(t *testing.T) {
+	const appArmorAnnotationKey = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
+
+	getStatefulSet := func(t *testing.T) *appsv1.StatefulSet {
+		t.Helper()
+
+		dk := getTestDynakubeWithExtensions()
+		dk.Spec.Templates.OpenTelemetryCollector.Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
+		clt := fake.NewClient(dk)
+
+		tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
+		require.NoError(t, clt.Create(t.Context(), &tlsSecret))
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		return sts
+	}
+
+	t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(30))
+
+		sts := getStatefulSet(t)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+	})
+
+	t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(31))
+
+		sts := getStatefulSet(t)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+	})
+}
+
 func getTestDynakubeWithExtensions() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -447,6 +490,7 @@ func getTestDynakube() *dynakube.DynaKube {
 }
 
 func getStatefulset(t *testing.T, dk *dynakube.DynaKube, objs ...client.Object) *appsv1.StatefulSet {
+	t.Cleanup(version.DisableCacheForTest(123))
 	t.Helper()
 
 	allObjs := append([]client.Object{dk}, objs...)
