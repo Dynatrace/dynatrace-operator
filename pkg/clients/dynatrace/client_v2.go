@@ -224,7 +224,7 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		}
 
 		config.HTTPClient = &http.Client{
-			Transport: middleware.CacheRoundTripper(transport, config.CacheEntryTTL),
+			Transport: middleware.NewCacheRoundTripper(transport, config.CacheEntryTTL),
 		}
 	}
 

@@ -58,7 +58,7 @@ func (rc *responseCache) get(key string) *http.Response {
 	return &resp
 }
 
-func (rc *responseCache) store(key string, response *http.Response, ttl time.Duration) {
+func (rc *responseCache) set(key string, response *http.Response, ttl time.Duration) {
 	if response == nil {
 		return
 	}

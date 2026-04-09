@@ -64,7 +64,7 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 	}
 
 	// not pretty...
-	dc.httpClient.Transport = middleware.CacheRoundTripper(dc.httpClient.Transport, dc.cacheEntryTTL)
+	dc.httpClient.Transport = middleware.NewCacheRoundTripper(dc.httpClient.Transport, dc.cacheEntryTTL)
 
 	return dc, nil
 }

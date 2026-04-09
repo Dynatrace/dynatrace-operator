@@ -20,7 +20,7 @@ func (rt RoundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return rt(r)
 }
 
-func CacheRoundTripper(next http.RoundTripper, ttl time.Duration) http.RoundTripper {
+func NewCacheRoundTripper(next http.RoundTripper, ttl time.Duration) http.RoundTripper {
 	return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		if r.Method != http.MethodGet ||
 			ttl == 0 ||
@@ -40,7 +40,7 @@ func CacheRoundTripper(next http.RoundTripper, ttl time.Duration) http.RoundTrip
 		// send the actual request
 		resp, err := next.RoundTrip(r)
 		if err == nil {
-			cache.store(cacheKey, resp, ttl)
+			cache.set(cacheKey, resp, ttl)
 		}
 
 		return resp, err
