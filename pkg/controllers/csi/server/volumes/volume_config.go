@@ -1,12 +1,14 @@
 package csivolumes
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 const (
@@ -87,6 +89,10 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (VolumeCon
 	dynakubeName := volCtx[CSIVolumeAttributeDynakubeField]
 	if dynakubeName == "" {
 		return volumeConfig, status.Error(codes.InvalidArgument, "No dynakube attribute included in request")
+	}
+
+	if errs := validation.IsDNS1035Label(dynakubeName); len(errs) > 0 {
+		return volumeConfig, status.Errorf(codes.InvalidArgument, "Invalid dynakube name: %s", strings.Join(errs, "; "))
 	}
 
 	volumeConfig.DynakubeName = dynakubeName
