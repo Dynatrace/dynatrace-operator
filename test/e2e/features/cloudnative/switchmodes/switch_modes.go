@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -36,7 +35,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Teardown(sampleAppCloudNative.Uninstall())
 
 	// install operator and dynakubeComponents
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, dynakubeCloudNative)
+	dynakubeComponents.Install(builder, &secretConfig, dynakubeCloudNative)
 
 	// apply sample apps
 	builder.Assess("(cloudnative) install sample app", sampleAppCloudNative.Install())
@@ -51,13 +50,11 @@ func Feature(t *testing.T) features.Feature {
 		sample.WithName(sampleAppsClassicName),
 	)
 
-	dynakubeComponents.Update(builder, helpers.LevelAssess, dynakubeClassicFullStack)
+	dynakubeComponents.Update(builder, dynakubeClassicFullStack)
 
 	// deploy sample apps
 	builder.Assess("(classic) install sample app", sampleAppClassicFullStack.Install())
 	builder.Teardown(sampleAppClassicFullStack.Uninstall())
-	// tear down
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, dynakubeCloudNative)
 
 	return builder.Feature()
 }

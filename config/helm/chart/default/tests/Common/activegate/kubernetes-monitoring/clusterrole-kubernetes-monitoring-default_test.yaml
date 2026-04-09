@@ -1,4 +1,4 @@
-suite: test default clusterrole for kubernetes monitoring
+suite: test aggregated clusterrole for kubernetes monitoring
 templates:
   - Common/activegate/kubernetes-monitoring/clusterrole-kubernetes-monitoring-default.yaml
 tests:
@@ -12,9 +12,6 @@ tests:
           value: dynatrace-kubernetes-monitoring-default
       - isNotEmpty:
           path: metadata.labels
-      - equal:
-          path: metadata.labels["rbac.dynatrace.com/aggregate-to-monitoring"]
-          value: "true"
       - isNotEmpty:
           path: rules
       - contains:
@@ -136,11 +133,11 @@ tests:
       - contains:
           path: rules
           content:
-              apiGroups:
+            apiGroups:
               - autoscaling
-              resources:
+            resources:
               - horizontalpodautoscalers
-              verbs:
+            verbs:
               - list
               - watch
               - get
@@ -155,15 +152,38 @@ tests:
             verbs:
               - get
 
+  - it: ClusterRoleBinding should exist
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-kubernetes-monitoring-default
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: roleRef
+          value:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: dynatrace-kubernetes-monitoring-default
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-activegate
+            namespace: NAMESPACE
+
   - it: should fail if only kubernetesMonitoring is turned on
     set:
       rbac.activeGate.create: false
       rbac.kubernetesMonitoring.create: true
     asserts:
-     - failedTemplate: {}
+      - failedTemplate: {}
+
   - it: shouldn't exist if turned off
     set:
-      rbac.activeGate.create: true
       rbac.kubernetesMonitoring.create: false
     asserts:
       - hasDocuments:

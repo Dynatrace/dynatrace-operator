@@ -5,7 +5,6 @@ package activegate
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8shpa"
@@ -30,7 +29,7 @@ func WithHPA(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL))
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	activeGateSSName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
 
@@ -54,7 +53,6 @@ func WithHPA(t *testing.T) features.Feature {
 	builder.Assess("check if the AG statefulset has replicas autoscaled to 3", k8sstatefulset.WaitForReplicas(activeGateSSName, testDynakube.Namespace, *scaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }
@@ -67,7 +65,7 @@ func EnforceReplicas(t *testing.T) features.Feature {
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithActiveGateReplicas(baseReplicas))
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	activeGateSSName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
 
@@ -76,8 +74,6 @@ func EnforceReplicas(t *testing.T) features.Feature {
 	}))
 
 	builder.Assess("check if the AG statefulset was rolled back to 2", k8sstatefulset.WaitForReplicas(activeGateSSName, testDynakube.Namespace, *baseReplicas))
-
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }

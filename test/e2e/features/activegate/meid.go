@@ -58,12 +58,11 @@ func NoUpdateMEID(t *testing.T) features.Feature {
 	builder := features.New("meid-no-update")
 
 	prevME := &settings.K8sClusterME{}
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, *prevDynaKube)
+	dynakubeComponents.Install(builder, &secretConfig, *prevDynaKube)
 	assessME(builder, prevDynaKube, prevME)
 	dynakubeComponents.Delete(builder, helpers.LevelAssess, *prevDynaKube)
 
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, *nextDynaKube)
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, *nextDynaKube)
+	dynakubeComponents.Install(builder, &secretConfig, *nextDynaKube)
 	reAssessME(builder, nextDynaKube, prevME)
 
 	return builder.Feature()

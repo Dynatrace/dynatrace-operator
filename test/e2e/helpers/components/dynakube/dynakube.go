@@ -27,14 +27,24 @@ const (
 	defaultName = "dynakube"
 )
 
-func Install(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
-	Create(builder, level, secretConfig.APIToken, secretConfig.DataIngestToken, dk)
-	VerifyStartup(builder, level, dk)
+// Install creates a tenant secret and waits until the DynaKube is Running.
+// It also registers the deletion of these resources in reverse order.
+func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
+	Create(builder, features.LevelAssess, secretConfig.APIToken, secretConfig.DataIngestToken, dk)
+	VerifyStartup(builder, features.LevelAssess, dk)
+	// The secret is required for correct cleanup, so always delete it last
+	Delete(builder, features.LevelTeardown, dk)
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(dk.Name, dk.Namespace))
 }
 
-func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
-	Create(builder, level, secretConfig.APITokenNoSettings, secretConfig.DataIngestToken, dk)
-	VerifyStartup(builder, level, dk)
+// InstallWithoutSettingsScopes creates a tenant secret without settings scopes and waits until the DynaKube is Running.
+// It also registers the deletion of these resources in reverse order.
+func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
+	Create(builder, features.LevelAssess, secretConfig.APITokenNoSettings, secretConfig.DataIngestToken, dk)
+	VerifyStartup(builder, features.LevelAssess, dk)
+	// The secret is required for correct cleanup, so always delete it last
+	Delete(builder, features.LevelTeardown, dk)
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(dk.Name, dk.Namespace))
 }
 
 func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDK prevDynakube.DynaKube) {
@@ -52,8 +62,8 @@ func Create(builder *features.FeatureBuilder, level features.Level, apiToken, da
 		create(testDynakube))
 }
 
-func Update(builder *features.FeatureBuilder, level features.Level, testDynakube dynakube.DynaKube) {
-	builder.WithStep("dynakube updated", level, update(testDynakube))
+func Update(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
+	builder.WithStep("dynakube updated", features.LevelAssess, update(testDynakube))
 }
 
 func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken string, prevDK prevDynakube.DynaKube) {
