@@ -3,19 +3,22 @@ package k8senv
 import (
 	"os"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	NodeName                    = "KUBE_NODE_NAME"
-	CSIDataDir                  = "CSI_DATA_DIR"
-	PodNamespace                = "POD_NAMESPACE"
-	PodName                     = "POD_NAME"
-	DTOperatorImageEnvName      = "DT_OPERATOR_IMAGE"
-	DTOperatorPullSecretEnvName = "DT_OPERATOR_PULL_SECRET"
-	OLMOperatorNamespaceEnv     = "OLM_OPERATOR_NAMESPACE"
-	AppVersion                  = "APP_VERSION"
+	NodeName                          = "KUBE_NODE_NAME"
+	CSIDataDir                        = "CSI_DATA_DIR"
+	PodNamespace                      = "POD_NAMESPACE"
+	PodName                           = "POD_NAME"
+	DTOperatorImageEnvName            = "DT_OPERATOR_IMAGE"
+	DTOperatorPullSecretEnvName       = "DT_OPERATOR_PULL_SECRET"
+	DTClientCacheCleanInterval        = "DT_CLIENT_CACHE_CLEAN_INTERVAL"
+	defaultDTClientCacheCleanInterval = time.Hour
+	OLMOperatorNamespaceEnv           = "OLM_OPERATOR_NAMESPACE"
+	AppVersion                        = "APP_VERSION"
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
@@ -92,4 +95,15 @@ func GetNodeName() string {
 
 func GetCSIDataDir() string {
 	return os.Getenv(CSIDataDir)
+}
+
+func GetDTClientCacheCleanInterval() time.Duration {
+	rawDuration := os.Getenv(DTClientCacheCleanInterval)
+
+	parsedDuration, err := time.ParseDuration(rawDuration)
+	if err != nil {
+		return defaultDTClientCacheCleanInterval
+	}
+
+	return parsedDuration
 }

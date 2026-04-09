@@ -18,6 +18,12 @@ var (
 	cache = newCache()
 )
 
+// cacheEntry holds all relevant info for a cached response.
+// The only not obvious part is that the `body` has to be stored separate from the actual `response`.
+// The reason for this is that the `Body` part of the `http.Response` is an `io.ReadCloser`.
+// This means the you may only read the body once, which is not good if we would like to reuse the `http.Response`
+// To combat this we read the `Body` while creating the `cacheEntry` and store it inside this new entry.
+// We always "recreate"(put it into a new Reader) the `Body` in the affected `http.Response` or when we returned the cached `http.Response`.
 type cacheEntry struct {
 	response *http.Response
 	body     []byte
@@ -104,6 +110,13 @@ func newCache() *responseCache {
 	}
 }
 
+// RunPeriodicCacheCleanup creates a small goroutine that will remove all expired entries from the dtclient cache.
+// This is necessary because if the user changes tokens, disables features etc., some entries will never be hit again,
+// so we can't clean them up during normal reconciles.
+// This only makes sense to use in the Operator Pod.
+// - The bootstrap command only runs once, and can only download a ~700MB archive. (can be less or more, depending on the technologies present in the archive)
+// - The csidriver (mainly `provisioner` container) does not make "in-memory cacheable" requests, it only downloads +700MB archives, that we "cache" on the node.
+// - The webhook (and any other not listed command) does not use the dtclient.
 func RunPeriodicCacheCleanup(ctx context.Context, period time.Duration) {
 	go func() {
 		ticker := time.NewTicker(period)

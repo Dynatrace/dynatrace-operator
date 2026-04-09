@@ -3,7 +3,6 @@ package operator
 import (
 	"context"
 	"os"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/middleware"
@@ -62,8 +61,7 @@ func runInPod(kubeCfg *rest.Config) error {
 	}
 
 	signalHandler := ctrl.SetupSignalHandler()
-	// TODO: make configurable
-	middleware.RunPeriodicCacheCleanup(signalHandler, time.Hour)
+	middleware.RunPeriodicCacheCleanup(signalHandler, k8senv.GetDTClientCacheCleanInterval())
 
 	return errors.WithStack(operatorManager.Start(signalHandler))
 }
@@ -86,9 +84,6 @@ func runLocally(ctx context.Context, kubeCfg *rest.Config) error {
 	if err != nil {
 		return err
 	}
-	// TODO: make configurable
-	// Added this here as a formality, doesn't really make much sense to this while debugging
-	middleware.RunPeriodicCacheCleanup(ctx, time.Hour)
 
 	return errors.WithStack(operatorManager.Start(ctx))
 }
