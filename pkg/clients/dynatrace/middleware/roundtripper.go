@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 )
 
 type RoundTripperFunc func(*http.Request) (*http.Response, error)
@@ -39,8 +41,10 @@ func NewCacheRoundTripper(next http.RoundTripper, ttl time.Duration) http.RoundT
 
 		// send the actual request
 		resp, err := next.RoundTrip(r)
-		if err == nil {
+		if err == nil && core.IsSuccessResponse(resp) {
 			cache.set(cacheKey, resp, ttl)
+		} else {
+			log.Debug("request was not successful, not caching it", "endpoint", r.URL, "statusCode", r.Response.StatusCode, "err", err)
 		}
 
 		return resp, err
