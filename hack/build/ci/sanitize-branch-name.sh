@@ -7,4 +7,4 @@ if [ -z "${BRANCH_NAME}" ]; then
   exit 0
 fi
 
-echo "${BRANCH_NAME//[^a-zA-Z0-9_.-]/-}"
+echo "${BRANCH_NAME//[^a-zA-Z0-9_.-]/-}" | cut -c1-63
