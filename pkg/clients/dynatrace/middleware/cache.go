@@ -25,14 +25,14 @@ var (
 // To combat this we read the `Body` while creating the `cacheEntry` and store it inside this new entry.
 // We always "recreate"(put it into a new Reader) the `Body` in the affected `http.Response` or when we returned the cached `http.Response`.
 type cacheEntry struct {
-	response *http.Response
-	body     []byte
-	lastCall time.Time
-	ttl      time.Duration
+	response     *http.Response
+	body         []byte
+	creationTime time.Time
+	ttl          time.Duration
 }
 
 func (ce *cacheEntry) isOutdated() bool {
-	return time.Since(ce.lastCall) > ce.ttl
+	return time.Since(ce.creationTime) > ce.ttl
 }
 
 type responseCache struct {
@@ -82,10 +82,10 @@ func (rc *responseCache) set(key string, response *http.Response, ttl time.Durat
 	defer rc.mu.Unlock()
 
 	rc.entries[key] = &cacheEntry{
-		response: response,
-		body:     body,
-		lastCall: time.Now(),
-		ttl:      ttl,
+		response:     response,
+		body:         body,
+		creationTime: time.Now(),
+		ttl:          ttl,
 	}
 }
 
