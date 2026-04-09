@@ -171,6 +171,20 @@ jobs:
           WORKFLOW_RUN_NUMBER: ${{ github.run_number }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
+      - name: Set up Go
+        if: steps.sync.outputs.changed == 'true'
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Generate Go SDKs
+        if: steps.sync.outputs.changed == 'true'
+        run: make oapi/generate
+
+      - name: Tidy Go modules
+        if: steps.sync.outputs.changed == 'true'
+        run: go mod tidy
+
       - name: Create pull request
         if: steps.sync.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
@@ -180,6 +194,9 @@ jobs:
           branch: sync-openapi-schemas
           add-paths: |
             api/oapi/*/spec3.json
+            pkg/clients/generated/
+            go.mod
+            go.sum
           title: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
           commit-message: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
           body: ${{ steps.sync.outputs.pr_body }}

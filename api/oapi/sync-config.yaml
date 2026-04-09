@@ -1,3 +1,5 @@
 schemas:
  - name: tenantApiV2
    branch: release/1.334.x
+   generate:
+     packageName: tenantapiv2

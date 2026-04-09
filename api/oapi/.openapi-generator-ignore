@@ -1,0 +1,18 @@
+# Files not needed in the repository
+.travis.yml
+git_push.sh
+.gitignore
+
+# Go module files are managed by the parent module
+go.mod
+go.sum
+
+# Generated tests use placeholder import paths (known openapi-generator issue)
+test/*
+*_test.go
+
+# Documentation
+docs/*.md
+
+# Then explicitly reverse the ignore rule for a single file:
+# !docs/README.md
