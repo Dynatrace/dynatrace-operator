@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -87,7 +88,25 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 	repo, err := name.NewRepository(repoURI)
 	require.NoError(t, err)
 
-	tags, err := remote.List(repo)
+	var tags []string
+	for attempt := 0; attempt < 3; attempt++ {
+		tags, err = remote.List(repo)
+		if err == nil {
+			break
+		}
+
+		if strings.Contains(err.Error(), "TOOMANYREQUESTS") {
+			wait := time.Duration(5*(attempt+1)) * time.Second
+			t.Logf("rate limited listing tags for %s, retrying in %s (attempt %d/3)", repoURI, wait, attempt+1)
+			time.Sleep(wait)
+
+			continue
+		}
+
+		break
+	}
+
+	require.NoError(t, err)
 
 	// We should skip tags that are technology-specific or sha digests,
 	// e.g., "latest", "1.327.30.20251107-111521-python", "sha256:abcd1234..."
@@ -105,7 +124,6 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 
 		return semver.Compare(semverA, semverB)
 	})
-	require.NoError(t, err)
 
 	return fmt.Sprintf("%s:%s", repoURI, filteredTags[len(filteredTags)-1])
 }
