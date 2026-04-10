@@ -26,6 +26,8 @@ MARKDOWN_LINK_CHECK_VERSION ?= v3.14.2
 HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
 GO_TEST_COVERAGE_VERSION ?= v2.18.3
+# renovate depName=@openapitools/openapi-generator-cli
+OPENAPI_GENERATOR_CLI_VERSION ?= 2.15.3
 
 # Enable renovate once project is migrated to newer structure
 OPERATOR_SDK_VERSION ?= v1.36.0
@@ -41,6 +43,7 @@ SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
 PYTHON ?= $(LOCALBIN)/.venv/bin/python3
 MARKDOWNLINT ?= $(LOCALBIN_NPM)/markdownlint
 MARKDOWN_LINK_CHECK ?= $(LOCALBIN_NPM)/markdown-link-check
+OPENAPI_GENERATOR_CLI ?= $(LOCALBIN_NPM)/openapi-generator-cli
 
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_VERSION ?= $(shell v='$(call gomodver,sigs.k8s.io/controller-runtime)'; \
@@ -122,6 +125,10 @@ prerequisites/setup-pre-commit:
 ## Configure git to use .git-blame-ignore-revs file
 prerequisites/git-ignore-revs-file:
 	git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+## Install 'openapi-generator-cli' if it is missing
+prerequisites/openapi-generator-cli:
+	npm install @openapitools/openapi-generator-cli@$(OPENAPI_GENERATOR_CLI_VERSION)
 
 .PHONY: prerequisites/operator-sdk
 OPERATOR_SDK ?= $(LOCALBIN)/operator-sdk
