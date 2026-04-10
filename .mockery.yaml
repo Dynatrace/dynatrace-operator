@@ -47,6 +47,7 @@ packages:
       logMonitoringReconciler:
       oneAgentReconciler:
       activeGateReconciler:
+      kspmReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring:
     config:
       dir: "{{.InterfaceDir}}"
