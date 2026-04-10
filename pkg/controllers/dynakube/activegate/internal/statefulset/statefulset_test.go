@@ -37,9 +37,7 @@ const (
 	testNamespaceName = "test-namespace"
 )
 
-var (
-	testReplicas int32 = 69
-)
+var testReplicas int32 = 69
 
 func getTestDynakube() dynakube.DynaKube {
 	return dynakube.DynaKube{
@@ -86,7 +84,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 	t.Run("default annotations", func(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		sts, _ := builder.CreateStatefulSet()
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
@@ -101,7 +99,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		dk.Status.ActiveGate.Source = status.TenantRegistryVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		sts, _ := builder.CreateStatefulSet()
 		expectedNodeSelectorTerms := []corev1.NodeSelectorTerm{
 			{
 				MatchExpressions: []corev1.NodeSelectorRequirement{
@@ -116,7 +114,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 						Values:   []string{"linux"},
 					},
 				},
-			}}
+			},
+		}
 
 		require.NotEmpty(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
 		assert.Contains(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, expectedNodeSelectorTerms[0])
@@ -126,7 +125,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		dk.Status.ActiveGate.Source = status.CustomImageVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		sts, _ := builder.CreateStatefulSet()
 		expectedNodeSelectorTerms := []corev1.NodeSelectorTerm{
 			{
 				MatchExpressions: []corev1.NodeSelectorRequirement{
@@ -141,7 +140,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 						Values:   []string{"linux"},
 					},
 				},
-			}}
+			},
+		}
 
 		require.NotEmpty(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
 		assert.Contains(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, expectedNodeSelectorTerms[0])
@@ -152,7 +152,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		}
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		sts, _ := builder.CreateStatefulSet()
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
@@ -328,7 +328,7 @@ func TestAddTemplateSpec(t *testing.T) {
 
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, err := builder.CreateStatefulSet(nil)
+		sts, err := builder.CreateStatefulSet()
 		require.NoError(t, err)
 
 		assert.Equal(t, builder.defaultTopologyConstraints(), sts.Spec.Template.Spec.TopologySpreadConstraints)
@@ -343,7 +343,7 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk.Spec.ActiveGate.TopologySpreadConstraints = testTopologyConstraint
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, err := builder.CreateStatefulSet(nil)
+		sts, err := builder.CreateStatefulSet()
 		require.NoError(t, err)
 
 		assert.Equal(t, testTopologyConstraint, sts.Spec.Template.Spec.TopologySpreadConstraints)
@@ -352,7 +352,7 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, err := builder.CreateStatefulSet(nil)
+		sts, err := builder.CreateStatefulSet()
 		require.NoError(t, err)
 
 		assert.Equal(t, int32(2), sts.Spec.Template.Spec.Containers[0].ReadinessProbe.TimeoutSeconds)
@@ -498,10 +498,11 @@ func TestSecurityContexts(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+		activeGateBuilder := builder.NewBuilder(statefulsetBuilder.getBase())
+		sts, _ := activeGateBuilder.AddModifier(
 			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
 			modifiers.NewReadOnlyModifier(dk),
-		})
+		).Build()
 
 		require.NotEmpty(t, sts)
 		require.Truef(t, reflect.DeepEqual(sts.Spec.Template.Spec.InitContainers[0].SecurityContext, sts.Spec.Template.Spec.Containers[0].SecurityContext), "InitContainer and Container have different SecurityContexts")
@@ -517,7 +518,7 @@ func TestUpdateStrategy(t *testing.T) {
 			MaxUnavailable: &maxUnavailable,
 		}
 		b := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, capability.NewMultiCapability(&dk))
-		sts, err := b.CreateStatefulSet(nil)
+		sts, err := b.CreateStatefulSet()
 
 		require.NoError(t, err)
 		require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
@@ -621,10 +622,11 @@ func TestTempVolume(t *testing.T) {
 
 			multiCapability := capability.NewMultiCapability(&dk)
 			statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-			sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+			activeGateBuilder := builder.NewBuilder(statefulsetBuilder.getBase())
+			sts, _ := activeGateBuilder.AddModifier(
 				modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
 				modifiers.NewReadOnlyModifier(dk),
-			})
+			).Build()
 
 			require.NotEmpty(t, sts)
 
@@ -661,10 +663,11 @@ func TestVolumeMounts(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+		activeGateBuilder := builder.NewBuilder(statefulsetBuilder.getBase())
+		sts, _ := activeGateBuilder.AddModifier(
 			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
 			modifiers.NewReadOnlyModifier(dk),
-		})
+		).Build()
 
 		require.NotEmpty(t, sts)
 
