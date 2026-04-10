@@ -77,7 +77,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		return nil, err
 	}
 
-	labels := k8slabel.NewCoreLabels(dk.Name, k8slabel.LogMonitoringComponentLabel)
+	labels := k8slabel.NewAppLabels(k8slabel.LogMonitoringComponentLabel, dk.Name, k8slabel.LogMonitoringComponentLabel, dk.Spec.Templates.LogMonitoring.ImageRef.Tag)
 
 	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(*dk, tenantUUID),
 		k8sdaemonset.SetInitContainer(getInitContainer(*dk, tenantUUID)),

@@ -75,7 +75,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		return nil, err
 	}
 
-	labels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KSPMComponentLabel)
+	labels := k8slabel.NewAppLabels(k8slabel.KSPMComponentLabel, dk.Name, k8slabel.KSPMComponentLabel, dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef.Tag)
 	templateAnnotations := map[string]string{tokenSecretHashAnnotation: dk.KSPM().TokenSecretHash}
 	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(dk.KSPM().Annotations, containerName))
 

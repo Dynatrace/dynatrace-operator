@@ -98,6 +98,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("Create and update works with ME not set", func(t *testing.T) {
 		dk := createDynakube(true)
+
 		dk.Status.KubernetesClusterMEID = ""
 
 		mockK8sClient := fake.NewClient()
@@ -454,6 +455,9 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:        "test-url",
 			LogMonitoring: logMonitoring,
+			Templates: dynakube.TemplatesSpec{
+				LogMonitoring: &logmonitoring.TemplateSpec{},
+			},
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
