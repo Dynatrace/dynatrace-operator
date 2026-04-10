@@ -134,6 +134,10 @@ type logMonitoringReconciler interface {
 	Reconcile(ctx context.Context, dtc dtclient.Client, dk *dynakube.DynaKube) error
 }
 
+type kspmReconciler interface {
+	Reconcile(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error
+}
+
 // Controller reconciles a DynaKube object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -145,7 +149,7 @@ type Controller struct {
 	apiMonitoringReconciler      apiMonitoringReconciler
 	extensionReconciler          dynakubeReconciler
 	k8sEntityReconciler          dtSettingReconciler
-	kspmReconciler               dtSettingReconciler
+	kspmReconciler               kspmReconciler
 	otelcReconciler              dynakubeReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
@@ -368,6 +372,14 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
+	log.Info("start reconciling KSPM")
+
+	if err := controller.kspmReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
+		log.Info("could not reconcile kspm")
+
+		componentErrors = append(componentErrors, err)
+	}
+
 	log.Info("start reconciling LogMonitoring")
 
 	err = controller.logMonitoringReconciler.Reconcile(ctx, dynatraceClient, dk)
@@ -426,12 +438,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		}
 
 		log.Info("could not reconcile OneAgent")
-
-		componentErrors = append(componentErrors, err)
-	}
-
-	if err := controller.kspmReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
-		log.Info("could not reconcile kspm")
 
 		componentErrors = append(componentErrors, err)
 	}
