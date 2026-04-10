@@ -1,7 +1,8 @@
 package oneagent
 
 import (
-	"golang.org/x/exp/maps"
+	"maps"
+
 	corev1 "k8s.io/api/core/v1"
 )
 

@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -22,7 +21,6 @@ import (
 
 type Reconciler struct {
 	apiReader    client.Reader
-	modifiers    []builder.Modifier
 	statefulsets k8sstatefulset.QueryObject
 }
 
@@ -32,7 +30,6 @@ func NewReconciler(
 ) *Reconciler {
 	return &Reconciler{
 		apiReader:    apiReader,
-		modifiers:    []builder.Modifier{},
 		statefulsets: k8sstatefulset.Query(clt, apiReader, log),
 	}
 }
@@ -78,7 +75,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 
 	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *dk, agCapability)
 
-	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
+	desiredSts, err := statefulSetBuilder.CreateStatefulSet()
 	if err != nil {
 		return nil, err
 	}
