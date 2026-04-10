@@ -6,6 +6,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 )
 
+var _ APIClient = (*Client)(nil)
+
 // APIClient is the interface for the Dynatrace EdgeConnect REST API Client.
 type APIClient interface {
 	// GetEdgeConnect return details of single EdgeConnect

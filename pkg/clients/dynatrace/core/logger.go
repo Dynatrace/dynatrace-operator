@@ -92,7 +92,7 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 var dtTokenRegex = regexp.MustCompile(`[a-z0-9]{5,}\.([A-Z0-7]{8}|[A-Z0-7]{24})\.[A-Z0-7]{64}`)
 
 // Detect JWT tokens
-var jwtBearerTokenRegex = regexp.MustCompile(`[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+`)
+var jwtBearerTokenRegex = regexp.MustCompile(`ey[A-Za-z0-9-_]+\.ey[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+`)
 
 func sanitizeBody(body []byte) string {
 	// Only hide private parts from output
