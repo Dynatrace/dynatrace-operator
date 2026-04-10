@@ -404,6 +404,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockOtelcReconciler := newMockDynakubeReconciler(t)
 		k8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
+		mockKSPMReconciler := newMockKspmReconciler(t)
 
 		mockedDtc := dtclientmock.NewClient(t)
 		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
@@ -420,6 +421,7 @@ func TestReconcileComponents(t *testing.T) {
 			otelcReconciler:         mockOtelcReconciler,
 			k8sEntityReconciler:     k8sEntityReconciler,
 			istioReconciler:         mockIstioReconciler,
+			kspmReconciler:          mockKSPMReconciler,
 		}
 
 		var err error
@@ -427,6 +429,7 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockExtensionReconciler, &err, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
 		expectReconcileError(t, k8sEntityReconciler, &err, &settings.Client{}, dk)
+		expectReconcileError(t, mockKSPMReconciler, &err, &settings.Client{}, dk)
 
 		err = controller.reconcileComponents(ctx, mockedDtc, dk)
 		require.Error(t, err)
