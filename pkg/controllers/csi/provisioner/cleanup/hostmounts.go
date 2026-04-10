@@ -1,12 +1,13 @@
 package cleanup
 
 import (
+	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"golang.org/x/exp/maps"
 	"k8s.io/mount-utils"
 )
 
@@ -95,7 +96,7 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 	}
 
 	if len(hostDirs) > 0 {
-		log.Info("host directories to keep because they have a related dynakube", "paths", strings.Join(maps.Keys(hostDirs), ","))
+		log.Info("host directories to keep because they have a related dynakube", "paths", strings.Join(slices.Collect(maps.Keys(hostDirs)), ","))
 	}
 
 	return hostDirs
