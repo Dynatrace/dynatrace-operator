@@ -22,7 +22,6 @@ const (
 	// The limit is necessary because kubernetes uses the name of some resources (ActiveGate StatefulSet) for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)
 	MaxNameLength = 40
 
-	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix = "-pull-secret"
 
 	DefaultMinRequestThresholdMinutes = 15
@@ -77,9 +76,10 @@ func (dk *DynaKube) TenantRegistryPullSecretName() string {
 }
 
 func (dk *DynaKube) PullSecretNames() []string {
-	names := make([]string, 0, 1+len(dk.CustomPullSecretNames()))
+	customNames := dk.CustomPullSecretNames()
+	names := make([]string, 0, 1+len(customNames))
 	names = append(names, dk.TenantRegistryPullSecretName())
-	names = append(names, dk.CustomPullSecretNames()...)
+	names = append(names, customNames...)
 
 	return names
 }
@@ -106,6 +106,10 @@ func (dk *DynaKube) TenantRegistryPullSecretReferences() []corev1.LocalObjectRef
 
 func (dk *DynaKube) CustomPullSecretReferences() []corev1.LocalObjectReference {
 	names := dk.CustomPullSecretNames()
+	if len(names) == 0 {
+		return nil
+	}
+
 	refs := make([]corev1.LocalObjectReference, len(names))
 
 	for i, name := range names {

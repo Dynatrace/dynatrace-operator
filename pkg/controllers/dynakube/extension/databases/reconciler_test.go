@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -218,6 +219,8 @@ func TestImagePullSecrets(t *testing.T) {
 	})
 
 	t.Run("no pull secrets when no custom pull secret is set", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
 		dk := getTestDynakube()
 		dk.Spec.CustomPullSecret = ""
 		deploy := getReconciledDeployment(t, fakeClient(), dk)

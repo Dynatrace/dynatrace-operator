@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -103,6 +104,8 @@ func TestReconcile(t *testing.T) {
 
 func TestGenerateDaemonSet(t *testing.T) {
 	t.Run("generate daemonset", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
 		dk := createDynakube(true)
 
 		reconciler := NewReconciler(nil, nil)

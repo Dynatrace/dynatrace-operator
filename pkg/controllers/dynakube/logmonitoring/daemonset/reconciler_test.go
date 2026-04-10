@@ -168,6 +168,8 @@ func TestReconcile(t *testing.T) {
 
 func TestGenerateDaemonSet(t *testing.T) {
 	t.Run("generate daemonset", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
 		dk := createDynakube(true)
 
 		reconciler := NewReconciler(nil, fake.NewClient())

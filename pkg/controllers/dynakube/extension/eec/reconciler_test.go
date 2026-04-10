@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
@@ -777,6 +778,8 @@ func TestAffinity(t *testing.T) {
 }
 
 func TestImagePullSecrets(t *testing.T) {
+	t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
 	t.Run("no pull secrets when only tenant registry pull secret exists", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 

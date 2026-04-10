@@ -126,6 +126,7 @@ func TestImagePullSecretReferences(t *testing.T) {
 	)
 
 	t.Run("only tenant pull secret when no custom pull secret is set", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
 		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName}}
 		refs := dk.ImagePullSecretReferences()
 		assert.Len(t, refs, 1)
@@ -133,6 +134,7 @@ func TestImagePullSecretReferences(t *testing.T) {
 	})
 
 	t.Run("includes DynaKube customPullSecret when set", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
@@ -215,12 +217,14 @@ func TestCustomPullSecretReferences(t *testing.T) {
 	)
 
 	t.Run("empty when no custom or Helm pull secret is set", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
 		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName}}
 		refs := dk.CustomPullSecretReferences()
 		assert.Empty(t, refs)
 	})
 
 	t.Run("includes customPullSecret when set", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
