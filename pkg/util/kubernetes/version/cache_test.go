@@ -19,38 +19,40 @@ import (
 func TestDisableCacheForTest(t *testing.T) {
 	resetCache()
 
-	undo := DisableCacheForTest(123)
-	assert.True(t, versionInfo.disableLookup)
+	getConfig = func() (*rest.Config, error) {
+		panic("unexpected call")
+	}
 
-	synctest.Test(t, func(t *testing.T) {
-		const iterations = 1_000
-		results := make([]func(), iterations)
-		for i := range iterations {
-			go func() {
-				results[i] = DisableCacheForTest(i)
-			}()
-		}
+	newClient = func(*rest.Config) (discovery.ServerVersionInterface, error) {
+		panic("unexpected call")
+	}
 
-		synctest.Wait()
-
-		// The value of minor version is essentially random since we change it concurrently
-		assert.NotEqual(t, 123, versionInfo.minorVersion)
-		expectMinorVersion := versionInfo.minorVersion
-
-		for idx, f := range results {
-			go func() {
-				f()
-				assert.Truef(t, versionInfo.disableLookup, "undo function %d mutated cache", idx)
-				assert.Equal(t, expectMinorVersion, versionInfo.minorVersion, "undo function %d mutated cache", idx)
-			}()
-		}
-
-		synctest.Wait()
+	t.Cleanup(func() {
+		getConfig = config.GetConfig
+		newClient = newDiscoveryClientForConfig
 	})
 
-	undo()
-	assert.False(t, versionInfo.disableLookup)
+	actualUndo := DisableCacheForTest(123)
+
+	assert.Equal(t, 123, versionInfo.minorVersion)
+	assert.True(t, versionInfo.disableLookup)
+	assert.NotPanics(t, func() { GetMinorVersion() })
+
+	nopUndo := DisableCacheForTest(321)
+	assert.Equal(t, 321, versionInfo.minorVersion)
+	assert.True(t, versionInfo.disableLookup)
+
+	nopUndo()
+
+	assert.Equal(t, 321, versionInfo.minorVersion)
+	assert.True(t, versionInfo.disableLookup)
+	assert.NotPanics(t, func() { GetMinorVersion() })
+
+	actualUndo()
+
 	assert.Equal(t, 0, versionInfo.minorVersion)
+	assert.False(t, versionInfo.disableLookup)
+	assert.Panics(t, func() { GetMinorVersion() })
 }
 
 func TestGetMinorVersion(t *testing.T) {
