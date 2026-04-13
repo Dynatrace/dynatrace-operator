@@ -83,12 +83,6 @@ func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
 		cfg.OAuth.ClientSecret = "****"
 	}
 
-	for i := range cfg.Secrets {
-		if cfg.Secrets[i].Token != "" {
-			cfg.Secrets[i].Token = "****"
-		}
-	}
-
 	safe, _ := yaml.Marshal(cfg)
 
 	return string(safe)
