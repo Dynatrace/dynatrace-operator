@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
@@ -45,7 +45,7 @@ func TestNew(t *testing.T) {
 
 		require.NotNil(t, client.newInstaller)
 
-		dtClient, err := dtclient.NewClientV2(dtclient.WithBaseURL("url"))
+		dtClient, err := dynatrace.NewClientV2(dynatrace.WithBaseURL("url"))
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)
 

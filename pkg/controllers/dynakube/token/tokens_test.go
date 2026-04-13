@@ -9,9 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -85,8 +84,7 @@ func TestTokens(t *testing.T) {
 		fakeTokenAllTelemetryIngestPermissions       = "all-telemetry-ingest-permissions"
 	)
 
-	createFakeClient := func(t *testing.T) *dtclientmock.Client {
-		fakeClient := dtclientmock.NewClient(t)
+	createFakeClient := func(t *testing.T) *tokenclientmock.APIClient {
 		mockedTokenClient := tokenclientmock.NewAPIClient(t)
 
 		tokenScopes := []struct {
@@ -105,9 +103,8 @@ func TestTokens(t *testing.T) {
 		for _, tokenScope := range tokenScopes {
 			mockedTokenClient.EXPECT().GetScopes(t.Context(), tokenScope.token).Return(tokenScope.scopes, nil).Maybe()
 		}
-		fakeClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
 
-		return fakeClient
+		return mockedTokenClient
 	}
 
 	enableKubernetesMonitoringAndMetricsIngest := func(dk *dynakube.DynaKube) *dynakube.DynaKube {
@@ -465,15 +462,12 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			mockedTokenClient := tokenclientmock.NewAPIClient(t)
 			mockedTokenClient.EXPECT().GetScopes(t.Context(), tokenValue).Return(c.availableScopes, nil).Once()
 
-			fakeClient := dtclientmock.NewClient(t)
-			fakeClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
-
 			apiToken := newToken(APIKey, tokenValue)
 			tokens := Tokens{
 				APIKey: &apiToken,
 			}
 			tokens = tokens.AddFeatureScopesToTokens()
-			optionalScopes, err := tokens.VerifyScopes(t.Context(), fakeClient, c.dk)
+			optionalScopes, err := tokens.VerifyScopes(t.Context(), mockedTokenClient, c.dk)
 
 			assert.Equal(t, c.expectedOptional, optionalScopes)
 			assert.Equal(t, c.shouldError, err != nil)
@@ -505,11 +499,11 @@ type concatErrorsTestCase struct {
 func TestConcatErrors(t *testing.T) {
 	stringError1 := errors.New("error 1")
 	stringError2 := errors.New("error 2")
-	serviceUnavailableError := dtclient.ServerError{
+	serviceUnavailableError := dynatrace.ServerError{
 		Code:    http.StatusServiceUnavailable,
 		Message: "ServiceUnavailable",
 	}
-	tooManyRequestsError := dtclient.ServerError{
+	tooManyRequestsError := dynatrace.ServerError{
 		Code:    http.StatusTooManyRequests,
 		Message: "TooManyRequests",
 	}

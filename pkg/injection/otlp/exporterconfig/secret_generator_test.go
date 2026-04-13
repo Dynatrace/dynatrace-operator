@@ -7,10 +7,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -36,14 +36,14 @@ const (
 
 func TestNewSecretGenerator(t *testing.T) {
 	c := fake.NewClient()
-	mockDTClient := dtclientmock.NewClient(t)
+	dtClient := &dynatrace.ClientV2{}
 
-	secretGenerator := NewSecretGenerator(c, c, mockDTClient)
+	secretGenerator := NewSecretGenerator(c, c, dtClient)
 	assert.NotNil(t, secretGenerator)
 
 	assert.Equal(t, c, secretGenerator.client)
 	assert.Equal(t, c, secretGenerator.apiReader)
-	assert.Equal(t, mockDTClient, secretGenerator.dtClient)
+	assert.Equal(t, dtClient, secretGenerator.dtClient)
 }
 
 func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
@@ -63,9 +63,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-
-		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		secretGenerator := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
 		require.NoError(t, err)
 
@@ -98,9 +96,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-
-		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		secretGenerator := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
 		require.NoError(t, err)
 	})
@@ -134,9 +130,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-
-		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		secretGenerator := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
@@ -214,9 +208,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-
-		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		secretGenerator := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
@@ -270,9 +262,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientInjectedNamespace(testNamespace, testDynakube),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-
-		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		secretGenerator := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
 		require.Error(t, err)
 
@@ -308,8 +298,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCertKey: []byte(testCrt)}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		secretGenerator := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace1, *namespace2, *terminatingNS}))
 
 		// replicated in active namespaces
@@ -336,8 +325,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{"other": []byte("value")}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		secretGenerator := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 		require.Error(t, secretGenerator.GenerateForDynakube(t.Context(), dk, nil))
 
 		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
@@ -370,8 +358,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCertKey: []byte(testCrt)}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		secretGenerator := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk, nil))
 
 		// source secret exists
@@ -406,7 +393,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.DataIngestKey: []byte(testDataIngestToken)}),
 		)
 
-		sg := NewSecretGenerator(clt, clt, dtclientmock.NewClient(t))
+		sg := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 
 		require.Error(t, sg.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace}))
 
@@ -439,7 +426,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{"unknown": []byte("value")}),
 		)
 
-		sg := NewSecretGenerator(clt, clt, dtclientmock.NewClient(t))
+		sg := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 
 		require.Error(t, sg.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace}))
 
@@ -471,8 +458,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.DataIngestKey: []byte(testDataIngestToken)}),
 		)
 
-		mockDTClient := dtclientmock.NewClient(t)
-		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		secretGenerator := NewSecretGenerator(clt, clt, &dynatrace.ClientV2{})
 		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace}))
 
 		// config secret replicated

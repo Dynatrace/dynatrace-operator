@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
@@ -128,7 +128,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk, createToken(t, dk))
 
 		unavailableInstaller := installermock.NewInstaller(t)
-		unavailableInstaller.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, dtclient.ServerError{Code: http.StatusServiceUnavailable})
+		unavailableInstaller.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, dynatrace.ServerError{Code: http.StatusServiceUnavailable})
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
 		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 
@@ -430,7 +430,7 @@ func mockSuccessfulDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
 	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(&dtclient.ClientV2{}, nil)
+	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(&dynatrace.ClientV2{}, nil)
 
 	return mockDtcBuilder
 }
