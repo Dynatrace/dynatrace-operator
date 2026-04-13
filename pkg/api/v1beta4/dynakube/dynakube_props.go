@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -45,63 +44,6 @@ func (dk *DynaKube) APIURLHost() string {
 	}
 
 	return parsedURL.Host
-}
-
-// PullSecretName returns the name of the pull secret to be used for immutable images.
-func (dk *DynaKube) PullSecretName() string {
-	if dk.Spec.CustomPullSecret != "" {
-		return dk.Spec.CustomPullSecret
-	}
-
-	return dk.TenantRegistryPullSecretName()
-}
-
-func (dk *DynaKube) TenantRegistryPullSecretName() string {
-	return dk.Name + PullSecretSuffix
-}
-
-func (dk *DynaKube) PullSecretNames() []string {
-	names := []string{
-		dk.TenantRegistryPullSecretName(),
-	}
-	names = append(names, dk.CustomPullSecretNames()...)
-
-	return names
-}
-
-func (dk *DynaKube) CustomPullSecretNames() []string {
-	var names []string
-
-	if dk.Spec.CustomPullSecret != "" {
-		names = append(names, dk.Spec.CustomPullSecret)
-	}
-
-	return names
-}
-
-func (dk *DynaKube) TenantRegistryPullSecretReferences() []corev1.LocalObjectReference {
-	return []corev1.LocalObjectReference{
-		{Name: dk.TenantRegistryPullSecretName()},
-	}
-}
-
-func (dk *DynaKube) CustomPullSecretReferences() []corev1.LocalObjectReference {
-	names := dk.CustomPullSecretNames()
-	if len(names) == 0 {
-		return nil
-	}
-
-	refs := make([]corev1.LocalObjectReference, len(names))
-
-	for i, name := range names {
-		refs[i].Name = name
-	}
-
-	return refs
-}
-
-func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
-	return append(dk.TenantRegistryPullSecretReferences(), dk.CustomPullSecretReferences()...)
 }
 
 // Tokens returns the name of the Secret to be used for tokens.

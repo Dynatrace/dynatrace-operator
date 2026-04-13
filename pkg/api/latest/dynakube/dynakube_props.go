@@ -76,7 +76,7 @@ func (dk *DynaKube) TenantRegistryPullSecretName() string {
 }
 
 func (dk *DynaKube) PullSecretNames() []string {
-	customNames := dk.CustomPullSecretNames()
+	customNames := dk.customPullSecretNames()
 	names := make([]string, 0, 1+len(customNames))
 	names = append(names, dk.TenantRegistryPullSecretName())
 	names = append(names, customNames...)
@@ -84,7 +84,7 @@ func (dk *DynaKube) PullSecretNames() []string {
 	return names
 }
 
-func (dk *DynaKube) CustomPullSecretNames() []string {
+func (dk *DynaKube) customPullSecretNames() []string {
 	var names []string
 
 	if dk.Spec.CustomPullSecret != "" {
@@ -105,7 +105,7 @@ func (dk *DynaKube) TenantRegistryPullSecretReferences() []corev1.LocalObjectRef
 }
 
 func (dk *DynaKube) CustomPullSecretReferences() []corev1.LocalObjectReference {
-	names := dk.CustomPullSecretNames()
+	names := dk.customPullSecretNames()
 	if len(names) == 0 {
 		return nil
 	}
