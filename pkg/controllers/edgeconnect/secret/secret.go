@@ -80,15 +80,16 @@ func PrepareConfigFile(ctx context.Context, ec *edgeconnect.EdgeConnect, apiRead
 // Replace client secret with stars for debug logs
 func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
 	type safeOAuth struct {
-		ClientID string `yaml:"client_id,omitempty"`
 		Endpoint string `yaml:"endpoint,omitempty"`
+		ClientID string `yaml:"client_id,omitempty"`
 		Resource string `yaml:"resource,omitempty"`
 	}
 
 	type safeProxy struct {
+		User       string `yaml:"user,omitempty"`
 		Server     string `yaml:"server,omitempty"`
-		Port       uint32 `yaml:"port,omitempty"`
 		Exceptions string `yaml:"exceptions,omitempty"`
+		Port       uint32 `yaml:"port,omitempty"`
 	}
 
 	type safeSecrets struct {
@@ -100,9 +101,9 @@ func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
 		Name                 string        `yaml:"name,omitempty"`
 		APIEndpointHost      string        `yaml:"api_endpoint_host,omitempty"`
 		OAuth                safeOAuth     `yaml:"oauth,omitempty"`
-		Proxy                safeProxy     `yaml:"proxy,omitempty"`
-		RootCertificatePaths []string      `yaml:"root_certificate_paths,omitempty"`
 		RestrictHostsTo      []string      `yaml:"restrict_hosts_to,omitempty"`
+		RootCertificatePaths []string      `yaml:"root_certificate_paths,omitempty"`
+		Proxy                safeProxy     `yaml:"proxy,omitempty"`
 		Secrets              []safeSecrets `yaml:"secrets,omitempty"`
 	}
 
@@ -115,6 +116,7 @@ func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
 			Resource: cfg.OAuth.Resource,
 		},
 		Proxy: safeProxy{
+			User:       cfg.Proxy.Auth.User,
 			Server:     cfg.Proxy.Server,
 			Port:       cfg.Proxy.Port,
 			Exceptions: cfg.Proxy.Exceptions,
