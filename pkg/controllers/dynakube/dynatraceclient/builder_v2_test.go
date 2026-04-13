@@ -12,6 +12,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	testNamespace        = "test-namespace"
+	testEndpoint         = "https://test-endpoint.com"
+	testValue            = "test-value"
+	testKey              = "test-key"
+	testValueAlternative = "test-alternative-value"
+)
+
 func TestBuildDynatraceClientV2(t *testing.T) {
 	ctx := t.Context()
 
