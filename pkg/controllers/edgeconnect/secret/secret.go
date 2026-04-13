@@ -79,11 +79,55 @@ func PrepareConfigFile(ctx context.Context, ec *edgeconnect.EdgeConnect, apiRead
 
 // Replace client secret with stars for debug logs
 func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
-	if cfg.OAuth.ClientSecret != "" {
-		cfg.OAuth.ClientSecret = "****"
+	type safeOAuth struct {
+		ClientID string `yaml:"client_id,omitempty"`
+		Endpoint string `yaml:"endpoint,omitempty"`
+		Resource string `yaml:"resource,omitempty"`
 	}
 
-	safe, _ := yaml.Marshal(cfg)
+	type safeProxy struct {
+		Server     string `yaml:"server,omitempty"`
+		Port       uint32 `yaml:"port,omitempty"`
+		Exceptions string `yaml:"exceptions,omitempty"`
+	}
+
+	type safeSecrets struct {
+		Name            string   `yaml:"name,omitempty"`
+		RestrictHostsTo []string `yaml:"restrict_hosts_to,omitempty"`
+	}
+
+	type safeConfig struct {
+		Name                 string        `yaml:"name,omitempty"`
+		APIEndpointHost      string        `yaml:"api_endpoint_host,omitempty"`
+		OAuth                safeOAuth     `yaml:"oauth,omitempty"`
+		Proxy                safeProxy     `yaml:"proxy,omitempty"`
+		RootCertificatePaths []string      `yaml:"root_certificate_paths,omitempty"`
+		RestrictHostsTo      []string      `yaml:"restrict_hosts_to,omitempty"`
+		Secrets              []safeSecrets `yaml:"secrets,omitempty"`
+	}
+
+	safeCfg := safeConfig{
+		Name:            cfg.Name,
+		APIEndpointHost: cfg.APIEndpointHost,
+		OAuth: safeOAuth{
+			ClientID: cfg.OAuth.ClientID,
+			Endpoint: cfg.OAuth.Endpoint,
+			Resource: cfg.OAuth.Resource,
+		},
+		Proxy: safeProxy{
+			Server:     cfg.Proxy.Server,
+			Port:       cfg.Proxy.Port,
+			Exceptions: cfg.Proxy.Exceptions,
+		},
+		RootCertificatePaths: cfg.RootCertificatePaths,
+		RestrictHostsTo:      cfg.RestrictHostsTo,
+	}
+
+	for _, s := range cfg.Secrets {
+		safeCfg.Secrets = append(safeCfg.Secrets, safeSecrets{Name: s.Name, RestrictHostsTo: s.RestrictHostsTo})
+	}
+
+	safe, _ := yaml.Marshal(safeCfg)
 
 	return string(safe)
 }
