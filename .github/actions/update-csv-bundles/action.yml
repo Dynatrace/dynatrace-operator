@@ -113,7 +113,7 @@ runs:
       with:
         base: release-${{ steps.vars.outputs.major_minor }}
         branch: csv-${{ steps.vars.outputs.major_minor}}
-        token: ${{ steps.create-github-app-token.token }}
+        token: ${{ steps.create-github-app-token.outputs.token }}
         delete-branch: true
         add-paths: |
           config/olm/**
