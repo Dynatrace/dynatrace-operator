@@ -27,35 +27,31 @@ func GetAppArmorProfile(annotations map[string]string, containerName string) *co
 	return profile
 }
 
-// RemoveAppArmorAnnotations returns a copy of the annotation without any AppArmor keys.
-// If no AppArmor annotation keys are present or the operator runs on Kubernetes 1.30 or lower, returns the annotations without modification.
+// RemoveAppArmorAnnotation returns a copy of the annotation without AppArmor annotations for the specified containers.
+// If no AppArmor annotations are found or the operator runs on Kubernetes 1.30 or lower, returns the input without modification.
 //
 // This function uses the version cache, so tests need to make sure to call [version.DisableCacheForTest].
-func RemoveAppArmorAnnotations(annotations map[string]string) map[string]string {
+func RemoveAppArmorAnnotation(annotations map[string]string, containerNames ...string) map[string]string {
 	if isAppArmorRewriteEnabled() {
-		if keys := findKeys(annotations); len(keys) > 0 {
-			modified := maps.Clone(annotations)
-			for _, key := range keys {
+		var modified map[string]string
+
+		for _, containerName := range containerNames {
+			key := corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
+			if _, ok := annotations[key]; ok {
+				if modified == nil {
+					modified = maps.Clone(annotations)
+				}
+
 				delete(modified, key)
 			}
+		}
 
+		if modified != nil {
 			return modified
 		}
 	}
 
 	return annotations
-}
-
-func findKeys(annotations map[string]string) []string {
-	var keys []string
-
-	for key := range annotations {
-		if strings.HasPrefix(key, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix) {
-			keys = append(keys, key)
-		}
-	}
-
-	return keys
 }
 
 // getProfileFromPodAnnotations gets the AppArmor profile to use with container from

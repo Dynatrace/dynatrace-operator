@@ -70,7 +70,7 @@ func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	statefulSetBuilder.addPersistentVolumeClaim(&sts)
 
 	// The annotation is needed for addTemplateSpec so remove it afterwards
-	sts.Spec.Template.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotations(sts.Spec.Template.Annotations)
+	sts.Spec.Template.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(sts.Spec.Template.Annotations, consts.ActiveGateContainerName)
 
 	return sts
 }

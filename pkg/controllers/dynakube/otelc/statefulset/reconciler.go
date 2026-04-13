@@ -140,7 +140,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 
 	if dk.Extensions().IsPrometheusEnabled() {
 		if dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
-			templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotations(dk.Spec.Templates.OpenTelemetryCollector.Annotations)
+			templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.OpenTelemetryCollector.Annotations, containerName)
 		}
 
 		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.Extensions().GetTLSSecretName(), dk.Namespace)

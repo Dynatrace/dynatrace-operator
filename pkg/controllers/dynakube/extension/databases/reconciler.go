@@ -55,7 +55,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
 			k8sdeployment.SetReplicas(replicas),
 			k8sdeployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
-			k8sdeployment.SetAllAnnotations(nil, k8ssecuritycontext.RemoveAppArmorAnnotations(dbSpec.Annotations)),
+			k8sdeployment.SetAllAnnotations(nil, k8ssecuritycontext.RemoveAppArmorAnnotation(dbSpec.Annotations, containerName)),
 			k8sdeployment.SetAffinity(dbSpec.Affinity),
 			k8sdeployment.SetTolerations(r.dk.Spec.Templates.SQLExtensionExecutor.Tolerations),
 			k8sdeployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),

@@ -10,7 +10,7 @@ import (
 const annotationTenantTokenHash = api.InternalFlagPrefix + "tenant-token-hash"
 
 func (r *Reconciler) getAnnotations(dk *dynakube.DynaKube) map[string]string {
-	annotations := k8ssecuritycontext.RemoveAppArmorAnnotations(dk.LogMonitoring().Template().Annotations)
+	annotations := k8ssecuritycontext.RemoveAppArmorAnnotation(dk.LogMonitoring().Template().Annotations, containerName, initContainerName)
 
 	return configsecret.AddAnnotations(annotations, *dk)
 }

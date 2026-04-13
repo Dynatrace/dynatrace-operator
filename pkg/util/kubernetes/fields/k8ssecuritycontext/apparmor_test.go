@@ -76,40 +76,47 @@ func TestGetAppArmorProfile(t *testing.T) {
 
 func TestRemoveAppArmorAnnotations(t *testing.T) {
 	tests := []struct {
-		name         string
-		minorVersion int
-		annotations  map[string]string
-		want         map[string]string
+		name           string
+		minorVersion   int
+		annotations    map[string]string
+		containerNames []string
+		want           map[string]string
 	}{
 		{
-			name:         "version too old",
-			minorVersion: 30,
-			annotations: map[string]string{
+			"version too old",
+			30,
+			map[string]string{
 				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
 			},
-			want: map[string]string{
+			[]string{containerName},
+			map[string]string{
 				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
 			},
 		},
 		{
-			name:         "no matching keys",
-			minorVersion: 31,
-			annotations: map[string]string{
+			"no matching keys",
+			31,
+			map[string]string{
 				"foo": "bar",
+				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + "foo": corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
 			},
-			want: map[string]string{
+			[]string{containerName},
+			map[string]string{
 				"foo": "bar",
+				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + "foo": corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
 			},
 		},
 		{
-			name:         "matching keys",
-			minorVersion: 31,
-			annotations: map[string]string{
+			"matching keys",
+			31,
+			map[string]string{
 				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + "foo": corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
 				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + "bar": corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
 				"foo": corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
 			},
-			want: map[string]string{
+			[]string{"foo"},
+			map[string]string{
+				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + "bar": corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
 				"foo": corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
 			},
 		},
@@ -117,7 +124,7 @@ func TestRemoveAppArmorAnnotations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Cleanup(version.DisableCacheForTest(tt.minorVersion))
-			got := RemoveAppArmorAnnotations(tt.annotations)
+			got := RemoveAppArmorAnnotation(tt.annotations, tt.containerNames...)
 			assert.Equal(t, tt.want, got)
 		})
 	}

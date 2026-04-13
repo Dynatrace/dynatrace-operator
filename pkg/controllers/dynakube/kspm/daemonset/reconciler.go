@@ -77,7 +77,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 
 	labels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KSPMComponentLabel)
 	templateAnnotations := map[string]string{tokenSecretHashAnnotation: dk.KSPM().TokenSecretHash}
-	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotations(dk.KSPM().Annotations))
+	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(dk.KSPM().Annotations, containerName))
 
 	affinity := k8saffinity.NewAMDOnlyNodeAffinity()
 	if dk.KSPM().NodeAffinity != nil {

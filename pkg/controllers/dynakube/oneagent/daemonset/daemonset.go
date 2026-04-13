@@ -173,7 +173,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		annotationEnableDaemonSetEviction: "false",
 	}
 
-	templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotations(maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations))
+	templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations), containerName, initContainerName)
 
 	result := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{

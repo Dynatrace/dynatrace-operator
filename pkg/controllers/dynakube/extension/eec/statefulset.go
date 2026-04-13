@@ -153,7 +153,7 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 	}
 
 	templateAnnotations := make(map[string]string)
-	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotations(r.dk.Spec.Templates.ExtensionExecutionController.Annotations))
+	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(r.dk.Spec.Templates.ExtensionExecutionController.Annotations, containerName))
 
 	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
 	if err != nil {

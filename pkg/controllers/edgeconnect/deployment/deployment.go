@@ -35,7 +35,7 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	log.Debug("EdgeConnect deployment app labels", "labels", labels)
 
 	annotations := maputils.MergeMap(buildContainerAnnotations(), ec.Spec.Annotations)
-	annotations = k8ssecuritycontext.RemoveAppArmorAnnotations(annotations)
+	annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(annotations, consts.EdgeConnectContainerName)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
