@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -19,12 +19,16 @@ import (
 )
 
 func BuildSettingsClient(secretConfig tenant.Secret) (dtsettings.APIClient, error) {
-	dtClient, err := dtclient.NewClient(secretConfig.APIURL, secretConfig.APIToken, "", dtclient.SkipCertificateValidation(false))
+	dtClient, err := dynatrace.NewClientV2(
+		dynatrace.WithBaseURL(secretConfig.APIURL),
+		dynatrace.WithAPIToken(secretConfig.APIToken),
+		dynatrace.WithPaasToken(""),
+		dynatrace.WithSkipCertificateValidation(false))
 	if err != nil {
 		return nil, err
 	}
 
-	return dtClient.AsV2().Settings, nil
+	return dtClient.Settings, nil
 }
 
 func CheckKSPMSettingsExistOnTenant(secretConfig tenant.Secret, dk *dynakube.DynaKube) features.Func {

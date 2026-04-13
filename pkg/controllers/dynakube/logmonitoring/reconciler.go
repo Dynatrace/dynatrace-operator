@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -43,10 +43,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtc dtclient.Client, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtc *dynatrace.ClientV2, dk *dynakube.DynaKube) error {
 	oaConnectionInfoReconciler := r.oneAgentConnectionInfoReconciler
 	if oaConnectionInfoReconciler == nil {
-		oaConnectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtc.AsV2().OneAgent, dk)
+		oaConnectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtc.OneAgent, dk)
 	}
 
 	err := oaConnectionInfoReconciler.Reconcile(ctx)
@@ -64,7 +64,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtclient.Client, dk *dyn
 		return err
 	}
 
-	err = r.logmonsettingsReconciler.Reconcile(ctx, dtc.AsV2().Settings, dk)
+	err = r.logmonsettingsReconciler.Reconcile(ctx, dtc.Settings, dk)
 	if err != nil {
 		return err
 	}

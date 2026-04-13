@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,7 +14,7 @@ type BuilderV2 interface {
 	SetDynakube(dk dynakube.DynaKube) BuilderV2
 	SetTokens(tokens token.Tokens) BuilderV2
 	SetUserAgentSuffix(suffix string) BuilderV2
-	Build(ctx context.Context) (*dtclient.ClientV2, error)
+	Build(ctx context.Context) (*dynatrace.ClientV2, error)
 }
 
 type builderV2 struct {
@@ -57,7 +57,7 @@ func (dynatraceClientBuilder builderV2) getTokens() token.Tokens {
 }
 
 // Build creates a new Dynatrace client using the settings configured on the given instance.
-func (dynatraceClientBuilder builderV2) Build(ctx context.Context) (*dtclient.ClientV2, error) {
+func (dynatraceClientBuilder builderV2) Build(ctx context.Context) (*dynatrace.ClientV2, error) {
 	namespace := dynatraceClientBuilder.dk.Namespace
 	apiReader := dynatraceClientBuilder.apiReader
 
@@ -91,11 +91,11 @@ func (dynatraceClientBuilder builderV2) Build(ctx context.Context) (*dtclient.Cl
 		paasToken = apiToken
 	}
 
-	opts.Opts = append(opts.Opts, dtclient.WithBaseURL(dynatraceClientBuilder.dk.Spec.APIURL))
-	opts.Opts = append(opts.Opts, dtclient.WithUserAgentSuffix(dynatraceClientBuilder.userAgentSuffix))
+	opts.Opts = append(opts.Opts, dynatrace.WithBaseURL(dynatraceClientBuilder.dk.Spec.APIURL))
+	opts.Opts = append(opts.Opts, dynatrace.WithUserAgentSuffix(dynatraceClientBuilder.userAgentSuffix))
 
-	opts.Opts = append(opts.Opts, dtclient.WithAPIToken(apiToken))
-	opts.Opts = append(opts.Opts, dtclient.WithPaasToken(paasToken))
+	opts.Opts = append(opts.Opts, dynatrace.WithAPIToken(apiToken))
+	opts.Opts = append(opts.Opts, dynatrace.WithPaasToken(paasToken))
 
-	return dtclient.NewClientV2(opts.Opts...)
+	return dynatrace.NewClientV2(opts.Opts...)
 }

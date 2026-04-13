@@ -34,13 +34,13 @@ type Reconciler struct {
 	versionReconciler         version.Reconciler
 	connectionInfoReconciler  controllers.Reconciler
 	enrichmentRulesReconciler controllers.Reconciler
-	dynatraceClient           dynatrace.Client
+	dynatraceClient           *dynatrace.ClientV2
 }
 
 type ReconcilerBuilder func(
 	client client.Client,
 	apiReader client.Reader,
-	dynatraceClient dynatrace.Client,
+	dynatraceClient *dynatrace.ClientV2,
 	dk *dynakube.DynaKube,
 ) controllers.Reconciler
 
@@ -48,7 +48,7 @@ type ReconcilerBuilder func(
 func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
-	dynatraceClient dynatrace.Client,
+	dynatraceClient *dynatrace.ClientV2,
 	dk *dynakube.DynaKube,
 ) controllers.Reconciler {
 	return &Reconciler{
@@ -57,9 +57,9 @@ func NewReconciler(
 		dk:                        dk,
 		dynatraceClient:           dynatraceClient,
 		istioReconciler:           istio.NewReconciler(client, apiReader),
-		versionReconciler:         version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
-		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient.AsV2().OneAgent, dk),
-		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient.AsV2().Settings, dk),
+		versionReconciler:         version.NewReconciler(apiReader, dynatraceClient.Version, timeprovider.New().Freeze()),
+		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient.OneAgent, dk),
+		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient.Settings, dk),
 	}
 }
 
@@ -179,7 +179,7 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
 }
 
 func (r *Reconciler) generateInitSecret(ctx context.Context, namespaces []corev1.Namespace) error {
-	err := bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient.AsV2().OneAgent).GenerateForDynakube(ctx, r.dk, namespaces)
+	err := bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient.OneAgent).GenerateForDynakube(ctx, r.dk, namespaces)
 	if err != nil {
 		if k8sconditions.IsKubeAPIError(err) {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), codeModulesInjectionConditionType, err)

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (controller *Controller) reconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, dtc dynatrace.Client) error {
+func (controller *Controller) reconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, dtc *dynatrace.ClientV2) error {
 	err := controller.activeGateReconciler.Reconcile(ctx, dk, dtc, controller.tokens)
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")

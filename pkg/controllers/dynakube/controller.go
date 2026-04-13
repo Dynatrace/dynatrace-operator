@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
@@ -82,7 +82,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		config:                 config,
 		operatorNamespace:      os.Getenv(k8senv.PodNamespace),
 		clusterID:              clusterID,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
+		dynatraceClientBuilder: dynatraceclient.NewBuilderV2(apiReader),
 
 		injectionReconcilerBuilder: injection.NewReconciler,
 
@@ -133,15 +133,15 @@ type dtSettingReconciler interface {
 }
 
 type logMonitoringReconciler interface {
-	Reconcile(ctx context.Context, dtc dtclient.Client, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtc *dynatrace.ClientV2, dk *dynakube.DynaKube) error
 }
 
 type oneAgentReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.ClientV2, tokens token.Tokens) error
 }
 
 type activeGateReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.ClientV2, tokens token.Tokens) error
 }
 
 type kspmReconciler interface {
@@ -167,7 +167,7 @@ type Controller struct {
 	oneAgentReconciler           oneAgentReconciler
 	activeGateReconciler         activeGateReconciler
 
-	dynatraceClientBuilder dynatraceclient.Builder
+	dynatraceClientBuilder dynatraceclient.BuilderV2
 	config                 *rest.Config
 
 	injectionReconcilerBuilder injection.ReconcilerBuilder
@@ -320,7 +320,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 	return controller.reconcileComponents(ctx, dynatraceClient, dk)
 }
 
-func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakube.DynaKube) (dtclient.Client, error) {
+func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.ClientV2, error) {
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)
@@ -343,7 +343,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 		return nil, err
 	}
 
-	err = controller.verifyTokens(ctx, dynatraceClient, dk)
+	err = controller.verifyTokens(ctx, dynatraceClient.Token, dk)
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
@@ -355,10 +355,10 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient *dynatrace.ClientV2, dk *dynakube.DynaKube) error {
 	var componentErrors []error
 
-	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.Settings, dk); err != nil {
 		componentErrors = append(componentErrors, err)
 	}
 
@@ -387,7 +387,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling KSPM")
 
-	if err := controller.kspmReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
+	if err := controller.kspmReconciler.Reconcile(ctx, dynatraceClient.Settings, dk); err != nil {
 		log.Info("could not reconcile kspm")
 
 		componentErrors = append(componentErrors, err)
@@ -456,7 +456,7 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	return &dkMapper
 }
 
-func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
 	err := controller.tokens.VerifyValues()
 	if err != nil {
 		return err
@@ -470,7 +470,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient 
 	return nil
 }
 
-func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
 	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",

@@ -28,7 +28,7 @@ import (
 type Controller struct {
 	client                 client.Client
 	apiReader              client.Reader
-	dynatraceClientBuilder dynatraceclient.Builder
+	dynatraceClientBuilder dynatraceclient.BuilderV2
 	timeProvider           *timeprovider.Provider
 	podNamespace           string
 	runLocal               bool
@@ -49,7 +49,7 @@ func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
 		client:                 mgr.GetClient(),
 		apiReader:              mgr.GetAPIReader(),
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
+		dynatraceClientBuilder: dynatraceclient.NewBuilderV2(mgr.GetAPIReader()),
 		runLocal:               system.IsRunLocally(),
 		podNamespace:           os.Getenv(k8senv.PodNamespace),
 		timeProvider:           timeprovider.New(),
@@ -60,7 +60,7 @@ func NewControllerFromClient(clt client.Client) *Controller {
 	return &Controller{
 		client:                 clt,
 		apiReader:              clt,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(clt),
+		dynatraceClientBuilder: dynatraceclient.NewBuilderV2(clt),
 		runLocal:               system.IsRunLocally(),
 		podNamespace:           os.Getenv(k8senv.PodNamespace),
 		timeProvider:           timeprovider.New(),
@@ -186,7 +186,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	hostEventClient := dynatraceClient.AsV2().HostEvent
+	hostEventClient := dynatraceClient.HostEvent
 
 	entityID, err := hostEventClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {
