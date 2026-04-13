@@ -73,8 +73,6 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 		return emptyPatch
 	}
 
-	wh.recorder.Setup(mutationRequest)
-
 	originalPod := mutationRequest.Pod.DeepCopy()
 
 	var handlerErr error
