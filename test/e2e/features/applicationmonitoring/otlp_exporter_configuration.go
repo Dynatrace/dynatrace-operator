@@ -196,7 +196,7 @@ func assertOTLPEnvVarsPresent(t *testing.T, pod *corev1.Pod, expectedBase string
 		require.NotNil(t, tokenEnv.ValueFrom)
 		require.NotNil(t, tokenEnv.ValueFrom.SecretKeyRef)
 		assert.Equal(t, consts.OTLPExporterSecretName, tokenEnv.ValueFrom.SecretKeyRef.Name)
-		assert.Equal(t, token.DataIngestToken, tokenEnv.ValueFrom.SecretKeyRef.Key)
+		assert.Equal(t, token.DataIngestKey, tokenEnv.ValueFrom.SecretKeyRef.Key)
 	}
 }
 

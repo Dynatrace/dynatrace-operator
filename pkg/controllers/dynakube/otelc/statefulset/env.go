@@ -107,7 +107,7 @@ func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
 			corev1.EnvVar{Name: otelcConsts.EnvDataIngestToken, ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-					Key:                  token.DataIngestToken,
+					Key:                  token.DataIngestKey,
 				},
 			}},
 		)

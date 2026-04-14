@@ -27,8 +27,8 @@ func TestBuildDynatraceClientV2(t *testing.T) {
 		dynatraceClientBuilder := builderV2{
 			apiReader: fakeClient,
 			tokens: map[string]*token.Token{
-				token.APIToken:  {Value: testValue},
-				token.PaasToken: {Value: testValueAlternative},
+				token.APIKey:  {Value: testValue},
+				token.PaaSKey: {Value: testValueAlternative},
 			},
 			dk: *dk,
 		}
@@ -55,8 +55,8 @@ func TestBuildDynatraceClientV2(t *testing.T) {
 			apiReader: fakeClient,
 			tokens: map[string]*token.Token{
 				// Simulate missing values
-				token.APIToken:  {Value: ""},
-				token.PaasToken: {Value: ""},
+				token.APIKey:  {Value: ""},
+				token.PaaSKey: {Value: ""},
 			},
 			dk: *dk,
 		}
@@ -89,8 +89,8 @@ func TestBuildDynatraceClientV2(t *testing.T) {
 		dynatraceClientBuilder := builderV2{
 			apiReader: fakeClient,
 			tokens: map[string]*token.Token{
-				token.APIToken:  {Value: testValue},
-				token.PaasToken: {Value: testValueAlternative},
+				token.APIKey:  {Value: testValue},
+				token.PaaSKey: {Value: testValueAlternative},
 			},
 			dk: *dk,
 		}
@@ -113,8 +113,8 @@ func TestBuildDynatraceClientV2(t *testing.T) {
 		dtf := builderV2{
 			apiReader: fakeClient,
 			tokens: map[string]*token.Token{
-				token.APIToken:  {Value: testValue},
-				token.PaasToken: {Value: testValueAlternative},
+				token.APIKey:  {Value: testValue},
+				token.PaaSKey: {Value: testValueAlternative},
 			},
 			dk: *dk,
 		}

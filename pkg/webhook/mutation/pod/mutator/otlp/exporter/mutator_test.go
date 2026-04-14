@@ -783,7 +783,7 @@ func assertTokenEnvVarIsSet(t *testing.T, containerEnvVars []corev1.EnvVar) {
 	require.NotNil(t, dtTokenVar.ValueFrom)
 	require.NotNil(t, dtTokenVar.ValueFrom.SecretKeyRef)
 	assert.Equal(t, consts.OTLPExporterSecretName, dtTokenVar.ValueFrom.SecretKeyRef.Name)
-	assert.Equal(t, token.DataIngestToken, dtTokenVar.ValueFrom.SecretKeyRef.Key)
+	assert.Equal(t, token.DataIngestKey, dtTokenVar.ValueFrom.SecretKeyRef.Key)
 }
 
 func TestMutator_Reinvoke(t *testing.T) {

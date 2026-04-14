@@ -101,9 +101,9 @@ func checkIfDynatraceAPISecretHasAPIToken(ctx context.Context, baseLog logd.Logg
 		return nil, errors.Wrapf(err, "'%s:%s' secret is missing or invalid", dk.Namespace, dk.Tokens())
 	}
 
-	_, hasAPIToken := tokens[token.APIToken]
+	_, hasAPIToken := tokens[token.APIKey]
 	if !hasAPIToken {
-		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", token.APIToken, dk.Namespace, dk.Tokens()))
+		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", token.APIKey, dk.Namespace, dk.Tokens()))
 	}
 
 	logInfof(log, "secret token 'apiToken' exists")

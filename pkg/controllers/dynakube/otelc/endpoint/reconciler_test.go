@@ -37,7 +37,7 @@ func TestConfigMapCreation(t *testing.T) {
 		dk := createDynaKube(true)
 
 		testConfigMap, err := k8sconfigmap.Build(&dk, dk.Name, map[string]string{
-			token.APIToken: testAPIToken,
+			token.APIKey: testAPIToken,
 		})
 		require.NoError(t, err)
 

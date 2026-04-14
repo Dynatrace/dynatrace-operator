@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	PaasToken       = "paasToken"
-	APIToken        = "apiToken"
-	DataIngestToken = "dataIngestToken"
+	PaaSKey       = "paasToken"
+	APIKey        = "apiToken"
+	DataIngestKey = "dataIngestToken"
 )
 
 type VerificationError struct {
@@ -28,15 +28,15 @@ func (v VerificationError) Error() string {
 type Tokens map[string]*Token
 
 func (tokens Tokens) APIToken() *Token {
-	return tokens.getToken(APIToken)
+	return tokens.getToken(APIKey)
 }
 
 func (tokens Tokens) PaasToken() *Token {
-	return tokens.getToken(PaasToken)
+	return tokens.getToken(PaaSKey)
 }
 
 func (tokens Tokens) DataIngestToken() *Token {
-	return tokens.getToken(DataIngestToken)
+	return tokens.getToken(DataIngestKey)
 }
 
 func (tokens Tokens) getToken(tokenName string) *Token {
@@ -49,15 +49,15 @@ func (tokens Tokens) getToken(tokenName string) *Token {
 }
 
 func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
-	_, hasPaasToken := tokens[PaasToken]
+	_, hasPaasToken := tokens[PaaSKey]
 
 	for _, token := range tokens {
 		switch token.Type {
-		case APIToken:
+		case APIKey:
 			token.addFeatures(getFeaturesForAPIToken(hasPaasToken))
-		case PaasToken:
+		case PaaSKey:
 			token.addFeatures(getFeaturesForPaaSToken())
-		case DataIngestToken:
+		case DataIngestKey:
 			token.addFeatures(getFeaturesForDataIngest())
 		}
 	}
@@ -129,7 +129,7 @@ func concatErrors(errs []error) error {
 }
 
 func CheckForDataIngestToken(tokens Tokens) bool {
-	dataIngestToken, hasDataIngestToken := tokens[DataIngestToken]
+	dataIngestToken, hasDataIngestToken := tokens[DataIngestKey]
 
 	return hasDataIngestToken && len(dataIngestToken.Value) != 0
 }

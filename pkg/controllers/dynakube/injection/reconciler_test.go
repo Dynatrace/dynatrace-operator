@@ -117,9 +117,9 @@ func TestReconciler(t *testing.T) {
 			clientNotInjectedNamespace(testNamespace, testDynakube),
 			clientNotInjectedNamespace(testNamespace2, testDynakube2),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				token.APIToken:        []byte(testAPIToken),
-				token.PaasToken:       []byte(testPaasToken),
-				token.DataIngestToken: []byte(testDataIngestToken),
+				token.APIKey:        []byte(testAPIToken),
+				token.PaaSKey:       []byte(testPaasToken),
+				token.DataIngestKey: []byte(testDataIngestToken),
 			}),
 			dk,
 		)
@@ -174,8 +174,8 @@ func TestReconciler(t *testing.T) {
 			clientSecret(consts.OTLPExporterSecretName, testNamespace, nil),
 			clientSecret(consts.OTLPExporterSecretName, testNamespace2, nil),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				token.APIToken:  []byte(testAPIToken),
-				token.PaasToken: []byte(testPaasToken),
+				token.APIKey:  []byte(testAPIToken),
+				token.PaaSKey: []byte(testPaasToken),
 			}),
 			dk,
 		)
@@ -386,8 +386,8 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 	}
 
 	tokenSecret := clientSecret(dkBase.Name, dkBase.Namespace, map[string][]byte{
-		token.APIToken:  []byte("testAPIToken"),
-		token.PaasToken: []byte("testPaasToken"),
+		token.APIKey:  []byte("testAPIToken"),
+		token.PaaSKey: []byte("testPaasToken"),
 	})
 
 	tenantSecret := clientSecret(dkBase.OneAgent().GetTenantSecret(), dkBase.Namespace, map[string][]byte{
@@ -449,8 +449,8 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 	}
 
 	tokenSecret := clientSecret(dkBase.Name, dkBase.Namespace, map[string][]byte{
-		token.APIToken:  []byte(testAPIToken),
-		token.PaasToken: []byte(testPaasToken),
+		token.APIKey:  []byte(testAPIToken),
+		token.PaaSKey: []byte(testPaasToken),
 	})
 
 	tenantSecret := clientSecret(dkBase.OneAgent().GetTenantSecret(), dkBase.Namespace, map[string][]byte{
@@ -538,9 +538,9 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 	}
 
 	tokenSecret := clientSecret(dkBase.Name, dkBase.Namespace, map[string][]byte{
-		token.APIToken:        []byte(testAPIToken),
-		token.PaasToken:       []byte(testPaasToken),
-		token.DataIngestToken: []byte(testDataIngestToken),
+		token.APIKey:        []byte(testAPIToken),
+		token.PaaSKey:       []byte(testPaasToken),
+		token.DataIngestKey: []byte(testDataIngestToken),
 	})
 
 	tenantSecret := clientSecret(dkBase.OneAgent().GetTenantSecret(), dkBase.Namespace, map[string][]byte{
@@ -707,8 +707,8 @@ func clientOneAgentInjection() client.Client {
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientInjectedNamespace(testNamespace2, testDynakube2),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			token.APIToken:  []byte(testAPIToken),
-			token.PaasToken: []byte(testPaasToken),
+			token.APIKey:  []byte(testAPIToken),
+			token.PaaSKey: []byte(testPaasToken),
 		}),
 	)
 }
@@ -718,9 +718,9 @@ func clientEnrichmentInjection() client.Client {
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientInjectedNamespace(testNamespace2, testDynakube2),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			token.APIToken:        []byte(testAPIToken),
-			token.PaasToken:       []byte(testPaasToken),
-			token.DataIngestToken: []byte(testDataIngestToken),
+			token.APIKey:        []byte(testAPIToken),
+			token.PaaSKey:       []byte(testPaasToken),
+			token.DataIngestKey: []byte(testDataIngestToken),
 		}),
 	)
 }

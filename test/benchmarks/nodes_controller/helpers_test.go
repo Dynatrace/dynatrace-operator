@@ -93,7 +93,7 @@ func createSecret(tb testing.TB, clt client.Client, index int) *corev1.Secret {
 			Namespace: testNamespace,
 		},
 		Data: map[string][]byte{
-			token.APIToken: []byte(testAPIToken),
+			token.APIKey: []byte(testAPIToken),
 		},
 	}
 

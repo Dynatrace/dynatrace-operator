@@ -51,7 +51,7 @@ func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dyn
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if dataIngestToken, ok := tokens.Data[token.DataIngestToken]; ok {
+	if dataIngestToken, ok := tokens.Data[token.DataIngestKey]; ok {
 		fields[MetricsTokenSecretField] = string(dataIngestToken)
 	} else {
 		log.Info("data ingest token not found in secret", "dk", dk.Name)

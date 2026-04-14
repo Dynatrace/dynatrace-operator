@@ -406,7 +406,7 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{
-			token.APIToken: []byte("this is a token"),
+			token.APIKey: []byte("this is a token"),
 		},
 	}
 }

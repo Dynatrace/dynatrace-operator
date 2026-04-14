@@ -34,7 +34,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			token.APIToken: &token.Token{Value: testValue},
+			token.APIKey: &token.Token{Value: testValue},
 		})
 
 		require.NoError(t, err)
@@ -62,7 +62,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fake.NewClient(), fakeErrorClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			token.APIToken: &token.Token{Value: testValue},
+			token.APIKey: &token.Token{Value: testValue},
 		})
 		require.ErrorIs(t, err, expectErr)
 	})
@@ -80,7 +80,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			token.APIToken: &token.Token{Value: testValue},
+			token.APIKey: &token.Token{Value: testValue},
 		})
 		require.Error(t, err)
 	})
@@ -96,7 +96,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeErrorClient, fakeClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			token.APIToken: &token.Token{Value: testValue},
+			token.APIKey: &token.Token{Value: testValue},
 		})
 		require.ErrorIs(t, err, expectErr)
 	})
@@ -121,7 +121,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			token.APIToken: &token.Token{Value: testValue},
+			token.APIKey: &token.Token{Value: testValue},
 		})
 
 		require.NoError(t, err)
@@ -143,7 +143,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{
-			token.APIToken: &token.Token{Value: testValue},
+			token.APIKey: &token.Token{Value: testValue},
 		}
 
 		r := NewReconciler(fakeClient, fakeClient)
@@ -183,7 +183,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{
-			token.APIToken: &token.Token{Value: testValue},
+			token.APIKey: &token.Token{Value: testValue},
 		}
 
 		r := NewReconciler(fakeClient, fakeClient)
@@ -219,7 +219,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{
-			token.APIToken: &token.Token{Value: testValue},
+			token.APIKey: &token.Token{Value: testValue},
 		}
 
 		r := NewReconciler(fakeClient, fakeClient)

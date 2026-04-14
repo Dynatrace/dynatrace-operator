@@ -65,8 +65,8 @@ func TestNoProxyConsistency(t *testing.T) {
 
 func createClient(t *testing.T, dk *dynakube.DynaKube) client.WithWatch {
 	testTokensSecret, err := k8ssecret.Build(dk, dk.Name, map[string][]byte{
-		token.APIToken:        []byte(testToken),
-		token.DataIngestToken: []byte(testToken),
+		token.APIKey:        []byte(testToken),
+		token.DataIngestKey: []byte(testToken),
 	})
 	require.NoError(t, err)
 

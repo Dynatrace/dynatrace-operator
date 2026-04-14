@@ -113,7 +113,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: consts.OTLPExporterSecretName,
 				},
-				Key: token.DataIngestToken,
+				Key: token.DataIngestKey,
 			},
 		},
 	}

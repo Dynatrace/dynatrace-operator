@@ -112,7 +112,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: otelcConsts.EnvDataIngestToken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-				Key:                  token.DataIngestToken,
+				Key:                  token.DataIngestKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 	})

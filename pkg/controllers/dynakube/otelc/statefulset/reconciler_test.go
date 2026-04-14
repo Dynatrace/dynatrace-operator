@@ -524,8 +524,8 @@ func getTokens(name string, namespace string) corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			token.APIToken:        []byte("test"),
-			token.DataIngestToken: []byte("test"),
+			token.APIKey:        []byte("test"),
+			token.DataIngestKey: []byte("test"),
 		},
 	}
 }

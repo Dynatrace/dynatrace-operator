@@ -49,7 +49,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 	r := &Reconciler{}
 
 	data, err := r.generateData(dk, token.Tokens{
-		token.PaasToken: &token.Token{Value: testPaasToken},
+		token.PaaSKey: &token.Token{Value: testPaasToken},
 	})
 
 	require.NoError(t, err)

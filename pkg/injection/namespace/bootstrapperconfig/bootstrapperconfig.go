@@ -257,7 +257,7 @@ func (s *SecretGenerator) prepareDownloadConfig(ctx context.Context, dk *dynakub
 
 	downloadConfigJSON := download.Config{
 		URL:           dk.Spec.APIURL,
-		APIToken:      string(tokens.Data[token.APIToken]),
+		APIToken:      string(tokens.Data[token.APIKey]),
 		NoProxy:       dk.FF().GetNoProxy(),
 		NetworkZone:   dk.Spec.NetworkZone,
 		HostGroup:     dk.OneAgent().GetHostGroup(),

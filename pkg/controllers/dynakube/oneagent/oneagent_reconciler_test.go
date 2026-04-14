@@ -763,6 +763,6 @@ func createVersionReconcilerMock(t *testing.T) versionReconciler {
 
 func createTokens() token.Tokens {
 	return token.Tokens{
-		token.APIToken: &token.Token{Value: "sdfsdf"},
+		token.APIKey: &token.Token{Value: "sdfsdf"},
 	}
 }
