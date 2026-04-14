@@ -165,16 +165,50 @@ secrets:
 			Name:            "test",
 			APIEndpointHost: "test",
 			OAuth: config.OAuth{
+				Endpoint:     "endpoint",
+				ClientID:     "id",
 				ClientSecret: "super secret",
+				Resource:     "resource",
+			},
+			RestrictHostsTo:      []string{"host"},
+			RootCertificatePaths: []string{"path"},
+			Proxy: config.Proxy{
+				Server:     "server",
+				Exceptions: "exception",
+				Port:       2,
+				Auth: config.Auth{
+					User:     "user",
+					Password: "password",
+				},
+			},
+			Secrets: []config.Secret{
+				{
+					Name:            "secret",
+					Token:           "token",
+					FromFile:        "file",
+					RestrictHostsTo: []string{"hosts"},
+				},
 			},
 		}
 		expected := `name: test
 api_endpoint_host: test
 oauth:
-    endpoint: ""
-    client_id: ""
-    client_secret: '****'
-    resource: ""
+    endpoint: endpoint
+    client_id: id
+    resource: resource
+restrict_hosts_to:
+    - host
+root_certificate_paths:
+    - path
+proxy:
+    user: user
+    server: server
+    exceptions: exception
+    port: 2
+secrets:
+    - name: secret
+      restrict_hosts_to:
+        - hosts
 `
 		assert.Equal(t, expected, safeEdgeConnectCfg(cfg))
 	})
