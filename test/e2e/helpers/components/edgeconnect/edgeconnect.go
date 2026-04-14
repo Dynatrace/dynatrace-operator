@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2/clientcredentials"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -141,18 +142,20 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 
 func BuildClient(secret tenant.EdgeConnectSecret) (edgeconnectClient.APIClient, error) {
 	oAuthClient, err := dynatrace.NewOAuthClient(
-		"https://"+secret.APIServer,
-		dynatrace.WithClientID(secret.OauthClientID),
-		dynatrace.WithClientSecret(secret.OauthClientSecret),
-		dynatrace.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		dynatrace.WithOAuthScopes([]string{
-			"app-engine:edge-connects:read",
-			"app-engine:edge-connects:write",
-			"app-engine:edge-connects:delete",
-			"oauth2:clients:manage",
-			"settings:objects:read",
-			"settings:objects:write",
-		}),
+		clientcredentials.Config{
+			ClientID:     secret.OauthClientID,
+			ClientSecret: secret.OauthClientSecret,
+			TokenURL:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+			Scopes: []string{
+				"app-engine:edge-connects:read",
+				"app-engine:edge-connects:write",
+				"app-engine:edge-connects:delete",
+				"oauth2:clients:manage",
+				"settings:objects:read",
+				"settings:objects:write",
+			},
+		},
+		dynatrace.WithBaseURL("https://"+secret.APIServer),
 		// Disable keep-alive to prevent dropped network packets in GitHub Actions environment
 		dynatrace.WithKeepAlive(false),
 	)

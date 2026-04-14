@@ -11,11 +11,12 @@ import (
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 func TestNewClientV2(t *testing.T) {
 	t.Run("creates client with all sub-clients initialized", func(t *testing.T) {
-		client, err := NewClientV2("https://aabb.test.com/api")
+		client, err := NewClientV2(WithBaseURL("https://aabb.test.com/api"))
 		require.NoError(t, err)
 		require.NotNil(t, client)
 		assert.NotNil(t, client.Settings)
@@ -26,26 +27,14 @@ func TestNewClientV2(t *testing.T) {
 		assert.NotNil(t, client.Token)
 	})
 
-	t.Run("appends /api when path does not end with /api", func(t *testing.T) {
-		client, err := NewClientV2("https://aabb.test.com")
-		require.NoError(t, err)
-		require.NotNil(t, client)
-	})
-
-	t.Run("does not duplicate /api when URL already ends with /api", func(t *testing.T) {
-		client, err := NewClientV2("https://aabb.test.com/api")
-		require.NoError(t, err)
-		require.NotNil(t, client)
-	})
-
 	t.Run("returns error on invalid URL", func(t *testing.T) {
-		_, err := NewClientV2("://invalid-url")
+		_, err := NewClientV2(WithBaseURL("://invalid-url"))
 		require.Error(t, err)
 	})
 
 	t.Run("applies WithAPIToken option", func(t *testing.T) {
-		client, err := NewClientV2(
-			"https://aabb.test.com/api",
+		client, err := NewClientV2(WithBaseURL(
+			"https://aabb.test.com/api"),
 			WithAPIToken("my-api-token"),
 		)
 		require.NoError(t, err)
@@ -53,8 +42,8 @@ func TestNewClientV2(t *testing.T) {
 	})
 
 	t.Run("applies WithPaasToken option", func(t *testing.T) {
-		client, err := NewClientV2(
-			"https://aabb.test.com/api",
+		client, err := NewClientV2(WithBaseURL(
+			"https://aabb.test.com/api"),
 			WithPaasToken("my-paas-token"),
 		)
 		require.NoError(t, err)
@@ -62,8 +51,8 @@ func TestNewClientV2(t *testing.T) {
 	})
 
 	t.Run("applies WithNetworkZone option", func(t *testing.T) {
-		client, err := NewClientV2(
-			"https://aabb.test.com/api",
+		client, err := NewClientV2(WithBaseURL(
+			"https://aabb.test.com/api"),
 			WithNetworkZone("eu-west"),
 		)
 		require.NoError(t, err)
@@ -71,8 +60,8 @@ func TestNewClientV2(t *testing.T) {
 	})
 
 	t.Run("applies WithHostGroup option", func(t *testing.T) {
-		client, err := NewClientV2(
-			"https://aabb.test.com/api",
+		client, err := NewClientV2(WithBaseURL(
+			"https://aabb.test.com/api"),
 			WithHostGroup("group-a"),
 		)
 		require.NoError(t, err)
@@ -80,8 +69,8 @@ func TestNewClientV2(t *testing.T) {
 	})
 
 	t.Run("applies WithUserAgentSuffix option", func(t *testing.T) {
-		client, err := NewClientV2(
-			"https://aabb.test.com/api",
+		client, err := NewClientV2(WithBaseURL(
+			"https://aabb.test.com/api"),
 			WithUserAgentSuffix("my-suffix"),
 		)
 		require.NoError(t, err)
@@ -90,7 +79,7 @@ func TestNewClientV2(t *testing.T) {
 
 	t.Run("WithUserAgentSuffix empty suffix is no-op", func(t *testing.T) {
 		client, err := NewClientV2(
-			"https://aabb.test.com/api",
+			WithBaseURL("https://aabb.test.com/api"),
 			WithUserAgentSuffix(""),
 		)
 		require.NoError(t, err)
@@ -100,7 +89,7 @@ func TestNewClientV2(t *testing.T) {
 	t.Run("returns error when HTTP option fails", func(t *testing.T) {
 		bad := badTransportHTTPClient()
 		_, err := NewClientV2(
-			"https://aabb.test.com/api",
+			WithBaseURL("https://aabb.test.com/api"),
 			WithHTTPClient(bad),
 		)
 		require.Error(t, err)
@@ -108,7 +97,7 @@ func TestNewClientV2(t *testing.T) {
 
 	t.Run("applies multiple options", func(t *testing.T) {
 		client, err := NewClientV2(
-			"https://aabb.test.com/api",
+			WithBaseURL("https://aabb.test.com/api"),
 			WithAPIToken("token"),
 			WithPaasToken("paas"),
 			WithNetworkZone("zone"),
@@ -123,10 +112,12 @@ func TestNewClientV2(t *testing.T) {
 func TestNewOAuthClient(t *testing.T) {
 	t.Run("creates OAuth client successfully", func(t *testing.T) {
 		client, err := NewOAuthClient(
-			"https://aabb.test.com",
-			WithClientID("client-id"),
-			WithClientSecret("client-secret"),
-			WithTokenURL("https://sso.test.com/sso/oauth2/token"),
+			clientcredentials.Config{
+				ClientID:     "client-id",
+				ClientSecret: "client-secret",
+				TokenURL:     "https://sso.test.com/sso/oauth2/token",
+			},
+			WithBaseURL("https://aabb.test.com"),
 		)
 		require.NoError(t, err)
 		require.NotNil(t, client)
@@ -134,23 +125,15 @@ func TestNewOAuthClient(t *testing.T) {
 	})
 
 	t.Run("returns error on invalid URL", func(t *testing.T) {
-		_, err := NewOAuthClient("://bad-url")
+		_, err := NewOAuthClient(clientcredentials.Config{}, WithBaseURL("://bad-url"))
 		require.Error(t, err)
-	})
-
-	t.Run("applies WithOAuthScopes", func(t *testing.T) {
-		client, err := NewOAuthClient(
-			"https://aabb.test.com",
-			WithOAuthScopes([]string{"scope1", "scope2"}),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
 	})
 
 	t.Run("returns error when HTTP option fails", func(t *testing.T) {
 		bad := badTransportHTTPClient()
 		_, err := NewOAuthClient(
-			"https://aabb.test.com",
+			clientcredentials.Config{},
+			WithBaseURL("https://aabb.test.com"),
 			WithHTTPClient(bad),
 		)
 		require.Error(t, err)
@@ -185,6 +168,23 @@ func TestWithHostGroup(t *testing.T) {
 	assert.Equal(t, "hg", cfg.HostGroup)
 }
 
+func TestWithBaseURL(t *testing.T) {
+	t.Run("valid URL is parsed and stored", func(t *testing.T) {
+		cfg := &ConfigV2{}
+		opt := WithBaseURL("https://aabb.test.com")
+		require.NoError(t, opt(cfg))
+		require.NotNil(t, cfg.BaseURL)
+		assert.Equal(t, "https://aabb.test.com", cfg.BaseURL.String())
+	})
+
+	t.Run("invalid URL returns error", func(t *testing.T) {
+		cfg := &ConfigV2{}
+		err := WithBaseURL("://invalid-url")(cfg)
+		require.Error(t, err)
+		assert.Nil(t, cfg.BaseURL)
+	})
+}
+
 func TestWithV2UserAgentSuffix(t *testing.T) {
 	t.Run("appends suffix when non-empty", func(t *testing.T) {
 		cfg := &ConfigV2{UserAgent: "agent"}
@@ -197,31 +197,6 @@ func TestWithV2UserAgentSuffix(t *testing.T) {
 		require.NoError(t, WithUserAgentSuffix("")(cfg))
 		assert.Equal(t, "agent", cfg.UserAgent)
 	})
-}
-
-func TestWithClientID(t *testing.T) {
-	cfg := &ConfigV2{}
-	require.NoError(t, WithClientID("id")(cfg))
-	assert.Equal(t, "id", cfg.ClientID)
-}
-
-func TestWithClientSecret(t *testing.T) {
-	cfg := &ConfigV2{}
-	require.NoError(t, WithClientSecret("secret")(cfg))
-	assert.Equal(t, "secret", cfg.ClientSecret)
-}
-
-func TestWithTokenURL(t *testing.T) {
-	cfg := &ConfigV2{}
-	require.NoError(t, WithTokenURL("https://sso.example.com/token")(cfg))
-	assert.Equal(t, "https://sso.example.com/token", cfg.TokenURL)
-}
-
-func TestWithOAuthScopes(t *testing.T) {
-	cfg := &ConfigV2{}
-	scopes := []string{"scope1", "scope2"}
-	require.NoError(t, WithOAuthScopes(scopes)(cfg))
-	assert.Equal(t, scopes, cfg.Scopes)
 }
 
 func TestWithHTTPClientOption(t *testing.T) {
@@ -310,8 +285,6 @@ func TestGetConfig(t *testing.T) {
 
 	t.Run("with different options", func(t *testing.T) {
 		c, err := getConfig(
-			WithClientID("id"),
-			WithClientSecret("secret"),
 			WithAPIToken("apitoken"),
 			WithPaasToken("paastoken"),
 			WithNetworkZone("network"),
@@ -319,8 +292,6 @@ func TestGetConfig(t *testing.T) {
 			WithUserAgentSuffix("useragent"))
 
 		require.NoError(t, err)
-		assert.Equal(t, "id", c.ClientID)
-		assert.Equal(t, "secret", c.ClientSecret)
 		assert.Equal(t, "apitoken", c.APIToken)
 		assert.Equal(t, "paastoken", c.PaasToken)
 		assert.Equal(t, "network", c.NetworkZone)

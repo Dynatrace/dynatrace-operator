@@ -27,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2/clientcredentials"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -528,11 +529,13 @@ func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oaut
 		}
 
 		oAuthClients, err := dynatrace.NewOAuthClient(
-			"https://"+ec.Spec.APIServer,
-			dynatrace.WithClientID(oauthCredentials.clientID),
-			dynatrace.WithClientSecret(oauthCredentials.clientSecret),
-			dynatrace.WithTokenURL(ec.Spec.OAuth.Endpoint),
-			dynatrace.WithOAuthScopes(oauthScopes),
+			clientcredentials.Config{
+				ClientID:     oauthCredentials.clientID,
+				ClientSecret: oauthCredentials.clientSecret,
+				TokenURL:     ec.Spec.OAuth.Endpoint,
+				Scopes:       oauthScopes,
+			},
+			dynatrace.WithBaseURL("https://"+ec.Spec.APIServer),
 			dynatrace.WithCerts(customCA))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed tot create edge connect client")

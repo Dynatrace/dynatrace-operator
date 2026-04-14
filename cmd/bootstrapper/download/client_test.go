@@ -45,7 +45,7 @@ func TestNew(t *testing.T) {
 
 		require.NotNil(t, client.newInstaller)
 
-		dtClient, err := dtclient.NewClientV2("url", []dtclient.OptionV2{}...)
+		dtClient, err := dtclient.NewClientV2(dtclient.WithBaseURL("url"))
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -45,37 +44,31 @@ type ConfigV2 struct {
 	HostGroup   string
 	UserAgent   string
 
+	BaseURL           *url.URL
 	HTTPClient        *http.Client
 	TLSConfig         *tls.Config
 	Proxy             string
 	NoProxy           string
 	Timeout           time.Duration
 	DisableKeepAlives bool
-
-	clientcredentials.Config
 }
 
 // OptionV2 is a functional option for configuring the v2 client
 type OptionV2 func(*ConfigV2) error
 
 // NewClientV2 creates a new Dynatrace V2 API client
-func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
+func NewClientV2(options ...OptionV2) (*ClientV2, error) {
 	config, err := getConfig(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get client v2 config")
 	}
 
-	parsedURL, err := url.Parse(baseURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
-	}
-
-	if !strings.HasSuffix(strings.TrimSuffix(parsedURL.Path, "/"), "/api") {
-		parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/") + "/api"
+	if !strings.HasSuffix(strings.TrimSuffix(config.BaseURL.Path, "/"), "/api") {
+		config.BaseURL.Path = strings.TrimSuffix(config.BaseURL.Path, "/") + "/api"
 	}
 
 	apiClient := core.NewClient(core.Config{
-		BaseURL:    parsedURL,
+		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,
 		UserAgent:  config.UserAgent,
 		APIToken:   config.APIToken,
@@ -93,25 +86,20 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 }
 
 // NewOAuthClient creates a new Dynatrace API OAuth client
-func NewOAuthClient(baseURL string, options ...OptionV2) (*OAuthClient, error) {
+func NewOAuthClient(credentials clientcredentials.Config, options ...OptionV2) (*OAuthClient, error) {
 	config, err := getConfig(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get client v2 config")
 	}
 
-	parsedURL, err := url.Parse(baseURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
-	}
-
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, config.HTTPClient)
 
-	oAuthHTTPClient := config.Client(ctx)
+	oAuthHTTPClient := credentials.Client(ctx)
 
 	apiClient := core.NewClient(core.Config{
-		BaseURL:    parsedURL,
+		BaseURL:    config.BaseURL,
 		HTTPClient: oAuthHTTPClient,
-		UserAgent:  operatorversion.UserAgent(),
+		UserAgent:  config.UserAgent,
 	})
 
 	return &OAuthClient{
@@ -155,48 +143,26 @@ func WithHostGroup(hostGroup string) OptionV2 {
 	}
 }
 
+// WithBaseURL parses the url and sets it
+func WithBaseURL(baseURL string) OptionV2 {
+	return func(c *ConfigV2) error {
+		parsedURL, err := url.Parse(baseURL)
+		if err != nil {
+			return errors.Wrap(err, "invalid base URL")
+		}
+
+		c.BaseURL = parsedURL
+
+		return nil
+	}
+}
+
 // WithUserAgentSuffix appends a suffix (comment) to the default user agent.
 func WithUserAgentSuffix(suffix string) OptionV2 {
 	return func(c *ConfigV2) error {
 		if suffix != "" {
 			c.UserAgent += " " + suffix
 		}
-
-		return nil
-	}
-}
-
-// WithClientID sets the OAuth client ID.
-func WithClientID(id string) OptionV2 {
-	return func(c *ConfigV2) error {
-		c.ClientID = id
-
-		return nil
-	}
-}
-
-// WithClientSecret sets the OAuth client secret.
-func WithClientSecret(secret string) OptionV2 {
-	return func(c *ConfigV2) error {
-		c.ClientSecret = secret
-
-		return nil
-	}
-}
-
-// WithTokenURL sets the OAuth token URL.
-func WithTokenURL(url string) OptionV2 {
-	return func(c *ConfigV2) error {
-		c.TokenURL = url
-
-		return nil
-	}
-}
-
-// WithOAuthScopes sets the OAuth scopes.
-func WithOAuthScopes(scopes []string) OptionV2 {
-	return func(c *ConfigV2) error {
-		c.Scopes = scopes
 
 		return nil
 	}
@@ -321,7 +287,7 @@ func getConfig(options ...OptionV2) (*ConfigV2, error) {
 	if config.Proxy != "" {
 		proxyURL, err := url.Parse(config.Proxy)
 		if err != nil {
-			return nil, fmt.Errorf("invalid proxy URL: %w", err)
+			return nil, errors.Wrap(err, "invalid proxy URL")
 		}
 
 		proxyConfig := httpproxy.Config{
@@ -346,7 +312,7 @@ func getConfig(options ...OptionV2) (*ConfigV2, error) {
 func (dtc *dynatraceClient) AsV2() *ClientV2 {
 	// Fields are already validated by the v1 client constructor
 	v2, _ := NewClientV2(
-		dtc.url,
+		WithBaseURL(dtc.url),
 		WithUserAgentSuffix(dtc.userAgentSuffix),
 		WithAPIToken(dtc.apiToken),
 		WithPaasToken(dtc.paasToken),
