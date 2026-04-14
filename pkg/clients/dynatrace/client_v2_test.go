@@ -16,7 +16,7 @@ import (
 
 func TestNewClientV2(t *testing.T) {
 	t.Run("creates client with all sub-clients initialized", func(t *testing.T) {
-		client, err := NewClientV2(WithBaseURL("https://aabb.test.com/api"))
+		client, err := NewClientV2(WithBaseURL("https://aabb.test.com/api"), WithAPIToken("foo"), WithPaasToken("bar"))
 		require.NoError(t, err)
 		require.NotNil(t, client)
 		assert.NotNil(t, client.Settings)
