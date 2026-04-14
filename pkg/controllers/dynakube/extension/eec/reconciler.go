@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/pkg/errors"
@@ -29,6 +30,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	logCtx, log := logd.NewFromContext(ctx, "extension-eec")
+
 	// TODO: Remove as part of ICP-1086
 	meta.RemoveStatusCondition(r.dk.Conditions(), "ExtensionsControllerStatefulSet")
 
@@ -45,12 +48,12 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		err = k8sstatefulset.Query(r.client, r.apiReader).Delete(ctx, sts)
+		err = k8sstatefulset.Query(r.client, r.apiReader).Delete(logCtx, sts)
 		if err != nil {
 			log.Error(err, "failed to clean up "+ext.GetExecutionControllerStatefulsetName()+" statufulset")
 		}
 
-		r.deleteLegacyStatefulset(ctx)
+		r.deleteLegacyStatefulset(logCtx)
 
 		return nil
 	}
@@ -67,7 +70,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return errors.New("kubeSystemUUID unknown")
 	}
 
-	defer r.deleteLegacyStatefulset(ctx)
+	defer r.deleteLegacyStatefulset(logCtx)
 
-	return r.createOrUpdateStatefulset(ctx)
+	return r.createOrUpdateStatefulset(logCtx)
 }

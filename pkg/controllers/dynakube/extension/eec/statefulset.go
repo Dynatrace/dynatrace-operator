@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -81,6 +82,8 @@ func useLegacyMounts(dk *dynakube.DynaKube) bool {
 }
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	appLabels := buildAppLabels(r.dk)
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx)

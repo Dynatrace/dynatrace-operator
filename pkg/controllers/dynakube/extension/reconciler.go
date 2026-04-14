@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/eec"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,24 +30,25 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	logCtx, log := logd.NewFromContext(ctx, "extension")
 	log.Info("start reconciling extensions")
 
-	err := r.reconcileSecret(ctx, dk)
+	err := r.reconcileSecret(logCtx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.reconcileService(ctx, dk)
+	err = r.reconcileService(logCtx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = tls.NewReconciler(r.client, r.apiReader, dk).Reconcile(ctx)
+	err = tls.NewReconciler(r.client, r.apiReader, dk).Reconcile(logCtx)
 	if err != nil {
 		return err
 	}
 
-	err = eec.NewReconciler(r.client, r.apiReader, dk).Reconcile(ctx)
+	err = eec.NewReconciler(r.client, r.apiReader, dk).Reconcile(logCtx)
 	if err != nil {
 		return err
 	}
