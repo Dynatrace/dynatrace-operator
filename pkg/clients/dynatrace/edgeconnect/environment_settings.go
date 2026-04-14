@@ -18,6 +18,8 @@ const (
 	KubernetesConnectionScope    = "environment"
 )
 
+var errNoEnvSettingObjectID = errors.New("no environment setting object id given")
+
 type EnvironmentSetting struct {
 	ObjectID string                  `json:"objectId,omitempty"`
 	SchemaID string                  `json:"schemaId"`
@@ -66,7 +68,7 @@ func (c *Client) CreateEnvironmentSetting(ctx context.Context, es EnvironmentSet
 // UpdateEnvironmentSetting update environment setting
 func (c *Client) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
 	if es.ObjectID == "" {
-		return errors.New("no environment setting object id given")
+		return errNoEnvSettingObjectID
 	}
 
 	err := c.apiClient.PUT(ctx, settingsObjectsIDPath+es.ObjectID).WithoutToken().WithJSONBody(es).Execute(nil)
@@ -80,7 +82,7 @@ func (c *Client) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSet
 // DeleteEnvironmentSetting deletes environment setting
 func (c *Client) DeleteEnvironmentSetting(ctx context.Context, objectID string) error {
 	if objectID == "" {
-		return errors.New("no environment setting object id given")
+		return errNoEnvSettingObjectID
 	}
 
 	err := c.apiClient.DELETE(ctx, settingsObjectsIDPath+objectID).WithoutToken().Execute(nil)
