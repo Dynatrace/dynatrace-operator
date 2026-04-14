@@ -15,10 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
-var (
-	log = logd.Get().WithName("kspm-settings")
-)
-
 type Reconciler struct {
 	timeProvider *timeprovider.Provider
 }
@@ -30,6 +26,8 @@ func NewReconciler() *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk *dynakube.DynaKube) error {
+	logCtx, log := logd.NewFromContext(ctx, "kspm-settings")
+
 	// Kubernetes Monitoring is REQUIRED for KSPM, so it is ok to just check for this.
 	if !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
 		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
@@ -65,7 +63,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk
 		log.Info("necessary scopes for kspm settings creation is available, proceeding with reconciliation")
 	}
 
-	err := r.checkKSPMSettings(ctx, dtc, dk)
+	err := r.checkKSPMSettings(logCtx, dtc, dk)
 	if err != nil {
 		return err
 	}
@@ -74,6 +72,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk
 }
 
 func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APIClient, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	log.Info("start reconciling kspm settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {
