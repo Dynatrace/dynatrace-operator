@@ -159,9 +159,10 @@ func TestCustomPullSecret(t *testing.T) {
 
 	podSpecs := ds.Spec.Template.Spec
 	assert.NotNil(t, podSpecs)
-	assert.Len(t, podSpecs.ImagePullSecrets, 2)
-	assert.Equal(t, dk.TenantRegistryPullSecretName(), podSpecs.ImagePullSecrets[0].Name)
-	assert.Equal(t, testName, podSpecs.ImagePullSecrets[1].Name)
+	require.Len(t, podSpecs.ImagePullSecrets, 2)
+
+	assert.Contains(t, podSpecs.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
+	assert.Contains(t, podSpecs.ImagePullSecrets, corev1.LocalObjectReference{Name: testName})
 }
 
 func TestResources(t *testing.T) {

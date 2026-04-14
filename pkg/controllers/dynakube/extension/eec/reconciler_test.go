@@ -787,25 +787,16 @@ func TestImagePullSecrets(t *testing.T) {
 		assert.Empty(t, statefulSet.Spec.Template.Spec.ImagePullSecrets)
 	})
 
-	t.Run("custom pull secret", func(t *testing.T) {
+	t.Run("custom pull secret, no tenant registry pull secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.CustomPullSecret = testEECPullSecret
 
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 1)
-		assert.Equal(t, dk.Spec.CustomPullSecret, statefulSet.Spec.Template.Spec.ImagePullSecrets[0].Name)
-	})
 
-	t.Run("does not include tenant registry pull secret even when custom pull secret is set", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.CustomPullSecret = testEECPullSecret
-
-		statefulSet := getStatefulset(t, dk)
-
-		for _, ref := range statefulSet.Spec.Template.Spec.ImagePullSecrets {
-			assert.NotEqual(t, dk.TenantRegistryPullSecretName(), ref.Name)
-		}
+		assert.Contains(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.Spec.CustomPullSecret})
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, dk.TenantRegistryPullSecretReferences())
 	})
 }
 

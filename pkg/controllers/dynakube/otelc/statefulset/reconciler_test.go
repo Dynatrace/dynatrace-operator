@@ -241,9 +241,7 @@ func TestImagePullSecrets(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		for _, ref := range statefulSet.Spec.Template.Spec.ImagePullSecrets {
-			assert.NotEqual(t, dk.TenantRegistryPullSecretName(), ref.Name)
-		}
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
 	})
 }
 
