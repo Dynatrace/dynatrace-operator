@@ -41,7 +41,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, s.apiReader, types.NamespacedName{
 		Name:      dk.OneAgent().GetTenantSecret(),
 		Namespace: dk.Namespace,
-	}, connectioninfo.TenantTokenKey, log)
+	}, connectioninfo.TenantTokenKey)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 

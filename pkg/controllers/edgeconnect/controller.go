@@ -87,7 +87,7 @@ func NewController(mgr manager.Manager) *Controller {
 		config:                   mgr.GetConfig(),
 		timeProvider:             timeprovider.New(),
 		edgeConnectClientBuilder: newEdgeConnectClient(),
-		secrets:                  k8ssecret.Query(mgr.GetClient(), mgr.GetAPIReader(), log),
+		secrets:                  k8ssecret.Query(mgr.GetClient(), mgr.GetAPIReader()),
 	}
 }
 
@@ -403,7 +403,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 		return errors.Wrap(err, "failed to resolve and set replica count")
 	}
 
-	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
+	_, err = k8sdeployment.Query(controller.client, controller.apiReader).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Info("could not create or update deployment for EdgeConnect")
 
@@ -575,7 +575,7 @@ func (controller *Controller) getEdgeConnectIDFromClientSecret(ctx context.Conte
 
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name, "clientSecretName", clientSecretName)
 
-	secrets := k8ssecret.Query(controller.client, controller.apiReader, _log)
+	secrets := k8ssecret.Query(controller.client, controller.apiReader)
 
 	secret, err := secrets.Get(ctx, types.NamespacedName{Name: clientSecretName, Namespace: ec.Namespace})
 	if err != nil {
@@ -625,7 +625,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 		return errors.WithStack(err)
 	}
 
-	secrets := k8ssecret.Query(controller.client, controller.apiReader, _log)
+	secrets := k8ssecret.Query(controller.client, controller.apiReader)
 
 	_, err = secrets.CreateOrUpdate(ctx, ecOAuthSecret)
 	if err != nil {
@@ -719,7 +719,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 		return errors.Wrap(err, "failed to resolve and set replica count")
 	}
 
-	_, err = k8sdeployment.Query(controller.client, controller.apiReader, _log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
+	_, err = k8sdeployment.Query(controller.client, controller.apiReader).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Debug("could not create or update deployment for EdgeConnect")
 

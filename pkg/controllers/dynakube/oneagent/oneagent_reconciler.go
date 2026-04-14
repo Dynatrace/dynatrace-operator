@@ -59,8 +59,8 @@ func NewReconciler(
 		client:    client,
 		apiReader: apiReader,
 		clusterID: clusterID,
-		configmap: k8sconfigmap.Query(client, apiReader, log),
-		daemonset: k8sdaemonset.Query(client, apiReader, log),
+		configmap: k8sconfigmap.Query(client, apiReader),
+		daemonset: k8sdaemonset.Query(client, apiReader),
 	}
 }
 

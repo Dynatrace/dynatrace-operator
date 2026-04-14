@@ -29,7 +29,7 @@ type Reconciler struct {
 func NewReconciler(clt client.Client,
 	apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		daemonset: k8sdaemonset.Query(clt, apiReader, log),
+		daemonset: k8sdaemonset.Query(clt, apiReader),
 	}
 }
 
