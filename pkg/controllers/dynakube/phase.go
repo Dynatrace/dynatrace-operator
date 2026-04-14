@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,6 +33,8 @@ func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dy
 }
 
 func (controller *Controller) determineActiveGatePhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	log := logd.FromContext(ctx)
+
 	if dk.ActiveGate().IsEnabled() {
 		activeGatePods, err := controller.numberOfMissingActiveGatePods(ctx, dk)
 		if err != nil {
@@ -65,6 +68,8 @@ func (controller *Controller) determineExtensionsCollectorPhase(ctx context.Cont
 }
 
 func (controller *Controller) determinePrometheusStatefulsetPhase(ctx context.Context, dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
+	log := logd.FromContext(ctx)
+
 	if dk.Extensions().IsPrometheusEnabled() {
 		statefulSet := &appsv1.StatefulSet{}
 
@@ -97,6 +102,8 @@ func (controller *Controller) determinePrometheusStatefulsetPhase(ctx context.Co
 }
 
 func (controller *Controller) determineExtensionsDatabasesPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	log := logd.FromContext(ctx)
+
 	if dk.Extensions().IsDatabasesEnabled() {
 		deployments, err := databases.ListDeployments(ctx, controller.client, dk)
 		if err != nil {
@@ -128,6 +135,8 @@ func (controller *Controller) determineExtensionsDatabasesPhase(ctx context.Cont
 }
 
 func (controller *Controller) determineOneAgentPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	log := logd.FromContext(ctx)
+
 	if dk.OneAgent().IsCloudNativeFullstackMode() || dk.OneAgent().IsClassicFullStackMode() || dk.OneAgent().IsHostMonitoringMode() {
 		oneAgentPods, err := controller.numberOfMissingDaemonSetPods(ctx, dk, dk.OneAgent().GetDaemonsetName())
 		if k8serrors.IsNotFound(err) {
@@ -153,6 +162,8 @@ func (controller *Controller) determineOneAgentPhase(ctx context.Context, dk *dy
 }
 
 func (controller *Controller) determineLogAgentPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	log := logd.FromContext(ctx)
+
 	if dk.LogMonitoring().IsStandalone() {
 		logAgentPods, err := controller.numberOfMissingDaemonSetPods(ctx, dk, dk.LogMonitoring().GetDaemonSetName())
 		if k8serrors.IsNotFound(err) {
@@ -178,6 +189,8 @@ func (controller *Controller) determineLogAgentPhase(ctx context.Context, dk *dy
 }
 
 func (controller *Controller) determineKSPMPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	log := logd.FromContext(ctx)
+
 	if dk.KSPM().IsEnabled() {
 		kspmPods, err := controller.numberOfMissingDaemonSetPods(ctx, dk, dk.KSPM().GetDaemonSetName())
 		if k8serrors.IsNotFound(err) {

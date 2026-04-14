@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -41,12 +42,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc oneagent.APIC
 var NoOneAgentCommunicationEndpointsError = errors.New("no communication endpoints for OneAgent are available")
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	logCtx, log := logd.NewFromContext(ctx, "oneagent-connectioninfo")
+
 	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.OneAgent().IsDaemonsetRequired() && !r.dk.LogMonitoring().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), oaConnectionInfoConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}})
+		err := r.secrets.Delete(logCtx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up OneAgent tenant-secret")
 		}
@@ -59,7 +62,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	oldStatus := r.dk.Status.DeepCopy()
 
-	err := r.reconcileConnectionInfo(ctx)
+	err := r.reconcileConnectionInfo(logCtx)
 	if err != nil {
 		return err
 	}
@@ -75,6 +78,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	secretNamespacedName := types.NamespacedName{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}
 
 	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, oaConnectionInfoConditionType) {
@@ -135,6 +140,8 @@ func (r *reconciler) setDynakubeStatus(connectionInfo oneagent.ConnectionInfo) {
 }
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo oneagent.ConnectionInfo) error {
+	log := logd.FromContext(ctx)
+
 	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)

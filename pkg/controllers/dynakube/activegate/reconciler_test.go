@@ -762,7 +762,7 @@ func mockVersionReconcileOnce(t *testing.T) version.Reconciler {
 func createIstioReconcilerMock(t *testing.T) istioReconciler {
 	rec := newMockIstioReconciler(t)
 
-	rec.EXPECT().ReconcileActiveGate(t.Context(), anyDynakube).Return(nil).Once()
+	rec.EXPECT().ReconcileActiveGate(anyCtx, anyDynakube).Return(nil).Once()
 
 	return rec
 }
