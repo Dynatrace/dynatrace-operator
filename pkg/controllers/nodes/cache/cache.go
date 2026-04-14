@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -71,10 +73,13 @@ func New(ctx context.Context, apiReader client.Reader, ns string, owner client.O
 	}
 
 	if k8serrors.IsNotFound(err) {
+		coreLabels := k8slabel.NewCoreLabels(version.AppName, k8slabel.NodeControllerLabel)
+
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      ConfigMapName,
 				Namespace: ns,
+				Labels:    coreLabels.BuildLabels(),
 			},
 			Data: map[string]string{},
 		}
