@@ -58,7 +58,7 @@ func (r *Reconciler) addOperatorVersionInfo(dk *dynakube.DynaKube, configMapData
 }
 
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, dk *dynakube.DynaKube, configMapData map[string]string) error {
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OperatorComponentLabel)
 
 	configMap, err := k8sconfigmap.Build(dk,
 		GetDeploymentMetadataConfigMapName(dk.Name),

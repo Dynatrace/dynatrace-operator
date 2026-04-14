@@ -81,7 +81,7 @@ func (r *Reconciler) reconcilePullSecret(ctx context.Context, dk *dynakube.DynaK
 		return errors.WithMessage(err, "could not generate pull secret data")
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OperatorComponentLabel)
 
 	secret, err := k8ssecret.Build(dk,
 		extendWithPullSecretSuffix(dk.Name), pullSecretData,
