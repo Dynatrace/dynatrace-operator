@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
@@ -64,12 +65,14 @@ func NewReconciler(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	logCtx, log := logd.NewFromContext(ctx, "dynakube-injection")
+
 	var setupErrors []error
-	if err := r.setupOneAgentInjection(ctx); err != nil {
+	if err := r.setupOneAgentInjection(logCtx); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
-	if err := r.setupEnrichmentInjection(ctx); err != nil {
+	if err := r.setupEnrichmentInjection(logCtx); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
@@ -78,9 +81,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichment().IsEnabled() && !r.dk.OTLPExporterConfiguration().IsEnabled() {
-		defer r.unmap(ctx)
+		defer r.unmap(logCtx)
 	} else {
-		dkMapper := r.createDynakubeMapper(ctx)
+		dkMapper := r.createDynakubeMapper(logCtx)
 
 		if err := dkMapper.MapFromDynakube(); err != nil {
 			log.Info("update of a map of namespaces failed")
@@ -89,16 +92,16 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 	}
 
-	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
+	namespaces, err := mapper.GetNamespacesForDynakube(logCtx, r.apiReader, r.dk.Name)
 	if err != nil {
 		return err
 	}
 
-	if err := r.setupInitSecret(ctx, namespaces); err != nil {
+	if err := r.setupInitSecret(logCtx, namespaces); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
-	if err := r.setupOTLPSecret(ctx, namespaces); err != nil {
+	if err := r.setupOTLPSecret(logCtx, namespaces); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
@@ -138,6 +141,8 @@ func (r *Reconciler) setupInitSecret(ctx context.Context, namespaces []corev1.Na
 }
 
 func (r *Reconciler) unmap(ctx context.Context) {
+	log := logd.FromContext(ctx)
+
 	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
 	if err != nil {
 		log.Error(err, "failed to list namespaces for dynakube", "dkName", r.dk.Name)
@@ -150,6 +155,8 @@ func (r *Reconciler) unmap(ctx context.Context) {
 }
 
 func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dk)
 	if err != nil {
 		return err
@@ -205,6 +212,8 @@ func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1
 }
 
 func (r *Reconciler) setupEnrichmentInjection(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	err := r.enrichmentRulesReconciler.Reconcile(ctx)
 	if err != nil {
 		log.Info("couldn't reconcile metadata-enrichment rules")
@@ -229,6 +238,8 @@ func (r *Reconciler) createDynakubeMapper(ctx context.Context) *mapper.DynakubeM
 }
 
 func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.Namespace) {
+	log := logd.FromContext(ctx)
+
 	if meta.FindStatusCondition(*r.dk.Conditions(), codeModulesInjectionConditionType) == nil &&
 		meta.FindStatusCondition(*r.dk.Conditions(), metaDataEnrichmentConditionType) == nil {
 		return
@@ -244,6 +255,8 @@ func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.
 }
 
 func (r *Reconciler) cleanupOTLPSecret(ctx context.Context, namespaces []corev1.Namespace) {
+	log := logd.FromContext(ctx)
+
 	if meta.FindStatusCondition(*r.dk.Conditions(), otlpExporterConfigurationConditionType) == nil {
 		return
 	}
