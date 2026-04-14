@@ -143,7 +143,7 @@ func WithHostGroup(hostGroup string) OptionV2 {
 	}
 }
 
-// WithBaseURL parses the url and sets it
+// WithBaseURL parses the URL and sets it
 func WithBaseURL(baseURL string) OptionV2 {
 	return func(c *ConfigV2) error {
 		parsedURL, err := url.Parse(baseURL)
