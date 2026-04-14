@@ -309,26 +309,6 @@ func getConfig(options ...OptionV2) (*ConfigV2, error) {
 	return &config, nil
 }
 
-func (dtc *dynatraceClient) AsV2() *ClientV2 {
-	// Fields are already validated by the v1 client constructor
-	v2, _ := NewClientV2(
-		WithBaseURL(dtc.url),
-		WithUserAgentSuffix(dtc.userAgentSuffix),
-		WithAPIToken(dtc.apiToken),
-		WithPaasToken(dtc.paasToken),
-		WithNetworkZone(dtc.networkZone),
-		WithHostGroup(dtc.hostGroup),
-		WithHTTPClient(dtc.httpClient),
-	)
-
-	// Placeholders to prevent deadcode elimination
-	// Will be used once the v1 HTTP client is no longer the default
-	_ = WithTLSConfig(nil)
-	_ = WithTimeout(0)
-
-	return v2
-}
-
 func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
 	proxyFunc := proxyConfig.ProxyFunc()
 

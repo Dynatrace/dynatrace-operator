@@ -1,7 +1,6 @@
 package download
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -22,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -56,8 +54,6 @@ func TestNew(t *testing.T) {
 }
 
 func TestDo(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("no config ==> error", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		inputDir := filepath.Join(tmpDir, "input")
@@ -68,7 +64,7 @@ func TestDo(t *testing.T) {
 		}
 		client := New(opts...)
 
-		err := client.Do(ctx, inputDir, targetDir, url.Properties{})
+		err := client.Do(t.Context(), inputDir, targetDir, url.Properties{})
 		require.Error(t, err)
 	})
 
@@ -85,12 +81,12 @@ func TestDo(t *testing.T) {
 
 		opts := []Option{
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
-				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(true, nil)
+				i.EXPECT().InstallAgent(t.Context(), targetDir).Return(true, nil)
 			})),
 		}
 		client := New(opts...)
 
-		err := client.Do(ctx, inputDir, targetDir, *props)
+		err := client.Do(t.Context(), inputDir, targetDir, *props)
 		require.NoError(t, err)
 	})
 
@@ -112,12 +108,12 @@ func TestDo(t *testing.T) {
 
 		opts := []Option{
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
-				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(true, nil)
+				i.EXPECT().InstallAgent(t.Context(), targetDir).Return(true, nil)
 			})),
 		}
 		client := New(opts...)
 
-		err = client.Do(ctx, inputDir, targetDir, *props)
+		err = client.Do(t.Context(), inputDir, targetDir, *props)
 		require.NoError(t, err)
 	})
 
@@ -136,12 +132,12 @@ func TestDo(t *testing.T) {
 
 		opts := []Option{
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
-				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(false, expectedErr)
+				i.EXPECT().InstallAgent(t.Context(), targetDir).Return(false, expectedErr)
 			})),
 		}
 		client := New(opts...)
 
-		err := client.Do(ctx, inputDir, targetDir, *props)
+		err := client.Do(t.Context(), inputDir, targetDir, *props)
 		require.Error(t, err)
 		require.ErrorIs(t, err, expectedErr)
 	})

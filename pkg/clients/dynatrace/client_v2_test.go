@@ -320,27 +320,6 @@ func TestGetConfig(t *testing.T) {
 	})
 }
 
-func TestAsV2(t *testing.T) {
-	dtc := &dynatraceClient{
-		url:             "https://aabb.test.com/api",
-		apiToken:        "api",
-		paasToken:       "paas",
-		networkZone:     "zone",
-		hostGroup:       "hg",
-		userAgentSuffix: "sfx",
-		httpClient:      &http.Client{Transport: &http.Transport{}},
-	}
-
-	v2 := dtc.AsV2()
-	require.NotNil(t, v2)
-	assert.NotNil(t, v2.Settings)
-	assert.NotNil(t, v2.ActiveGate)
-	assert.NotNil(t, v2.HostEvent)
-	assert.NotNil(t, v2.OneAgent)
-	assert.NotNil(t, v2.Version)
-	assert.NotNil(t, v2.Token)
-}
-
 type badTransport struct{}
 
 func (b *badTransport) RoundTrip(*http.Request) (*http.Response, error) {

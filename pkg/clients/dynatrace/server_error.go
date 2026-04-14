@@ -5,10 +5,6 @@ import (
 	"strings"
 )
 
-type serverErrorResponse struct {
-	ErrorMessage ServerError `json:"error"`
-}
-
 type ConstraintViolation struct {
 	Description       string `json:"description"`
 	Location          string `json:"location"`
