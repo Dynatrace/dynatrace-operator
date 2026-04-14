@@ -251,17 +251,14 @@ properties:
     type: integer
     title: Operator startup probe periodSeconds
     description: How often (in seconds) to perform the startup probe. Defaults to 10.
-    nullable: true
   operator.startupProbe.timeoutSeconds:
     type: integer
     title: Operator startup probe timeoutSeconds
     description: Number of seconds after which the startup probe times out. Defaults to 5.
-    nullable: true
   operator.startupProbe.failureThreshold:
     type: integer
     title: Operator startup probe failureThreshold
     description: Number of times the startup probe can fail before giving up. Defaults to 1.
-    nullable: true
 
   webhook.hostNetwork:
     type: boolean
@@ -329,17 +326,14 @@ properties:
     type: integer
     title: Webhook startup probe periodSeconds
     description: How often (in seconds) to perform the startup probe. Defaults to 10.
-    nullable: true
   webhook.startupProbe.timeoutSeconds:
     type: integer
     title: Webhook startup probe timeoutSeconds
     description: Number of seconds after which the startup probe times out. Defaults to 5.
-    nullable: true
   webhook.startupProbe.failureThreshold:
     type: integer
     title: Webhook startup probe failureThreshold
     description: Number of times the startup probe can fail before giving up. Defaults to 1.
-    nullable: true
 
   csidriver.enabled:
     type: boolean
@@ -372,17 +366,14 @@ properties:
     type: integer
     title: CSI driver provisioner startup probe periodSeconds
     description: How often (in seconds) to perform the startup probe. Defaults to 10.
-    nullable: true
   csidriver.provisioner.startupProbe.timeoutSeconds:
     type: integer
     title: CSI driver provisioner startup probe timeoutSeconds
     description: Number of seconds after which the startup probe times out. Defaults to 5.
-    nullable: true
   csidriver.provisioner.startupProbe.failureThreshold:
     type: integer
     title: CSI driver provisioner startup probe failureThreshold
     description: Number of times the startup probe can fail before giving up. Defaults to 1.
-    nullable: true
   csidriver.server.resources.requests.cpu:
     type: string
     title: CSI driver CPU request - server
