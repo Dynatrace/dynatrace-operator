@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -93,7 +93,7 @@ func createSecret(tb testing.TB, clt client.Client, index int) *corev1.Secret {
 			Namespace: testNamespace,
 		},
 		Data: map[string][]byte{
-			dtclient.APIToken: []byte(testAPIToken),
+			consts.APIToken: []byte(testAPIToken),
 		},
 	}
 

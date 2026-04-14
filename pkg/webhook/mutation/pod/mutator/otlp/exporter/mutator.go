@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -113,7 +112,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: consts.OTLPExporterSecretName,
 				},
-				Key: dynatrace.DataIngestToken,
+				Key: consts.DataIngestToken,
 			},
 		},
 	}

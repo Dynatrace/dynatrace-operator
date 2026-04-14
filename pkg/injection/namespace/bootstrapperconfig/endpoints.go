@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
@@ -51,7 +51,7 @@ func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dyn
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
+	if token, ok := tokens.Data[consts.DataIngestToken]; ok {
 		fields[MetricsTokenSecretField] = string(token)
 	} else {
 		log.Info("data ingest token not found in secret", "dk", dk.Name)

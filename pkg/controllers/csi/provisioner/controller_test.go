@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
@@ -405,7 +406,7 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{
-			dtclient.APIToken: []byte("this is a token"),
+			consts.APIToken: []byte("this is a token"),
 		},
 	}
 }

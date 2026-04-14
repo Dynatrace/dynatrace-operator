@@ -15,6 +15,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
@@ -243,7 +244,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 				Namespace: dk.Namespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte("this is a token"),
+				consts.APIToken: []byte("this is a token"),
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
@@ -275,7 +276,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 				Namespace: dk.Namespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte("this is a token"),
+				consts.APIToken: []byte("this is a token"),
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
@@ -669,7 +670,7 @@ func TestTokenConditions(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte(testAPIToken),
+				consts.APIToken: []byte(testAPIToken),
 			},
 		})
 
@@ -711,7 +712,7 @@ func TestTokenConditions(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte(testAPIToken),
+				consts.APIToken: []byte(testAPIToken),
 			},
 		})
 
@@ -960,7 +961,7 @@ func createAPISecret() *corev1.Secret {
 			Namespace: testNamespace,
 		},
 		Data: map[string][]byte{
-			dtclient.APIToken: []byte(testAPIToken),
+			consts.APIToken: []byte(testAPIToken),
 		},
 	}
 }

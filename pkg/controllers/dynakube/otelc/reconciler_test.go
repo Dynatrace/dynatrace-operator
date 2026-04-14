@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	globalConsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/statefulset"
@@ -65,8 +65,8 @@ func TestNoProxyConsistency(t *testing.T) {
 
 func createClient(t *testing.T, dk *dynakube.DynaKube) client.WithWatch {
 	testTokensSecret, err := k8ssecret.Build(dk, dk.Name, map[string][]byte{
-		dtclient.APIToken:        []byte(testToken),
-		dtclient.DataIngestToken: []byte(testToken),
+		globalConsts.APIToken:        []byte(testToken),
+		globalConsts.DataIngestToken: []byte(testToken),
 	})
 	require.NoError(t, err)
 

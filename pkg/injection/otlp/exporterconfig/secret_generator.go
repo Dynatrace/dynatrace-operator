@@ -111,14 +111,14 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if _, ok := tokens.Data[dtclient.DataIngestToken]; !ok {
+	if _, ok := tokens.Data[consts.DataIngestToken]; !ok {
 		err := errors.New("data ingest token not found in tokens secret")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
 
-	data[dtclient.DataIngestToken] = tokens.Data[dtclient.DataIngestToken]
+	data[consts.DataIngestToken] = tokens.Data[consts.DataIngestToken]
 
 	return data, nil
 }

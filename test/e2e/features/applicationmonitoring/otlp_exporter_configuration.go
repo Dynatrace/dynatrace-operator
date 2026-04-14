@@ -10,7 +10,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
@@ -196,7 +195,7 @@ func assertOTLPEnvVarsPresent(t *testing.T, pod *corev1.Pod, expectedBase string
 		require.NotNil(t, tokenEnv.ValueFrom)
 		require.NotNil(t, tokenEnv.ValueFrom.SecretKeyRef)
 		assert.Equal(t, consts.OTLPExporterSecretName, tokenEnv.ValueFrom.SecretKeyRef.Name)
-		assert.Equal(t, dynatrace.DataIngestToken, tokenEnv.ValueFrom.SecretKeyRef.Key)
+		assert.Equal(t, consts.DataIngestToken, tokenEnv.ValueFrom.SecretKeyRef.Key)
 	}
 }
 
