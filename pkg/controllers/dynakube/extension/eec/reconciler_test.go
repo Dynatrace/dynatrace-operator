@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,6 +75,7 @@ func getTestDynakube() *dynakube.DynaKube {
 }
 
 func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+	t.Cleanup(version.DisableCacheForTest(123))
 	t.Helper()
 	mockK8sClient := fake.NewClient(dk)
 	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
@@ -120,6 +122,8 @@ func disableLegacyVolumeMounts(dk *dynakube.DynaKube) {
 }
 
 func TestConditions(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("no kubeSystemUUID", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Status.KubeSystemUUID = ""
@@ -353,6 +357,8 @@ func TestEnvironmentVariables(t *testing.T) {
 }
 
 func TestLegacyVolumeMounts(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("volume mounts, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		disableAutomaticAGCertificate(dk)
@@ -1039,6 +1045,8 @@ func TestServiceAccountName(t *testing.T) {
 }
 
 func TestSecurityContext(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("securityContext is set", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
@@ -1885,5 +1893,46 @@ func TestActiveGateVolumes(t *testing.T) {
 		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
 		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedAutoAgCertVolume)
+	})
+}
+
+func TestAppArmorAnnotationHandling(t *testing.T) {
+	const appArmorAnnotationKey = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
+
+	getStatefulSet := func(t *testing.T) *appsv1.StatefulSet {
+		t.Helper()
+
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
+		clt := fake.NewClient(dk)
+
+		tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
+		require.NoError(t, clt.Create(t.Context(), &tlsSecret))
+
+		require.NoError(t, NewReconciler(clt, clt, dk).Reconcile(t.Context()))
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		return sts
+	}
+
+	t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(30))
+
+		sts := getStatefulSet(t)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+	})
+
+	t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(31))
+
+		sts := getStatefulSet(t)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
 	})
 }

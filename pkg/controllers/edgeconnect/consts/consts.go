@@ -21,8 +21,6 @@ const (
 	KeyEdgeConnectOauthResource     = "oauth-client-resource"
 	KeyEdgeConnectID                = "id"
 
-	AnnotationEdgeConnectContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + EdgeConnectContainerName
-
 	// SecretConfigConditionType identifies the secret config condition.
 	SecretConfigConditionType = "SecretConfigConditionType"
 )

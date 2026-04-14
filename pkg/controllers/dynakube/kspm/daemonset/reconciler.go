@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -76,7 +77,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 
 	labels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KSPMComponentLabel)
 	templateAnnotations := map[string]string{tokenSecretHashAnnotation: dk.KSPM().TokenSecretHash}
-	maps.Copy(templateAnnotations, dk.KSPM().Annotations)
+	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(dk.KSPM().Annotations, containerName))
 
 	affinity := k8saffinity.NewAMDOnlyNodeAffinity()
 	if dk.KSPM().NodeAffinity != nil {

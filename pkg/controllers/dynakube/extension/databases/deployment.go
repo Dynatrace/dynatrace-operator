@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +29,8 @@ const (
 	defaultServiceAccount = "dynatrace-sql-ext-exec"
 	// Must contain the ID specified in the DynaKube CR.
 	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
+
+	containerName = "sql-executor"
 
 	tmpVolumeName         = "tmp-data"
 	tmpMountPath          = "/tmp"
@@ -86,7 +89,7 @@ func buildServiceAccountName(dbSpec extensions.DatabaseSpec) string {
 
 func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev1.Container {
 	container := corev1.Container{
-		Name:            "sql-executor",
+		Name:            containerName,
 		Image:           dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String(),
 		ImagePullPolicy: dk.Spec.Templates.SQLExtensionExecutor.ImageRef.GetPullPolicy(),
 		Args:            buildContainerArgs(dk),
@@ -118,7 +121,7 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev
 			SuccessThreshold:    1,
 		},
 		Resources:       buildContainerResources(dbSpec.Resources),
-		SecurityContext: buildContainerSecurityContext(),
+		SecurityContext: buildContainerSecurityContext(dbSpec.Annotations),
 		VolumeMounts:    buildVolumeMounts(dk, dbSpec),
 	}
 
@@ -271,7 +274,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 	}
 }
 
-func buildContainerSecurityContext() *corev1.SecurityContext {
+func buildContainerSecurityContext(annotations map[string]string) *corev1.SecurityContext {
 	return &corev1.SecurityContext{
 		Privileged:               ptr.To(false),
 		AllowPrivilegeEscalation: ptr.To(false),
@@ -284,6 +287,7 @@ func buildContainerSecurityContext() *corev1.SecurityContext {
 				"ALL",
 			},
 		},
+		AppArmorProfile: k8ssecuritycontext.GetAppArmorProfile(annotations, containerName),
 	}
 }
 

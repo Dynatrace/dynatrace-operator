@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -271,6 +272,45 @@ func TestReconcileReplicas(t *testing.T) {
 	}
 }
 
+func TestAppArmorAnnotationHandling(t *testing.T) {
+	const appArmorAnnotationKey = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
+
+	getReconciledDeployment := func(t *testing.T) *appsv1.Deployment {
+		t.Helper()
+
+		dk := getTestDynakube()
+		dk.Spec.Extensions.Databases[0].Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
+		clt := fakeClient()
+
+		require.NoError(t, NewReconciler(clt, clt, dk).Reconcile(t.Context()))
+		deployments := &appsv1.DeploymentList{}
+		require.NoError(t, clt.List(t.Context(), deployments))
+		require.Len(t, deployments.Items, 1)
+
+		return &deployments.Items[0]
+	}
+
+	t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(30))
+
+		deploy := getReconciledDeployment(t)
+		require.Len(t, deploy.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, deploy.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.Nil(t, deploy.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.Contains(t, deploy.Spec.Template.Annotations, appArmorAnnotationKey)
+	})
+
+	t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(31))
+
+		deploy := getReconciledDeployment(t)
+		require.Len(t, deploy.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, deploy.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.NotNil(t, deploy.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.NotContains(t, deploy.Spec.Template.Annotations, appArmorAnnotationKey)
+	})
+}
+
 func fakeClient() client.Client {
 	return fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
@@ -278,6 +318,7 @@ func fakeClient() client.Client {
 }
 
 func requireReconcileFails(t *testing.T, dk *dynakube.DynaKube, builder *fake.ClientBuilder) {
+	t.Cleanup(version.DisableCacheForTest(123))
 	t.Helper()
 
 	mockK8sClient := builder.
@@ -293,7 +334,9 @@ func requireReconcileFails(t *testing.T, dk *dynakube.DynaKube, builder *fake.Cl
 }
 
 func getReconciledDeployment(t *testing.T, clt client.Client, dk *dynakube.DynaKube) *appsv1.Deployment {
+	t.Cleanup(version.DisableCacheForTest(123))
 	t.Helper()
+
 	require.NoError(t, NewReconciler(clt, clt, dk).Reconcile(t.Context()))
 	deployments := &appsv1.DeploymentList{}
 	require.NoError(t, clt.List(t.Context(), deployments))

@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -14,6 +15,8 @@ import (
 )
 
 func TestGetContainer(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	tenantUUID := "test-uuid"
 
 	t.Run("get main container", func(t *testing.T) {
@@ -76,6 +79,8 @@ func TestGetContainer(t *testing.T) {
 }
 
 func TestGetInitContainer(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	tenantUUID := "test-uuid"
 
 	t.Run("get main container", func(t *testing.T) {
@@ -155,6 +160,8 @@ func TestGetInitContainer(t *testing.T) {
 }
 
 func TestSecurityContext(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	tenantUUID := "test-uuid"
 
 	t.Run("get base securityContext", func(t *testing.T) {
@@ -215,5 +222,38 @@ func TestSecurityContext(t *testing.T) {
 		require.NotEmpty(t, sc)
 		assert.True(t, *sc.Privileged)
 		assert.True(t, *sc.AllowPrivilegeEscalation)
+	})
+
+	appArmorDK := dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			Templates: dynakube.TemplatesSpec{
+				LogMonitoring: &logmonitoring.TemplateSpec{
+					Annotations: map[string]string{
+						corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName:     corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+						corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + initContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+					},
+				},
+			},
+		},
+	}
+
+	t.Run("apparmor annotation is not converted in 1.30", func(t *testing.T) {
+		version.DisableCacheForTest(30)
+
+		initContainer := getInitContainer(appArmorDK, tenantUUID)
+		mainContainer := getContainer(appArmorDK, tenantUUID)
+
+		require.Nil(t, initContainer.SecurityContext.AppArmorProfile)
+		require.Nil(t, mainContainer.SecurityContext.AppArmorProfile)
+	})
+
+	t.Run("apparmor annotation is converted in 1.31", func(t *testing.T) {
+		version.DisableCacheForTest(31)
+
+		initContainer := getInitContainer(appArmorDK, tenantUUID)
+		mainContainer := getContainer(appArmorDK, tenantUUID)
+
+		require.NotNil(t, initContainer.SecurityContext.AppArmorProfile)
+		require.NotNil(t, mainContainer.SecurityContext.AppArmorProfile)
 	})
 }
