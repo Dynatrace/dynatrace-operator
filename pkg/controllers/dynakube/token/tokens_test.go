@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
@@ -121,9 +120,9 @@ func TestTokens(t *testing.T) {
 	}
 
 	t.Run("empty dynakube, all permissions in api token, but paas => should fail", func(t *testing.T) {
-		apiToken := newToken(consts.APIToken, fakeTokenAllAPITokenPermissions)
+		apiToken := newToken(APIToken, fakeTokenAllAPITokenPermissions)
 		tokens := Tokens{
-			consts.APIToken: &apiToken,
+			APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
@@ -136,11 +135,11 @@ func TestTokens(t *testing.T) {
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("empty dynakube, all permissions in api token, but paas + paas token => should work", func(t *testing.T) {
-		apiToken := newToken(consts.APIToken, fakeTokenAllAPITokenPermissions)
-		paasToken := newToken(consts.PaasToken, fakeTokenPaas)
+		apiToken := newToken(APIToken, fakeTokenAllAPITokenPermissions)
+		paasToken := newToken(PaasToken, fakeTokenPaas)
 		tokens := Tokens{
-			consts.APIToken:  &apiToken,
-			consts.PaasToken: &paasToken,
+			APIToken:  &apiToken,
+			PaasToken: &paasToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
@@ -151,9 +150,9 @@ func TestTokens(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("empty dynakube, all permissions in api token => should work", func(t *testing.T) {
-		apiToken := newToken(consts.APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
+		apiToken := newToken(APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
 		tokens := Tokens{
-			consts.APIToken: &apiToken,
+			APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
@@ -169,9 +168,9 @@ func TestTokens(t *testing.T) {
 			activegate.KubeMonCapability.DisplayName,
 		}
 
-		apiToken := newToken(consts.APIToken, fakeTokenNoPermissions)
+		apiToken := newToken(APIToken, fakeTokenNoPermissions)
 		tokens := Tokens{
-			consts.APIToken: &apiToken,
+			APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
@@ -186,11 +185,11 @@ func TestTokens(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		enableKubernetesMonitoringAndMetricsIngest(&dk)
 
-		apiToken := newToken(consts.APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(consts.DataIngestToken, fakeTokenNoPermissions)
+		apiToken := newToken(APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
+		dataingestToken := newToken(DataIngestToken, fakeTokenNoPermissions)
 		tokens := Tokens{
-			consts.APIToken:        &apiToken,
-			consts.DataIngestToken: &dataingestToken,
+			APIToken:        &apiToken,
+			DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
@@ -202,11 +201,11 @@ func TestTokens(t *testing.T) {
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'Data Ingest' is missing scope 'metrics.ingest']")
 	})
 	t.Run("data ingest enabled => dataingest token has rights => success", func(t *testing.T) {
-		apiToken := newToken(consts.APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(consts.DataIngestToken, fakeTokenAllDataIngestPermissions)
+		apiToken := newToken(APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
+		dataingestToken := newToken(DataIngestToken, fakeTokenAllDataIngestPermissions)
 		tokens := Tokens{
-			consts.APIToken:        &apiToken,
-			consts.DataIngestToken: &dataingestToken,
+			APIToken:        &apiToken,
+			DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
@@ -229,11 +228,11 @@ func TestTokens(t *testing.T) {
 			},
 		}
 
-		apiToken := newToken(consts.APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(consts.DataIngestToken, fakeTokenNoPermissions)
+		apiToken := newToken(APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
+		dataingestToken := newToken(DataIngestToken, fakeTokenNoPermissions)
 		tokens := Tokens{
-			consts.APIToken:        &apiToken,
-			consts.DataIngestToken: &dataingestToken,
+			APIToken:        &apiToken,
+			DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
@@ -257,11 +256,11 @@ func TestTokens(t *testing.T) {
 			},
 		}
 
-		apiToken := newToken(consts.APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(consts.DataIngestToken, fakeTokenAllOTLPExporterPermissions)
+		apiToken := newToken(APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
+		dataingestToken := newToken(DataIngestToken, fakeTokenAllOTLPExporterPermissions)
 		tokens := Tokens{
-			consts.APIToken:        &apiToken,
-			consts.DataIngestToken: &dataingestToken,
+			APIToken:        &apiToken,
+			DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
@@ -469,9 +468,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			fakeClient := dtclientmock.NewClient(t)
 			fakeClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
 
-			apiToken := newToken(consts.APIToken, tokenValue)
+			apiToken := newToken(APIToken, tokenValue)
 			tokens := Tokens{
-				consts.APIToken: &apiToken,
+				APIToken: &apiToken,
 			}
 			tokens = tokens.AddFeatureScopesToTokens()
 			optionalScopes, err := tokens.VerifyScopes(t.Context(), fakeClient, c.dk)
@@ -483,14 +482,14 @@ func TestTokens_VerifyScopes(t *testing.T) {
 }
 
 func TestTokens_VerifyValues(t *testing.T) {
-	validToken := newToken(consts.APIToken, "valid-value")
-	invalidToken := newToken(consts.APIToken, " invalid-value ")
+	validToken := newToken(APIToken, "valid-value")
+	invalidToken := newToken(APIToken, " invalid-value ")
 
 	validTokens := Tokens{
-		consts.APIToken: &validToken,
+		APIToken: &validToken,
 	}
 	invalidTokens := Tokens{
-		consts.APIToken: &invalidToken,
+		APIToken: &invalidToken,
 	}
 
 	require.NoError(t, validTokens.VerifyValues())
@@ -580,7 +579,7 @@ func TestConcatErrors(t *testing.T) {
 func TestCheckForDataIngestToken(t *testing.T) {
 	t.Run("data ingest token is present, but empty", func(t *testing.T) {
 		tokens := Tokens{
-			consts.DataIngestToken: &Token{},
+			DataIngestToken: &Token{},
 		}
 
 		assert.False(t, CheckForDataIngestToken(tokens))
@@ -588,7 +587,7 @@ func TestCheckForDataIngestToken(t *testing.T) {
 
 	t.Run("data ingest token is present and not empty", func(t *testing.T) {
 		tokens := Tokens{
-			consts.DataIngestToken: &Token{
+			DataIngestToken: &Token{
 				Value: "token",
 			},
 		}

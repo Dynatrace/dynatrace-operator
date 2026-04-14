@@ -8,8 +8,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
+)
+
+const (
+	PaasToken       = "paasToken"
+	APIToken        = "apiToken"
+	DataIngestToken = "dataIngestToken"
 )
 
 type VerificationError struct {
@@ -23,15 +28,15 @@ func (v VerificationError) Error() string {
 type Tokens map[string]*Token
 
 func (tokens Tokens) APIToken() *Token {
-	return tokens.getToken(consts.APIToken)
+	return tokens.getToken(APIToken)
 }
 
 func (tokens Tokens) PaasToken() *Token {
-	return tokens.getToken(consts.PaasToken)
+	return tokens.getToken(PaasToken)
 }
 
 func (tokens Tokens) DataIngestToken() *Token {
-	return tokens.getToken(consts.DataIngestToken)
+	return tokens.getToken(DataIngestToken)
 }
 
 func (tokens Tokens) getToken(tokenName string) *Token {
@@ -44,15 +49,15 @@ func (tokens Tokens) getToken(tokenName string) *Token {
 }
 
 func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
-	_, hasPaasToken := tokens[consts.PaasToken]
+	_, hasPaasToken := tokens[PaasToken]
 
 	for _, token := range tokens {
 		switch token.Type {
-		case consts.APIToken:
+		case APIToken:
 			token.addFeatures(getFeaturesForAPIToken(hasPaasToken))
-		case consts.PaasToken:
+		case PaasToken:
 			token.addFeatures(getFeaturesForPaaSToken())
-		case consts.DataIngestToken:
+		case DataIngestToken:
 			token.addFeatures(getFeaturesForDataIngest())
 		}
 	}
@@ -124,7 +129,7 @@ func concatErrors(errs []error) error {
 }
 
 func CheckForDataIngestToken(tokens Tokens) bool {
-	dataIngestToken, hasDataIngestToken := tokens[consts.DataIngestToken]
+	dataIngestToken, hasDataIngestToken := tokens[DataIngestToken]
 
 	return hasDataIngestToken && len(dataIngestToken.Value) != 0
 }

@@ -11,7 +11,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -54,7 +53,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					consts.APIToken: []byte(testAPIToken),
+					token.APIToken: []byte(testAPIToken),
 				},
 			},
 		)
@@ -101,7 +100,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					consts.APIToken: []byte(testAPIToken),
+					token.APIToken: []byte(testAPIToken),
 				},
 			},
 		)
@@ -147,7 +146,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					consts.APIToken: []byte(testAPIToken),
+					token.APIToken: []byte(testAPIToken),
 				},
 			},
 		)
@@ -388,7 +387,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				consts.APIToken: []byte(testAPIToken),
+				token.APIToken: []byte(testAPIToken),
 			},
 		},
 		&corev1.Secret{
@@ -397,7 +396,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				consts.APIToken: []byte(testAPIToken),
+				token.APIToken: []byte(testAPIToken),
 			},
 		})
 }

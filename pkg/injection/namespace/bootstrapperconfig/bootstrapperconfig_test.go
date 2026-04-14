@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
@@ -89,8 +90,8 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.APIToken:  []byte(testAPIToken),
-				consts.PaasToken: []byte(testPaasToken),
+				token.APIToken:  []byte(testAPIToken),
+				token.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
@@ -154,8 +155,8 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.APIToken:  []byte(testAPIToken),
-				consts.PaasToken: []byte(testPaasToken),
+				token.APIToken:  []byte(testAPIToken),
+				token.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
 				dynakube.ServerCertKey: []byte("test-cert-value"),
@@ -252,8 +253,8 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.APIToken:  []byte(testAPIToken),
-				consts.PaasToken: []byte(testPaasToken),
+				token.APIToken:  []byte(testAPIToken),
+				token.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
 				dynakube.ServerCertKey: []byte("test-cert-value"),
@@ -331,8 +332,8 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.APIToken:  []byte(testAPIToken),
-				consts.PaasToken: []byte(testPaasToken),
+				token.APIToken:  []byte(testAPIToken),
+				token.PaasToken: []byte(testPaasToken),
 			}),
 		)
 
@@ -379,8 +380,8 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.APIToken:  []byte(testAPIToken),
-				consts.PaasToken: []byte(testPaasToken),
+				token.APIToken:  []byte(testAPIToken),
+				token.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
 				dynakube.ServerCertKey: []byte("test-cert-value"),
@@ -442,8 +443,8 @@ func TestGenerateForDynakube(t *testing.T) {
 		failClient := createConfigFailClient(dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.APIToken:  []byte(testAPIToken),
-				consts.PaasToken: []byte(testPaasToken),
+				token.APIToken:  []byte(testAPIToken),
+				token.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
 				dynakube.ServerCertKey: []byte("test-cert-value"),
@@ -501,8 +502,8 @@ func TestCleanup(t *testing.T) {
 		dk,
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			consts.APIToken:  []byte(testAPIToken),
-			consts.PaasToken: []byte(testPaasToken),
+			token.APIToken:  []byte(testAPIToken),
+			token.PaasToken: []byte(testPaasToken),
 		}),
 		clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 			"tenant-token": []byte(testTenantToken),

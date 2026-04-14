@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -523,8 +524,8 @@ func getTokens(name string, namespace string) corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			consts.APIToken:        []byte("test"),
-			consts.DataIngestToken: []byte("test"),
+			token.APIToken:        []byte("test"),
+			token.DataIngestToken: []byte("test"),
 		},
 	}
 }

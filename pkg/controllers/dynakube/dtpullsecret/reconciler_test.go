@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,7 +34,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			consts.APIToken: &token.Token{Value: testValue},
+			token.APIToken: &token.Token{Value: testValue},
 		})
 
 		require.NoError(t, err)
@@ -63,7 +62,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fake.NewClient(), fakeErrorClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			consts.APIToken: &token.Token{Value: testValue},
+			token.APIToken: &token.Token{Value: testValue},
 		})
 		require.ErrorIs(t, err, expectErr)
 	})
@@ -81,7 +80,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			consts.APIToken: &token.Token{Value: testValue},
+			token.APIToken: &token.Token{Value: testValue},
 		})
 		require.Error(t, err)
 	})
@@ -97,7 +96,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeErrorClient, fakeClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			consts.APIToken: &token.Token{Value: testValue},
+			token.APIToken: &token.Token{Value: testValue},
 		})
 		require.ErrorIs(t, err, expectErr)
 	})
@@ -122,7 +121,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 
 		err := r.Reconcile(t.Context(), dk, token.Tokens{
-			consts.APIToken: &token.Token{Value: testValue},
+			token.APIToken: &token.Token{Value: testValue},
 		})
 
 		require.NoError(t, err)
@@ -144,7 +143,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{
-			consts.APIToken: &token.Token{Value: testValue},
+			token.APIToken: &token.Token{Value: testValue},
 		}
 
 		r := NewReconciler(fakeClient, fakeClient)
@@ -184,7 +183,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{
-			consts.APIToken: &token.Token{Value: testValue},
+			token.APIToken: &token.Token{Value: testValue},
 		}
 
 		r := NewReconciler(fakeClient, fakeClient)
@@ -220,7 +219,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{
-			consts.APIToken: &token.Token{Value: testValue},
+			token.APIToken: &token.Token{Value: testValue},
 		}
 
 		r := NewReconciler(fakeClient, fakeClient)

@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -50,7 +49,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 	r := &Reconciler{}
 
 	data, err := r.generateData(dk, token.Tokens{
-		consts.PaasToken: &token.Token{Value: testPaasToken},
+		token.PaasToken: &token.Token{Value: testPaasToken},
 	})
 
 	require.NoError(t, err)

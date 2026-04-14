@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -256,7 +257,7 @@ func (s *SecretGenerator) prepareDownloadConfig(ctx context.Context, dk *dynakub
 
 	downloadConfigJSON := download.Config{
 		URL:           dk.Spec.APIURL,
-		APIToken:      string(tokens.Data[consts.APIToken]),
+		APIToken:      string(tokens.Data[token.APIToken]),
 		NoProxy:       dk.FF().GetNoProxy(),
 		NetworkZone:   dk.Spec.NetworkZone,
 		HostGroup:     dk.OneAgent().GetHostGroup(),

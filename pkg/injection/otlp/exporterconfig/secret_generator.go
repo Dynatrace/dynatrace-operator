@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -111,14 +112,14 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if _, ok := tokens.Data[consts.DataIngestToken]; !ok {
+	if _, ok := tokens.Data[token.DataIngestToken]; !ok {
 		err := errors.New("data ingest token not found in tokens secret")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
 
-	data[consts.DataIngestToken] = tokens.Data[consts.DataIngestToken]
+	data[token.DataIngestToken] = tokens.Data[token.DataIngestToken]
 
 	return data, nil
 }

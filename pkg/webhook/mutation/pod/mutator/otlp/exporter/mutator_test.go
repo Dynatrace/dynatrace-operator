@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcactivegate "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -782,7 +783,7 @@ func assertTokenEnvVarIsSet(t *testing.T, containerEnvVars []corev1.EnvVar) {
 	require.NotNil(t, dtTokenVar.ValueFrom)
 	require.NotNil(t, dtTokenVar.ValueFrom.SecretKeyRef)
 	assert.Equal(t, consts.OTLPExporterSecretName, dtTokenVar.ValueFrom.SecretKeyRef.Name)
-	assert.Equal(t, consts.DataIngestToken, dtTokenVar.ValueFrom.SecretKeyRef.Key)
+	assert.Equal(t, token.DataIngestToken, dtTokenVar.ValueFrom.SecretKeyRef.Key)
 }
 
 func TestMutator_Reinvoke(t *testing.T) {

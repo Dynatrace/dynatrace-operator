@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -102,9 +101,9 @@ func checkIfDynatraceAPISecretHasAPIToken(ctx context.Context, baseLog logd.Logg
 		return nil, errors.Wrapf(err, "'%s:%s' secret is missing or invalid", dk.Namespace, dk.Tokens())
 	}
 
-	_, hasAPIToken := tokens[consts.APIToken]
+	_, hasAPIToken := tokens[token.APIToken]
 	if !hasAPIToken {
-		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", consts.APIToken, dk.Namespace, dk.Tokens()))
+		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", token.APIToken, dk.Namespace, dk.Tokens()))
 	}
 
 	logInfof(log, "secret token 'apiToken' exists")

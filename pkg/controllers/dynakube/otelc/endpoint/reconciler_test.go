@@ -10,8 +10,8 @@ import (
 	schemeFake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	globalConsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +37,7 @@ func TestConfigMapCreation(t *testing.T) {
 		dk := createDynaKube(true)
 
 		testConfigMap, err := k8sconfigmap.Build(&dk, dk.Name, map[string]string{
-			globalConsts.APIToken: testAPIToken,
+			token.APIToken: testAPIToken,
 		})
 		require.NoError(t, err)
 

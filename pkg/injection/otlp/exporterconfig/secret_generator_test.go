@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -58,7 +59,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			dk,
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.DataIngestToken: []byte(testDataIngestToken),
+				token.DataIngestToken: []byte(testDataIngestToken),
 			}),
 		)
 
@@ -93,7 +94,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.DataIngestToken: []byte(testDataIngestToken),
+				token.DataIngestToken: []byte(testDataIngestToken),
 			}),
 		)
 
@@ -126,7 +127,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.DataIngestToken: []byte(testDataIngestToken),
+				token.DataIngestToken: []byte(testDataIngestToken),
 			}),
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
 				dynakube.TLSCertKey: []byte(testCrt),
@@ -145,7 +146,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		require.Equal(t, consts.OTLPExporterSecretName, secret.Name)
 		assert.NotEmpty(t, secret.Data)
 
-		assert.Equal(t, testDataIngestToken, string(secret.Data[consts.DataIngestToken]))
+		assert.Equal(t, testDataIngestToken, string(secret.Data[token.DataIngestToken]))
 
 		var sourceSecret corev1.Secret
 		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
@@ -194,16 +195,16 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				consts.DataIngestToken: []byte(testDataIngestToken),
+				token.DataIngestToken: []byte(testDataIngestToken),
 			}),
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
 				dynakube.TLSCertKey: []byte(testCrt),
 			}),
 			clientSecret(consts.OTLPExporterSecretName, testNamespace, map[string][]byte{
-				consts.DataIngestToken: []byte(oldDataIngestToken),
+				token.DataIngestToken: []byte(oldDataIngestToken),
 			}),
 			clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, map[string][]byte{
-				consts.DataIngestToken: []byte(oldDataIngestToken),
+				token.DataIngestToken: []byte(oldDataIngestToken),
 			}),
 			clientSecret(consts.OTLPExporterCertsSecretName, testNamespace, map[string][]byte{
 				ActiveGateCertDataName: []byte(oldTestCert),
@@ -225,7 +226,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		require.Equal(t, consts.OTLPExporterSecretName, secret.Name)
 		assert.NotEmpty(t, secret.Data)
 
-		assert.Equal(t, testDataIngestToken, string(secret.Data[consts.DataIngestToken]))
+		assert.Equal(t, testDataIngestToken, string(secret.Data[token.DataIngestToken]))
 
 		var sourceSecret corev1.Secret
 		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
@@ -303,7 +304,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			namespace1,
 			namespace2,
 			terminatingNS,
-			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{consts.DataIngestToken: []byte(testDataIngestToken)}),
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.DataIngestToken: []byte(testDataIngestToken)}),
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCertKey: []byte(testCrt)}),
 		)
 
@@ -365,7 +366,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		clt := fake.NewClientWithIndex(
 			dk,
 			nonInjected,
-			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{consts.DataIngestToken: []byte(testDataIngestToken)}),
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.DataIngestToken: []byte(testDataIngestToken)}),
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCertKey: []byte(testCrt)}),
 		)
 
@@ -402,7 +403,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		clt := fake.NewClientWithIndex(
 			dk,
 			namespace,
-			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{consts.DataIngestToken: []byte(testDataIngestToken)}),
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.DataIngestToken: []byte(testDataIngestToken)}),
 		)
 
 		sg := NewSecretGenerator(clt, clt, dtclientmock.NewClient(t))
@@ -434,7 +435,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		clt := fake.NewClientWithIndex(
 			dk,
 			namespace,
-			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{consts.DataIngestToken: []byte(testDataIngestToken)}),
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.DataIngestToken: []byte(testDataIngestToken)}),
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{"unknown": []byte("value")}),
 		)
 
@@ -467,7 +468,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			trustedCAConfigMap,
-			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{consts.DataIngestToken: []byte(testDataIngestToken)}),
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.DataIngestToken: []byte(testDataIngestToken)}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -515,7 +516,7 @@ func TestCleanup(t *testing.T) {
 		dk,
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			consts.DataIngestToken: []byte(testDataIngestToken),
+			token.DataIngestToken: []byte(testDataIngestToken),
 		}),
 		clientSecret(consts.OTLPExporterSecretName, testNamespace, nil),
 		clientSecret(consts.OTLPExporterSecretName, testNamespace2, nil),

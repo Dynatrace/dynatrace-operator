@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -50,9 +49,9 @@ func testReadTokens(t *testing.T) {
 			},
 		}
 		testSecret, err := k8ssecret.Build(&dk, "dynakube", map[string][]byte{
-			consts.APIToken:        []byte(testAPIToken),
-			consts.PaasToken:       []byte(testPaasToken),
-			consts.DataIngestToken: []byte(testDataIngestToken),
+			APIToken:               []byte(testAPIToken),
+			PaasToken:              []byte(testPaasToken),
+			DataIngestToken:        []byte(testDataIngestToken),
 			testIrrelevantTokenKey: []byte(testIrrelevantToken),
 		})
 		require.NoError(t, err)
@@ -65,13 +64,13 @@ func testReadTokens(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Len(t, tokens, 4)
-		assert.Contains(t, tokens, consts.APIToken)
-		assert.Contains(t, tokens, consts.PaasToken)
-		assert.Contains(t, tokens, consts.DataIngestToken)
+		assert.Contains(t, tokens, APIToken)
+		assert.Contains(t, tokens, PaasToken)
+		assert.Contains(t, tokens, DataIngestToken)
 		assert.Contains(t, tokens, testIrrelevantTokenKey)
-		assert.Equal(t, testAPIToken, tokens[consts.APIToken].Value)
-		assert.Equal(t, testPaasToken, tokens[consts.PaasToken].Value)
-		assert.Equal(t, testDataIngestToken, tokens[consts.DataIngestToken].Value)
+		assert.Equal(t, testAPIToken, tokens[APIToken].Value)
+		assert.Equal(t, testPaasToken, tokens[PaasToken].Value)
+		assert.Equal(t, testDataIngestToken, tokens[DataIngestToken].Value)
 		assert.Equal(t, testIrrelevantToken, tokens[testIrrelevantTokenKey].Value)
 	})
 }
@@ -98,7 +97,7 @@ func testVerifyTokens(t *testing.T) {
 			testIrrelevantTokenKey: {
 				Value: testIrrelevantToken,
 			},
-			consts.APIToken: {
+			APIToken: {
 				Value: testAPIToken,
 			},
 		})

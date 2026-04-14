@@ -11,10 +11,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	globalConsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/stretchr/testify/assert"
@@ -65,8 +65,8 @@ func TestNoProxyConsistency(t *testing.T) {
 
 func createClient(t *testing.T, dk *dynakube.DynaKube) client.WithWatch {
 	testTokensSecret, err := k8ssecret.Build(dk, dk.Name, map[string][]byte{
-		globalConsts.APIToken:        []byte(testToken),
-		globalConsts.DataIngestToken: []byte(testToken),
+		token.APIToken:        []byte(testToken),
+		token.DataIngestToken: []byte(testToken),
 	})
 	require.NoError(t, err)
 
