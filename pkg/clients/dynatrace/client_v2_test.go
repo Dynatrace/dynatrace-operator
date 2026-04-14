@@ -142,37 +142,32 @@ func TestNewOAuthClient(t *testing.T) {
 
 func TestWithAPIToken(t *testing.T) {
 	cfg := &ConfigV2{}
-	opt := WithAPIToken("token")
-	require.NoError(t, opt(cfg))
+	require.NoError(t, WithAPIToken("token")(cfg))
 	assert.Equal(t, "token", cfg.APIToken)
 }
 
 func TestWithPaasToken(t *testing.T) {
 	cfg := &ConfigV2{}
-	opt := WithPaasToken("paas")
-	require.NoError(t, opt(cfg))
+	require.NoError(t, WithPaasToken("paas")(cfg))
 	assert.Equal(t, "paas", cfg.PaasToken)
 }
 
 func TestWithNetworkZone(t *testing.T) {
 	cfg := &ConfigV2{}
-	opt := WithNetworkZone("zone")
-	require.NoError(t, opt(cfg))
+	require.NoError(t, WithNetworkZone("zone")(cfg))
 	assert.Equal(t, "zone", cfg.NetworkZone)
 }
 
 func TestWithHostGroup(t *testing.T) {
 	cfg := &ConfigV2{}
-	opt := WithHostGroup("hg")
-	require.NoError(t, opt(cfg))
+	require.NoError(t, WithHostGroup("hg")(cfg))
 	assert.Equal(t, "hg", cfg.HostGroup)
 }
 
 func TestWithBaseURL(t *testing.T) {
 	t.Run("valid URL is parsed and stored", func(t *testing.T) {
 		cfg := &ConfigV2{}
-		opt := WithBaseURL("https://aabb.test.com")
-		require.NoError(t, opt(cfg))
+		require.NoError(t, WithBaseURL("https://aabb.test.com")(cfg))
 		require.NotNil(t, cfg.BaseURL)
 		assert.Equal(t, "https://aabb.test.com", cfg.BaseURL.String())
 	})
