@@ -13,7 +13,7 @@ KUSTOMIZE_VERSION ?= v5.8.1
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 CONTROLLER_GEN_VERSION ?= v0.20.1
 # renovate depName=github.com/golangci/golangci-lint/v2
-GOLANGCI_LINT_VERSION ?= v2.11.3
+GOLANGCI_LINT_VERSION ?= v2.11.4
 # renovate depName=golang.org/x/tools
 GOLANG_TOOLS_VERSION ?= v0.42.0
 # renovate depName=github.com/vektra/mockery
@@ -25,7 +25,7 @@ MARKDOWN_LINK_CHECK_VERSION ?= v3.14.2
 # renovate depName=github.com/helm-unittest/helm-unittest
 HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.18.3
+GO_TEST_COVERAGE_VERSION ?= v2.18.4
 # renovate depName=@openapitools/openapi-generator-cli
 OPENAPI_GENERATOR_CLI_VERSION ?= 2.15.3
 

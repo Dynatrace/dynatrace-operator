@@ -1,11 +1,12 @@
 package token
 
 import (
+	"slices"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
-	"golang.org/x/exp/slices"
 )
 
 type Feature struct {
