@@ -533,7 +533,7 @@ func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oaut
 			dynatrace.WithClientSecret(oauthCredentials.clientSecret),
 			dynatrace.WithTokenURL(ec.Spec.OAuth.Endpoint),
 			dynatrace.WithOAuthScopes(oauthScopes),
-			dynatrace.WithOAuthHTTPOptions(dynatrace.WithCerts(customCA)))
+			dynatrace.WithCerts(customCA))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed tot create edge connect client")
 		}

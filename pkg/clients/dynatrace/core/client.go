@@ -58,7 +58,6 @@ type Config struct {
 	UserAgent  string
 	APIToken   string
 	PaasToken  string
-	OAuthToken string
 }
 
 type Client struct {

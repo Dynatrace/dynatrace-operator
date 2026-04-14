@@ -41,11 +41,11 @@ func (c Config) toDTClientOptionsV2() []dtclient.OptionV2 {
 	}
 
 	if c.Proxy != "" {
-		options = append(options, dtclient.WithV2HTTPOptions(dtclient.WithProxy(c.Proxy, c.NoProxy)))
+		options = append(options, dtclient.WithProxy(c.Proxy, c.NoProxy))
 	}
 
 	if c.SkipCertCheck {
-		options = append(options, dtclient.WithV2HTTPOptions(dtclient.WithSkipCertificateValidation(c.SkipCertCheck)))
+		options = append(options, dtclient.WithSkipCertificateValidation(c.SkipCertCheck))
 	}
 
 	return options

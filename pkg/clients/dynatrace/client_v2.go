@@ -34,13 +34,25 @@ type ClientV2 struct {
 	Token      token.APIClient
 }
 
+type OAuthClient struct {
+	EdgeConnect edgeconnect.APIClient
+}
+
 type ConfigV2 struct {
 	APIToken    string
 	PaasToken   string
 	NetworkZone string
 	HostGroup   string
 	UserAgent   string
-	httpOptions []HTTPOption
+
+	HTTPClient        *http.Client
+	TLSConfig         *tls.Config
+	Proxy             string
+	NoProxy           string
+	Timeout           time.Duration
+	DisableKeepAlives bool
+
+	clientcredentials.Config
 }
 
 // OptionV2 is a functional option for configuring the v2 client
@@ -48,14 +60,9 @@ type OptionV2 func(*ConfigV2) error
 
 // NewClientV2 creates a new Dynatrace V2 API client
 func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
-	config := ConfigV2{
-		UserAgent: operatorversion.UserAgent(),
-	}
-
-	for _, opt := range options {
-		if err := opt(&config); err != nil {
-			return nil, err
-		}
+	config, err := getConfig(options...)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get client v2 config")
 	}
 
 	parsedURL, err := url.Parse(baseURL)
@@ -67,14 +74,9 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/") + "/api"
 	}
 
-	httpClient, err := newHTTPClient(config.httpOptions...)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not create http client")
-	}
-
 	apiClient := core.NewClient(core.Config{
 		BaseURL:    parsedURL,
-		HTTPClient: httpClient,
+		HTTPClient: config.HTTPClient,
 		UserAgent:  config.UserAgent,
 		APIToken:   config.APIToken,
 		PaasToken:  config.PaasToken,
@@ -87,6 +89,33 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		OneAgent:   oneagent.NewClient(apiClient, config.HostGroup, config.NetworkZone),
 		Version:    version.NewClient(apiClient),
 		Token:      token.NewClient(apiClient),
+	}, nil
+}
+
+// NewOAuthClient creates a new Dynatrace API OAuth client
+func NewOAuthClient(baseURL string, options ...OptionV2) (*OAuthClient, error) {
+	config, err := getConfig(options...)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get client v2 config")
+	}
+
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base URL: %w", err)
+	}
+
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, config.HTTPClient)
+
+	oAuthHTTPClient := config.Client(ctx)
+
+	apiClient := core.NewClient(core.Config{
+		BaseURL:    parsedURL,
+		HTTPClient: oAuthHTTPClient,
+		UserAgent:  operatorversion.UserAgent(),
+	})
+
+	return &OAuthClient{
+		EdgeConnect: edgeconnect.NewClient(apiClient),
 	}, nil
 }
 
@@ -126,8 +155,8 @@ func WithHostGroup(hostGroup string) OptionV2 {
 	}
 }
 
-// WithV2UserAgentSuffix appends a suffix (comment) to the default user agent.
-func WithV2UserAgentSuffix(suffix string) OptionV2 {
+// WithUserAgentSuffix appends a suffix (comment) to the default user agent.
+func WithUserAgentSuffix(suffix string) OptionV2 {
 	return func(c *ConfigV2) error {
 		if suffix != "" {
 			c.UserAgent += " " + suffix
@@ -137,65 +166,9 @@ func WithV2UserAgentSuffix(suffix string) OptionV2 {
 	}
 }
 
-// WithV2HTTPOptions adds the HTTP options
-func WithV2HTTPOptions(options ...HTTPOption) OptionV2 {
-	return func(c *ConfigV2) error {
-		c.httpOptions = append(c.httpOptions, options...)
-
-		return nil
-	}
-}
-
-type OAuthClient struct {
-	EdgeConnect edgeconnect.APIClient
-}
-
-type OAuthConfig struct {
-	clientcredentials.Config
-	httpOptions []HTTPOption
-}
-
-// OAuthOption is a functional option for configuring the OAuth client
-type OAuthOption func(client *OAuthConfig) error
-
-// NewOAuthClient creates a new Dynatrace API OAuth client
-func NewOAuthClient(baseURL string, options ...OAuthOption) (*OAuthClient, error) {
-	config := &OAuthConfig{}
-
-	for _, opt := range options {
-		if err := opt(config); err != nil {
-			return nil, err
-		}
-	}
-
-	parsedURL, err := url.Parse(baseURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
-	}
-
-	httpClient, err := newHTTPClient(config.httpOptions...)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not create http client")
-	}
-
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
-
-	oAuthHTTPClient := config.Client(ctx)
-
-	apiClient := core.NewClient(core.Config{
-		BaseURL:    parsedURL,
-		HTTPClient: oAuthHTTPClient,
-		UserAgent:  operatorversion.UserAgent(),
-	})
-
-	return &OAuthClient{
-		EdgeConnect: edgeconnect.NewClient(apiClient),
-	}, nil
-}
-
 // WithClientID sets the OAuth client ID.
-func WithClientID(id string) OAuthOption {
-	return func(c *OAuthConfig) error {
+func WithClientID(id string) OptionV2 {
+	return func(c *ConfigV2) error {
 		c.ClientID = id
 
 		return nil
@@ -203,8 +176,8 @@ func WithClientID(id string) OAuthOption {
 }
 
 // WithClientSecret sets the OAuth client secret.
-func WithClientSecret(secret string) OAuthOption {
-	return func(c *OAuthConfig) error {
+func WithClientSecret(secret string) OptionV2 {
+	return func(c *ConfigV2) error {
 		c.ClientSecret = secret
 
 		return nil
@@ -212,8 +185,8 @@ func WithClientSecret(secret string) OAuthOption {
 }
 
 // WithTokenURL sets the OAuth token URL.
-func WithTokenURL(url string) OAuthOption {
-	return func(c *OAuthConfig) error {
+func WithTokenURL(url string) OptionV2 {
+	return func(c *ConfigV2) error {
 		c.TokenURL = url
 
 		return nil
@@ -221,39 +194,105 @@ func WithTokenURL(url string) OAuthOption {
 }
 
 // WithOAuthScopes sets the OAuth scopes.
-func WithOAuthScopes(scopes []string) OAuthOption {
-	return func(c *OAuthConfig) error {
+func WithOAuthScopes(scopes []string) OptionV2 {
+	return func(c *ConfigV2) error {
 		c.Scopes = scopes
 
 		return nil
 	}
 }
 
-// WithOAuthHTTPOptions adds HTTP options for the OAuth client.
-func WithOAuthHTTPOptions(options ...HTTPOption) OAuthOption {
-	return func(c *OAuthConfig) error {
-		c.httpOptions = append(c.httpOptions, options...)
+// WithHTTPClient sets a custom HTTP client
+func WithHTTPClient(httpClient *http.Client) OptionV2 {
+	return func(c *ConfigV2) error {
+		c.HTTPClient = httpClient
 
 		return nil
 	}
 }
 
-type HTTPConfig struct {
-	HTTPClient        *http.Client
-	TLSConfig         *tls.Config
-	Proxy             string
-	NoProxy           string
-	Timeout           time.Duration
-	DisableKeepAlives bool
+// WithTimeout sets the request timeout
+func WithTimeout(timeout time.Duration) OptionV2 {
+	return func(c *ConfigV2) error {
+		c.Timeout = timeout
+
+		return nil
+	}
 }
 
-// HTTPOption is a functional option for configuring the HTTP client.
-type HTTPOption func(*HTTPConfig) error
+// WithProxy sets the proxy URL
+func WithProxy(proxyURL, noProxy string) OptionV2 {
+	return func(c *ConfigV2) error {
+		c.Proxy = proxyURL
+		c.NoProxy = noProxy
 
-// newHTTPClient creates an HTTP client configured with the provided options.
-func newHTTPClient(options ...HTTPOption) (*http.Client, error) {
-	config := HTTPConfig{
-		Timeout: 30 * time.Second,
+		return nil
+	}
+}
+
+// WithTLSConfig sets custom TLS configuration
+func WithTLSConfig(tlsConfig *tls.Config) OptionV2 {
+	return func(c *ConfigV2) error {
+		c.TLSConfig = tlsConfig
+
+		return nil
+	}
+}
+
+// WithKeepAlive enables or disables HTTP keep-alives.
+func WithKeepAlive(keepAlive bool) OptionV2 {
+	return func(c *ConfigV2) error {
+		c.DisableKeepAlives = !keepAlive
+
+		return nil
+	}
+}
+
+// WithSkipCertificateValidation skips TLS certificate validation when enabled.
+func WithSkipCertificateValidation(skip bool) OptionV2 {
+	return func(c *ConfigV2) error {
+		if skip {
+			if c.TLSConfig == nil {
+				c.TLSConfig = &tls.Config{}
+			}
+
+			c.TLSConfig.InsecureSkipVerify = true
+		}
+
+		return nil
+	}
+}
+
+// WithCerts appends custom root certificates to the system certificate pool.
+func WithCerts(certs []byte) OptionV2 {
+	return func(c *ConfigV2) error {
+		if len(certs) == 0 {
+			return nil
+		}
+
+		rootCAs, err := x509.SystemCertPool()
+		if err != nil {
+			return errors.Wrap(err, "couldn't read system certificates")
+		}
+
+		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
+			return errors.New("failed to append custom certs")
+		}
+
+		if c.TLSConfig == nil {
+			c.TLSConfig = &tls.Config{}
+		}
+
+		c.TLSConfig.RootCAs = rootCAs
+
+		return nil
+	}
+}
+
+func getConfig(options ...OptionV2) (*ConfigV2, error) {
+	config := ConfigV2{
+		UserAgent: operatorversion.UserAgent(),
+		Timeout:   30 * time.Second,
 	}
 
 	for _, opt := range options {
@@ -301,106 +340,19 @@ func newHTTPClient(options ...HTTPOption) (*http.Client, error) {
 		config.HTTPClient.Timeout = config.Timeout
 	}
 
-	return config.HTTPClient, nil
-}
-
-// WithHTTPClient sets a custom HTTP client
-func WithHTTPClient(httpClient *http.Client) HTTPOption {
-	return func(c *HTTPConfig) error {
-		c.HTTPClient = httpClient
-
-		return nil
-	}
-}
-
-// WithTimeout sets the request timeout
-func WithTimeout(timeout time.Duration) HTTPOption {
-	return func(c *HTTPConfig) error {
-		c.Timeout = timeout
-
-		return nil
-	}
-}
-
-// WithProxy sets the proxy URL
-func WithProxy(proxyURL, noProxy string) HTTPOption {
-	return func(c *HTTPConfig) error {
-		c.Proxy = proxyURL
-		c.NoProxy = noProxy
-
-		return nil
-	}
-}
-
-// WithTLSConfig sets custom TLS configuration
-func WithTLSConfig(tlsConfig *tls.Config) HTTPOption {
-	return func(c *HTTPConfig) error {
-		c.TLSConfig = tlsConfig
-
-		return nil
-	}
-}
-
-// WithKeepAlive enables or disables HTTP keep-alives.
-func WithKeepAlive(keepAlive bool) HTTPOption {
-	return func(c *HTTPConfig) error {
-		c.DisableKeepAlives = !keepAlive
-
-		return nil
-	}
-}
-
-// WithSkipCertificateValidation skips TLS certificate validation when enabled.
-func WithSkipCertificateValidation(skip bool) HTTPOption {
-	return func(c *HTTPConfig) error {
-		if skip {
-			if c.TLSConfig == nil {
-				c.TLSConfig = &tls.Config{}
-			}
-
-			c.TLSConfig.InsecureSkipVerify = true
-		}
-
-		return nil
-	}
-}
-
-// WithCerts appends custom root certificates to the system certificate pool.
-func WithCerts(certs []byte) HTTPOption {
-	return func(c *HTTPConfig) error {
-		if len(certs) == 0 {
-			return nil
-		}
-
-		rootCAs, err := x509.SystemCertPool()
-		if err != nil {
-			return errors.Wrap(err, "couldn't read system certificates")
-		}
-
-		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-			return errors.New("failed to append custom certs")
-		}
-
-		if c.TLSConfig == nil {
-			c.TLSConfig = &tls.Config{}
-		}
-
-		c.TLSConfig.RootCAs = rootCAs
-
-		return nil
-	}
+	return &config, nil
 }
 
 func (dtc *dynatraceClient) AsV2() *ClientV2 {
 	// Fields are already validated by the v1 client constructor
 	v2, _ := NewClientV2(
 		dtc.url,
-		WithV2UserAgentSuffix(dtc.userAgentSuffix),
+		WithUserAgentSuffix(dtc.userAgentSuffix),
 		WithAPIToken(dtc.apiToken),
 		WithPaasToken(dtc.paasToken),
 		WithNetworkZone(dtc.networkZone),
 		WithHostGroup(dtc.hostGroup),
-		WithV2HTTPOptions(WithHTTPClient(dtc.httpClient)),
+		WithHTTPClient(dtc.httpClient),
 	)
 
 	// Placeholders to prevent deadcode elimination

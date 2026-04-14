@@ -67,7 +67,7 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, err
 	options := config.toDTClientOptionsV2()
 
 	if len(certs) > 0 {
-		options = append(options, dtclient.WithV2HTTPOptions(dtclient.WithCerts(certs)))
+		options = append(options, dtclient.WithCerts(certs))
 	}
 
 	client, err := dtclient.NewClientV2(config.URL, options...)

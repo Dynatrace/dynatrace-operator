@@ -154,7 +154,7 @@ func BuildClient(secret tenant.EdgeConnectSecret) (edgeconnectClient.APIClient, 
 			"settings:objects:write",
 		}),
 		// Disable keep-alive to prevent dropped network packets in GitHub Actions environment
-		dynatrace.WithOAuthHTTPOptions(dynatrace.WithKeepAlive(false)),
+		dynatrace.WithKeepAlive(false),
 	)
 
 	if err != nil {

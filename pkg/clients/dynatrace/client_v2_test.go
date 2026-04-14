@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -78,19 +79,19 @@ func TestNewClientV2(t *testing.T) {
 		require.NotNil(t, client)
 	})
 
-	t.Run("applies WithV2UserAgentSuffix option", func(t *testing.T) {
+	t.Run("applies WithUserAgentSuffix option", func(t *testing.T) {
 		client, err := NewClientV2(
 			"https://aabb.test.com/api",
-			WithV2UserAgentSuffix("my-suffix"),
+			WithUserAgentSuffix("my-suffix"),
 		)
 		require.NoError(t, err)
 		require.NotNil(t, client)
 	})
 
-	t.Run("WithV2UserAgentSuffix empty suffix is no-op", func(t *testing.T) {
+	t.Run("WithUserAgentSuffix empty suffix is no-op", func(t *testing.T) {
 		client, err := NewClientV2(
 			"https://aabb.test.com/api",
-			WithV2UserAgentSuffix(""),
+			WithUserAgentSuffix(""),
 		)
 		require.NoError(t, err)
 		require.NotNil(t, client)
@@ -100,7 +101,7 @@ func TestNewClientV2(t *testing.T) {
 		bad := badTransportHTTPClient()
 		_, err := NewClientV2(
 			"https://aabb.test.com/api",
-			WithV2HTTPOptions(WithHTTPClient(bad)),
+			WithHTTPClient(bad),
 		)
 		require.Error(t, err)
 	})
@@ -112,10 +113,47 @@ func TestNewClientV2(t *testing.T) {
 			WithPaasToken("paas"),
 			WithNetworkZone("zone"),
 			WithHostGroup("grp"),
-			WithV2UserAgentSuffix("sfx"),
+			WithUserAgentSuffix("sfx"),
 		)
 		require.NoError(t, err)
 		require.NotNil(t, client)
+	})
+}
+
+func TestNewOAuthClient(t *testing.T) {
+	t.Run("creates OAuth client successfully", func(t *testing.T) {
+		client, err := NewOAuthClient(
+			"https://aabb.test.com",
+			WithClientID("client-id"),
+			WithClientSecret("client-secret"),
+			WithTokenURL("https://sso.test.com/sso/oauth2/token"),
+		)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		assert.NotNil(t, client.EdgeConnect)
+	})
+
+	t.Run("returns error on invalid URL", func(t *testing.T) {
+		_, err := NewOAuthClient("://bad-url")
+		require.Error(t, err)
+	})
+
+	t.Run("applies WithOAuthScopes", func(t *testing.T) {
+		client, err := NewOAuthClient(
+			"https://aabb.test.com",
+			WithOAuthScopes([]string{"scope1", "scope2"}),
+		)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+	})
+
+	t.Run("returns error when HTTP option fails", func(t *testing.T) {
+		bad := badTransportHTTPClient()
+		_, err := NewOAuthClient(
+			"https://aabb.test.com",
+			WithHTTPClient(bad),
+		)
+		require.Error(t, err)
 	})
 }
 
@@ -150,117 +188,158 @@ func TestWithHostGroup(t *testing.T) {
 func TestWithV2UserAgentSuffix(t *testing.T) {
 	t.Run("appends suffix when non-empty", func(t *testing.T) {
 		cfg := &ConfigV2{UserAgent: "agent"}
-		require.NoError(t, WithV2UserAgentSuffix("sfx")(cfg))
+		require.NoError(t, WithUserAgentSuffix("sfx")(cfg))
 		assert.Equal(t, "agent sfx", cfg.UserAgent)
 	})
 
 	t.Run("no change when suffix is empty", func(t *testing.T) {
 		cfg := &ConfigV2{UserAgent: "agent"}
-		require.NoError(t, WithV2UserAgentSuffix("")(cfg))
+		require.NoError(t, WithUserAgentSuffix("")(cfg))
 		assert.Equal(t, "agent", cfg.UserAgent)
 	})
 }
 
-func TestWithV2HTTPOptions(t *testing.T) {
-	cfg := &ConfigV2{}
-	opt := WithV2HTTPOptions(WithTimeout(5 * time.Second))
-	require.NoError(t, opt(cfg))
-	httpCfg := &HTTPConfig{}
-	require.NoError(t, cfg.httpOptions[0](httpCfg))
-	assert.Equal(t, 5*time.Second, httpCfg.Timeout)
-}
-
-func TestNewOAuthClient(t *testing.T) {
-	t.Run("creates OAuth client successfully", func(t *testing.T) {
-		client, err := NewOAuthClient(
-			"https://aabb.test.com",
-			WithClientID("client-id"),
-			WithClientSecret("client-secret"),
-			WithTokenURL("https://sso.test.com/sso/oauth2/token"),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
-		assert.NotNil(t, client.EdgeConnect)
-	})
-
-	t.Run("returns error on invalid URL", func(t *testing.T) {
-		_, err := NewOAuthClient("://bad-url")
-		require.Error(t, err)
-	})
-
-	t.Run("applies WithOAuthScopes", func(t *testing.T) {
-		client, err := NewOAuthClient(
-			"https://aabb.test.com",
-			WithOAuthScopes([]string{"scope1", "scope2"}),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
-	})
-
-	t.Run("returns error when HTTP option fails", func(t *testing.T) {
-		bad := badTransportHTTPClient()
-		_, err := NewOAuthClient(
-			"https://aabb.test.com",
-			WithOAuthHTTPOptions(WithHTTPClient(bad)),
-		)
-		require.Error(t, err)
-	})
-}
-
 func TestWithClientID(t *testing.T) {
-	cfg := &OAuthConfig{}
+	cfg := &ConfigV2{}
 	require.NoError(t, WithClientID("id")(cfg))
 	assert.Equal(t, "id", cfg.ClientID)
 }
 
 func TestWithClientSecret(t *testing.T) {
-	cfg := &OAuthConfig{}
+	cfg := &ConfigV2{}
 	require.NoError(t, WithClientSecret("secret")(cfg))
 	assert.Equal(t, "secret", cfg.ClientSecret)
 }
 
 func TestWithTokenURL(t *testing.T) {
-	cfg := &OAuthConfig{}
+	cfg := &ConfigV2{}
 	require.NoError(t, WithTokenURL("https://sso.example.com/token")(cfg))
 	assert.Equal(t, "https://sso.example.com/token", cfg.TokenURL)
 }
 
 func TestWithOAuthScopes(t *testing.T) {
-	cfg := &OAuthConfig{}
+	cfg := &ConfigV2{}
 	scopes := []string{"scope1", "scope2"}
 	require.NoError(t, WithOAuthScopes(scopes)(cfg))
 	assert.Equal(t, scopes, cfg.Scopes)
 }
 
-func TestWithOAuthHTTPOptions(t *testing.T) {
-	cfg := &OAuthConfig{}
-	require.NoError(t, WithOAuthHTTPOptions(WithTimeout(10*time.Second))(cfg))
-	assert.Len(t, cfg.httpOptions, 1)
-	httpCfg := &HTTPConfig{}
-	require.NoError(t, cfg.httpOptions[0](httpCfg))
-	assert.Equal(t, 10*time.Second, httpCfg.Timeout)
+func TestWithHTTPClientOption(t *testing.T) {
+	existing := &http.Client{Transport: &http.Transport{}}
+	cfg := &ConfigV2{}
+	require.NoError(t, WithHTTPClient(existing)(cfg))
+	assert.Same(t, existing, cfg.HTTPClient)
 }
 
-func TestNewBaseClient(t *testing.T) {
-	t.Run("default creates client with 30s timeout", func(t *testing.T) {
-		c, err := newHTTPClient()
+func TestWithTimeoutOption(t *testing.T) {
+	cfg := &ConfigV2{}
+	require.NoError(t, WithTimeout(5*time.Second)(cfg))
+	assert.Equal(t, 5*time.Second, cfg.Timeout)
+}
+
+func TestWithProxyOption(t *testing.T) {
+	cfg := &ConfigV2{}
+	require.NoError(t, WithProxy("http://p.example.com", "no.proxy")(cfg))
+	assert.Equal(t, "http://p.example.com", cfg.Proxy)
+	assert.Equal(t, "no.proxy", cfg.NoProxy)
+}
+
+func TestWithTLSConfigOption(t *testing.T) {
+	tlsCfg := &tls.Config{MinVersion: tls.VersionTLS13}
+	cfg := &ConfigV2{}
+	require.NoError(t, WithTLSConfig(tlsCfg)(cfg))
+	assert.Equal(t, tlsCfg, cfg.TLSConfig)
+}
+
+func TestWithKeepAliveOption(t *testing.T) {
+	cfg := &ConfigV2{}
+
+	require.NoError(t, WithKeepAlive(false)(cfg))
+	assert.True(t, cfg.DisableKeepAlives)
+
+	require.NoError(t, WithKeepAlive(true)(cfg))
+	assert.False(t, cfg.DisableKeepAlives)
+}
+
+func TestWithSkipCertificateValidationOption(t *testing.T) {
+	t.Run("skip creates TLS config with InsecureSkipVerify", func(t *testing.T) {
+		cfg := &ConfigV2{}
+		require.NoError(t, WithSkipCertificateValidation(true)(cfg))
+		require.NotNil(t, cfg.TLSConfig)
+		assert.True(t, cfg.TLSConfig.InsecureSkipVerify)
+	})
+
+	t.Run("skip with existing TLS config reuses it", func(t *testing.T) {
+		existing := &tls.Config{MinVersion: tls.VersionTLS12}
+		cfg := &ConfigV2{TLSConfig: existing}
+		require.NoError(t, WithSkipCertificateValidation(true)(cfg))
+		assert.Same(t, existing, cfg.TLSConfig)
+		assert.True(t, cfg.TLSConfig.InsecureSkipVerify)
+	})
+
+	t.Run("no skip is a no-op", func(t *testing.T) {
+		cfg := &ConfigV2{}
+		require.NoError(t, WithSkipCertificateValidation(false)(cfg))
+		assert.Nil(t, cfg.TLSConfig)
+	})
+}
+
+func TestWithCertsOption(t *testing.T) {
+	t.Run("nil certs is a no-op", func(t *testing.T) {
+		cfg := &ConfigV2{}
+		require.NoError(t, WithCerts(nil)(cfg))
+		assert.Nil(t, cfg.TLSConfig)
+	})
+
+	t.Run("invalid PEM returns error", func(t *testing.T) {
+		cfg := &ConfigV2{}
+		err := WithCerts([]byte("not-a-valid-pem"))(cfg)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to append custom certs")
+	})
+}
+
+func TestGetConfig(t *testing.T) {
+	t.Run("default, a config with client default timeout and user agent", func(t *testing.T) {
+		c, err := getConfig()
 		require.NoError(t, err)
 		require.NotNil(t, c)
-		assert.Equal(t, 30*time.Second, c.Timeout)
+		assert.Equal(t, 30*time.Second, c.HTTPClient.Timeout)
+		assert.Equal(t, operatorversion.UserAgent(), c.UserAgent)
+	})
+
+	t.Run("with different options", func(t *testing.T) {
+		c, err := getConfig(
+			WithClientID("id"),
+			WithClientSecret("secret"),
+			WithAPIToken("apitoken"),
+			WithPaasToken("paastoken"),
+			WithNetworkZone("network"),
+			WithHostGroup("hostgroup"),
+			WithUserAgentSuffix("useragent"))
+
+		require.NoError(t, err)
+		assert.Equal(t, "id", c.ClientID)
+		assert.Equal(t, "secret", c.ClientSecret)
+		assert.Equal(t, "apitoken", c.APIToken)
+		assert.Equal(t, "paastoken", c.PaasToken)
+		assert.Equal(t, "network", c.NetworkZone)
+		assert.Equal(t, "hostgroup", c.HostGroup)
+		assert.Equal(t, operatorversion.UserAgent()+" useragent", c.UserAgent)
 	})
 
 	t.Run("WithTimeout overrides default", func(t *testing.T) {
-		c, err := newHTTPClient(WithTimeout(5 * time.Second))
+		c, err := getConfig(WithTimeout(5 * time.Second))
 		require.NoError(t, err)
-		assert.Equal(t, 5*time.Second, c.Timeout)
+		assert.Equal(t, 5*time.Second, c.HTTPClient.Timeout)
 	})
 
 	t.Run("WithProxy configures transport proxy", func(t *testing.T) {
-		c, err := newHTTPClient(WithProxy("http://proxy.example.com:8080", ""))
+		c, err := getConfig(WithProxy("http://proxy.example.com:8080", ""))
 		require.NoError(t, err)
 		require.NotNil(t, c)
 
-		transport, ok := c.Transport.(*http.Transport)
+		transport, ok := c.HTTPClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		require.NotNil(t, transport.Proxy)
 
@@ -270,10 +349,10 @@ func TestNewBaseClient(t *testing.T) {
 	})
 
 	t.Run("WithProxy with NoProxy excludes matching hosts", func(t *testing.T) {
-		c, err := newHTTPClient(WithProxy("http://proxy.example.com:8080", "excluded.host"))
+		c, err := getConfig(WithProxy("http://proxy.example.com:8080", "excluded.host"))
 		require.NoError(t, err)
 
-		transport, ok := c.Transport.(*http.Transport)
+		transport, ok := c.HTTPClient.Transport.(*http.Transport)
 		require.True(t, ok)
 
 		noProxyURL, err := transport.Proxy(&http.Request{URL: mustParseURL("https://excluded.host/path")})
@@ -286,150 +365,75 @@ func TestNewBaseClient(t *testing.T) {
 	})
 
 	t.Run("WithProxy invalid URL returns error", func(t *testing.T) {
-		_, err := newHTTPClient(WithProxy("://bad-proxy", ""))
+		_, err := getConfig(WithProxy("://bad-proxy", ""))
 		require.Error(t, err)
 	})
 
 	t.Run("WithSkipCertificateValidation true sets InsecureSkipVerify", func(t *testing.T) {
-		c, err := newHTTPClient(WithSkipCertificateValidation(true))
+		c, err := getConfig(WithSkipCertificateValidation(true))
 		require.NoError(t, err)
 
-		transport, ok := c.Transport.(*http.Transport)
+		transport, ok := c.HTTPClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		require.NotNil(t, transport.TLSClientConfig)
 		assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 
 	t.Run("WithSkipCertificateValidation false is no-op", func(t *testing.T) {
-		c, err := newHTTPClient(WithSkipCertificateValidation(false))
+		c, err := getConfig(WithSkipCertificateValidation(false))
 		require.NoError(t, err)
 
-		transport, ok := c.Transport.(*http.Transport)
+		transport, ok := c.HTTPClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		assert.Nil(t, transport.TLSClientConfig)
 	})
 
 	t.Run("WithTLSConfig sets TLS config on transport", func(t *testing.T) {
 		tlsCfg := &tls.Config{MinVersion: tls.VersionTLS13}
-		c, err := newHTTPClient(WithTLSConfig(tlsCfg))
+		c, err := getConfig(WithTLSConfig(tlsCfg))
 		require.NoError(t, err)
 
-		transport, ok := c.Transport.(*http.Transport)
+		transport, ok := c.HTTPClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		assert.Equal(t, tlsCfg, transport.TLSClientConfig)
 	})
 
 	t.Run("WithKeepAlive false disables keep-alives", func(t *testing.T) {
-		c, err := newHTTPClient(WithKeepAlive(false))
+		c, err := getConfig(WithKeepAlive(false))
 		require.NoError(t, err)
 
-		transport, ok := c.Transport.(*http.Transport)
+		transport, ok := c.HTTPClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		assert.True(t, transport.DisableKeepAlives)
 	})
 
 	t.Run("WithKeepAlive true keeps keep-alives enabled", func(t *testing.T) {
-		c, err := newHTTPClient(WithKeepAlive(true))
+		c, err := getConfig(WithKeepAlive(true))
 		require.NoError(t, err)
 
-		transport, ok := c.Transport.(*http.Transport)
+		transport, ok := c.HTTPClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		assert.False(t, transport.DisableKeepAlives)
 	})
 
 	t.Run("WithHTTPClient uses provided client", func(t *testing.T) {
 		existing := &http.Client{Transport: &http.Transport{}}
-		c, err := newHTTPClient(WithHTTPClient(existing))
+		c, err := getConfig(WithHTTPClient(existing))
 		require.NoError(t, err)
-		assert.Same(t, existing, c)
+		assert.Same(t, existing, c.HTTPClient)
 	})
 
 	t.Run("WithHTTPClient with unexpected transport type returns error", func(t *testing.T) {
 		bad := &http.Client{Transport: &badTransport{}}
-		_, err := newHTTPClient(WithHTTPClient(bad))
+		_, err := getConfig(WithHTTPClient(bad))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected transport type")
 	})
 
 	t.Run("WithCerts empty bytes is no-op", func(t *testing.T) {
-		c, err := newHTTPClient(WithCerts(nil))
+		c, err := getConfig(WithCerts(nil))
 		require.NoError(t, err)
-		require.NotNil(t, c)
-	})
-}
-
-func TestWithHTTPClientOption(t *testing.T) {
-	existing := &http.Client{Transport: &http.Transport{}}
-	cfg := &HTTPConfig{}
-	require.NoError(t, WithHTTPClient(existing)(cfg))
-	assert.Same(t, existing, cfg.HTTPClient)
-}
-
-func TestWithTimeoutOption(t *testing.T) {
-	cfg := &HTTPConfig{}
-	require.NoError(t, WithTimeout(5*time.Second)(cfg))
-	assert.Equal(t, 5*time.Second, cfg.Timeout)
-}
-
-func TestWithProxyOption(t *testing.T) {
-	cfg := &HTTPConfig{}
-	require.NoError(t, WithProxy("http://p.example.com", "no.proxy")(cfg))
-	assert.Equal(t, "http://p.example.com", cfg.Proxy)
-	assert.Equal(t, "no.proxy", cfg.NoProxy)
-}
-
-func TestWithTLSConfigOption(t *testing.T) {
-	tlsCfg := &tls.Config{MinVersion: tls.VersionTLS13}
-	cfg := &HTTPConfig{}
-	require.NoError(t, WithTLSConfig(tlsCfg)(cfg))
-	assert.Equal(t, tlsCfg, cfg.TLSConfig)
-}
-
-func TestWithKeepAliveOption(t *testing.T) {
-	cfg := &HTTPConfig{}
-
-	require.NoError(t, WithKeepAlive(false)(cfg))
-	assert.True(t, cfg.DisableKeepAlives)
-
-	require.NoError(t, WithKeepAlive(true)(cfg))
-	assert.False(t, cfg.DisableKeepAlives)
-}
-
-func TestWithSkipCertificateValidationOption(t *testing.T) {
-	t.Run("skip creates TLS config with InsecureSkipVerify", func(t *testing.T) {
-		cfg := &HTTPConfig{}
-		require.NoError(t, WithSkipCertificateValidation(true)(cfg))
-		require.NotNil(t, cfg.TLSConfig)
-		assert.True(t, cfg.TLSConfig.InsecureSkipVerify)
-	})
-
-	t.Run("skip with existing TLS config reuses it", func(t *testing.T) {
-		existing := &tls.Config{MinVersion: tls.VersionTLS12}
-		cfg := &HTTPConfig{TLSConfig: existing}
-		require.NoError(t, WithSkipCertificateValidation(true)(cfg))
-		assert.Same(t, existing, cfg.TLSConfig)
-		assert.True(t, cfg.TLSConfig.InsecureSkipVerify)
-	})
-
-	t.Run("no skip is a no-op", func(t *testing.T) {
-		cfg := &HTTPConfig{}
-		require.NoError(t, WithSkipCertificateValidation(false)(cfg))
-		assert.Nil(t, cfg.TLSConfig)
-	})
-}
-
-func TestWithCertsOption(t *testing.T) {
-	t.Run("nil certs is a no-op", func(t *testing.T) {
-		cfg := &HTTPConfig{}
-		require.NoError(t, WithCerts(nil)(cfg))
-		assert.Nil(t, cfg.TLSConfig)
-	})
-
-	t.Run("invalid PEM returns error", func(t *testing.T) {
-		cfg := &HTTPConfig{}
-		err := WithCerts([]byte("not-a-valid-pem"))(cfg)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to append custom certs")
+		require.NotNil(t, c.HTTPClient)
 	})
 }
 
