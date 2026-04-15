@@ -5,6 +5,7 @@ package logs
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"strings"
 	"testing"
@@ -18,17 +19,22 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-func FetchOperatorLog(ctx context.Context, envConfig *envconf.Config, t *testing.T) string {
+// WriteOperatorLog fetches the operator pod logs and writes the to the testing log sink.
+func WriteOperatorLog(ctx context.Context, envConfig *envconf.Config, t *testing.T) {
 	resources := envConfig.Client().Resources()
 
-	var operatorLog string
-
-	err := k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{Name: "dynatrace-operator", Namespace: "dynatrace"}).ForEachPod(func(pod corev1.Pod) {
-		operatorLog = ReadLog(ctx, t, envConfig, pod.Namespace, pod.Name, "operator")
-	})
+	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 	require.NoError(t, err)
 
-	return operatorLog
+	err = k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{Name: "dynatrace-operator", Namespace: "dynatrace"}).ForEachPod(func(pod corev1.Pod) {
+		err = copyLogStream(ctx, clientset, t.Output(), logParams{
+			namespace:     pod.Namespace,
+			podName:       pod.Name,
+			containerName: "operator",
+		})
+		require.NoError(t, err)
+	})
+	require.NoError(t, err)
 }
 
 func ReadLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, namespace, podName, containerName string) string { //nolint:revive
@@ -40,17 +46,12 @@ func ReadLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, names
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 	require.NoError(t, err)
 
-	logStream, err := clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
-		Container: containerName,
-	}).Stream(ctx)
-	require.NoError(t, err)
-
-	defer func() {
-		require.NoError(t, logStream.Close())
-	}()
-
 	buffer := new(bytes.Buffer)
-	_, err = io.Copy(buffer, logStream)
+	err = copyLogStream(ctx, clientset, buffer, logParams{
+		namespace:     namespace,
+		podName:       podName,
+		containerName: containerName,
+	})
 	require.NoError(t, err)
 
 	return buffer.String()
@@ -73,4 +74,30 @@ func FindLineContainingText(log, searchText string) string {
 	}
 
 	return ""
+}
+
+type logParams struct {
+	namespace     string
+	podName       string
+	containerName string
+}
+
+func copyLogStream(ctx context.Context, clientset kubernetes.Interface, w io.Writer, params logParams) (err error) {
+	logStream, err := clientset.CoreV1().Pods(params.namespace).GetLogs(params.podName, &corev1.PodLogOptions{
+		Container: params.containerName,
+	}).Stream(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		errClose := logStream.Close()
+		if errClose != nil {
+			err = errors.Join(err, errClose)
+		}
+	}()
+
+	_, err = io.Copy(w, logStream)
+
+	return err
 }
