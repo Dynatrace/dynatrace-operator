@@ -257,6 +257,66 @@ func (brokenWriter) Write(_ []byte) (int, error) {
 	return 0, io.ErrClosedPipe
 }
 
+func TestClient_ExecuteWriterWithHeaders(t *testing.T) {
+	const responseBody = "cbor-binary-content"
+	const etagValue = `"v1"`
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/fail":
+			w.WriteHeader(http.StatusTeapot)
+			_, _ = w.Write([]byte(`{"error":{}}`))
+		case "/not-modified":
+			w.WriteHeader(http.StatusNotModified)
+		default:
+			w.Header().Set("ETag", etagValue)
+			_, _ = w.Write([]byte(responseBody))
+		}
+	}))
+	defer s.Close()
+
+	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+
+	t.Run("streams response body and returns headers", func(t *testing.T) {
+		var buf bytes.Buffer
+		headers, err := c.GET(t.Context(), "/test").ExecuteWriterWithHeaders(&buf)
+		require.NoError(t, err)
+		assert.Equal(t, responseBody, buf.String())
+		assert.Equal(t, etagValue, headers.Get("ETag"))
+	})
+
+	t.Run("returns error and writes nothing on non-2xx", func(t *testing.T) {
+		var buf bytes.Buffer
+		headers, err := c.GET(t.Context(), "/fail").ExecuteWriterWithHeaders(&buf)
+		require.Error(t, err)
+		assert.Nil(t, headers)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns HTTPError with status 304 on Not Modified", func(t *testing.T) {
+		var buf bytes.Buffer
+		headers, err := c.GET(t.Context(), "/not-modified").ExecuteWriterWithHeaders(&buf)
+		require.Error(t, err)
+		assert.True(t, HasStatusCode(err, http.StatusNotModified))
+		assert.Nil(t, headers)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns error on missing base URL", func(t *testing.T) {
+		var buf bytes.Buffer
+		headers, err := new(Client).GET(t.Context(), "/test").ExecuteWriterWithHeaders(&buf)
+		require.EqualError(t, err, "build URL: missing base URL")
+		assert.Nil(t, headers)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns error on broken writer", func(t *testing.T) {
+		headers, err := c.GET(t.Context(), "/test").ExecuteWriterWithHeaders(brokenWriter{})
+		require.ErrorContains(t, err, "stream response body")
+		assert.Nil(t, headers)
+	})
+}
+
 func TestHandleErrorResponse_SingleServerError(t *testing.T) {
 	resp := newTestResponse(400, "/test", `{"error":{"code":400,"message":"bad request"}}`)
 	err := handleErrorResponse(resp, []byte(`{"error":{"code":400,"message":"bad request"}}`))

@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"io"
+	"net/http"
 	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -192,6 +193,68 @@ func (_c *APIRequest_ExecuteWriter_Call) Return(err error) *APIRequest_ExecuteWr
 }
 
 func (_c *APIRequest_ExecuteWriter_Call) RunAndReturn(run func(writer io.Writer) error) *APIRequest_ExecuteWriter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ExecuteWriterWithHeaders provides a mock function for the type APIRequest
+func (_mock *APIRequest) ExecuteWriterWithHeaders(writer io.Writer) (http.Header, error) {
+	ret := _mock.Called(writer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ExecuteWriterWithHeaders")
+	}
+
+	var r0 http.Header
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(io.Writer) (http.Header, error)); ok {
+		return returnFunc(writer)
+	}
+	if returnFunc, ok := ret.Get(0).(func(io.Writer) http.Header); ok {
+		r0 = returnFunc(writer)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.Header)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(io.Writer) error); ok {
+		r1 = returnFunc(writer)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// APIRequest_ExecuteWriterWithHeaders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecuteWriterWithHeaders'
+type APIRequest_ExecuteWriterWithHeaders_Call struct {
+	*mock.Call
+}
+
+// ExecuteWriterWithHeaders is a helper method to define mock.On call
+//   - writer io.Writer
+func (_e *APIRequest_Expecter) ExecuteWriterWithHeaders(writer interface{}) *APIRequest_ExecuteWriterWithHeaders_Call {
+	return &APIRequest_ExecuteWriterWithHeaders_Call{Call: _e.mock.On("ExecuteWriterWithHeaders", writer)}
+}
+
+func (_c *APIRequest_ExecuteWriterWithHeaders_Call) Run(run func(writer io.Writer)) *APIRequest_ExecuteWriterWithHeaders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 io.Writer
+		if args[0] != nil {
+			arg0 = args[0].(io.Writer)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *APIRequest_ExecuteWriterWithHeaders_Call) Return(headers http.Header, err error) *APIRequest_ExecuteWriterWithHeaders_Call {
+	_c.Call.Return(headers, err)
+	return _c
+}
+
+func (_c *APIRequest_ExecuteWriterWithHeaders_Call) RunAndReturn(run func(writer io.Writer) (http.Header, error)) *APIRequest_ExecuteWriterWithHeaders_Call {
 	_c.Call.Return(run)
 	return _c
 }
