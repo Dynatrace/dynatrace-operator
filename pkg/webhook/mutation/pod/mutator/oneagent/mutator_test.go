@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -432,7 +433,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 			},
 		}
 
-		addOneAgentToContainer(dk, &container, corev1.Namespace{}, installPath)
+		addOneAgentToContainer(dk, &container, corev1.Namespace{}, installPath, logd.Get())
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 

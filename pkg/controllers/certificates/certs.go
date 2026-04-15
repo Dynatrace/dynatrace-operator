@@ -126,8 +126,8 @@ func (cs *Certs) validateServerCerts(ctx context.Context, now time.Time) bool {
 
 func (cs *Certs) generateRootCerts(ctx context.Context, domain string, now time.Time) error {
 	log := logd.FromContext(ctx)
-
 	// Generate CA root keys
+
 	log.Info("generating root certificate")
 
 	privateKey, err := cs.generatePrivateKey(RootKey)
@@ -183,7 +183,6 @@ func (cs *Certs) generateRootCerts(ctx context.Context, domain string, now time.
 
 func (cs *Certs) generateServerCerts(ctx context.Context, domain string, now time.Time) error {
 	log := logd.FromContext(ctx)
-
 	// Generate server keys
 	log.Info("generating server certificate")
 

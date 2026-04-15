@@ -38,7 +38,7 @@ func (extractor OneAgentExtractor) ExtractGzip(ctx context.Context, sourceFilePa
 	tmpUnzipDir := extractor.pathResolver.AgentTempUnzipRootDir()
 	tarReader := tar.NewReader(gzipReader)
 
-	err = extractFilesFromGzip(tmpUnzipDir, tarReader)
+	err = extractFilesFromGzip(ctx, tmpUnzipDir, tarReader)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (extractor OneAgentExtractor) ExtractGzip(ctx context.Context, sourceFilePa
 	return extractor.moveToTargetDir(ctx, targetDir)
 }
 
-func extractFilesFromGzip(targetDir string, reader *tar.Reader) error {
+func extractFilesFromGzip(ctx context.Context, targetDir string, reader *tar.Reader) error {
 	for {
 		header, err := reader.Next()
 		if errors.Is(err, io.EOF) {
@@ -71,25 +71,27 @@ func extractFilesFromGzip(targetDir string, reader *tar.Reader) error {
 			return errors.Errorf("%q is outside of %q", header.Name, targetDir)
 		}
 
-		err = extract(targetDir, reader, header, target)
+		err = extract(ctx, targetDir, reader, header, target)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func extract(targetDir string, reader *tar.Reader, header *tar.Header, target string) error {
+func extract(ctx context.Context, targetDir string, reader *tar.Reader, header *tar.Header, target string) error {
+	log := logd.FromContext(ctx)
+
 	switch header.Typeflag {
 	case tar.TypeDir:
 		if err := os.MkdirAll(target, header.FileInfo().Mode()); err != nil {
 			return errors.WithStack(err)
 		}
 	case tar.TypeLink:
-		if err := extractLink(targetDir, target, header); err != nil {
+		if err := extractLink(ctx, targetDir, target, header); err != nil {
 			return errors.WithStack(err)
 		}
 	case tar.TypeSymlink:
-		if err := extractSymlink(targetDir, target, header); err != nil {
+		if err := extractSymlink(ctx, targetDir, target, header); err != nil {
 			return errors.WithStack(err)
 		}
 	case tar.TypeReg:
@@ -103,7 +105,9 @@ func extract(targetDir string, reader *tar.Reader, header *tar.Header, target st
 	return nil
 }
 
-func extractLink(targetDir, target string, header *tar.Header) error {
+func extractLink(ctx context.Context, targetDir, target string, header *tar.Header) error {
+	log := logd.FromContext(ctx)
+
 	if isSafeToLink(header.Linkname, targetDir, target) && isSafeToLink(header.Name, targetDir, target) {
 		if err := os.Link(filepath.Join(targetDir, header.Linkname), target); err != nil {
 			return errors.WithStack(err)
@@ -115,7 +119,9 @@ func extractLink(targetDir, target string, header *tar.Header) error {
 	return nil
 }
 
-func extractSymlink(targetDir, target string, header *tar.Header) error {
+func extractSymlink(ctx context.Context, targetDir, target string, header *tar.Header) error {
+	log := logd.FromContext(ctx)
+
 	if isSafeToLink(header.Linkname, targetDir, target) && isSafeToLink(header.Name, targetDir, target) {
 		if err := os.Symlink(header.Linkname, target); err != nil {
 			return errors.WithStack(err)

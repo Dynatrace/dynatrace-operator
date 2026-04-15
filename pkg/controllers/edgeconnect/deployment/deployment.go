@@ -1,8 +1,11 @@
 package deployment
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -18,11 +21,13 @@ const (
 	unprivilegedGroup = int64(1000)
 )
 
-func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
-	return create(ec)
+func New(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
+	return create(ctx, ec)
 }
 
-func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
+func create(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
+	log := logd.FromContext(ctx)
+
 	appLabels := buildAppLabels(ec)
 	labels := appLabels.BuildLabels()
 

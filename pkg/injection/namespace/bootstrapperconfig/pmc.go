@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +19,8 @@ import (
 )
 
 func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
+	log := logd.FromContext(ctx)
+
 	pmConfig, err := s.getCachedPMC(ctx, dk)
 	if err != nil {
 		return nil, err
@@ -90,6 +93,8 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 }
 
 func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKube) (*oneagentclient.ProcessModuleConfig, error) {
+	log := logd.FromContext(ctx)
+
 	var pmConfig *oneagentclient.ProcessModuleConfig
 
 	if !k8sconditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {

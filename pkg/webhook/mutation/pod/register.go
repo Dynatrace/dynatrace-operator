@@ -1,9 +1,11 @@
 package pod
 
 import (
+	"context"
 	"net/http"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
@@ -20,7 +22,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, isOpenShift bool) error {
+func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, isOpenShift bool) error {
+	log := logd.FromContext(ctx)
+
 	eventRecorder := mgr.GetEventRecorder("dynatrace-webhook")
 	kubeConfig := mgr.GetConfig()
 	kubeClient := mgr.GetClient()
@@ -33,6 +37,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, isOpen
 	}
 
 	wh, err := newWebhook(
+		ctx,
 		kubeClient,
 		metaClient,
 		apiReader,
@@ -52,6 +57,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, isOpen
 }
 
 func newWebhook( //nolint:revive
+	ctx context.Context,
 	kubeClient,
 	metaClient client.Client,
 	apiReader client.Reader,
@@ -59,6 +65,8 @@ func newWebhook( //nolint:revive
 	decoder admission.Decoder,
 	webhookNamespace string,
 	isOpenshift bool) (*webhook, error) {
+	log := logd.FromContext(ctx)
+
 	webhookImage := os.Getenv(k8senv.DTOperatorImageEnvName)
 	if webhookImage == "" {
 		return nil, errors.New("DT_OPERATOR_IMAGE env var is not set, cannot determine webhook container image")
@@ -90,7 +98,9 @@ func newWebhook( //nolint:revive
 	}, nil
 }
 
-func registerLivezEndpoint(mgr manager.Manager) {
+func registerLivezEndpoint(ctx context.Context, mgr manager.Manager) {
+	log := logd.FromContext(ctx)
+
 	mgr.GetWebhookServer().Register("/livez", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))

@@ -9,11 +9,14 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/klauspost/compress/zip"
 	"github.com/pkg/errors"
 )
 
 func (extractor OneAgentExtractor) ExtractZip(ctx context.Context, sourceFile *os.File, targetDir string) error {
+	log := logd.FromContext(ctx)
+
 	extractor.cleanTempZipDir()
 
 	if sourceFile == nil {

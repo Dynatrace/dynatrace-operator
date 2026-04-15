@@ -30,7 +30,7 @@ func TestRemoveHostMounts(t *testing.T) {
 			assert.DirExists(t, cleaner.path.OsAgentDir(folder))
 		}
 
-		cleaner.removeHostMounts(dks, fsState{
+		cleaner.removeHostMounts(t.Context(), dks, fsState{
 			hostDks: hostFolders,
 		})
 
@@ -58,7 +58,7 @@ func TestRemoveHostMounts(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		cleaner.removeHostMounts(dks, fsState{
+		cleaner.removeHostMounts(t.Context(), dks, fsState{
 			hostDks: []string{dks[0].Name, dks[1].Name, tenantUUID1, "random-name1", "random-name2"},
 		})
 
@@ -89,7 +89,7 @@ func TestRemoveHostMounts(t *testing.T) {
 
 		cleaner.mounter = fakeMounter
 
-		cleaner.removeHostMounts(dks, fsState{
+		cleaner.removeHostMounts(t.Context(), dks, fsState{
 			hostDks: hostFolders,
 		})
 
@@ -110,7 +110,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 		cleaner := createCleaner(t)
 		dks := []dynakube.DynaKube{}
 
-		relevantDirs := cleaner.collectRelevantHostDirs(dks)
+		relevantDirs := cleaner.collectRelevantHostDirs(t.Context(), dks)
 
 		require.Empty(t, relevantDirs)
 	})
@@ -122,7 +122,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 			createAppMonDK(t, "appmon2", apiURL2),
 		}
 
-		relevantDirs := cleaner.collectRelevantHostDirs(dks)
+		relevantDirs := cleaner.collectRelevantHostDirs(t.Context(), dks)
 
 		require.Empty(t, relevantDirs)
 	})
@@ -134,7 +134,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 			createCloudNativeDK(t, "cloudnative", apiURL2),
 		}
 
-		relevantDirs := cleaner.collectRelevantHostDirs(dks)
+		relevantDirs := cleaner.collectRelevantHostDirs(t.Context(), dks)
 
 		require.NotEmpty(t, relevantDirs)
 		require.Len(t, relevantDirs, 2)
@@ -155,7 +155,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 		cleaner.createDeprecatedHostDirs(t, tenantUUID1)
 		cleaner.createHostDirs(t, dks[0].Name)
 
-		relevantDirs := cleaner.collectRelevantHostDirs(dks)
+		relevantDirs := cleaner.collectRelevantHostDirs(t.Context(), dks)
 
 		require.NotEmpty(t, relevantDirs)
 		require.Len(t, relevantDirs, 3)

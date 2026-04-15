@@ -63,7 +63,7 @@ func TestRemoveUnusedBinaries(t *testing.T) {
 			require.NoError(t, os.MkdirAll(cleaner.path.LatestAgentBinaryForDynaKube(tenantName), os.ModePerm))
 		}
 
-		cleaner.removeUnusedBinaries([]dynakube.DynaKube{dk}, state)
+		cleaner.removeUnusedBinaries(t.Context(), []dynakube.DynaKube{dk}, state)
 
 		for _, version := range unusedVersions {
 			assert.NoDirExists(t, cleaner.path.AgentSharedBinaryDirForAgent(version))
@@ -96,7 +96,7 @@ func TestRemoveOldSharedBinaries(t *testing.T) {
 
 		keptBins := map[string]bool{}
 
-		cleaner.removeOldSharedBinaries(keptBins)
+		cleaner.removeOldSharedBinaries(t.Context(), keptBins)
 	})
 	t.Run("empty shared dir -> no panic", func(t *testing.T) {
 		cleaner := createCleaner(t)
@@ -104,7 +104,7 @@ func TestRemoveOldSharedBinaries(t *testing.T) {
 
 		keptBins := map[string]bool{}
 
-		cleaner.removeOldSharedBinaries(keptBins)
+		cleaner.removeOldSharedBinaries(t.Context(), keptBins)
 	})
 
 	t.Run("empty keptBins -> remove all", func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestRemoveOldSharedBinaries(t *testing.T) {
 			assert.DirExists(t, expectedDir)
 		}
 
-		cleaner.removeOldSharedBinaries(keptBins)
+		cleaner.removeOldSharedBinaries(t.Context(), keptBins)
 
 		for _, folder := range agentVersions {
 			expectedDir := cleaner.path.AgentSharedBinaryDirForAgent(folder)
@@ -147,7 +147,7 @@ func TestRemoveOldSharedBinaries(t *testing.T) {
 			assert.DirExists(t, expectedDir)
 		}
 
-		cleaner.removeOldSharedBinaries(keptBins)
+		cleaner.removeOldSharedBinaries(t.Context(), keptBins)
 
 		for _, folder := range agentVersions {
 			expectedDir := cleaner.path.AgentSharedBinaryDirForAgent(folder)
@@ -165,7 +165,7 @@ func TestCollectStillMountedBins(t *testing.T) {
 	t.Run("0 mounts -> empty", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		relevantBins, err := cleaner.collectStillMountedBins()
+		relevantBins, err := cleaner.collectStillMountedBins(t.Context())
 
 		require.NoError(t, err)
 		require.Empty(t, relevantBins)
@@ -189,7 +189,7 @@ func TestCollectStillMountedBins(t *testing.T) {
 
 		mockMountPoints(t, cleaner, relevantMountPoint)
 
-		relevantBins, err := cleaner.collectStillMountedBins()
+		relevantBins, err := cleaner.collectStillMountedBins(t.Context())
 
 		require.NoError(t, err)
 		require.Len(t, relevantBins, 1)
@@ -201,14 +201,14 @@ func TestCollectRelevantLatestBins(t *testing.T) {
 	t.Run("no dk -> do nothing", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		relevantBins := cleaner.collectRelevantLatestBins([]dynakube.DynaKube{})
+		relevantBins := cleaner.collectRelevantLatestBins(t.Context(), []dynakube.DynaKube{})
 
 		require.Empty(t, relevantBins)
 	})
 	t.Run("no relevant dk -> do nothing", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		relevantBins := cleaner.collectRelevantLatestBins([]dynakube.DynaKube{
+		relevantBins := cleaner.collectRelevantLatestBins(t.Context(), []dynakube.DynaKube{
 			createHostMonDK(t, "hostmon", "url"),
 		})
 
@@ -223,7 +223,7 @@ func TestCollectRelevantLatestBins(t *testing.T) {
 		require.NoError(t, os.MkdirAll(cleaner.path.DynaKubeDir(dk.Name), os.ModePerm))
 		require.NoError(t, os.Symlink(relevantBin, cleaner.path.LatestAgentBinaryForDynaKube(dk.Name)))
 
-		relevantBins := cleaner.collectRelevantLatestBins([]dynakube.DynaKube{
+		relevantBins := cleaner.collectRelevantLatestBins(t.Context(), []dynakube.DynaKube{
 			dk,
 		})
 
@@ -246,7 +246,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 			assert.DirExists(t, expectedDir)
 		}
 
-		cleaner.removeOldBinarySymlinks(dks, fsState{
+		cleaner.removeOldBinarySymlinks(t.Context(), dks, fsState{
 			binDks: binDirs,
 		})
 
@@ -271,7 +271,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 			assert.DirExists(t, expectedDir)
 		}
 
-		cleaner.removeOldBinarySymlinks(dks, fsState{
+		cleaner.removeOldBinarySymlinks(t.Context(), dks, fsState{
 			binDks: binDirs,
 		})
 
@@ -300,7 +300,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 			assert.DirExists(t, expectedDir)
 		}
 
-		cleaner.removeOldBinarySymlinks(dks, fsState{
+		cleaner.removeOldBinarySymlinks(t.Context(), dks, fsState{
 			deprecatedDks: binDirs,
 		})
 

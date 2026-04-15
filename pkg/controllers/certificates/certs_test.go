@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"testing"
@@ -18,7 +19,7 @@ func TestCertsValidation(t *testing.T) {
 		Now:    now,
 	}
 
-	require.NoError(t, firstCerts.ValidateCerts(t.Context()))
+	require.NoError(t, firstCerts.ValidateCerts(context.Background()))
 	require.Len(t, firstCerts.Data, 5)
 	requireValidCerts(t, domain, now.Add(5*time.Minute), firstCerts.Data[RootCert], firstCerts.Data[ServerCert])
 
@@ -26,7 +27,7 @@ func TestCertsValidation(t *testing.T) {
 		newTime := now.Add(5 * time.Minute)
 
 		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
-		require.NoError(t, newCerts.ValidateCerts(t.Context()))
+		require.NoError(t, newCerts.ValidateCerts(context.Background()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
 		// No changes should have been applied.

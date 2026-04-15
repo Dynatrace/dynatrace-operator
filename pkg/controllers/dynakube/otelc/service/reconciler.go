@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -49,6 +50,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "otelc-service")
 	if !dk.TelemetryIngest().IsEnabled() {
 		r.removeServiceOnce(ctx, dk)
 
@@ -70,6 +72,7 @@ func (r *Reconciler) removeServiceOnce(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceName string, dk *dynakube.DynaKube) {
+	log := logd.FromContext(ctx)
 	telemetryServiceList := &corev1.ServiceList{}
 
 	listOps := []client.ListOption{
@@ -98,6 +101,8 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	newService, err := r.buildService(dk)
 	if err != nil {
 		k8sconditions.SetServiceGenFailed(dk.Conditions(), serviceConditionType, err)
@@ -199,7 +204,7 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 					TargetPort: intstr.FromInt32(statsdPort),
 				})
 		default:
-			log.Info("unknown telemetry service protocol ignored", "protocol", protocol)
+			logd.Get().WithName("otelc-service").Info("unknown telemetry service protocol ignored", "protocol", protocol)
 		}
 	}
 

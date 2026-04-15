@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -46,6 +47,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "otelc-statefulset")
 	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
 		return r.createOrUpdateStatefulset(ctx, dk)
 	} else { // do cleanup or
@@ -73,6 +75,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	if dk.TelemetryIngest().IsEnabled() {
 		if !r.checkDataIngestTokenExists(ctx, dk) {
 			msg := "data ingest token is missing, but it's required for telemetery ingest"

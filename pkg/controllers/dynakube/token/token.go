@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
@@ -40,6 +41,8 @@ func (token *Token) addFeatures(features []Feature) {
 }
 
 func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) (map[string]bool, error) {
+	_, log := logd.NewFromContext(ctx, "tokens")
+
 	if len(token.Features) == 0 {
 		return map[string]bool{}, nil
 	}

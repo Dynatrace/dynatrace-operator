@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -108,6 +109,8 @@ func (certSecret *certificateSecret) isBundleValid(bundle []byte) bool {
 }
 
 func (certSecret *certificateSecret) createOrUpdateIfNecessary(ctx context.Context, clt client.Client) error {
+	log := logd.FromContext(ctx)
+
 	if certSecret.isRecent() && certSecret.existsInCluster {
 		return nil
 	}

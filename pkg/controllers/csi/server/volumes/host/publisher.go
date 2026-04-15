@@ -22,6 +22,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -41,17 +42,20 @@ type Publisher struct {
 }
 
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	if err := pub.mountStorageVolume(volumeCfg); err != nil {
+	ctx, _ = logd.NewFromContext(ctx, "csi-hostvolume")
+
+	if err := pub.mountStorageVolume(ctx, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, "failed to mount osagent volume: "+err.Error())
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-func (pub *Publisher) mountStorageVolume(volumeCfg *csivolumes.VolumeConfig) error {
+func (pub *Publisher) mountStorageVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) error {
+	log := logd.FromContext(ctx)
 	oaStorageDir := pub.path.OsAgentDir(volumeCfg.DynakubeName)
 
-	err := cleanupDanglingSymlink(oaStorageDir)
+	err := cleanupDanglingSymlink(ctx, oaStorageDir)
 	if err != nil {
 		log.Info("failed to cleanup dangling symlink", "path", oaStorageDir)
 
@@ -80,7 +84,9 @@ func (pub *Publisher) mountStorageVolume(volumeCfg *csivolumes.VolumeConfig) err
 	return nil
 }
 
-func cleanupDanglingSymlink(hostDir string) error {
+func cleanupDanglingSymlink(ctx context.Context, hostDir string) error {
+	log := logd.FromContext(ctx)
+
 	linkInfo, err := os.Lstat(hostDir)
 	if err == nil && linkInfo.Mode()&os.ModeSymlink != 0 {
 		_, err := os.Stat(hostDir)

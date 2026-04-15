@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
@@ -358,7 +359,7 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath)
+		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
 		require.NoError(t, err)
 
 		assert.ElementsMatch(t, commonArgs, initContainer.Args)
@@ -372,7 +373,7 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath)
+		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
 		require.NoError(t, err)
 
 		expectedArgs := slices.Concat([]string{
@@ -390,7 +391,7 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath)
+		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
 		require.ErrorAs(t, err, new(webhook.MutatorError))
 	})
 	t.Run("cloudnative + tech from dk -> common args + cloudnative args + tech arg", func(t *testing.T) {
@@ -406,7 +407,7 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath)
+		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
 		require.NoError(t, err)
 
 		expectedArgs := slices.Concat([]string{
@@ -429,7 +430,7 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath)
+		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
 		require.NoError(t, err)
 
 		expectedArgs := slices.Concat([]string{

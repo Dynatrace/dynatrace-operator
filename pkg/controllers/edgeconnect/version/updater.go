@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -51,6 +52,8 @@ func (u updater) RequiresReconcile() bool {
 }
 
 func (u updater) Update(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	var err error
 
 	defer func() {
@@ -70,7 +73,7 @@ func (u updater) Update(ctx context.Context) error {
 			return err
 		}
 
-		image, err = u.combineImageWithDigest(imageVersion.Digest)
+		image, err = u.combineImageWithDigest(ctx, imageVersion.Digest)
 		if err != nil {
 			return err
 		}
@@ -87,7 +90,9 @@ func (u updater) Update(ctx context.Context) error {
 	return nil
 }
 
-func (u updater) combineImageWithDigest(digest digest.Digest) (string, error) {
+func (u updater) combineImageWithDigest(ctx context.Context, digest digest.Digest) (string, error) {
+	log := logd.FromContext(ctx)
+
 	imageRef, err := name.ParseReference(u.edgeConnect.Image())
 	if err != nil {
 		log.Debug("unable to parse EdgeConnect image reference")

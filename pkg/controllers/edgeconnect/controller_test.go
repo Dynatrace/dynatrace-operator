@@ -678,7 +678,7 @@ func TestReconcileReplicas(t *testing.T) {
 		}
 
 		if existingReplicas != nil {
-			existing := deployment.New(ec)
+			existing := deployment.New(context.Background(), ec)
 			existing.Spec.Replicas = existingReplicas
 			objs = append(objs, existing)
 		}
@@ -1054,14 +1054,14 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 		edgeConnectClient := edgeconnectmock.NewClient(t)
 		edgeConnectClient.On("GetConnectionSettings").Return([]edgeconnectClient.EnvironmentSetting{}, nil)
 		edgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil)
-		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
+		err := controller.createOrUpdateConnectionSetting(context.Background(), edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.NoError(t, err)
 	})
 	t.Run("Existing Connection Setting object", func(t *testing.T) {
 		controller := mockController()
 		edgeConnectClient := edgeconnectmock.NewClient(t)
 		edgeConnectClient.On("GetConnectionSettings").Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
+		err := controller.createOrUpdateConnectionSetting(context.Background(), edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.NoError(t, err)
 		edgeConnectClient.AssertNotCalled(t, "CreateConnectionSetting", mock.Anything)
 	})
@@ -1074,7 +1074,7 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 		edgeConnectClient := edgeconnectmock.NewClient(t)
 		edgeConnectClient.On("GetConnectionSettings").Return([]edgeconnectClient.EnvironmentSetting{differentEnvironmentSetting}, nil)
 		edgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil)
-		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
+		err := controller.createOrUpdateConnectionSetting(context.Background(), edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.NoError(t, err)
 	})
 	t.Run("Server fails", func(t *testing.T) {
@@ -1085,7 +1085,7 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 
 		edgeConnectClient := edgeconnectmock.NewClient(t)
 		edgeConnectClient.On("GetConnectionSettings").Return(nil, errors.New("something went wrong"))
-		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
+		err := controller.createOrUpdateConnectionSetting(context.Background(), edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.Error(t, err)
 	})
 }

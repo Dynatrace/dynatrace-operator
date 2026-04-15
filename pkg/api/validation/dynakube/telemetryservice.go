@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,7 +28,9 @@ const (
 	errorOtelCollectorMissingImage           = `The Dynakube's specification specifies the OTel Collector, but no image repository/tag is configured.`
 )
 
-func emptyTelemetryIngestProtocolsList(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func emptyTelemetryIngestProtocolsList(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -41,7 +44,9 @@ func emptyTelemetryIngestProtocolsList(_ context.Context, _ *Validator, dk *dyna
 	return ""
 }
 
-func unknownTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func unknownTelemetryIngestProtocols(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -86,6 +91,8 @@ func invalidTelemetryIngestNameErrorMessage() string {
 }
 
 func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -120,7 +127,9 @@ func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, 
 	return ""
 }
 
-func forbiddenTelemetryIngestServiceNameSuffix(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func forbiddenTelemetryIngestServiceNameSuffix(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -24,7 +25,8 @@ const (
 	errorMutatedAPIURL = `The DynaKube's specification mutated the API URL although it is immutable. Please delete the CR and then apply a new one`
 )
 
-func NoAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func NoAPIURL(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
 	apiURL := dk.Spec.APIURL
 
 	if apiURL == ExampleAPIURL {
@@ -42,7 +44,8 @@ func NoAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	return ""
 }
 
-func IsInvalidAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func IsInvalidAPIURL(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
 	apiURL := dk.Spec.APIURL
 
 	if !strings.HasSuffix(apiURL, "/api") {

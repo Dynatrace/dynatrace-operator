@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -83,6 +84,7 @@ type Reconciler struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error {
+	ctx, log := logd.NewFromContext(ctx, "dynakube-oneagent")
 	log.Info("reconciling OneAgent")
 
 	versionReconciler := r.versionReconciler
@@ -145,6 +147,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 }
 
 func (r *Reconciler) cleanUp(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	log.Info("removing OneAgent daemonSet")
 
 	if meta.FindStatusCondition(*dk.Conditions(), oaConditionType) == nil {
@@ -167,6 +170,7 @@ func (r *Reconciler) cleanUp(ctx context.Context, dk *dynakube.DynaKube) error {
 }
 
 func (r *Reconciler) updateInstancesStatus(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	updInterval := defaultUpdateInterval
 
 	if val := os.Getenv(updateEnvVar); val != "" {
@@ -194,6 +198,7 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context, dk *dynakube.Dyn
 }
 
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	configMapData := extractPublicData(dk)
 
 	configMap, err := k8sconfigmap.Build(dk,
@@ -239,6 +244,7 @@ func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 }
 
 func (r *Reconciler) reconcileRollout(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	// Define a new DaemonSet object
 	dsDesired, err := r.buildDesiredDaemonSet(dk)
 	if err != nil {
@@ -332,7 +338,7 @@ func (r *Reconciler) buildDesiredDaemonSet(dk *dynakube.DynaKube) (*appsv1.Daemo
 func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube.DynaKube) error {
 	pods, listOpts, err := r.getOneagentPods(ctx, dk, deploymentmetadata.GetOneAgentDeploymentType(*dk))
 	if err != nil {
-		handlePodListError(err, listOpts)
+		handlePodListError(ctx, err, listOpts)
 	}
 
 	instanceStatuses := getInstanceStatuses(pods)

@@ -1,6 +1,7 @@
 package deployment
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -35,7 +36,7 @@ func TestNew(t *testing.T) {
 			},
 		}
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		assert.NotNil(t, deployment)
 	})
@@ -88,7 +89,7 @@ func TestLabels(t *testing.T) {
 			Spec: edgeconnect.EdgeConnectSpec{},
 		}
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		require.Len(t, deployment.Spec.Template.Labels, 5)
 		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppNameLabel)
@@ -121,7 +122,7 @@ func TestLabels(t *testing.T) {
 			},
 		}
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		assert.Len(t, deployment.Spec.Template.Labels, 6)
 		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppNameLabel)
@@ -161,7 +162,7 @@ func TestAnnotations(t *testing.T) {
 			Spec: edgeconnect.EdgeConnectSpec{},
 		}
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		assert.Len(t, deployment.Spec.Template.Annotations, 1)
 		assert.Contains(t, deployment.Spec.Template.Annotations, webhook.AnnotationDynatraceInject)
@@ -186,7 +187,7 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		assert.Len(t, deployment.Spec.Template.Annotations, 2)
 		assert.Contains(t, deployment.Spec.Template.Annotations, testAnnotationKey)

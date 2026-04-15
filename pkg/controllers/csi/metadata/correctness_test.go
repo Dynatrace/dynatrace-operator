@@ -132,7 +132,7 @@ func TestMigrateAppMounts(t *testing.T) {
 		},
 	})
 
-	checker.migrateAppMounts(setupLogForTest(t))
+	checker.migrateAppMounts(t.Context())
 
 	assert.DirExists(t, checker.path.AppMountsBaseDir())
 	assert.FileExists(t, checker.path.AppMountForID(volID))
@@ -158,7 +158,7 @@ func TestMigrateHostMounts(t *testing.T) {
 		checker := NewCorrectnessChecker(apiReader, dtcsi.CSIOptions{RootDir: tempDir})
 		require.NoError(t, os.MkdirAll(checker.path.OsAgentDir("test"), os.ModePerm))
 
-		checker.migrateHostMounts(setupLogForTest(t))
+		checker.migrateHostMounts(t.Context())
 	})
 
 	t.Run("create symlink", func(t *testing.T) {
@@ -166,7 +166,7 @@ func TestMigrateHostMounts(t *testing.T) {
 		checker := NewCorrectnessChecker(apiReader, dtcsi.CSIOptions{RootDir: tempDir})
 		require.NoError(t, os.MkdirAll(checker.path.OldOsAgentDir("tenant"), os.ModePerm))
 
-		checker.migrateHostMounts(setupLogForTest(t))
+		checker.migrateHostMounts(t.Context())
 
 		assert.FileExists(t, checker.path.OsAgentDir("test")) // file because symlink
 	})
@@ -175,7 +175,7 @@ func TestMigrateHostMounts(t *testing.T) {
 		tempDir := t.TempDir()
 		checker := NewCorrectnessChecker(apiReader, dtcsi.CSIOptions{RootDir: tempDir})
 
-		checker.migrateHostMounts(setupLogForTest(t))
+		checker.migrateHostMounts(t.Context())
 
 		assert.NoFileExists(t, checker.path.OsAgentDir("test"))
 		assert.NoDirExists(t, checker.path.OsAgentDir("test"))

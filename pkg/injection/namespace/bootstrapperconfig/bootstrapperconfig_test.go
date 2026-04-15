@@ -21,6 +21,7 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -99,7 +100,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
@@ -176,7 +177,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
@@ -275,7 +276,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
@@ -338,7 +339,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
@@ -401,7 +402,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
@@ -463,7 +464,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			})
 
 		mockDTClient := oneagentclientmock.NewAPIClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})

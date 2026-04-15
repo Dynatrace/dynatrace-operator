@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -27,8 +26,6 @@ const (
 
 	DefaultMinRequestThresholdMinutes = 15
 )
-
-var log = logd.Get().WithName("dynakube-v1beta6")
 
 func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations)
