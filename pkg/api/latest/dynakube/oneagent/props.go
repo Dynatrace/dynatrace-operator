@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +22,8 @@ const (
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
 	name, apiURLHost string,
-	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool) *OneAgent {
+	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool,
+	globalResourceAttributes map[string]string) *OneAgent {
 	return &OneAgent{
 		Spec:              spec,
 		Status:            status,
@@ -29,6 +31,8 @@ func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatu
 
 		name:       name,
 		apiURLHost: apiURLHost,
+
+		globalResourceAttributes: globalResourceAttributes,
 
 		featureOneAgentPrivileged:        featureOneAgentPrivileged,
 		featureOneAgentSkipLivenessProbe: featureOneAgentSkipLivenessProbe,
@@ -368,4 +372,55 @@ func (oa *OneAgent) GetHostPath() string {
 	}
 
 	return ""
+}
+
+// GetResourceAttributes returns the merged resource attributes for the active OneAgent mode.
+// The global resource attributes from spec.resourceAttributes are merged with the mode-specific
+// additionalResourceAttributes, where additionalResourceAttributes takes precedence on key conflicts.
+// Returns nil when both sources are nil or empty.
+func (oa *OneAgent) GetResourceAttributes() map[string]string {
+	if oa.Spec == nil {
+		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, nil)
+	}
+
+	switch {
+	case oa.IsCloudNativeFullstackMode():
+		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, oa.CloudNativeFullStack.AdditionalResourceAttributes)
+	case oa.IsApplicationMonitoringMode():
+		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, oa.ApplicationMonitoring.AdditionalResourceAttributes)
+	default:
+		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, nil)
+	}
+}
+
+// HasAdditionalResourceAttributes returns true when the active injection mode has additionalResourceAttributes configured.
+func (oa *OneAgent) HasAdditionalResourceAttributes() bool {
+	if oa.Spec == nil {
+		return false
+	}
+
+	switch {
+	case oa.IsCloudNativeFullstackMode():
+		return len(oa.CloudNativeFullStack.AdditionalResourceAttributes) > 0
+	case oa.IsApplicationMonitoringMode():
+		return len(oa.ApplicationMonitoring.AdditionalResourceAttributes) > 0
+	default:
+		return false
+	}
+}
+
+// GetAdditionalResourceAttributes returns the component-level additionalResourceAttributes for the active injection mode, without merging with global attributes.
+func (oa *OneAgent) GetAdditionalResourceAttributes() map[string]string {
+	if oa.Spec == nil {
+		return nil
+	}
+
+	switch {
+	case oa.IsCloudNativeFullstackMode():
+		return oa.CloudNativeFullStack.AdditionalResourceAttributes
+	case oa.IsApplicationMonitoringMode():
+		return oa.ApplicationMonitoring.AdditionalResourceAttributes
+	default:
+		return nil
+	}
 }

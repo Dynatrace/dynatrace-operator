@@ -102,6 +102,11 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	TelemetryIngest *telemetryingest.Spec `json:"telemetryIngest,omitempty"`
 
+	// Global default resource attributes applied to every component that supports resource attributes.
+	// Per-component additionalResourceAttributes take precedence over these values when the same key is present in both.
+	// +kubebuilder:validation:Optional
+	ResourceAttributes map[string]string `json:"resourceAttributes,omitempty"`
+
 	// Configuration for OTLP Exporter Configuration
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OTLP Exporter Configuration",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}

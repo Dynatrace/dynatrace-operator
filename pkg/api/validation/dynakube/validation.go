@@ -63,6 +63,9 @@ var (
 		missingDatabaseExecutorImage,
 		conflictingOrInvalidDatabasesVolumeMounts,
 		unusedDatabasesVolume,
+		invalidGlobalResourceAttributes,
+		invalidOneAgentResourceAttributes,
+		invalidOTLPResourceAttributes,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -79,6 +82,9 @@ var (
 		hostPathDatabaseVolumeFound,
 		disabledMetadataEnrichmentForInjectionModes,
 		activeGateRollingUpdateWithOldK8sVersion,
+		globalResourceAttributesExceedsLimit,
+		oneAgentResourceAttributesExceedsLimit,
+		otlpResourceAttributesExceedsLimit,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,
