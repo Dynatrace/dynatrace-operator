@@ -23,7 +23,7 @@ type Reconciler struct {
 
 func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		configMaps: k8sconfigmap.Query(client, apiReader, log),
+		configMaps: k8sconfigmap.Query(client, apiReader),
 	}
 }
 

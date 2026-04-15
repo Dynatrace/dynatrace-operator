@@ -30,7 +30,7 @@ func NewReconciler(
 ) *Reconciler {
 	return &Reconciler{
 		apiReader:    apiReader,
-		statefulsets: k8sstatefulset.Query(clt, apiReader, log),
+		statefulsets: k8sstatefulset.Query(clt, apiReader),
 	}
 }
 
@@ -138,14 +138,14 @@ func (r *Reconciler) getAuthTokenValue(ctx context.Context, dk *dynakube.DynaKub
 
 func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, dk *dynakube.DynaKube, customProperties *value.Source) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
+		return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
 	}
 
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
-	return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName, log)
+	return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName)
 }
 
 func needsCustomPropertyHash(customProperties *value.Source) bool {

@@ -88,7 +88,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			versionReconciler:          mockVersionReconcileOnce(t),
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconciler,
-			configMaps:                 k8sconfigmap.Query(clt, clt, log),
+			configMaps:                 k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), buildDynakube(), createMockDTClient(t, false), nil)
@@ -113,7 +113,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        tlsSecretReconciler,
-			configMaps:                 k8sconfigmap.Query(clt, clt, log),
+			configMaps:                 k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
@@ -139,7 +139,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
 			statefulsetReconciler:      statefulsetReconciler,
-			configMaps:                 k8sconfigmap.Query(clt, clt, log),
+			configMaps:                 k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
@@ -186,7 +186,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
-			configMaps:                 k8sconfigmap.Query(clt, clt, log),
+			configMaps:                 k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
@@ -222,7 +222,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			// statefulsetReconciler: panic if called
 			// customPropertiesReconciler: panic if called
 			tlsSecretReconciler: mockTLSReconcileOnce(t),
-			configMaps:          k8sconfigmap.Query(clt, clt, log),
+			configMaps:          k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
@@ -308,7 +308,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
-			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
+			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient),
 		}
 		err := proxyReconciler.Reconcile(t.Context(), dkWithProxy, createMockDTClient(t, false), nil)
 		require.NoError(t, err)
@@ -324,7 +324,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
-			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
+			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient),
 		}
 
 		err = noProxyReconciler.Reconcile(t.Context(), dkNoProxy, createMockDTClient(t, false), nil)
@@ -681,7 +681,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
-			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
+			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, true), nil)

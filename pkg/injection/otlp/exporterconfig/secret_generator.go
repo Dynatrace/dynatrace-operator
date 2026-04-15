@@ -29,7 +29,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader) *SecretGe
 		client:       client,
 		apiReader:    apiReader,
 		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(client, apiReader, log),
+		secrets:      k8ssecret.Query(client, apiReader),
 	}
 }
 
@@ -204,7 +204,7 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 		nsList = append(nsList, ns.Name)
 	}
 
-	secrets := k8ssecret.Query(client, apiReader, log)
+	secrets := k8ssecret.Query(client, apiReader)
 
 	err := secrets.DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	if err != nil {
@@ -222,7 +222,7 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 		nsList = append(nsList, ns.Name)
 	}
 
-	secrets := k8ssecret.Query(client, apiReader, log)
+	secrets := k8ssecret.Query(client, apiReader)
 
 	err := secrets.DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
 	if err != nil {

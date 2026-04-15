@@ -105,7 +105,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 		return err
 	}
 
-	_, err = k8sservice.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
+	_, err = k8sservice.Query(r.client, r.apiReader).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update telemetry service")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), serviceConditionType, err)

@@ -45,7 +45,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		err = k8sstatefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
+		err = k8sstatefulset.Query(r.client, r.apiReader).Delete(ctx, sts)
 		if err != nil {
 			log.Error(err, "failed to clean up "+ext.GetExecutionControllerStatefulsetName()+" statufulset")
 		}

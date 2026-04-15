@@ -71,6 +71,8 @@ func (entityMap hostEntityMap) Update(ctx context.Context, info HostResponse) {
 
 // GetEntityIDForIP returns the host entity ID for a given IP address.
 func (c *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
+	ctx, _ = logd.NewFromContext(ctx, "dtclient-hostevent")
+
 	if ip == "" {
 		return "", errors.New("must provide IP")
 	}
@@ -140,6 +142,8 @@ func NewMarkedForTerminationEvent(entityID, source, description string, timestam
 
 // SendEvent posts an event to the Dynatrace API.
 func (c *Client) SendEvent(ctx context.Context, event Event) error {
+	ctx, _ = logd.NewFromContext(ctx, "dtclient-hostevent")
+
 	if event.EventType == "" {
 		return errors.New("no key set for eventType in eventData payload")
 	}

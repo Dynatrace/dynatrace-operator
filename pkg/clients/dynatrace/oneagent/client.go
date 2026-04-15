@@ -5,12 +5,7 @@ import (
 	"io"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
-
-// log is kept as a package-level logger because NewProcessModuleConfig is a data-parsing
-// constructor with no context.Context parameter. It should be removed once ctx is threaded through.
-var log = logd.Get().WithName("dtclient-oneagent")
 
 type APIClient interface {
 	GetConnectionInfo(ctx context.Context) (ConnectionInfo, error)

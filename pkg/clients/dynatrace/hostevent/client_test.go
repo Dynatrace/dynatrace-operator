@@ -8,8 +8,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestGetEntityIDForIP(t *testing.T) {
 	setupClient := func(t *testing.T, err error) *Client {
@@ -32,7 +35,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 			}).
 			Return(err).Once()
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), hostsPath).Return(req).Once()
+		client.EXPECT().GET(anyCtx, hostsPath).Return(req).Once()
 
 		return NewClient(client, "")
 	}
@@ -143,7 +146,7 @@ func TestSendEvent(t *testing.T) {
 		req.EXPECT().WithJSONBody(Event{EventType: "TEST"}).Return(req).Once()
 		req.EXPECT().Execute(nil).Return(err).Once()
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().POST(t.Context(), eventsPath).Return(req).Once()
+		client.EXPECT().POST(anyCtx, eventsPath).Return(req).Once()
 
 		return NewClient(client, "")
 	}

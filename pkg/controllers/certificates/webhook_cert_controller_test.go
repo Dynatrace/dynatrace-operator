@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -201,7 +202,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dkCrd, ecCrd, deployment)
 		cs := newCertificateSecret(deployment)
 		_ = cs.setSecretFromReader(t.Context(), fakeClient, testNamespace)
-		_ = cs.validateCertificates(testNamespace)
+		_ = cs.validateCertificates(t.Context(), testNamespace)
 		_ = cs.createOrUpdateIfNecessary(t.Context(), fakeClient)
 
 		controller, request := prepareController(fakeClient)
@@ -253,7 +254,7 @@ func createValidTestCertData() map[string][]byte {
 		Domain: testDomain,
 		Now:    time.Now(),
 	}
-	_ = cert.ValidateCerts()
+	_ = cert.ValidateCerts(context.Background())
 
 	return cert.Data
 }
@@ -294,8 +295,8 @@ func verifyCertificates(t *testing.T, secret *corev1.Secret, clt client.Client, 
 	}
 
 	// validateRootCerts and validateServerCerts return false if the certificates are valid
-	assert.False(t, cert.validateRootCerts(time.Now()))
-	assert.False(t, cert.validateServerCerts(time.Now()))
+	assert.False(t, cert.validateRootCerts(t.Context(), time.Now()))
+	assert.False(t, cert.validateServerCerts(t.Context(), time.Now()))
 
 	assertCABundle := func(t *testing.T, webhookClientConfig *admissionregistrationv1.WebhookClientConfig) {
 		t.Helper()

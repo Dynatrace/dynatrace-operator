@@ -27,7 +27,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, dk *dynakube.DynaKube
 			return err
 		}
 
-		err = k8sservice.Query(r.client, r.apiReader, log).Delete(ctx, svc)
+		err = k8sservice.Query(r.client, r.apiReader).Delete(ctx, svc)
 		if err != nil {
 			log.Error(err, "failed to clean up extension service")
 		}
@@ -46,7 +46,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 		return err
 	}
 
-	_, err = k8sservice.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
+	_, err = k8sservice.Query(r.client, r.apiReader).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update extension service")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), serviceConditionType, err)

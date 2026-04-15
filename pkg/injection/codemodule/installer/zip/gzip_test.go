@@ -14,7 +14,7 @@ func TestExtractGzip(t *testing.T) {
 	t.Run("path empty", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		extractor := createTestExtractor()
-		err := extractor.ExtractGzip(tmpDir, tmpDir)
+		err := extractor.ExtractGzip(t.Context(), tmpDir, tmpDir)
 		require.Error(t, err)
 	})
 
