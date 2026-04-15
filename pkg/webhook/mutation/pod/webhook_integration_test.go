@@ -541,7 +541,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				assert.Equal(t, pod.Spec.Containers[0].Name, gotResourceAttributes["k8s.container.name"])
 				assert.Equal(t, pod.OwnerReferences[0].Name, gotResourceAttributes["k8s.workload.name"])
 				assert.Equal(t, strings.ToLower(pod.OwnerReferences[0].Kind), gotResourceAttributes["k8s.workload.kind"])
-				assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes["dt.entity.kubernetes_cluster"])
+				assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes[injection.DeprecatedClusterIDKey])
 
 				if tc.withDeprecatedAttributes {
 					assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes["dt.kubernetes.cluster.id"])
