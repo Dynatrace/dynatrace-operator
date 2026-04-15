@@ -30,6 +30,10 @@ func ReadLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, names
 	}).Stream(ctx)
 	require.NoError(t, err)
 
+	defer func() {
+		require.NoError(t, logStream.Close())
+	}()
+
 	buffer := new(bytes.Buffer)
 	_, err = io.Copy(buffer, logStream)
 	require.NoError(t, err)
