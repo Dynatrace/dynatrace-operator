@@ -25,7 +25,7 @@ func Test_setDeprecatedAttributes(t *testing.T) {
 func assertDeprecatedAttributes(t *testing.T, attrs podattr.Attributes) {
 	t.Helper()
 
-	depValue, ok := attrs.UserDefined[deprecatedClusterIDKey]
+	depValue, ok := attrs.UserDefined[DeprecatedClusterIDKey]
 	require.True(t, ok)
 	assert.Equal(t, attrs.ClusterUID, depValue)
 }
@@ -33,6 +33,6 @@ func assertDeprecatedAttributes(t *testing.T, attrs podattr.Attributes) {
 func assertNoDeprecatedAttributes(t *testing.T, attrs podattr.Attributes) {
 	t.Helper()
 
-	_, ok := attrs.UserDefined[deprecatedClusterIDKey]
+	_, ok := attrs.UserDefined[DeprecatedClusterIDKey]
 	require.False(t, ok)
 }

@@ -3,7 +3,7 @@ package injection
 import podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 
 const (
-	deprecatedClusterIDKey = "dt.kubernetes.cluster.id"
+	DeprecatedClusterIDKey = "dt.kubernetes.cluster.id"
 )
 
 func setDeprecatedAttributes(attrs *podattr.Attributes) {
@@ -11,5 +11,5 @@ func setDeprecatedAttributes(attrs *podattr.Attributes) {
 		attrs.UserDefined = map[string]string{}
 	}
 
-	attrs.UserDefined[deprecatedClusterIDKey] = attrs.ClusterUID
+	attrs.UserDefined[DeprecatedClusterIDKey] = attrs.ClusterUID
 }
