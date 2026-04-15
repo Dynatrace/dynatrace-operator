@@ -26,15 +26,15 @@ func (m brokenModel) MarshalJSON() ([]byte, error) {
 
 func TestClient_Verbs(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/api/"+r.Method, r.URL.Path)
+		assert.Equal(t, "/api/test/"+r.Method, r.URL.Path)
 	}))
 	defer s.Close()
 
 	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/")})
-	require.NoError(t, c.GET(t.Context(), http.MethodGet).Execute(nil))
-	require.NoError(t, c.POST(t.Context(), http.MethodPost).Execute(nil))
-	require.NoError(t, c.PUT(t.Context(), http.MethodPut).Execute(nil))
-	require.NoError(t, c.DELETE(t.Context(), http.MethodDelete).Execute(nil))
+	require.NoError(t, c.GET(t.Context(), "/").WithPath("/test//", http.MethodGet).Execute(nil))
+	require.NoError(t, c.POST(t.Context(), "/").WithPath("/test//", http.MethodPost).Execute(nil))
+	require.NoError(t, c.PUT(t.Context(), "/").WithPath("/test//", http.MethodPut).Execute(nil))
+	require.NoError(t, c.DELETE(t.Context(), "/").WithPath("/test//", http.MethodDelete).Execute(nil))
 }
 
 func TestClient_Headers(t *testing.T) {
@@ -48,10 +48,10 @@ func TestClient_Headers(t *testing.T) {
 	defer s.Close()
 
 	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/"), UserAgent: "my-user-agent"})
-	require.NoError(t, c.GET(t.Context(), "/test").Execute(nil))
+	require.NoError(t, c.GET(t.Context(), "test").Execute(nil))
 
 	expectContentType = "application/json"
-	require.NoError(t, c.POST(t.Context(), "/test").WithRawBody([]byte("test")).Execute(nil))
+	require.NoError(t, c.POST(t.Context(), "test").WithRawBody([]byte("test")).Execute(nil))
 }
 
 func TestClient_WithHeader(t *testing.T) {

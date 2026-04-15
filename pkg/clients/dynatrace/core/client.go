@@ -28,8 +28,8 @@ type APIClient interface {
 
 // APIRequest provides a fluent interface for building and executing HTTP requests
 type APIRequest interface {
-	// WithPath sets the path for the request
-	WithPath(path string) APIRequest
+	// WithPath sets the path for the request. Path parts will be joined, ignoring leading or trailing slashes.
+	WithPath(path ...string) APIRequest
 	// WithQueryParams adds multiple query parameters to the request, overwriting existing keys if they exist
 	WithQueryParams(params map[string]string) APIRequest
 	// WithRawQueryParams adds multiple query parameters to the request
@@ -131,9 +131,9 @@ func (c *Client) DELETE(ctx context.Context, path string) APIRequest {
 	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
 }
 
-// WithPath sets the path for the request
-func (r *Request) WithPath(path string) APIRequest {
-	r.path = path
+// WithPath sets the path for the request. Path parts will be joined, ignoring leading or trailing slashes
+func (r *Request) WithPath(path ...string) APIRequest {
+	r.path = (&url.URL{Path: r.path}).JoinPath(path...).Path
 
 	return r
 }
