@@ -495,34 +495,15 @@ Use `"github.com/Dynatrace/dynatrace-operator/pkg/logd"` (alias `logd`) for all 
   ctx = logd.IntoContext(ctx, myLogger)
   ```
 
-- **Utility functions that emit logs should accept `log logd.Logger` as a parameter** rather than closing over a package-level `log`.
-  This makes the function independently testable, its output attributable to the right component, and avoids hidden coupling to the package global.
+- **Utility functions that emit logs should accept `ctx context.Context` as a parameter** rather than using a package-level `log`.
 
   ```go
   // ✓
-  func printKubernetesVersion(log logd.Logger, kubeConfig *rest.Config) {
-      log.Info("kubernetes version", "version", ...)
-  }
-
-  // ✗ hidden dependency on package-level log
-  func printKubernetesVersion(kubeConfig *rest.Config) {
+  func printKubernetesVersion(ctx context.Context, kubeConfig *rest.Config) {
+      log := logd.FromContext(ctx)
       log.Info("kubernetes version", "version", ...)
   }
   ```
-
-- Include **enough context fields** in log messages to be useful during troubleshooting.
-  Reviewers frequently ask for additional fields (e.g. Go version, resource name, namespace). When in doubt, add more rather than less.
-
-### Exceptions
-
-`cmd/` packages and functions that have no `context.Context` parameter (e.g. background singletons, startup helpers) may keep a package-level logger declared with `logd.Get().WithName(...)`. Document the exception with a comment:
-
-```go
-// log is kept as a package-level logger because GetMinorVersion is a background singleton
-// cache with no context.Context parameter. This is an intentional exception to the
-// context-logger pattern.
-var log = logd.Get().WithName("k8sversion")
-```
 
 ### Don'ts
 
