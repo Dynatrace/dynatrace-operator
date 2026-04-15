@@ -10,9 +10,7 @@ import (
 
 // EdgeConnect API
 const (
-	edgeConnectAPIPath  = "/platform/app-engine/edge-connect/v1"
-	edgeConnectsAPIPath = edgeConnectAPIPath + "/edge-connects"
-	edgeConnectPath     = edgeConnectsAPIPath + "/"
+	edgeConnectsPath = "/platform/app-engine/edge-connect/v1/edge-connects"
 )
 
 var errNoEdgeConnectID = errors.New("no EdgeConnect ID given")
@@ -65,7 +63,7 @@ func (c *Client) GetEdgeConnect(ctx context.Context, id string) (APIResponse, er
 
 	var response APIResponse
 
-	err := c.apiClient.GET(ctx, edgeConnectPath+id).WithoutToken().Execute(&response)
+	err := c.apiClient.GET(ctx, edgeConnectsPath).WithPath(id).WithoutToken().Execute(&response)
 	if err != nil {
 		return APIResponse{}, errors.Wrap(err, "failed to get EdgeConnect")
 	}
@@ -77,7 +75,7 @@ func (c *Client) GetEdgeConnect(ctx context.Context, id string) (APIResponse, er
 func (c *Client) CreateEdgeConnect(ctx context.Context, request *Request) (APIResponse, error) {
 	var response APIResponse
 
-	err := c.apiClient.POST(ctx, edgeConnectsAPIPath).WithoutToken().WithJSONBody(request).Execute(&response)
+	err := c.apiClient.POST(ctx, edgeConnectsPath).WithoutToken().WithJSONBody(request).Execute(&response)
 	if err != nil {
 		return APIResponse{}, errors.Wrap(err, "failed to create EdgeConnect")
 	}
@@ -91,7 +89,7 @@ func (c *Client) UpdateEdgeConnect(ctx context.Context, id string, request *Requ
 		return errNoEdgeConnectID
 	}
 
-	err := c.apiClient.PUT(ctx, edgeConnectPath+id).WithoutToken().WithJSONBody(request).Execute(nil)
+	err := c.apiClient.PUT(ctx, edgeConnectsPath).WithPath(id).WithoutToken().WithJSONBody(request).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to update EdgeConnect")
 	}
@@ -108,7 +106,7 @@ func (c *Client) ListEdgeConnects(ctx context.Context, name string) ([]APIRespon
 		"filter":     fmt.Sprintf("name='%s'", name),
 	}
 
-	err := c.apiClient.GET(ctx, edgeConnectsAPIPath).WithoutToken().WithQueryParams(qp).Execute(&response)
+	err := c.apiClient.GET(ctx, edgeConnectsPath).WithoutToken().WithQueryParams(qp).Execute(&response)
 	if err != nil {
 		return []APIResponse{}, errors.Wrap(err, "failed to get EdgeConnects")
 	}
@@ -122,7 +120,7 @@ func (c *Client) DeleteEdgeConnect(ctx context.Context, id string) error {
 		return errNoEdgeConnectID
 	}
 
-	err := c.apiClient.DELETE(ctx, edgeConnectPath+id).WithoutToken().Execute(nil)
+	err := c.apiClient.DELETE(ctx, edgeConnectsPath).WithPath(id).WithoutToken().Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete EdgeConnect")
 	}

@@ -14,7 +14,7 @@ const edgeConnectID = "test-id"
 func TestGetEdgeConnect(t *testing.T) {
 	t.Run("get EdgeConnect", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectGET(t, apiClient, request, edgeConnectPath+edgeConnectID)
+		expectGET(t, apiClient, request, edgeConnectsPath, edgeConnectID)
 		request.EXPECT().Execute(new(APIResponse)).Run(func(obj any) {
 			obj.(*APIResponse).Name = "test-name"
 		}).Return(nil).Once()
@@ -26,7 +26,7 @@ func TestGetEdgeConnect(t *testing.T) {
 
 	t.Run("fail to get EdgeConnect", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectGET(t, apiClient, request, edgeConnectPath+edgeConnectID)
+		expectGET(t, apiClient, request, edgeConnectsPath, edgeConnectID)
 		request.EXPECT().Execute(new(APIResponse)).Return(errTest).Once()
 		got, err := mockClient.GetEdgeConnect(t.Context(), edgeConnectID)
 		require.ErrorIs(t, err, errTest)
@@ -42,11 +42,11 @@ func TestGetEdgeConnect(t *testing.T) {
 }
 
 func TestCreateEdgeConnect(t *testing.T) {
-	var edgeConnectCreateRequest = NewCreateRequest("InternalServices", []string{"*.internal.org"}, []edgeconnect.HostMapping{})
+	edgeConnectCreateRequest := NewCreateRequest("InternalServices", []string{"*.internal.org"}, []edgeconnect.HostMapping{})
 
 	t.Run("create EdgeConnect", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectPOST(t, apiClient, request, edgeConnectsAPIPath, edgeConnectCreateRequest)
+		expectPOST(t, apiClient, request, edgeConnectsPath, edgeConnectCreateRequest)
 		request.EXPECT().Execute(new(APIResponse)).Run(func(obj any) {
 			obj.(*APIResponse).Name = edgeConnectCreateRequest.Name
 		}).Return(nil).Once()
@@ -58,7 +58,7 @@ func TestCreateEdgeConnect(t *testing.T) {
 
 	t.Run("fail to create EdgeConnect", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectPOST(t, apiClient, request, edgeConnectsAPIPath, edgeConnectCreateRequest)
+		expectPOST(t, apiClient, request, edgeConnectsPath, edgeConnectCreateRequest)
 		request.EXPECT().Execute(new(APIResponse)).Return(errTest).Once()
 		got, err := mockClient.CreateEdgeConnect(t.Context(), edgeConnectCreateRequest)
 		require.ErrorIs(t, err, errTest)
@@ -67,11 +67,11 @@ func TestCreateEdgeConnect(t *testing.T) {
 }
 
 func TestUpdateEdgeConnect(t *testing.T) {
-	var edgeConnectUpdateRequest = NewUpdateRequest("InternalServices", []string{"*.internal.org"}, []edgeconnect.HostMapping{}, "dt0s02.AIOUP56P")
+	edgeConnectUpdateRequest := NewUpdateRequest("InternalServices", []string{"*.internal.org"}, []edgeconnect.HostMapping{}, "dt0s02.AIOUP56P")
 
 	t.Run("update EdgeConnect", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectPUT(t, apiClient, request, edgeConnectPath+edgeConnectID, edgeConnectUpdateRequest)
+		expectPUT(t, apiClient, request, edgeConnectsPath, edgeConnectID, edgeConnectUpdateRequest)
 		request.EXPECT().Execute(nil).Return(nil).Once()
 		err := mockClient.UpdateEdgeConnect(t.Context(), edgeConnectID, edgeConnectUpdateRequest)
 		require.NoError(t, err)
@@ -79,7 +79,7 @@ func TestUpdateEdgeConnect(t *testing.T) {
 
 	t.Run("fail to update EdgeConnect", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectPUT(t, apiClient, request, edgeConnectPath+edgeConnectID, edgeConnectUpdateRequest)
+		expectPUT(t, apiClient, request, edgeConnectsPath, edgeConnectID, edgeConnectUpdateRequest)
 		request.EXPECT().Execute(nil).Return(errTest).Once()
 		err := mockClient.UpdateEdgeConnect(t.Context(), edgeConnectID, edgeConnectUpdateRequest)
 		require.ErrorIs(t, err, errTest)
@@ -102,7 +102,7 @@ func TestListEdgeConnects(t *testing.T) {
 
 	t.Run("get EdgeConnects", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectGET(t, apiClient, request, edgeConnectsAPIPath)
+		expectGET(t, apiClient, request, edgeConnectsPath, "")
 		request.EXPECT().WithQueryParams(ecQp).Return(request).Once()
 		request.EXPECT().Execute(new(listResponse)).Run(func(obj any) {
 			obj.(*listResponse).EdgeConnects = []APIResponse{
@@ -117,7 +117,7 @@ func TestListEdgeConnects(t *testing.T) {
 
 	t.Run("fail to get EdgeConnects", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectGET(t, apiClient, request, edgeConnectsAPIPath)
+		expectGET(t, apiClient, request, edgeConnectsPath, "")
 		request.EXPECT().WithQueryParams(ecQp).Return(request).Once()
 		request.EXPECT().Execute(new(listResponse)).Return(errTest).Once()
 		got, err := mockClient.ListEdgeConnects(t.Context(), name)
@@ -129,7 +129,7 @@ func TestListEdgeConnects(t *testing.T) {
 func TestDeleteEdgeConnect(t *testing.T) {
 	t.Run("delete EdgeConnect", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectDELETE(t, apiClient, request, edgeConnectPath+edgeConnectID)
+		expectDELETE(t, apiClient, request, edgeConnectsPath, edgeConnectID)
 		request.EXPECT().Execute(nil).Return(nil).Once()
 		err := mockClient.DeleteEdgeConnect(t.Context(), edgeConnectID)
 		require.NoError(t, err)
@@ -137,7 +137,7 @@ func TestDeleteEdgeConnect(t *testing.T) {
 
 	t.Run("fail to delete EdgeConnect", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectDELETE(t, apiClient, request, edgeConnectPath+edgeConnectID)
+		expectDELETE(t, apiClient, request, edgeConnectsPath, edgeConnectID)
 		request.EXPECT().Execute(nil).Return(errTest).Once()
 		err := mockClient.DeleteEdgeConnect(t.Context(), edgeConnectID)
 		require.ErrorIs(t, err, errTest)
@@ -158,9 +158,12 @@ func newTestSetup(t *testing.T) (*coremock.APIClient, *coremock.APIRequest, *Cli
 	return apiClient, request, NewClient(apiClient)
 }
 
-func expectGET(t *testing.T, apiClient *coremock.APIClient, request *coremock.APIRequest, path string) {
+func expectGET(t *testing.T, apiClient *coremock.APIClient, request *coremock.APIRequest, path, id string) {
 	t.Helper()
 	request.EXPECT().WithoutToken().Return(request).Once()
+	if id != "" {
+		request.EXPECT().WithPath([]string{id}).Return(request).Once()
+	}
 	apiClient.EXPECT().GET(t.Context(), path).Return(request).Once()
 }
 
@@ -171,16 +174,18 @@ func expectPOST(t *testing.T, apiClient *coremock.APIClient, request *coremock.A
 	apiClient.EXPECT().POST(t.Context(), path).Return(request).Once()
 }
 
-func expectPUT(t *testing.T, apiClient *coremock.APIClient, request *coremock.APIRequest, path string, body any) {
+func expectPUT(t *testing.T, apiClient *coremock.APIClient, request *coremock.APIRequest, path, id string, body any) {
 	t.Helper()
 	request.EXPECT().WithoutToken().Return(request).Once()
 	request.EXPECT().WithJSONBody(body).Return(request).Once()
+	request.EXPECT().WithPath([]string{id}).Return(request).Once()
 	apiClient.EXPECT().PUT(t.Context(), path).Return(request).Once()
 }
 
 // expectDELETE sets up WithoutToken and DELETE mock expectations for the given path.
-func expectDELETE(t *testing.T, apiClient *coremock.APIClient, request *coremock.APIRequest, path string) {
+func expectDELETE(t *testing.T, apiClient *coremock.APIClient, request *coremock.APIRequest, path, id string) {
 	t.Helper()
 	request.EXPECT().WithoutToken().Return(request).Once()
+	request.EXPECT().WithPath([]string{id}).Return(request).Once()
 	apiClient.EXPECT().DELETE(t.Context(), path).Return(request).Once()
 }
