@@ -49,7 +49,7 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 }
 
 func (pub *Publisher) mountStorageVolume(volumeCfg *csivolumes.VolumeConfig) error {
-	oaStorageDir := pub.path.OsAgentDir(volumeCfg.DynakubeName)
+	oaStorageDir := pub.path.OSAgentDir(volumeCfg.DynakubeName)
 
 	err := cleanupDanglingSymlink(oaStorageDir)
 	if err != nil {

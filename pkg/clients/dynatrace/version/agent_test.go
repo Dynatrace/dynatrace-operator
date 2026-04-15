@@ -42,9 +42,9 @@ func TestGetLatestAgentVersion(t *testing.T) {
 			"bitness": "64",
 			"flavor":  arch.FlavorDefault,
 		}
-		client := setupMockedClient(t, installer.OsUnix, installer.TypeDefault, queryParams, nil)
+		client := setupMockedClient(t, installer.OSUnix, installer.TypeDefault, queryParams, nil)
 
-		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypeDefault)
+		version, err := client.GetLatestAgentVersion(t.Context(), installer.OSUnix, installer.TypeDefault)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
@@ -55,9 +55,9 @@ func TestGetLatestAgentVersion(t *testing.T) {
 			"flavor":  arch.Flavor,
 			"arch":    arch.Arch,
 		}
-		client := setupMockedClient(t, installer.OsUnix, installer.TypePaaS, queryParams, nil)
+		client := setupMockedClient(t, installer.OSUnix, installer.TypePaaS, queryParams, nil)
 
-		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypePaaS)
+		version, err := client.GetLatestAgentVersion(t.Context(), installer.OSUnix, installer.TypePaaS)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
@@ -72,7 +72,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 	t.Run("empty installerType", func(t *testing.T) {
 		client := NewClient(nil)
 
-		_, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, "")
+		_, err := client.GetLatestAgentVersion(t.Context(), installer.OSUnix, "")
 		assert.Error(t, err, "os is empty")
 	})
 
@@ -82,9 +82,9 @@ func TestGetLatestAgentVersion(t *testing.T) {
 			"flavor":  arch.FlavorDefault,
 		}
 		expectErr := errors.New("boom")
-		client := setupMockedClient(t, installer.OsUnix, installer.TypeDefault, queryParams, expectErr)
+		client := setupMockedClient(t, installer.OSUnix, installer.TypeDefault, queryParams, expectErr)
 
-		_, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypeDefault)
+		_, err := client.GetLatestAgentVersion(t.Context(), installer.OSUnix, installer.TypeDefault)
 		assert.ErrorIs(t, err, expectErr)
 	})
 }

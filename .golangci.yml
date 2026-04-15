@@ -202,7 +202,7 @@ linters:
         - name: var-naming
           arguments:
             - [] # AllowList
-            - ["DT", "EEC", "KSPM", "OLM", "OTLP", "DK", "EC", "GRPC"] # DenyList
+            - ["DT", "EEC", "KSPM", "OLM", "OTLP", "DK", "EC", "GRPC", "OS"] # DenyList
         - name: unused-receiver
           disabled: true
         - name: import-shadowing

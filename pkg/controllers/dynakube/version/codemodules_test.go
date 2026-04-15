@@ -110,7 +110,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		}
 
 		mockVersionClient := versionclientmock.NewAPIClient(t)
-		mockVersionClient.EXPECT().GetLatestAgentVersion(anyCtx, installer.OsUnix, installer.TypePaaS).Return("", errors.New("BOOM")).Once()
+		mockVersionClient.EXPECT().GetLatestAgentVersion(anyCtx, installer.OSUnix, installer.TypePaaS).Return("", errors.New("BOOM")).Once()
 
 		updater := newCodeModulesUpdater(dk, mockVersionClient)
 
