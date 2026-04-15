@@ -9,12 +9,27 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
+
+func FetchOperatorLog(ctx context.Context, envConfig *envconf.Config, t *testing.T) string {
+	resources := envConfig.Client().Resources()
+
+	var operatorLog string
+
+	err := k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{Name: "dynatrace-operator", Namespace: "dynatrace"}).ForEachPod(func(pod corev1.Pod) {
+		operatorLog = ReadLog(ctx, t, envConfig, pod.Namespace, pod.Name, "operator")
+	})
+	require.NoError(t, err)
+
+	return operatorLog
+}
 
 func ReadLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, namespace, podName, containerName string) string { //nolint:revive
 	resources := envConfig.Client().Resources()
@@ -29,6 +44,10 @@ func ReadLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, names
 		Container: containerName,
 	}).Stream(ctx)
 	require.NoError(t, err)
+
+	defer func() {
+		require.NoError(t, logStream.Close())
+	}()
 
 	buffer := new(bytes.Buffer)
 	_, err = io.Copy(buffer, logStream)
