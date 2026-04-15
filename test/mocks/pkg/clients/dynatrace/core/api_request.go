@@ -249,8 +249,8 @@ func (_c *APIRequest_ExecuteWriterWithHeaders_Call) Run(run func(writer io.Write
 	return _c
 }
 
-func (_c *APIRequest_ExecuteWriterWithHeaders_Call) Return(headers http.Header, err error) *APIRequest_ExecuteWriterWithHeaders_Call {
-	_c.Call.Return(headers, err)
+func (_c *APIRequest_ExecuteWriterWithHeaders_Call) Return(header http.Header, err error) *APIRequest_ExecuteWriterWithHeaders_Call {
+	_c.Call.Return(header, err)
 	return _c
 }
 
