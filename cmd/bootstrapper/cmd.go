@@ -73,8 +73,6 @@ func AddFlags(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().BoolVar(&enableAttributesDTKubernetes, EnableAttributesDTKubernetesFlag, true, "(Optional) Should the deprecated attributes dt.kubernetes be added to the metadata enrichment.")
 
-	cmd.PersistentFlags().Lookup(EnableAttributesDTKubernetesFlag).NoOptDefVal = "true"
-
 	configure.AddFlags(cmd)
 }
 
