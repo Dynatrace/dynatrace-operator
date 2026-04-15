@@ -35,7 +35,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 			return nil // no condition == nothing is there to clean up
 		}
 
-		query := k8sconfigmap.Query(r.client, r.apiReader, log)
+		query := k8sconfigmap.Query(r.client, r.apiReader)
 
 		err := query.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}})
 		if err != nil {
@@ -51,7 +51,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
-	query := k8sconfigmap.Query(r.client, r.apiReader, log)
+	query := k8sconfigmap.Query(r.client, r.apiReader)
 
 	newConfigMap, err := r.prepareConfigMap(dk)
 	if err != nil {

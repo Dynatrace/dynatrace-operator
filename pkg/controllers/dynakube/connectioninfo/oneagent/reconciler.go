@@ -34,7 +34,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc oneagent.APIC
 		dk:           dk,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader, log),
+		secrets:      k8ssecret.Query(clt, apiReader),
 	}
 }
 
@@ -78,7 +78,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	secretNamespacedName := types.NamespacedName{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}
 
 	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, oaConnectionInfoConditionType) {
-		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName, log)
+		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName)
 		if err != nil {
 			return err
 		}

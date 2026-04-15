@@ -24,7 +24,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		client:       clt,
 		apiReader:    apiReader,
 		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader, log),
+		secrets:      k8ssecret.Query(clt, apiReader),
 	}
 }
 

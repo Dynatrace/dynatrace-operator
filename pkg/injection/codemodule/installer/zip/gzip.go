@@ -2,17 +2,21 @@ package zip
 
 import (
 	"archive/tar"
+	"context"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/klauspost/compress/gzip"
 	"github.com/pkg/errors"
 )
 
-func (extractor OneAgentExtractor) ExtractGzip(sourceFilePath, targetDir string) error {
+func (extractor OneAgentExtractor) ExtractGzip(ctx context.Context, sourceFilePath, targetDir string) error {
+	log := logd.FromContext(ctx)
+
 	extractor.cleanTempZipDir()
 
 	targetDir = filepath.Clean(targetDir)
@@ -39,7 +43,7 @@ func (extractor OneAgentExtractor) ExtractGzip(sourceFilePath, targetDir string)
 		return err
 	}
 
-	return extractor.moveToTargetDir(targetDir)
+	return extractor.moveToTargetDir(ctx, targetDir)
 }
 
 func extractFilesFromGzip(targetDir string, reader *tar.Reader) error {

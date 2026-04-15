@@ -24,7 +24,7 @@ type Reconciler struct {
 
 func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		secrets: k8ssecret.Query(client, apiReader, log),
+		secrets: k8ssecret.Query(client, apiReader),
 	}
 }
 

@@ -85,10 +85,10 @@ func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (
 
 		_ = os.RemoveAll(inst.props.PathResolver.AgentJobWorkDirForJob(jobName))
 
-		return true, inst.query(log).DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationBackground)})
+		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationBackground)})
 	}
 
-	job, err := inst.query(log).Get(ctx, types.NamespacedName{Name: jobName, Namespace: inst.props.Owner.GetNamespace()})
+	job, err := inst.query().Get(ctx, types.NamespacedName{Name: jobName, Namespace: inst.props.Owner.GetNamespace()})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		log.Info("failed to determine the status of the download job", "err", err)
 
@@ -110,7 +110,7 @@ func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (
 		return false, err
 	}
 
-	return false, inst.query(log).WithOwner(inst.props.Owner).Create(ctx, job)
+	return false, inst.query().WithOwner(inst.props.Owner).Create(ctx, job)
 }
 
 func (inst *Installer) isAlreadyPresent(targetDir string) bool {
@@ -119,6 +119,6 @@ func (inst *Installer) isAlreadyPresent(targetDir string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (inst *Installer) query(log logd.Logger) k8sjob.QueryObject {
-	return k8sjob.Query(inst.props.Client, inst.props.APIReader, log)
+func (inst *Installer) query() k8sjob.QueryObject {
+	return k8sjob.Query(inst.props.Client, inst.props.APIReader)
 }

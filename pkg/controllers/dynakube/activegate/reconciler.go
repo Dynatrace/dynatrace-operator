@@ -83,7 +83,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		customPropertiesReconciler: customproperties.NewReconciler(clt, apiReader),
 		statefulsetReconciler:      statefulset.NewReconciler(clt, apiReader),
 		tlsSecretReconciler:        tls.NewReconciler(clt, apiReader),
-		configMaps:                 k8sconfigmap.Query(clt, apiReader, log),
+		configMaps:                 k8sconfigmap.Query(clt, apiReader),
 	}
 }
 

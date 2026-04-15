@@ -41,8 +41,8 @@ type Reconciler struct {
 
 func NewReconciler(kubeClient client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		serviceEntry:   k8sserviceentry.Query(kubeClient, apiReader, log),
-		virtualService: k8svirtualservice.Query(kubeClient, apiReader, log),
+		serviceEntry:   k8sserviceentry.Query(kubeClient, apiReader),
+		virtualService: k8svirtualservice.Query(kubeClient, apiReader),
 	}
 }
 func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube) error {

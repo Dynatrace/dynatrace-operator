@@ -114,7 +114,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
 		k8sconditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
@@ -146,7 +146,7 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations = r.dk.Spec.Templates.ExtensionExecutionController.Annotations
 	}
 
-	secrets := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      r.dk.Extensions().GetTLSSecretName(),

@@ -35,7 +35,7 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 		apiReader:             apiReader,
 		operatorNs:            operatorNs,
 		dk:                    dk,
-		secrets:               k8ssecret.Query(clt, apiReader, log),
+		secrets:               k8ssecret.Query(clt, apiReader),
 		matchedOANamespaces:   []string{},
 		matchedMENamespaces:   []string{},
 		matchedOTLPNamespaces: []string{},

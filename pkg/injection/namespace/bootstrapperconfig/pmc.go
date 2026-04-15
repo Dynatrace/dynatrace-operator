@@ -41,7 +41,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, s.apiReader, types.NamespacedName{
 		Name:      dk.OneAgent().GetTenantSecret(),
 		Namespace: dk.Namespace,
-	}, connectioninfo.TenantTokenKey, log)
+	}, connectioninfo.TenantTokenKey)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
@@ -111,7 +111,7 @@ func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKub
 
 			return nil, err
 		} else if err == nil && source.Data[pmc.InputFileName] != nil {
-			pmConfig, err = oneagentclient.NewProcessModuleConfig(source.Data[pmc.InputFileName])
+			pmConfig, err = oneagentclient.NewProcessModuleConfig(ctx, source.Data[pmc.InputFileName])
 			if err != nil {
 				log.Error(err, "could not unmarshal process module config from source secret, will recreate")
 			}
