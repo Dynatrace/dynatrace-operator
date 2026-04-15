@@ -55,7 +55,7 @@ type Installer struct {
 	keychain  authn.Keychain
 }
 
-func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (bool, error) {
+func (installer *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
 	log.Info("installing agent from image")
 
 	if installer.isAlreadyPresent(targetDir) {
@@ -73,7 +73,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 
 	log.Info("installing agent", "image", installer.props.ImageURI, "target dir", targetDir)
 
-	if err := installer.installAgentFromImage(targetDir); err != nil {
+	if err := installer.installAgentFromImage(ctx, targetDir); err != nil {
 		_ = os.RemoveAll(targetDir)
 
 		log.Info("failed to install agent from image", "err", err)
@@ -81,7 +81,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 		return false, errors.WithStack(err)
 	}
 
-	if err := symlink.CreateForCurrentVersionIfNotExists(targetDir); err != nil {
+	if err := symlink.CreateForCurrentVersionIfNotExists(ctx, targetDir); err != nil {
 		_ = os.RemoveAll(targetDir)
 
 		log.Info("failed to create symlink for agent installation", "err", err)
@@ -92,7 +92,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 	return true, nil
 }
 
-func (installer *Installer) installAgentFromImage(targetDir string) error {
+func (installer *Installer) installAgentFromImage(ctx context.Context, targetDir string) error {
 	defer func() { _ = os.RemoveAll(CacheDir) }()
 
 	err := os.MkdirAll(CacheDir, common.MkDirFileMode)
@@ -106,6 +106,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
 
 	err = installer.extractAgentBinariesFromImage(
+		ctx,
 		imagePullInfo{
 			imageCacheDir: imageCacheDir,
 			targetDir:     targetDir,

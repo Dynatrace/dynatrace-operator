@@ -26,7 +26,6 @@ type Generic[T client.Object, L client.ObjectList] struct {
 	Owner      client.Object
 	KubeClient client.Client
 	KubeReader client.Reader
-	Log        logd.Logger
 }
 
 func (c Generic[T, L]) WithOwner(owner client.Object) Generic[T, L] {
@@ -42,7 +41,7 @@ func (c Generic[T, L]) Get(ctx context.Context, objectKey client.ObjectKey) (T, 
 }
 
 func (c Generic[T, L]) Create(ctx context.Context, object T) error {
-	c.log(object).Info("creating")
+	c.log(ctx, object).Info("creating")
 
 	err := hasher.AddAnnotation(object)
 	if err != nil {
@@ -60,7 +59,7 @@ func (c Generic[T, L]) Create(ctx context.Context, object T) error {
 }
 
 func (c Generic[T, L]) Update(ctx context.Context, object T) error {
-	c.log(object).Info("updating")
+	c.log(ctx, object).Info("updating")
 
 	err := hasher.AddAnnotation(object)
 	if err != nil {
@@ -78,7 +77,7 @@ func (c Generic[T, L]) Update(ctx context.Context, object T) error {
 }
 
 func (c Generic[T, L]) Delete(ctx context.Context, object T, options ...client.DeleteOption) error {
-	c.log(object).Info("deleting")
+	c.log(ctx, object).Info("deleting")
 
 	err := c.KubeClient.Delete(ctx, object, options...)
 
@@ -104,13 +103,13 @@ func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, e
 	}
 
 	if c.IsEqual(currentObject, newObject) {
-		c.log(newObject).Info("update not needed, no changes detected")
+		c.log(ctx, newObject).Info("update not needed, no changes detected")
 
 		return false, nil
 	}
 
 	if c.MustRecreate(currentObject, newObject) {
-		c.log(newObject).Info("recreation needed, immutable change detected")
+		c.log(ctx, newObject).Info("recreation needed, immutable change detected")
 
 		err := c.Recreate(ctx, newObject)
 		if err != nil {
@@ -141,7 +140,8 @@ func (c Generic[T, L]) Recreate(ctx context.Context, object T) error {
 }
 
 func (c Generic[T, L]) GetAllFromNamespaces(ctx context.Context, objectName string) ([]T, error) {
-	c.Log.Info("querying from all namespaces", "name", objectName)
+	log := logd.FromContext(ctx)
+	log.Info("querying from all namespaces", "name", objectName)
 
 	listOps := []client.ListOption{
 		client.MatchingFields{
@@ -160,7 +160,7 @@ func (c Generic[T, L]) CreateOrUpdateForNamespaces(ctx context.Context, object T
 		return err
 	}
 
-	c.log(object).Info("reconciling objects for multiple namespaces", "len(namespaces)", len(namespaces))
+	c.log(ctx, object).Info("reconciling objects for multiple namespaces", "len(namespaces)", len(namespaces))
 
 	namespacesContainingObject := make(map[string]T, len(objects))
 	for _, object := range objects {
@@ -171,6 +171,7 @@ func (c Generic[T, L]) CreateOrUpdateForNamespaces(ctx context.Context, object T
 }
 
 func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T, namespacesContainingSecret map[string]T, namespaces []corev1.Namespace) error {
+	log := logd.FromContext(ctx)
 	updateCount := 0
 	creationCount := 0
 
@@ -178,7 +179,7 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 
 	for _, namespace := range namespaces {
 		if namespace.Status.Phase == corev1.NamespaceTerminating {
-			c.Log.Info("skipping terminating namespace", "namespace", namespace.Name)
+			log.Info("skipping terminating namespace", "namespace", namespace.Name)
 
 			continue
 		}
@@ -212,13 +213,14 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 		}
 	}
 
-	c.log(object).Info("reconciled objects for multiple namespaces", "creationCount", creationCount, "updateCount", updateCount)
+	c.log(ctx, object).Info("reconciled objects for multiple namespaces", "creationCount", creationCount, "updateCount", updateCount)
 
 	return goerrors.Join(errs...)
 }
 
 func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string, options ...client.DeleteOption) error {
-	c.Log.Info("deleting object from namespace", "name", objectName, "namespace", namespace)
+	log := logd.FromContext(ctx)
+	log.Info("deleting object from namespace", "name", objectName, "namespace", namespace)
 
 	c.Target.SetName(objectName)
 	c.Target.SetNamespace(namespace)
@@ -227,7 +229,8 @@ func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string
 }
 
 func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName string, namespaces []string) error {
-	c.Log.Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
+	log := logd.FromContext(ctx)
+	log.Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
 
 	errs := make([]error, 0, len(namespaces))
 
@@ -241,8 +244,8 @@ func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName strin
 	return goerrors.Join(errs...)
 }
 
-func (c Generic[T, L]) log(object T) logd.Logger {
-	return c.Log.WithValues("kind", reflect.TypeOf(object), "name", object.GetName(), "namespace", object.GetNamespace())
+func (c Generic[T, L]) log(ctx context.Context, object T) logd.Logger {
+	return logd.FromContext(ctx).WithValues("kind", reflect.TypeOf(object), "name", object.GetName(), "namespace", object.GetNamespace())
 }
 
 func asNamespacedName(object client.Object) types.NamespacedName {

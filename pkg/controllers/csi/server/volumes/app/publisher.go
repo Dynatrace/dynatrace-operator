@@ -24,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
@@ -51,32 +52,36 @@ const (
 )
 
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	if !pub.isCodeModuleAvailable(volumeCfg) {
+	ctx, log := logd.NewFromContext(ctx, "csi-appvolume")
+
+	if !pub.isCodeModuleAvailable(ctx, volumeCfg) {
 		provisionerNotDoneErr := errors.Errorf("version or digest is not yet set, csi-provisioner hasn't finished setup yet for %s DynaKube", volumeCfg.DynakubeName)
-		if pub.hasRetryLimitReached(volumeCfg) {
+		if pub.hasRetryLimitReached(ctx, volumeCfg) {
 			log.Error(provisionerNotDoneErr, retryLimitReachedMsg, "pod", volumeCfg.PodName)
 
-			return pub.finishMount(volumeCfg)
+			return pub.finishMount(ctx, volumeCfg)
 		}
 
 		return nil, status.Error(codes.Unavailable, provisionerNotDoneErr.Error())
 	}
 
-	if err := pub.mountCodeModule(volumeCfg); err != nil {
+	if err := pub.mountCodeModule(ctx, volumeCfg); err != nil {
 		mountFailedErr := errors.WithMessage(err, "failed to mount oneagent volume")
-		if pub.hasRetryLimitReached(volumeCfg) {
+		if pub.hasRetryLimitReached(ctx, volumeCfg) {
 			log.Error(mountFailedErr, retryLimitReachedMsg, "pod", volumeCfg.PodName)
 
-			return pub.finishMount(volumeCfg)
+			return pub.finishMount(ctx, volumeCfg)
 		}
 
 		return nil, status.Error(codes.Internal, mountFailedErr.Error())
 	}
 
-	return pub.finishMount(volumeCfg)
+	return pub.finishMount(ctx, volumeCfg)
 }
 
-func (pub *Publisher) finishMount(volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+func (pub *Publisher) finishMount(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	log := logd.FromContext(ctx)
+
 	err := os.RemoveAll(pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
 	if err != nil {
 		log.Error(err, "failed to cleanup backoff tracking dir")
@@ -87,7 +92,8 @@ func (pub *Publisher) finishMount(volumeCfg *csivolumes.VolumeConfig) (*csi.Node
 
 // hasRetryLimitReached creates the base dir for a given app mount if it doesn't exist yet, checks the creation timestamp against the threshold
 // if any of the FS calls fail in an unexpected way, then it is considered that the limit was reached.
-func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) bool {
+func (pub *Publisher) hasRetryLimitReached(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) bool {
+	log := logd.FromContext(ctx)
 	appDir := pub.path.AppMountForID(volumeCfg.VolumeID)
 	retryDir := pub.path.AppMountRetryTrackerForID(volumeCfg.VolumeID)
 
@@ -115,7 +121,8 @@ func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) b
 }
 
 // isCodeModuleAvailable checks if the LatestAgentBinaryForDynaKube folder exists or not
-func (pub *Publisher) isCodeModuleAvailable(volumeCfg *csivolumes.VolumeConfig) bool {
+func (pub *Publisher) isCodeModuleAvailable(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) bool {
+	log := logd.FromContext(ctx)
 	binDir := pub.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
 
 	stat, err := os.Stat(binDir)
@@ -132,7 +139,9 @@ func (pub *Publisher) isCodeModuleAvailable(volumeCfg *csivolumes.VolumeConfig) 
 	return stat.IsDir()
 }
 
-func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error {
+func (pub *Publisher) mountCodeModule(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) error {
+	log := logd.FromContext(ctx)
+
 	upperDir, err := pub.prepareUpperDir(volumeCfg)
 	if err != nil {
 		return err
@@ -174,7 +183,7 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 		return err
 	}
 
-	err = pub.addPodInfoSymlink(volumeCfg)
+	err = pub.addPodInfoSymlink(ctx, volumeCfg)
 	if err != nil {
 		return err
 	}
@@ -182,7 +191,7 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 	return nil
 }
 
-func (pub *Publisher) addPodInfoSymlink(volumeCfg *csivolumes.VolumeConfig) error {
+func (pub *Publisher) addPodInfoSymlink(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) error {
 	appMountPodInfoDir := pub.path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
 	if err := os.MkdirAll(appMountPodInfoDir, os.ModePerm); err != nil {
 		return err
@@ -190,11 +199,11 @@ func (pub *Publisher) addPodInfoSymlink(volumeCfg *csivolumes.VolumeConfig) erro
 
 	targetDir := pub.path.AppMountForID(volumeCfg.VolumeID)
 
-	if err := symlink.Remove(appMountPodInfoDir); err != nil {
+	if err := symlink.Remove(ctx, appMountPodInfoDir); err != nil {
 		return err
 	}
 
-	err := symlink.Create(targetDir, appMountPodInfoDir)
+	err := symlink.Create(ctx, targetDir, appMountPodInfoDir)
 	if err != nil {
 		return err
 	}

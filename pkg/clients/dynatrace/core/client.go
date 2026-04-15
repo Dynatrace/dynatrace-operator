@@ -16,8 +16,6 @@ import (
 
 const apiTokenHeader = "Api-Token "
 
-var log = logd.Get().WithName("dtclient-core")
-
 // APIClient defines the behavior required from a config provider and is mockable
 type APIClient interface {
 	GET(ctx context.Context, path string) APIRequest
@@ -248,6 +246,8 @@ func (r *Request) withMethod(method string) APIRequest {
 }
 
 func (r *Request) doRequestStream(writer io.Writer) (err error) {
+	log := logd.FromContext(r.ctx)
+
 	if r.err != nil {
 		return r.err
 	}
@@ -314,6 +314,8 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 }
 
 func (r *Request) doRequest() (body []byte, err error) {
+	log := logd.FromContext(r.ctx)
+
 	if r.err != nil {
 		return nil, r.err
 	}

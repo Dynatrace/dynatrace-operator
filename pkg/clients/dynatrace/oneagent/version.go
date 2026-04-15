@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
@@ -124,6 +125,8 @@ func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, err
 }
 
 func (c *Client) GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
+	log := logd.FromContext(ctx)
+
 	apiRequest := c.apiClient.GET(ctx, url).WithoutToken()
 
 	sha256, err := makeRequestForBinary(apiRequest, writer)
