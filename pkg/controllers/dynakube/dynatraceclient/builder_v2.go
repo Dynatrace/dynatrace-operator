@@ -91,10 +91,11 @@ func (dynatraceClientBuilder builderV2) Build(ctx context.Context) (*dtclient.Cl
 		paasToken = apiToken
 	}
 
+	opts.Opts = append(opts.Opts, dtclient.WithBaseURL(dynatraceClientBuilder.dk.Spec.APIURL))
 	opts.Opts = append(opts.Opts, dtclient.WithUserAgentSuffix(dynatraceClientBuilder.userAgentSuffix))
 
 	opts.Opts = append(opts.Opts, dtclient.WithAPIToken(apiToken))
 	opts.Opts = append(opts.Opts, dtclient.WithPaasToken(paasToken))
 
-	return dtclient.NewClientV2(dynatraceClientBuilder.dk.Spec.APIURL, opts.Opts...)
+	return dtclient.NewClientV2(opts.Opts...)
 }

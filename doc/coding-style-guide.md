@@ -528,7 +528,7 @@ log.Debug("EdgeConnect deployment created/updated", "name", edgeConnect.Name)
 if len(ecs.EdgeConnects) > 1 {
     log.Debug("Found multiple EdgeConnect objects with the same name", "count", ecs.EdgeConnects)
 
-    return edgeconnect.GetResponse{}, errors.New("many EdgeConnects have the same name")
+    return edgeconnect.APIResponse{}, errors.New("many EdgeConnects have the same name")
 }
 
 ```
