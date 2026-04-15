@@ -18,7 +18,7 @@ create a self-signed root CA
 > openssl req -x509 -nodes -sha256 -days 1825 -newkey rsa:2048 -keyout root.pem -out root.crt -subj '/CN=dynakube-activegate.issuer'
 
 sign certificate signing request with root CA
-> openssl x509 -req -CA root.crt -CAkey root.pem -in ag.csr -out agcrt.pem -days 365 -CAcreateserial -extfile ag.ext
+> openssl x509 -req -CA root.crt -CAkey root.pem -in ag.csr -out agcrt.pem -days 365 -CAcreateserial -extfile /Users/andrii.soldatenko/work/dynatrace-operator/test/e2e/testdata/custom-cas/ag.ext
 
 convert to p12
 > openssl pkcs12 -export -out agcrtkey.p12 -inkey agkey.pem -in agcrt.pem -certfile root.crt
