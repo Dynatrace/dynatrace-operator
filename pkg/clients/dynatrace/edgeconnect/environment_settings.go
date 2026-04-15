@@ -8,9 +8,7 @@ import (
 
 // Environment API
 const (
-	environmentAPIPath    = "/platform/classic/environment-api/v2"
-	settingsObjectsPath   = environmentAPIPath + "/settings/objects"
-	settingsObjectsIDPath = settingsObjectsPath + "/"
+	settingsObjectsPath = "/platform/classic/environment-api/v2/settings/objects"
 )
 
 const (
@@ -71,7 +69,7 @@ func (c *Client) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSet
 		return errNoEnvSettingObjectID
 	}
 
-	err := c.apiClient.PUT(ctx, settingsObjectsIDPath+es.ObjectID).WithoutToken().WithJSONBody(es).Execute(nil)
+	err := c.apiClient.PUT(ctx, settingsObjectsPath).WithPath(es.ObjectID).WithoutToken().WithJSONBody(es).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to update environment setting")
 	}
@@ -85,7 +83,7 @@ func (c *Client) DeleteEnvironmentSetting(ctx context.Context, objectID string) 
 		return errNoEnvSettingObjectID
 	}
 
-	err := c.apiClient.DELETE(ctx, settingsObjectsIDPath+objectID).WithoutToken().Execute(nil)
+	err := c.apiClient.DELETE(ctx, settingsObjectsPath).WithPath(objectID).WithoutToken().Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete environment setting")
 	}

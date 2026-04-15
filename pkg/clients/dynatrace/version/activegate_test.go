@@ -13,9 +13,8 @@ import (
 func TestGetLatestActiveGateVersion(t *testing.T) {
 	setupMockedClient := func(t *testing.T, os string, err error) *Client {
 		req := coremock.NewAPIRequest(t)
-		req.EXPECT().
-			WithPaasToken().
-			Return(req).Once()
+		req.EXPECT().WithPath([]string{os, "latest/metainfo"}).Return(req).Once()
+		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().
 			Execute(new(struct {
 				LatestGatewayVersion string `json:"latestGatewayVersion"`
@@ -28,7 +27,7 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 			}).
 			Return(err).Once()
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getLatestActiveGateVersionPath(os)).Return(req).Once()
+		client.EXPECT().GET(t.Context(), "/v1/deployment/installer/gateway").Return(req).Once()
 
 		return NewClient(client)
 	}
@@ -45,7 +44,7 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 		client := NewClient(nil)
 
 		_, err := client.GetLatestActiveGateVersion(t.Context(), "")
-		assert.Error(t, err, "os is empty")
+		assert.ErrorIs(t, err, errEmptyOS)
 	})
 
 	t.Run("server error", func(t *testing.T) {
