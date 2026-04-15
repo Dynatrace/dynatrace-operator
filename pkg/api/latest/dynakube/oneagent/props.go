@@ -14,7 +14,7 @@ import (
 const (
 	OneAgentTenantSecretSuffix            = "-oneagent-tenant-secret"
 	OneAgentConnectionInfoConfigMapSuffix = "-oneagent-connection-info"
-	PodNameOsAgent                        = "oneagent"
+	PodNameOSAgent                        = "oneagent"
 	DefaultOneAgentImageRegistrySubPath   = "/linux/oneagent"
 	StorageVolumeDefaultHostPath          = "/var/opt/dynatrace"
 )
@@ -66,7 +66,7 @@ func (oa *OneAgent) IsDaemonsetRequired() bool {
 }
 
 func (oa *OneAgent) GetDaemonsetName() string {
-	return fmt.Sprintf("%s-%s", oa.name, PodNameOsAgent)
+	return fmt.Sprintf("%s-%s", oa.name, PodNameOSAgent)
 }
 
 func (oa *OneAgent) IsPrivilegedNeeded() bool {

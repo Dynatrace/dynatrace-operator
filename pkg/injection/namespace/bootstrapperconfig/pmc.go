@@ -3,6 +3,7 @@ package bootstrapperconfig
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -111,12 +112,29 @@ func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKub
 
 			return nil, err
 		} else if err == nil && source.Data[pmc.InputFileName] != nil {
-			pmConfig, err = oneagentclient.NewProcessModuleConfig(source.Data[pmc.InputFileName])
+			inputData := source.Data[pmc.InputFileName]
+
+			pmConfig, err = configFromBytes(inputData)
 			if err != nil {
-				log.Error(err, "could not unmarshal process module config from source secret, will recreate")
+				log.Error(err, "could not unmarshal process module config from source secret, will recreate", pmc.InputFileName, string(inputData))
 			}
 		}
 	}
 
 	return pmConfig, nil
+}
+
+func configFromBytes(response []byte) (*oneagentclient.ProcessModuleConfig, error) {
+	var resp oneagentclient.ProcessModuleConfig
+
+	err := json.Unmarshal(response, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Properties) == 0 {
+		return nil, errors.New("no properties available")
+	}
+
+	return &resp, nil
 }

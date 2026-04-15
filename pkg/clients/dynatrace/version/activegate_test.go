@@ -33,9 +33,9 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 	}
 
 	t.Run("ok - returns version", func(t *testing.T) {
-		client := setupMockedClient(t, installer.OsUnix, nil)
+		client := setupMockedClient(t, installer.OSUnix, nil)
 
-		version, err := client.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
+		version, err := client.GetLatestActiveGateVersion(t.Context(), installer.OSUnix)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
@@ -49,9 +49,9 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 
 	t.Run("server error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		client := setupMockedClient(t, installer.OsUnix, expectErr)
+		client := setupMockedClient(t, installer.OSUnix, expectErr)
 
-		_, err := client.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
+		_, err := client.GetLatestActiveGateVersion(t.Context(), installer.OSUnix)
 		assert.ErrorIs(t, err, expectErr)
 	})
 }

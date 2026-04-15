@@ -156,7 +156,7 @@ func TestMigrateHostMounts(t *testing.T) {
 	t.Run("skip agent dir exists", func(t *testing.T) {
 		tempDir := t.TempDir()
 		checker := NewCorrectnessChecker(apiReader, dtcsi.CSIOptions{RootDir: tempDir})
-		require.NoError(t, os.MkdirAll(checker.path.OsAgentDir("test"), os.ModePerm))
+		require.NoError(t, os.MkdirAll(checker.path.OSAgentDir("test"), os.ModePerm))
 
 		setupLogForTest(t)
 		checker.migrateHostMounts(t.Context())
@@ -165,12 +165,12 @@ func TestMigrateHostMounts(t *testing.T) {
 	t.Run("create symlink", func(t *testing.T) {
 		tempDir := t.TempDir()
 		checker := NewCorrectnessChecker(apiReader, dtcsi.CSIOptions{RootDir: tempDir})
-		require.NoError(t, os.MkdirAll(checker.path.OldOsAgentDir("tenant"), os.ModePerm))
+		require.NoError(t, os.MkdirAll(checker.path.OldOSAgentDir("tenant"), os.ModePerm))
 
 		setupLogForTest(t)
 		checker.migrateHostMounts(t.Context())
 
-		assert.FileExists(t, checker.path.OsAgentDir("test")) // file because symlink
+		assert.FileExists(t, checker.path.OSAgentDir("test")) // file because symlink
 	})
 
 	t.Run("skip missing source dir", func(t *testing.T) {
@@ -180,8 +180,8 @@ func TestMigrateHostMounts(t *testing.T) {
 		setupLogForTest(t)
 		checker.migrateHostMounts(t.Context())
 
-		assert.NoFileExists(t, checker.path.OsAgentDir("test"))
-		assert.NoDirExists(t, checker.path.OsAgentDir("test"))
+		assert.NoFileExists(t, checker.path.OSAgentDir("test"))
+		assert.NoDirExists(t, checker.path.OSAgentDir("test"))
 	})
 }
 

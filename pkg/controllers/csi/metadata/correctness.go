@@ -103,7 +103,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 			log.Error(err, "failed to create dynakube directory")
 		}
 
-		newPath := checker.path.OsAgentDir(dk.Name)
+		newPath := checker.path.OSAgentDir(dk.Name)
 
 		stat, err := os.Stat(newPath)
 		if err == nil && stat.IsDir() {
@@ -117,7 +117,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 			continue
 		}
 
-		oldPath := checker.path.OldOsAgentDir(tenantUUID)
+		oldPath := checker.path.OldOSAgentDir(tenantUUID)
 
 		_, err = os.Stat(oldPath)
 		if err != nil {

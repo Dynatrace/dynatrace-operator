@@ -23,7 +23,7 @@ const (
 
 func TestGetLatest(t *testing.T) {
 	args := GetParams{
-		OS:            installer.OsUnix,
+		OS:            installer.OSUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        arch.FlavorMultidistro,
 		Technologies:  nil,
@@ -73,13 +73,13 @@ func TestGetLatest(t *testing.T) {
 
 	t.Run("missing params", func(t *testing.T) {
 		require.ErrorIs(t, (&Client{}).GetLatest(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
-		require.ErrorIs(t, (&Client{}).GetLatest(t.Context(), GetParams{OS: installer.OsUnix}, nil), errEmptyInstallerType)
+		require.ErrorIs(t, (&Client{}).GetLatest(t.Context(), GetParams{OS: installer.OSUnix}, nil), errEmptyInstallerType)
 	})
 }
 
 func TestGet(t *testing.T) {
 	args := GetParams{
-		OS:            installer.OsUnix,
+		OS:            installer.OSUnix,
 		InstallerType: installer.TypePaaS,
 		Version:       "1.2.3",
 		Flavor:        "",
@@ -131,13 +131,13 @@ func TestGet(t *testing.T) {
 
 	t.Run("missing params", func(t *testing.T) {
 		require.ErrorIs(t, (&Client{}).Get(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
-		require.ErrorIs(t, (&Client{}).Get(t.Context(), GetParams{OS: installer.OsUnix}, nil), errEmptyInstallerType)
+		require.ErrorIs(t, (&Client{}).Get(t.Context(), GetParams{OS: installer.OSUnix}, nil), errEmptyInstallerType)
 	})
 }
 
 func TestGetVersions(t *testing.T) {
 	args := GetParams{
-		OS:            installer.OsUnix,
+		OS:            installer.OSUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        "",
 	}
@@ -187,7 +187,7 @@ func TestGetVersions(t *testing.T) {
 	t.Run("missing params", func(t *testing.T) {
 		_, err := (&Client{}).GetVersions(t.Context(), GetParams{InstallerType: installer.TypePaaS})
 		require.ErrorIs(t, err, errEmptyOS)
-		_, err = (&Client{}).GetVersions(t.Context(), GetParams{OS: installer.OsUnix})
+		_, err = (&Client{}).GetVersions(t.Context(), GetParams{OS: installer.OSUnix})
 		require.ErrorIs(t, err, errEmptyInstallerType)
 	})
 }
