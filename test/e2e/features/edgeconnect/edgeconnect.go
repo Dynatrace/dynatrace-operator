@@ -107,7 +107,7 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 }
 
 func WithHTTPProxy(t *testing.T) features.Feature {
-	builder := features.New("edgeconnect-install-http-proxy")
+	builder := features.New("edgeconnect-proxy-http")
 
 	builder.Setup(func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		ctx, err := istio.AssertIstioNamespace()(ctx, envConfig, t)
@@ -160,7 +160,7 @@ func WithHTTPProxy(t *testing.T) features.Feature {
 }
 
 func WithHTTPSProxy(t *testing.T) features.Feature {
-	builder := features.New("edgeconnect-install-https-proxy")
+	builder := features.New("edgeconnect-proxy-https")
 
 	builder.Setup(func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		ctx, err := istio.AssertIstioNamespace()(ctx, envConfig, t)
