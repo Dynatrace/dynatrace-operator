@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -59,6 +60,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.APIClient,
 }
 
 func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.APIClient) error {
+	ctx, log := logd.NewFromContext(ctx, "dynakube-activegate-authtoken")
+
 	secret, err := r.secrets.Get(ctx, client.ObjectKey{Name: dk.ActiveGate().GetAuthTokenSecretName(), Namespace: dk.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {

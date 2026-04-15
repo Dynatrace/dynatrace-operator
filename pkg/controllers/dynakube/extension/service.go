@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
@@ -14,6 +15,8 @@ import (
 )
 
 func (r *Reconciler) reconcileService(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsAnyEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), serviceConditionType) == nil {
 			return nil
@@ -39,6 +42,8 @@ func (r *Reconciler) reconcileService(ctx context.Context, dk *dynakube.DynaKube
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	newService, err := r.buildService(dk)
 	if err != nil {
 		k8sconditions.SetServiceGenFailed(dk.Conditions(), serviceConditionType, err)

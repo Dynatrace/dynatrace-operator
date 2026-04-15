@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -214,7 +215,7 @@ func TestAddInitContainerToPod(t *testing.T) {
 		pod := corev1.Pod{}
 		initContainer := corev1.Container{}
 
-		addInitContainerToPod(&pod, &initContainer)
+		addInitContainerToPod(&pod, &initContainer, logd.Get())
 
 		assert.Contains(t, pod.Spec.InitContainers, initContainer)
 		require.Len(t, pod.Spec.Volumes, 2)

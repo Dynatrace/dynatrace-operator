@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -24,6 +25,8 @@ func (err CodeModulesStatusNotReadyErr) Error() string {
 }
 
 func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath string) error {
+	log := logd.FromContext(mutationRequest.Context)
+
 	if !mutationRequest.DynaKube.IsCodeModulesStatusReady() {
 		return dtwebhook.MutatorError{
 			Err:      CodeModulesStatusNotReadyErr{dkName: mutationRequest.DynaKube.Name},
@@ -46,7 +49,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	} else {
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
-		addEmptyDirBinVolume(mutationRequest.Pod)
+		addEmptyDirBinVolume(mutationRequest.Pod, log)
 		// in case of no CSI, the the emptyDir can't be readonly for the init-container, as it first has to download/move the agent into it
 		addInitBinMount(mutationRequest.InstallContainer, false)
 
@@ -72,7 +75,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	}
 
-	return addInitArgs(mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath)
+	return addInitArgs(mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath, log)
 }
 
 func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
@@ -84,7 +87,7 @@ func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{}
 }
 
-func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) error {
+func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string, log logd.Logger) error {
 	args := []arg.Arg{
 		{Name: k8sinit.SourceFolderFlag, Value: AgentCodeModuleSource},
 		{Name: k8sinit.TargetFolderFlag, Value: consts.AgentInitBinDirMount},

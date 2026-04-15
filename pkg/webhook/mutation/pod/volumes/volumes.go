@@ -11,10 +11,6 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-var (
-	log = logd.Get().WithName("volumes-mutation")
-)
-
 const (
 	ConfigVolumeName    = "dynatrace-config"
 	InitConfigMountPath = "/mnt/config"
@@ -30,7 +26,7 @@ const (
 	AnnotationConfigVolumeNameResource = AnnotationResourcePrefix + ConfigVolumeName
 )
 
-func AddConfigVolume(pod *corev1.Pod) {
+func AddConfigVolume(pod *corev1.Pod, log logd.Logger) {
 	if k8svolume.Contains(pod.Spec.Volumes, ConfigVolumeName) {
 		return
 	}

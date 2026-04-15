@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
@@ -29,6 +30,8 @@ type DynakubeMapper struct {
 }
 
 func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynakube.DynaKube) DynakubeMapper {
+	ctx, _ = logd.NewFromContext(ctx, "namespace-mapper")
+
 	return DynakubeMapper{
 		ctx:                   ctx,
 		client:                clt,
@@ -58,9 +61,9 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 	oaActive := dm.dk.OneAgent().IsAppInjectionNeeded()
 	meActive := dm.dk.MetadataEnrichment().IsEnabled()
 	otlpActive := dm.dk.OTLPExporterConfiguration().IsEnabled()
-	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType, oaActive, dm.matchedOANamespaces)
-	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType, meActive, dm.matchedMENamespaces)
-	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType, otlpActive, dm.matchedOTLPNamespaces)
+	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType, oaActive, dm.matchedOANamespaces)
+	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType, meActive, dm.matchedMENamespaces)
+	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType, otlpActive, dm.matchedOTLPNamespaces)
 
 	return nil
 }
@@ -154,7 +157,7 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 			dm.matchedOTLPNamespaces = append(dm.matchedOTLPNamespaces, namespace.Name)
 		}
 
-		updated, err := updateNamespace(namespace, dkList)
+		updated, err := updateNamespace(dm.ctx, namespace, dkList)
 		if err != nil {
 			return nil, err
 		}

@@ -5,6 +5,7 @@ import (
 
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -52,6 +53,7 @@ func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
+	log := logd.FromContext(request.Context)
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
 	workloadInfo, err := workload.FindRootOwnerOfPod(request.Context, mut.metaClient, *request.BaseRequest, log)
@@ -95,7 +97,9 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 }
 
 func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
-	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+	log := logd.FromContext(request.Context)
+
+	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, log)
 	if copiedMetadataAnnotations == nil {
 		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
 

@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -530,6 +531,8 @@ func (b *builder) getReadinessProbe() *corev1.Probe {
 // isRootFsReadonly checks if the given version of the OneAgent supports the `ReadOnlyRootFilesystem` securityContext setting.
 // if the version is not set, ie.: unknown, we  consider the OneAgent to support `ReadOnlyRootFilesystem`.
 func (b *builder) isRootFsReadonly() bool {
+	log := logd.Get().WithName("oneagent-daemonset")
+
 	if b.dk != nil &&
 		b.dk.OneAgent().IsReadOnlyFSSupported() &&
 		b.dk.OneAgent().GetVersion() != "" &&

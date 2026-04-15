@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -89,6 +90,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error {
+	logCtx, log := logd.NewFromContext(ctx, "dynakube-activegate")
 	// If AG is not used or was not cleaned up due to being previously enabled
 	// Split the `if` for better logging.
 	if !dk.ActiveGate().IsEnabled() {
@@ -103,12 +105,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		log.Info("activeGate was disabled, starting cleanup")
 	}
 
-	err := r.connectionReconciler.Reconcile(ctx, dtClient.ActiveGate, dk)
+	err := r.connectionReconciler.Reconcile(logCtx, dtClient.ActiveGate, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.createActiveGateTenantConnectionInfoConfigMap(ctx, dk)
+	err = r.createActiveGateTenantConnectionInfoConfigMap(logCtx, dk)
 	if err != nil {
 		return err
 	}
@@ -117,31 +119,31 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		r.versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
 	}
 
-	err = r.versionReconciler.ReconcileActiveGate(ctx, dk)
+	err = r.versionReconciler.ReconcileActiveGate(logCtx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.pullSecretReconciler.Reconcile(ctx, dk, tokens)
+	err = r.pullSecretReconciler.Reconcile(logCtx, dk, tokens)
 	if err != nil {
 		return err
 	}
 
-	err = r.istioReconciler.ReconcileActiveGate(ctx, dk)
+	err = r.istioReconciler.ReconcileActiveGate(logCtx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.authTokenReconciler.Reconcile(ctx, dtClient.ActiveGate, dk)
+	err = r.authTokenReconciler.Reconcile(logCtx, dtClient.ActiveGate, dk)
 	if err != nil {
 		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 	}
 
 	agCapability := capability.NewMultiCapability(dk)
 	if agCapability.Enabled() {
-		return r.createCapability(ctx, dk, agCapability)
+		return r.createCapability(logCtx, dk, agCapability)
 	} else {
-		if err := r.deleteCapability(ctx, dk); err != nil {
+		if err := r.deleteCapability(logCtx, dk); err != nil {
 			return err
 		}
 	}
@@ -152,6 +154,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 }
 
 func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	if !dk.ActiveGate().IsEnabled() {
 		// TODO: Add clean up of the config map
 		return nil

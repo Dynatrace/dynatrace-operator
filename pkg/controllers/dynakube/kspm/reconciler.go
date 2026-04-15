@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/kspmsettings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,21 +27,23 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.APIClient, dk *dynakube.DynaKube) error {
-	err := r.tokenReconciler.Reconcile(ctx, dk)
+	logCtx, log := logd.NewFromContext(ctx, "kspm")
+
+	err := r.tokenReconciler.Reconcile(logCtx, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM Secret")
 
 		return err
 	}
 
-	err = r.settingsReconciler.Reconcile(ctx, dtClient, dk)
+	err = r.settingsReconciler.Reconcile(logCtx, dtClient, dk)
 	if err != nil {
 		log.Info("failed to reconcile KSPM Settings")
 
 		return err
 	}
 
-	err = r.daemonSetReconciler.Reconcile(ctx, dk)
+	err = r.daemonSetReconciler.Reconcile(logCtx, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM DaemonSet")
 

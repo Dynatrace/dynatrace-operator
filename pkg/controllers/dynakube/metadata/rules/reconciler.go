@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -29,6 +30,8 @@ func NewReconciler(dtClient settings.APIClient, dk *dynakube.DynaKube) controlle
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	ctx, log := logd.NewFromContext(ctx, "metadata-enrichment-rules")
+
 	if !r.dk.MetadataEnrichment().IsEnabled() && !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.OTLPExporterConfiguration().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil

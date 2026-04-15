@@ -678,7 +678,7 @@ func TestReconcileReplicas(t *testing.T) {
 		}
 
 		if existingReplicas != nil {
-			existing := deployment.New(ec)
+			existing := deployment.New(context.Background(), ec)
 			existing.Spec.Replicas = existingReplicas
 			objs = append(objs, existing)
 		}

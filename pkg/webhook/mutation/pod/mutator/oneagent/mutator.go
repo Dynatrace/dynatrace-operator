@@ -2,6 +2,7 @@ package oneagent
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -64,6 +65,7 @@ func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
+	log := logd.FromContext(request.Context)
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 
 	err := mutateInitContainer(request, installPath)
@@ -73,32 +75,33 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 
 	// not checking the returned bool, as getting a `false` value shouldn't happen
 	// the caller of mutate already checks if it needs to be mutated
-	_ = mutateUserContainers(request.BaseRequest, installPath)
+	_ = mutateUserContainers(request.BaseRequest, installPath, log)
 	setInjectedAnnotation(request.Pod)
 
 	return nil
 }
 
 func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+	log := logd.Get().WithName("oa-mutation")
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 
-	return mutateUserContainers(request.BaseRequest, installPath)
+	return mutateUserContainers(request.BaseRequest, installPath, log)
 }
 
 func containerIsInjected(container corev1.Container, _ *dtwebhook.BaseRequest) bool {
 	return k8smount.Contains(container.VolumeMounts, BinVolumeName)
 }
 
-func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string) bool {
+func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, log logd.Logger) bool {
 	newContainers := request.NewContainers(containerIsInjected)
 	for _, container := range newContainers {
-		addOneAgentToContainer(request.DynaKube, container, request.Namespace, installPath)
+		addOneAgentToContainer(request.DynaKube, container, request.Namespace, installPath, log)
 	}
 
 	return len(newContainers) > 0
 }
 
-func addOneAgentToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string) {
+func addOneAgentToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
 	log.Info("adding OneAgent to container", "name", container.Name)
 
 	addVolumeMounts(container, installPath)

@@ -28,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -188,6 +189,7 @@ type Controller struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := logd.FromContext(ctx)
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
@@ -246,6 +248,8 @@ func (controller *Controller) handleError(
 	reconcileErr error,
 	oldStatus dynakube.DynaKubeStatus,
 ) (reconcile.Result, error) {
+	log := logd.FromContext(ctx)
+
 	switch {
 	case core.IsUnreachable(reconcileErr):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
@@ -294,6 +298,8 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	err := controller.istioReconciler.ReconcileAPIURL(ctx, dk)
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile istio objects for API url")
@@ -358,6 +364,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	var componentErrors []error
 
 	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
@@ -468,6 +475,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 }
 
 func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",

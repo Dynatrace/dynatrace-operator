@@ -12,6 +12,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+// log is kept as a package-level logger because GetMinorVersion is a background singleton
+// cache with no context.Context parameter. This is an intentional exception to the
+// context-logger pattern.
 var log = logd.Get().WithName("k8sversion")
 
 const refreshInterval = 5 * time.Minute

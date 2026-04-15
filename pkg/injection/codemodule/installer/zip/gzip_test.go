@@ -30,7 +30,7 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(tmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
 		require.NoError(t, err)
 		testUnpackedArchive(t, tmpDir)
 	})
@@ -55,7 +55,7 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(tmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
 		require.NoError(t, err)
 
 		// Verify regular files exist
@@ -119,7 +119,7 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(tmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
 		require.NoError(t, err)
 
 		// Verify root file
@@ -202,7 +202,7 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(tmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
 		require.NoError(t, err)
 
 		// Verify safe files were extracted

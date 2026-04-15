@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -77,6 +78,8 @@ func (updater oneAgentUpdater) IsAutoRegistryEnabled() bool {
 }
 
 func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	var err error
 
 	// Not using setVerificationSkippedReasonCondition here because technically we do some verification.
@@ -99,7 +102,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 
 	defaultImage := updater.dk.OneAgent().GetDefaultImage(latestVersion)
 
-	err = updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
+	err = updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, latestVersion)
 	if err != nil {
 		return err
 	}
@@ -136,6 +139,7 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 }
 
 func (updater oneAgentUpdater) ValidateStatus() error {
+	log := logd.Get().WithName("dynakube-version")
 	imageVersion := updater.Target().Version
 	imageType := updater.Target().Type
 
