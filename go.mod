@@ -1,6 +1,6 @@
 module github.com/Dynatrace/dynatrace-operator
 
-go 1.25.6
+go 1.25.0
 
 require (
 	github.com/Dynatrace/dynatrace-bootstrapper v1.2.0
