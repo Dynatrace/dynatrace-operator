@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // makeStringMapWithPrefix creates a map with n unique entries using keys prefixed by the given prefix.
@@ -320,7 +321,7 @@ func TestResourceAttributesSyntaxValidation(t *testing.T) {
 			},
 		}
 		_, err := runValidators(t, dk)
-		assert.ErrorContains(t, err, "spec.resourceAttributes contains invalid entries")
+		require.ErrorContains(t, err, "spec.resourceAttributes contains invalid entries")
 		assert.NotContains(t, err.Error(), "spec.oneAgent")
 		assert.NotContains(t, err.Error(), "spec.otlpExporterConfiguration")
 	})
