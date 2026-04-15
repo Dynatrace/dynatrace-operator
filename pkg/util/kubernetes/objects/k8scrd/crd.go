@@ -21,10 +21,9 @@ const (
 	EdgeConnectName = "edgeconnects.dynatrace.com"
 )
 
-var log = logd.Get().WithName("operator-k8scrd")
-
 // IsLatestVersion checks if the CRD version matches the application version and logs an error if they do not match.
 func IsLatestVersion(ctx context.Context, apiReader client.Reader, crdName string) (bool, error) {
+	log := logd.FromContext(ctx)
 	crdMetadata := metav1.PartialObjectMetadata{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: apiVersion,

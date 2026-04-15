@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
@@ -53,6 +54,7 @@ func NewURLInstaller(dtc oneagent.APIClient, props *Properties) installer.Instal
 }
 
 func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
+	ctx, log := logd.NewFromContext(ctx, "oneagent-url")
 	log.Info("installing agent from url")
 
 	if installer.isAlreadyDownloaded(targetDir) {
@@ -78,7 +80,7 @@ func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (
 		return false, err
 	}
 
-	if err := symlink.CreateForCurrentVersionIfNotExists(targetDir); err != nil {
+	if err := symlink.CreateForCurrentVersionIfNotExists(ctx, targetDir); err != nil {
 		_ = os.RemoveAll(targetDir)
 		log.Info("failed to create symlink for agent installation", "targetDir", targetDir)
 
@@ -89,6 +91,8 @@ func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (
 }
 
 func (installer Installer) installAgent(ctx context.Context, targetDir string) error {
+	log := logd.FromContext(ctx)
+
 	var path string
 	if installer.isInitContainerMode() {
 		path = targetDir
@@ -115,7 +119,7 @@ func (installer Installer) installAgent(ctx context.Context, targetDir string) e
 		return err
 	}
 
-	return installer.unpackOneAgentZip(targetDir, tmpFile)
+	return installer.unpackOneAgentZip(ctx, targetDir, tmpFile)
 }
 
 func (installer Installer) isInitContainerMode() bool {

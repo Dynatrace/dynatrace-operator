@@ -3,7 +3,6 @@ package k8ssecret
 import (
 	"reflect"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,7 +12,7 @@ type QueryObject struct {
 	query.Generic[*corev1.Secret, *corev1.SecretList]
 }
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) QueryObject {
+func Query(kubeClient client.Client, kubeReader client.Reader) QueryObject {
 	return QueryObject{
 		query.Generic[*corev1.Secret, *corev1.SecretList]{
 			Target:     &corev1.Secret{},
@@ -31,7 +30,6 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 			KubeClient: kubeClient,
 			KubeReader: kubeReader,
-			Log:        log,
 		},
 	}
 }

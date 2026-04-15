@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
@@ -26,6 +27,8 @@ type GetParams struct {
 
 // Get gets the agent package for the given OS, installer type, flavor, arch and version.
 func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) error {
+	log := logd.FromContext(ctx)
+
 	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
@@ -50,6 +53,8 @@ func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) erro
 
 // GetLatest gets the latest agent package for the given OS, installer type, flavor and arch.
 func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer) error {
+	log := logd.FromContext(ctx)
+
 	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
@@ -102,6 +107,8 @@ func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, err
 }
 
 func (c *Client) GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
+	log := logd.FromContext(ctx)
+
 	apiRequest := c.apiClient.GET(ctx, url).WithoutToken()
 
 	sha256, err := makeRequestForBinary(apiRequest, writer)

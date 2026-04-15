@@ -1,29 +1,35 @@
 package symlink
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"regexp"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
-func CreateForCurrentVersionIfNotExists(targetDir string) error {
+func CreateForCurrentVersionIfNotExists(ctx context.Context, targetDir string) error {
+	log := logd.FromContext(ctx)
+
 	var err error
 
 	targetBinDir := filepath.Join(targetDir, binDir)
 
-	relativeSymlinkPath, err := findVersionFromFileSystem(targetBinDir)
+	relativeSymlinkPath, err := findVersionFromFileSystem(ctx, targetBinDir)
 	if err != nil {
 		log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
 
 		return err
 	}
 
-	return Create(relativeSymlinkPath, filepath.Join(targetBinDir, "current"))
+	return Create(ctx, relativeSymlinkPath, filepath.Join(targetBinDir, "current"))
 }
 
-func Create(targetDir, symlinkDir string) error {
+func Create(ctx context.Context, targetDir, symlinkDir string) error {
+	log := logd.FromContext(ctx)
+
 	// Check if the symlink already exists
 	if fileInfo, _ := os.Stat(symlinkDir); fileInfo != nil {
 		log.Info("symlink already exists", "location", symlinkDir)
@@ -42,7 +48,9 @@ func Create(targetDir, symlinkDir string) error {
 	return nil
 }
 
-func Remove(symlinkPath string) error {
+func Remove(ctx context.Context, symlinkPath string) error {
+	log := logd.FromContext(ctx)
+
 	if err := os.Remove(symlinkPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Info("failed to remove symlink", "path", symlinkPath)
 
@@ -52,7 +60,9 @@ func Remove(symlinkPath string) error {
 	return nil
 }
 
-func findVersionFromFileSystem(targetDir string) (string, error) {
+func findVersionFromFileSystem(ctx context.Context, targetDir string) (string, error) {
+	log := logd.FromContext(ctx)
+
 	var version string
 
 	entries, err := os.ReadDir(targetDir)

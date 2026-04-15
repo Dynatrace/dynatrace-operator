@@ -21,7 +21,7 @@ type imagePullInfo struct {
 	targetDir     string
 }
 
-func (installer *Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, imageName string) error {
+func (installer *Installer) extractAgentBinariesFromImage(ctx context.Context, pullInfo imagePullInfo, imageName string) error {
 	img, err := installer.pullImageInfo(imageName)
 	if err != nil {
 		log.Info("pullImageInfo", "error", err)
@@ -31,7 +31,7 @@ func (installer *Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo
 
 	image := *img
 
-	err = installer.pullOCIimage(image, imageName, pullInfo.imageCacheDir, pullInfo.targetDir)
+	err = installer.pullOCIimage(ctx, image, imageName, pullInfo.imageCacheDir, pullInfo.targetDir)
 	if err != nil {
 		log.Info("pullOCIimage", "err", err)
 
@@ -59,7 +59,7 @@ func (installer *Installer) pullImageInfo(imageName string) (*containerv1.Image,
 	return &image, nil
 }
 
-func (installer *Installer) pullOCIimage(image containerv1.Image, imageName string, imageCacheDir string, targetDir string) error {
+func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.Image, imageName string, imageCacheDir string, targetDir string) error {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return errors.WithMessagef(err, "parsing reference %q", imageName)
@@ -90,7 +90,7 @@ func (installer *Installer) pullOCIimage(image containerv1.Image, imageName stri
 		return errors.WithStack(err)
 	}
 
-	err = installer.unpackOciImage(layers, imageCachePath, targetDir)
+	err = installer.unpackOciImage(ctx, layers, imageCachePath, targetDir)
 	if err != nil {
 		log.Info("failed to unpackOciImage", "error", err)
 
@@ -100,7 +100,7 @@ func (installer *Installer) pullOCIimage(image containerv1.Image, imageName stri
 	return nil
 }
 
-func (installer *Installer) unpackOciImage(layers []containerv1.Layer, imageCacheDir string, targetDir string) error {
+func (installer *Installer) unpackOciImage(ctx context.Context, layers []containerv1.Layer, imageCacheDir string, targetDir string) error {
 	for _, layer := range layers {
 		mediaType, _ := layer.MediaType()
 		switch mediaType {
@@ -109,7 +109,7 @@ func (installer *Installer) unpackOciImage(layers []containerv1.Layer, imageCach
 			sourcePath := filepath.Join(imageCacheDir, "blobs", digest.Algorithm, digest.Hex)
 			log.Info("unpackOciImage", "sourcePath", sourcePath)
 
-			if err := installer.extractor.ExtractGzip(sourcePath, targetDir); err != nil {
+			if err := installer.extractor.ExtractGzip(ctx, sourcePath, targetDir); err != nil {
 				return err
 			}
 		case types.OCILayerZStd:
