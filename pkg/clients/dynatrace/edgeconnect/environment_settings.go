@@ -18,7 +18,7 @@ const (
 	KubernetesConnectionScope    = "environment"
 )
 
-var errNoEnvSettingObjectID = errors.New("no environment setting object id given")
+var errNoEnvSettingObjectID = errors.New("no environment setting object ID given")
 
 type EnvironmentSetting struct {
 	ObjectID string                  `json:"objectId,omitempty"`

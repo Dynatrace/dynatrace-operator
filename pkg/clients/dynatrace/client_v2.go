@@ -89,7 +89,7 @@ func NewClientV2(options ...OptionV2) (*ClientV2, error) {
 func NewOAuthClient(credentials clientcredentials.Config, options ...OptionV2) (*OAuthClient, error) {
 	config, err := getConfig(options...)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not get client v2 config")
+		return nil, errors.Wrap(err, "could not get oauth v2 config")
 	}
 
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, config.HTTPClient)

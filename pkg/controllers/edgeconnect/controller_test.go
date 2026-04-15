@@ -1110,6 +1110,32 @@ func TestController_newEdgeConnectClient(t *testing.T) {
 	})
 }
 
+func TestBuildOAuthScopes(t *testing.T) {
+	baseScopes := []string{
+		"app-engine:edge-connects:read",
+		"app-engine:edge-connects:write",
+		"app-engine:edge-connects:delete",
+		"oauth2:clients:manage",
+	}
+
+	t.Run("k8s automation disabled returns only base scopes", func(t *testing.T) {
+		scopes := buildOAuthScopes(false)
+		assert.Equal(t, baseScopes, scopes)
+	})
+
+	t.Run("k8s automation enabled appends settings scopes", func(t *testing.T) {
+		scopes := buildOAuthScopes(true)
+		expected := slices.Concat(baseScopes, []string{"settings:objects:read", "settings:objects:write"})
+		assert.Equal(t, expected, scopes)
+	})
+
+	t.Run("k8s automation disabled does not include settings scopes", func(t *testing.T) {
+		scopes := buildOAuthScopes(false)
+		assert.NotContains(t, scopes, "settings:objects:read")
+		assert.NotContains(t, scopes, "settings:objects:write")
+	})
+}
+
 func mockController() *Controller {
 	return &Controller{
 		client:                   fake.NewClient(),

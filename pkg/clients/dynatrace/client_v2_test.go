@@ -27,85 +27,9 @@ func TestNewClientV2(t *testing.T) {
 		assert.NotNil(t, client.Token)
 	})
 
-	t.Run("returns error on invalid URL", func(t *testing.T) {
+	t.Run("returns error on invalid option", func(t *testing.T) {
 		_, err := NewClientV2(WithBaseURL("://invalid-url"))
 		require.Error(t, err)
-	})
-
-	t.Run("applies WithAPIToken option", func(t *testing.T) {
-		client, err := NewClientV2(WithBaseURL(
-			"https://aabb.test.com/api"),
-			WithAPIToken("my-api-token"),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
-	})
-
-	t.Run("applies WithPaasToken option", func(t *testing.T) {
-		client, err := NewClientV2(WithBaseURL(
-			"https://aabb.test.com/api"),
-			WithPaasToken("my-paas-token"),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
-	})
-
-	t.Run("applies WithNetworkZone option", func(t *testing.T) {
-		client, err := NewClientV2(WithBaseURL(
-			"https://aabb.test.com/api"),
-			WithNetworkZone("eu-west"),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
-	})
-
-	t.Run("applies WithHostGroup option", func(t *testing.T) {
-		client, err := NewClientV2(WithBaseURL(
-			"https://aabb.test.com/api"),
-			WithHostGroup("group-a"),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
-	})
-
-	t.Run("applies WithUserAgentSuffix option", func(t *testing.T) {
-		client, err := NewClientV2(WithBaseURL(
-			"https://aabb.test.com/api"),
-			WithUserAgentSuffix("my-suffix"),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
-	})
-
-	t.Run("WithUserAgentSuffix empty suffix is no-op", func(t *testing.T) {
-		client, err := NewClientV2(
-			WithBaseURL("https://aabb.test.com/api"),
-			WithUserAgentSuffix(""),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
-	})
-
-	t.Run("returns error when HTTP option fails", func(t *testing.T) {
-		bad := badTransportHTTPClient()
-		_, err := NewClientV2(
-			WithBaseURL("https://aabb.test.com/api"),
-			WithHTTPClient(bad),
-		)
-		require.Error(t, err)
-	})
-
-	t.Run("applies multiple options", func(t *testing.T) {
-		client, err := NewClientV2(
-			WithBaseURL("https://aabb.test.com/api"),
-			WithAPIToken("token"),
-			WithPaasToken("paas"),
-			WithNetworkZone("zone"),
-			WithHostGroup("grp"),
-			WithUserAgentSuffix("sfx"),
-		)
-		require.NoError(t, err)
-		require.NotNil(t, client)
 	})
 }
 
@@ -124,18 +48,8 @@ func TestNewOAuthClient(t *testing.T) {
 		assert.NotNil(t, client.EdgeConnect)
 	})
 
-	t.Run("returns error on invalid URL", func(t *testing.T) {
+	t.Run("returns error on invalid option", func(t *testing.T) {
 		_, err := NewOAuthClient(clientcredentials.Config{}, WithBaseURL("://bad-url"))
-		require.Error(t, err)
-	})
-
-	t.Run("returns error when HTTP option fails", func(t *testing.T) {
-		bad := badTransportHTTPClient()
-		_, err := NewOAuthClient(
-			clientcredentials.Config{},
-			WithBaseURL("https://aabb.test.com"),
-			WithHTTPClient(bad),
-		)
 		require.Error(t, err)
 	})
 }
@@ -180,7 +94,7 @@ func TestWithBaseURL(t *testing.T) {
 	})
 }
 
-func TestWithV2UserAgentSuffix(t *testing.T) {
+func TestWithUserAgentSuffix(t *testing.T) {
 	t.Run("appends suffix when non-empty", func(t *testing.T) {
 		cfg := &ConfigV2{UserAgent: "agent"}
 		require.NoError(t, WithUserAgentSuffix("sfx")(cfg))
@@ -194,34 +108,34 @@ func TestWithV2UserAgentSuffix(t *testing.T) {
 	})
 }
 
-func TestWithHTTPClientOption(t *testing.T) {
+func TestWithHTTPClient(t *testing.T) {
 	existing := &http.Client{Transport: &http.Transport{}}
 	cfg := &ConfigV2{}
 	require.NoError(t, WithHTTPClient(existing)(cfg))
 	assert.Same(t, existing, cfg.HTTPClient)
 }
 
-func TestWithTimeoutOption(t *testing.T) {
+func TestWithTimeout(t *testing.T) {
 	cfg := &ConfigV2{}
 	require.NoError(t, WithTimeout(5*time.Second)(cfg))
 	assert.Equal(t, 5*time.Second, cfg.Timeout)
 }
 
-func TestWithProxyOption(t *testing.T) {
+func TestWithProxy(t *testing.T) {
 	cfg := &ConfigV2{}
 	require.NoError(t, WithProxy("http://p.example.com", "no.proxy")(cfg))
 	assert.Equal(t, "http://p.example.com", cfg.Proxy)
 	assert.Equal(t, "no.proxy", cfg.NoProxy)
 }
 
-func TestWithTLSConfigOption(t *testing.T) {
+func TestWithTLSConfig(t *testing.T) {
 	tlsCfg := &tls.Config{MinVersion: tls.VersionTLS13}
 	cfg := &ConfigV2{}
 	require.NoError(t, WithTLSConfig(tlsCfg)(cfg))
 	assert.Equal(t, tlsCfg, cfg.TLSConfig)
 }
 
-func TestWithKeepAliveOption(t *testing.T) {
+func TestWithKeepAlive(t *testing.T) {
 	cfg := &ConfigV2{}
 
 	require.NoError(t, WithKeepAlive(false)(cfg))
@@ -231,7 +145,7 @@ func TestWithKeepAliveOption(t *testing.T) {
 	assert.False(t, cfg.DisableKeepAlives)
 }
 
-func TestWithSkipCertificateValidationOption(t *testing.T) {
+func TestWithSkipCertificateValidation(t *testing.T) {
 	t.Run("skip creates TLS config with InsecureSkipVerify", func(t *testing.T) {
 		cfg := &ConfigV2{}
 		require.NoError(t, WithSkipCertificateValidation(true)(cfg))
@@ -254,11 +168,18 @@ func TestWithSkipCertificateValidationOption(t *testing.T) {
 	})
 }
 
-func TestWithCertsOption(t *testing.T) {
+func TestWithCerts(t *testing.T) {
 	t.Run("nil certs is a no-op", func(t *testing.T) {
 		cfg := &ConfigV2{}
 		require.NoError(t, WithCerts(nil)(cfg))
 		assert.Nil(t, cfg.TLSConfig)
+	})
+
+	t.Run("valid cert is set on the tls config", func(t *testing.T) {
+		cfg := &ConfigV2{}
+		require.NoError(t, WithCerts([]byte(customCA))(cfg))
+		assert.NotNil(t, cfg.TLSConfig)
+		assert.NotNil(t, cfg.TLSConfig.RootCAs)
 	})
 
 	t.Run("invalid PEM returns error", func(t *testing.T) {
@@ -284,48 +205,50 @@ func TestGetConfig(t *testing.T) {
 			WithPaasToken("paastoken"),
 			WithNetworkZone("network"),
 			WithHostGroup("hostgroup"),
-			WithUserAgentSuffix("useragent"))
+			WithBaseURL("https://aabb.test.com"),
+			WithUserAgentSuffix("useragent"),
+			WithTimeout(5*time.Second),
+			WithKeepAlive(true),
+		)
 
 		require.NoError(t, err)
 		assert.Equal(t, "apitoken", c.APIToken)
 		assert.Equal(t, "paastoken", c.PaasToken)
 		assert.Equal(t, "network", c.NetworkZone)
 		assert.Equal(t, "hostgroup", c.HostGroup)
-		assert.Equal(t, operatorversion.UserAgent()+" useragent", c.UserAgent)
-	})
-
-	t.Run("WithTimeout overrides default", func(t *testing.T) {
-		c, err := getConfig(WithTimeout(5 * time.Second))
-		require.NoError(t, err)
 		assert.Equal(t, 5*time.Second, c.HTTPClient.Timeout)
+		assert.False(t, c.DisableKeepAlives)
+		assert.Equal(t, operatorversion.UserAgent()+" useragent", c.UserAgent)
 	})
 
 	t.Run("WithProxy configures transport proxy", func(t *testing.T) {
 		c, err := getConfig(WithProxy("http://proxy.example.com:8080", ""))
 		require.NoError(t, err)
 		require.NotNil(t, c)
+		assert.Equal(t, "http://proxy.example.com:8080", c.Proxy)
 
 		transport, ok := c.HTTPClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		require.NotNil(t, transport.Proxy)
 
-		proxyURL, err := transport.Proxy(&http.Request{URL: mustParseURL("https://some.target.com")})
+		proxyURL, err := transport.Proxy(&http.Request{URL: mustParseURL(t, "https://some.target.com")})
 		require.NoError(t, err)
 		require.NotNil(t, proxyURL)
 	})
 
-	t.Run("WithProxy with NoProxy excludes matching hosts", func(t *testing.T) {
+	t.Run("WithProxy excludes matching no proxy hosts", func(t *testing.T) {
 		c, err := getConfig(WithProxy("http://proxy.example.com:8080", "excluded.host"))
 		require.NoError(t, err)
+		assert.Equal(t, "excluded.host", c.NoProxy)
 
 		transport, ok := c.HTTPClient.Transport.(*http.Transport)
 		require.True(t, ok)
 
-		noProxyURL, err := transport.Proxy(&http.Request{URL: mustParseURL("https://excluded.host/path")})
+		noProxyURL, err := transport.Proxy(&http.Request{URL: mustParseURL(t, "https://excluded.host/path")})
 		require.NoError(t, err)
 		assert.Nil(t, noProxyURL)
 
-		proxiedURL, err := transport.Proxy(&http.Request{URL: mustParseURL("https://other.host/path")})
+		proxiedURL, err := transport.Proxy(&http.Request{URL: mustParseURL(t, "https://other.host/path")})
 		require.NoError(t, err)
 		require.NotNil(t, proxiedURL)
 	})
@@ -395,12 +318,6 @@ func TestGetConfig(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected transport type")
 	})
-
-	t.Run("WithCerts empty bytes is no-op", func(t *testing.T) {
-		c, err := getConfig(WithCerts(nil))
-		require.NoError(t, err)
-		require.NotNil(t, c.HTTPClient)
-	})
 }
 
 func TestAsV2(t *testing.T) {
@@ -430,16 +347,37 @@ func (b *badTransport) RoundTrip(*http.Request) (*http.Response, error) {
 	return nil, errors.New("bad transport")
 }
 
-// badTransportHTTPClient returns an http.Client whose Transport is not *http.Transport,
-func badTransportHTTPClient() *http.Client {
-	return &http.Client{Transport: &badTransport{}}
-}
-
-func mustParseURL(raw string) *url.URL {
+func mustParseURL(t *testing.T, raw string) *url.URL {
+	t.Helper()
 	u, err := url.Parse(raw)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 
 	return u
 }
+
+// Generated with:
+// openssl genrsa -out ca.key 2048
+// openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 -out ca.crt -subj '/CN=Test CA/C=AT/ST=UA/L=Linz/O=Dynatrace/OU=Operator' -extensions v3_ca
+
+const customCA = `-----BEGIN CERTIFICATE-----
+MIIDpTCCAo2gAwIBAgIUTCZa2IYrncHLMV2nLNbXOcQqc/4wDQYJKoZIhvcNAQEL
+BQAwYjEQMA4GA1UEAwwHVGVzdCBDQTELMAkGA1UEBhMCQVQxCzAJBgNVBAgMAlVB
+MQ0wCwYDVQQHDARMaW56MRIwEAYDVQQKDAlEeW5hdHJhY2UxETAPBgNVBAsMCE9w
+ZXJhdG9yMB4XDTI1MTEwNjEzMDQyMVoXDTM1MTEwNDEzMDQyMVowYjEQMA4GA1UE
+AwwHVGVzdCBDQTELMAkGA1UEBhMCQVQxCzAJBgNVBAgMAlVBMQ0wCwYDVQQHDARM
+aW56MRIwEAYDVQQKDAlEeW5hdHJhY2UxETAPBgNVBAsMCE9wZXJhdG9yMIIBIjAN
+BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArw564P5tXzT2uo0uRJdjhe+zGyU4
+1zWdp6sIFB3J3KWKaAQ9ao7oMu75+pFo11c1XFuZcZpRmucWZ1AMWNm6Mga4yn6y
+OcC+cIpDMT1kXnix+u7TH+XwOXkIty0T7I5OyiVV5JEryrl3jTjXRf4YbHRVrc4w
+vspbS4JIxx+Hv6u4/sRRSvBI89hQ8miGgtOwuokGBIxcOKf/lqe10Q9SMuK+mAmP
+jFlNlnOteFwTRBLWFJlDFgE+jxAyP3FGUIwLNN6w+DKzb4cmjnBk8TK3CHxhJREl
+cncQnIXAp4Sq6VfR6mLGGyGpt3OWnm0L/cPASed5gp3V1CUW0T3Iz21VVwIDAQAB
+o1MwUTAdBgNVHQ4EFgQULiJWJ0CXf4aoFki24ef2gRH0EU8wHwYDVR0jBBgwFoAU
+LiJWJ0CXf4aoFki24ef2gRH0EU8wDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0B
+AQsFAAOCAQEAnLgaLr2qpVM6heHaBHt+vDWNda9YkfUGCfGU64AZf5kT9fQWFaXi
+Liv0TC1NBOTHJ35DjSc4O/EshfO/qW0eMnLw8u4gfhPKs7mmADkcy4V/rhyA/hTU
+1Vx+MSJsKH2vJAODaELKZZ3AiA9Rfyyt6Nv+nUtHRtBLpRmrYnVLlZHgfMvfSmnk
+zWDF6rXZJXT6MJUcf740v4MOLlIWcrNj/igI9VQP9cBrhvJzthHJ0gMEjNqKJPgk
+APj12zaRa05OBW3H3Ng+1MmdtrU4gAu+xwLAOz1cxT6q8LUGBGDCBYVcFXvomhKL
+kHUfKUp2W9zOWWDlwSB65QuJ3wAQSCVs4g==
+-----END CERTIFICATE-----`

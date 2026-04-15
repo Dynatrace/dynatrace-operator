@@ -518,22 +518,12 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgec
 
 func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.APIClient, error) {
 	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (edgeconnectClient.APIClient, error) {
-		oauthScopes := []string{
-			"app-engine:edge-connects:read",
-			"app-engine:edge-connects:write",
-			"app-engine:edge-connects:delete",
-			"oauth2:clients:manage",
-		}
-		if ec.IsK8SAutomationEnabled() {
-			oauthScopes = append(oauthScopes, "settings:objects:read", "settings:objects:write")
-		}
-
 		oAuthClients, err := dynatrace.NewOAuthClient(
 			clientcredentials.Config{
 				ClientID:     oauthCredentials.clientID,
 				ClientSecret: oauthCredentials.clientSecret,
 				TokenURL:     ec.Spec.OAuth.Endpoint,
-				Scopes:       oauthScopes,
+				Scopes:       buildOAuthScopes(ec.IsK8SAutomationEnabled()),
 			},
 			dynatrace.WithBaseURL("https://"+ec.Spec.APIServer),
 			dynatrace.WithCerts(customCA))
@@ -901,4 +891,18 @@ func GetConnectionSetting(ctx context.Context, edgeConnectClient edgeconnectClie
 	}
 
 	return edgeconnectClient.EnvironmentSetting{}, nil
+}
+
+func buildOAuthScopes(k8sAutomationEnabled bool) []string {
+	oAuthScopes := []string{
+		"app-engine:edge-connects:read",
+		"app-engine:edge-connects:write",
+		"app-engine:edge-connects:delete",
+		"oauth2:clients:manage",
+	}
+	if k8sAutomationEnabled {
+		oAuthScopes = append(oAuthScopes, "settings:objects:read", "settings:objects:write")
+	}
+
+	return oAuthScopes
 }
