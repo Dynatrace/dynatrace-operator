@@ -6,6 +6,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/app"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +45,7 @@ func addInitBinMount(initContainer *corev1.Container, readonly bool) {
 	)
 }
 
-func addEmptyDirBinVolume(pod *corev1.Pod) {
+func addEmptyDirBinVolume(pod *corev1.Pod, log logd.Logger) {
 	if k8svolume.Contains(pod.Spec.Volumes, BinVolumeName) {
 		return
 	}

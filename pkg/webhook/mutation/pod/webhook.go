@@ -18,21 +18,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-var (
-	log = logd.Get().WithName("pod-mutation")
-)
-
 const (
 	ocDebugAnnotationsContainer = "debug.openshift.io/source-container"
 	ocDebugAnnotationsResource  = "debug.openshift.io/source-resource"
 )
 
 func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string, isOpenShift bool) error {
-	if err := registerInjectEndpoint(mgr, ns, isOpenShift); err != nil {
+	if err := registerInjectEndpoint(ctx, mgr, ns, isOpenShift); err != nil {
 		return err
 	}
 
-	registerLivezEndpoint(mgr)
+	registerLivezEndpoint(ctx, mgr)
 
 	return nil
 }
@@ -51,6 +47,7 @@ type webhook struct {
 }
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
+	ctx, log := logd.NewFromContext(ctx, "pod-mutation")
 	emptyPatch := admission.Patched("")
 
 	mutationRequest, err := wh.createMutationRequestBase(ctx, request)
@@ -86,7 +83,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 	if handlerErr != nil {
 		mutErr := new(dtwebhook.MutatorError)
 		if !errors.As(handlerErr, mutErr) {
-			return silentErrorResponse(mutationRequest.Pod, handlerErr)
+			return silentErrorResponse(mutationRequest.Pod, handlerErr, log)
 		}
 
 		mutationRequest.Pod = originalPod // prevent partial modifications
@@ -129,13 +126,13 @@ func (wh *webhook) isOcDebugPod(pod *corev1.Pod) bool {
 func createResponseForPod(pod *corev1.Pod, req admission.Request) admission.Response {
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
 	if err != nil {
-		return silentErrorResponse(pod, err)
+		return silentErrorResponse(pod, err, logd.Get())
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
-func silentErrorResponse(pod *corev1.Pod, err error) admission.Response {
+func silentErrorResponse(pod *corev1.Pod, err error, log logd.Logger) admission.Response {
 	rsp := admission.Patched("")
 	podName := k8spod.GetName(*pod)
 	log.Error(err, "failed to inject into pod", "podName", podName)

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -35,7 +36,9 @@ var (
 	}
 )
 
-func isAllowedSuffixAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
+func isAllowedSuffixAPIServer(ctx context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
+	log := logd.FromContext(ctx)
+
 	for _, suffix := range allowedSuffix {
 		if strings.HasSuffix(ec.Spec.APIServer, suffix) {
 			hostnameWithDomains := strings.FieldsFunc(suffix,
@@ -59,7 +62,9 @@ func isAllowedSuffixAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.E
 	return errorMissingAllowedSuffixAPIServer
 }
 
-func checkAPIServerProtocolNotSet(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
+func checkAPIServerProtocolNotSet(ctx context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
+	log := logd.FromContext(ctx)
+
 	parsedURL, err := url.Parse(ec.Spec.APIServer)
 	if err != nil {
 		log.Info("API Server URL is not a valid URL", "err", err.Error())

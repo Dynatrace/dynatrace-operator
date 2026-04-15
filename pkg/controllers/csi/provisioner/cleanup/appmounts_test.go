@@ -14,7 +14,7 @@ func TestRemoveDeprecatedMounts(t *testing.T) {
 	t.Run("empty fsState -> no panic", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		cleaner.removeDeprecatedMounts(fsState{})
+		cleaner.removeDeprecatedMounts(t.Context(), fsState{})
 	})
 
 	t.Run("remove unmounted deprecated dirs (empty mapped subdir)", func(t *testing.T) {
@@ -37,7 +37,7 @@ func TestRemoveDeprecatedMounts(t *testing.T) {
 			require.Len(t, subdirs, i+i*2)
 		}
 
-		cleaner.removeDeprecatedMounts(fsState{
+		cleaner.removeDeprecatedMounts(t.Context(), fsState{
 			deprecatedDks: deprecateDir,
 		})
 

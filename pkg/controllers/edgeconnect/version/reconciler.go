@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,6 +28,8 @@ func NewReconciler(apiReader client.Reader, registryClient registry.ImageGetter,
 }
 
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
+	ctx, log := logd.NewFromContext(ctx, "edgeconnect-version")
+
 	updaters := []versionStatusUpdater{
 		newUpdater(reconciler.apiReader, reconciler.timeProvider, reconciler.registryClient, reconciler.edgeConnect),
 	}

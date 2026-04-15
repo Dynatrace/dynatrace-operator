@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
@@ -27,6 +28,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	logCtx, log := logd.NewFromContext(ctx, "extension-databases")
+
 	log.Debug("reconciling deployments")
 
 	query := k8sdeployment.Query(r.client, r.apiReader)
@@ -37,14 +40,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		expectedDeploymentNames[i] = ext.GetDatabaseDatasourceName(dbSpec.ID)
 	}
 
-	if err := deleteDeployments(ctx, r.client, r.dk, expectedDeploymentNames); err != nil {
+	if err := deleteDeployments(logCtx, r.client, r.dk, expectedDeploymentNames); err != nil {
 		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	for i, dbSpec := range ext.Databases {
-		replicas, err := k8sdeployment.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: expectedDeploymentNames[i], Namespace: r.dk.Namespace}, dbSpec.Replicas)
+		replicas, err := k8sdeployment.ResolveReplicas(logCtx, r.apiReader, client.ObjectKey{Name: expectedDeploymentNames[i], Namespace: r.dk.Namespace}, dbSpec.Replicas)
 		if err != nil {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
@@ -73,7 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		changed, err := query.WithOwner(r.dk).CreateOrUpdate(ctx, deploy)
+		changed, err := query.WithOwner(r.dk).CreateOrUpdate(logCtx, deploy)
 		if err != nil {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 

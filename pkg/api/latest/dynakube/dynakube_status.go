@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,6 +91,7 @@ func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 }
 
 func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) error {
+	log := logd.FromContext(ctx)
 	dk.Status.UpdatedTimestamp = metav1.Now()
 	err := client.Status().Update(ctx, dk)
 

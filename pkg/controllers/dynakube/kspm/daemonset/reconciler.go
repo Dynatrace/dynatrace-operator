@@ -5,6 +5,7 @@ import (
 	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -34,6 +35,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	logCtx, log := logd.NewFromContext(ctx, "kspm-daemonset")
+
 	if !dk.KSPM().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
@@ -41,7 +44,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 		defer meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 
-		err := r.daemonset.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}})
+		err := r.daemonset.Delete(logCtx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up KSPM daemonset")
 		}
@@ -54,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	updated, err := r.daemonset.WithOwner(dk).CreateOrUpdate(ctx, ds)
+	updated, err := r.daemonset.WithOwner(dk).CreateOrUpdate(logCtx, ds)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 

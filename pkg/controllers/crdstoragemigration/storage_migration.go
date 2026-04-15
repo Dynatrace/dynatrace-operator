@@ -3,6 +3,7 @@ package crdstoragemigration
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/pkg/errors"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -14,6 +15,8 @@ import (
 )
 
 func Run(ctx context.Context, clt client.Client, namespace string) error {
+	log := logd.FromContext(ctx)
+
 	log.Info("starting CRD storage version storage migration")
 
 	var crd apiextensionsv1.CustomResourceDefinition

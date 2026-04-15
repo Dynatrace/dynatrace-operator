@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -36,6 +37,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader) *SecretGe
 // GenerateForDynakube creates/updates the OTLP exporter config secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
+	ctx, log := logd.NewFromContext(ctx, "otlp-exporter-configuration")
 	log.Info("reconciling namespace OTLP exporter secret for", "dynakube", dk.Name)
 
 	data, err := s.generateConfig(ctx, dk)
@@ -78,6 +80,8 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 }
 
 func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "otlp-exporter-configuration")
+
 	err := cleanupConfig(ctx, client, apiReader, namespaces, dk)
 	if err != nil {
 		log.Error(err, "failed to cleanup OTLP exporter config secrets")
@@ -154,6 +158,8 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 }
 
 func (s *SecretGenerator) createSecretForNamespaces(ctx context.Context, secretName, conditionType string, nsList []corev1.Namespace, dk *dynakube.DynaKube, data map[string][]byte) error { //nolint:revive
+	log := logd.FromContext(ctx)
+
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
@@ -197,6 +203,8 @@ func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynaku
 }
 
 func cleanupConfig(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	defer meta.RemoveStatusCondition(dk.Conditions(), ConfigConditionType)
 
 	nsList := make([]string, 0, len(namespaces))
@@ -215,6 +223,8 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 }
 
 func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	defer meta.RemoveStatusCondition(dk.Conditions(), CertsConditionType)
 
 	nsList := make([]string, 0, len(namespaces))

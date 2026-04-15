@@ -14,10 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	log = logd.Get().WithName("otlp-exporter-pod-mutation")
-)
-
 const (
 	OTELResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES"
 )
@@ -47,6 +43,7 @@ func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 }
 
 func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+	log := logd.Get().WithName("otlp-exporter-pod-mutation")
 	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	mutated, _ := m.mutate(context.Background(), request.BaseRequest)
@@ -55,6 +52,7 @@ func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 }
 
 func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (bool, error) {
+	log := logd.FromContext(ctx)
 	mutated := false
 
 	log.Debug("injecting OTLP resource Attributes")
@@ -70,7 +68,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 	}
 
-	annotationAttributes := sanitizeMap(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
+	annotationAttributes := sanitizeMap(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, log))
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]

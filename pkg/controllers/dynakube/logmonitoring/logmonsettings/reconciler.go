@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -25,6 +26,7 @@ func NewReconciler() *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "logmonitoring-settings")
 	if !dk.LogMonitoring().IsEnabled() {
 		_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
@@ -68,6 +70,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 }
 
 func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	log.Info("start reconciling log monitoring settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {

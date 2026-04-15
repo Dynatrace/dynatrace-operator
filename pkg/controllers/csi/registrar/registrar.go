@@ -21,10 +21,6 @@ const (
 	permAllUG = 0077
 )
 
-var (
-	log = logd.Get().WithName("csi-registrar")
-)
-
 type Server struct {
 	registerapi.UnimplementedRegistrationServer
 	driverName             string
@@ -47,6 +43,7 @@ func NewServer(driverName string, csiAddress string, endpoint string, pluginRegi
 }
 
 func (s Server) Start(ctx context.Context) error {
+	ctx, log := logd.NewFromContext(ctx, "csi-registrar")
 	log.Info("starting registrar")
 
 	if err := s.isDriverRunning(ctx); err != nil {
@@ -108,7 +105,8 @@ func (s Server) Start(ctx context.Context) error {
 	return nil
 }
 
-func (s Server) GetInfo(_ context.Context, req *registerapi.InfoRequest) (*registerapi.PluginInfo, error) {
+func (s Server) GetInfo(ctx context.Context, req *registerapi.InfoRequest) (*registerapi.PluginInfo, error) {
+	log := logd.FromContext(ctx)
 	log.Info("received GetInfo", "request", req)
 
 	return &registerapi.PluginInfo{
@@ -119,7 +117,8 @@ func (s Server) GetInfo(_ context.Context, req *registerapi.InfoRequest) (*regis
 	}, nil
 }
 
-func (s Server) NotifyRegistrationStatus(_ context.Context, status *registerapi.RegistrationStatus) (*registerapi.RegistrationStatusResponse, error) {
+func (s Server) NotifyRegistrationStatus(ctx context.Context, status *registerapi.RegistrationStatus) (*registerapi.RegistrationStatusResponse, error) {
+	log := logd.FromContext(ctx)
 	log.Info("received NotifyRegistrationStatus", "status", status)
 
 	if !status.GetPluginRegistered() {
@@ -131,6 +130,7 @@ func (s Server) NotifyRegistrationStatus(_ context.Context, status *registerapi.
 
 func grpcMessageLogger() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		log := logd.FromContext(ctx)
 		log.Debug("GRPC call", "full_method", info.FullMethod)
 
 		resp, err := handler(ctx, req)
@@ -156,6 +156,8 @@ func removeExistingSocketFile(path string) error {
 }
 
 func (s Server) isDriverRunning(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	conn, err := connection.Connect(ctx, s.csiAddress, nil, connection.WithTimeout(0))
 	if err != nil {
 		log.Error(err, "failed to establish connection to CSI driver")

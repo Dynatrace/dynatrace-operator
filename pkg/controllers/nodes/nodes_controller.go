@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
@@ -69,6 +70,8 @@ func NewControllerFromClient(clt client.Client) *Controller {
 }
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
+	logCtx, log := logd.NewFromContext(ctx, "nodes")
+
 	nodeName := request.Name
 
 	dk, err := controller.determineDynakubeForNode(ctx, nodeName)
@@ -86,27 +89,27 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	log.Info("reconciling node", "node", nodeName)
 
-	nodeCache, err := controller.getCache(ctx)
+	nodeCache, err := controller.getCache(logCtx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	var node corev1.Node
 
-	err = controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node)
+	err = controller.apiReader.Get(logCtx, client.ObjectKey{Name: nodeName}, &node)
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, err
 		}
 
-		err := controller.reconcileNodeDeletion(ctx, nodeCache, nodeName)
+		err := controller.reconcileNodeDeletion(logCtx, nodeCache, nodeName)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
-		return reconcile.Result{}, nodeCache.Store(ctx, controller.client)
+		return reconcile.Result{}, nodeCache.Store(logCtx, controller.client)
 	} else if dk != nil { // Node is found in the cluster, add or update to cache
-		err := controller.reconcileNodeUpdate(ctx, dk, nodeCache, &node)
+		err := controller.reconcileNodeUpdate(logCtx, dk, nodeCache, &node)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -114,14 +117,14 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	// check node cache for outdated nodes and remove them, to keep cache clean
 	if nodeCache.IsOutdated(controller.timeProvider.Now().UTC()) {
-		if err := controller.pruneCache(ctx, nodeCache); err != nil {
+		if err := controller.pruneCache(logCtx, nodeCache); err != nil {
 			return reconcile.Result{}, err
 		}
 
 		nodeCache.UpdateTimestamp(controller.timeProvider.Now().UTC())
 	}
 
-	return reconcile.Result{}, nodeCache.Store(ctx, controller.client)
+	return reconcile.Result{}, nodeCache.Store(logCtx, controller.client)
 }
 
 func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynakube.DynaKube, nodeCache *cache.Cache, node *corev1.Node) error {
@@ -180,6 +183,7 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCac
 }
 
 func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNode *cache.Entry) error {
+	log := logd.FromContext(ctx)
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
 	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
@@ -231,6 +235,8 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 }
 
 func (controller *Controller) markForTermination(ctx context.Context, dk *dynakube.DynaKube, cacheEntry *cache.Entry) error {
+	log := logd.FromContext(ctx)
+
 	if !cacheEntry.IsMarkableForTermination(controller.timeProvider.Now().UTC()) {
 		return nil
 	}
@@ -273,6 +279,8 @@ func (controller *Controller) getCache(ctx context.Context) (*cache.Cache, error
 }
 
 func (controller *Controller) pruneCache(ctx context.Context, nodeCache *cache.Cache) error {
+	log := logd.FromContext(ctx)
+
 	missingCachedNodes, err := nodeCache.Prune(ctx, controller.client, controller.timeProvider.Now().UTC())
 	if err != nil {
 		return err

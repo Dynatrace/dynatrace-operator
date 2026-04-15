@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -38,6 +39,7 @@ func NewReconciler() *Reconciler {
 // On first run the MEID may not yet exist; after creating the settings object the MEID is immediately
 // refreshed so that subsequent reconcilers do not need to wait for the next cycle.
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+	logCtx, log := logd.NewFromContext(ctx, "automatic-api-monitoring")
 	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead) {
 		msg := token.ScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
@@ -50,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		return errMissingKubeSystemUUID
 	}
 
-	if err := r.reconcileMEID(ctx, dtClient, dk); err != nil {
+	if err := r.reconcileMEID(logCtx, dtClient, dk); err != nil {
 		return err
 	}
 
@@ -65,7 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		return nil
 	}
 
-	objectID, err := r.createK8sConnectionSettingIfAbsent(ctx, dtClient, dk)
+	objectID, err := r.createK8sConnectionSettingIfAbsent(logCtx, dtClient, dk)
 	if err != nil {
 		return err
 	}
@@ -73,18 +75,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 	if objectID != "" {
 		// On first run the monitored entity only becomes available after the settings object is created.
 		// Refresh the MEID immediately to avoid requiring an extra reconciliation cycle.
-		if err := r.refreshMEIDWithRetry(ctx, dtClient, dk); err != nil {
+		if err := r.refreshMEIDWithRetry(logCtx, dtClient, dk); err != nil {
 			return err
 		}
 	}
 
-	return r.createK8sAppSettingIfAbsent(ctx, dtClient, dk)
+	return r.createK8sAppSettingIfAbsent(logCtx, dtClient, dk)
 }
 
 // reconcileMEID fetches and caches the Kubernetes Cluster Monitored Entity ID in the DynaKube status.
 // It uses time-based caching via the meIDConditionType condition; if the condition is still up to date,
 // the API call is skipped.
 func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	if !k8sconditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
 		log.Info("kubernetesClusterMEID not outdated, skipping reconciliation")
 
@@ -122,6 +125,7 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client
 // Retries up to maxRefreshRetries times with retryInterval between attempts, because the ME
 // may not be available immediately after the settings object is created.
 func (r *Reconciler) refreshMEIDWithRetry(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	return retry.OnError(retry.DefaultRetry, func(err error) bool { return errors.Is(err, errNotAvailableME) }, func() error {
 		log.Info("refreshing kubernetesClusterMEID")
 
@@ -147,6 +151,7 @@ func (r *Reconciler) refreshMEIDWithRetry(ctx context.Context, dtClient settings
 }
 
 func (r *Reconciler) createK8sConnectionSettingIfAbsent(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) (string, error) {
+	log := logd.FromContext(ctx)
 	if dk.Status.KubernetesClusterMEID != "" {
 		log.Info("kubernetes cluster setting already exists", "kubernetesClusterMEID", dk.Status.KubernetesClusterMEID, "kubernetesClusterName", dk.Status.KubernetesClusterName, "kubeSystemUUID", dk.Status.KubeSystemUUID)
 
@@ -169,6 +174,7 @@ func (r *Reconciler) createK8sConnectionSettingIfAbsent(ctx context.Context, dtC
 }
 
 func (r *Reconciler) createK8sAppSettingIfAbsent(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	k8sEntity := settings.K8sClusterME{ID: dk.Status.KubernetesClusterMEID, Name: dk.Status.KubernetesClusterName}
 	if dk.FF().IsK8sAppEnabled() {
 		appSettings, err := dtClient.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.AppTransitionSchemaID)
