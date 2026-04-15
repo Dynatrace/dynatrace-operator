@@ -15,8 +15,6 @@ import (
 	"github.com/go-logr/logr"
 )
 
-var log = logd.Get().WithName("dtclient-settings")
-
 const (
 	validateOnlyQueryParam = "validateOnly"
 	pageSizeQueryParam     = "pageSize"
@@ -158,6 +156,7 @@ func NewClient(apiClient core.Client) Client {
 //
 // In case 0 settings are found, so no Kubernetes Cluster Monitored Entity exists, we return an empty object, without an error.
 func (c *ClientImpl) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error) {
+	log := logd.FromContext(ctx)
 	if kubeSystemUUID == "" {
 		return K8sClusterME{}, errMissingKubeSystemUUID
 	}

@@ -18,8 +18,6 @@ const (
 	hostsPath  = "/v1/entity/infrastructure/hosts"
 )
 
-var log = logd.Get().WithName("dtclient-hostevent")
-
 type Client interface {
 	// GetEntityIDForIP returns the host entity ID for a given IP address.
 	GetEntityIDForIP(ctx context.Context, ip string) (string, error)
@@ -59,7 +57,9 @@ type hostEntityMap map[string]string
 // Update adds or overwrites the IP-to-Entity mapping if the IP already existed.
 // The reason we do this "overwrite check" is somewhat unknown, it used to be part of a "caching" logic, however that cache was actually never really used.
 // Kept it "as is" mainly to not introduce new behavior, it is unknown how the API we use handles repeated IP usage. But it can be just dead code.
-func (entityMap hostEntityMap) Update(info HostResponse) {
+func (entityMap hostEntityMap) Update(ctx context.Context, info HostResponse) {
+	log := logd.FromContext(ctx)
+
 	for _, ip := range info.IPAddresses {
 		if oldEntityID, ok := entityMap[ip]; ok {
 			log.Info("hosts mapping: duplicate IP, replacing HOST entity to 'newer' one", "ip", ip, "new", info.EntityID, "old", oldEntityID)
@@ -86,7 +86,7 @@ func (c *ClientImpl) GetEntityIDForIP(ctx context.Context, ip string) (string, e
 		return "", setEndpointNotAvailable(err, hostsPath)
 	}
 
-	entities := buildHostEntityMap(hosts, c.networkZone)
+	entities := buildHostEntityMap(ctx, hosts, c.networkZone)
 
 	entityID := entities[ip]
 	if entityID == "" {
@@ -96,13 +96,13 @@ func (c *ClientImpl) GetEntityIDForIP(ctx context.Context, ip string) (string, e
 	return entityID, nil
 }
 
-func buildHostEntityMap(hosts []HostResponse, networkZone string) hostEntityMap {
+func buildHostEntityMap(ctx context.Context, hosts []HostResponse, networkZone string) hostEntityMap {
 	entities := make(hostEntityMap)
 
 	for _, host := range hosts {
 		if (networkZone != "" && host.NetworkZoneID == networkZone) ||
 			(networkZone == "" && (host.NetworkZoneID == "default" || host.NetworkZoneID == "")) {
-			entities.Update(host)
+			entities.Update(ctx, host)
 		}
 	}
 

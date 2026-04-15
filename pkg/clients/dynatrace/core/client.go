@@ -270,6 +270,7 @@ func (r *RequestImpl) withMethod(method string) Request {
 }
 
 func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
+	log := logd.FromContext(r.ctx)
 	if r.err != nil {
 		return nil, r.err
 	}
@@ -330,6 +331,7 @@ func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.He
 }
 
 func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
+	log := logd.FromContext(r.ctx)
 	if r.err != nil {
 		return nil, "", r.err
 	}

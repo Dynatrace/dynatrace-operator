@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -30,6 +31,7 @@ type ruleItemValue struct {
 
 // GetRules returns metadata enrichment rules with the number of settings objects and their values.
 func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID string) ([]metadataenrichment.Rule, error) {
+	log := logd.FromContext(ctx)
 	if kubeSystemUUID == "" {
 		return nil, errMissingKubeSystemUUID
 	}
