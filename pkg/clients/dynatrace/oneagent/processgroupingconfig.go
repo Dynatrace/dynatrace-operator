@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 )
@@ -27,10 +28,10 @@ var ErrNotModified = errors.New("server returned 304 Not Modified")
 // Returns:
 //   - The ETag value from the response header on success (HTTP 200), or the original etag on 304.
 //   - An error if the request failed. Returns ErrNotModified on HTTP 304.
-func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterId string, etag string, writer io.Writer) (string, error) {
+func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error) {
 	params := map[string]string{}
-	if kubernetesClusterId != "" {
-		params["kubernetesClusterId"] = kubernetesClusterId
+	if kubernetesClusterID != "" {
+		params["kubernetesClusterId"] = kubernetesClusterID
 	}
 
 	req := c.apiClient.GET(ctx, processGroupingConfigPath).
@@ -43,7 +44,7 @@ func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesCluster
 	}
 
 	headers, err := req.ExecuteWriterWithHeaders(writer)
-	if core.HasStatusCode(err, 304) {
+	if core.HasStatusCode(err, http.StatusNotModified) {
 		return etag, ErrNotModified
 	}
 

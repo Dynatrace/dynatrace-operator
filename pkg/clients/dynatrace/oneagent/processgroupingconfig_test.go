@@ -2,7 +2,6 @@ package oneagent
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -15,10 +14,10 @@ import (
 )
 
 const (
-	testCBORData      = "\x81\x01" // minimal CBOR: array of one integer
-	testETag          = `"abc123"`
-	testResponseETag  = `"def456"`
-	testClusterID     = "my-cluster"
+	testCBORData     = "\x81\x01" // minimal CBOR: array of one integer
+	testETag         = `"abc123"`
+	testResponseETag = `"def456"`
+	testClusterID    = "my-cluster"
 )
 
 // setupMockedProcessGroupingClient builds a Client backed by a mock core.APIClient.
@@ -123,7 +122,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", testETag, &buf)
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, ErrNotModified), "expected ErrNotModified, got %v", err)
+		require.ErrorIs(t, err, ErrNotModified, "expected ErrNotModified, got %v", err)
 		assert.Empty(t, buf.String())
 		// On 304, the original ETag is returned for convenience
 		assert.Equal(t, testETag, returnedETag)
@@ -177,7 +176,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", "", &buf)
 		require.Error(t, err)
-		assert.False(t, errors.Is(err, ErrNotModified))
+		require.NotErrorIs(t, err, ErrNotModified)
 		assert.Empty(t, returnedETag)
 		assert.Empty(t, buf.String())
 	})
