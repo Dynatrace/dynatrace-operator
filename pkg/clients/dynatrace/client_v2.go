@@ -319,6 +319,7 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 		WithNetworkZone(dtc.networkZone),
 		WithHostGroup(dtc.hostGroup),
 		WithHTTPClient(dtc.httpClient),
+		WithTLSConfig(dtc.httpClient.Transport.(*http.Transport).TLSClientConfig),
 	)
 
 	// Placeholders to prevent deadcode elimination
