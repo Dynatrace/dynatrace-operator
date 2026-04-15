@@ -18,7 +18,7 @@ type Reconciler struct {
 
 func NewReconciler(clt client.Client, apiReader client.Reader, clusterID string) *Reconciler {
 	return &Reconciler{
-		configMaps: k8sconfigmap.Query(clt, apiReader, log),
+		configMaps: k8sconfigmap.Query(clt, apiReader),
 		clusterID:  clusterID,
 	}
 }

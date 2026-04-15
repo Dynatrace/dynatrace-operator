@@ -33,7 +33,7 @@ type Reconciler struct {
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		secrets: k8ssecret.Query(clt, apiReader, log),
+		secrets: k8ssecret.Query(clt, apiReader),
 	}
 }
 

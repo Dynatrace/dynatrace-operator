@@ -52,7 +52,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dk *dynakube.DynaK
 		return errors.WithStack(err)
 	}
 
-	secrets := k8ssecret.Query(r.client, r.apiReader, log)
+	secrets := k8ssecret.Query(r.client, r.apiReader)
 
 	_, err = secrets.CreateOrUpdate(ctx, secret)
 

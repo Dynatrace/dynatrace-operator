@@ -61,8 +61,8 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			configmap:                k8sconfigmap.Query(fakeClient, fakeClient, log),
-			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient, log),
+			configmap:                k8sconfigmap.Query(fakeClient, fakeClient),
+			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient),
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
@@ -87,8 +87,8 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			configmap:                k8sconfigmap.Query(fakeClient, fakeClient, log),
-			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient, log),
+			configmap:                k8sconfigmap.Query(fakeClient, fakeClient),
+			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient),
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
@@ -111,8 +111,8 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			configmap:                k8sconfigmap.Query(fakeClient, fakeClient, log),
-			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient, log),
+			configmap:                k8sconfigmap.Query(fakeClient, fakeClient),
+			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient),
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
@@ -140,8 +140,8 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			configmap:                k8sconfigmap.Query(fakeClient, fakeClient, log),
-			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient, log),
+			configmap:                k8sconfigmap.Query(fakeClient, fakeClient),
+			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient),
 			connectionInfoReconciler: connInfoReconciler,
 			versionReconciler:        createVersionReconcilerMock(t),
 		}
@@ -168,8 +168,8 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			configmap:                k8sconfigmap.Query(fakeClient, fakeClient, log),
-			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient, log),
+			configmap:                k8sconfigmap.Query(fakeClient, fakeClient),
+			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient),
 			connectionInfoReconciler: controllermock.NewReconciler(t),
 			versionReconciler:        versionReconciler,
 		}
@@ -211,8 +211,8 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	reconciler := &Reconciler{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
-		configmap:                k8sconfigmap.Query(fakeClient, fakeClient, log),
-		daemonset:                k8sdaemonset.Query(fakeClient, fakeClient, log),
+		configmap:                k8sconfigmap.Query(fakeClient, fakeClient),
+		daemonset:                k8sdaemonset.Query(fakeClient, fakeClient),
 		connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		versionReconciler:        createVersionReconcilerMock(t),
 	}
@@ -260,8 +260,8 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	reconciler := &Reconciler{
 		client:    c,
 		apiReader: c,
-		configmap: k8sconfigmap.Query(c, c, log),
-		daemonset: k8sdaemonset.Query(c, c, log),
+		configmap: k8sconfigmap.Query(c, c),
+		daemonset: k8sdaemonset.Query(c, c),
 	}
 
 	expectedLabels := map[string]string{
@@ -643,8 +643,8 @@ func TestInstanceStatus(t *testing.T) {
 	reconciler := &Reconciler{
 		client:    fakeClient,
 		apiReader: fakeClient,
-		configmap: k8sconfigmap.Query(fakeClient, fakeClient, log),
-		daemonset: k8sdaemonset.Query(fakeClient, fakeClient, log),
+		configmap: k8sconfigmap.Query(fakeClient, fakeClient),
+		daemonset: k8sdaemonset.Query(fakeClient, fakeClient),
 	}
 
 	err := reconciler.reconcileInstanceStatuses(t.Context(), dk)
@@ -695,8 +695,8 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	reconciler := &Reconciler{
 		client:    fakeClient,
 		apiReader: fakeClient,
-		configmap: k8sconfigmap.Query(fakeClient, fakeClient, log),
-		daemonset: k8sdaemonset.Query(fakeClient, fakeClient, log),
+		configmap: k8sconfigmap.Query(fakeClient, fakeClient),
+		daemonset: k8sdaemonset.Query(fakeClient, fakeClient),
 	}
 
 	err := reconciler.reconcileInstanceStatuses(t.Context(), dk)
@@ -728,8 +728,8 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 		reconciler := Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			configmap:                k8sconfigmap.Query(fakeClient, fakeClient, log),
-			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient, log),
+			configmap:                k8sconfigmap.Query(fakeClient, fakeClient),
+			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient),
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}

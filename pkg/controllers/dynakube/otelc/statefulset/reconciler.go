@@ -62,7 +62,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 			return err
 		}
 
-		err = k8sstatefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
+		err = k8sstatefulset.Query(r.client, r.apiReader).Delete(ctx, sts)
 		if err != nil {
 			log.Error(err, "failed to clean up "+dk.OtelCollectorStatefulsetName()+" statufulset")
 
@@ -122,7 +122,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		return err
 	}
 
-	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(dk).CreateOrUpdate(ctx, sts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
 		log.Info("failed to create/update " + dk.OtelCollectorStatefulsetName() + " statefulset")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
@@ -173,7 +173,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 }
 
 func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string, namespace string) (string, error) {
-	secrets := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      secretName,
@@ -192,7 +192,7 @@ func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string,
 }
 
 func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName string, namespace string) (string, error) {
-	query := k8sconfigmap.Query(r.client, r.client, log)
+	query := k8sconfigmap.Query(r.client, r.client)
 
 	configConfigMap, err := query.Get(ctx, types.NamespacedName{
 		Name:      configMapName,

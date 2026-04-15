@@ -83,7 +83,7 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 		}
 	}
 
-	isValid, err := certsutils.ValidateCertificateExpiration(secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now(), log)
+	isValid, err := certsutils.ValidateCertificateExpiration(context.TODO(), secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now())
 	if err != nil {
 		return false, err
 	} else if !isValid {

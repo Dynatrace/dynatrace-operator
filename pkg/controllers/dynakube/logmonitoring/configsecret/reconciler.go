@@ -46,7 +46,7 @@ func NewReconciler(clt client.Client,
 	apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		apiReader: apiReader,
-		secrets:   k8ssecret.Query(clt, apiReader, log),
+		secrets:   k8ssecret.Query(clt, apiReader),
 	}
 }
 
@@ -119,7 +119,7 @@ func (r *Reconciler) getSecretData(ctx context.Context, dk *dynakube.DynaKube) (
 	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
 		Name:      dk.OneAgent().GetTenantSecret(),
 		Namespace: dk.Namespace,
-	}, connectioninfo.TenantTokenKey, log)
+	}, connectioninfo.TenantTokenKey)
 	if err != nil {
 		log.Info("failed to get the oneagent-tenant secret")
 

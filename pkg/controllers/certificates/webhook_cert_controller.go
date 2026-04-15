@@ -93,7 +93,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return ctrl.Result{}, err
 	}
 
-	if err := certSecret.validateCertificates(webhookDeployment.Namespace); err != nil {
+	if err := certSecret.validateCertificates(ctx, webhookDeployment.Namespace); err != nil {
 		return ctrl.Result{}, err
 	}
 
