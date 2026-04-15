@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -113,9 +114,12 @@ func (r *Reconciler) getActiveGateAuthToken(ctx context.Context, dk *dynakube.Dy
 func (r *Reconciler) createSecret(ctx context.Context, dk *dynakube.DynaKube, secretData map[string][]byte) error {
 	secretName := dk.ActiveGate().GetAuthTokenSecretName()
 
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+
 	secret, err := k8ssecret.Build(dk,
 		secretName,
-		secretData)
+		secretData,
+		k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 

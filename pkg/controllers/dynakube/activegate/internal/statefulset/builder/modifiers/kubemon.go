@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -65,6 +66,9 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 		},
 	}, mod.getReadOnlyInitVolumeMounts())
 
+	securityContext := GetSecurityContext(true)
+	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(mod.dk.ActiveGate().Annotations, initContainerTemplateName)
+
 	return []corev1.Container{
 		{
 			Name:            initContainerTemplateName,
@@ -75,7 +79,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 			Args:            []string{"-c", k8scrt2jksPath},
 			VolumeMounts:    volumeMounts,
 			Resources:       mod.capability.Properties().Resources,
-			SecurityContext: GetSecurityContext(true),
+			SecurityContext: securityContext,
 		},
 	}
 }

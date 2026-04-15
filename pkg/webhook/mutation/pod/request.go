@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -83,7 +84,7 @@ func (wh *webhook) getDynakube(ctx context.Context, dynakubeName string) (*dynak
 
 	err := wh.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: wh.webhookNamespace}, &dk)
 	if k8serrors.IsNotFound(err) {
-		wh.recorder.SendMissingDynaKubeEvent(wh.webhookNamespace, dynakubeName)
+		events.SendMissingDynaKubeEvent(wh.recorder, wh.webhookNamespace, dynakubeName)
 
 		return nil, err
 	} else if err != nil {

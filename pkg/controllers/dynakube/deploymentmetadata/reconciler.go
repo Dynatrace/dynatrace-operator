@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -57,9 +58,12 @@ func (r *Reconciler) addOperatorVersionInfo(dk *dynakube.DynaKube, configMapData
 }
 
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, dk *dynakube.DynaKube, configMapData map[string]string) error {
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OperatorComponentLabel)
+
 	configMap, err := k8sconfigmap.Build(dk,
 		GetDeploymentMetadataConfigMapName(dk.Name),
 		configMapData,
+		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
 	)
 	if err != nil {
 		return errors.WithStack(err)

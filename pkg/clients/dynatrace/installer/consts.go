@@ -7,9 +7,9 @@ const (
 )
 
 const (
-	OsUnix = "unix"
+	OSUnix = "unix"
 	// Commented for linter, left for further reference
-	// OsWindows = "windows"
-	// OsAix     = "aix"
-	// OsSolaris = "solaris"
+	// OSWindows = "windows"
+	// OSAix     = "aix"
+	// OSSolaris = "solaris"
 )

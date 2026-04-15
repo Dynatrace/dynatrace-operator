@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -50,10 +49,10 @@ func testReadTokens(t *testing.T) {
 			},
 		}
 		testSecret, err := k8ssecret.Build(&dk, "dynakube", map[string][]byte{
-			dtclient.APIToken:        []byte(testAPIToken),
-			dtclient.PaasToken:       []byte(testPaasToken),
-			dtclient.DataIngestToken: []byte(testDataIngestToken),
-			testIrrelevantTokenKey:   []byte(testIrrelevantToken),
+			APIKey:                 []byte(testAPIToken),
+			PaaSKey:                []byte(testPaasToken),
+			DataIngestKey:          []byte(testDataIngestToken),
+			testIrrelevantTokenKey: []byte(testIrrelevantToken),
 		})
 		require.NoError(t, err)
 
@@ -65,13 +64,13 @@ func testReadTokens(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Len(t, tokens, 4)
-		assert.Contains(t, tokens, dtclient.APIToken)
-		assert.Contains(t, tokens, dtclient.PaasToken)
-		assert.Contains(t, tokens, dtclient.DataIngestToken)
+		assert.Contains(t, tokens, APIKey)
+		assert.Contains(t, tokens, PaaSKey)
+		assert.Contains(t, tokens, DataIngestKey)
 		assert.Contains(t, tokens, testIrrelevantTokenKey)
-		assert.Equal(t, testAPIToken, tokens[dtclient.APIToken].Value)
-		assert.Equal(t, testPaasToken, tokens[dtclient.PaasToken].Value)
-		assert.Equal(t, testDataIngestToken, tokens[dtclient.DataIngestToken].Value)
+		assert.Equal(t, testAPIToken, tokens[APIKey].Value)
+		assert.Equal(t, testPaasToken, tokens[PaaSKey].Value)
+		assert.Equal(t, testDataIngestToken, tokens[DataIngestKey].Value)
 		assert.Equal(t, testIrrelevantToken, tokens[testIrrelevantTokenKey].Value)
 	})
 }
@@ -98,7 +97,7 @@ func testVerifyTokens(t *testing.T) {
 			testIrrelevantTokenKey: {
 				Value: testIrrelevantToken,
 			},
-			dtclient.APIToken: {
+			APIKey: {
 				Value: testAPIToken,
 			},
 		})

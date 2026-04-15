@@ -1,10 +1,9 @@
 package dynatrace
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,13 +11,17 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
+	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 type ClientV2 struct {
@@ -30,22 +33,79 @@ type ClientV2 struct {
 	Token      token.APIClient
 }
 
-type ConfigV2 struct {
-	HTTPClient  *http.Client
-	TLSConfig   *tls.Config
-	BaseURL     string
-	APIToken    string
-	PaasToken   string
-	UserAgent   string
-	Proxy       string
-	NoProxy     string
-	NetworkZone string
-	HostGroup   string
-	Timeout     time.Duration
+type OAuthClient struct {
+	EdgeConnect edgeconnect.APIClient
 }
 
-// OptionV2 is a functional option for configuring the dtClient
+type ConfigV2 struct {
+	APIToken    string
+	PaasToken   string
+	NetworkZone string
+	HostGroup   string
+	UserAgent   string
+
+	BaseURL           *url.URL
+	HTTPClient        *http.Client
+	TLSConfig         *tls.Config
+	Proxy             string
+	NoProxy           string
+	Timeout           time.Duration
+	DisableKeepAlives bool
+}
+
+// OptionV2 is a functional option for configuring the v2 client
 type OptionV2 func(*ConfigV2) error
+
+// NewClientV2 creates a new Dynatrace V2 API client
+func NewClientV2(options ...OptionV2) (*ClientV2, error) {
+	config, err := getConfig(options...)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get client v2 config")
+	}
+
+	if !strings.HasSuffix(strings.TrimSuffix(config.BaseURL.Path, "/"), "/api") {
+		config.BaseURL.Path = strings.TrimSuffix(config.BaseURL.Path, "/") + "/api"
+	}
+
+	apiClient := core.NewClient(core.Config{
+		BaseURL:    config.BaseURL,
+		HTTPClient: config.HTTPClient,
+		UserAgent:  config.UserAgent,
+		APIToken:   config.APIToken,
+		PaasToken:  config.PaasToken,
+	})
+
+	return &ClientV2{
+		Settings:   settings.NewClient(apiClient),
+		ActiveGate: activegate.NewClient(apiClient),
+		HostEvent:  hostevent.NewClient(apiClient, config.NetworkZone),
+		OneAgent:   oneagent.NewClient(apiClient, config.HostGroup, config.NetworkZone),
+		Version:    version.NewClient(apiClient),
+		Token:      token.NewClient(apiClient),
+	}, nil
+}
+
+// NewOAuthClient creates a new Dynatrace API OAuth client
+func NewOAuthClient(credentials clientcredentials.Config, options ...OptionV2) (*OAuthClient, error) {
+	config, err := getConfig(options...)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get oauth v2 config")
+	}
+
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, config.HTTPClient)
+
+	oAuthHTTPClient := credentials.Client(ctx)
+
+	apiClient := core.NewClient(core.Config{
+		BaseURL:    config.BaseURL,
+		HTTPClient: oAuthHTTPClient,
+		UserAgent:  config.UserAgent,
+	})
+
+	return &OAuthClient{
+		EdgeConnect: edgeconnect.NewClient(apiClient),
+	}, nil
+}
 
 // WithAPIToken sets the API token
 func WithAPIToken(token string) OptionV2 {
@@ -65,54 +125,53 @@ func WithPaasToken(token string) OptionV2 {
 	}
 }
 
-// WithHTTPClient sets a custom HTTP dtClient
+// WithNetworkZone sets the network zone
+func WithNetworkZone(networkZone string) OptionV2 {
+	return func(c *ConfigV2) error {
+		c.NetworkZone = networkZone
+
+		return nil
+	}
+}
+
+// WithHostGroup sets the host group
+func WithHostGroup(hostGroup string) OptionV2 {
+	return func(c *ConfigV2) error {
+		c.HostGroup = hostGroup
+
+		return nil
+	}
+}
+
+// WithBaseURL parses the URL and sets it
+func WithBaseURL(baseURL string) OptionV2 {
+	return func(c *ConfigV2) error {
+		parsedURL, err := url.Parse(baseURL)
+		if err != nil {
+			return errors.Wrap(err, "invalid base URL")
+		}
+
+		c.BaseURL = parsedURL
+
+		return nil
+	}
+}
+
+// WithUserAgentSuffix appends a suffix (comment) to the default user agent.
+func WithUserAgentSuffix(suffix string) OptionV2 {
+	return func(c *ConfigV2) error {
+		if suffix != "" {
+			c.UserAgent += " " + suffix
+		}
+
+		return nil
+	}
+}
+
+// WithHTTPClient sets a custom HTTP client
 func WithHTTPClient(httpClient *http.Client) OptionV2 {
 	return func(c *ConfigV2) error {
 		c.HTTPClient = httpClient
-
-		return nil
-	}
-}
-
-// WithTLSConfig sets custom TLS configuration
-func WithTLSConfig(tlsConfig *tls.Config) OptionV2 {
-	return func(c *ConfigV2) error {
-		c.TLSConfig = tlsConfig
-
-		return nil
-	}
-}
-
-func WithSkipCertificateValidation(skip bool) OptionV2 {
-	return func(c *ConfigV2) error {
-		if skip {
-			if c.TLSConfig == nil {
-				c.TLSConfig = &tls.Config{}
-			}
-
-			c.TLSConfig.InsecureSkipVerify = true
-		}
-
-		return nil
-	}
-}
-
-func WithCerts(certs []byte) OptionV2 {
-	return func(c *ConfigV2) error {
-		rootCAs, err := x509.SystemCertPool()
-		if err != nil {
-			return fmt.Errorf("couldn't read system certificates: %w", err)
-		}
-
-		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-			return errors.New("failed to append custom certs")
-		}
-
-		if c.TLSConfig == nil {
-			c.TLSConfig = &tls.Config{}
-		}
-
-		c.TLSConfig.RootCAs = rootCAs
 
 		return nil
 	}
@@ -137,39 +196,67 @@ func WithProxy(proxyURL, noProxy string) OptionV2 {
 	}
 }
 
-// WithNetworkZone sets the network zone
-func WithNetworkZone(networkZone string) OptionV2 {
+// WithTLSConfig sets custom TLS configuration
+func WithTLSConfig(tlsConfig *tls.Config) OptionV2 {
 	return func(c *ConfigV2) error {
-		c.NetworkZone = networkZone
+		c.TLSConfig = tlsConfig
 
 		return nil
 	}
 }
 
-// WithHostGroup sets the host group
-func WithHostGroup(hostGroup string) OptionV2 {
+// WithKeepAlive enables or disables HTTP keep-alives.
+func WithKeepAlive(keepAlive bool) OptionV2 {
 	return func(c *ConfigV2) error {
-		c.HostGroup = hostGroup
+		c.DisableKeepAlives = !keepAlive
 
 		return nil
 	}
 }
 
-// WithUserAgentSuffix appends a suffix (comment) to the default user agent.
-func WithUserAgentSuffix(suffix string) OptionV2 {
+// WithSkipCertificateValidation skips TLS certificate validation when enabled.
+func WithSkipCertificateValidation(skip bool) OptionV2 {
 	return func(c *ConfigV2) error {
-		if suffix != "" {
-			c.UserAgent += " " + suffix
+		if skip {
+			if c.TLSConfig == nil {
+				c.TLSConfig = &tls.Config{}
+			}
+
+			c.TLSConfig.InsecureSkipVerify = true
 		}
 
 		return nil
 	}
 }
 
-// NewClientV2 creates a new Dynatrace API client
-func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
+// WithCerts appends custom root certificates to the system certificate pool.
+func WithCerts(certs []byte) OptionV2 {
+	return func(c *ConfigV2) error {
+		if len(certs) == 0 {
+			return nil
+		}
+
+		rootCAs, err := x509.SystemCertPool()
+		if err != nil {
+			return errors.Wrap(err, "couldn't read system certificates")
+		}
+
+		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
+			return errors.New("failed to append custom certs")
+		}
+
+		if c.TLSConfig == nil {
+			c.TLSConfig = &tls.Config{}
+		}
+
+		c.TLSConfig.RootCAs = rootCAs
+
+		return nil
+	}
+}
+
+func getConfig(options ...OptionV2) (*ConfigV2, error) {
 	config := ConfigV2{
-		BaseURL:   baseURL,
 		UserAgent: operatorversion.UserAgent(),
 		Timeout:   30 * time.Second,
 	}
@@ -180,66 +267,52 @@ func NewClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 		}
 	}
 
-	parsedURL, err := url.Parse(config.BaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
-	}
-
-	if !strings.HasSuffix(strings.TrimSuffix(parsedURL.Path, "/"), "/api") {
-		parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/") + "/api"
-	}
+	t := &http.Transport{}
 
 	if config.HTTPClient == nil {
-		transport := &http.Transport{
-			TLSClientConfig: config.TLSConfig,
-		}
-
-		// Configure proxy if provided
-		if config.Proxy != "" {
-			proxyURL, err := url.Parse(config.Proxy)
-			if err != nil {
-				return nil, fmt.Errorf("invalid proxy URL: %w", err)
-			}
-
-			proxyConfig := httpproxy.Config{
-				HTTPProxy:  proxyURL.String(),
-				HTTPSProxy: proxyURL.String(),
-				NoProxy:    config.NoProxy,
-			}
-			transport.Proxy = proxyWrapper(proxyConfig)
-		}
-
 		config.HTTPClient = &http.Client{
-			Transport: transport,
+			Transport: t,
 		}
+	} else {
+		var ok bool
+
+		t, ok = config.HTTPClient.Transport.(*http.Transport)
+		if !ok {
+			return nil, errors.New("unexpected transport type")
+		}
+	}
+
+	t.TLSClientConfig = config.TLSConfig
+
+	if config.Proxy != "" {
+		proxyURL, err := url.Parse(config.Proxy)
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid proxy URL")
+		}
+
+		proxyConfig := httpproxy.Config{
+			HTTPProxy:  proxyURL.String(),
+			HTTPSProxy: proxyURL.String(),
+			NoProxy:    config.NoProxy,
+		}
+		t.Proxy = proxyWrapper(proxyConfig)
+	}
+
+	if config.DisableKeepAlives {
+		t.DisableKeepAlives = true
 	}
 
 	if config.Timeout > 0 {
 		config.HTTPClient.Timeout = config.Timeout
 	}
 
-	apiClient := core.NewClient(core.Config{
-		BaseURL:    parsedURL,
-		HTTPClient: config.HTTPClient,
-		UserAgent:  config.UserAgent,
-		APIToken:   config.APIToken,
-		PaasToken:  config.PaasToken,
-	})
-
-	return &ClientV2{
-		Settings:   settings.NewClient(apiClient),
-		ActiveGate: activegate.NewClient(apiClient),
-		HostEvent:  hostevent.NewClient(apiClient, config.NetworkZone),
-		OneAgent:   oneagent.NewClient(apiClient, config.HostGroup, config.NetworkZone),
-		Version:    version.NewClient(apiClient),
-		Token:      token.NewClient(apiClient),
-	}, nil
+	return &config, nil
 }
 
 func (dtc *dynatraceClient) AsV2() *ClientV2 {
 	// Fields are already validated by the v1 client constructor
 	v2, _ := NewClientV2(
-		dtc.url,
+		WithBaseURL(dtc.url),
 		WithUserAgentSuffix(dtc.userAgentSuffix),
 		WithAPIToken(dtc.apiToken),
 		WithPaasToken(dtc.paasToken),

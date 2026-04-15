@@ -23,7 +23,7 @@ const (
 
 func TestGetLatest(t *testing.T) {
 	args := GetParams{
-		OS:            installer.OsUnix,
+		OS:            installer.OSUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        arch.FlavorMultidistro,
 		Technologies:  nil,
@@ -49,7 +49,7 @@ func TestGetLatest(t *testing.T) {
 		}).Return(rawErr).Once()
 
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getLatestURL(installer.OsUnix, installer.TypePaaS)).Return(req).Once()
+		client.EXPECT().GET(t.Context(), getLatestURL(installer.OSUnix, installer.TypePaaS)).Return(req).Once()
 
 		return NewClient(client, "", ""), file
 	}
@@ -73,7 +73,7 @@ func TestGetLatest(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	args := GetParams{
-		OS:            installer.OsUnix,
+		OS:            installer.OSUnix,
 		InstallerType: installer.TypePaaS,
 		Version:       "",
 		Flavor:        "",
@@ -100,7 +100,7 @@ func TestGet(t *testing.T) {
 		}).Return(rawErr).Once()
 
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getURL(installer.OsUnix, installer.TypePaaS, "")).Return(req).Once()
+		client.EXPECT().GET(t.Context(), getURL(installer.OSUnix, installer.TypePaaS, "")).Return(req).Once()
 
 		return NewClient(client, "", ""), file
 	}
@@ -125,7 +125,7 @@ func TestGet(t *testing.T) {
 
 func TestGetVersions(t *testing.T) {
 	args := GetParams{
-		OS:            installer.OsUnix,
+		OS:            installer.OSUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        "",
 	}
@@ -145,7 +145,7 @@ func TestGetVersions(t *testing.T) {
 		}).Return(execErr).Once()
 
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getVersionsURL(installer.OsUnix, installer.TypePaaS)).Return(req).Once()
+		client.EXPECT().GET(t.Context(), getVersionsURL(installer.OSUnix, installer.TypePaaS)).Return(req).Once()
 
 		return NewClient(client, "", "")
 	}

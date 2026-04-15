@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,7 +55,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
 			k8sdeployment.SetReplicas(replicas),
 			k8sdeployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
-			k8sdeployment.SetAllAnnotations(nil, dbSpec.Annotations),
+			k8sdeployment.SetAllAnnotations(nil, k8ssecuritycontext.RemoveAppArmorAnnotation(dbSpec.Annotations, containerName)),
 			k8sdeployment.SetAffinity(dbSpec.Affinity),
 			k8sdeployment.SetTolerations(r.dk.Spec.Templates.SQLExtensionExecutor.Tolerations),
 			k8sdeployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),

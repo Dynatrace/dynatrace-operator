@@ -70,7 +70,9 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, err
 		options = append(options, dtclient.WithCerts(certs))
 	}
 
-	client, err := dtclient.NewClientV2(config.URL, options...)
+	options = append(options, dtclient.WithBaseURL(config.URL))
+
+	client, err := dtclient.NewClientV2(options...)
 	if err != nil {
 		return nil, err
 	}

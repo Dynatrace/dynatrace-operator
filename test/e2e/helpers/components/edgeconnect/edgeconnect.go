@@ -12,11 +12,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2/clientcredentials"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -116,13 +118,13 @@ func WaitForPhase(edgeConnect edgeconnect.EdgeConnect, phase status.DeploymentPh
 // CreateTenantConfig for Normal mode only, preserves the ID and OAuth Secret of EdgeConnect configuration on the tenant
 func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig, testHostPattern string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		clt, err := BuildClient(ctx, clientSecret)
+		clt, err := BuildClient(clientSecret)
 		require.NoError(t, err)
 
-		edgeConnectRequest := edgeconnectClient.NewRequest(ecName, []string{testHostPattern}, []edgeconnect.HostMapping{}, "")
+		edgeConnectRequest := edgeconnectClient.NewCreateRequest(ecName, []string{testHostPattern}, []edgeconnect.HostMapping{})
 		edgeConnectRequest.ManagedByDynatraceOperator = false
 
-		res, err := clt.CreateEdgeConnect(edgeConnectRequest)
+		res, err := clt.CreateEdgeConnect(ctx, edgeConnectRequest)
 		require.NoError(t, err)
 		assert.Equal(t, ecName, res.Name)
 
@@ -138,29 +140,31 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 	}
 }
 
-func BuildClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconnectClient.Client, error) {
-	clt, err := edgeconnectClient.NewClient(
-		secret.OauthClientID,
-		secret.OauthClientSecret,
-		edgeconnectClient.WithBaseURL("https://"+secret.APIServer),
-		edgeconnectClient.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		edgeconnectClient.WithOauthScopes([]string{
-			"app-engine:edge-connects:read",
-			"app-engine:edge-connects:write",
-			"app-engine:edge-connects:delete",
-			"oauth2:clients:manage",
-			"settings:objects:read",
-			"settings:objects:write",
-		}),
-		edgeconnectClient.WithContext(ctx),
+func BuildClient(secret tenant.EdgeConnectSecret) (edgeconnectClient.APIClient, error) {
+	oAuthClient, err := dynatrace.NewOAuthClient(
+		clientcredentials.Config{
+			ClientID:     secret.OauthClientID,
+			ClientSecret: secret.OauthClientSecret,
+			TokenURL:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+			Scopes: []string{
+				"app-engine:edge-connects:read",
+				"app-engine:edge-connects:write",
+				"app-engine:edge-connects:delete",
+				"oauth2:clients:manage",
+				"settings:objects:read",
+				"settings:objects:write",
+			},
+		},
+		dynatrace.WithBaseURL("https://"+secret.APIServer),
 		// Disable keep-alive to prevent dropped network packets in GitHub Actions environment
-		edgeconnectClient.WithKeepAlive(false),
+		dynatrace.WithKeepAlive(false),
 	)
+
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return clt, nil
+	return oAuthClient.EdgeConnect, nil
 }
 
 func BuildOAuthClientSecretName(secretName string) string {
@@ -169,10 +173,10 @@ func BuildOAuthClientSecretName(secretName string) string {
 
 func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		clt, err := BuildClient(ctx, clientSecret)
+		clt, err := BuildClient(clientSecret)
 		require.NoError(t, err)
 
-		err = clt.DeleteEdgeConnect(edgeConnectTenantConfig.ID)
+		err = clt.DeleteEdgeConnect(ctx, edgeConnectTenantConfig.ID)
 		// TODO: use core.IsNotFound after edgeconnect client was refactored
 		if err != nil && strings.Contains(err.Error(), "server error 404: Unknown key") {
 			err = nil
@@ -185,10 +189,10 @@ func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenant
 
 func CheckECExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		clt, err := BuildClient(ctx, clientSecret)
+		clt, err := BuildClient(clientSecret)
 		require.NoError(t, err)
 
-		_, err = clt.GetEdgeConnect(edgeConnectTenantConfig.ID)
+		_, err = clt.GetEdgeConnect(ctx, edgeConnectTenantConfig.ID)
 		require.NoError(t, err)
 
 		return ctx

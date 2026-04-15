@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,8 +35,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 		dynatraceClientBuilder := builder{
 			apiReader: fakeClient,
 			tokens: map[string]*token.Token{
-				dtclient.APIToken:  {Value: testValue},
-				dtclient.PaasToken: {Value: testValueAlternative},
+				token.APIKey:  {Value: testValue},
+				token.PaaSKey: {Value: testValueAlternative},
 			},
 			dk: *dk,
 		}
@@ -64,8 +63,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 			apiReader: fakeClient,
 			tokens: map[string]*token.Token{
 				// Simulate missing values
-				dtclient.APIToken:  {Value: ""},
-				dtclient.PaasToken: {Value: ""},
+				token.APIKey:  {Value: ""},
+				token.PaaSKey: {Value: ""},
 			},
 			dk: *dk,
 		}
@@ -98,8 +97,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 		dynatraceClientBuilder := builder{
 			apiReader: fakeClient,
 			tokens: map[string]*token.Token{
-				dtclient.APIToken:  {Value: testValue},
-				dtclient.PaasToken: {Value: testValueAlternative},
+				token.APIKey:  {Value: testValue},
+				token.PaaSKey: {Value: testValueAlternative},
 			},
 			dk: *dk,
 		}
@@ -122,8 +121,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 		dtf := builder{
 			apiReader: fakeClient,
 			tokens: map[string]*token.Token{
-				dtclient.APIToken:  {Value: testValue},
-				dtclient.PaasToken: {Value: testValueAlternative},
+				token.APIKey:  {Value: testValue},
+				token.PaaSKey: {Value: testValueAlternative},
 			},
 			dk: *dk,
 		}

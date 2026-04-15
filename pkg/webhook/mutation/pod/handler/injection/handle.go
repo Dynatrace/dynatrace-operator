@@ -53,8 +53,6 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		return nil
 	}
 
-	h.recorder.Setup(mutationRequest)
-
 	if !h.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitSecretName) {
 		return nil
 	}
@@ -68,7 +66,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	if h.isInjected(mutationRequest) {
 		if h.handlePodReinvocation(mutationRequest) {
 			log.Info("reinvocation policy applied", "podName", mutationRequest.PodName())
-			h.recorder.SendPodUpdateEvent()
+			events.SendPodUpdateEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
 
 			return nil
 		}
@@ -153,7 +151,7 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 		}
 
 		addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
-		h.recorder.SendPodInjectEvent()
+		events.SendPodInjectEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
 	}
 
 	return mutated, nil
