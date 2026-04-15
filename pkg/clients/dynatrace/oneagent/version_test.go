@@ -70,6 +70,11 @@ func TestGetLatest(t *testing.T) {
 		err := oaClient.GetLatest(t.Context(), args, file)
 		require.Error(t, err)
 	})
+
+	t.Run("missing params", func(t *testing.T) {
+		require.ErrorIs(t, (&Client{}).GetLatest(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
+		require.ErrorIs(t, (&Client{}).GetLatest(t.Context(), GetParams{OS: installer.OsUnix}, nil), errEmptyInstallerType)
+	})
 }
 
 func TestGet(t *testing.T) {
@@ -123,6 +128,11 @@ func TestGet(t *testing.T) {
 
 		require.True(t, core.IsNotFound(err))
 	})
+
+	t.Run("missing params", func(t *testing.T) {
+		require.ErrorIs(t, (&Client{}).Get(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
+		require.ErrorIs(t, (&Client{}).Get(t.Context(), GetParams{OS: installer.OsUnix}, nil), errEmptyInstallerType)
+	})
 }
 
 func TestGetVersions(t *testing.T) {
@@ -172,5 +182,12 @@ func TestGetVersions(t *testing.T) {
 		require.Empty(t, availableVersions)
 		require.Error(t, err)
 		require.True(t, core.IsBadRequest(err))
+	})
+
+	t.Run("missing params", func(t *testing.T) {
+		_, err := (&Client{}).GetVersions(t.Context(), GetParams{InstallerType: installer.TypePaaS})
+		require.ErrorIs(t, err, errEmptyOS)
+		_, err = (&Client{}).GetVersions(t.Context(), GetParams{OS: installer.OsUnix})
+		require.ErrorIs(t, err, errEmptyInstallerType)
 	})
 }

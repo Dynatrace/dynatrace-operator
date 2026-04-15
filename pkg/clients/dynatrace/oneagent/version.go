@@ -17,7 +17,10 @@ import (
 
 const agentDeploymentPath = "/v1/deployment/installer/agent"
 
-var errEmptyOSOrInstallerType = goerrors.New("OS or installerType is empty")
+var (
+	errEmptyOS            = goerrors.New("OS is empty")
+	errEmptyInstallerType = goerrors.New("installerType is empty")
+)
 
 type GetParams struct {
 	OS            string
@@ -30,8 +33,12 @@ type GetParams struct {
 
 // Get gets the agent package for the given OS, installer type, flavor, arch and version.
 func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) error {
-	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
-		return errEmptyOSOrInstallerType
+	if len(args.OS) == 0 {
+		return errEmptyOS
+	}
+
+	if len(args.InstallerType) == 0 {
+		return errEmptyInstallerType
 	}
 
 	apiRequest := c.apiClient.GET(ctx, agentDeploymentPath).
@@ -55,8 +62,12 @@ func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) erro
 
 // GetLatest gets the latest agent package for the given OS, installer type, flavor and arch.
 func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer) error {
-	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
-		return errEmptyOSOrInstallerType
+	if len(args.OS) == 0 {
+		return errEmptyOS
+	}
+
+	if len(args.InstallerType) == 0 {
+		return errEmptyInstallerType
 	}
 
 	apiRequest := c.apiClient.GET(ctx, agentDeploymentPath).
@@ -84,8 +95,12 @@ type versionsResponse struct {
 
 // GetVersions gets available agent versions for the given OS, installer type and flavor.
 func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, error) {
-	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
-		return nil, errEmptyOSOrInstallerType
+	if len(args.OS) == 0 {
+		return nil, errEmptyOS
+	}
+
+	if len(args.InstallerType) == 0 {
+		return nil, errEmptyInstallerType
 	}
 
 	var resp versionsResponse
