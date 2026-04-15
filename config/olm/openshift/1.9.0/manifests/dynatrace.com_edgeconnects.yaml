@@ -6,7 +6,7 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: 0.0.0-snapshot
+    app.kubernetes.io/version: 1.9.0
   name: edgeconnects.dynatrace.com
 spec:
   conversion:
