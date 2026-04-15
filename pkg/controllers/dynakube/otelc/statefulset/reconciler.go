@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -139,7 +140,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 
 	if dk.Extensions().IsPrometheusEnabled() {
 		if dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
-			templateAnnotations = dk.Spec.Templates.OpenTelemetryCollector.Annotations
+			templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.OpenTelemetryCollector.Annotations, containerName)
 		}
 
 		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.Extensions().GetTLSSecretName(), dk.Namespace)
@@ -228,7 +229,7 @@ func getReplicas(dk *dynakube.DynaKube) int32 {
 	return defaultReplicas
 }
 
-func buildSecurityContext() *corev1.SecurityContext {
+func buildSecurityContext(dk *dynakube.DynaKube) *corev1.SecurityContext {
 	return &corev1.SecurityContext{
 		Privileged:               ptr.To(false),
 		AllowPrivilegeEscalation: ptr.To(false),
@@ -244,6 +245,7 @@ func buildSecurityContext() *corev1.SecurityContext {
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
+		AppArmorProfile: k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.OpenTelemetryCollector.Annotations, containerName),
 	}
 }
 

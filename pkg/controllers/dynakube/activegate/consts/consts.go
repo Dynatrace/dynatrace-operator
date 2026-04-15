@@ -3,6 +3,7 @@ package consts
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -29,7 +30,7 @@ const (
 
 	AnnotationActiveGateConfigurationHash = api.InternalFlagPrefix + "activegate-configuration-hash"
 	AnnotationActiveGateTenantTokenHash   = api.InternalFlagPrefix + "activegate-tenant-token-hash"
-	AnnotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ActiveGateContainerName
+	AnnotationActiveGateContainerAppArmor = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + ActiveGateContainerName
 
 	GatewayConfigVolumeName  = "ag-lib-gateway-config"
 	GatewayLibTempVolumeName = "ag-lib-gateway-temp"

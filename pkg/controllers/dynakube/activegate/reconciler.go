@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -158,9 +159,12 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 
 	configMapData := extractPublicData(dk)
 
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.ActiveGate().GetConnectionInfoConfigMapName(),
 		configMapData,
+		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
 	)
 	if err != nil {
 		return errors.WithStack(err)

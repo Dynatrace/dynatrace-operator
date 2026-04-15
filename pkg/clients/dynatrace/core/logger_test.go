@@ -47,6 +47,7 @@ func Test_loggerArgs(t *testing.T) {
 
 	publicPart := strings.Repeat("a", 5) + "." + strings.Repeat("B", 24)
 	token := publicPart + "." + strings.Repeat("C", 64)
+	jwtBearerToken := "eya.eyb.c"
 
 	response := &http.Response{
 		StatusCode: http.StatusOK,
@@ -54,12 +55,15 @@ func Test_loggerArgs(t *testing.T) {
 		Request: &http.Request{
 			Method: http.MethodGet,
 			URL:    u,
-			Header: http.Header{"request-foo": []string{"request-" + token}},
+			Header: http.Header{
+				"request-foo":   []string{"request-" + token},
+				"authorization": []string{"Bearer " + jwtBearerToken},
+			},
 		},
 	}
 
-	requestBody := []byte("request " + token + "rest")
-	responseBody := []byte("response " + token + "rest")
+	requestBody := []byte("request " + "Bearer " + jwtBearerToken + " " + token + "rest")
+	responseBody := []byte("response " + "Bearer " + jwtBearerToken + " " + token + "rest")
 
 	tests := []struct {
 		name     string
@@ -79,7 +83,7 @@ func Test_loggerArgs(t *testing.T) {
 			levelRequest,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_body", "request " + publicPart + ".***rest",
+				"request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
 			},
 		},
 		{
@@ -87,8 +91,8 @@ func Test_loggerArgs(t *testing.T) {
 			levelResponse,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_body", "request " + publicPart + ".***rest",
-				"response_body", "response " + publicPart + ".***rest",
+				"request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
+				"response_body", "response " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
 			},
 		},
 		{
@@ -96,10 +100,10 @@ func Test_loggerArgs(t *testing.T) {
 			levelFull,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_headers", `{"Request-Foo":"request-` + publicPart + `.***"}`,
+				"request_headers", `{"Authorization":"Bearer eya.eyb.***","Request-Foo":"request-` + publicPart + `.***"}`,
 				"response_headers", `{"Response-Foo":"response-` + publicPart + `.***"}`,
-				"request_body", "request " + publicPart + ".***rest",
-				"response_body", "response " + publicPart + ".***rest",
+				"request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
+				"response_body", "response " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
 			},
 		},
 	}
@@ -128,6 +132,7 @@ func Test_loggerArgs(t *testing.T) {
 
 func Test_dumpValues(t *testing.T) {
 	token := strings.Repeat("a", 5) + "." + strings.Repeat("A", 8) + "." + strings.Repeat("B", 64)
+	authorizationToken := "eya.eyb.c"
 
 	tests := []struct {
 		name         string
@@ -147,8 +152,8 @@ func Test_dumpValues(t *testing.T) {
 		{"multi value w canonicalize", http.Header{"x-foo": []string{"bar", "baz"}}, true, `{"X-Foo":["bar","baz"]}`},
 		{"multi value wo canonicalize", url.Values{"foo": []string{"bar", "baz"}}, false, `{"foo":["bar","baz"]}`},
 
-		{"mask secret w canonicalize", http.Header{"x-foo": []string{"Bearer " + token}}, true, `{"X-Foo":"Bearer aaaaa.AAAAAAAA.***"}`},
-		{"mask secret wo canonicalize", url.Values{"foo": []string{"Bearer " + token}}, false, `{"foo":"Bearer aaaaa.AAAAAAAA.***"}`},
+		{"mask secret w canonicalize", http.Header{"authorization": []string{"Bearer " + authorizationToken}, "request-foo": []string{"request-" + token}}, true, `{"Authorization":"Bearer eya.eyb.***","Request-Foo":"request-aaaaa.AAAAAAAA.***"}`},
+		{"mask secret wo canonicalize", url.Values{"authorization": []string{"Bearer " + authorizationToken}, "request-foo": []string{"request-" + token}}, false, `{"authorization":"Bearer eya.eyb.***","request-foo":"request-aaaaa.AAAAAAAA.***"}`},
 	}
 
 	for _, tt := range tests {

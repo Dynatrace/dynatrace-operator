@@ -25,6 +25,8 @@ const (
 	ExtensionComponentLabel     = "dynatrace-extension-controller"
 	OtelCComponentLabel         = "dynatrace-otel-collector"
 	DatabaseSQLExecutorLabel    = "dynatrace-sql-extension-executor"
+	NodeControllerLabel         = "node-controller"
+	OperatorComponentLabel      = "operator"
 )
 
 type AppMatchLabels struct {

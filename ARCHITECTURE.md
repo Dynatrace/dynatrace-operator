@@ -256,7 +256,7 @@ This command [`cmd/metadata/`](./cmd/metadata/) generates metadata files contain
 [**`pkg/clients/`**](./pkg/clients/): External API clients
 
 - [**`dynatrace/`**](./pkg/clients/dynatrace/): Dynatrace API client
-- [**`edgeconnect/`**](./pkg/clients/edgeconnect/): EdgeConnect API client
+- [**`edgeconnect/`**](./pkg/clients/dynatrace/edgeconnect/): EdgeConnect API client
 
 [**`pkg/injection/`**](./pkg/injection/): [Code module](https://docs.dynatrace.com/docs/shortlink/oneagent-support-matrix#ent-cloud-code-modules) injection logic
 

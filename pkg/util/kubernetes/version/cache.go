@@ -115,6 +115,8 @@ func (c *versionInfoCache) refreshMinorVersion() error {
 		return errors.Wrap(err, "invalid kubernetes minor version")
 	}
 
+	log.Debug("cached kubernetes server version", "minorVersion", info.Minor)
+
 	c.minorVersion = minor
 
 	return nil

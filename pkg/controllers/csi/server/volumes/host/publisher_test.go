@@ -27,7 +27,7 @@ func TestPublishVolume(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		expectedHostDir := path.OsAgentDir(volumeCfg.DynakubeName)
+		expectedHostDir := path.OSAgentDir(volumeCfg.DynakubeName)
 		assert.DirExists(t, expectedHostDir)
 
 		isMountPoint, err := mounter.IsMountPoint(volumeCfg.TargetPath)
@@ -67,11 +67,11 @@ func TestPublishVolume(t *testing.T) {
 		volumeCfg := getTestVolumeConfig(t)
 
 		// Create dir to be symlinked
-		oldDir := path.OldOsAgentDir(volumeCfg.DynakubeName)
+		oldDir := path.OldOSAgentDir(volumeCfg.DynakubeName)
 		require.NoError(t, os.MkdirAll(oldDir, os.ModePerm))
 
 		// Create symlink to dir
-		newDir := path.OsAgentDir(volumeCfg.DynakubeName)
+		newDir := path.OSAgentDir(volumeCfg.DynakubeName)
 		require.NoError(t, os.MkdirAll(filepath.Dir(newDir), os.ModePerm))
 		require.NoError(t, os.Symlink(oldDir, newDir))
 
