@@ -170,7 +170,6 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCSI)),
 		helm.WithArgs("--set", "manifests=true"),
 		helm.WithArgs("--set", "debugLogs=true"),
-		helm.WithArgs("--set", "dtClientLogLevel=response"),
 	}
 
 	// Install from registry
