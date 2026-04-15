@@ -324,7 +324,6 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 
 	// Placeholders to prevent deadcode elimination
 	// Will be used once the v1 HTTP client is no longer the default
-	// _ = WithTLSConfig(nil)
 	_ = WithTimeout(0)
 
 	return v2
