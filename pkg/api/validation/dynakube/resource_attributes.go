@@ -36,7 +36,7 @@ func validateResourceAttributeMap(attrs map[string]string) string {
 		}
 	}
 
-	return strings.Join(errs, ", ")
+	return strings.Join(errs, "")
 }
 
 func invalidGlobalResourceAttributes(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {

@@ -374,10 +374,6 @@ func (oa *OneAgent) GetHostPath() string {
 	return ""
 }
 
-// GetResourceAttributes returns the merged resource attributes for the active OneAgent mode.
-// The global resource attributes from spec.resourceAttributes are merged with the mode-specific
-// additionalResourceAttributes, where additionalResourceAttributes takes precedence on key conflicts.
-// Returns nil when both sources are nil or empty.
 func (oa *OneAgent) GetResourceAttributes() map[string]string {
 	if oa.Spec == nil {
 		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, nil)
@@ -393,7 +389,6 @@ func (oa *OneAgent) GetResourceAttributes() map[string]string {
 	}
 }
 
-// HasAdditionalResourceAttributes returns true when the active injection mode has additionalResourceAttributes configured.
 func (oa *OneAgent) HasAdditionalResourceAttributes() bool {
 	if oa.Spec == nil {
 		return false
@@ -409,7 +404,6 @@ func (oa *OneAgent) HasAdditionalResourceAttributes() bool {
 	}
 }
 
-// GetAdditionalResourceAttributes returns the component-level additionalResourceAttributes for the active injection mode, without merging with global attributes.
 func (oa *OneAgent) GetAdditionalResourceAttributes() map[string]string {
 	if oa.Spec == nil {
 		return nil

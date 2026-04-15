@@ -49,10 +49,6 @@ func (e *ExporterConfiguration) IsLogsEnabled() bool {
 	return e.Spec != nil && e.Spec.Signals.Logs != nil
 }
 
-// GetResourceAttributes returns the merged resource attributes for the OTLP exporter configuration.
-// The global resource attributes from spec.resourceAttributes are merged with Spec.AdditionalResourceAttributes,
-// where AdditionalResourceAttributes takes precedence on key conflicts.
-// Returns nil when both sources are nil or empty, or when Spec is nil.
 func (e *ExporterConfiguration) GetResourceAttributes() map[string]string {
 	if e.Spec == nil {
 		return resourceattributes.MergeResourceAttributes(e.globalResourceAttributes, nil)
@@ -61,12 +57,10 @@ func (e *ExporterConfiguration) GetResourceAttributes() map[string]string {
 	return resourceattributes.MergeResourceAttributes(e.globalResourceAttributes, e.Spec.AdditionalResourceAttributes)
 }
 
-// HasAdditionalResourceAttributes returns true when additionalResourceAttributes are configured on the OTLP exporter.
 func (e *ExporterConfiguration) HasAdditionalResourceAttributes() bool {
 	return e.Spec != nil && len(e.Spec.AdditionalResourceAttributes) > 0
 }
 
-// GetAdditionalResourceAttributes returns the component-level additionalResourceAttributes without merging with global attributes.
 func (e *ExporterConfiguration) GetAdditionalResourceAttributes() map[string]string {
 	if e.Spec == nil {
 		return nil
