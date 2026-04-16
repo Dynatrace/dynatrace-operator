@@ -34,7 +34,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
-	logCtx, log := logd.NewFromContext(ctx, "activegate-connectioninfo")
+	ctx, log := logd.NewFromContext(ctx, "activegate-connectioninfo")
 	if !dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), activeGateConnectionInfoConditionType) == nil {
 			return nil
@@ -42,7 +42,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 
 		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{}
 
-		err := r.secrets.Delete(logCtx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace}})
+		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up ActiveGate tenant-secret")
 		}
@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	err := r.reconcileConnectionInfo(logCtx, dk, agClient)
+	err := r.reconcileConnectionInfo(ctx, dk, agClient)
 	if err != nil {
 		return err
 	}

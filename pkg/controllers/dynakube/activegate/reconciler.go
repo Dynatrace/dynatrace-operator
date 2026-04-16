@@ -90,7 +90,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error {
-	logCtx, log := logd.NewFromContext(ctx, "dynakube-activegate")
+	ctx, log := logd.NewFromContext(ctx, "dynakube-activegate")
 	// If AG is not used or was not cleaned up due to being previously enabled
 	// Split the `if` for better logging.
 	if !dk.ActiveGate().IsEnabled() {
@@ -105,12 +105,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		log.Info("activeGate was disabled, starting cleanup")
 	}
 
-	err := r.connectionReconciler.Reconcile(logCtx, dtClient.ActiveGate, dk)
+	err := r.connectionReconciler.Reconcile(ctx, dtClient.ActiveGate, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.createActiveGateTenantConnectionInfoConfigMap(logCtx, dk)
+	err = r.createActiveGateTenantConnectionInfoConfigMap(ctx, dk)
 	if err != nil {
 		return err
 	}
@@ -120,31 +120,31 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
 	}
 
-	err = versionReconciler.ReconcileActiveGate(logCtx, dk)
+	err = versionReconciler.ReconcileActiveGate(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.pullSecretReconciler.Reconcile(logCtx, dk, tokens)
+	err = r.pullSecretReconciler.Reconcile(ctx, dk, tokens)
 	if err != nil {
 		return err
 	}
 
-	err = r.istioReconciler.ReconcileActiveGate(logCtx, dk)
+	err = r.istioReconciler.ReconcileActiveGate(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.authTokenReconciler.Reconcile(logCtx, dtClient.ActiveGate, dk)
+	err = r.authTokenReconciler.Reconcile(ctx, dtClient.ActiveGate, dk)
 	if err != nil {
 		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 	}
 
 	agCapability := capability.NewMultiCapability(dk)
 	if agCapability.Enabled() {
-		return r.createCapability(logCtx, dk, agCapability)
+		return r.createCapability(ctx, dk, agCapability)
 	} else {
-		if err := r.deleteCapability(logCtx, dk); err != nil {
+		if err := r.deleteCapability(ctx, dk); err != nil {
 			return err
 		}
 	}

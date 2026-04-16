@@ -34,7 +34,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
-	logCtx, log := logd.NewFromContext(ctx, "dynakube-pullsecret")
+	ctx, log := logd.NewFromContext(ctx, "dynakube-pullsecret")
 
 	if !dk.OneAgent().IsDaemonsetRequired() && !dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType) == nil {
@@ -45,7 +45,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, token
 
 		secret, _ := k8ssecret.Build(dk, extendWithPullSecretSuffix(dk.Name), nil)
 
-		_ = r.deleteSecret(logCtx, dk, secret)
+		_ = r.deleteSecret(ctx, dk, secret)
 
 		return nil
 	}
@@ -54,7 +54,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, token
 		k8sconditions.SetSecretOutdated(dk.Conditions(), PullSecretConditionType,
 			extendWithPullSecretSuffix(dk.Name)+" is not present or outdated")
 
-		err := r.reconcilePullSecret(logCtx, dk, tokens)
+		err := r.reconcilePullSecret(ctx, dk, tokens)
 		if err != nil {
 			log.Info("could not reconcile pull secret")
 

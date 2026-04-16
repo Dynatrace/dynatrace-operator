@@ -28,7 +28,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	logCtx, log := logd.NewFromContext(ctx, "extension-databases")
+	ctx, log := logd.NewFromContext(ctx, "extension-databases")
 
 	log.Debug("reconciling deployments")
 
@@ -40,14 +40,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		expectedDeploymentNames[i] = ext.GetDatabaseDatasourceName(dbSpec.ID)
 	}
 
-	if err := deleteDeployments(logCtx, r.client, r.dk, expectedDeploymentNames); err != nil {
+	if err := deleteDeployments(ctx, r.client, r.dk, expectedDeploymentNames); err != nil {
 		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	for i, dbSpec := range ext.Databases {
-		replicas, err := k8sdeployment.ResolveReplicas(logCtx, r.apiReader, client.ObjectKey{Name: expectedDeploymentNames[i], Namespace: r.dk.Namespace}, dbSpec.Replicas)
+		replicas, err := k8sdeployment.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: expectedDeploymentNames[i], Namespace: r.dk.Namespace}, dbSpec.Replicas)
 		if err != nil {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
@@ -76,7 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		changed, err := query.WithOwner(r.dk).CreateOrUpdate(logCtx, deploy)
+		changed, err := query.WithOwner(r.dk).CreateOrUpdate(ctx, deploy)
 		if err != nil {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 

@@ -35,7 +35,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	logCtx, log := logd.NewFromContext(ctx, "kspm-daemonset")
+	ctx, log := logd.NewFromContext(ctx, "kspm-daemonset")
 
 	if !dk.KSPM().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
@@ -44,7 +44,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 		defer meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 
-		err := r.daemonset.Delete(logCtx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}})
+		err := r.daemonset.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up KSPM daemonset")
 		}
@@ -57,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	updated, err := r.daemonset.WithOwner(dk).CreateOrUpdate(logCtx, ds)
+	updated, err := r.daemonset.WithOwner(dk).CreateOrUpdate(ctx, ds)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 

@@ -42,7 +42,7 @@ func NewReconciler(kubeClient client.Client, apiReader client.Reader) *Reconcile
 	}
 }
 func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube) error {
-	logCtx, log := logd.NewFromContext(ctx, "dynakube-istio")
+	ctx, log := logd.NewFromContext(ctx, "dynakube-istio")
 
 	log.Info("reconciling istio components for the Dynatrace API url")
 
@@ -52,7 +52,7 @@ func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube)
 
 	if !dk.Spec.EnableIstio {
 		if isIstioConfigured(dk, OperatorComponent) {
-			err := r.cleanupIstio(logCtx, dk, OperatorComponent)
+			err := r.cleanupIstio(ctx, dk, OperatorComponent)
 			if err != nil {
 				// We don't error out here to avoid stuck reconciliations in case cleanup fails
 				log.Error(err, "failed to cleanup the istio configuration", "component", OperatorComponent)
@@ -69,7 +69,7 @@ func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube)
 		return err
 	}
 
-	err = r.reconcileCommunicationHosts(logCtx, []CommunicationHost{apiCommunicationHost}, dk, OperatorComponent)
+	err = r.reconcileCommunicationHosts(ctx, []CommunicationHost{apiCommunicationHost}, dk, OperatorComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	}

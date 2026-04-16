@@ -30,25 +30,25 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	logCtx, log := logd.NewFromContext(ctx, "extension")
+	ctx, log := logd.NewFromContext(ctx, "extension")
 	log.Info("start reconciling extensions")
 
-	err := r.reconcileSecret(logCtx, dk)
+	err := r.reconcileSecret(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = r.reconcileService(logCtx, dk)
+	err = r.reconcileService(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	err = tls.NewReconciler(r.client, r.apiReader, dk).Reconcile(logCtx)
+	err = tls.NewReconciler(r.client, r.apiReader, dk).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = eec.NewReconciler(r.client, r.apiReader, dk).Reconcile(logCtx)
+	err = eec.NewReconciler(r.client, r.apiReader, dk).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
