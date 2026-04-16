@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
@@ -48,6 +49,24 @@ func TestReconcile(t *testing.T) {
 	t.Run("dynakube doesn't need app-injection => no error, long requeue", func(t *testing.T) {
 		dk := createDynaKubeNoCSI(t)
 		prov := createProvisioner(t, dk)
+
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, longRequeueDuration, result.RequeueAfter)
+
+		assert.False(t, areFsDirsCreated(t, prov, dk))
+	})
+
+	t.Run("migration mode (csiDriver=false in modules.json) => cleanup only, no install, long requeue", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := createDynaKubeWithImage(t)
+		prov := createProvisioner(t, dk)
+		// imageInstallerBuilder is intentionally NOT set — if it were called the test would panic
+		prov.imageInstallerBuilder = func(_ context.Context, _ *image.Properties) (installer.Installer, error) {
+			return nil, nil
+		}
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
