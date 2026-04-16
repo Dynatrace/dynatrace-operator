@@ -63,9 +63,9 @@ func TestReconcile(t *testing.T) {
 
 		dk := createDynaKubeWithImage(t)
 		prov := createProvisioner(t, dk)
-		// imageInstallerBuilder is intentionally NOT set — if it were called the test would panic
+		// imageInstallerBuilder is intentionally NOT set, if it were called the test would panic
 		prov.imageInstallerBuilder = func(_ context.Context, _ *image.Properties) (installer.Installer, error) {
-			return nil, nil
+			return nil, errors.New("imageInstallerBuilder should not be called in migration mode")
 		}
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
