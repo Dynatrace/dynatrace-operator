@@ -120,12 +120,6 @@ func TestWithHTTPClient(t *testing.T) {
 	assert.Same(t, existing, cfg.HTTPClient)
 }
 
-func TestWithTimeout(t *testing.T) {
-	cfg := &ConfigV2{}
-	require.NoError(t, WithTimeout(5*time.Second)(cfg))
-	assert.Equal(t, 5*time.Second, cfg.Timeout)
-}
-
 func TestWithProxy(t *testing.T) {
 	cfg := &ConfigV2{}
 	require.NoError(t, WithProxy("http://p.example.com", "no.proxy")(cfg))
@@ -212,7 +206,6 @@ func TestGetConfig(t *testing.T) {
 			WithHostGroup("hostgroup"),
 			WithBaseURL("https://aabb.test.com"),
 			WithUserAgentSuffix("useragent"),
-			WithTimeout(5*time.Second),
 			WithKeepAlive(true),
 		)
 
@@ -221,7 +214,6 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, "paastoken", c.PaasToken)
 		assert.Equal(t, "network", c.NetworkZone)
 		assert.Equal(t, "hostgroup", c.HostGroup)
-		assert.Equal(t, 5*time.Second, c.HTTPClient.Timeout)
 		assert.False(t, c.DisableKeepAlives)
 		assert.Equal(t, operatorversion.UserAgent()+" useragent", c.UserAgent)
 	})

@@ -185,15 +185,6 @@ func WithHTTPClient(httpClient *http.Client) OptionV2 {
 	}
 }
 
-// WithTimeout sets the request timeout
-func WithTimeout(timeout time.Duration) OptionV2 {
-	return func(c *ConfigV2) error {
-		c.Timeout = timeout
-
-		return nil
-	}
-}
-
 // WithProxy sets the proxy URL
 func WithProxy(proxyURL, noProxy string) OptionV2 {
 	return func(c *ConfigV2) error {
