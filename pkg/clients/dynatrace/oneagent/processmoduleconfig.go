@@ -183,7 +183,7 @@ func (c *Client) GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConf
 }
 
 func NewProcessModuleConfig(ctx context.Context, response []byte) (*ProcessModuleConfig, error) {
-	log := logd.FromContext(ctx)
+	_, log := logd.NewFromContext(ctx, "dtclient-oneagent")
 
 	resp := ProcessModuleConfig{}
 

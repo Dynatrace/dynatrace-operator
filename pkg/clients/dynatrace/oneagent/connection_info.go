@@ -22,7 +22,7 @@ type ConnectionInfo struct {
 }
 
 func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, "dtclient-oneagent")
 
 	var resp ConnectionInfo
 

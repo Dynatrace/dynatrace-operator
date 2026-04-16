@@ -51,7 +51,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 			}).
 			Return(err).Once()
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), processModuleConfigPath).Return(req).Once()
+		client.EXPECT().GET(anyCtx, processModuleConfigPath).Return(req).Once()
 
 		return NewClient(client, hostGroup, "")
 	}

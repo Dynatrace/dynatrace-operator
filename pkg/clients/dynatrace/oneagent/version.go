@@ -34,6 +34,8 @@ type GetParams struct {
 
 // Get gets the agent package for the given OS, installer type, flavor, arch and version.
 func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) error {
+	ctx, log := logd.NewFromContext(ctx, "dtclient-oneagent")
+
 	if len(args.OS) == 0 {
 		return errEmptyOS
 	}
@@ -63,6 +65,8 @@ func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) erro
 
 // GetLatest gets the latest agent package for the given OS, installer type, flavor and arch.
 func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer) error {
+	ctx, log := logd.NewFromContext(ctx, "dtclient-oneagent")
+
 	if len(args.OS) == 0 {
 		return errEmptyOS
 	}
@@ -125,7 +129,7 @@ func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, err
 }
 
 func (c *Client) GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, "dtclient-oneagent")
 
 	apiRequest := c.apiClient.GET(ctx, url).WithoutToken()
 
