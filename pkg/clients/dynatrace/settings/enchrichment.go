@@ -31,7 +31,7 @@ type ruleItemValue struct {
 
 // GetRules returns metadata enrichment rules with the number of settings objects and their values.
 func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID string) ([]metadataenrichment.Rule, error) {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, "dtclient-settings")
 	if kubeSystemUUID == "" {
 		return nil, errMissingKubeSystemUUID
 	}

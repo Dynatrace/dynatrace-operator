@@ -156,7 +156,8 @@ func NewClient(apiClient core.Client) Client {
 //
 // In case 0 settings are found, so no Kubernetes Cluster Monitored Entity exists, we return an empty object, without an error.
 func (c *ClientImpl) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error) {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, "dtclient-settings")
+
 	if kubeSystemUUID == "" {
 		return K8sClusterME{}, errMissingKubeSystemUUID
 	}
