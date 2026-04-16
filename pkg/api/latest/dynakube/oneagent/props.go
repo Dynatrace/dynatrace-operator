@@ -376,7 +376,7 @@ func (oa *OneAgent) GetHostPath() string {
 
 func (oa *OneAgent) GetResourceAttributes() map[string]string {
 	if oa.Spec == nil {
-		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, nil)
+		return oa.globalResourceAttributes
 	}
 
 	switch {
@@ -385,7 +385,7 @@ func (oa *OneAgent) GetResourceAttributes() map[string]string {
 	case oa.IsApplicationMonitoringMode():
 		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, oa.ApplicationMonitoring.AdditionalResourceAttributes)
 	default:
-		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, nil)
+		return oa.globalResourceAttributes
 	}
 }
 

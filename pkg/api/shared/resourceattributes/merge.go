@@ -9,7 +9,7 @@ func MergeResourceAttributes(base, override map[string]string) map[string]string
 		return nil
 	}
 
-	result := make(map[string]string, len(base)+len(override))
+	result := make(map[string]string)
 
 	maps.Copy(result, base)
 
