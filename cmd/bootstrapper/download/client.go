@@ -64,7 +64,7 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, err
 		return nil, err
 	}
 
-	options := config.toDTClientOptionsV2()
+	options := config.toDTClientOptions()
 
 	if len(certs) > 0 {
 		options = append(options, dynatrace.WithCerts(certs))

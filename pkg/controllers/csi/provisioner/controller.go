@@ -59,7 +59,7 @@ type OneAgentProvisioner struct {
 	apiReader  client.Reader
 	kubeClient client.Client
 
-	dynatraceClientBuilder dynatraceclient.BuilderV2
+	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
 	jobInstallerBuilder    jobInstallerBuilder
@@ -75,7 +75,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		apiReader:              mgr.GetAPIReader(),
 		kubeClient:             mgr.GetClient(),
 		path:                   path,
-		dynatraceClientBuilder: dynatraceclient.NewBuilderV2(mgr.GetAPIReader()),
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewURLInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
 		jobInstallerBuilder:    job.NewInstaller,

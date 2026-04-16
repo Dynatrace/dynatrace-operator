@@ -309,7 +309,7 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 }
 
 func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *dynatrace.Client) *Controller {
-	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
+	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDtcBuilder.EXPECT().SetDynakube(mock.MatchedBy(func(dynakube.DynaKube) bool { return true })).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.MatchedBy(func(token.Tokens) bool { return true })).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().Build(t.Context()).Return(dtClient, nil)

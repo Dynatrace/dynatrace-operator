@@ -82,7 +82,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		config:                 config,
 		operatorNamespace:      os.Getenv(k8senv.PodNamespace),
 		clusterID:              clusterID,
-		dynatraceClientBuilder: dynatraceclient.NewBuilderV2(apiReader),
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 
 		injectionReconcilerBuilder: injection.NewReconciler,
 
@@ -167,7 +167,7 @@ type Controller struct {
 	oneAgentReconciler           oneAgentReconciler
 	activeGateReconciler         activeGateReconciler
 
-	dynatraceClientBuilder dynatraceclient.BuilderV2
+	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
 
 	injectionReconcilerBuilder injection.ReconcilerBuilder

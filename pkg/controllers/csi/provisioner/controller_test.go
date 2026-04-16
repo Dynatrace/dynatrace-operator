@@ -411,10 +411,10 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 	}
 }
 
-func mockFailingDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
+func mockFailingDTClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
-	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
+	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)
@@ -423,10 +423,10 @@ func mockFailingDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
 	return mockDtcBuilder
 }
 
-func mockSuccessfulDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
+func mockSuccessfulDTClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
-	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
+	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)

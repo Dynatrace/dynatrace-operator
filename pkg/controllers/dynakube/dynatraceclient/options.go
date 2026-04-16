@@ -10,35 +10,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type optionsV2 struct {
+type options struct {
 	ctx  context.Context
 	Opts []dynatrace.Option
 }
 
-func newOptionsV2(ctx context.Context) *optionsV2 {
-	return &optionsV2{
+func newOptions(ctx context.Context) *options {
+	return &options{
 		Opts: []dynatrace.Option{},
 		ctx:  ctx,
 	}
 }
 
-func (opts *optionsV2) appendNetworkZone(networkZone string) {
+func (opts *options) appendNetworkZone(networkZone string) {
 	if networkZone != "" {
 		opts.Opts = append(opts.Opts, dynatrace.WithNetworkZone(networkZone))
 	}
 }
 
-func (opts *optionsV2) appendHostGroup(hostGroup string) {
+func (opts *options) appendHostGroup(hostGroup string) {
 	if hostGroup != "" {
 		opts.Opts = append(opts.Opts, dynatrace.WithHostGroup(hostGroup))
 	}
 }
 
-func (opts *optionsV2) appendCertCheck(skipCertCheck bool) {
+func (opts *options) appendCertCheck(skipCertCheck bool) {
 	opts.Opts = append(opts.Opts, dynatrace.WithSkipCertificateValidation(skipCertCheck))
 }
 
-func (opts *optionsV2) appendProxySettings(apiReader client.Reader, dk *dynakube.DynaKube) error {
+func (opts *options) appendProxySettings(apiReader client.Reader, dk *dynakube.DynaKube) error {
 	if dk == nil || !dk.HasProxy() {
 		return nil
 	}
@@ -53,7 +53,7 @@ func (opts *optionsV2) appendProxySettings(apiReader client.Reader, dk *dynakube
 	return nil
 }
 
-func (opts *optionsV2) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dynatrace.Option, error) {
+func (opts *options) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dynatrace.Option, error) {
 	var proxyOption dynatrace.Option
 
 	proxyURL, err := dk.Proxy(opts.ctx, apiReader)
@@ -66,7 +66,7 @@ func (opts *optionsV2) createProxyOption(apiReader client.Reader, dk *dynakube.D
 	return proxyOption, nil
 }
 
-func (opts *optionsV2) appendTrustedCerts(apiReader client.Reader, trustedCerts string, namespace string) error {
+func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts string, namespace string) error {
 	if trustedCerts != "" {
 		certs := &corev1.ConfigMap{}
 		if err := apiReader.Get(opts.ctx, client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {

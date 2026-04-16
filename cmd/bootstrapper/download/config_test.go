@@ -62,7 +62,7 @@ func TestToDTClientOptions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.title, func(t *testing.T) {
-			options := test.in.toDTClientOptionsV2()
+			options := test.in.toDTClientOptions()
 
 			compareDTOptions(t, test.out, options)
 		})

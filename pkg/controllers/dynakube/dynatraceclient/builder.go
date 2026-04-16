@@ -10,45 +10,45 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type BuilderV2 interface {
-	SetDynakube(dk dynakube.DynaKube) BuilderV2
-	SetTokens(tokens token.Tokens) BuilderV2
-	SetUserAgentSuffix(suffix string) BuilderV2
+type Builder interface {
+	SetDynakube(dk dynakube.DynaKube) Builder
+	SetTokens(tokens token.Tokens) Builder
+	SetUserAgentSuffix(suffix string) Builder
 	Build(ctx context.Context) (*dynatrace.Client, error)
 }
 
-type builderV2 struct {
+type builder struct {
 	apiReader       client.Reader
 	tokens          token.Tokens
 	dk              dynakube.DynaKube
 	userAgentSuffix string
 }
 
-func NewBuilderV2(apiReader client.Reader) BuilderV2 {
-	return builderV2{
+func NewBuilder(apiReader client.Reader) Builder {
+	return builder{
 		apiReader: apiReader,
 	}
 }
 
-func (dynatraceClientBuilder builderV2) SetDynakube(dk dynakube.DynaKube) BuilderV2 {
+func (dynatraceClientBuilder builder) SetDynakube(dk dynakube.DynaKube) Builder {
 	dynatraceClientBuilder.dk = dk
 
 	return dynatraceClientBuilder
 }
 
-func (dynatraceClientBuilder builderV2) SetTokens(tokens token.Tokens) BuilderV2 {
+func (dynatraceClientBuilder builder) SetTokens(tokens token.Tokens) Builder {
 	dynatraceClientBuilder.tokens = tokens
 
 	return dynatraceClientBuilder
 }
 
-func (dynatraceClientBuilder builderV2) SetUserAgentSuffix(suffx string) BuilderV2 {
+func (dynatraceClientBuilder builder) SetUserAgentSuffix(suffx string) Builder {
 	dynatraceClientBuilder.userAgentSuffix = suffx
 
 	return dynatraceClientBuilder
 }
 
-func (dynatraceClientBuilder builderV2) getTokens() token.Tokens {
+func (dynatraceClientBuilder builder) getTokens() token.Tokens {
 	if dynatraceClientBuilder.tokens == nil {
 		dynatraceClientBuilder.tokens = token.Tokens{}
 	}
@@ -57,7 +57,7 @@ func (dynatraceClientBuilder builderV2) getTokens() token.Tokens {
 }
 
 // Build creates a new Dynatrace client using the settings configured on the given instance.
-func (dynatraceClientBuilder builderV2) Build(ctx context.Context) (*dynatrace.Client, error) {
+func (dynatraceClientBuilder builder) Build(ctx context.Context) (*dynatrace.Client, error) {
 	namespace := dynatraceClientBuilder.dk.Namespace
 	apiReader := dynatraceClientBuilder.apiReader
 
@@ -65,7 +65,7 @@ func (dynatraceClientBuilder builderV2) Build(ctx context.Context) (*dynatrace.C
 		return nil, errors.New("url is empty")
 	}
 
-	opts := newOptionsV2(ctx)
+	opts := newOptions(ctx)
 	opts.appendCertCheck(dynatraceClientBuilder.dk.Spec.SkipCertCheck)
 	opts.appendNetworkZone(dynatraceClientBuilder.dk.Spec.NetworkZone)
 	opts.appendHostGroup(dynatraceClientBuilder.dk.OneAgent().GetHostGroup())
