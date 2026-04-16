@@ -53,6 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynatraceClient dynatrace.Cl
 	}
 
 	var setupErrors []error
+
 	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled() && !dk.OTLPExporterConfiguration().IsEnabled() {
 		defer r.unmap(ctx, dk)
 	} else {
