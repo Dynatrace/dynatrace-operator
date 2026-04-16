@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
@@ -33,6 +34,7 @@ type GetParams struct {
 
 // Get gets the agent package for the given OS, installer type, flavor, arch and version.
 func (c *ClientImpl) Get(ctx context.Context, args GetParams, writer io.Writer) error {
+	ctx, log := logd.NewFromContext(ctx, "dtclient-oneagent")
 	if len(args.OS) == 0 {
 		return errEmptyOS
 	}
@@ -62,6 +64,7 @@ func (c *ClientImpl) Get(ctx context.Context, args GetParams, writer io.Writer) 
 
 // GetLatest gets the latest agent package for the given OS, installer type, flavor and arch.
 func (c *ClientImpl) GetLatest(ctx context.Context, args GetParams, writer io.Writer) error {
+	ctx, log := logd.NewFromContext(ctx, "dtclient-oneagent")
 	if len(args.OS) == 0 {
 		return errEmptyOS
 	}

@@ -1,14 +1,18 @@
 package oneagent
 
 import (
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 const (
 	testCommunicationEndpoint = "https://tenant.dev.dynatracelabs.com:443"
@@ -46,7 +50,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 			}).
 			Return(err).Once()
 		coreClient := coremock.NewClient(t)
-		coreClient.EXPECT().GET(t.Context(), connectionInfoPath).Return(req).Once()
+		coreClient.EXPECT().GET(anyCtx, connectionInfoPath).Return(req).Once()
 
 		return NewClient(coreClient, "", networkZone)
 	}
