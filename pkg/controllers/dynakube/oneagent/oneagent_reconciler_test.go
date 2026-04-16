@@ -67,7 +67,7 @@ func TestReconcile(t *testing.T) {
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, dk, &dynatrace.ClientV2{}, createTokens())
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, createTokens())
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
@@ -93,7 +93,7 @@ func TestReconcile(t *testing.T) {
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, dk, &dynatrace.ClientV2{}, token.Tokens{})
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, token.Tokens{})
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
@@ -117,7 +117,7 @@ func TestReconcile(t *testing.T) {
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, dk, &dynatrace.ClientV2{}, token.Tokens{})
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, token.Tokens{})
 		require.NoError(t, err)
 	})
 
@@ -146,7 +146,7 @@ func TestReconcile(t *testing.T) {
 			versionReconciler:        createVersionReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, &dk, &dynatrace.ClientV2{}, createTokens())
+		err := reconciler.Reconcile(ctx, &dk, &dynatrace.Client{}, createTokens())
 		require.ErrorIs(t, err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError)
 	})
 
@@ -174,7 +174,7 @@ func TestReconcile(t *testing.T) {
 			versionReconciler:        versionReconciler,
 		}
 
-		err := reconciler.Reconcile(ctx, &dk, &dynatrace.ClientV2{}, token.Tokens{})
+		err := reconciler.Reconcile(ctx, &dk, &dynatrace.Client{}, token.Tokens{})
 		require.Error(t, err)
 	})
 }
@@ -206,7 +206,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	dk.Status.OneAgent.ConnectionInfo.TenantUUID = "test-tenant"
 
 	fakeClient := fake.NewClient()
-	dtClient := dynatrace.ClientV2{}
+	dtClient := dynatrace.Client{}
 
 	reconciler := &Reconciler{
 		client:                   fakeClient,
@@ -295,7 +295,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 		require.NoError(t, err)
 
-		err = reconciler.Reconcile(ctx, dk, &dynatrace.ClientV2{}, createTokens())
+		err = reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, createTokens())
 
 		require.NoError(t, err)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
@@ -327,7 +327,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 		require.NoError(t, err)
 
-		err = reconciler.Reconcile(ctx, dk, &dynatrace.ClientV2{}, createTokens())
+		err = reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, createTokens())
 
 		require.NoError(t, err)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
@@ -734,7 +734,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, dk, &dynatrace.ClientV2{}, createTokens())
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, createTokens())
 		require.NoError(t, err)
 
 		var actual corev1.ConfigMap

@@ -766,7 +766,7 @@ func createIstioReconcilerMock(t *testing.T) istioReconciler {
 	return rec
 }
 
-func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dynatrace.ClientV2 {
+func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dynatrace.Client {
 	t.Helper()
 
 	agClient := agclientmock.NewAPIClient(t)
@@ -775,5 +775,5 @@ func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dynatrace.Cl
 		agClient.EXPECT().GetAuthToken(anyCtx, testName).Return(&agclient.AuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil).Maybe()
 	}
 
-	return &dynatrace.ClientV2{ActiveGate: agClient}
+	return &dynatrace.Client{ActiveGate: agClient}
 }

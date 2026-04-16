@@ -289,7 +289,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		}, nil).Once()
 
 		mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
-		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.ClientV2{Token: mockedTokenClient})
+		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.Client{Token: mockedTokenClient})
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -373,7 +373,7 @@ func TestReconcileComponents(t *testing.T) {
 			oneAgentReconciler:         mockOneAgentReconciler,
 			activeGateReconciler:       mockActiveGateReconciler,
 		}
-		dtc := &dynatrace.ClientV2{Settings: &settings.Client{}}
+		dtc := &dynatrace.Client{Settings: &settings.Client{}}
 
 		var err error
 
@@ -401,7 +401,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockIstioReconciler := newMockIstioReconciler(t)
 		mockKSPMReconciler := newMockKspmReconciler(t)
 
-		dtc := &dynatrace.ClientV2{Settings: &settings.Client{}}
+		dtc := &dynatrace.Client{Settings: &settings.Client{}}
 
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtc, mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
@@ -450,7 +450,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		tokenclient.ScopeActiveGateTokenCreate,
 	}, nil)
 
-	dtc := &dynatrace.ClientV2{
+	dtc := &dynatrace.Client{
 		Settings: &settings.Client{},
 		Token:    mockedTokenClient,
 	}
@@ -554,7 +554,7 @@ func TestReconcileDynaKube(t *testing.T) {
 }
 
 func createInjectionReconcilerBuilder(reconciler controllers.Reconciler) injection.ReconcilerBuilder {
-	return func(client client.Client, apiReader client.Reader, dynatraceClient *dynatrace.ClientV2, dk *dynakube.DynaKube) controllers.Reconciler {
+	return func(client client.Client, apiReader client.Reader, dynatraceClient *dynatrace.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -676,7 +676,7 @@ func TestTokenConditions(t *testing.T) {
 		})
 
 		mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
-		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.ClientV2{Token: mockedTokenClient})
+		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.Client{Token: mockedTokenClient})
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -711,7 +711,7 @@ func TestTokenConditions(t *testing.T) {
 		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return([]string{}, nil)
 
 		mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
-		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.ClientV2{Token: mockedTokenClient})
+		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.Client{Token: mockedTokenClient})
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -905,7 +905,7 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes []string) *Control
 	mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(tokenScopes, nil)
 
 	fakeBuilder := dtbuildermock.NewBuilderV2(t)
-	mockDynatraceClientBuild(fakeBuilder, &dynatrace.ClientV2{Token: mockedTokenClient})
+	mockDynatraceClientBuild(fakeBuilder, &dynatrace.Client{Token: mockedTokenClient})
 
 	return &Controller{
 		client:                 fakeClient,
@@ -914,7 +914,7 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes []string) *Control
 	}
 }
 
-func mockDynatraceClientBuild(builder *dtbuildermock.BuilderV2, client *dynatrace.ClientV2) {
+func mockDynatraceClientBuild(builder *dtbuildermock.BuilderV2, client *dynatrace.Client) {
 	builder.EXPECT().SetDynakube(mock.AnythingOfType("dynakube.DynaKube")).Return(builder)
 	builder.EXPECT().SetTokens(mock.AnythingOfType("token.Tokens")).Return(builder)
 	builder.EXPECT().Build(anyCtx).Return(client, nil)

@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 		hostClient := hostclientmock.NewAPIClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", &core.HTTPError{StatusCode: 404})
 
-		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.ClientV2{HostEvent: hostClient})
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -153,7 +153,7 @@ func TestReconcile(t *testing.T) {
 			return e.EventType == hostevent.MarkedForTerminationEvent
 		})).Return(&core.HTTPError{StatusCode: 404}).Once()
 
-		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.ClientV2{HostEvent: hostClient})
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -240,7 +240,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
 		hostClient := hostclientmock.NewAPIClient(t)
-		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.ClientV2{HostEvent: hostClient})
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
@@ -262,7 +262,7 @@ func TestReconcile(t *testing.T) {
 		hostClient := hostclientmock.NewAPIClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", hostevent.EntityNotFoundError{IP: "1.2.3.4"})
 
-		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.ClientV2{HostEvent: hostClient})
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
@@ -308,7 +308,7 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 	}
 }
 
-func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *dynatrace.ClientV2) *Controller {
+func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *dynatrace.Client) *Controller {
 	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
 	mockDtcBuilder.EXPECT().SetDynakube(mock.MatchedBy(func(dynakube.DynaKube) bool { return true })).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.MatchedBy(func(token.Tokens) bool { return true })).Return(mockDtcBuilder)
@@ -324,14 +324,14 @@ func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *d
 	}
 }
 
-func createDTMockClient(t *testing.T, ip, host string) *dynatrace.ClientV2 {
+func createDTMockClient(t *testing.T, ip, host string) *dynatrace.Client {
 	hostClient := hostclientmock.NewAPIClient(t)
 	hostClient.EXPECT().GetEntityIDForIP(t.Context(), ip).Return(host, nil)
 	hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
 		return e.EventType == hostevent.MarkedForTerminationEvent
 	})).Return(nil)
 
-	return &dynatrace.ClientV2{HostEvent: hostClient}
+	return &dynatrace.Client{HostEvent: hostClient}
 }
 
 func reconcileAllNodes(t *testing.T, ctrl *Controller, fakeClient client.Client) {

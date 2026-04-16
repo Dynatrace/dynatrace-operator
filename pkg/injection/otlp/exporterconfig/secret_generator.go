@@ -20,13 +20,13 @@ import (
 // SecretGenerator manages the OTLP exporter secret secret generation for the user namespaces.
 type SecretGenerator struct {
 	client       client.Client
-	dtClient     *dynatrace.ClientV2
+	dtClient     *dynatrace.Client
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
 	secrets      k8ssecret.QueryObject
 }
 
-func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient *dynatrace.ClientV2) *SecretGenerator {
+func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient *dynatrace.Client) *SecretGenerator {
 	return &SecretGenerator{
 		client:       client,
 		dtClient:     dtClient,

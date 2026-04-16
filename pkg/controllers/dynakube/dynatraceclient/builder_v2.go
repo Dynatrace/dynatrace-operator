@@ -14,7 +14,7 @@ type BuilderV2 interface {
 	SetDynakube(dk dynakube.DynaKube) BuilderV2
 	SetTokens(tokens token.Tokens) BuilderV2
 	SetUserAgentSuffix(suffix string) BuilderV2
-	Build(ctx context.Context) (*dynatrace.ClientV2, error)
+	Build(ctx context.Context) (*dynatrace.Client, error)
 }
 
 type builderV2 struct {
@@ -57,7 +57,7 @@ func (dynatraceClientBuilder builderV2) getTokens() token.Tokens {
 }
 
 // Build creates a new Dynatrace client using the settings configured on the given instance.
-func (dynatraceClientBuilder builderV2) Build(ctx context.Context) (*dynatrace.ClientV2, error) {
+func (dynatraceClientBuilder builderV2) Build(ctx context.Context) (*dynatrace.Client, error) {
 	namespace := dynatraceClientBuilder.dk.Namespace
 	apiReader := dynatraceClientBuilder.apiReader
 

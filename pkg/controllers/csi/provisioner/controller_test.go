@@ -430,7 +430,7 @@ func mockSuccessfulDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
 	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(&dynatrace.ClientV2{}, nil)
+	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(&dynatrace.Client{}, nil)
 
 	return mockDtcBuilder
 }

@@ -24,7 +24,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-type ClientV2 struct {
+type Client struct {
 	Settings   settings.APIClient
 	ActiveGate activegate.APIClient
 	HostEvent  hostevent.APIClient
@@ -37,7 +37,7 @@ type OAuthClient struct {
 	EdgeConnect edgeconnect.APIClient
 }
 
-type ConfigV2 struct {
+type Config struct {
 	APIToken    string
 	PaasToken   string
 	NetworkZone string
@@ -53,11 +53,11 @@ type ConfigV2 struct {
 	DisableKeepAlives bool
 }
 
-// OptionV2 is a functional option for configuring the v2 client
-type OptionV2 func(*ConfigV2) error
+// Option is a functional option for configuring the v2 client
+type Option func(*Config) error
 
 // NewClientV2 creates a new Dynatrace V2 API client
-func NewClientV2(options ...OptionV2) (*ClientV2, error) {
+func NewClientV2(options ...Option) (*Client, error) {
 	config, err := getConfig(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get client v2 config")
@@ -83,7 +83,7 @@ func NewClientV2(options ...OptionV2) (*ClientV2, error) {
 		PaasToken:  config.PaasToken,
 	})
 
-	return &ClientV2{
+	return &Client{
 		Settings:   settings.NewClient(apiClient),
 		ActiveGate: activegate.NewClient(apiClient),
 		HostEvent:  hostevent.NewClient(apiClient, config.NetworkZone),
@@ -94,7 +94,7 @@ func NewClientV2(options ...OptionV2) (*ClientV2, error) {
 }
 
 // NewOAuthClient creates a new Dynatrace API OAuth client
-func NewOAuthClient(credentials clientcredentials.Config, options ...OptionV2) (*OAuthClient, error) {
+func NewOAuthClient(credentials clientcredentials.Config, options ...Option) (*OAuthClient, error) {
 	config, err := getConfig(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get oauth v2 config")
@@ -116,8 +116,8 @@ func NewOAuthClient(credentials clientcredentials.Config, options ...OptionV2) (
 }
 
 // WithAPIToken sets the API token
-func WithAPIToken(token string) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithAPIToken(token string) Option {
+	return func(c *Config) error {
 		c.APIToken = token
 
 		return nil
@@ -125,8 +125,8 @@ func WithAPIToken(token string) OptionV2 {
 }
 
 // WithPaasToken sets the PaaS token
-func WithPaasToken(token string) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithPaasToken(token string) Option {
+	return func(c *Config) error {
 		c.PaasToken = token
 
 		return nil
@@ -134,8 +134,8 @@ func WithPaasToken(token string) OptionV2 {
 }
 
 // WithNetworkZone sets the network zone
-func WithNetworkZone(networkZone string) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithNetworkZone(networkZone string) Option {
+	return func(c *Config) error {
 		c.NetworkZone = networkZone
 
 		return nil
@@ -143,8 +143,8 @@ func WithNetworkZone(networkZone string) OptionV2 {
 }
 
 // WithHostGroup sets the host group
-func WithHostGroup(hostGroup string) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithHostGroup(hostGroup string) Option {
+	return func(c *Config) error {
 		c.HostGroup = hostGroup
 
 		return nil
@@ -152,8 +152,8 @@ func WithHostGroup(hostGroup string) OptionV2 {
 }
 
 // WithBaseURL parses the URL and sets it
-func WithBaseURL(baseURL string) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithBaseURL(baseURL string) Option {
+	return func(c *Config) error {
 		parsedURL, err := url.Parse(baseURL)
 		if err != nil {
 			return errors.Wrap(err, "invalid base URL")
@@ -166,8 +166,8 @@ func WithBaseURL(baseURL string) OptionV2 {
 }
 
 // WithUserAgentSuffix appends a suffix (comment) to the default user agent.
-func WithUserAgentSuffix(suffix string) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithUserAgentSuffix(suffix string) Option {
+	return func(c *Config) error {
 		if suffix != "" {
 			c.UserAgent += " " + suffix
 		}
@@ -177,8 +177,8 @@ func WithUserAgentSuffix(suffix string) OptionV2 {
 }
 
 // WithHTTPClient sets a custom HTTP client
-func WithHTTPClient(httpClient *http.Client) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithHTTPClient(httpClient *http.Client) Option {
+	return func(c *Config) error {
 		c.HTTPClient = httpClient
 
 		return nil
@@ -186,8 +186,8 @@ func WithHTTPClient(httpClient *http.Client) OptionV2 {
 }
 
 // WithProxy sets the proxy URL
-func WithProxy(proxyURL, noProxy string) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithProxy(proxyURL, noProxy string) Option {
+	return func(c *Config) error {
 		c.Proxy = proxyURL
 		c.NoProxy = noProxy
 
@@ -196,8 +196,8 @@ func WithProxy(proxyURL, noProxy string) OptionV2 {
 }
 
 // WithTLSConfig sets custom TLS configuration
-func WithTLSConfig(tlsConfig *tls.Config) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithTLSConfig(tlsConfig *tls.Config) Option {
+	return func(c *Config) error {
 		c.TLSConfig = tlsConfig
 
 		return nil
@@ -205,8 +205,8 @@ func WithTLSConfig(tlsConfig *tls.Config) OptionV2 {
 }
 
 // WithKeepAlive enables or disables HTTP keep-alives.
-func WithKeepAlive(keepAlive bool) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithKeepAlive(keepAlive bool) Option {
+	return func(c *Config) error {
 		c.DisableKeepAlives = !keepAlive
 
 		return nil
@@ -214,8 +214,8 @@ func WithKeepAlive(keepAlive bool) OptionV2 {
 }
 
 // WithSkipCertificateValidation skips TLS certificate validation when enabled.
-func WithSkipCertificateValidation(skip bool) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithSkipCertificateValidation(skip bool) Option {
+	return func(c *Config) error {
 		if skip {
 			if c.TLSConfig == nil {
 				c.TLSConfig = &tls.Config{}
@@ -229,8 +229,8 @@ func WithSkipCertificateValidation(skip bool) OptionV2 {
 }
 
 // WithCerts appends custom root certificates to the system certificate pool.
-func WithCerts(certs []byte) OptionV2 {
-	return func(c *ConfigV2) error {
+func WithCerts(certs []byte) Option {
+	return func(c *Config) error {
 		if len(certs) == 0 {
 			return nil
 		}
@@ -254,8 +254,8 @@ func WithCerts(certs []byte) OptionV2 {
 	}
 }
 
-func getConfig(options ...OptionV2) (*ConfigV2, error) {
-	config := ConfigV2{
+func getConfig(options ...Option) (*Config, error) {
+	config := Config{
 		UserAgent: operatorversion.UserAgent(),
 		Timeout:   30 * time.Second,
 	}

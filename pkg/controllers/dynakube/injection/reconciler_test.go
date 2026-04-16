@@ -129,7 +129,7 @@ func TestReconciler(t *testing.T) {
 		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 		settingsClient := settingsmock.NewAPIClient(t)
 		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
-		dtClient := &dynatrace.ClientV2{
+		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient,
 			Version:  versionClient,
@@ -178,7 +178,7 @@ func TestReconciler(t *testing.T) {
 			dk,
 		)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient := &dynatrace.ClientV2{Settings: settingsClient}
+		dtClient := &dynatrace.Client{Settings: settingsClient}
 
 		rec := NewReconciler(clt, clt, dtClient, dk).(*Reconciler)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
@@ -230,7 +230,7 @@ func TestReconciler(t *testing.T) {
 
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient := &dynatrace.ClientV2{
+		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient}
 
@@ -403,7 +403,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
-		dtClient := &dynatrace.ClientV2{OneAgent: oneAgentClient}
+		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
 		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
@@ -471,7 +471,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
-		dtClient := &dynatrace.ClientV2{OneAgent: oneAgentClient}
+		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
 		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
@@ -558,7 +558,7 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 			autoTLSSecret,
 		)
 
-		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: &dynatrace.ClientV2{}}
+		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: &dynatrace.Client{}}
 
 		err := r.generateOTLPSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]})
 		require.NoError(t, err)

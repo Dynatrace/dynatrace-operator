@@ -174,7 +174,7 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) er
 	return nil
 }
 
-func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube.DynaKube) (*dynatrace.ClientV2, error) {
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube.DynaKube) (*dynatrace.Client, error) {
 	tokenReader := token.NewReader(provisioner.apiReader, &dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)

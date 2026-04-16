@@ -60,39 +60,39 @@ func TestNewOAuthClient(t *testing.T) {
 }
 
 func TestWithAPIToken(t *testing.T) {
-	cfg := &ConfigV2{}
+	cfg := &Config{}
 	require.NoError(t, WithAPIToken("token")(cfg))
 	assert.Equal(t, "token", cfg.APIToken)
 }
 
 func TestWithPaasToken(t *testing.T) {
-	cfg := &ConfigV2{}
+	cfg := &Config{}
 	require.NoError(t, WithPaasToken("paas")(cfg))
 	assert.Equal(t, "paas", cfg.PaasToken)
 }
 
 func TestWithNetworkZone(t *testing.T) {
-	cfg := &ConfigV2{}
+	cfg := &Config{}
 	require.NoError(t, WithNetworkZone("zone")(cfg))
 	assert.Equal(t, "zone", cfg.NetworkZone)
 }
 
 func TestWithHostGroup(t *testing.T) {
-	cfg := &ConfigV2{}
+	cfg := &Config{}
 	require.NoError(t, WithHostGroup("hg")(cfg))
 	assert.Equal(t, "hg", cfg.HostGroup)
 }
 
 func TestWithBaseURL(t *testing.T) {
 	t.Run("valid URL is parsed and stored", func(t *testing.T) {
-		cfg := &ConfigV2{}
+		cfg := &Config{}
 		require.NoError(t, WithBaseURL("https://aabb.test.com")(cfg))
 		require.NotNil(t, cfg.BaseURL)
 		assert.Equal(t, "https://aabb.test.com", cfg.BaseURL.String())
 	})
 
 	t.Run("invalid URL returns error", func(t *testing.T) {
-		cfg := &ConfigV2{}
+		cfg := &Config{}
 		err := WithBaseURL("://invalid-url")(cfg)
 		require.Error(t, err)
 		assert.Nil(t, cfg.BaseURL)
@@ -101,13 +101,13 @@ func TestWithBaseURL(t *testing.T) {
 
 func TestWithUserAgentSuffix(t *testing.T) {
 	t.Run("appends suffix when non-empty", func(t *testing.T) {
-		cfg := &ConfigV2{UserAgent: "agent"}
+		cfg := &Config{UserAgent: "agent"}
 		require.NoError(t, WithUserAgentSuffix("sfx")(cfg))
 		assert.Equal(t, "agent sfx", cfg.UserAgent)
 	})
 
 	t.Run("no change when suffix is empty", func(t *testing.T) {
-		cfg := &ConfigV2{UserAgent: "agent"}
+		cfg := &Config{UserAgent: "agent"}
 		require.NoError(t, WithUserAgentSuffix("")(cfg))
 		assert.Equal(t, "agent", cfg.UserAgent)
 	})
@@ -115,13 +115,13 @@ func TestWithUserAgentSuffix(t *testing.T) {
 
 func TestWithHTTPClient(t *testing.T) {
 	existing := &http.Client{Transport: &http.Transport{}}
-	cfg := &ConfigV2{}
+	cfg := &Config{}
 	require.NoError(t, WithHTTPClient(existing)(cfg))
 	assert.Same(t, existing, cfg.HTTPClient)
 }
 
 func TestWithProxy(t *testing.T) {
-	cfg := &ConfigV2{}
+	cfg := &Config{}
 	require.NoError(t, WithProxy("http://p.example.com", "no.proxy")(cfg))
 	assert.Equal(t, "http://p.example.com", cfg.Proxy)
 	assert.Equal(t, "no.proxy", cfg.NoProxy)
@@ -129,13 +129,13 @@ func TestWithProxy(t *testing.T) {
 
 func TestWithTLSConfig(t *testing.T) {
 	tlsCfg := &tls.Config{MinVersion: tls.VersionTLS13}
-	cfg := &ConfigV2{}
+	cfg := &Config{}
 	require.NoError(t, WithTLSConfig(tlsCfg)(cfg))
 	assert.Equal(t, tlsCfg, cfg.TLSConfig)
 }
 
 func TestWithKeepAlive(t *testing.T) {
-	cfg := &ConfigV2{}
+	cfg := &Config{}
 
 	require.NoError(t, WithKeepAlive(false)(cfg))
 	assert.True(t, cfg.DisableKeepAlives)
@@ -146,7 +146,7 @@ func TestWithKeepAlive(t *testing.T) {
 
 func TestWithSkipCertificateValidation(t *testing.T) {
 	t.Run("skip creates TLS config with InsecureSkipVerify", func(t *testing.T) {
-		cfg := &ConfigV2{}
+		cfg := &Config{}
 		require.NoError(t, WithSkipCertificateValidation(true)(cfg))
 		require.NotNil(t, cfg.TLSConfig)
 		assert.True(t, cfg.TLSConfig.InsecureSkipVerify)
@@ -154,14 +154,14 @@ func TestWithSkipCertificateValidation(t *testing.T) {
 
 	t.Run("skip with existing TLS config reuses it", func(t *testing.T) {
 		existing := &tls.Config{MinVersion: tls.VersionTLS12}
-		cfg := &ConfigV2{TLSConfig: existing}
+		cfg := &Config{TLSConfig: existing}
 		require.NoError(t, WithSkipCertificateValidation(true)(cfg))
 		assert.Same(t, existing, cfg.TLSConfig)
 		assert.True(t, cfg.TLSConfig.InsecureSkipVerify)
 	})
 
 	t.Run("no skip is a no-op", func(t *testing.T) {
-		cfg := &ConfigV2{}
+		cfg := &Config{}
 		require.NoError(t, WithSkipCertificateValidation(false)(cfg))
 		assert.Nil(t, cfg.TLSConfig)
 	})
@@ -169,20 +169,20 @@ func TestWithSkipCertificateValidation(t *testing.T) {
 
 func TestWithCerts(t *testing.T) {
 	t.Run("nil certs is a no-op", func(t *testing.T) {
-		cfg := &ConfigV2{}
+		cfg := &Config{}
 		require.NoError(t, WithCerts(nil)(cfg))
 		assert.Nil(t, cfg.TLSConfig)
 	})
 
 	t.Run("valid cert is set on the tls config", func(t *testing.T) {
-		cfg := &ConfigV2{}
+		cfg := &Config{}
 		require.NoError(t, WithCerts([]byte(customCA))(cfg))
 		assert.NotNil(t, cfg.TLSConfig)
 		assert.NotNil(t, cfg.TLSConfig.RootCAs)
 	})
 
 	t.Run("invalid PEM returns error", func(t *testing.T) {
-		cfg := &ConfigV2{}
+		cfg := &Config{}
 		err := WithCerts([]byte("not-a-valid-pem"))(cfg)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to append custom certs")

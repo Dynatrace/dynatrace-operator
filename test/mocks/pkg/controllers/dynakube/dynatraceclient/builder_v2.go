@@ -42,23 +42,23 @@ func (_m *BuilderV2) EXPECT() *BuilderV2_Expecter {
 }
 
 // Build provides a mock function for the type BuilderV2
-func (_mock *BuilderV2) Build(ctx context.Context) (*dynatrace.ClientV2, error) {
+func (_mock *BuilderV2) Build(ctx context.Context) (*dynatrace.Client, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
 	}
 
-	var r0 *dynatrace.ClientV2
+	var r0 *dynatrace.Client
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (*dynatrace.ClientV2, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (*dynatrace.Client, error)); ok {
 		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) *dynatrace.ClientV2); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) *dynatrace.Client); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*dynatrace.ClientV2)
+			r0 = ret.Get(0).(*dynatrace.Client)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -93,12 +93,12 @@ func (_c *BuilderV2_Build_Call) Run(run func(ctx context.Context)) *BuilderV2_Bu
 	return _c
 }
 
-func (_c *BuilderV2_Build_Call) Return(clientV2 *dynatrace.ClientV2, err error) *BuilderV2_Build_Call {
+func (_c *BuilderV2_Build_Call) Return(clientV2 *dynatrace.Client, err error) *BuilderV2_Build_Call {
 	_c.Call.Return(clientV2, err)
 	return _c
 }
 
-func (_c *BuilderV2_Build_Call) RunAndReturn(run func(ctx context.Context) (*dynatrace.ClientV2, error)) *BuilderV2_Build_Call {
+func (_c *BuilderV2_Build_Call) RunAndReturn(run func(ctx context.Context) (*dynatrace.Client, error)) *BuilderV2_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }

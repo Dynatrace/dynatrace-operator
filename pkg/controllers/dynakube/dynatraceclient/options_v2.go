@@ -12,12 +12,12 @@ import (
 
 type optionsV2 struct {
 	ctx  context.Context
-	Opts []dynatrace.OptionV2
+	Opts []dynatrace.Option
 }
 
 func newOptionsV2(ctx context.Context) *optionsV2 {
 	return &optionsV2{
-		Opts: []dynatrace.OptionV2{},
+		Opts: []dynatrace.Option{},
 		ctx:  ctx,
 	}
 }
@@ -53,8 +53,8 @@ func (opts *optionsV2) appendProxySettings(apiReader client.Reader, dk *dynakube
 	return nil
 }
 
-func (opts *optionsV2) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dynatrace.OptionV2, error) {
-	var proxyOption dynatrace.OptionV2
+func (opts *optionsV2) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dynatrace.Option, error) {
+	var proxyOption dynatrace.Option
 
 	proxyURL, err := dk.Proxy(opts.ctx, apiReader)
 	if err != nil {

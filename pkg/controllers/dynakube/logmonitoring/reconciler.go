@@ -43,7 +43,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtc *dynatrace.ClientV2, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtc *dynatrace.Client, dk *dynakube.DynaKube) error {
 	oaConnectionInfoReconciler := r.oneAgentConnectionInfoReconciler
 	if oaConnectionInfoReconciler == nil {
 		oaConnectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtc.OneAgent, dk)

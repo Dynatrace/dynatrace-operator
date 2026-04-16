@@ -34,13 +34,13 @@ type Reconciler struct {
 	versionReconciler         version.Reconciler
 	connectionInfoReconciler  controllers.Reconciler
 	enrichmentRulesReconciler controllers.Reconciler
-	dynatraceClient           *dynatrace.ClientV2
+	dynatraceClient           *dynatrace.Client
 }
 
 type ReconcilerBuilder func(
 	client client.Client,
 	apiReader client.Reader,
-	dynatraceClient *dynatrace.ClientV2,
+	dynatraceClient *dynatrace.Client,
 	dk *dynakube.DynaKube,
 ) controllers.Reconciler
 
@@ -48,7 +48,7 @@ type ReconcilerBuilder func(
 func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
-	dynatraceClient *dynatrace.ClientV2,
+	dynatraceClient *dynatrace.Client,
 	dk *dynakube.DynaKube,
 ) controllers.Reconciler {
 	return &Reconciler{

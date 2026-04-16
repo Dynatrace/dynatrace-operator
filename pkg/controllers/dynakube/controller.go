@@ -133,15 +133,15 @@ type dtSettingReconciler interface {
 }
 
 type logMonitoringReconciler interface {
-	Reconcile(ctx context.Context, dtc *dynatrace.ClientV2, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtc *dynatrace.Client, dk *dynakube.DynaKube) error
 }
 
 type oneAgentReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.ClientV2, tokens token.Tokens) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error
 }
 
 type activeGateReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.ClientV2, tokens token.Tokens) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error
 }
 
 type kspmReconciler interface {
@@ -320,7 +320,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 	return controller.reconcileComponents(ctx, dynatraceClient, dk)
 }
 
-func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.ClientV2, error) {
+func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)
@@ -355,7 +355,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient *dynatrace.ClientV2, dk *dynakube.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	var componentErrors []error
 
 	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.Settings, dk); err != nil {

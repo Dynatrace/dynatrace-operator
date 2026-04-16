@@ -24,8 +24,8 @@ type Config struct {
 	SkipCertCheck bool `json:"skipCertCheck"`
 }
 
-func (c Config) toDTClientOptionsV2() []dynatrace.OptionV2 {
-	var options []dynatrace.OptionV2
+func (c Config) toDTClientOptionsV2() []dynatrace.Option {
+	var options []dynatrace.Option
 
 	if c.APIToken != "" {
 		options = append(options, dynatrace.WithAPIToken(c.APIToken))
