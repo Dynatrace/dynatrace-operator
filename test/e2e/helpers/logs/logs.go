@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,11 +27,11 @@ func WriteOperatorLog(ctx context.Context, envConfig *envconf.Config, t *testing
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 	require.NoError(t, err)
 
-	err = k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{Name: "dynatrace-operator", Namespace: "dynatrace"}).ForEachPod(func(pod corev1.Pod) {
+	err = k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{Name: operator.DeploymentName, Namespace: operator.DefaultNamespace}).ForEachPod(func(pod corev1.Pod) {
 		err = copyLogStream(ctx, clientset, t.Output(), logParams{
 			namespace:     pod.Namespace,
 			podName:       pod.Name,
-			containerName: "operator",
+			containerName: operator.ContainerName,
 		})
 		require.NoError(t, err)
 	})
