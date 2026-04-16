@@ -47,13 +47,12 @@ func NewReconciler(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dynatraceClient dynatrace.Client, dk *dynakube.DynaKube) error {
-	var setupErrors []error
-
 	err := r.reconcileSubReconcilers(ctx, dynatraceClient, dk)
 	if err != nil {
-		setupErrors = append(setupErrors, err)
+		return err
 	}
 
+	var setupErrors []error
 	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled() && !dk.OTLPExporterConfiguration().IsEnabled() {
 		defer r.unmap(ctx, dk)
 	} else {
