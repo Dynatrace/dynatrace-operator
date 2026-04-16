@@ -86,7 +86,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 	}
 
 	latestAgentVersionUnixPaas, err := updater.versionClient.GetLatestAgentVersion(ctx,
-		installer.OsUnix, installer.TypePaaS)
+		installer.OSUnix, installer.TypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)

@@ -319,11 +319,11 @@ func (dtc *dynatraceClient) AsV2() *ClientV2 {
 		WithNetworkZone(dtc.networkZone),
 		WithHostGroup(dtc.hostGroup),
 		WithHTTPClient(dtc.httpClient),
+		WithTLSConfig(dtc.httpClient.Transport.(*http.Transport).TLSClientConfig),
 	)
 
 	// Placeholders to prevent deadcode elimination
 	// Will be used once the v1 HTTP client is no longer the default
-	_ = WithTLSConfig(nil)
 	_ = WithTimeout(0)
 
 	return v2

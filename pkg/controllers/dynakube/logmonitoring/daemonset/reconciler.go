@@ -94,7 +94,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		k8sdaemonset.SetPriorityClass(dk.LogMonitoring().Template().PriorityClassName),
 		k8sdaemonset.SetNodeSelector(dk.LogMonitoring().Template().NodeSelector),
 		k8sdaemonset.SetTolerations(dk.LogMonitoring().Template().Tolerations),
-		k8sdaemonset.SetPullSecret(dk.ImagePullSecretReferences()...),
+		k8sdaemonset.SetPullSecret(dk.CustomPullSecretReferences()...),
 		k8sdaemonset.SetUpdateStrategy(getUpdateStrategy(dk)),
 		k8sdaemonset.SetVolumes(getVolumes(dk.Name)),
 		k8sdaemonset.SetSecurityContext(buildPodSecurityContext()),

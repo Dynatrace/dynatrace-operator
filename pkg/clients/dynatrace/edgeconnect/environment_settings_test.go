@@ -31,7 +31,7 @@ var errTest = errors.New("test-error")
 func TestListEnvironmentSettings(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectGET(t, apiClient, request, settingsObjectsPath)
+		expectGET(t, apiClient, request, settingsObjectsPath, "")
 		request.EXPECT().WithQueryParams(qp).Return(request).Once()
 		request.EXPECT().Execute(new(environmentSettingsResponse)).Run(func(obj any) {
 			obj.(*environmentSettingsResponse).Items = []EnvironmentSetting{
@@ -47,7 +47,7 @@ func TestListEnvironmentSettings(t *testing.T) {
 
 	t.Run("Server response NOK", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectGET(t, apiClient, request, settingsObjectsPath)
+		expectGET(t, apiClient, request, settingsObjectsPath, "")
 		request.EXPECT().WithQueryParams(qp).Return(request).Once()
 		request.EXPECT().Execute(new(environmentSettingsResponse)).Return(errTest).Once()
 		got, err := mockClient.ListEnvironmentSettings(t.Context())
@@ -77,7 +77,7 @@ func TestCreateEnvironmentSetting(t *testing.T) {
 func TestUpdateEnvironmentSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectPUT(t, apiClient, request, settingsObjectsIDPath+testObjectID, testEnvironmentSetting)
+		expectPUT(t, apiClient, request, settingsObjectsPath, testObjectID, testEnvironmentSetting)
 		request.EXPECT().Execute(nil).Return(nil).Once()
 		err := mockClient.UpdateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestUpdateEnvironmentSetting(t *testing.T) {
 
 	t.Run("Server response NOK", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectPUT(t, apiClient, request, settingsObjectsIDPath+testObjectID, testEnvironmentSetting)
+		expectPUT(t, apiClient, request, settingsObjectsPath, testObjectID, testEnvironmentSetting)
 		request.EXPECT().Execute(nil).Return(errTest).Once()
 		err := mockClient.UpdateEnvironmentSetting(t.Context(), testEnvironmentSetting)
 		require.ErrorIs(t, err, errTest)
@@ -107,7 +107,7 @@ func TestUpdateEnvironmentSetting(t *testing.T) {
 func TestDeleteEnvironmentSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectDELETE(t, apiClient, request, settingsObjectsIDPath+testObjectID)
+		expectDELETE(t, apiClient, request, settingsObjectsPath, testObjectID)
 		request.EXPECT().Execute(nil).Return(nil).Once()
 		err := mockClient.DeleteEnvironmentSetting(t.Context(), testEnvironmentSetting.ObjectID)
 		require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestDeleteEnvironmentSetting(t *testing.T) {
 
 	t.Run("Server response NOK", func(t *testing.T) {
 		apiClient, request, mockClient := newTestSetup(t)
-		expectDELETE(t, apiClient, request, settingsObjectsIDPath+testObjectID)
+		expectDELETE(t, apiClient, request, settingsObjectsPath, testObjectID)
 		request.EXPECT().Execute(nil).Return(errTest).Once()
 		err := mockClient.DeleteEnvironmentSetting(t.Context(), testEnvironmentSetting.ObjectID)
 		require.ErrorIs(t, err, errTest)
