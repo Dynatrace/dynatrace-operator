@@ -113,7 +113,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		k8sstatefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
 		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
 		k8sstatefulset.SetRollingUpdateStrategyType(),
-		setImagePullSecrets(dk.ImagePullSecretReferences()),
+		setImagePullSecrets(dk.CustomPullSecretReferences()),
 		setVolumes(dk),
 	)
 	if err != nil {

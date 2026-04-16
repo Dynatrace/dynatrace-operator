@@ -165,9 +165,10 @@ func TestCustomPullSecret(t *testing.T) {
 
 	podSpecs := ds.Spec.Template.Spec
 	assert.NotNil(t, podSpecs)
-	assert.Len(t, podSpecs.ImagePullSecrets, 2)
-	assert.Equal(t, testDynakubeName+dynakube.PullSecretSuffix, podSpecs.ImagePullSecrets[0].Name)
-	assert.Equal(t, testName, podSpecs.ImagePullSecrets[1].Name)
+	require.Len(t, podSpecs.ImagePullSecrets, 2)
+
+	assert.Contains(t, podSpecs.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
+	assert.Contains(t, podSpecs.ImagePullSecrets, corev1.LocalObjectReference{Name: testName})
 }
 
 func TestResources(t *testing.T) {
@@ -844,7 +845,7 @@ func TestImagePullSecrets(t *testing.T) {
 		pullSecrets := dsBuilder.imagePullSecrets()
 
 		assert.Contains(t, pullSecrets, corev1.LocalObjectReference{
-			Name: testName + dynakube.PullSecretSuffix,
+			Name: dsBuilder.dk.TenantRegistryPullSecretName(),
 		})
 	})
 	t.Run("returns custom pull secret", func(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/stretchr/testify/assert"
@@ -199,6 +200,26 @@ func TestReconcileSpec(t *testing.T) {
 		deploy := getReconciledDeployment(t, fakeClient(), dk)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 5)
 		assert.Len(t, deploy.Spec.Template.Spec.Containers[0].VolumeMounts, 5)
+	})
+}
+
+func TestImagePullSecrets(t *testing.T) {
+	t.Run("custom pull secret is mounted, no tenant registry pull secret", func(t *testing.T) {
+		dk := getTestDynakube() // getTestDynakube sets CustomPullSecret = testPullSecret
+		deploy := getReconciledDeployment(t, fakeClient(), dk)
+
+		assert.Contains(t, deploy.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: testPullSecret})
+		assert.NotContains(t, deploy.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
+	})
+
+	t.Run("no pull secrets when no custom pull secret is set", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
+		dk := getTestDynakube()
+		dk.Spec.CustomPullSecret = ""
+		deploy := getReconciledDeployment(t, fakeClient(), dk)
+
+		assert.Empty(t, deploy.Spec.Template.Spec.ImagePullSecrets)
 	})
 }
 

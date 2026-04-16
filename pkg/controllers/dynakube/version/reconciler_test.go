@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
@@ -294,7 +293,7 @@ func createTestPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.Dy
 	return fakeClient.Create(t.Context(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dk.Namespace,
-			Name:      dk.Name + dtpullsecret.PullSecretSuffix,
+			Name:      dk.TenantRegistryPullSecretName(),
 		},
 		Data: map[string][]byte{
 			".dockerconfigjson": []byte("{}"),
