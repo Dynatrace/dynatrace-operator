@@ -61,15 +61,11 @@ func AddFlags(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().BoolVar(&areErrorsSuppressed, SuppressErrorsFlag, false, "(Optional) Always return exit code 0, even on error")
 
-	cmd.PersistentFlags().Lookup(SuppressErrorsFlag).NoOptDefVal = "true"
-
 	cmd.PersistentFlags().StringSliceVar(&technologies, TechnologiesFlag, []string{"all"}, "comma separated list of technologies that will be used to download the code modules image.")
 
 	cmd.PersistentFlags().StringVar(&flavor, FlavorFlag, arch.Flavor, "flavor of the code modules image.")
 
 	cmd.PersistentFlags().BoolVar(&needsMetadataEnrichment, MetadataEnrichmentFlag, false, "(Optional) Should the enrichment with metadata be performed.")
-
-	cmd.PersistentFlags().Lookup(MetadataEnrichmentFlag).NoOptDefVal = "true"
 
 	cmd.PersistentFlags().BoolVar(&enableAttributesDTKubernetes, EnableAttributesDTKubernetesFlag, true, "(Optional) Should the deprecated attributes dt.kubernetes be added to the metadata enrichment.")
 
