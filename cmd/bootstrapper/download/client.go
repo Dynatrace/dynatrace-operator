@@ -72,7 +72,7 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, err
 
 	options = append(options, dynatrace.WithBaseURL(config.URL))
 
-	client, err := dynatrace.NewClientV2(options...)
+	client, err := dynatrace.NewClient(options...)
 	if err != nil {
 		return nil, err
 	}

@@ -43,7 +43,7 @@ func TestNew(t *testing.T) {
 
 		require.NotNil(t, client.newInstaller)
 
-		dtClient, err := dynatrace.NewClientV2(dynatrace.WithBaseURL("url"), dynatrace.WithAPIToken("foo"), dynatrace.WithPaasToken("paas"))
+		dtClient, err := dynatrace.NewClient(dynatrace.WithBaseURL("url"), dynatrace.WithAPIToken("foo"), dynatrace.WithPaasToken("paas"))
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)
 

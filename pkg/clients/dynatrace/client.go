@@ -56,8 +56,8 @@ type Config struct {
 // Option is a functional option for configuring the v2 client
 type Option func(*Config) error
 
-// NewClientV2 creates a new Dynatrace V2 API client
-func NewClientV2(options ...Option) (*Client, error) {
+// NewClient creates a new Dynatrace V2 API client
+func NewClient(options ...Option) (*Client, error) {
 	config, err := getConfig(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get client v2 config")

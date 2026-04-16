@@ -14,9 +14,9 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-func TestNewClientV2(t *testing.T) {
+func TestNewClient(t *testing.T) {
 	t.Run("creates client with all sub-clients initialized", func(t *testing.T) {
-		client, err := NewClientV2(WithBaseURL("https://aabb.test.com/api"), WithAPIToken("foo"), WithPaasToken("bar"))
+		client, err := NewClient(WithBaseURL("https://aabb.test.com/api"), WithAPIToken("foo"), WithPaasToken("bar"))
 		require.NoError(t, err)
 		require.NotNil(t, client)
 		assert.NotNil(t, client.Settings)
@@ -28,12 +28,12 @@ func TestNewClientV2(t *testing.T) {
 	})
 
 	t.Run("returns error on invalid option", func(t *testing.T) {
-		_, err := NewClientV2(WithBaseURL("://invalid-url"))
+		_, err := NewClient(WithBaseURL("://invalid-url"))
 		require.Error(t, err)
 	})
 
 	t.Run("returns error on empty option", func(t *testing.T) {
-		_, err := NewClientV2(WithBaseURL(""))
+		_, err := NewClient(WithBaseURL(""))
 		require.Error(t, err)
 	})
 }

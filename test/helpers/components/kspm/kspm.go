@@ -19,7 +19,7 @@ import (
 )
 
 func BuildSettingsClient(secretConfig tenant.Secret) (dtsettings.APIClient, error) {
-	dtClient, err := dynatrace.NewClientV2(
+	dtClient, err := dynatrace.NewClient(
 		dynatrace.WithBaseURL(secretConfig.APIURL),
 		dynatrace.WithAPIToken(secretConfig.APIToken),
 		dynatrace.WithPaasToken(""),
