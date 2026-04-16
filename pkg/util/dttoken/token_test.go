@@ -49,3 +49,10 @@ func Test_generateRandom(t *testing.T) {
 		require.Len(t, r, 32)
 	})
 }
+
+func TestIsPlatform(t *testing.T) {
+	token, _ := New("dt0c1")
+	assert.False(t, IsPlatform(token.String()))
+	token, _ = New("dt0s1")
+	assert.True(t, IsPlatform(token.String()))
+}

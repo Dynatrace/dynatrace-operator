@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -103,5 +104,47 @@ func testVerifyTokens(t *testing.T) {
 		})
 
 		require.NoError(t, err)
+	})
+}
+
+func TestHasPlatformToken(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dynakubeName,
+			Namespace: dynatraceNamespace,
+		},
+	}
+
+	t.Run("no secret", func(t *testing.T) {
+		_, err := NewReader(fake.NewClient(), dk).HasPlatformToken(t.Context())
+		assert.Error(t, err)
+	})
+
+	t.Run("no apiToken", func(t *testing.T) {
+		secret, err := k8ssecret.Build(dk, "dynakube", nil)
+		require.NoError(t, err)
+		hasPlatform, err := NewReader(fake.NewClient(secret), dk).HasPlatformToken(t.Context())
+		require.NoError(t, err)
+		assert.False(t, hasPlatform)
+	})
+
+	t.Run("no platform token", func(t *testing.T) {
+		secret, err := k8ssecret.Build(dk, "dynakube", map[string][]byte{
+			APIKey: []byte("legacy token"),
+		})
+		require.NoError(t, err)
+		hasPlatform, err := NewReader(fake.NewClient(secret), dk).HasPlatformToken(t.Context())
+		require.NoError(t, err)
+		assert.False(t, hasPlatform)
+	})
+
+	t.Run("platform token", func(t *testing.T) {
+		secret, err := k8ssecret.Build(dk, "dynakube", map[string][]byte{
+			APIKey: []byte(dttoken.PlatformPrefix + "legacy token"),
+		})
+		require.NoError(t, err)
+		hasPlatform, err := NewReader(fake.NewClient(secret), dk).HasPlatformToken(t.Context())
+		require.NoError(t, err)
+		assert.True(t, hasPlatform)
 	})
 }
