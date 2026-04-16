@@ -31,6 +31,11 @@ func TestNewClientV2(t *testing.T) {
 		_, err := NewClientV2(WithBaseURL("://invalid-url"))
 		require.Error(t, err)
 	})
+
+	t.Run("returns error on empty option", func(t *testing.T) {
+		_, err := NewClientV2(WithBaseURL(""))
+		require.Error(t, err)
+	})
 }
 
 func TestNewOAuthClient(t *testing.T) {

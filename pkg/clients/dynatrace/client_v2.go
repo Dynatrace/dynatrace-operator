@@ -63,6 +63,10 @@ func NewClientV2(options ...OptionV2) (*ClientV2, error) {
 		return nil, errors.Wrap(err, "could not get client v2 config")
 	}
 
+	if len(config.BaseURL.String()) == 0 {
+		return nil, errors.New("base URL is empty")
+	}
+
 	if len(config.APIToken) == 0 && len(config.PaasToken) == 0 {
 		return nil, errors.New("tokens are empty")
 	}
