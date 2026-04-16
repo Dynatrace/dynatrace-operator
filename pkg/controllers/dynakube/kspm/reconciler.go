@@ -27,23 +27,23 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.APIClient, dk *dynakube.DynaKube) error {
-	logCtx, log := logd.NewFromContext(ctx, "kspm")
+	ctx, log := logd.NewFromContext(ctx, "kspm")
 
-	err := r.tokenReconciler.Reconcile(logCtx, dk)
+	err := r.tokenReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM Secret")
 
 		return err
 	}
 
-	err = r.settingsReconciler.Reconcile(logCtx, dtClient, dk)
+	err = r.settingsReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
 		log.Info("failed to reconcile KSPM Settings")
 
 		return err
 	}
 
-	err = r.daemonSetReconciler.Reconcile(logCtx, dk)
+	err = r.daemonSetReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM DaemonSet")
 

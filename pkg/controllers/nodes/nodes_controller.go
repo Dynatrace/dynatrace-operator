@@ -69,7 +69,7 @@ func NewControllerFromClient(clt client.Client) *Controller {
 }
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
-	logCtx, log := logd.NewFromContext(ctx, "nodes")
+	ctx, log := logd.NewFromContext(ctx, "nodes")
 
 	nodeName := request.Name
 	dk, err := controller.determineDynakubeForNode(nodeName)
@@ -80,27 +80,27 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	nodeCache, err := controller.getCache(logCtx)
+	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	var node corev1.Node
 
-	err = controller.apiReader.Get(logCtx, client.ObjectKey{Name: nodeName}, &node)
+	err = controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node)
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, err
 		}
 
-		err := controller.reconcileNodeDeletion(logCtx, nodeCache, nodeName)
+		err := controller.reconcileNodeDeletion(ctx, nodeCache, nodeName)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
-		return reconcile.Result{}, nodeCache.Store(logCtx, controller.client)
+		return reconcile.Result{}, nodeCache.Store(ctx, controller.client)
 	} else if dk != nil { // Node is found in the cluster, add or update to cache
-		err := controller.reconcileNodeUpdate(logCtx, dk, nodeCache, &node)
+		err := controller.reconcileNodeUpdate(ctx, dk, nodeCache, &node)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -108,14 +108,14 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	// check node cache for outdated nodes and remove them, to keep cache clean
 	if nodeCache.IsOutdated(controller.timeProvider.Now().UTC()) {
-		if err := controller.pruneCache(logCtx, nodeCache); err != nil {
+		if err := controller.pruneCache(ctx, nodeCache); err != nil {
 			return reconcile.Result{}, err
 		}
 
 		nodeCache.UpdateTimestamp(controller.timeProvider.Now().UTC())
 	}
 
-	return reconcile.Result{}, nodeCache.Store(logCtx, controller.client)
+	return reconcile.Result{}, nodeCache.Store(ctx, controller.client)
 }
 
 func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynakube.DynaKube, nodeCache *cache.Cache, node *corev1.Node) error {

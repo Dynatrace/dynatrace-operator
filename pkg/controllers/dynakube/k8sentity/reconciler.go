@@ -40,7 +40,7 @@ func NewReconciler() *Reconciler {
 // On first run the MEID may not yet exist; after creating the settings object the MEID is immediately
 // refreshed so that subsequent reconcilers do not need to wait for the next cycle.
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
-	logCtx, log := logd.NewFromContext(ctx, "automatic-api-monitoring")
+	ctx, log := logd.NewFromContext(ctx, "automatic-api-monitoring")
 	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead) {
 		msg := token.ScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
@@ -53,7 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient,
 		return errMissingKubeSystemUUID
 	}
 
-	if err := r.reconcileMEID(logCtx, dtClient, dk); err != nil {
+	if err := r.reconcileMEID(ctx, dtClient, dk); err != nil {
 		return err
 	}
 
@@ -68,7 +68,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient,
 		return nil
 	}
 
-	objectID, err := r.createK8sConnectionSettingIfAbsent(logCtx, dtClient, dk)
+	objectID, err := r.createK8sConnectionSettingIfAbsent(ctx, dtClient, dk)
 	if err != nil {
 		return err
 	}
@@ -76,12 +76,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient,
 	if objectID != "" {
 		// On first run the monitored entity only becomes available after the settings object is created.
 		// Refresh the MEID immediately to avoid requiring an extra reconciliation cycle.
-		if err := r.refreshMEIDWithRetry(logCtx, dtClient, dk); err != nil {
+		if err := r.refreshMEIDWithRetry(ctx, dtClient, dk); err != nil {
 			return err
 		}
 	}
 
-	return r.createK8sAppSettingIfAbsent(logCtx, dtClient, dk)
+	return r.createK8sAppSettingIfAbsent(ctx, dtClient, dk)
 }
 
 // reconcileMEID fetches and caches the Kubernetes Cluster Monitored Entity ID in the DynaKube status.

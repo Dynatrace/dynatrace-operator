@@ -43,14 +43,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtClient oneagent
 var NoOneAgentCommunicationEndpointsError = errors.New("no communication endpoints for OneAgent are available")
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	logCtx, log := logd.NewFromContext(ctx, "oneagent-connectioninfo")
+	ctx, log := logd.NewFromContext(ctx, "oneagent-connectioninfo")
 
 	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.OneAgent().IsDaemonsetRequired() && !r.dk.LogMonitoring().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), oaConnectionInfoConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		err := r.secrets.Delete(logCtx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}})
+		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up OneAgent tenant-secret")
 		}
@@ -63,7 +63,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	oldStatus := r.dk.Status.DeepCopy()
 
-	err := r.reconcileConnectionInfo(logCtx)
+	err := r.reconcileConnectionInfo(ctx)
 	if err != nil {
 		return err
 	}
