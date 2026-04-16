@@ -92,7 +92,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		k8sdaemonset.SetPriorityClass(dk.KSPM().PriorityClassName),
 		k8sdaemonset.SetNodeSelector(dk.KSPM().NodeSelector),
 		k8sdaemonset.SetTolerations(dk.KSPM().Tolerations),
-		k8sdaemonset.SetPullSecret(dk.ImagePullSecretReferences()...),
+		k8sdaemonset.SetPullSecret(dk.CustomPullSecretReferences()...),
 		k8sdaemonset.SetUpdateStrategy(r.getUpdateStrategy(dk)),
 		k8sdaemonset.SetVolumes(getVolumes(*dk)),
 		k8sdaemonset.SetAutomountServiceAccountToken(false),
