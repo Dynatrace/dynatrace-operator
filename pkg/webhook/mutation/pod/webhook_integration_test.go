@@ -18,9 +18,9 @@ import (
 	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -481,7 +481,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				require.NotNil(t, dtTokenEnv.ValueFrom)
 				require.NotNil(t, dtTokenEnv.ValueFrom.SecretKeyRef)
 				assert.Equal(t, consts.OTLPExporterSecretName, dtTokenEnv.ValueFrom.SecretKeyRef.Name)
-				assert.Equal(t, dynatrace.DataIngestToken, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
+				assert.Equal(t, token.DataIngestKey, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
 
 				// Headers env vars should reference DT_API_TOKEN via authorization header literal
 				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPMetricsHeadersEnv, Value: exporter.OTLPAuthorizationHeader})
@@ -622,7 +622,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		require.NotNil(t, dtTokenEnv.ValueFrom)
 		require.NotNil(t, dtTokenEnv.ValueFrom.SecretKeyRef)
 		assert.Equal(t, consts.OTLPExporterSecretName, dtTokenEnv.ValueFrom.SecretKeyRef.Name)
-		assert.Equal(t, dynatrace.DataIngestToken, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
+		assert.Equal(t, token.DataIngestKey, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
 
 		raEnv := k8senv.Find(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
 		require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
@@ -721,8 +721,8 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dynatrace.APIToken:        []byte(dataIngestToken),
-				dynatrace.DataIngestToken: []byte(dataIngestToken),
+				token.APIKey:        []byte(dataIngestToken),
+				token.DataIngestKey: []byte(dataIngestToken),
 			},
 		}
 		createObject(t, clt, apiTokenSecret)
@@ -753,7 +753,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		require.NotNil(t, dtTokenEnv.ValueFrom)
 		require.NotNil(t, dtTokenEnv.ValueFrom.SecretKeyRef)
 		assert.Equal(t, consts.OTLPExporterSecretName, dtTokenEnv.ValueFrom.SecretKeyRef.Name)
-		assert.Equal(t, dynatrace.DataIngestToken, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
+		assert.Equal(t, token.DataIngestKey, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
 
 		expectedService := fmt.Sprintf("%s-%s.%s", dk.Name, agconsts.MultiActiveGateName, testNamespace)
 		expectedBase := fmt.Sprintf("https://%s/e/%s/api/v2/otlp", expectedService, tenantUUID)
@@ -812,8 +812,8 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dynatrace.APIToken:        []byte(dataIngestToken),
-				dynatrace.DataIngestToken: []byte(dataIngestToken),
+				token.APIKey:        []byte(dataIngestToken),
+				token.DataIngestKey: []byte(dataIngestToken),
 			},
 		}
 		createObject(t, clt, apiTokenSecret)
@@ -1146,8 +1146,8 @@ func getOTLPExporterSecret(namespace string) *corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			dynatrace.APIToken:        []byte(dataIngestToken),
-			dynatrace.DataIngestToken: []byte(dataIngestToken),
+			token.APIKey:        []byte(dataIngestToken),
+			token.DataIngestKey: []byte(dataIngestToken),
 		},
 	}
 }

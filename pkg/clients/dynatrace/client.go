@@ -12,12 +12,6 @@ import (
 	"golang.org/x/net/http/httpproxy"
 )
 
-const (
-	PaasToken       = "paasToken"
-	APIToken        = "apiToken"
-	DataIngestToken = "dataIngestToken"
-)
-
 // Client is the interface for the Dynatrace REST API client.
 type Client interface {
 	// AsV2 is a temporary adapter to gradually migrate to the v2 client.

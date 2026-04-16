@@ -6,8 +6,10 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,6 +23,8 @@ const (
 )
 
 func TestNew(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("Create new edgeconnect deployment", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
@@ -70,6 +74,8 @@ func Test_buildAppLabels(t *testing.T) {
 }
 
 func TestLabels(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	testObjectMetaLabelKey := "test-om-label-key"
 	testObjectMetaValue := "test-om-label-value"
 
@@ -143,6 +149,8 @@ func TestLabels(t *testing.T) {
 }
 
 func TestAnnotations(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	testObjectMetaAnnotationKey := "test-om-annotation-key"
 	testObjectMetaAnnotationValue := "test-om-annotation-value"
 
@@ -196,6 +204,54 @@ func TestAnnotations(t *testing.T) {
 
 		assert.NotContains(t, deployment.Annotations, testAnnotationKey)
 		assert.NotContains(t, deployment.Annotations, testObjectMetaAnnotationKey)
+	})
+}
+
+func TestAppArmor(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
+	t.Run("apparmor is untouched in 1.30", func(t *testing.T) {
+		version.DisableCacheForTest(30)
+
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnect.EdgeConnectSpec{
+				Annotations: map[string]string{
+					corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + consts.EdgeConnectContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+				},
+			},
+		}
+
+		deployment := New(ec)
+
+		assert.Contains(t, deployment.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+consts.EdgeConnectContainerName)
+		require.Len(t, deployment.Spec.Template.Spec.Containers, 1)
+		assert.Nil(t, deployment.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+	})
+
+	t.Run("apparmor is migrated in 1.31", func(t *testing.T) {
+		version.DisableCacheForTest(31)
+
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnect.EdgeConnectSpec{
+				Annotations: map[string]string{
+					corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + consts.EdgeConnectContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+				},
+			},
+		}
+
+		deployment := New(ec)
+
+		assert.NotContains(t, deployment.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+consts.EdgeConnectContainerName)
+		require.Len(t, deployment.Spec.Template.Spec.Containers, 1)
+		assert.NotNil(t, deployment.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
 	})
 }
 

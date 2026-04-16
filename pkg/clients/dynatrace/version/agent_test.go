@@ -12,14 +12,11 @@ import (
 )
 
 func TestGetLatestAgentVersion(t *testing.T) {
-	setupMockedClient := func(t *testing.T, os string, installerType string, queryParams map[string]string, err error) *Client {
+	setupMockedClient := func(t *testing.T, os, installerType string, queryParams map[string]string, err error) *Client {
 		req := coremock.NewAPIRequest(t)
-		req.EXPECT().
-			WithQueryParams(queryParams).
-			Return(req).Once()
-		req.EXPECT().
-			WithPaasToken().
-			Return(req).Once()
+		req.EXPECT().WithPath([]string{os, installerType, "latest/metainfo"}).Return(req).Once()
+		req.EXPECT().WithQueryParams(queryParams).Return(req).Once()
+		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().
 			Execute(new(struct {
 				LatestAgentVersion string `json:"latestAgentVersion"`
@@ -32,7 +29,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 			}).
 			Return(err).Once()
 		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getLatestAgentVersionPath(os, installerType)).Return(req).Once()
+		client.EXPECT().GET(t.Context(), "/v1/deployment/installer/agent").Return(req).Once()
 
 		return NewClient(client)
 	}
@@ -42,9 +39,9 @@ func TestGetLatestAgentVersion(t *testing.T) {
 			"bitness": "64",
 			"flavor":  arch.FlavorDefault,
 		}
-		client := setupMockedClient(t, installer.OsUnix, installer.TypeDefault, queryParams, nil)
+		client := setupMockedClient(t, installer.OSUnix, installer.TypeDefault, queryParams, nil)
 
-		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypeDefault)
+		version, err := client.GetLatestAgentVersion(t.Context(), installer.OSUnix, installer.TypeDefault)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
@@ -55,9 +52,9 @@ func TestGetLatestAgentVersion(t *testing.T) {
 			"flavor":  arch.Flavor,
 			"arch":    arch.Arch,
 		}
-		client := setupMockedClient(t, installer.OsUnix, installer.TypePaaS, queryParams, nil)
+		client := setupMockedClient(t, installer.OSUnix, installer.TypePaaS, queryParams, nil)
 
-		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypePaaS)
+		version, err := client.GetLatestAgentVersion(t.Context(), installer.OSUnix, installer.TypePaaS)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
@@ -66,14 +63,14 @@ func TestGetLatestAgentVersion(t *testing.T) {
 		client := NewClient(nil)
 
 		_, err := client.GetLatestAgentVersion(t.Context(), "", installer.TypeDefault)
-		assert.Error(t, err, "os is empty")
+		assert.ErrorIs(t, err, errEmptyOSOrInstallerType)
 	})
 
 	t.Run("empty installerType", func(t *testing.T) {
 		client := NewClient(nil)
 
-		_, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, "")
-		assert.Error(t, err, "os is empty")
+		_, err := client.GetLatestAgentVersion(t.Context(), installer.OSUnix, "")
+		assert.ErrorIs(t, err, errEmptyOSOrInstallerType)
 	})
 
 	t.Run("server error", func(t *testing.T) {
@@ -82,9 +79,9 @@ func TestGetLatestAgentVersion(t *testing.T) {
 			"flavor":  arch.FlavorDefault,
 		}
 		expectErr := errors.New("boom")
-		client := setupMockedClient(t, installer.OsUnix, installer.TypeDefault, queryParams, expectErr)
+		client := setupMockedClient(t, installer.OSUnix, installer.TypeDefault, queryParams, expectErr)
 
-		_, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypeDefault)
+		_, err := client.GetLatestAgentVersion(t.Context(), installer.OSUnix, installer.TypeDefault)
 		assert.ErrorIs(t, err, expectErr)
 	})
 }

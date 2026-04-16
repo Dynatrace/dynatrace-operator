@@ -75,7 +75,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 		}
 
 		props := &url.Properties{
-			OS:            installerclient.OsUnix,
+			OS:            installerclient.OSUnix,
 			Type:          installerclient.TypePaaS,
 			Arch:          arch.Arch,
 			Flavor:        arch.Flavor,

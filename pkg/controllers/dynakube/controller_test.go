@@ -243,7 +243,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 				Namespace: dk.Namespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte("this is a token"),
+				token.APIKey: []byte("this is a token"),
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
@@ -275,7 +275,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 				Namespace: dk.Namespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte("this is a token"),
+				token.APIKey: []byte("this is a token"),
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
@@ -669,7 +669,7 @@ func TestTokenConditions(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte(testAPIToken),
+				token.APIKey: []byte(testAPIToken),
 			},
 		})
 
@@ -711,7 +711,7 @@ func TestTokenConditions(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte(testAPIToken),
+				token.APIKey: []byte(testAPIToken),
 			},
 		})
 
@@ -960,7 +960,7 @@ func createAPISecret() *corev1.Secret {
 			Namespace: testNamespace,
 		},
 		Data: map[string][]byte{
-			dtclient.APIToken: []byte(testAPIToken),
+			token.APIKey: []byte(testAPIToken),
 		},
 	}
 }

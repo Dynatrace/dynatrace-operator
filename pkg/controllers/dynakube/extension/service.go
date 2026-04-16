@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -33,12 +32,8 @@ func (r *Reconciler) reconcileService(ctx context.Context, dk *dynakube.DynaKube
 			log.Error(err, "failed to clean up extension service")
 		}
 
-		r.deleteLegacyService(ctx, dk)
-
 		return nil
 	}
-
-	defer r.deleteLegacyService(ctx, dk)
 
 	return r.createOrUpdateService(ctx, dk)
 }
@@ -84,16 +79,4 @@ func (r *Reconciler) buildService(dk *dynakube.DynaKube) (*corev1.Service, error
 		k8sservice.SetLabels(coreLabels.BuildLabels()),
 		k8sservice.SetType(corev1.ServiceTypeClusterIP),
 	)
-}
-
-// TODO: Remove as part of DAQ-18375
-func (r *Reconciler) deleteLegacyService(ctx context.Context, dk *dynakube.DynaKube) {
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.Name + "-extensions-controller",
-			Namespace: dk.Namespace,
-		},
-	}
-
-	_ = r.client.Delete(ctx, svc)
 }

@@ -24,15 +24,15 @@ const (
 
 var (
 	flavorURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro+"a", arch.Arch)
+		installer.OSUnix, installer.TypePaaS, arch.FlavorMultidistro+"a", arch.Arch)
 	flavourURIResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null}]}}`
 
 	archURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, arch.Arch+"a")
+		installer.OSUnix, installer.TypePaaS, arch.FlavorMultidistro, arch.Arch+"a")
 	archURIResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
 
 	flavorArchURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro+"a", arch.Arch+"a")
+		installer.OSUnix, installer.TypePaaS, arch.FlavorMultidistro+"a", arch.Arch+"a")
 	flavourArchURIResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null},{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
 
 	oaLatestMetainfoURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",

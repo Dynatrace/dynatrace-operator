@@ -2,6 +2,7 @@ package eec
 
 import (
 	"context"
+	"maps"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -14,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -127,25 +129,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	return nil
 }
 
-// TODO: Remove as part of DAQ-18375
-func (r *reconciler) deleteLegacyStatefulset(ctx context.Context) {
-	sts := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.dk.Name + "-extensions-controller",
-			Namespace: r.dk.Namespace,
-		},
-	}
-
-	_ = r.client.Delete(ctx, sts)
-}
-
 func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
-	templateAnnotations := map[string]string{}
-
-	if r.dk.Spec.Templates.ExtensionExecutionController.Annotations != nil {
-		templateAnnotations = r.dk.Spec.Templates.ExtensionExecutionController.Annotations
-	}
-
 	secrets := k8ssecret.Query(r.client, r.client, log)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
@@ -155,6 +139,9 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 	if err != nil {
 		return nil, err
 	}
+
+	templateAnnotations := make(map[string]string)
+	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(r.dk.Spec.Templates.ExtensionExecutionController.Annotations, containerName))
 
 	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
 	if err != nil {
@@ -199,7 +186,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 			TimeoutSeconds:      2,
 			SuccessThreshold:    1,
 		},
-		SecurityContext: buildSecurityContext(),
+		SecurityContext: buildSecurityContext(dk),
 		Ports: []corev1.ContainerPort{
 			{
 				Name:          consts.ExtensionsDatasourceTargetPortName,
@@ -212,7 +199,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 	}
 }
 
-func buildSecurityContext() *corev1.SecurityContext {
+func buildSecurityContext(dk *dynakube.DynaKube) *corev1.SecurityContext {
 	return &corev1.SecurityContext{
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
@@ -228,6 +215,7 @@ func buildSecurityContext() *corev1.SecurityContext {
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
+		AppArmorProfile: k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.ExtensionExecutionController.Annotations, containerName),
 	}
 }
 

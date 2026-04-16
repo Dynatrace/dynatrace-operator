@@ -43,8 +43,8 @@ func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 
 	for _, hostDK := range fsState.hostDks {
 		possibleHostDirs := []string{
-			c.path.OsAgentDir(hostDK),
-			c.path.OldOsAgentDir(hostDK),
+			c.path.OSAgentDir(hostDK),
+			c.path.OldOSAgentDir(hostDK),
 		}
 
 		for _, hostDir := range possibleHostDirs {
@@ -78,7 +78,7 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 			continue
 		}
 
-		hostDir := c.path.OsAgentDir(dk.Name)
+		hostDir := c.path.OSAgentDir(dk.Name)
 
 		hostDirs[hostDir] = true
 
@@ -91,7 +91,7 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 			continue
 		}
 
-		deprecatedHostDirLink := c.path.OldOsAgentDir(tenantUUID)
+		deprecatedHostDirLink := c.path.OldOSAgentDir(tenantUUID)
 		c.safeAddRelevantPath(deprecatedHostDirLink, hostDirs)
 	}
 

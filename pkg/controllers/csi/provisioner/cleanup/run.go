@@ -108,7 +108,7 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 			fsState.deprecatedDks = append(fsState.deprecatedDks, fileInfo.Name())
 		}
 
-		_, err = os.Stat(c.path.OldOsAgentDir(fileInfo.Name()))
+		_, err = os.Stat(c.path.OldOSAgentDir(fileInfo.Name()))
 		if err == nil {
 			hostExists = true
 
@@ -143,7 +143,7 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 			fsState.binDks = append(fsState.binDks, fileInfo.Name())
 		}
 
-		_, err = os.Stat(c.path.OsAgentDir(fileInfo.Name()))
+		_, err = os.Stat(c.path.OSAgentDir(fileInfo.Name()))
 		if err == nil {
 			hostExists = true
 

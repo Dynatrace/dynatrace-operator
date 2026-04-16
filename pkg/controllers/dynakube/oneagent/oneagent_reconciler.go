@@ -196,9 +196,12 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context, dk *dynakube.Dyn
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
 	configMapData := extractPublicData(dk)
 
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OneAgentComponentLabel)
+
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		configMapData,
+		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
 	)
 	if err != nil {
 		return errors.WithStack(err)

@@ -53,7 +53,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					dtclient.APIToken: []byte(testAPIToken),
+					token.APIKey: []byte(testAPIToken),
 				},
 			},
 		)
@@ -100,7 +100,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					dtclient.APIToken: []byte(testAPIToken),
+					token.APIKey: []byte(testAPIToken),
 				},
 			},
 		)
@@ -146,7 +146,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					dtclient.APIToken: []byte(testAPIToken),
+					token.APIKey: []byte(testAPIToken),
 				},
 			},
 		)
@@ -387,7 +387,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte(testAPIToken),
+				token.APIKey: []byte(testAPIToken),
 			},
 		},
 		&corev1.Secret{
@@ -396,7 +396,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte(testAPIToken),
+				token.APIKey: []byte(testAPIToken),
 			},
 		})
 }

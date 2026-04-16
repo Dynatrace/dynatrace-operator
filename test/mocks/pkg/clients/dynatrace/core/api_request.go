@@ -355,16 +355,22 @@ func (_c *APIRequest_WithPaasToken_Call) RunAndReturn(run func() core.APIRequest
 }
 
 // WithPath provides a mock function for the type APIRequest
-func (_mock *APIRequest) WithPath(path string) core.APIRequest {
-	ret := _mock.Called(path)
+func (_mock *APIRequest) WithPath(path ...string) core.APIRequest {
+	var tmpRet mock.Arguments
+	if len(path) > 0 {
+		tmpRet = _mock.Called(path)
+	} else {
+		tmpRet = _mock.Called()
+	}
+	ret := tmpRet
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithPath")
 	}
 
 	var r0 core.APIRequest
-	if returnFunc, ok := ret.Get(0).(func(string) core.APIRequest); ok {
-		r0 = returnFunc(path)
+	if returnFunc, ok := ret.Get(0).(func(...string) core.APIRequest); ok {
+		r0 = returnFunc(path...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(core.APIRequest)
@@ -379,19 +385,22 @@ type APIRequest_WithPath_Call struct {
 }
 
 // WithPath is a helper method to define mock.On call
-//   - path string
-func (_e *APIRequest_Expecter) WithPath(path interface{}) *APIRequest_WithPath_Call {
-	return &APIRequest_WithPath_Call{Call: _e.mock.On("WithPath", path)}
+//   - path ...string
+func (_e *APIRequest_Expecter) WithPath(path ...interface{}) *APIRequest_WithPath_Call {
+	return &APIRequest_WithPath_Call{Call: _e.mock.On("WithPath",
+		append([]interface{}{}, path...)...)}
 }
 
-func (_c *APIRequest_WithPath_Call) Run(run func(path string)) *APIRequest_WithPath_Call {
+func (_c *APIRequest_WithPath_Call) Run(run func(path ...string)) *APIRequest_WithPath_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 string
-		if args[0] != nil {
-			arg0 = args[0].(string)
+		var arg0 []string
+		var variadicArgs []string
+		if len(args) > 0 {
+			variadicArgs = args[0].([]string)
 		}
+		arg0 = variadicArgs
 		run(
-			arg0,
+			arg0...,
 		)
 	})
 	return _c
@@ -402,7 +411,7 @@ func (_c *APIRequest_WithPath_Call) Return(aPIRequest core.APIRequest) *APIReque
 	return _c
 }
 
-func (_c *APIRequest_WithPath_Call) RunAndReturn(run func(path string) core.APIRequest) *APIRequest_WithPath_Call {
+func (_c *APIRequest_WithPath_Call) RunAndReturn(run func(path ...string) core.APIRequest) *APIRequest_WithPath_Call {
 	_c.Call.Return(run)
 	return _c
 }

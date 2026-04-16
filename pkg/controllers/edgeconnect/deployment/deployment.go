@@ -5,6 +5,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,6 +34,9 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 
 	log.Debug("EdgeConnect deployment app labels", "labels", labels)
 
+	annotations := maputils.MergeMap(buildContainerAnnotations(), ec.Spec.Annotations)
+	annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(annotations, consts.EdgeConnectContainerName)
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ec.Name,
@@ -46,7 +50,7 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: maputils.MergeMap(buildContainerAnnotations(), ec.Spec.Annotations),
+					Annotations: annotations,
 					Labels:      customPodLabels,
 				},
 				Spec: corev1.PodSpec{
@@ -118,6 +122,7 @@ func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{"ALL"},
 			},
+			AppArmorProfile: k8ssecuritycontext.GetAppArmorProfile(ec.Spec.Annotations, consts.EdgeConnectContainerName),
 		},
 		VolumeMounts: prepareVolumeMounts(ec),
 	}

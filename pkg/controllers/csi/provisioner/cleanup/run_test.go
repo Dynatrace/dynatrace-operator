@@ -162,7 +162,7 @@ func (c *Cleaner) createBinDirs(t *testing.T, name string) {
 func (c *Cleaner) createHostDirs(t *testing.T, name string) {
 	t.Helper()
 
-	hostDir := c.path.OsAgentDir(name)
+	hostDir := c.path.OSAgentDir(name)
 	err := os.MkdirAll(hostDir, os.ModePerm)
 	require.NoError(t, err)
 }
@@ -170,7 +170,7 @@ func (c *Cleaner) createHostDirs(t *testing.T, name string) {
 func (c *Cleaner) createDeprecatedHostDirs(t *testing.T, tenantUUID string) {
 	t.Helper()
 
-	hostDir := c.path.OldOsAgentDir(tenantUUID)
+	hostDir := c.path.OldOSAgentDir(tenantUUID)
 	err := os.MkdirAll(hostDir, os.ModePerm)
 	require.NoError(t, err)
 }
