@@ -16,6 +16,7 @@ import (
 
 func (extractor OneAgentExtractor) ExtractZip(ctx context.Context, sourceFile *os.File, targetDir string) error {
 	log := logd.FromContext(ctx)
+
 	extractor.cleanTempZipDir()
 
 	if sourceFile == nil {
