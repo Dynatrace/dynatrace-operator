@@ -30,7 +30,7 @@ func TestGetK8sClusterME(t *testing.T) {
 				{Scope: "entity-1", Value: kubernetesObjectValue{Label: "label-1"}},
 			}
 		}).Return(nil).Once()
-		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
+		apiClient.EXPECT().GET(anyCtx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "uuid-1")
@@ -43,7 +43,7 @@ func TestGetK8sClusterME(t *testing.T) {
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(getKubernetesObjectsResponse)).Return(errors.New("api error")).Once()
-		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
+		apiClient.EXPECT().GET(anyCtx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "uuid-1")
@@ -64,7 +64,7 @@ func TestGetK8sClusterME(t *testing.T) {
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(getKubernetesObjectsResponse)).Return(nil).Once()
-		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
+		apiClient.EXPECT().GET(anyCtx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "uuid-1")

@@ -87,6 +87,7 @@ const (
 )
 
 func (c *Client) newRequest(ctx context.Context) *Request {
+	ctx, _ = logd.NewFromContext(ctx, "dtclient-core")
 	headers := make(http.Header)
 
 	query := make(url.Values)
