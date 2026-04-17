@@ -63,10 +63,6 @@ func NewClient(options ...Option) (*Client, error) {
 		return nil, errors.Wrap(err, "could not get client config")
 	}
 
-	if len(config.BaseURL.String()) == 0 {
-		return nil, errors.New("base URL is empty")
-	}
-
 	if len(config.APIToken) == 0 && len(config.PaasToken) == 0 {
 		return nil, errors.New("tokens are empty")
 	}
@@ -157,6 +153,10 @@ func WithBaseURL(baseURL string) Option {
 		parsedURL, err := url.Parse(baseURL)
 		if err != nil {
 			return errors.Wrap(err, "invalid base URL")
+		}
+
+		if len(parsedURL.String()) == 0 {
+			return errors.New("base URL is empty")
 		}
 
 		c.BaseURL = parsedURL
