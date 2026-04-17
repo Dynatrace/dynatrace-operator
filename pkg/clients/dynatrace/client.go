@@ -67,6 +67,10 @@ func NewClient(options ...Option) (*Client, error) {
 		return nil, errors.New("tokens are empty")
 	}
 
+	if config.PaasToken == "" {
+		config.PaasToken = config.APIToken
+	}
+
 	if !strings.HasSuffix(strings.TrimSuffix(config.BaseURL.Path, "/"), "/api") {
 		config.BaseURL.Path = strings.TrimSuffix(config.BaseURL.Path, "/") + "/api"
 	}
