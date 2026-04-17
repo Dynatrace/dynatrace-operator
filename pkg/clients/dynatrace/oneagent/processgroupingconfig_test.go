@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	testCBORData     = "\x81\x01" // minimal CBOR: array of one integer
-	testETag         = `"abc123"`
-	testResponseETag = `"def456"`
-	testClusterID    = "my-cluster"
+	testCBORData        = "\x81\x01" // minimal CBOR: array of one integer
+	testETag            = `"abc123"`
+	testResponseETag    = "def456"
+	testResponseETagRaw = `"` + testResponseETag + `"`
+	testClusterID       = "my-cluster"
 )
 
 // setupMockedProcessGroupingClient builds a Client backed by a mock core.APIClient.
@@ -37,9 +38,6 @@ func setupMockedProcessGroupingClient(
 	req := coremock.NewAPIRequest(t)
 	req.EXPECT().
 		WithQueryParams(params).
-		Return(req).Once()
-	req.EXPECT().
-		WithPaasToken().
 		Return(req).Once()
 	req.EXPECT().
 		WithHeader("Accept", "application/cbor").
@@ -72,7 +70,7 @@ func setupMockedProcessGroupingClient(
 func TestGetProcessGroupingConfig(t *testing.T) {
 	t.Run("success_200_with_etag", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETag}}
+		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
@@ -92,7 +90,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("success_200_without_etag", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETag}}
+		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
@@ -130,7 +128,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("with_kubernetes_cluster_id", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETag}}
+		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{"kubernetesClusterId": testClusterID},
@@ -147,7 +145,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("without_kubernetes_cluster_id", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETag}}
+		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},

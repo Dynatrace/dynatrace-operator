@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 )
@@ -36,7 +37,6 @@ func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesCluster
 
 	req := c.apiClient.GET(ctx, processGroupingConfigPath).
 		WithQueryParams(params).
-		WithPaasToken().
 		WithHeader("Accept", "application/cbor")
 
 	if etag != "" {
@@ -52,5 +52,5 @@ func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesCluster
 		return "", err
 	}
 
-	return headers.Get("ETag"), nil
+	return strings.ReplaceAll(headers.Get("ETag"), "\"", ""), nil
 }
