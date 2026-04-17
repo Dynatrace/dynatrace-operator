@@ -61,10 +61,6 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (*dynatrace.Cli
 	namespace := dynatraceClientBuilder.dk.Namespace
 	apiReader := dynatraceClientBuilder.apiReader
 
-	if dynatraceClientBuilder.dk.Spec.APIURL == "" {
-		return nil, errors.New("url is empty")
-	}
-
 	opts := newOptions(ctx)
 	opts.appendCertCheck(dynatraceClientBuilder.dk.Spec.SkipCertCheck)
 	opts.appendNetworkZone(dynatraceClientBuilder.dk.Spec.NetworkZone)
@@ -82,14 +78,6 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (*dynatrace.Cli
 
 	apiToken := dynatraceClientBuilder.getTokens().APIToken().Value
 	paasToken := dynatraceClientBuilder.getTokens().PaasToken().Value
-
-	if apiToken == "" && paasToken == "" {
-		return nil, errors.New("tokens are empty")
-	}
-
-	if paasToken == "" {
-		paasToken = apiToken
-	}
 
 	opts.Opts = append(opts.Opts, dynatrace.WithBaseURL(dynatraceClientBuilder.dk.Spec.APIURL))
 	opts.Opts = append(opts.Opts, dynatrace.WithUserAgentSuffix(dynatraceClientBuilder.userAgentSuffix))
