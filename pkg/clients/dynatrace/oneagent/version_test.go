@@ -47,7 +47,7 @@ func TestGetLatest(t *testing.T) {
 		req.EXPECT().ExecuteWriter(multiWriter).Run(func(writer io.Writer) {
 			_, copyErr := io.Copy(writer, bytes.NewReader(response))
 			require.NoError(t, copyErr)
-		}).Return(rawErr).Once()
+		}).Return(nil, rawErr).Once()
 
 		client := coremock.NewAPIClient(t)
 		client.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
@@ -104,7 +104,7 @@ func TestGet(t *testing.T) {
 		req.EXPECT().ExecuteWriter(multiWriter).Run(func(writer io.Writer) {
 			_, copyErr := io.Copy(writer, bytes.NewReader(response))
 			require.NoError(t, copyErr)
-		}).Return(rawErr).Once()
+		}).Return(nil, rawErr).Once()
 
 		client := coremock.NewAPIClient(t)
 		client.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()

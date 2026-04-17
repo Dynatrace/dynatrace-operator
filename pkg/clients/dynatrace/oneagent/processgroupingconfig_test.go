@@ -24,7 +24,7 @@ const (
 // setupMockedProcessGroupingClient builds a Client backed by a mock core.APIClient.
 // params:       expected query params
 // extraHeaders: additional headers expected to be set (e.g. If-None-Match)
-// responseHeaders, responseBody, execErr: what ExecuteWriterWithHeaders returns
+// responseHeaders, responseBody, execErr: what ExecuteWriter returns
 func setupMockedProcessGroupingClient(
 	t *testing.T,
 	params map[string]string,
@@ -51,7 +51,7 @@ func setupMockedProcessGroupingClient(
 	}
 
 	req.EXPECT().
-		ExecuteWriterWithHeaders(mock.Anything).
+		ExecuteWriter(mock.Anything).
 		Run(func(writer io.Writer) {
 			if execErr == nil && len(responseBody) > 0 {
 				_, _ = writer.Write(responseBody)

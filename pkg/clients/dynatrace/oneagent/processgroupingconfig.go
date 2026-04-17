@@ -43,7 +43,7 @@ func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesCluster
 		req = req.WithHeader("If-None-Match", etag)
 	}
 
-	headers, err := req.ExecuteWriterWithHeaders(writer)
+	headers, err := req.ExecuteWriter(writer)
 	if core.HasStatusCode(err, http.StatusNotModified) {
 		return etag, ErrNotModified
 	}

@@ -48,11 +48,9 @@ type APIRequest interface {
 	Execute(model any) error
 	// ExecuteRaw executes the request and returns the raw response data
 	ExecuteRaw() ([]byte, error)
-	// ExecuteWriter executes the request and writes the response body to the provided writer
-	ExecuteWriter(writer io.Writer) error
-	// ExecuteWriterWithHeaders executes the request, writes the response body to the provided writer,
+	// ExecuteWriter executes the request, writes the response body to the provided writer,
 	// and returns the response headers on success.
-	ExecuteWriterWithHeaders(writer io.Writer) (http.Header, error)
+	ExecuteWriter(writer io.Writer) (http.Header, error)
 }
 
 type Config struct {
@@ -236,15 +234,10 @@ func (r *Request) ExecuteRaw() ([]byte, error) {
 	return r.doRequest()
 }
 
-// ExecuteWriter executes the request and writes the response body to the provided writer.
-func (r *Request) ExecuteWriter(writer io.Writer) error {
-	return r.doRequestStream(writer)
-}
-
-// ExecuteWriterWithHeaders executes the request, writes the response body to the provided writer,
+// ExecuteWriter executes the request, writes the response body to the provided writer,
 // and returns the response headers on success.
-func (r *Request) ExecuteWriterWithHeaders(writer io.Writer) (http.Header, error) {
-	return r.doRequestStreamWithHeaders(writer)
+func (r *Request) ExecuteWriter(writer io.Writer) (http.Header, error) {
+	return r.doRequestStream(writer)
 }
 
 func (r *Request) getToken() string {
@@ -279,13 +272,7 @@ func (r *Request) withMethod(method string) APIRequest {
 	return r
 }
 
-func (r *Request) doRequestStream(writer io.Writer) error {
-	_, err := r.doRequestStreamWithHeaders(writer)
-
-	return err
-}
-
-func (r *Request) doRequestStreamWithHeaders(writer io.Writer) (responseHeaders http.Header, err error) {
+func (r *Request) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
 	if r.err != nil {
 		return nil, r.err
 	}
