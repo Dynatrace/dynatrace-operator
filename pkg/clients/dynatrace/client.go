@@ -53,14 +53,14 @@ type Config struct {
 	DisableKeepAlives bool
 }
 
-// Option is a functional option for configuring the v2 client
+// Option is a functional option for configuring the client
 type Option func(*Config) error
 
-// NewClient creates a new Dynatrace V2 API client
+// NewClient creates a new Dynatrace API client
 func NewClient(options ...Option) (*Client, error) {
 	config, err := getConfig(options...)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not get client v2 config")
+		return nil, errors.Wrap(err, "could not get client config")
 	}
 
 	if len(config.BaseURL.String()) == 0 {
@@ -97,7 +97,7 @@ func NewClient(options ...Option) (*Client, error) {
 func NewOAuthClient(credentials clientcredentials.Config, options ...Option) (*OAuthClient, error) {
 	config, err := getConfig(options...)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not get oauth v2 config")
+		return nil, errors.Wrap(err, "could not get oauth config")
 	}
 
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, config.HTTPClient)

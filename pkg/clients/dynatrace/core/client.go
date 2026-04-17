@@ -310,7 +310,6 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 		}
 	}()
 
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
 	statusCodeThreshold := 201
 	if r.method == http.MethodDelete {
 		statusCodeThreshold = 299
@@ -383,7 +382,6 @@ func (r *Request) doRequest() (body []byte, err error) {
 
 	log.Debug("API request", loggerArgs(resp, body)...)
 
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
 	statusCodeThreshold := 201
 	if r.method == http.MethodDelete {
 		statusCodeThreshold = 299
