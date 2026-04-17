@@ -23,26 +23,6 @@ type ConstraintViolation struct {
 	Path              string `json:"path"`
 }
 
-func (e ServerError) Error() string {
-	if len(e.Message) == 0 && e.Code == 0 {
-		return "unknown server error"
-	}
-
-	var sb strings.Builder
-	fmt.Fprintf(&sb, "dynatrace server error %d: %s", e.Code, e.Message)
-
-	for _, v := range e.ConstraintViolations {
-		// Fprintf scales allocations linearly with the amount of items.
-		// WriteString only allocates when backing slice needs more space.
-		sb.WriteString("\n\t- ")
-		sb.WriteString(v.Path)
-		sb.WriteString(": ")
-		sb.WriteString(v.Message)
-	}
-
-	return sb.String()
-}
-
 // HTTPError represents an HTTP error that includes status code, response body, and parsed server errors
 type HTTPError struct {
 	Body         string        `json:"body"`
@@ -60,7 +40,7 @@ func (e *HTTPError) Error() string {
 				sb.WriteString("; ")
 			}
 
-			sb.WriteString(serverErr.Error())
+			sb.WriteString(formatServerError(&serverErr))
 		}
 
 		return fmt.Sprintf("HTTP %d: %s", e.StatusCode, sb.String())
@@ -103,4 +83,24 @@ func StatusCode(err error) int {
 	}
 
 	return httpErr.StatusCode
+}
+
+func formatServerError(e *ServerError) string {
+	if len(e.Message) == 0 && e.Code == 0 {
+		return "unknown server error"
+	}
+
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "dynatrace server error %d: %s", e.Code, e.Message)
+
+	for _, v := range e.ConstraintViolations {
+		// Fprintf scales allocations linearly with the amount of items.
+		// WriteString only allocates when backing slice needs more space.
+		sb.WriteString("\n\t- ")
+		sb.WriteString(v.Path)
+		sb.WriteString(": ")
+		sb.WriteString(v.Message)
+	}
+
+	return sb.String()
 }
