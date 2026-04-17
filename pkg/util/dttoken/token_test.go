@@ -51,8 +51,8 @@ func Test_generateRandom(t *testing.T) {
 }
 
 func TestIsPlatform(t *testing.T) {
-	token, _ := New("dt0c1")
+	token, _ := New("dt0s02")
 	assert.False(t, IsPlatform(token.String()))
-	token, _ = New("dt0s1")
+	token, _ = New("dt0s16")
 	assert.True(t, IsPlatform(token.String()))
 }

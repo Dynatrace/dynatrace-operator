@@ -12,7 +12,9 @@ const (
 	privatePortionSize = 64
 )
 
-const PlatformPrefix = "dt0s"
+// https://docs.dynatrace.com/docs/dynatrace-api/basics/dynatrace-api-authentication
+
+const PlatformPrefix = "dt0s16"
 
 // Token represents a legacy Dynatrace access token.
 //
