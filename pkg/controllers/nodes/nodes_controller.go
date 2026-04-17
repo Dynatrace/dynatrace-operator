@@ -70,12 +70,22 @@ func NewControllerFromClient(clt client.Client) *Controller {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
 	nodeName := request.Name
 	dk, err := controller.determineDynakubeForNode(nodeName)
-
-	log.Info("reconciling node name", "node", nodeName)
-
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+
+	if skip, err := token.NewReader(controller.apiReader, dk).HasPlatformToken(ctx); err != nil {
+		return reconcile.Result{}, err
+	} else if skip {
+		logEveryInterval("node controller disabled due to detected platform token in secret")
+
+		return reconcile.Result{}, nil
+	}
+
+	// Reset log throttling for the edge case that the user switches back to 2nd gen token and then to platform token again.
+	lastSkipLogTimestamp = time.Time{}
+
+	log.Info("reconciling node", "node", nodeName)
 
 	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
@@ -276,4 +286,16 @@ func (controller *Controller) pruneCache(ctx context.Context, nodeCache *cache.C
 	}
 
 	return nil
+}
+
+var lastSkipLogTimestamp time.Time
+
+const logSkipInterval = 15 * time.Minute
+
+// NOT THREAD-SAFE!!!
+func logEveryInterval(message string) {
+	if lastSkipLogTimestamp.IsZero() || time.Since(lastSkipLogTimestamp) > logSkipInterval {
+		log.Info(message)
+		lastSkipLogTimestamp = time.Now()
+	}
 }
