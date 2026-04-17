@@ -16,16 +16,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
-	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -351,7 +348,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		mockOneAgentReconciler := newMockOneAgentReconciler(t)
 		mockActiveGateReconciler := newMockActiveGateReconciler(t)
-		mockInjectionReconciler := controllermock.NewReconciler(t)
+		mockInjectionReconciler := newMockInjectionReconciler(t)
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 
 		mockExtensionReconciler := newMockDynakubeReconciler(t)
@@ -364,15 +361,15 @@ func TestReconcileComponents(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 
-			injectionReconcilerBuilder: createInjectionReconcilerBuilder(mockInjectionReconciler),
-			logMonitoringReconciler:    mockLogMonitoringReconciler,
-			extensionReconciler:        mockExtensionReconciler,
-			istioReconciler:            mockIstioReconciler,
-			otelcReconciler:            mockOtelcReconciler,
-			kspmReconciler:             mockKSPMReconciler,
-			k8sEntityReconciler:        mockK8sEntityReconciler,
-			oneAgentReconciler:         mockOneAgentReconciler,
-			activeGateReconciler:       mockActiveGateReconciler,
+			logMonitoringReconciler: mockLogMonitoringReconciler,
+			extensionReconciler:     mockExtensionReconciler,
+			istioReconciler:         mockIstioReconciler,
+			otelcReconciler:         mockOtelcReconciler,
+			kspmReconciler:          mockKSPMReconciler,
+			k8sEntityReconciler:     mockK8sEntityReconciler,
+			oneAgentReconciler:      mockOneAgentReconciler,
+			activeGateReconciler:    mockActiveGateReconciler,
+			injectionReconciler:     mockInjectionReconciler,
 		}
 		dtc := &dynatrace.Client{Settings: &settings.Client{}}
 
@@ -380,7 +377,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		expectReconcileError(t, mockOneAgentReconciler, &err, dk, dtc, token.Tokens(nil))
 		expectReconcileError(t, mockActiveGateReconciler, &err, dk, dtc, token.Tokens(nil))
-		expectReconcileError(t, mockInjectionReconciler, &err)
+		expectReconcileError(t, mockInjectionReconciler, &err, dtc, dk)
 		expectReconcileError(t, mockLogMonitoringReconciler, &err, dtc, dk)
 		expectReconcileError(t, mockExtensionReconciler, &err, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
@@ -471,8 +468,8 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockActiveGateReconciler := newMockActiveGateReconciler(t)
 	mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil)
 
-	mockInjectionReconciler := controllermock.NewReconciler(t)
-	mockInjectionReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
+	mockInjectionReconciler := newMockInjectionReconciler(t)
+	mockInjectionReconciler.EXPECT().Reconcile(anyCtx, mockClient, anyDynaKube).Return(nil)
 
 	mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 	mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtc, anyDynaKube).Return(nil)
@@ -499,7 +496,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		deploymentMetadataReconciler: mockDeploymentMetadataReconciler,
 		dynatraceClientBuilder:       mockDtcBuilder,
 		extensionReconciler:          mockExtensionReconciler,
-		injectionReconcilerBuilder:   createInjectionReconcilerBuilder(mockInjectionReconciler),
+		injectionReconciler:          mockInjectionReconciler,
 		istioReconciler:              mockIstioReconciler,
 		logMonitoringReconciler:      mockLogMonitoringReconciler,
 		otelcReconciler:              mockOtelcReconciler,
@@ -552,12 +549,6 @@ func TestReconcileDynaKube(t *testing.T) {
 		require.Error(t, err)
 		assert.NotNil(t, result)
 	})
-}
-
-func createInjectionReconcilerBuilder(reconciler controllers.Reconciler) injection.ReconcilerBuilder {
-	return func(client client.Client, apiReader client.Reader, dynatraceClient *dynatrace.Client, dk *dynakube.DynaKube) controllers.Reconciler {
-		return reconciler
-	}
 }
 
 type errorClient struct {

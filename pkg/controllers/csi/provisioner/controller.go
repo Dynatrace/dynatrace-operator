@@ -34,6 +34,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -108,6 +109,12 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		}
 
 		return reconcile.Result{}, err
+	}
+
+	if !installconfig.GetModules().CSIDriver {
+		log.Info("CSI driver migration mode active, running cleanup only")
+
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.cleaner.Run(ctx)
 	}
 
 	if !isProvisionerNeeded(&dk) {

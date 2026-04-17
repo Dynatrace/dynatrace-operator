@@ -84,8 +84,6 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 
-		injectionReconcilerBuilder: injection.NewReconciler,
-
 		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
 		k8sEntityReconciler:          k8sentity.NewReconciler(),
@@ -96,6 +94,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		logMonitoringReconciler:      logmonitoring.NewReconciler(kubeClient, apiReader),
 		oneAgentReconciler:           oneagent.NewReconciler(kubeClient, apiReader, clusterID),
 		activeGateReconciler:         activegate.NewReconciler(kubeClient, apiReader),
+		injectionReconciler:          injection.NewReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -148,6 +147,10 @@ type kspmReconciler interface {
 	Reconcile(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error
 }
 
+type injectionReconciler interface {
+	Reconcile(ctx context.Context, dtClient dtclient.Client, dk *dynakube.DynaKube) error
+}
+
 // Controller reconciles a DynaKube object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -166,11 +169,10 @@ type Controller struct {
 	logMonitoringReconciler      logMonitoringReconciler
 	oneAgentReconciler           oneAgentReconciler
 	activeGateReconciler         activeGateReconciler
+	injectionReconciler          injectionReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
-
-	injectionReconcilerBuilder injection.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -410,12 +412,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.injectionReconcilerBuilder(
-		controller.client,
-		controller.apiReader,
-		dynatraceClient,
-		dk,
-	).Reconcile(ctx)
+	err = controller.injectionReconciler.Reconcile(ctx, dynatraceClient, dk)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
 			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
