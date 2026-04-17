@@ -30,7 +30,7 @@ type benchmarkConfig struct {
 }
 
 // SetupDTServerMock sets up a mock Dynatrace server that responds to host entity requests
-// It is not a dtclient Mock, but a real HTTP server that responds to requests made by the dtclient.
+// It is not a dtClient Mock, but a real HTTP server that responds to requests made by the dtclient.
 // This allows for more realistic benchmarking of the NodesController's interaction with the Dynatrace API.
 func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 	b.Helper()

@@ -178,7 +178,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	dynatraceClient, err := controller.dynatraceClientBuilder.
+	dtClient, err := controller.dynatraceClientBuilder.
 		SetDynakube(*dk).
 		SetTokens(tokens).
 		Build(ctx)
@@ -186,7 +186,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	hostEventClient := dynatraceClient.HostEvent
+	hostEventClient := dtClient.HostEvent
 
 	entityID, err := hostEventClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {

@@ -23,17 +23,17 @@ import (
 
 type reconciler struct {
 	client       client.Client
-	dtc          oneagent.APIClient
+	dtClient     oneagent.APIClient
 	timeProvider *timeprovider.Provider
 	dk           *dynakube.DynaKube
 	secrets      k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dtc oneagent.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dtClient oneagent.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
 		dk:           dk,
-		dtc:          dtc,
+		dtClient:     dtClient,
 		timeProvider: timeprovider.New(),
 		secrets:      k8ssecret.Query(clt, apiReader, log),
 	}
@@ -97,7 +97,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 	k8sconditions.SetSecretOutdated(r.dk.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
-	connectionInfo, err := r.dtc.GetConnectionInfo(ctx)
+	connectionInfo, err := r.dtClient.GetConnectionInfo(ctx)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), oaConnectionInfoConditionType, err)
 

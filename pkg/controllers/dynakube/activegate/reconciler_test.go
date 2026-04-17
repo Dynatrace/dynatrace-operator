@@ -580,7 +580,7 @@ func TestServiceCreation(t *testing.T) {
 		return activegateService
 	}
 
-	dynatraceClient := createMockDTClient(t, true)
+	dtClient := createMockDTClient(t, true)
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -625,7 +625,7 @@ func TestServiceCreation(t *testing.T) {
 				capName,
 			}
 
-			err := reconciler.Reconcile(t.Context(), dk, dynatraceClient, nil)
+			err := reconciler.Reconcile(t.Context(), dk, dtClient, nil)
 			require.NoError(t, err)
 
 			if len(expectedPorts) == 0 {

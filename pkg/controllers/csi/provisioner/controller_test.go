@@ -131,7 +131,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with version, unknown issue with dtc => fail before installer creation", func(t *testing.T) {
+	t.Run("dynakube with version, unknown issue with dtClient => fail before installer creation", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
 		prov.dynatraceClientBuilder = mockFailingDTClientBuilder(t)
@@ -143,7 +143,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with version, known issue with dtc => no error, just short requeue", func(t *testing.T) {
+	t.Run("dynakube with version, known issue with dtClient => no error, just short requeue", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
 
@@ -158,7 +158,7 @@ func TestReconcile(t *testing.T) {
 		require.Equal(t, shortRequeueDuration, result.RequeueAfter)
 	})
 
-	t.Run("dynakube with image => image installer used, dtclient not created, no error", func(t *testing.T) {
+	t.Run("dynakube with image => image installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
 		prov := createProvisioner(t, dk)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
@@ -171,7 +171,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with job => job installer used, dtclient not created, no error", func(t *testing.T) {
+	t.Run("dynakube with job => job installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t))
@@ -184,7 +184,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with job + custom-pull-secret => job installer used, dtclient not created, no error", func(t *testing.T) {
+	t.Run("dynakube with job + custom-pull-secret => job installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		dk.Spec.CustomPullSecret = "test-ps"
 		prov := createProvisioner(t, dk)

@@ -210,8 +210,8 @@ func (_m *mockDtSettingReconciler) EXPECT() *mockDtSettingReconciler_Expecter {
 }
 
 // Reconcile provides a mock function for the type mockDtSettingReconciler
-func (_mock *mockDtSettingReconciler) Reconcile(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error {
-	ret := _mock.Called(ctx, dtclient, dk)
+func (_mock *mockDtSettingReconciler) Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
+	ret := _mock.Called(ctx, dtClient, dk)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
@@ -219,7 +219,7 @@ func (_mock *mockDtSettingReconciler) Reconcile(ctx context.Context, dtclient se
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.APIClient, *dynakube.DynaKube) error); ok {
-		r0 = returnFunc(ctx, dtclient, dk)
+		r0 = returnFunc(ctx, dtClient, dk)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -233,13 +233,13 @@ type mockDtSettingReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtclient settings.APIClient
+//   - dtClient settings.APIClient
 //   - dk *dynakube.DynaKube
-func (_e *mockDtSettingReconciler_Expecter) Reconcile(ctx interface{}, dtclient interface{}, dk interface{}) *mockDtSettingReconciler_Reconcile_Call {
-	return &mockDtSettingReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtclient, dk)}
+func (_e *mockDtSettingReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockDtSettingReconciler_Reconcile_Call {
+	return &mockDtSettingReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
-func (_c *mockDtSettingReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube)) *mockDtSettingReconciler_Reconcile_Call {
+func (_c *mockDtSettingReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube)) *mockDtSettingReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -267,7 +267,7 @@ func (_c *mockDtSettingReconciler_Reconcile_Call) Return(err error) *mockDtSetti
 	return _c
 }
 
-func (_c *mockDtSettingReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error) *mockDtSettingReconciler_Reconcile_Call {
+func (_c *mockDtSettingReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error) *mockDtSettingReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -300,8 +300,8 @@ func (_m *mockLogMonitoringReconciler) EXPECT() *mockLogMonitoringReconciler_Exp
 }
 
 // Reconcile provides a mock function for the type mockLogMonitoringReconciler
-func (_mock *mockLogMonitoringReconciler) Reconcile(ctx context.Context, dtc *dynatrace.Client, dk *dynakube.DynaKube) error {
-	ret := _mock.Called(ctx, dtc, dk)
+func (_mock *mockLogMonitoringReconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
+	ret := _mock.Called(ctx, dtClient, dk)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
@@ -309,7 +309,7 @@ func (_mock *mockLogMonitoringReconciler) Reconcile(ctx context.Context, dtc *dy
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynatrace.Client, *dynakube.DynaKube) error); ok {
-		r0 = returnFunc(ctx, dtc, dk)
+		r0 = returnFunc(ctx, dtClient, dk)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -323,13 +323,13 @@ type mockLogMonitoringReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtc *dynatrace.Client
+//   - dtClient *dynatrace.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockLogMonitoringReconciler_Expecter) Reconcile(ctx interface{}, dtc interface{}, dk interface{}) *mockLogMonitoringReconciler_Reconcile_Call {
-	return &mockLogMonitoringReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtc, dk)}
+func (_e *mockLogMonitoringReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockLogMonitoringReconciler_Reconcile_Call {
+	return &mockLogMonitoringReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
-func (_c *mockLogMonitoringReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtc *dynatrace.Client, dk *dynakube.DynaKube)) *mockLogMonitoringReconciler_Reconcile_Call {
+func (_c *mockLogMonitoringReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube)) *mockLogMonitoringReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -357,7 +357,7 @@ func (_c *mockLogMonitoringReconciler_Reconcile_Call) Return(err error) *mockLog
 	return _c
 }
 
-func (_c *mockLogMonitoringReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtc *dynatrace.Client, dk *dynakube.DynaKube) error) *mockLogMonitoringReconciler_Reconcile_Call {
+func (_c *mockLogMonitoringReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error) *mockLogMonitoringReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -582,8 +582,8 @@ func (_m *mockKspmReconciler) EXPECT() *mockKspmReconciler_Expecter {
 }
 
 // Reconcile provides a mock function for the type mockKspmReconciler
-func (_mock *mockKspmReconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error {
-	ret := _mock.Called(ctx, dtc, dk)
+func (_mock *mockKspmReconciler) Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
+	ret := _mock.Called(ctx, dtClient, dk)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
@@ -591,7 +591,7 @@ func (_mock *mockKspmReconciler) Reconcile(ctx context.Context, dtc settings.API
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.APIClient, *dynakube.DynaKube) error); ok {
-		r0 = returnFunc(ctx, dtc, dk)
+		r0 = returnFunc(ctx, dtClient, dk)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -605,13 +605,13 @@ type mockKspmReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtc settings.APIClient
+//   - dtClient settings.APIClient
 //   - dk *dynakube.DynaKube
-func (_e *mockKspmReconciler_Expecter) Reconcile(ctx interface{}, dtc interface{}, dk interface{}) *mockKspmReconciler_Reconcile_Call {
-	return &mockKspmReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtc, dk)}
+func (_e *mockKspmReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockKspmReconciler_Reconcile_Call {
+	return &mockKspmReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
-func (_c *mockKspmReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube)) *mockKspmReconciler_Reconcile_Call {
+func (_c *mockKspmReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube)) *mockKspmReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -639,7 +639,7 @@ func (_c *mockKspmReconciler_Reconcile_Call) Return(err error) *mockKspmReconcil
 	return _c
 }
 
-func (_c *mockKspmReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error) *mockKspmReconciler_Reconcile_Call {
+func (_c *mockKspmReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error) *mockKspmReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

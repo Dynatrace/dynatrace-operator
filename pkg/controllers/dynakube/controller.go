@@ -128,11 +128,11 @@ type dynakubeReconciler interface {
 
 // dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
 type dtSettingReconciler interface {
-	Reconcile(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error
 }
 
 type logMonitoringReconciler interface {
-	Reconcile(ctx context.Context, dtc *dynatrace.Client, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error
 }
 
 type oneAgentReconciler interface {
@@ -144,7 +144,7 @@ type activeGateReconciler interface {
 }
 
 type kspmReconciler interface {
-	Reconcile(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error
 }
 
 type injectionReconciler interface {
@@ -299,7 +299,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return errors.WithMessage(err, "failed to reconcile istio objects for API url")
 	}
 
-	dynatraceClient, err := controller.setupTokensAndClient(ctx, dk)
+	dtClient, err := controller.setupTokensAndClient(ctx, dk)
 	if err != nil {
 		return err
 	}
@@ -319,7 +319,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return err
 	}
 
-	return controller.reconcileComponents(ctx, dynatraceClient, dk)
+	return controller.reconcileComponents(ctx, dtClient, dk)
 }
 
 func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
@@ -338,14 +338,14 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 		SetDynakube(*dk).
 		SetTokens(tokens)
 
-	dynatraceClient, err := dynatraceClientBuilder.Build(ctx)
+	dtClient, err := dynatraceClientBuilder.Build(ctx)
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
 		return nil, err
 	}
 
-	err = controller.verifyTokens(ctx, dynatraceClient.Token, dk)
+	err = controller.verifyTokens(ctx, dtClient.Token, dk)
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
@@ -354,19 +354,19 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	controller.setConditionTokenReady(dk, token.CheckForDataIngestToken(tokens))
 
-	return dynatraceClient, nil
+	return dtClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient *dynatrace.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	var componentErrors []error
 
-	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.Settings, dk); err != nil {
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
 		componentErrors = append(componentErrors, err)
 	}
 
 	log.Info("start reconciling ActiveGate")
 
-	err := controller.reconcileActiveGate(ctx, dk, dynatraceClient)
+	err := controller.reconcileActiveGate(ctx, dk, dtClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
@@ -389,7 +389,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling KSPM")
 
-	if err := controller.kspmReconciler.Reconcile(ctx, dynatraceClient.Settings, dk); err != nil {
+	if err := controller.kspmReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
 		log.Info("could not reconcile kspm")
 
 		componentErrors = append(componentErrors, err)
@@ -397,7 +397,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling LogMonitoring")
 
-	err = controller.logMonitoringReconciler.Reconcile(ctx, dynatraceClient, dk)
+	err = controller.logMonitoringReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
@@ -412,7 +412,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.injectionReconciler.Reconcile(ctx, dynatraceClient, dk)
+	err = controller.injectionReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
 			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
@@ -429,7 +429,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling OneAgent")
 
-	err = controller.oneAgentReconciler.Reconcile(ctx, dk, dynatraceClient, controller.tokens)
+	err = controller.oneAgentReconciler.Reconcile(ctx, dk, dtClient, controller.tokens)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
 			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
@@ -453,13 +453,13 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	return &dkMapper
 }
 
-func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
+func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
 	err := controller.tokens.VerifyValues()
 	if err != nil {
 		return err
 	}
 
-	err = controller.verifyTokenScopes(ctx, dynatraceClient, dk)
+	err = controller.verifyTokenScopes(ctx, dtClient, dk)
 	if err != nil {
 		return err
 	}
@@ -467,7 +467,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient 
 	return nil
 }
 
-func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
+func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
 	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",
@@ -479,7 +479,7 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 
 	tokens := controller.tokens.AddFeatureScopesToTokens()
 
-	optionalScopes, err := tokens.VerifyScopes(ctx, dynatraceClient, *dk)
+	optionalScopes, err := tokens.VerifyScopes(ctx, dtClient, *dk)
 	if err != nil {
 		return err
 	}
