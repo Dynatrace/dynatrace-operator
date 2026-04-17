@@ -51,7 +51,7 @@ func (e *ExporterConfiguration) IsLogsEnabled() bool {
 
 func (e *ExporterConfiguration) GetResourceAttributes() map[string]string {
 	if e.Spec == nil {
-		return e.globalResourceAttributes)
+		return e.globalResourceAttributes
 	}
 
 	return resourceattributes.MergeResourceAttributes(e.globalResourceAttributes, e.Spec.AdditionalResourceAttributes)
