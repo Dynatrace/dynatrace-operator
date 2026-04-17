@@ -120,7 +120,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", testETag, &buf)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotModified, "expected ErrNotModified, got %v", err)
+		require.True(t, core.HasStatusCode(err, http.StatusNotModified), "expected 304 status code error, got %v", err)
 		assert.Empty(t, buf.String())
 		// On 304, the original ETag is returned for convenience
 		assert.Equal(t, testETag, returnedETag)
@@ -174,7 +174,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", "", &buf)
 		require.Error(t, err)
-		require.NotErrorIs(t, err, ErrNotModified)
+		require.False(t, core.HasStatusCode(err, http.StatusNotModified))
 		assert.Empty(t, returnedETag)
 		assert.Empty(t, buf.String())
 	})

@@ -68,7 +68,7 @@ func TestGetProcessGroupingConfig_Integration(t *testing.T) {
 
 		etag2, err := client.GetProcessGroupingConfig(t.Context(), clusterID, etag, &buf2)
 		if err != nil {
-			require.ErrorIs(t, err, ErrNotModified)
+			require.True(t, core.HasStatusCode(err, http.StatusNotModified))
 			require.Equal(t, etag, etag2)
 			require.Zero(t, buf2.Len(), "body should be empty on 304")
 
