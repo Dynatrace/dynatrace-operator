@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,7 +33,7 @@ func (reader Reader) HasPlatformToken(ctx context.Context) (bool, error) {
 
 	token := tokens.APIToken()
 	if token != nil {
-		return token.Platform, nil
+		return dttoken.IsPlatform(token.Value), nil
 	}
 
 	return false, nil

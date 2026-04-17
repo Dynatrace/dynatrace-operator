@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/pkg/errors"
 )
 
@@ -16,7 +15,6 @@ type Token struct {
 	Type     string
 	Value    string
 	Features []Feature
-	Platform bool
 }
 
 type ScopeError struct {
@@ -34,7 +32,6 @@ func newToken(tokenType string, value string) Token {
 		Type:     tokenType,
 		Value:    value,
 		Features: make([]Feature, 0),
-		Platform: dttoken.IsPlatform(value),
 	}
 }
 
