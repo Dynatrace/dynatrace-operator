@@ -8,7 +8,7 @@ import (
 )
 
 func (controller *Controller) determineDynakubeForNode(ctx context.Context, nodeName string) (*dynakube.DynaKube, error) {
-	dks, err := controller.getDynakubeList()
+	dks, err := controller.getDynakubeList(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -69,7 +69,8 @@ func NewControllerFromClient(clt client.Client) *Controller {
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
 	nodeName := request.Name
-	dk, err := controller.determineDynakubeForNode(nodeName)
+
+	dk, err := controller.determineDynakubeForNode(ctx, nodeName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -154,7 +155,7 @@ func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynak
 }
 
 func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCache *cache.Cache, nodeName string) error {
-	dynakube, err := controller.determineDynakubeForNode(nodeName)
+	dynakube, err := controller.determineDynakubeForNode(ctx, nodeName)
 	if err != nil {
 		return err
 	}
@@ -296,6 +297,7 @@ const logSkipInterval = 15 * time.Minute
 func logEveryInterval(message string) {
 	if lastSkipLogTimestamp.IsZero() || time.Since(lastSkipLogTimestamp) > logSkipInterval {
 		log.Info(message)
+
 		lastSkipLogTimestamp = time.Now()
 	}
 }
