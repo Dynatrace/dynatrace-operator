@@ -22,7 +22,6 @@ func BuildSettingsClient(secretConfig tenant.Secret) (dtsettings.APIClient, erro
 	dtClient, err := dynatrace.NewClient(
 		dynatrace.WithBaseURL(secretConfig.APIURL),
 		dynatrace.WithAPIToken(secretConfig.APIToken),
-		dynatrace.WithPaasToken(""),
 		dynatrace.WithSkipCertificateValidation(false))
 	if err != nil {
 		return nil, err
