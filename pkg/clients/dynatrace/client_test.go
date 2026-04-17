@@ -26,16 +26,6 @@ func TestNewClient(t *testing.T) {
 		assert.NotNil(t, client.Version)
 		assert.NotNil(t, client.Token)
 	})
-
-	t.Run("returns error on invalid option", func(t *testing.T) {
-		_, err := NewClient(WithBaseURL("://invalid-url"))
-		require.Error(t, err)
-	})
-
-	t.Run("returns error on empty option", func(t *testing.T) {
-		_, err := NewClient(WithBaseURL(""))
-		require.Error(t, err)
-	})
 }
 
 func TestNewOAuthClient(t *testing.T) {
@@ -94,6 +84,13 @@ func TestWithBaseURL(t *testing.T) {
 	t.Run("invalid URL returns error", func(t *testing.T) {
 		cfg := &Config{}
 		err := WithBaseURL("://invalid-url")(cfg)
+		require.Error(t, err)
+		assert.Nil(t, cfg.BaseURL)
+	})
+
+	t.Run("empty URL returns error", func(t *testing.T) {
+		cfg := &Config{}
+		err := WithBaseURL("")(cfg)
 		require.Error(t, err)
 		assert.Nil(t, cfg.BaseURL)
 	})
