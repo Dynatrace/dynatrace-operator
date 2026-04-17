@@ -192,7 +192,7 @@ func (r *Reconciler) generateInitSecret(ctx context.Context, namespaces []corev1
 }
 
 func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1.Namespace) error {
-	err := exporterconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk, namespaces)
+	err := exporterconfig.NewSecretGenerator(r.client, r.apiReader).GenerateForDynakube(ctx, r.dk, namespaces)
 	if err != nil {
 		if k8sconditions.IsKubeAPIError(err) {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), otlpExporterConfigurationConditionType, err)
