@@ -23,7 +23,7 @@ type ConstraintViolation struct {
 	Path              string `json:"path"`
 }
 
-func (e *ServerError) Error() string {
+func (e ServerError) Error() string {
 	if len(e.Message) == 0 && e.Code == 0 {
 		return "unknown server error"
 	}

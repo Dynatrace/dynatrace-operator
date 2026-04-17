@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -184,7 +185,7 @@ func TestHandleError(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		serverError := dynatrace.ServerError{Code: http.StatusTooManyRequests}
+		serverError := core.ServerError{Code: http.StatusTooManyRequests}
 
 		result, err := controller.handleError(ctx, oldDynakube, serverError, oldDynakube.Status)
 		require.NoError(t, err)
@@ -669,9 +670,9 @@ func TestTokenConditions(t *testing.T) {
 		})
 
 		mockedTokenClient := tokenclientmock.NewAPIClient(t)
-		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(nil, dynatrace.ServerError{
+		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(nil, core.ServerError{
 			Message:              "test-error",
-			ConstraintViolations: []dynatrace.ConstraintViolation{},
+			ConstraintViolations: []core.ConstraintViolation{},
 			Code:                 1234,
 		})
 

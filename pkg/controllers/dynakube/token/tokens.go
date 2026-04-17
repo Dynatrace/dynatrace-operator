@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 )
@@ -120,7 +120,7 @@ func concatErrors(errs []error) error {
 	}
 
 	if apiStatus != dynatraceapi.NoError {
-		return dynatrace.ServerError{
+		return core.ServerError{
 			Code:    apiStatus,
 			Message: concatenatedError.String(),
 		}

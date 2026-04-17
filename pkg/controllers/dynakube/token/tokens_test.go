@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
@@ -499,11 +499,11 @@ type concatErrorsTestCase struct {
 func TestConcatErrors(t *testing.T) {
 	stringError1 := errors.New("error 1")
 	stringError2 := errors.New("error 2")
-	serviceUnavailableError := dynatrace.ServerError{
+	serviceUnavailableError := core.ServerError{
 		Code:    http.StatusServiceUnavailable,
 		Message: "ServiceUnavailable",
 	}
-	tooManyRequestsError := dynatrace.ServerError{
+	tooManyRequestsError := core.ServerError{
 		Code:    http.StatusTooManyRequests,
 		Message: "TooManyRequests",
 	}

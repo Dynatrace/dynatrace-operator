@@ -3,7 +3,7 @@ package dynatraceapi
 import (
 	"net/http"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/pkg/errors"
 )
 
@@ -12,7 +12,7 @@ const (
 )
 
 func IsUnreachable(err error) bool {
-	var serverErr dynatrace.ServerError
+	var serverErr core.ServerError
 	if errors.As(err, &serverErr) && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable) {
 		return true
 	}
@@ -21,7 +21,7 @@ func IsUnreachable(err error) bool {
 }
 
 func StatusCode(err error) int {
-	var serverErr dynatrace.ServerError
+	var serverErr core.ServerError
 	if errors.As(err, &serverErr) {
 		return serverErr.Code
 	}
@@ -30,7 +30,7 @@ func StatusCode(err error) int {
 }
 
 func Message(err error) string {
-	var serverErr dynatrace.ServerError
+	var serverErr core.ServerError
 	if errors.As(err, &serverErr) {
 		return serverErr.Message
 	}

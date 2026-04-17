@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
@@ -128,7 +129,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk, createToken(t, dk))
 
 		unavailableInstaller := installermock.NewInstaller(t)
-		unavailableInstaller.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, dynatrace.ServerError{Code: http.StatusServiceUnavailable})
+		unavailableInstaller.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, core.ServerError{Code: http.StatusServiceUnavailable})
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
 		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 
@@ -346,7 +347,7 @@ func createSuccessfulInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(true, nil)
+	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(true, nil)
 
 	return m
 }
@@ -355,7 +356,7 @@ func createNotReadyInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, nil)
+	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, nil)
 
 	return m
 }
@@ -364,7 +365,7 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, errors.New("BOOM"))
+	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, errors.New("BOOM"))
 
 	return m
 }
