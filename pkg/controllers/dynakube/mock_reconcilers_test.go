@@ -672,7 +672,7 @@ func (_m *mockInjectionReconciler) EXPECT() *mockInjectionReconciler_Expecter {
 }
 
 // Reconcile provides a mock function for the type mockInjectionReconciler
-func (_mock *mockInjectionReconciler) Reconcile(ctx context.Context, dtClient dynatrace.Client, dk *dynakube.DynaKube) error {
+func (_mock *mockInjectionReconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	ret := _mock.Called(ctx, dtClient, dk)
 
 	if len(ret) == 0 {
@@ -680,7 +680,7 @@ func (_mock *mockInjectionReconciler) Reconcile(ctx context.Context, dtClient dy
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, dynatrace.Client, *dynakube.DynaKube) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynatrace.Client, *dynakube.DynaKube) error); ok {
 		r0 = returnFunc(ctx, dtClient, dk)
 	} else {
 		r0 = ret.Error(0)
@@ -695,21 +695,21 @@ type mockInjectionReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtClient dynatrace.Client
+//   - dtClient *dynatrace.Client
 //   - dk *dynakube.DynaKube
 func (_e *mockInjectionReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockInjectionReconciler_Reconcile_Call {
 	return &mockInjectionReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
-func (_c *mockInjectionReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtClient dynatrace.Client, dk *dynakube.DynaKube)) *mockInjectionReconciler_Reconcile_Call {
+func (_c *mockInjectionReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube)) *mockInjectionReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 dynatrace.Client
+		var arg1 *dynatrace.Client
 		if args[1] != nil {
-			arg1 = args[1].(dynatrace.Client)
+			arg1 = args[1].(*dynatrace.Client)
 		}
 		var arg2 *dynakube.DynaKube
 		if args[2] != nil {
@@ -729,7 +729,7 @@ func (_c *mockInjectionReconciler_Reconcile_Call) Return(err error) *mockInjecti
 	return _c
 }
 
-func (_c *mockInjectionReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient dynatrace.Client, dk *dynakube.DynaKube) error) *mockInjectionReconciler_Reconcile_Call {
+func (_c *mockInjectionReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error) *mockInjectionReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

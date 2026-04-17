@@ -263,8 +263,7 @@ func TestRemoveAppInjection(t *testing.T) {
 	setCodeModulesInjectionCreatedCondition(dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(dk.Conditions())
 
-	dtClient := dtclientmock.NewClient(t)
-	err := rec.Reconcile(t.Context(), dtClient, dk)
+	err := rec.Reconcile(t.Context(), &dynatrace.Client{}, dk)
 	require.NoError(t, err)
 
 	var namespace corev1.Namespace
@@ -575,7 +574,7 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 
 		r := Reconciler{client: clt, apiReader: clt}
 
-		err := r.generateOTLPSecret(ctx, dtClient, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
+		err := r.generateOTLPSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
 		require.NoError(t, err)
 
 		for _, ns := range namespaces {
@@ -586,7 +585,7 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 
 		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
 
-		err = r.generateOTLPSecret(ctx, dtClient, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
+		err = r.generateOTLPSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
 		require.NoError(t, err)
 
 		for _, ns := range namespaces {

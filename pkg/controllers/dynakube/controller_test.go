@@ -469,7 +469,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil)
 
 	mockInjectionReconciler := newMockInjectionReconciler(t)
-	mockInjectionReconciler.EXPECT().Reconcile(anyCtx, mockClient, anyDynaKube).Return(nil)
+	mockInjectionReconciler.EXPECT().Reconcile(anyCtx, dtc, anyDynaKube).Return(nil)
 
 	mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 	mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtc, anyDynaKube).Return(nil)

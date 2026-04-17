@@ -148,7 +148,7 @@ type kspmReconciler interface {
 }
 
 type injectionReconciler interface {
-	Reconcile(ctx context.Context, dtClient dtclient.Client, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error
 }
 
 // Controller reconciles a DynaKube object
