@@ -243,6 +243,7 @@ func (srv *Server) unmount(ctx context.Context, volumeInfo csivolumes.VolumeInfo
 // The mapped folder was just a bind mount to a binary folder, that only exists on "old mounts".
 func (srv *Server) unmountMappedMount(ctx context.Context, path string) error {
 	log := logd.FromContext(ctx)
+
 	if path == "" {
 		return nil
 	}

@@ -96,6 +96,7 @@ func (installer *Installer) InstallAgent(ctx context.Context, targetDir string) 
 
 func (installer *Installer) installAgentFromImage(ctx context.Context, targetDir string) error {
 	log := logd.FromContext(ctx)
+
 	defer func() { _ = os.RemoveAll(CacheDir) }()
 
 	err := os.MkdirAll(CacheDir, common.MkDirFileMode)

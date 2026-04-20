@@ -64,6 +64,7 @@ func (installer *Installer) pullImageInfo(ctx context.Context, imageName string)
 
 func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.Image, imageName string, imageCacheDir string, targetDir string) error {
 	log := logd.FromContext(ctx)
+
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return errors.WithMessagef(err, "parsing reference %q", imageName)
@@ -106,6 +107,7 @@ func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.
 
 func (installer *Installer) unpackOciImage(ctx context.Context, layers []containerv1.Layer, imageCacheDir string, targetDir string) error {
 	log := logd.FromContext(ctx)
+
 	for _, layer := range layers {
 		mediaType, _ := layer.MediaType()
 		switch mediaType {
