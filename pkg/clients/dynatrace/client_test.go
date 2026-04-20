@@ -319,6 +319,34 @@ func TestGetConfig(t *testing.T) {
 	})
 }
 
+func TestMapThirdGenAPIURL(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    "https://tenant.apps.dynatrace.com",
+			expected: "https://tenant.live.dynatrace.com/api",
+		},
+		{
+			input:    "https://tenant.sprint.apps.dynatrace.com",
+			expected: "https://tenant.sprint.dynatrace.com/api",
+		},
+		{
+			input:    "https://tenant.dev.apps.dynatrace.com",
+			expected: "https://tenant.dev.dynatrace.com/api",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.input, func(t *testing.T) {
+			u := mustParseURL(t, tc.input)
+			mapThirdGenAPIURL(u)
+			assert.Equal(t, tc.expected, u.String())
+		})
+	}
+}
+
 type badTransport struct{}
 
 func (b *badTransport) RoundTrip(*http.Request) (*http.Response, error) {

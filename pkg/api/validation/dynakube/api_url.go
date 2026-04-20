@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -18,10 +20,16 @@ const (
 	Make sure you correctly specify the URL in your custom resource (including the /api postfix).
 	`
 
-	errorThirdGenAPIURL = `The DynaKube's specification has an 3rd gen API URL. Make sure to remove the 'apps' part
+	errorThirdGenAPIURL = `The DynaKube's specification has an 3rd gen API URL and the apiToken provided is not a platform token. Make sure to remove the 'apps' part
 	out of it. Example: ` + ExampleAPIURL
 
-	errorMutatedAPIURL = `The DynaKube's specification mutated the API URL although it is immutable. Please delete the CR and then apply a new one`
+	errorQueryingSecret = `Failed to query the DynaKube's secret to check for 3rd gen API URL. Make sure the secret exists and is accessible by the operator.`
+
+	errorSecretMissingAPIToken = `The DynaKube's secret is missing the API token. Make sure the secret contains the API token under the 'apiToken' key.`
+
+	apiToken3rdGenPrefix = "dt0s"
+
+	errorMutatedAPIURL = `The DynaKube's specification mutated the tenant in the API URL although it is immutable. Please delete the CR and then apply a new one`
 )
 
 func NoAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -44,6 +52,10 @@ func NoAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 
 func IsInvalidAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	apiURL := dk.Spec.APIURL
+
+	if isThirdGenAPIURL(apiURL) {
+		return ""
+	}
 
 	if !strings.HasSuffix(apiURL, "/api") {
 		log.Info("api url does not end with /api", "apiUrl", apiURL)
@@ -72,16 +84,55 @@ func IsInvalidAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) str
 	return ""
 }
 
-func IsThirdGenAPIUrl(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if strings.Contains(dk.APIURL(), ".apps.") {
+func isThirdGenAPIURL(apiURL string) bool {
+	parsed, err := url.Parse(apiURL)
+	if err != nil {
+		return false
+	}
+
+	return strings.Contains(parsed.Hostname(), ".apps.")
+}
+
+func IsThirdGenAPIUrl(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	if !isThirdGenAPIURL(dk.APIURL()) {
+		return ""
+	}
+
+	var dkSecret corev1.Secret
+
+	err := dv.apiReader.Get(ctx, client.ObjectKey{Namespace: dk.Namespace, Name: dk.Tokens()}, &dkSecret)
+	if err != nil {
+		return errorQueryingSecret
+	}
+
+	dkSecretAPIToken, ok := dkSecret.Data["apiToken"]
+	if !ok {
+		return errorSecretMissingAPIToken
+	}
+
+	if !strings.HasPrefix(string(dkSecretAPIToken), apiToken3rdGenPrefix) {
 		return errorThirdGenAPIURL
 	}
 
 	return ""
 }
 
+func tenantUUIDFromAPIURL(apiURL string) string {
+	parsed, err := url.Parse(apiURL)
+	if err != nil {
+		return apiURL
+	}
+
+	hostname := parsed.Hostname()
+	if idx := strings.IndexByte(hostname, '.'); idx > 0 {
+		return hostname[:idx]
+	}
+
+	return hostname
+}
+
 func IsMutatedAPIURL(_ context.Context, _ *Validator, oldDK *dynakube.DynaKube, newDK *dynakube.DynaKube) string {
-	if oldDK.Spec.APIURL != newDK.Spec.APIURL {
+	if tenantUUIDFromAPIURL(oldDK.Spec.APIURL) != tenantUUIDFromAPIURL(newDK.Spec.APIURL) {
 		return errorMutatedAPIURL
 	}
 
