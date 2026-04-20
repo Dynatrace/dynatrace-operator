@@ -11,7 +11,7 @@ import (
 )
 
 func CreateForCurrentVersionIfNotExists(ctx context.Context, targetDir string) error {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, "oneagent-symlink")
 
 	var err error
 
@@ -24,10 +24,16 @@ func CreateForCurrentVersionIfNotExists(ctx context.Context, targetDir string) e
 		return err
 	}
 
-	return Create(ctx, relativeSymlinkPath, filepath.Join(targetBinDir, "current"))
+	return create(ctx, relativeSymlinkPath, filepath.Join(targetBinDir, "current"))
 }
 
 func Create(ctx context.Context, targetDir, symlinkDir string) error {
+	ctx, _ = logd.NewFromContext(ctx, "oneagent-symlink")
+
+	return create(ctx, targetDir, symlinkDir)
+}
+
+func create(ctx context.Context, targetDir, symlinkDir string) error {
 	log := logd.FromContext(ctx)
 
 	// Check if the symlink already exists
@@ -49,7 +55,7 @@ func Create(ctx context.Context, targetDir, symlinkDir string) error {
 }
 
 func Remove(ctx context.Context, symlinkPath string) error {
-	log := logd.FromContext(ctx)
+	_, log := logd.NewFromContext(ctx, "oneagent-symlink")
 
 	if err := os.Remove(symlinkPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Info("failed to remove symlink", "path", symlinkPath)
