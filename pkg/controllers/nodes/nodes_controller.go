@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -27,12 +27,12 @@ import (
 )
 
 type Controller struct {
-	client                 client.Client
-	apiReader              client.Reader
-	dynatraceClientBuilder dynatraceclient.Builder
-	timeProvider           *timeprovider.Provider
-	podNamespace           string
-	runLocal               bool
+	client          client.Client
+	apiReader       client.Reader
+	dtClientFactory dynatrace.ClientFactory
+	timeProvider    *timeprovider.Provider
+	podNamespace    string
+	runLocal        bool
 }
 
 func Add(mgr manager.Manager, _ string) error {
@@ -48,23 +48,23 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 
 func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
-		client:                 mgr.GetClient(),
-		apiReader:              mgr.GetAPIReader(),
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
-		runLocal:               system.IsRunLocally(),
-		podNamespace:           os.Getenv(k8senv.PodNamespace),
-		timeProvider:           timeprovider.New(),
+		client:          mgr.GetClient(),
+		apiReader:       mgr.GetAPIReader(),
+		dtClientFactory: dynatrace.NewClientFromDynakube,
+		runLocal:        system.IsRunLocally(),
+		podNamespace:    os.Getenv(k8senv.PodNamespace),
+		timeProvider:    timeprovider.New(),
 	}
 }
 
 func NewControllerFromClient(clt client.Client) *Controller {
 	return &Controller{
-		client:                 clt,
-		apiReader:              clt,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(clt),
-		runLocal:               system.IsRunLocally(),
-		podNamespace:           os.Getenv(k8senv.PodNamespace),
-		timeProvider:           timeprovider.New(),
+		client:          clt,
+		apiReader:       clt,
+		dtClientFactory: dynatrace.NewClientFromDynakube,
+		runLocal:        system.IsRunLocally(),
+		podNamespace:    os.Getenv(k8senv.PodNamespace),
+		timeProvider:    timeprovider.New(),
 	}
 }
 
@@ -185,10 +185,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	// Mark-for-termination events are rare, caching this possibly large dataset would waste memory with no meaningful benefit.
 	dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
 
-	dtClient, err := controller.dynatraceClientBuilder.
-		SetDynakube(*dk).
-		SetTokens(tokens).
-		Build(ctx)
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, *dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
 	if err != nil {
 		return err
 	}

@@ -28,7 +28,6 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
@@ -60,12 +59,11 @@ type OneAgentProvisioner struct {
 	apiReader  client.Reader
 	kubeClient client.Client
 
-	dynatraceClientBuilder dynatraceclient.Builder
-	urlInstallerBuilder    urlInstallerBuilder
-	imageInstallerBuilder  imageInstallerBuilder
-	jobInstallerBuilder    jobInstallerBuilder
-	cleaner                *cleanup.Cleaner
-	path                   metadata.PathResolver
+	urlInstallerBuilder   urlInstallerBuilder
+	imageInstallerBuilder imageInstallerBuilder
+	jobInstallerBuilder   jobInstallerBuilder
+	cleaner               *cleanup.Cleaner
+	path                  metadata.PathResolver
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -73,14 +71,13 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 	path := metadata.PathResolver{RootDir: opts.RootDir}
 
 	return &OneAgentProvisioner{
-		apiReader:              mgr.GetAPIReader(),
-		kubeClient:             mgr.GetClient(),
-		path:                   path,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
-		urlInstallerBuilder:    url.NewURLInstaller,
-		imageInstallerBuilder:  image.NewImageInstaller,
-		jobInstallerBuilder:    job.NewInstaller,
-		cleaner:                cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
+		apiReader:             mgr.GetAPIReader(),
+		kubeClient:            mgr.GetClient(),
+		path:                  path,
+		urlInstallerBuilder:   url.NewURLInstaller,
+		imageInstallerBuilder: image.NewImageInstaller,
+		jobInstallerBuilder:   job.NewInstaller,
+		cleaner:               cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
 	}
 }
 
@@ -189,11 +186,7 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube
 		return nil, err
 	}
 
-	dtClient, err := provisioner.dynatraceClientBuilder.
-		SetDynakube(dk).
-		SetTokens(tokens).
-		SetUserAgentSuffix("provisioner").
-		Build(ctx)
+	dtClient, err := dynatrace.NewClientFromDynakube(ctx, provisioner.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "provisioner")
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create Dynatrace client")
 	}

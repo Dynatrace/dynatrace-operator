@@ -35,6 +35,14 @@ func newToken(tokenType string, value string) Token {
 	}
 }
 
+func (token *Token) String() string {
+	if token == nil {
+		return ""
+	}
+
+	return token.Value
+}
+
 func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
