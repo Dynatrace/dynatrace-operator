@@ -148,7 +148,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk, createToken(t, dk))
 
 		unavailableInstaller := installermock.NewInstaller(t)
-		unavailableInstaller.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, core.ServerError{Code: http.StatusServiceUnavailable})
+		unavailableInstaller.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, &core.HTTPError{StatusCode: http.StatusServiceUnavailable})
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
 		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 

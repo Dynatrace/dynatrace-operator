@@ -9,12 +9,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
@@ -247,9 +247,9 @@ func (controller *Controller) handleError(
 	oldStatus dynakube.DynaKubeStatus,
 ) (reconcile.Result, error) {
 	switch {
-	case dynatraceapi.IsUnreachable(reconcileErr):
+	case core.IsUnreachable(reconcileErr):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
-			"errorCode", dynatraceapi.StatusCode(reconcileErr), "errorMessage", dynatraceapi.Message(reconcileErr))
+			"errorCode", core.StatusCode(reconcileErr), "errorMessage", reconcileErr.Error())
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastRequeueInterval}, nil
 

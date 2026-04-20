@@ -9,13 +9,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 )
 
 const (
 	PaaSKey       = "paasToken"
 	APIKey        = "apiToken"
 	DataIngestKey = "dataIngestToken"
+
+	noError = 0
 )
 
 type VerificationError struct {
@@ -104,7 +105,7 @@ func concatErrors(errs []error) error {
 		return nil
 	}
 
-	apiStatus := dynatraceapi.NoError
+	apiStatus := noError
 
 	var concatenatedError strings.Builder
 	for index, err := range errs {
@@ -114,15 +115,20 @@ func concatErrors(errs []error) error {
 			concatenatedError.WriteString("\n\t")
 		}
 
-		if apiStatus == dynatraceapi.NoError && dynatraceapi.IsUnreachable(err) {
-			apiStatus = dynatraceapi.StatusCode(err)
+		if apiStatus == noError && core.IsUnreachable(err) {
+			apiStatus = core.StatusCode(err)
 		}
 	}
 
-	if apiStatus != dynatraceapi.NoError {
-		return core.ServerError{
-			Code:    apiStatus,
-			Message: concatenatedError.String(),
+	if apiStatus != noError {
+		return &core.HTTPError{
+			StatusCode: apiStatus,
+			ServerErrors: []core.ServerError{
+				{
+					Code:    apiStatus,
+					Message: concatenatedError.String(),
+				},
+			},
 		}
 	}
 
