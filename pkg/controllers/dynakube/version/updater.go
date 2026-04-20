@@ -21,8 +21,8 @@ type StatusUpdater interface {
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
 	IsAutoRegistryEnabled() bool
-	CheckForDowngrade(latestVersion string) (bool, error)
-	ValidateStatus() error
+	CheckForDowngrade(ctx context.Context, latestVersion string) (bool, error)
+	ValidateStatus(ctx context.Context) error
 
 	UseTenantRegistry(context.Context) error
 }
@@ -65,7 +65,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 			return err
 		}
 
-		return updater.ValidateStatus()
+		return updater.ValidateStatus(ctx)
 	}
 
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
@@ -75,7 +75,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		return err
 	}
 
-	return updater.ValidateStatus()
+	return updater.ValidateStatus(ctx)
 }
 
 func (r *reconciler) processAutoRegistry(ctx context.Context, updater StatusUpdater) error {
@@ -172,12 +172,13 @@ func getTagFromImageID(imageID string) (string, error) {
 	return taggedRef.TagStr(), nil
 }
 
-func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, error) {
+func isDowngrade(ctx context.Context, updaterName, previousVersion, latestVersion string) (bool, error) {
 	if previousVersion != "" {
 		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
 			return false, err
 		} else if downgrade {
-			logd.Get().WithName("dynakube-version").Info("downgrade detected, which is not allowed in this configuration", "updater", updaterName, "from", previousVersion, "to", latestVersion)
+			log := logd.FromContext(ctx)
+			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updaterName, "from", previousVersion, "to", latestVersion)
 
 			return true, err
 		}

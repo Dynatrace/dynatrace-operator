@@ -254,7 +254,7 @@ func TestCheckForDowngrade(t *testing.T) {
 		t.Run(testCase.testName, func(t *testing.T) {
 			updater := newOneAgentUpdater(testCase.dk, fake.NewClient(), nil)
 
-			isDowngrade, err := updater.CheckForDowngrade(testCase.newVersion)
+			isDowngrade, err := updater.CheckForDowngrade(t.Context(), testCase.newVersion)
 			require.NoError(t, err)
 			assert.Equal(t, testCase.isDowngrade, isDowngrade)
 		})
@@ -288,26 +288,26 @@ func TestCheckLabels(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
-		require.NoError(t, updater.ValidateStatus())
+		require.NoError(t, updater.ValidateStatus(t.Context()))
 	})
 	t.Run("Validate immutable oneAgent image with classicFullStack", func(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
 		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
-		require.Error(t, updater.ValidateStatus())
+		require.Error(t, updater.ValidateStatus(t.Context()))
 	})
 	t.Run("Validate immutable oneAgent image when image version is not set", func(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dk.Status.OneAgent.Version = ""
 		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
-		require.Error(t, updater.ValidateStatus())
+		require.Error(t, updater.ValidateStatus(t.Context()))
 	})
 	t.Run("Validate mutable oneAgent image with classicFullStack", func(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
 		dk.Status.OneAgent.Type = "mutable"
 		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
-		require.NoError(t, updater.ValidateStatus())
+		require.NoError(t, updater.ValidateStatus(t.Context()))
 	})
 }

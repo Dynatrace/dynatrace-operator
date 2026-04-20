@@ -69,7 +69,7 @@ func (updater codeModulesUpdater) IsAutoRegistryEnabled() bool {
 	return false
 }
 
-func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
+func (updater *codeModulesUpdater) CheckForDowngrade(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
@@ -107,6 +107,6 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 	return nil
 }
 
-func (updater codeModulesUpdater) ValidateStatus() error {
+func (updater codeModulesUpdater) ValidateStatus(_ context.Context) error {
 	return nil
 }

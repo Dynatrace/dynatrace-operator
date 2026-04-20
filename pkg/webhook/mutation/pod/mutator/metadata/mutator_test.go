@@ -194,11 +194,11 @@ func TestIsEnabled(t *testing.T) {
 
 			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
 
-			assert.Equal(t, test.withCSI, mut.IsEnabled(req.BaseRequest))
+			assert.Equal(t, test.withCSI, mut.IsEnabled(t.Context(), req.BaseRequest))
 
 			installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
-			assert.Equal(t, test.withoutCSI, mut.IsEnabled(req.BaseRequest))
+			assert.Equal(t, test.withoutCSI, mut.IsEnabled(t.Context(), req.BaseRequest))
 		})
 	}
 }
@@ -208,10 +208,10 @@ func Test_setInjectedAnnotation(t *testing.T) {
 		mut := NewMutator(nil)
 		request := createTestMutationRequest(nil, nil)
 
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
 		require.Len(t, request.Pod.Annotations, 1)
-		require.True(t, mut.IsInjected(request.BaseRequest))
+		require.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("should remove reason from map", func(t *testing.T) {
@@ -219,10 +219,10 @@ func Test_setInjectedAnnotation(t *testing.T) {
 		request := createTestMutationRequest(nil, nil)
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
 		require.Len(t, request.Pod.Annotations, 1)
-		require.True(t, mut.IsInjected(request.BaseRequest))
+		require.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 }
 
@@ -231,10 +231,10 @@ func Test_setNotInjectedAnnotationFunc(t *testing.T) {
 		mut := NewMutator(nil)
 		request := createTestMutationRequest(nil, nil)
 
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 		require.Len(t, request.Pod.Annotations, 2)
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 }
 

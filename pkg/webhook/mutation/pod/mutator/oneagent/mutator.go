@@ -1,6 +1,8 @@
 package oneagent
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
@@ -56,11 +58,11 @@ func IsEnabled(request *dtwebhook.BaseRequest) bool {
 	return matchesNamespaceSelector && enabledOnPod && enabledOnDynakube
 }
 
-func (mut *Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) IsEnabled(_ context.Context, request *dtwebhook.BaseRequest) bool {
 	return IsEnabled(request)
 }
 
-func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) IsInjected(_ context.Context, request *dtwebhook.BaseRequest) bool {
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
@@ -81,8 +83,8 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	return nil
 }
 
-func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	log := logd.Get().WithName("oa-mutation")
+func (mut *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
+	log := logd.FromContext(ctx)
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 
 	return mutateUserContainers(request.BaseRequest, installPath, log)

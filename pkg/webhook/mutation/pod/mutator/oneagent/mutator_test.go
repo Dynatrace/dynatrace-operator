@@ -306,7 +306,7 @@ func TestMutate(t *testing.T) {
 			assert.True(t, containerIsInjected(request.Pod.Spec.Containers[i], nil))
 		}
 
-		assert.True(t, mut.IsInjected(request.BaseRequest))
+		assert.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 	t.Run("install-path respected", func(t *testing.T) {
 		expectedInstallPath := "my-install"
@@ -326,7 +326,7 @@ func TestMutate(t *testing.T) {
 			assert.Contains(t, preload.Value, expectedInstallPath)
 		}
 
-		assert.True(t, mut.IsInjected(request.BaseRequest))
+		assert.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 	t.Run("no change => no update", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers()
@@ -337,7 +337,7 @@ func TestMutate(t *testing.T) {
 		err := mut.Mutate(request)
 		require.NoError(t, err)
 
-		assert.True(t, mut.IsInjected(request.BaseRequest))
+		assert.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("no tenantUUID + cloudnative => error", func(t *testing.T) {
@@ -347,7 +347,7 @@ func TestMutate(t *testing.T) {
 		err := mut.Mutate(request)
 		require.Error(t, err)
 
-		assert.False(t, mut.IsInjected(request.BaseRequest))
+		assert.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("tenantUUID + cloudnative => update", func(t *testing.T) {
@@ -359,7 +359,7 @@ func TestMutate(t *testing.T) {
 		err := mut.Mutate(request)
 		require.NoError(t, err)
 
-		assert.True(t, mut.IsInjected(request.BaseRequest))
+		assert.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 }
 
@@ -370,7 +370,7 @@ func TestReinvoke(t *testing.T) {
 		request := createTestMutationRequestWithInjectedContainers()
 
 		original := createTestMutationRequestWithInjectedContainers()
-		updated := mut.Reinvoke(request.ToReinvocationRequest())
+		updated := mut.Reinvoke(t.Context(), request.ToReinvocationRequest())
 		require.True(t, updated)
 
 		// no update to install container
@@ -395,7 +395,7 @@ func TestReinvoke(t *testing.T) {
 			AnnotationInstallPath: expectedInstallPath,
 		}
 
-		updated := mut.Reinvoke(request.ToReinvocationRequest())
+		updated := mut.Reinvoke(t.Context(), request.ToReinvocationRequest())
 		require.True(t, updated)
 
 		for _, c := range request.Pod.Spec.Containers {
@@ -411,7 +411,7 @@ func TestReinvoke(t *testing.T) {
 			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
 		}
 
-		updated := mut.Reinvoke(request.ToReinvocationRequest())
+		updated := mut.Reinvoke(t.Context(), request.ToReinvocationRequest())
 		require.False(t, updated)
 	})
 }
@@ -516,10 +516,10 @@ func Test_setInjectedAnnotation(t *testing.T) {
 		mut := NewMutator()
 		request := createTestMutationRequestWithInjectedContainers()
 
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
 		require.Len(t, request.Pod.Annotations, 1)
-		require.True(t, mut.IsInjected(request.BaseRequest))
+		require.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("should remove reason from map", func(t *testing.T) {
@@ -527,10 +527,10 @@ func Test_setInjectedAnnotation(t *testing.T) {
 		request := createTestMutationRequestWithInjectedContainers()
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
 		require.Len(t, request.Pod.Annotations, 1)
-		require.True(t, mut.IsInjected(request.BaseRequest))
+		require.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 }
 
@@ -539,9 +539,9 @@ func Test_setNotInjectedAnnotationFunc(t *testing.T) {
 		mut := NewMutator()
 		request := createTestMutationRequestWithoutInjectedContainers()
 
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 		require.Len(t, request.Pod.Annotations, 2)
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 }

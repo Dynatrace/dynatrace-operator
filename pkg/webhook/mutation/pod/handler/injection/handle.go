@@ -125,7 +125,7 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 
 	var mutated bool
 
-	if h.oaMutator.IsEnabled(mutationRequest.BaseRequest) {
+	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
 		err := h.oaMutator.Mutate(mutationRequest)
 		if err != nil {
 			return false, err
@@ -134,7 +134,7 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 		mutated = true
 	}
 
-	if h.metaMutator.IsEnabled(mutationRequest.BaseRequest) {
+	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
 		err := h.metaMutator.Mutate(mutationRequest)
 		if err != nil {
 			return false, err
@@ -176,8 +176,8 @@ func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationReque
 	}
 
 	var oaUpdated bool
-	if h.oaMutator.IsEnabled(mutationRequest.BaseRequest) {
-		oaUpdated = h.oaMutator.Reinvoke(mutationRequest.ToReinvocationRequest())
+	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
+		oaUpdated = h.oaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest())
 	}
 
 	return hasNewContainers || oaUpdated

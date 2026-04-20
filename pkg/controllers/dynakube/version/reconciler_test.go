@@ -176,13 +176,13 @@ func TestNeedsUpdate(t *testing.T) {
 		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(dkCopy, fake.NewClient(), nil), dkCopy))
+		assert.True(t, reconciler.needsUpdate(t.Context(), newOneAgentUpdater(dkCopy, fake.NewClient(), nil), dkCopy))
 	})
 	t.Run("does not need", func(t *testing.T) {
 		r := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.False(t, r.needsUpdate(newOneAgentUpdater(&dynakube.DynaKube{}, fake.NewClient(), nil), &dynakube.DynaKube{}))
+		assert.False(t, r.needsUpdate(t.Context(), newOneAgentUpdater(&dynakube.DynaKube{}, fake.NewClient(), nil), &dynakube.DynaKube{}))
 	})
 	t.Run("does not need, because not old enough", func(t *testing.T) {
 		oldImage := "repo.com:tag@sha256:123"
@@ -194,7 +194,7 @@ func TestNeedsUpdate(t *testing.T) {
 		r := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.False(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
+		assert.False(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
 	})
 
 	t.Run("needs, because source changed", func(t *testing.T) {
@@ -204,7 +204,7 @@ func TestNeedsUpdate(t *testing.T) {
 		r := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.True(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
+		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
 	})
 
 	t.Run("needs, because custom image changed", func(t *testing.T) {
@@ -217,7 +217,7 @@ func TestNeedsUpdate(t *testing.T) {
 		r := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.True(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
+		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
 	})
 
 	t.Run("needs, because custom version changed", func(t *testing.T) {
@@ -230,7 +230,7 @@ func TestNeedsUpdate(t *testing.T) {
 		r := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.True(t, r.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
+		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil), updatedDynakube))
 	})
 }
 
@@ -249,7 +249,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 		updatedDynakube := dk.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion //nolint:staticcheck
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
-		assert.True(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
+		assert.True(t, hasCustomFieldChanged(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
 
 	t.Run("no change; version", func(t *testing.T) {
@@ -257,7 +257,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 		updatedDynakube := dk.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = version //nolint:staticcheck
 		setOneAgentCustomVersionStatus(updatedDynakube, version)
-		assert.False(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
+		assert.False(t, hasCustomFieldChanged(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
 
 	t.Run("image changed", func(t *testing.T) {
@@ -266,7 +266,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 		updatedDynakube := dk.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
 		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
-		assert.True(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
+		assert.True(t, hasCustomFieldChanged(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
 
 	t.Run("no change; image", func(t *testing.T) {
@@ -275,7 +275,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 		updatedDynakube := dk.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newImage //nolint:staticcheck
 		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
-		assert.False(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
+		assert.False(t, hasCustomFieldChanged(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
 }
 

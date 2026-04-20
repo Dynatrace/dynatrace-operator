@@ -189,7 +189,7 @@ type Controller struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, "dynakube")
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
