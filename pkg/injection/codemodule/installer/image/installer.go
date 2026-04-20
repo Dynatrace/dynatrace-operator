@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -56,6 +57,7 @@ type Installer struct {
 }
 
 func (installer *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
+	ctx, log := logd.NewFromContext(ctx, "oneagent-image")
 	log.Info("installing agent from image")
 
 	if installer.isAlreadyPresent(targetDir) {
@@ -93,6 +95,7 @@ func (installer *Installer) InstallAgent(ctx context.Context, targetDir string) 
 }
 
 func (installer *Installer) installAgentFromImage(ctx context.Context, targetDir string) error {
+	log := logd.FromContext(ctx)
 	defer func() { _ = os.RemoveAll(CacheDir) }()
 
 	err := os.MkdirAll(CacheDir, common.MkDirFileMode)

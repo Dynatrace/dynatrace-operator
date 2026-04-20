@@ -12,7 +12,7 @@ import (
 )
 
 func PrepareConfigFile(ctx context.Context, ec *edgeconnect.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
-	log := logd.FromContext(ctx)
+	_, log := logd.NewFromContext(ctx, "edgeconnect-secret")
 
 	cfg := config.EdgeConnect{
 		Name:            ec.Name,

@@ -23,6 +23,8 @@ const (
 )
 
 func New(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
+	ctx, _ = logd.NewFromContext(ctx, "edgeconnect-deployment")
+
 	return create(ctx, ec)
 }
 

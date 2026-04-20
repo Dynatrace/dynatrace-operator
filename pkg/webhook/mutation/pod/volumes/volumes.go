@@ -1,6 +1,8 @@
 package volumes
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
@@ -26,7 +28,7 @@ const (
 	AnnotationConfigVolumeNameResource = AnnotationResourcePrefix + ConfigVolumeName
 )
 
-func AddConfigVolume(pod *corev1.Pod, log logd.Logger) {
+func AddConfigVolume(ctx context.Context, pod *corev1.Pod) {
 	if k8svolume.Contains(pod.Spec.Volumes, ConfigVolumeName) {
 		return
 	}
@@ -36,6 +38,7 @@ func AddConfigVolume(pod *corev1.Pod, log logd.Logger) {
 	if r, ok := pod.Annotations[AnnotationConfigVolumeNameResource]; ok && r != "" {
 		sizeLimit, err := resource.ParseQuantity(r)
 		if err != nil {
+			_, log := logd.NewFromContext(ctx, "volumes-mutation")
 			log.Error(err, "failed to parse quantity from annotation "+AnnotationConfigVolumeNameResource, "value", r)
 		} else {
 			emptyDirVS = corev1.EmptyDirVolumeSource{

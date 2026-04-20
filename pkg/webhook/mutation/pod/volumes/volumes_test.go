@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -71,7 +70,7 @@ func TestAddConfigVolume(t *testing.T) {
 			},
 		}
 
-		AddConfigVolume(pod, logd.Get())
+		AddConfigVolume(t.Context(), pod)
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 		assert.Equal(t, corev1.Volume{
@@ -103,7 +102,7 @@ func TestAddConfigVolume(t *testing.T) {
 			},
 		}
 
-		AddConfigVolume(pod, logd.Get())
+		AddConfigVolume(t.Context(), pod)
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 		assert.Equal(t, corev1.Volume{
