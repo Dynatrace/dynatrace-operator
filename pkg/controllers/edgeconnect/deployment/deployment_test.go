@@ -226,7 +226,7 @@ func TestAppArmor(t *testing.T) {
 			},
 		}
 
-		deployment := New(ec)
+		deployment := New(t.Context(), ec)
 
 		assert.Contains(t, deployment.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+consts.EdgeConnectContainerName)
 		require.Len(t, deployment.Spec.Template.Spec.Containers, 1)
@@ -248,7 +248,7 @@ func TestAppArmor(t *testing.T) {
 			},
 		}
 
-		deployment := New(ec)
+		deployment := New(t.Context(), ec)
 
 		assert.NotContains(t, deployment.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+consts.EdgeConnectContainerName)
 		require.Len(t, deployment.Spec.Template.Spec.Containers, 1)
