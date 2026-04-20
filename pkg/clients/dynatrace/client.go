@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
 	"golang.org/x/oauth2"
