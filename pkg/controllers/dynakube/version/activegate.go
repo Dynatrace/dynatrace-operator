@@ -72,7 +72,7 @@ func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
 	return !updater.dk.FF().IsActiveGateUpdatesDisabled()
 }
 
-func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
+func (updater *activeGateUpdater) CheckForDowngrade(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
@@ -103,7 +103,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	return nil
 }
 
-func (updater activeGateUpdater) ValidateStatus() error {
+func (updater activeGateUpdater) ValidateStatus(_ context.Context) error {
 	imageVersion := updater.Target().Version
 	if imageVersion == "" {
 		return errors.New("build version of ActiveGate image is not set")

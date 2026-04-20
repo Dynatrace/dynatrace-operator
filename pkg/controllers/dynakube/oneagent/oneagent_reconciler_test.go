@@ -278,7 +278,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
 		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		ds, err := dsInfo.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		pod := &corev1.Pod{
@@ -309,7 +309,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		dk.Spec.OneAgent.ClassicFullStack.Version = "version" //nolint:staticcheck
 		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		ds, err := dsInfo.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		pod := &corev1.Pod{
@@ -349,7 +349,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 		},
 	}
 
-	ds2, err := r.buildDesiredDaemonSet(dk)
+	ds2, err := r.buildDesiredDaemonSet(t.Context(), dk)
 	require.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[hasher.AnnotationHash])
 
@@ -507,10 +507,10 @@ func TestHasSpecChanged(t *testing.T) {
 				},
 			}
 			test.mod(&oldInstance, &newInstance)
-			ds1, err := r.buildDesiredDaemonSet(&oldInstance)
+			ds1, err := r.buildDesiredDaemonSet(t.Context(), &oldInstance)
 			require.NoError(t, err)
 
-			ds2, err := r.buildDesiredDaemonSet(&newInstance)
+			ds2, err := r.buildDesiredDaemonSet(t.Context(), &newInstance)
 			require.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[hasher.AnnotationHash])
@@ -525,7 +525,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run("adds correct affinities", func(t *testing.T) {
 		r := Reconciler{}
 		dk := newDynaKube()
-		ds, err := r.buildDesiredDaemonSet(dk)
+		ds, err := r.buildDesiredDaemonSet(t.Context(), dk)
 
 		require.NoError(t, err)
 		assert.NotNil(t, ds)

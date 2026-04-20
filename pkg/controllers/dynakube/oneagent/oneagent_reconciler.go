@@ -249,7 +249,7 @@ func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 func (r *Reconciler) reconcileRollout(ctx context.Context, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 	// Define a new DaemonSet object
-	dsDesired, err := r.buildDesiredDaemonSet(dk)
+	dsDesired, err := r.buildDesiredDaemonSet(ctx, dk)
 	if err != nil {
 		log.Info("failed to get desired daemonset")
 		setDaemonSetGenerationFailedCondition(dk.Conditions())
@@ -310,18 +310,18 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube,
 	return podList.Items, listOps, err
 }
 
-func (r *Reconciler) buildDesiredDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
+func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 
 	var err error
 
 	switch {
 	case dk.OneAgent().IsClassicFullStackMode():
-		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsHostMonitoringMode():
-		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsCloudNativeFullstackMode():
-		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
 	}
 
 	if err != nil {

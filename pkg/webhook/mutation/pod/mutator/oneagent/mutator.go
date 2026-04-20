@@ -1,6 +1,8 @@
 package oneagent
 
 import (
+	"context"
+
 	"fmt"
 	"os"
 	"path/filepath"
@@ -70,11 +72,11 @@ func IsEnabled(request *dtwebhook.BaseRequest) bool {
 	return matchesNamespaceSelector && enabledOnPod && enabledOnDynakube
 }
 
-func (mut *Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) IsEnabled(_ context.Context, request *dtwebhook.BaseRequest) bool {
 	return IsEnabled(request)
 }
 
-func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) IsInjected(_ context.Context, request *dtwebhook.BaseRequest) bool {
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
@@ -114,8 +116,8 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	return nil
 }
 
-func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	log := logd.Get().WithName("oa-mutation")
+func (mut *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
+	log := logd.FromContext(ctx)
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 	if err := validateInstallPath(installPath); err != nil {
 		return false

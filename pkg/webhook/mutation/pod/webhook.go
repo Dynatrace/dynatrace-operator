@@ -92,7 +92,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
-	return createResponseForPod(mutationRequest.Pod, request)
+	return createResponseForPod(ctx, mutationRequest.Pod, request)
 }
 
 func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
@@ -123,10 +123,11 @@ func (wh *webhook) isOcDebugPod(pod *corev1.Pod) bool {
 }
 
 // createResponseForPod tries to format pod as json
-func createResponseForPod(pod *corev1.Pod, req admission.Request) admission.Response {
+func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Request) admission.Response {
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
 	if err != nil {
-		return silentErrorResponse(pod, err, logd.Get())
+		log := logd.FromContext(ctx)
+		return silentErrorResponse(pod, err, log)
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)

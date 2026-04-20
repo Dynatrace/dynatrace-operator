@@ -95,7 +95,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 		}
 	}
 
-	downgrade, err := updater.CheckForDowngrade(latestVersion)
+	downgrade, err := updater.CheckForDowngrade(ctx, latestVersion)
 	if err != nil || downgrade {
 		return err
 	}
@@ -112,7 +112,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	return nil
 }
 
-func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
+func (updater *oneAgentUpdater) CheckForDowngrade(ctx context.Context, latestVersion string) (bool, error) {
 	imageID := updater.Target().ImageID
 	if imageID == "" {
 		return false, nil
@@ -126,7 +126,7 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 		previousVersion = updater.Target().Version //nolint:staticcheck
 	}
 
-	downgrade, err := isDowngrade(updater.Name(), previousVersion, latestVersion)
+	downgrade, err := isDowngrade(ctx, updater.Name(), previousVersion, latestVersion)
 	if downgrade {
 		setDowngradeCondition(updater.dk.Conditions(), oaConditionType, previousVersion, latestVersion)
 	}
@@ -138,8 +138,8 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	return downgrade, err
 }
 
-func (updater oneAgentUpdater) ValidateStatus() error {
-	log := logd.Get().WithName("dynakube-version")
+func (updater oneAgentUpdater) ValidateStatus(ctx context.Context) error {
+	log := logd.FromContext(ctx)
 	imageVersion := updater.Target().Version
 	imageType := updater.Target().Type
 

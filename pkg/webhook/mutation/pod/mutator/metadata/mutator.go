@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"context"
 	"maps"
 
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
@@ -28,7 +29,7 @@ func NewMutator(metaClient client.Client) dtwebhook.Mutator {
 	}
 }
 
-func (mut *Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) IsEnabled(_ context.Context, request *dtwebhook.BaseRequest) bool {
 	if oneagent.IsEnabled(request) {
 		return true
 	}
@@ -48,7 +49,7 @@ func (mut *Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 	return matchesNamespace && enabledOnPod && enabledOnDynakube
 }
 
-func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) IsInjected(_ context.Context, request *dtwebhook.BaseRequest) bool {
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
@@ -106,7 +107,7 @@ func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{{Name: bootstrapper.MetadataEnrichmentFlag}})...)
 }
 
-func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+func (mut *Mutator) Reinvoke(_ context.Context, request *dtwebhook.ReinvocationRequest) bool {
 	return false
 }
 

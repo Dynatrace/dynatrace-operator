@@ -26,12 +26,12 @@ func New(apiReader client.Client) dtwebhook.Mutator {
 	return &Mutator{kubeClient: apiReader}
 }
 
-func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
+func (Mutator) IsEnabled(_ context.Context, _ *dtwebhook.BaseRequest) bool {
 	// always return true, as this mutator is only called if OTLP exporter mutator is enabled
 	return true
 }
 
-func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
+func (Mutator) IsInjected(_ context.Context, _ *dtwebhook.BaseRequest) bool {
 	// always return false, as this mutator is only called if OTLP exporter mutator is enabled
 	return false
 }
@@ -42,11 +42,11 @@ func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	return err
 }
 
-func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	log := logd.Get().WithName("otlp-exporter-pod-mutation")
+func (m *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
+	log := logd.FromContext(ctx)
 	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	mutated, _ := m.mutate(context.Background(), request.BaseRequest)
+	mutated, _ := m.mutate(ctx, request.BaseRequest)
 
 	return mutated
 }

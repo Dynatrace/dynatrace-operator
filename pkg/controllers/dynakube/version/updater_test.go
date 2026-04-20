@@ -271,7 +271,7 @@ func newBaseUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool)
 	updater.On("Target").Maybe().Return(target)
 	updater.On("IsEnabled").Maybe().Return(true)
 	updater.On("IsAutoUpdateEnabled").Maybe().Return(autoUpdate)
-	updater.On("ValidateStatus").Maybe().Return(nil)
+	updater.On("ValidateStatus", anyCtx).Maybe().Return(nil)
 
 	return updater
 }

@@ -103,7 +103,7 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
-	newService, err := r.buildService(dk)
+	newService, err := r.buildService(ctx, dk)
 	if err != nil {
 		k8sconditions.SetServiceGenFailed(dk.Conditions(), serviceConditionType, err)
 
@@ -123,20 +123,20 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 	return nil
 }
 
-func (r *Reconciler) buildService(dk *dynakube.DynaKube) (*corev1.Service, error) {
+func (r *Reconciler) buildService(ctx context.Context, dk *dynakube.DynaKube) (*corev1.Service, error) {
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel)
 	appLabels := k8slabel.NewAppLabels(k8slabel.OtelCComponentLabel, dk.Name, k8slabel.OtelCComponentLabel, "")
 
 	return k8sservice.Build(dk,
 		dk.TelemetryIngest().GetServiceName(),
 		appLabels.BuildMatchLabels(),
-		buildServicePortList(dk.TelemetryIngest().GetProtocols()),
+		buildServicePortList(ctx, dk.TelemetryIngest().GetProtocols()),
 		k8sservice.SetLabels(coreLabels.BuildLabels()),
 		k8sservice.SetType(corev1.ServiceTypeClusterIP),
 	)
 }
 
-func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
+func buildServicePortList(ctx context.Context, protocols []otelcgen.Protocol) []corev1.ServicePort {
 	if len(protocols) == 0 {
 		return nil
 	}
@@ -204,7 +204,8 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 					TargetPort: intstr.FromInt32(statsdPort),
 				})
 		default:
-			logd.Get().WithName("otelc-service").Info("unknown telemetry service protocol ignored", "protocol", protocol)
+			log := logd.FromContext(ctx)
+			log.Info("unknown telemetry service protocol ignored", "protocol", protocol)
 		}
 	}
 
