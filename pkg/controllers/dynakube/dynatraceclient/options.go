@@ -18,7 +18,6 @@ type options struct {
 func newOptions(ctx context.Context) *options {
 	return &options{
 		Opts: []dynatrace.Option{},
-		ctx:  ctx,
 	}
 }
 
@@ -38,12 +37,12 @@ func (opts *options) appendCertCheck(skipCertCheck bool) {
 	opts.Opts = append(opts.Opts, dynatrace.WithSkipCertificateValidation(skipCertCheck))
 }
 
-func (opts *options) appendProxySettings(apiReader client.Reader, dk *dynakube.DynaKube) error {
+func (opts *options) appendProxySettings(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	if dk == nil || !dk.HasProxy() {
 		return nil
 	}
 
-	proxyOption, err := opts.createProxyOption(apiReader, dk)
+	proxyOption, err := opts.createProxyOption(ctx, apiReader, dk)
 	if err != nil {
 		return err
 	}
@@ -53,23 +52,23 @@ func (opts *options) appendProxySettings(apiReader client.Reader, dk *dynakube.D
 	return nil
 }
 
-func (opts *options) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dynatrace.Option, error) {
+func (opts *options) createProxyOption(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube) (dynatrace.Option, error) {
 	var proxyOption dynatrace.Option
 
-	proxyURL, err := dk.Proxy(opts.ctx, apiReader)
+	proxyURL, err := dk.Proxy(ctx, apiReader)
 	if err != nil {
 		return proxyOption, err
 	}
 
-	proxyOption = dynatrace.WithProxy(proxyURL, dk.FF().GetNoProxy())
+	proxyOption = dynatrace.WithProxy(ctx, proxyURL, dk.FF().GetNoProxy())
 
 	return proxyOption, nil
 }
 
-func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts string, namespace string) error {
+func (opts *options) appendTrustedCerts(ctx context.Context, apiReader client.Reader, trustedCerts string, namespace string) error {
 	if trustedCerts != "" {
 		certs := &corev1.ConfigMap{}
-		if err := apiReader.Get(opts.ctx, client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
+		if err := apiReader.Get(ctx, client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
 			return errors.WithMessage(err, "failed to get certificate configmap")
 		}
 
@@ -77,7 +76,7 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
 
-		opts.Opts = append(opts.Opts, dynatrace.WithCerts([]byte(certs.Data[dynakube.TrustedCAKey])))
+		opts.Opts = append(opts.Opts, dynatrace.WithCerts(ctx, []byte(certs.Data[dynakube.TrustedCAKey])))
 	}
 
 	return nil

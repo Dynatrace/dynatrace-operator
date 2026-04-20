@@ -61,17 +61,17 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (*dynatrace.Cli
 	namespace := dynatraceClientBuilder.dk.Namespace
 	apiReader := dynatraceClientBuilder.apiReader
 
-	opts := newOptions(ctx)
+	opts := newOptions()
 	opts.appendCertCheck(dynatraceClientBuilder.dk.Spec.SkipCertCheck)
 	opts.appendNetworkZone(dynatraceClientBuilder.dk.Spec.NetworkZone)
 	opts.appendHostGroup(dynatraceClientBuilder.dk.OneAgent().GetHostGroup())
 
-	err := opts.appendProxySettings(apiReader, &dynatraceClientBuilder.dk)
+	err := opts.appendProxySettings(ctx, apiReader, &dynatraceClientBuilder.dk)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	err = opts.appendTrustedCerts(apiReader, dynatraceClientBuilder.dk.Spec.TrustedCAs, namespace)
+	err = opts.appendTrustedCerts(ctx, apiReader, dynatraceClientBuilder.dk.Spec.TrustedCAs, namespace)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

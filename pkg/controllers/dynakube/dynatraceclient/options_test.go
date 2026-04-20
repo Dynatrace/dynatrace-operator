@@ -32,7 +32,7 @@ func TestOptions(t *testing.T) {
 	}
 
 	t.Run("Test append network zone", func(t *testing.T) {
-		opts := newOptions(t.Context())
+		opts := newOptions()
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
@@ -46,7 +46,7 @@ func TestOptions(t *testing.T) {
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run("Test append cert check", func(t *testing.T) {
-		opts := newOptions(t.Context())
+		opts := newOptions()
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
@@ -56,23 +56,23 @@ func TestOptions(t *testing.T) {
 		assert.NotNil(t, opts)
 		assert.NotEmpty(t, opts.Opts)
 
-		opts = newOptions(t.Context())
+		opts = newOptions()
 		opts.appendCertCheck(true)
 
 		assert.NotNil(t, opts)
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run("Test append proxy settings", func(t *testing.T) {
-		opts := newOptions(t.Context())
+		opts := newOptions()
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
 
-		err := opts.appendProxySettings(nil, nil)
+		err := opts.appendProxySettings(t.Context(), nil, nil)
 		require.NoError(t, err)
 		assert.Empty(t, opts.Opts)
 
-		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(t, value.Source{Value: testValue}))
+		err = opts.appendProxySettings(t.Context(), nil, createTestDynakubeWithProxy(t, value.Source{Value: testValue}))
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -87,16 +87,16 @@ func TestOptions(t *testing.T) {
 					dynakube.ProxyKey: []byte(testValue),
 				},
 			})
-		opts = newOptions(t.Context())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
+		opts = newOptions()
+		err = opts.appendProxySettings(t.Context(), fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run("AppendProxySettings handles missing or malformed secret", func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		opts := newOptions(t.Context())
-		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
+		opts := newOptions()
+		err := opts.appendProxySettings(t.Context(), fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
@@ -109,19 +109,19 @@ func TestOptions(t *testing.T) {
 				},
 				Data: map[string][]byte{},
 			})
-		opts = newOptions(t.Context())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
+		opts = newOptions()
+		err = opts.appendProxySettings(t.Context(), fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
 	})
 	t.Run("Test append trusted certificates", func(t *testing.T) {
-		opts := newOptions(t.Context())
+		opts := newOptions()
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
 
-		err := opts.appendTrustedCerts(nil, "", "")
+		err := opts.appendTrustedCerts(t.Context(), nil, "", "")
 
 		require.NoError(t, err)
 		assert.Empty(t, opts.Opts)
@@ -135,19 +135,19 @@ func TestOptions(t *testing.T) {
 				Data: map[string]string{
 					dynakube.TrustedCAKey: testValue,
 				}})
-		err = opts.appendTrustedCerts(fakeClient, testName, testNamespace)
+		err = opts.appendTrustedCerts(t.Context(), fakeClient, testName, testNamespace)
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run("AppendTrustedCerts handles missing or malformed config map", func(t *testing.T) {
-		opts := newOptions(t.Context())
+		opts := newOptions()
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
 
 		fakeClient := fake.NewClient()
-		err := opts.appendTrustedCerts(fakeClient, testName, testNamespace)
+		err := opts.appendTrustedCerts(t.Context(), fakeClient, testName, testNamespace)
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
@@ -159,7 +159,7 @@ func TestOptions(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{}})
-		err = opts.appendTrustedCerts(fakeClient, testName, testNamespace)
+		err = opts.appendTrustedCerts(t.Context(), fakeClient, testName, testNamespace)
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
