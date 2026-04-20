@@ -1,11 +1,12 @@
 package injection
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
@@ -50,11 +51,11 @@ func areErrorsSuppressed(pod *corev1.Pod, dk dynakube.DynaKube) bool {
 	return maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FF().GetInjectionFailurePolicy()) != "fail" // safer than == silent
 }
 
-func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container, log logd.Logger) {
+func addInitContainerToPod(ctx context.Context, pod *corev1.Pod, initContainer *corev1.Container) {
 	volumes.AddInitConfigVolumeMount(initContainer)
 	volumes.AddInitInputVolumeMount(initContainer)
 	volumes.AddInputVolume(pod)
-	volumes.AddConfigVolume(pod, log)
+	volumes.AddConfigVolume(ctx, pod)
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
 }
 

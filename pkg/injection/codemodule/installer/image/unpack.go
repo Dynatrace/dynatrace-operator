@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -22,7 +23,9 @@ type imagePullInfo struct {
 }
 
 func (installer *Installer) extractAgentBinariesFromImage(ctx context.Context, pullInfo imagePullInfo, imageName string) error {
-	img, err := installer.pullImageInfo(imageName)
+	log := logd.FromContext(ctx)
+
+	img, err := installer.pullImageInfo(ctx, imageName)
 	if err != nil {
 		log.Info("pullImageInfo", "error", err)
 
@@ -41,13 +44,13 @@ func (installer *Installer) extractAgentBinariesFromImage(ctx context.Context, p
 	return nil
 }
 
-func (installer *Installer) pullImageInfo(imageName string) (*containerv1.Image, error) {
+func (installer *Installer) pullImageInfo(ctx context.Context, imageName string) (*containerv1.Image, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
 	}
 
-	image, err := remote.Image(ref, remote.WithContext(context.TODO()),
+	image, err := remote.Image(ref, remote.WithContext(ctx),
 		remote.WithAuthFromKeychain(installer.keychain),
 		remote.WithTransport(installer.transport),
 		remote.WithPlatform(arch.ImagePlatform),
@@ -60,6 +63,7 @@ func (installer *Installer) pullImageInfo(imageName string) (*containerv1.Image,
 }
 
 func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.Image, imageName string, imageCacheDir string, targetDir string) error {
+	log := logd.FromContext(ctx)
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return errors.WithMessagef(err, "parsing reference %q", imageName)
@@ -101,6 +105,7 @@ func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.
 }
 
 func (installer *Installer) unpackOciImage(ctx context.Context, layers []containerv1.Layer, imageCacheDir string, targetDir string) error {
+	log := logd.FromContext(ctx)
 	for _, layer := range layers {
 		mediaType, _ := layer.MediaType()
 		switch mediaType {

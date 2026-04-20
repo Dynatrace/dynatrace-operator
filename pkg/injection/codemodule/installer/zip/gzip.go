@@ -15,7 +15,7 @@ import (
 )
 
 func (extractor OneAgentExtractor) ExtractGzip(ctx context.Context, sourceFilePath, targetDir string) error {
-	log := logd.FromContext(ctx)
+	_, log := logd.NewFromContext(ctx, "oneagent-zip")
 
 	extractor.cleanTempZipDir()
 

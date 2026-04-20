@@ -100,7 +100,7 @@ func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 }
 
 func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) error {
-	log := logd.FromContext(ctx)
+	_, log := logd.NewFromContext(ctx, "dynakube-v1beta4")
 	dk.Status.UpdatedTimestamp = metav1.Now()
 	err := client.Status().Update(ctx, dk)
 

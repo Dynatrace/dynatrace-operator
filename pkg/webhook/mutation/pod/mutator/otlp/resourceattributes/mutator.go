@@ -37,13 +37,14 @@ func (Mutator) IsInjected(_ context.Context, _ *dtwebhook.BaseRequest) bool {
 }
 
 func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_, err := m.mutate(request.Context, request.BaseRequest)
+	ctx, _ := logd.NewFromContext(request.Context, "otlp-exporter-pod-mutation")
+	_, err := m.mutate(ctx, request.BaseRequest)
 
 	return err
 }
 
 func (m *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation")
 	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	mutated, _ := m.mutate(ctx, request.BaseRequest)

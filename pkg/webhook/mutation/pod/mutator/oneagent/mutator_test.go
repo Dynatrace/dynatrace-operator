@@ -291,9 +291,9 @@ func TestMutate(t *testing.T) {
 	mut := NewMutator()
 
 	t.Run("success", func(t *testing.T) {
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 
-		original := createTestMutationRequestWithoutInjectedContainers()
+		original := createTestMutationRequestWithoutInjectedContainers(t)
 		err := mut.Mutate(request)
 		require.NoError(t, err)
 		// update install container
@@ -310,7 +310,7 @@ func TestMutate(t *testing.T) {
 	})
 	t.Run("install-path respected", func(t *testing.T) {
 		expectedInstallPath := "my-install"
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 		request.Pod.Annotations = map[string]string{
 			AnnotationInstallPath: expectedInstallPath,
 		}
@@ -329,7 +329,7 @@ func TestMutate(t *testing.T) {
 		assert.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 	t.Run("no change => no update", func(t *testing.T) {
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 		for i := range request.Pod.Spec.Containers {
 			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
 		}
@@ -341,7 +341,7 @@ func TestMutate(t *testing.T) {
 	})
 
 	t.Run("no tenantUUID + cloudnative => error", func(t *testing.T) {
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 		request.DynaKube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 
 		err := mut.Mutate(request)
@@ -351,7 +351,7 @@ func TestMutate(t *testing.T) {
 	})
 
 	t.Run("tenantUUID + cloudnative => update", func(t *testing.T) {
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 		request.DynaKube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		request.DynaKube.Status.OneAgent.ConnectionInfo.TenantUUID = "example"
 		request.DynaKube.Status.CodeModules.Version = "1.2.3"
@@ -367,9 +367,9 @@ func TestReinvoke(t *testing.T) {
 	mut := NewMutator()
 
 	t.Run("success", func(t *testing.T) {
-		request := createTestMutationRequestWithInjectedContainers()
+		request := createTestMutationRequestWithInjectedContainers(t)
 
-		original := createTestMutationRequestWithInjectedContainers()
+		original := createTestMutationRequestWithInjectedContainers(t)
 		updated := mut.Reinvoke(t.Context(), request.ToReinvocationRequest())
 		require.True(t, updated)
 
@@ -390,7 +390,7 @@ func TestReinvoke(t *testing.T) {
 
 	t.Run("install-path respected", func(t *testing.T) {
 		expectedInstallPath := "my-install"
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 		request.Pod.Annotations = map[string]string{
 			AnnotationInstallPath: expectedInstallPath,
 		}
@@ -406,7 +406,7 @@ func TestReinvoke(t *testing.T) {
 	})
 
 	t.Run("no change => no update", func(t *testing.T) {
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 		for i := range request.Pod.Spec.Containers {
 			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
 		}
@@ -457,8 +457,9 @@ func TestAddOneAgentToContainer(t *testing.T) {
 	})
 }
 
-func createTestMutationRequestWithoutInjectedContainers() *dtwebhook.MutationRequest {
+func createTestMutationRequestWithoutInjectedContainers(t *testing.T) *dtwebhook.MutationRequest {
 	return &dtwebhook.MutationRequest{
+		Context: t.Context(),
 		InstallContainer: &corev1.Container{
 			Name: dtwebhook.InstallContainerName,
 		},
@@ -502,8 +503,8 @@ func createTestMutationRequestWithoutInjectedContainers() *dtwebhook.MutationReq
 	}
 }
 
-func createTestMutationRequestWithInjectedContainers() *dtwebhook.MutationRequest {
-	request := createTestMutationRequestWithoutInjectedContainers()
+func createTestMutationRequestWithInjectedContainers(t *testing.T) *dtwebhook.MutationRequest {
+	request := createTestMutationRequestWithoutInjectedContainers(t)
 
 	i := 0
 	addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
@@ -514,7 +515,7 @@ func createTestMutationRequestWithInjectedContainers() *dtwebhook.MutationReques
 func Test_setInjectedAnnotation(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
 		mut := NewMutator()
-		request := createTestMutationRequestWithInjectedContainers()
+		request := createTestMutationRequestWithInjectedContainers(t)
 
 		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
@@ -524,7 +525,7 @@ func Test_setInjectedAnnotation(t *testing.T) {
 
 	t.Run("should remove reason from map", func(t *testing.T) {
 		mut := NewMutator()
-		request := createTestMutationRequestWithInjectedContainers()
+		request := createTestMutationRequestWithInjectedContainers(t)
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 
 		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
@@ -537,7 +538,7 @@ func Test_setInjectedAnnotation(t *testing.T) {
 func Test_setNotInjectedAnnotationFunc(t *testing.T) {
 	t.Run("should add annotations to nil map", func(t *testing.T) {
 		mut := NewMutator()
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 
 		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setNotInjectedAnnotationFunc("test")(request.Pod)

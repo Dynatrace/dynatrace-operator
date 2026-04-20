@@ -127,6 +127,7 @@ func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Re
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
 	if err != nil {
 		log := logd.FromContext(ctx)
+
 		return silentErrorResponse(pod, err, log)
 	}
 
