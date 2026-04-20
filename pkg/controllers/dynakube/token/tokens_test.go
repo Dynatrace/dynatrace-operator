@@ -490,22 +490,32 @@ func TestTokens_VerifyValues(t *testing.T) {
 	require.EqualError(t, invalidTokens.VerifyValues(), "token 'apiToken' contains leading or trailing whitespaces")
 }
 
-type concatErrorsTestCase struct {
-	name              string
-	encounteredErrors []error
-	message           string
-}
-
 func TestConcatErrors(t *testing.T) {
 	stringError1 := errors.New("error 1")
 	stringError2 := errors.New("error 2")
-	serviceUnavailableError := core.ServerError{
-		Code:    http.StatusServiceUnavailable,
-		Message: "ServiceUnavailable",
+	serviceUnavailableError := &core.HTTPError{
+		ServerErrors: []core.ServerError{
+			{
+				Code:    http.StatusServiceUnavailable,
+				Message: "ServiceUnavailable",
+			},
+		},
+		StatusCode: http.StatusServiceUnavailable,
 	}
-	tooManyRequestsError := core.ServerError{
-		Code:    http.StatusTooManyRequests,
-		Message: "TooManyRequests",
+	tooManyRequestsError := &core.HTTPError{
+		ServerErrors: []core.ServerError{
+			{
+				Code:    http.StatusTooManyRequests,
+				Message: "TooManyRequests",
+			},
+		},
+		StatusCode: http.StatusTooManyRequests,
+	}
+
+	type concatErrorsTestCase struct {
+		name              string
+		encounteredErrors []error
+		message           string
 	}
 
 	testCases := []concatErrorsTestCase{
@@ -527,7 +537,7 @@ func TestConcatErrors(t *testing.T) {
 				stringError1,
 				serviceUnavailableError,
 			},
-			message: "dynatrace server error 503: error 1\n\tdynatrace server error 503: ServiceUnavailable",
+			message: "HTTP 503: dynatrace server error 503: error 1\n\tHTTP 503: dynatrace server error 503: ServiceUnavailable",
 		},
 		{
 			name: "string + TooManyRequests errors",
@@ -535,7 +545,7 @@ func TestConcatErrors(t *testing.T) {
 				stringError1,
 				tooManyRequestsError,
 			},
-			message: "dynatrace server error 429: error 1\n\tdynatrace server error 429: TooManyRequests",
+			message: "HTTP 429: dynatrace server error 429: error 1\n\tHTTP 429: dynatrace server error 429: TooManyRequests",
 		},
 		{
 			name: "string + ServiceUnavailable + TooManyRequests errors",
@@ -544,7 +554,7 @@ func TestConcatErrors(t *testing.T) {
 				serviceUnavailableError,
 				tooManyRequestsError,
 			},
-			message: "dynatrace server error 503: error 1\n\tdynatrace server error 503: ServiceUnavailable\n\tdynatrace server error 429: TooManyRequests",
+			message: "HTTP 503: dynatrace server error 503: error 1\n\tHTTP 503: dynatrace server error 503: ServiceUnavailable\n\tHTTP 429: dynatrace server error 429: TooManyRequests",
 		},
 		{
 			name: "string + TooManyRequests + ServiceUnavailable errors",
@@ -553,7 +563,7 @@ func TestConcatErrors(t *testing.T) {
 				tooManyRequestsError,
 				serviceUnavailableError,
 			},
-			message: "dynatrace server error 429: error 1\n\tdynatrace server error 429: TooManyRequests\n\tdynatrace server error 503: ServiceUnavailable",
+			message: "HTTP 429: dynatrace server error 429: error 1\n\tHTTP 429: dynatrace server error 429: TooManyRequests\n\tHTTP 503: dynatrace server error 503: ServiceUnavailable",
 		},
 	}
 

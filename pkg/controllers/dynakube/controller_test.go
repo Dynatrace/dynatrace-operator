@@ -182,7 +182,7 @@ func TestHandleError(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		serverError := core.ServerError{Code: http.StatusTooManyRequests}
+		serverError := &core.HTTPError{StatusCode: http.StatusTooManyRequests}
 
 		result, err := controller.handleError(ctx, oldDynakube, serverError, oldDynakube.Status)
 		require.NoError(t, err)
@@ -661,10 +661,9 @@ func TestTokenConditions(t *testing.T) {
 		})
 
 		mockedTokenClient := tokenclientmock.NewAPIClient(t)
-		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(nil, core.ServerError{
-			Message:              "test-error",
-			ConstraintViolations: []core.ConstraintViolation{},
-			Code:                 1234,
+		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(nil, &core.HTTPError{
+			Message:    "test-error",
+			StatusCode: 1234,
 		})
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
