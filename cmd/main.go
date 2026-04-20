@@ -54,7 +54,7 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 }
 
 func main() {
-	ctrl.SetLogger(log.Logger)
+	ctrl.SetLogger(logd.Get().Logger)
 	stdLog.SetOutput(&log)
 
 	cmd := newRootCommand()
