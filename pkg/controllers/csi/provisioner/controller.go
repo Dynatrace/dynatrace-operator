@@ -151,7 +151,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: notReadyRequeueDuration}, nil
 	case core.IsUnreachable(err):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! Reconcile requeued.",
-			"errorCode", core.StatusCode(err), "errorMessage", err.Error(), "requeueAfter", shortRequeueDuration)
+			"errorMessage", err.Error(), "requeueAfter", shortRequeueDuration)
 
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	case err != nil:

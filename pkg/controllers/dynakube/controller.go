@@ -249,7 +249,7 @@ func (controller *Controller) handleError(
 	switch {
 	case core.IsUnreachable(reconcileErr):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
-			"errorCode", core.StatusCode(reconcileErr), "errorMessage", reconcileErr.Error())
+			"errorMessage", reconcileErr.Error())
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastRequeueInterval}, nil
 
