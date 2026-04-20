@@ -34,7 +34,7 @@ func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 		funcs = append(funcs, nodes.Add)
 	}
 
-	if !isOLM {
+	if isOLM {
 		funcs = append(funcs, certificates.Add)
 	}
 

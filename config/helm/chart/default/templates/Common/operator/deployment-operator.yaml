@@ -52,7 +52,7 @@ spec:
         {{- toYaml .Values.operator.labels | nindent 8 }}
         {{- end }}
     spec:
-      {{- $needsCertgen := not (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+      {{- $needsCertgen := (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
       {{- $needsMigrator := and .Release.IsUpgrade .Values.operator.crdStorageMigrationInitManager }}
       {{- if or $needsCertgen $needsMigrator }}
       initContainers:
