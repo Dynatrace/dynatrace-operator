@@ -37,7 +37,6 @@ var (
 		KSPM:                 true,
 		KubernetesMonitoring: true,
 	}
-
 )
 
 type Modules struct {
