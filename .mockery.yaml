@@ -91,9 +91,6 @@ packages:
   # =============================================================================
   # Shared mocks: placed in test/mocks/ (using default config)
   # =============================================================================
-  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
-    interfaces:
-      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate:
     interfaces:
       APIClient:
@@ -125,7 +122,6 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
     interfaces:
       Builder:
-      BuilderV2:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:

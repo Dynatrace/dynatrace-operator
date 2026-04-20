@@ -12,7 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -21,7 +22,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/pkg/errors"
@@ -182,7 +182,7 @@ func TestHandleError(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		serverError := dtclient.ServerError{Code: http.StatusTooManyRequests}
+		serverError := &core.HTTPError{StatusCode: http.StatusTooManyRequests}
 
 		result, err := controller.handleError(ctx, oldDynakube, serverError, oldDynakube.Status)
 		require.NoError(t, err)
@@ -226,9 +226,9 @@ func TestSetupTokensAndClient(t *testing.T) {
 			apiReader: fakeClient,
 		}
 
-		dtc, err := controller.setupTokensAndClient(ctx, dk)
+		dtClient, err := controller.setupTokensAndClient(ctx, dk)
 		require.Error(t, err)
-		assert.Nil(t, dtc)
+		assert.Nil(t, dtClient)
 		assertTokenCondition(t, dk, true)
 	})
 
@@ -256,12 +256,12 @@ func TestSetupTokensAndClient(t *testing.T) {
 			dynatraceClientBuilder: mockDtcBuilder,
 		}
 
-		dtc, err := controller.setupTokensAndClient(ctx, dk)
+		dtClient, err := controller.setupTokensAndClient(ctx, dk)
 		require.Error(t, err)
-		assert.Nil(t, dtc)
+		assert.Nil(t, dtClient)
 		assertTokenCondition(t, dk, true)
 	})
-	t.Run("tokens + dtclient ok => no error", func(t *testing.T) {
+	t.Run("tokens + dtClient ok => no error", func(t *testing.T) {
 		// There is also a pull-secret created here, however testing it here is a bit counterintuitive.
 		// TODO: Make the pull-secret reconciler mockable, so we can improve this test.
 		dk := dkBase.DeepCopy()
@@ -286,11 +286,8 @@ func TestSetupTokensAndClient(t *testing.T) {
 			tokenclient.ScopeActiveGateTokenCreate,
 		}, nil).Once()
 
-		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
-
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDynatraceClientBuild(mockDtcBuilder, mockedDtc)
+		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.Client{Token: mockedTokenClient})
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -298,9 +295,9 @@ func TestSetupTokensAndClient(t *testing.T) {
 			dynatraceClientBuilder: mockDtcBuilder,
 		}
 
-		dtc, err := controller.setupTokensAndClient(ctx, dk)
+		dtClient, err := controller.setupTokensAndClient(ctx, dk)
 		require.NoError(t, err)
-		assert.NotNil(t, dtc)
+		assert.NotNil(t, dtClient)
 		assertTokenCondition(t, dk, false)
 	})
 }
@@ -374,21 +371,20 @@ func TestReconcileComponents(t *testing.T) {
 			activeGateReconciler:    mockActiveGateReconciler,
 			injectionReconciler:     mockInjectionReconciler,
 		}
-		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
+		dtClient := &dynatrace.Client{Settings: &settings.Client{}}
 
 		var err error
 
-		expectReconcileError(t, mockOneAgentReconciler, &err, dk, mockedDtc, token.Tokens(nil))
-		expectReconcileError(t, mockActiveGateReconciler, &err, dk, mockedDtc, token.Tokens(nil))
-		expectReconcileError(t, mockInjectionReconciler, &err, mockedDtc, dk)
-		expectReconcileError(t, mockLogMonitoringReconciler, &err, mockedDtc, dk)
+		expectReconcileError(t, mockOneAgentReconciler, &err, dk, dtClient, token.Tokens(nil))
+		expectReconcileError(t, mockActiveGateReconciler, &err, dk, dtClient, token.Tokens(nil))
+		expectReconcileError(t, mockInjectionReconciler, &err, dtClient, dk)
+		expectReconcileError(t, mockLogMonitoringReconciler, &err, dtClient, dk)
 		expectReconcileError(t, mockExtensionReconciler, &err, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
 		expectReconcileError(t, mockKSPMReconciler, &err, &settings.Client{}, dk)
 		expectReconcileError(t, mockK8sEntityReconciler, &err, &settings.Client{}, dk)
 
-		err = controller.reconcileComponents(ctx, mockedDtc, dk)
+		err = controller.reconcileComponents(ctx, dtClient, dk)
 		require.Error(t, err)
 	})
 
@@ -403,11 +399,10 @@ func TestReconcileComponents(t *testing.T) {
 		mockIstioReconciler := newMockIstioReconciler(t)
 		mockKSPMReconciler := newMockKspmReconciler(t)
 
-		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
+		dtClient := &dynatrace.Client{Settings: &settings.Client{}}
 
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
-		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, mockedDtc, mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
+		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
 
 		controller := &Controller{
 			client:                  fakeClient,
@@ -422,13 +417,13 @@ func TestReconcileComponents(t *testing.T) {
 		}
 
 		var err error
-		expectReconcileError(t, mockActiveGateReconciler, &err, dk, mockedDtc, token.Tokens(nil))
+		expectReconcileError(t, mockActiveGateReconciler, &err, dk, dtClient, token.Tokens(nil))
 		expectReconcileError(t, mockExtensionReconciler, &err, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
 		expectReconcileError(t, k8sEntityReconciler, &err, &settings.Client{}, dk)
 		expectReconcileError(t, mockKSPMReconciler, &err, &settings.Client{}, dk)
 
-		err = controller.reconcileComponents(ctx, mockedDtc, dk)
+		err = controller.reconcileComponents(ctx, dtClient, dk)
 		require.Error(t, err)
 	})
 }
@@ -443,7 +438,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	}
 
 	fakeClient := fake.NewClient(baseDK, createCRD(t), createAPISecret())
-	mockClient := dtclientmock.NewClient(t)
+
 	mockedTokenClient := tokenclientmock.NewAPIClient(t)
 	mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return([]string{
 		tokenclient.ScopeDataExport,
@@ -452,13 +447,14 @@ func TestReconcileDynaKube(t *testing.T) {
 		tokenclient.ScopeInstallerDownload,
 		tokenclient.ScopeActiveGateTokenCreate,
 	}, nil)
-	mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+
+	dtClient := &dynatrace.Client{
 		Settings: &settings.Client{},
 		Token:    mockedTokenClient,
-	})
+	}
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDynatraceClientBuild(mockDtcBuilder, mockClient)
+	mockDynatraceClientBuild(mockDtcBuilder, dtClient)
 
 	mockDeploymentMetadataReconciler := newMockDynakubeReconciler(t)
 	mockDeploymentMetadataReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
@@ -473,10 +469,10 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil)
 
 	mockInjectionReconciler := newMockInjectionReconciler(t)
-	mockInjectionReconciler.EXPECT().Reconcile(anyCtx, mockClient, anyDynaKube).Return(nil)
+	mockInjectionReconciler.EXPECT().Reconcile(anyCtx, dtClient, anyDynaKube).Return(nil)
 
 	mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
-	mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, mockClient, anyDynaKube).Return(nil)
+	mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, anyDynaKube).Return(nil)
 
 	mockExtensionReconciler := newMockDynakubeReconciler(t)
 
@@ -665,17 +661,13 @@ func TestTokenConditions(t *testing.T) {
 		})
 
 		mockedTokenClient := tokenclientmock.NewAPIClient(t)
-		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(nil, dtclient.ServerError{
-			Message:              "test-error",
-			ConstraintViolations: []dtclient.ConstraintViolation{},
-			Code:                 1234,
+		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(nil, &core.HTTPError{
+			Message:    "test-error",
+			StatusCode: 1234,
 		})
 
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
-
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDynatraceClientBuild(mockDtcBuilder, mockClient)
+		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.Client{Token: mockedTokenClient})
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -709,11 +701,8 @@ func TestTokenConditions(t *testing.T) {
 		mockedTokenClient := tokenclientmock.NewAPIClient(t)
 		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return([]string{}, nil)
 
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
-
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDynatraceClientBuild(mockDtcBuilder, mockClient)
+		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.Client{Token: mockedTokenClient})
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -906,11 +895,8 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes []string) *Control
 	mockedTokenClient := tokenclientmock.NewAPIClient(t)
 	mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(tokenScopes, nil)
 
-	fakeDTClient := dtclientmock.NewClient(t)
-	fakeDTClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Token: mockedTokenClient})
-
 	fakeBuilder := dtbuildermock.NewBuilder(t)
-	mockDynatraceClientBuild(fakeBuilder, fakeDTClient)
+	mockDynatraceClientBuild(fakeBuilder, &dynatrace.Client{Token: mockedTokenClient})
 
 	return &Controller{
 		client:                 fakeClient,
@@ -919,7 +905,7 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes []string) *Control
 	}
 }
 
-func mockDynatraceClientBuild(builder *dtbuildermock.Builder, client *dtclientmock.Client) {
+func mockDynatraceClientBuild(builder *dtbuildermock.Builder, client *dynatrace.Client) {
 	builder.EXPECT().SetDynakube(mock.AnythingOfType("dynakube.DynaKube")).Return(builder)
 	builder.EXPECT().SetTokens(mock.AnythingOfType("token.Tokens")).Return(builder)
 	builder.EXPECT().Build(anyCtx).Return(client, nil)

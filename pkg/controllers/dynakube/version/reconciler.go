@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -18,13 +18,13 @@ type Reconciler interface {
 }
 
 type reconciler struct {
-	dtClient     dtclient.Client
+	dtClient     version.APIClient
 	timeProvider *timeprovider.Provider
 
 	apiReader client.Reader
 }
 
-func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvider *timeprovider.Provider) Reconciler {
+func NewReconciler(apiReader client.Reader, dtClient version.APIClient, timeProvider *timeprovider.Provider) Reconciler {
 	return &reconciler{
 		apiReader:    apiReader,
 		timeProvider: timeProvider,
@@ -33,7 +33,7 @@ func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvid
 }
 
 func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
-	updater := newCodeModulesUpdater(dk, r.dtClient.AsV2().Version)
+	updater := newCodeModulesUpdater(dk, r.dtClient)
 	if r.needsUpdate(updater, dk) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
@@ -42,7 +42,7 @@ func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 }
 
 func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error {
-	updater := newOneAgentUpdater(dk, r.apiReader, r.dtClient.AsV2().Version)
+	updater := newOneAgentUpdater(dk, r.apiReader, r.dtClient)
 	if r.needsUpdate(updater, dk) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
@@ -51,7 +51,7 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
-	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient.AsV2().Version)
+	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient)
 	if r.needsUpdate(updater, dk) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
 

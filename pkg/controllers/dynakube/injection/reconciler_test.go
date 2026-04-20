@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -24,7 +24,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
@@ -123,7 +122,6 @@ func TestReconciler(t *testing.T) {
 			}),
 			dk,
 		)
-		dtClient := dtclientmock.NewClient(t)
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
 		oneAgentClient.EXPECT().GetConnectionInfo(t.Context()).Return(expectedOneAgentConnectionInfo, nil).Once()
 		versionClient := versionclientmock.NewAPIClient(t)
@@ -131,11 +129,11 @@ func TestReconciler(t *testing.T) {
 		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 		settingsClient := settingsmock.NewAPIClient(t)
 		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient,
 			Version:  versionClient,
-		}).Times(4) // constructor of connectionInfoReconciler and enrichmentRulesReconciler + method versionReconciler.ReconcileCodeModules + bootstrapperconfig.NewSecretGenerator
+		}
 
 		rec := NewReconciler(clt, clt)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
@@ -179,9 +177,8 @@ func TestReconciler(t *testing.T) {
 			}),
 			dk,
 		)
-		dtClient := dtclientmock.NewClient(t)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Times(3) // constructor of connectionInfoReconciler and enrichmentRulesReconciler + method versionReconciler.ReconcileCodeModules
+		dtClient := &dynatrace.Client{Settings: settingsClient}
 
 		rec := NewReconciler(clt, clt)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
@@ -231,12 +228,11 @@ func TestReconciler(t *testing.T) {
 		fakeReconciler := createReconcilerMock(t)
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
-		dtClient := dtclientmock.NewClient(t)
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
-			Settings: settingsClient}).Times(2) // enrichmentRulesReconciler + generateInitSecret
+			Settings: settingsClient}
 
 		rec := NewReconciler(boomClient, boomClient)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
@@ -267,8 +263,7 @@ func TestRemoveAppInjection(t *testing.T) {
 	setCodeModulesInjectionCreatedCondition(dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(dk.Conditions())
 
-	dtClient := dtclientmock.NewClient(t)
-	err := rec.Reconcile(t.Context(), dtClient, dk)
+	err := rec.Reconcile(t.Context(), &dynatrace.Client{}, dk)
 	require.NoError(t, err)
 
 	var namespace corev1.Namespace
@@ -421,8 +416,8 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
-		dtClient := dtclientmock.NewClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oneAgentClient}).Once()
+
+		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
 		r := Reconciler{client: clt, apiReader: clt}
 
@@ -489,8 +484,8 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
-		dtClient := dtclientmock.NewClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{OneAgent: oneAgentClient}).Twice() // generateInitSecret x2
+
+		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
 		r := Reconciler{client: clt, apiReader: clt}
 
@@ -577,11 +572,9 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 			autoTLSSecret,
 		)
 
-		dtClient := dtclientmock.NewClient(t)
-
 		r := Reconciler{client: clt, apiReader: clt}
 
-		err := r.generateOTLPSecret(ctx, dtClient, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
+		err := r.generateOTLPSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
 		require.NoError(t, err)
 
 		for _, ns := range namespaces {
@@ -592,7 +585,7 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 
 		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
 
-		err = r.generateOTLPSecret(ctx, dtClient, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
+		err = r.generateOTLPSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
 		require.NoError(t, err)
 
 		for _, ns := range namespaces {

@@ -30,7 +30,7 @@ func (installer Installer) downloadOneAgentFromURL(ctx context.Context, tmpFile 
 func (installer Installer) downloadLatestOneAgent(ctx context.Context, tmpFile *os.File) error {
 	log.Info("downloading latest OneAgent package", "props", installer.props)
 
-	return installer.dtc.GetLatest(ctx, oneagent.GetParams{
+	return installer.dtClient.GetLatest(ctx, oneagent.GetParams{
 		OS:            installer.props.OS,
 		InstallerType: installer.props.Type,
 		Flavor:        installer.props.Flavor,
@@ -44,7 +44,7 @@ func (installer Installer) downloadLatestOneAgent(ctx context.Context, tmpFile *
 func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpFile *os.File) error {
 	log.Info("downloading specific OneAgent package", "version", installer.props.TargetVersion)
 
-	err := installer.dtc.Get(ctx,
+	err := installer.dtClient.Get(ctx,
 		oneagent.GetParams{
 			OS:            installer.props.OS,
 			InstallerType: installer.props.Type,
@@ -56,7 +56,7 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 		tmpFile,
 	)
 	if err != nil {
-		availableVersions, getVersionsError := installer.dtc.GetVersions(ctx,
+		availableVersions, getVersionsError := installer.dtClient.GetVersions(ctx,
 			oneagent.GetParams{
 				OS:            installer.props.OS,
 				InstallerType: installer.props.Type,
@@ -80,5 +80,5 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 func (installer Installer) downloadOneAgentViaInstallerURL(ctx context.Context, tmpFile *os.File) error {
 	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.URL)
 
-	return installer.dtc.GetViaInstallerURL(ctx, installer.props.URL, tmpFile)
+	return installer.dtClient.GetViaInstallerURL(ctx, installer.props.URL, tmpFile)
 }

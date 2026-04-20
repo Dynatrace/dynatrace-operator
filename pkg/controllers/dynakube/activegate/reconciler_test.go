@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -19,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/pkg/errors"
@@ -581,7 +580,7 @@ func TestServiceCreation(t *testing.T) {
 		return activegateService
 	}
 
-	dynatraceClient := createMockDTClient(t, true)
+	dtClient := createMockDTClient(t, true)
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -626,7 +625,7 @@ func TestServiceCreation(t *testing.T) {
 				capName,
 			}
 
-			err := reconciler.Reconcile(t.Context(), dk, dynatraceClient, nil)
+			err := reconciler.Reconcile(t.Context(), dk, dtClient, nil)
 			require.NoError(t, err)
 
 			if len(expectedPorts) == 0 {
@@ -767,17 +766,14 @@ func createIstioReconcilerMock(t *testing.T) istioReconciler {
 	return rec
 }
 
-func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dtclientmock.Client {
+func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dynatrace.Client {
 	t.Helper()
 
-	dtc := dtclientmock.NewClient(t)
 	agClient := agclientmock.NewAPIClient(t)
 
 	if authTokenRouteRequired {
 		agClient.EXPECT().GetAuthToken(anyCtx, testName).Return(&agclient.AuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil).Maybe()
 	}
 
-	dtc.EXPECT().AsV2().Return(&dtclient.ClientV2{ActiveGate: agClient})
-
-	return dtc
+	return &dynatrace.Client{ActiveGate: agClient}
 }

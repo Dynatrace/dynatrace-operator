@@ -15,14 +15,14 @@ import (
 )
 
 type Reconciler struct {
-	dtc          settings.APIClient
+	dtClient     settings.APIClient
 	dk           *dynakube.DynaKube
 	timeProvider *timeprovider.Provider
 }
 
-func NewReconciler(dtc settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(dtClient settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &Reconciler{
-		dtc:          dtc,
+		dtClient:     dtClient,
 		dk:           dk,
 		timeProvider: timeprovider.New(),
 	}
@@ -66,7 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]metadataenrichment.Rule, error) {
-	rules, err := r.dtc.GetRules(ctx, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
+	rules, err := r.dtClient.GetRules(ctx, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), conditionType, err)
 
