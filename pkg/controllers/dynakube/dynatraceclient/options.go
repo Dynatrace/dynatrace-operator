@@ -11,11 +11,10 @@ import (
 )
 
 type options struct {
-	ctx  context.Context
 	Opts []dynatrace.Option
 }
 
-func newOptions(ctx context.Context) *options {
+func newOptions() *options {
 	return &options{
 		Opts: []dynatrace.Option{},
 	}
@@ -60,7 +59,7 @@ func (opts *options) createProxyOption(ctx context.Context, apiReader client.Rea
 		return proxyOption, err
 	}
 
-	proxyOption = dynatrace.WithProxy(ctx, proxyURL, dk.FF().GetNoProxy())
+	proxyOption = dynatrace.WithProxy(proxyURL, dk.FF().GetNoProxy())
 
 	return proxyOption, nil
 }
@@ -76,7 +75,7 @@ func (opts *options) appendTrustedCerts(ctx context.Context, apiReader client.Re
 			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
 
-		opts.Opts = append(opts.Opts, dynatrace.WithCerts(ctx, []byte(certs.Data[dynakube.TrustedCAKey])))
+		opts.Opts = append(opts.Opts, dynatrace.WithCerts([]byte(certs.Data[dynakube.TrustedCAKey])))
 	}
 
 	return nil
