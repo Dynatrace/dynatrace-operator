@@ -12,11 +12,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-// log is kept as a package-level logger because GetMinorVersion is a background singleton
-// cache with no context.Context parameter. This is an intentional exception to the
-// context-logger pattern.
-var log = logd.Get().WithName("k8sversion")
-
 const refreshInterval = 5 * time.Minute
 
 type versionInfoCache struct {
@@ -68,6 +63,8 @@ func GetMinorVersion() int {
 }
 
 func (c *versionInfoCache) getMinorVersion() int {
+	log := logd.Get().WithName("k8sversion")
+
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -88,6 +85,8 @@ func newDiscoveryClientForConfig(c *rest.Config) (discovery.ServerVersionInterfa
 }
 
 func (c *versionInfoCache) refreshMinorVersion() error {
+	log := logd.Get().WithName("k8sversion")
+
 	if c.disableLookup || !c.shouldRefresh() {
 		return nil
 	}

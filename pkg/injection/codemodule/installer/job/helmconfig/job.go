@@ -4,6 +4,7 @@
 package helmconfig
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"sync"
@@ -83,9 +84,9 @@ type Config struct {
 	Job                JobConfig `json:"job"`
 }
 
-func Get() Config {
+func Get(ctx context.Context) Config {
 	once.Do(func() {
-		log := logd.Get().WithName("csi-job")
+		_, log := logd.NewFromContext(ctx, "csi-job")
 
 		confJSON := os.Getenv(JSONEnv)
 		if confJSON == "" {

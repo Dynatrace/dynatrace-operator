@@ -23,16 +23,11 @@ var (
 
 	// BuildDate is the date when the binary was build. Assigned externally.
 	BuildDate = ""
-
-	// log is kept as a package-level logger because LogVersion/LogVersionToLogger are called
-	// during startup without a context.Context parameter. This is an intentional exception to the
-	// context-logger pattern.
-	log = logd.Get().WithName("version")
 )
 
 // LogVersion logs metadata about the Operator.
 func LogVersion() {
-	LogVersionToLogger(log)
+	LogVersionToLogger(logd.Get().WithName("version"))
 }
 
 func LogVersionToLogger(log logd.Logger) {
