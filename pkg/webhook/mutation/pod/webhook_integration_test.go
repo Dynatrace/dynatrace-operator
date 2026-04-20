@@ -25,7 +25,6 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	podmutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/otlp"
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	metadatamutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
@@ -363,11 +362,11 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 	if withoutDeprecatedAnnotations {
 		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
 		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(injection.DeprecatedClusterIDKey, testClusterUUID))
+		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedClusterIDKey, testClusterUUID))
 	} else {
 		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
 		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(injection.DeprecatedClusterIDKey, testClusterUUID))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedClusterIDKey, testClusterUUID))
 	}
 
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
@@ -544,7 +543,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes["dt.entity.kubernetes_cluster"])
 
 				if tc.withDeprecatedAttributes {
-					assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes[injection.DeprecatedClusterIDKey])
+					assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes[metadatamutator.DeprecatedClusterIDKey])
 					assert.Equal(t, pod.OwnerReferences[0].Name, gotResourceAttributes[metadatamutator.DeprecatedWorkloadNameKey])
 					assert.Equal(t, strings.ToLower(pod.OwnerReferences[0].Kind), gotResourceAttributes[metadatamutator.DeprecatedWorkloadKindKey])
 				}

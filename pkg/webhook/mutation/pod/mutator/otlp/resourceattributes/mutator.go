@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
@@ -118,7 +117,7 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 	}
 
 	if request.DynaKube.FF().EnableAttributesDTKubernetes() {
-		kubernetesMetaDataAttributes[injection.DeprecatedClusterIDKey] = request.DynaKube.Status.KubeSystemUUID
+		kubernetesMetaDataAttributes[metadata.DeprecatedClusterIDKey] = request.DynaKube.Status.KubeSystemUUID
 	}
 
 	kubernetesMetaDataAttributes = sanitizeMap(kubernetesMetaDataAttributes)
