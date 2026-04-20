@@ -108,7 +108,7 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 		APIReader:       provisioner.apiReader,
 		Client:          provisioner.kubeClient,
 		PathResolver:    provisioner.path,
-		CSIJob:          helmconfig.Get(),
+		CSIJob:          helmconfig.Get(ctx),
 	}
 
 	return provisioner.jobInstallerBuilder(ctx, props)

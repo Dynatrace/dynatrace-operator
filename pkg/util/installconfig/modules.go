@@ -38,10 +38,6 @@ var (
 		KubernetesMonitoring: true,
 	}
 
-	// log is kept as a package-level logger because ReadModules/ReadModulesToLogger are called
-	// during startup without a context.Context parameter. This is an intentional exception to the
-	// context-logger pattern.
-	log = logd.Get().WithName("install-config")
 )
 
 type Modules struct {
@@ -67,7 +63,7 @@ func GetModules() Modules {
 }
 
 func ReadModules() {
-	ReadModulesToLogger(log)
+	ReadModulesToLogger(logd.Get().WithName("install-config"))
 }
 
 func ReadModulesToLogger(log logd.Logger) {
