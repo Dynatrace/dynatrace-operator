@@ -9,6 +9,12 @@ import (
 )
 
 func TestFromContext(t *testing.T) {
+	t.Run("returns fallback logger when ctx is nil", func(t *testing.T) {
+		log := logd.FromContext(nil) //nolint:staticcheck
+
+		assert.NotNil(t, log.GetSink())
+	})
+
 	t.Run("returns fallback logger when context has no logger", func(t *testing.T) {
 		log := logd.FromContext(t.Context())
 

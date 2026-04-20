@@ -18,7 +18,7 @@ func FromContext(ctx context.Context) Logger {
 	}
 
 	logger, err := logr.FromContext(ctx)
-	if logger.GetSink() == nil || err != nil {
+	if err != nil {
 		return Get()
 	}
 

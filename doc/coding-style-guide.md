@@ -495,7 +495,7 @@ Use `"github.com/Dynatrace/dynatrace-operator/pkg/logd"` (alias `logd`) for all 
   ctx = logd.IntoContext(ctx, myLogger)
   ```
 
-- **Utility functions that emit logs should accept `ctx context.Context` as a parameter** rather than using a package-level `log`.
+- **Utility functions that emit logs should accept `ctx context.Context` as a parameter** rather than using a package-level `log`. This includes background callbacks, sync.Once initializers, and other singleton-style helpers — if they can receive a ctx, they should.
 
   ```go
   // ✓
@@ -505,8 +505,11 @@ Use `"github.com/Dynatrace/dynatrace-operator/pkg/logd"` (alias `logd`) for all 
   }
   ```
 
+- **A good rule of thumb**: a package should only rely on a package-level logger (i.e. not receive one from context) if it is a `cmd/` entrypoint (i.e. `main`). Every other package that logs should receive `ctx` and derive its logger from it.
+
 ### Don'ts
 
+- Don't declare `var log = logd.Get().WithName("...")` at the package level outside of `cmd/` packages. Instead, call `logd.NewFromContext(ctx, "name")` at the function entry point.
 - Don't use `fmt.Sprintf` for creating log messages, the values you wish to replace via `Sprintf` should be provided to the logger as key-value pairs.
   - Example: `log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)`
 - Don't start a log message with uppercase characters, unless it's a name of an exact proper noun.
