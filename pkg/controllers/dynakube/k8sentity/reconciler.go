@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/retry"
 )
@@ -24,14 +23,10 @@ var (
 // meIDConditionType is the condition type used to cache the Kubernetes Cluster Monitored Entity ID in the DynaKube status.
 const meIDConditionType = "MonitoredEntity"
 
-type Reconciler struct {
-	timeProvider *timeprovider.Provider
-}
+type Reconciler struct{}
 
 func NewReconciler() *Reconciler {
-	return &Reconciler{
-		timeProvider: timeprovider.New(),
-	}
+	return &Reconciler{}
 }
 
 // Reconcile first looks up the Kubernetes Cluster Monitored Entity ID (MEID), then creates the
@@ -86,14 +81,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient,
 // It uses time-based caching via the meIDConditionType condition; if the condition is still up to date,
 // the API call is skipped.
 func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
-		log.Info("kubernetesClusterMEID not outdated, skipping reconciliation")
-
-		return nil
-	}
-
-	k8sconditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, "kubernetesClusterMEID is outdated in the status")
-
 	k8sEntity, err := dtClient.GetK8sClusterME(ctx, dk.Status.KubeSystemUUID)
 	if err != nil {
 		log.Info("failed to retrieve MEs")

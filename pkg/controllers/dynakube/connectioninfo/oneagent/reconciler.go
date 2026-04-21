@@ -12,30 +12,26 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type reconciler struct {
-	client       client.Client
-	dtClient     oneagent.APIClient
-	timeProvider *timeprovider.Provider
-	dk           *dynakube.DynaKube
-	secrets      k8ssecret.QueryObject
+	client   client.Client
+	dtClient oneagent.APIClient
+	dk       *dynakube.DynaKube
+	secrets  k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dtClient oneagent.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
-		client:       clt,
-		dk:           dk,
-		dtClient:     dtClient,
-		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader, log),
+		client:   clt,
+		dk:       dk,
+		dtClient: dtClient,
+		secrets:  k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -76,27 +72,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	secretNamespacedName := types.NamespacedName{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}
-
-	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, oaConnectionInfoConditionType) {
-		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName, log)
-		if err != nil {
-			return err
-		}
-
-		condition := meta.FindStatusCondition(*r.dk.Conditions(), oaConnectionInfoConditionType)
-		if isSecretPresent {
-			log.Info(dynakube.GetCacheValidMessage(
-				"OneAgent connection info update",
-				condition.LastTransitionTime,
-				r.dk.APIRequestThreshold()))
-
-			return nil
-		}
-	}
-
-	k8sconditions.SetSecretOutdated(r.dk.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
-
 	connectionInfo, err := r.dtClient.GetConnectionInfo(ctx)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), oaConnectionInfoConditionType, err)

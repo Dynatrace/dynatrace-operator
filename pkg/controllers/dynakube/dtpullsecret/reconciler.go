@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,14 +20,12 @@ const (
 )
 
 type Reconciler struct {
-	timeprovider *timeprovider.Provider
-	secrets      k8ssecret.QueryObject
+	secrets k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		timeprovider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader, log),
+		secrets: k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -47,16 +44,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, token
 		return nil
 	}
 
-	if k8sconditions.IsOutdated(r.timeprovider, dk, PullSecretConditionType) {
-		k8sconditions.SetSecretOutdated(dk.Conditions(), PullSecretConditionType,
-			extendWithPullSecretSuffix(dk.Name)+" is not present or outdated")
+	err := r.reconcilePullSecret(ctx, dk, tokens)
+	if err != nil {
+		log.Info("could not reconcile pull secret")
 
-		err := r.reconcilePullSecret(ctx, dk, tokens)
-		if err != nil {
-			log.Info("could not reconcile pull secret")
-
-			return errors.WithStack(err)
-		}
+		return errors.WithStack(err)
 	}
 
 	return nil

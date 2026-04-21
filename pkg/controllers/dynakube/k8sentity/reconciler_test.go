@@ -63,10 +63,6 @@ func setMEInfo(dk *dynakube.DynaKube, me settings.K8sClusterME) {
 	dk.Status.KubernetesClusterName = me.Name
 }
 
-func setCondition(dk *dynakube.DynaKube) {
-	k8sconditions.SetStatusUpdated(&dk.Status.Conditions, meIDConditionType, "Kubernetes Cluster MEID is up to date")
-}
-
 func TestReconcile(t *testing.T) {
 	const (
 		meID       = "KUBERNETES_CLUSTER-119C75CCDA94799F"
@@ -178,16 +174,6 @@ func TestReconcileMEID(t *testing.T) {
 		meName     = "my-cluster"
 		systemUUID = "2132143215"
 	)
-
-	t.Run("skipped when MEID condition is up to date", func(t *testing.T) {
-		dk := newDynaKube()
-		setCondition(dk)
-
-		dtClient := settingsmock.NewAPIClient(t)
-		r := NewReconciler()
-		err := r.reconcileMEID(t.Context(), dtClient, dk)
-		require.NoError(t, err)
-	})
 
 	t.Run("sets MEID when ME is found", func(t *testing.T) {
 		dk := newDynaKube()

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -100,15 +99,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 		})
 		require.ErrorIs(t, err, expectErr)
 	})
-	t.Run("Create does not reconcile with custom pull secret", func(t *testing.T) {
+	t.Run("No reconcile without OA or AG enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynakube.DynaKubeSpec{
-				CustomPullSecret: testValue,
-			}}
+			Spec: dynakube.DynaKubeSpec{}}
 		r := NewReconciler(nil, nil)
 		err := r.Reconcile(t.Context(), dk, nil)
 
@@ -163,7 +160,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		require.NoError(t, err)
 
-		r.timeprovider.Set(r.timeprovider.Now().Add(1 * time.Hour))
 		err = r.Reconcile(t.Context(), dk, tokens)
 
 		require.NoError(t, err)
@@ -178,42 +174,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 		assert.JSONEq(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
-	})
-	t.Run("Reconciliation only runs every 15 min", func(t *testing.T) {
-		dk := createTestDynakube()
-		fakeClient := fake.NewClient()
-		tokens := token.Tokens{
-			token.APIKey: &token.Token{Value: testValue},
-		}
-
-		r := NewReconciler(fakeClient, fakeClient)
-		err := r.Reconcile(t.Context(), dk, tokens)
-
-		require.NoError(t, err)
-
-		var pullSecret corev1.Secret
-		err = fakeClient.Get(t.Context(),
-			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
-			&pullSecret)
-
-		require.NoError(t, err)
-
-		pullSecret.Data = nil
-		err = fakeClient.Update(t.Context(), &pullSecret)
-
-		require.NoError(t, err)
-
-		err = r.Reconcile(t.Context(), dk, tokens)
-
-		require.NoError(t, err)
-
-		err = fakeClient.Get(t.Context(),
-			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
-			&pullSecret)
-
-		require.NoError(t, err)
-		assert.NotNil(t, pullSecret)
-		assert.Empty(t, pullSecret.Data)
 	})
 	t.Run("Cleanup works", func(t *testing.T) {
 		dk := createTestDynakube()

@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -27,20 +26,18 @@ import (
 
 // SecretGenerator manages the bootstrapper init secret generation for the user namespaces.
 type SecretGenerator struct {
-	client       client.Client
-	dtClient     oneagent.APIClient
-	apiReader    client.Reader
-	timeProvider *timeprovider.Provider
-	secrets      k8ssecret.QueryObject
+	client    client.Client
+	dtClient  oneagent.APIClient
+	apiReader client.Reader
+	secrets   k8ssecret.QueryObject
 }
 
 func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient oneagent.APIClient) *SecretGenerator {
 	return &SecretGenerator{
-		client:       client,
-		dtClient:     dtClient,
-		apiReader:    apiReader,
-		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(client, apiReader, log),
+		client:    client,
+		dtClient:  dtClient,
+		apiReader: apiReader,
+		secrets:   k8ssecret.Query(client, apiReader, log),
 	}
 }
 

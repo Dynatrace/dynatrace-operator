@@ -9,19 +9,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
-type Reconciler struct {
-	timeProvider *timeprovider.Provider
-}
+type Reconciler struct{}
 
 func NewReconciler() *Reconciler {
-	return &Reconciler{
-		timeProvider: timeprovider.New(),
-	}
+	return &Reconciler{}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
@@ -30,12 +25,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient,
 
 		return nil
 	}
-
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, ConditionType) {
-		return nil
-	}
-
-	_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
 	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead)
 	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite)

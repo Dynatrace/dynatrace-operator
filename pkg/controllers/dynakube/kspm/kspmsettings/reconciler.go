@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
@@ -19,14 +18,10 @@ var (
 	log = logd.Get().WithName("kspm-settings")
 )
 
-type Reconciler struct {
-	timeProvider *timeprovider.Provider
-}
+type Reconciler struct{}
 
 func NewReconciler() *Reconciler {
-	return &Reconciler{
-		timeProvider: timeprovider.New(),
-	}
+	return &Reconciler{}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.APIClient, dk *dynakube.DynaKube) error {
@@ -36,12 +31,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.APIClien
 
 		return nil
 	}
-
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, conditionType) {
-		return nil
-	}
-
-	_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType) // needed so the timestamp updates, will never actually show up in the status
 
 	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead)
 	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite)

@@ -4,14 +4,12 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -51,50 +49,6 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
 		assert.Empty(t, dk.Status.Conditions)
-	})
-
-	t.Run("no update if not outdated", func(t *testing.T) {
-		dk := createDynaKube()
-		specialMessage := "TESTING" // if the special message does not change == condition didn't update
-		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
-
-		dtClient := settingsmock.NewAPIClient(t)
-		reconciler := NewReconciler(dtClient, &dk)
-
-		err := reconciler.Reconcile(ctx)
-
-		require.NoError(t, err)
-		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
-		require.Len(t, dk.Status.Conditions, 1)
-		assert.Equal(t, specialMessage, dk.Status.Conditions[0].Message)
-	})
-
-	t.Run("update if outdated", func(t *testing.T) {
-		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
-
-		expectedResponse := createRules()
-		specialMessage := "TESTING" // if the special message changes == condition updated
-		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
-
-		dtClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
-
-		futureTime := timeprovider.New()
-		futureTime.Set(time.Now().Add(time.Hour))
-		reconciler := Reconciler{
-			dtClient:     dtClient,
-			dk:           &dk,
-			timeProvider: futureTime,
-		}
-
-		err := reconciler.Reconcile(ctx)
-
-		require.NoError(t, err)
-		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
-		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
-		require.NotNil(t, condition)
-		assert.NotEqual(t, specialMessage, condition.Message)
 	})
 
 	t.Run("set rules correctly", func(t *testing.T) {

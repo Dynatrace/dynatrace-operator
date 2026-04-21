@@ -10,21 +10,18 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 type Reconciler struct {
-	dtClient     settings.APIClient
-	dk           *dynakube.DynaKube
-	timeProvider *timeprovider.Provider
+	dtClient settings.APIClient
+	dk       *dynakube.DynaKube
 }
 
 func NewReconciler(dtClient settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &Reconciler{
-		dtClient:     dtClient,
-		dk:           dk,
-		timeProvider: timeprovider.New(),
+		dtClient: dtClient,
+		dk:       dk,
 	}
 }
 
@@ -39,12 +36,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 		return nil
 	}
-
-	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, conditionType) {
-		return nil
-	}
-
-	k8sconditions.SetStatusOutdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are outdated in the status")
 
 	if !k8sconditions.IsOptionalScopeAvailable(r.dk, token.ConditionTypeAPITokenSettingsRead) {
 		log.Info("metadata-enrichment rules are not set in the status because the optional scope is not available", "scope", token.ScopeSettingsRead)

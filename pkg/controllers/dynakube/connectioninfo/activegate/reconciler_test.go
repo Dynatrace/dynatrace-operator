@@ -3,7 +3,6 @@ package activegate
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -101,7 +100,6 @@ func TestReconcile(t *testing.T) {
 		}
 
 		r := NewReconciler(fakeClient, fakeClient)
-		r.timeProvider.Set(r.timeProvider.Now().Add(time.Minute * 20))
 
 		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)

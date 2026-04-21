@@ -483,8 +483,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 		)
 
 		oneAgentClient := oneagentclientmock.NewAPIClient(t)
-		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
-
+		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Twice()
 		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
 		r := Reconciler{client: clt, apiReader: clt}
