@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -39,6 +40,7 @@ func getAllScopesForDataIngest() []string {
 		tokenclient.ScopeMetricsIngest,
 	}
 }
+
 func getAllScopesForTelemetryIngest() []string {
 	return []string{
 		tokenclient.ScopeMetricsIngest,
@@ -604,4 +606,11 @@ func TestCheckForDataIngestToken(t *testing.T) {
 
 		assert.False(t, CheckForDataIngestToken(tokens))
 	})
+}
+
+func TestDisableLookupForPlatformToken(t *testing.T) {
+	tokens := Tokens{APIKey: &Token{Value: dttoken.PlatformPrefix + "test", Features: []Feature{{}}}}
+	scopes, err := tokens.VerifyScopes(t.Context(), nil, dynakube.DynaKube{})
+	require.NoError(t, err)
+	assert.Empty(t, scopes)
 }
