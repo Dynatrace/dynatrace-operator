@@ -2,12 +2,10 @@ package oneagent
 
 import (
 	"context"
-	"encoding/json"
 	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
@@ -177,25 +175,6 @@ func (c *ClientImpl) GetProcessModuleConfig(ctx context.Context) (*ProcessModule
 
 	if len(resp.Properties) == 0 {
 		return &ProcessModuleConfig{}, errors.New("no properties available")
-	}
-
-	return &resp, nil
-}
-
-func NewProcessModuleConfig(ctx context.Context, response []byte) (*ProcessModuleConfig, error) {
-	_, log := logd.NewFromContext(ctx, "dtclient-oneagent")
-
-	resp := ProcessModuleConfig{}
-
-	err := json.Unmarshal(response, &resp)
-	if err != nil {
-		log.Error(err, "error unmarshalling processmoduleconfig response", "response", string(response))
-
-		return nil, err
-	}
-
-	if len(resp.Properties) == 0 {
-		return nil, errors.New("no properties available")
 	}
 
 	return &resp, nil
