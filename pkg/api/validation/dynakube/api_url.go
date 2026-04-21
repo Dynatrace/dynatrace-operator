@@ -6,10 +6,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
-
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 )
 
 const (
@@ -25,9 +22,7 @@ const (
 	errorThirdGenAPIURL = `The DynaKube's specification has an 3rd gen API URL and the apiToken provided is not a platform token. Make sure to remove the 'apps' part
 	out of it. Example: ` + ExampleAPIURL
 
-	errorQueryingSecret = `Failed to query the DynaKube's secret to check for 3rd gen API URL. Make sure the secret exists and is accessible by the operator.`
-
-	errorSecretMissingAPIToken = `The DynaKube's secret is missing the API token. Make sure the secret contains the API token under the 'apiToken' key.`
+	errorCheckingSecret = `Failed to check the DynaKube's secret to check for 3rd gen API URL. Make sure the secret exists and is accessible by the operator.`
 
 	errorMutatedAPIURL = `The DynaKube's specification mutated the tenant in the API URL although it is immutable. Please delete the CR and then apply a new one`
 )
@@ -98,19 +93,14 @@ func IsThirdGenAPIUrl(ctx context.Context, dv *Validator, dk *dynakube.DynaKube)
 		return ""
 	}
 
-	var dkSecret corev1.Secret
+	tokenReader := token.NewReader(dv.apiReader, dk)
 
-	err := dv.apiReader.Get(ctx, client.ObjectKey{Namespace: dk.Namespace, Name: dk.Tokens()}, &dkSecret)
+	hasPlatformToken, err := tokenReader.HasPlatformToken(ctx)
 	if err != nil {
-		return errorQueryingSecret
+		return errorCheckingSecret
 	}
 
-	dkSecretAPIToken, ok := dkSecret.Data["apiToken"]
-	if !ok {
-		return errorSecretMissingAPIToken
-	}
-
-	if !strings.HasPrefix(string(dkSecretAPIToken), dttoken.PlatformPrefix) {
+	if !hasPlatformToken {
 		return errorThirdGenAPIURL
 	}
 
