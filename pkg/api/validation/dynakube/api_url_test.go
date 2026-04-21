@@ -154,6 +154,6 @@ func regularTokenSecret() *corev1.Secret {
 func platformTokenSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
-		Data:       map[string][]byte{"apiToken": []byte("dt0s.platformtoken")},
+		Data:       map[string][]byte{"apiToken": []byte("dt0s16.platformtoken")},
 	}
 }

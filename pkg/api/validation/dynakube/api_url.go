@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -26,8 +27,6 @@ const (
 	errorQueryingSecret = `Failed to query the DynaKube's secret to check for 3rd gen API URL. Make sure the secret exists and is accessible by the operator.`
 
 	errorSecretMissingAPIToken = `The DynaKube's secret is missing the API token. Make sure the secret contains the API token under the 'apiToken' key.`
-
-	apiToken3rdGenPrefix = "dt0s"
 
 	errorMutatedAPIURL = `The DynaKube's specification mutated the tenant in the API URL although it is immutable. Please delete the CR and then apply a new one`
 )
@@ -110,7 +109,7 @@ func IsThirdGenAPIUrl(ctx context.Context, dv *Validator, dk *dynakube.DynaKube)
 		return errorSecretMissingAPIToken
 	}
 
-	if !strings.HasPrefix(string(dkSecretAPIToken), apiToken3rdGenPrefix) {
+	if !strings.HasPrefix(string(dkSecretAPIToken), dttoken.PlatformPrefix) {
 		return errorThirdGenAPIURL
 	}
 
