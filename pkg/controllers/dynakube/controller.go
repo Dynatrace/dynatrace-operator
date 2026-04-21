@@ -365,6 +365,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
+
 	var componentErrors []error
 
 	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {

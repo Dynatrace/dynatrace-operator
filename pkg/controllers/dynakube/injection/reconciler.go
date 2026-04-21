@@ -48,65 +48,47 @@ func NewReconciler(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "dynakube-injection")
+
 	err := r.reconcileSubReconcilers(ctx, dtClient, dk)
 	if err != nil {
 		return err
 	}
-}
-
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-injection")
 
 	var setupErrors []error
-	if err := r.setupOneAgentInjection(ctx); err != nil {
-		setupErrors = append(setupErrors, err)
-	}
-
-	if err := r.setupEnrichmentInjection(ctx); err != nil {
-		setupErrors = append(setupErrors, err)
-	}
 
 	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled() && !dk.OTLPExporterConfiguration().IsEnabled() {
 		defer r.unmap(ctx, dk)
-		if len(setupErrors) > 0 {
-			return goerrors.Join(setupErrors...)
-		}
+	} else {
+		dkMapper := r.createDynakubeMapper(ctx, dk)
 
-		if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichment().IsEnabled() && !r.dk.OTLPExporterConfiguration().IsEnabled() {
-			defer r.unmap(ctx)
-		} else {
-			dkMapper := r.createDynakubeMapper(ctx)
-			dkMapper := r.createDynakubeMapper(ctx, dk)
+		if err := dkMapper.MapFromDynakube(); err != nil {
+			log.Info("update of a map of namespaces failed")
 
-			if err := dkMapper.MapFromDynakube(); err != nil {
-				log.Info("update of a map of namespaces failed")
-
-				setupErrors = append(setupErrors, err)
-			}
-		}
-
-		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
-		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
-		if err != nil {
-			return err
-		}
-
-		if err := r.setupInitSecret(ctx, dtClient, namespaces, dk); err != nil {
 			setupErrors = append(setupErrors, err)
 		}
-
-		if err := r.setupOTLPSecret(ctx, namespaces, dk); err != nil {
-			setupErrors = append(setupErrors, err)
-		}
-
-		if len(setupErrors) > 0 {
-			return goerrors.Join(setupErrors...)
-		}
-
-		log.Info("app injection reconciled")
-
-		return nil
 	}
+
+	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
+	if err != nil {
+		return err
+	}
+
+	if err := r.setupInitSecret(ctx, dtClient, namespaces, dk); err != nil {
+		setupErrors = append(setupErrors, err)
+	}
+
+	if err := r.setupOTLPSecret(ctx, namespaces, dk); err != nil {
+		setupErrors = append(setupErrors, err)
+	}
+
+	if len(setupErrors) > 0 {
+		return goerrors.Join(setupErrors...)
+	}
+
+	log.Info("app injection reconciled")
+
+	return nil
 }
 
 func (r *Reconciler) reconcileSubReconcilers(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {

@@ -129,11 +129,11 @@ func TestReconciler(t *testing.T) {
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 		settingsClient := settingsmock.NewAPIClient(t)
 		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient,
 			Version:  versionClient,
-		})
+		}
 
 		rec := NewReconciler(clt, clt)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)

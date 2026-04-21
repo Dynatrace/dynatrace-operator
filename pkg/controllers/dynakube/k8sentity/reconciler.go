@@ -41,6 +41,7 @@ func NewReconciler() *Reconciler {
 // refreshed so that subsequent reconcilers do not need to wait for the next cycle.
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "automatic-api-monitoring")
+
 	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead) {
 		msg := token.ScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
@@ -127,6 +128,7 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.APICli
 // may not be available immediately after the settings object is created.
 func (r *Reconciler) refreshMEIDWithRetry(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
+
 	return retry.OnError(retry.DefaultRetry, func(err error) bool { return errors.Is(err, errNotAvailableME) }, func() error {
 		log.Info("refreshing kubernetesClusterMEID")
 
@@ -176,6 +178,7 @@ func (r *Reconciler) createK8sConnectionSettingIfAbsent(ctx context.Context, dtC
 
 func (r *Reconciler) createK8sAppSettingIfAbsent(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
+
 	k8sEntity := settings.K8sClusterME{ID: dk.Status.KubernetesClusterMEID, Name: dk.Status.KubernetesClusterName}
 	if dk.FF().IsK8sAppEnabled() {
 		appSettings, err := dtClient.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.AppTransitionSchemaID)
