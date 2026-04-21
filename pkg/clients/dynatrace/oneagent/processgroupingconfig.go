@@ -10,7 +10,10 @@ import (
 )
 
 const (
-	processGroupingConfigPath = "/v1/deployment/installer/agent/processgroupingconfig"
+	processGroupingConfigPath    = "/v1/deployment/installer/agent/processgroupingconfig"
+	parameterKubernetesClusterID = "kubernetesClusterId"
+	requestHeaderEtag            = "If-None-Match"
+	responseHeaderEtag           = "ETag"
 )
 
 // GetProcessGroupingConfig fetches the process grouping configuration as a binary CBOR stream.
@@ -28,7 +31,7 @@ const (
 func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error) {
 	params := map[string]string{}
 	if kubernetesClusterID != "" {
-		params["kubernetesClusterId"] = kubernetesClusterID
+		params[parameterKubernetesClusterID] = kubernetesClusterID
 	}
 
 	req := c.apiClient.GET(ctx, processGroupingConfigPath).
@@ -36,7 +39,7 @@ func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesCluster
 		WithHeader("Accept", "application/cbor")
 
 	if etag != "" {
-		req = req.WithHeader("If-None-Match", etag)
+		req = req.WithHeader(requestHeaderEtag, etag)
 	}
 
 	headers, err := req.ExecuteWriter(writer)
@@ -48,5 +51,5 @@ func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesCluster
 		return "", err
 	}
 
-	return strings.ReplaceAll(headers.Get("ETag"), "\"", ""), nil
+	return strings.ReplaceAll(headers.Get(responseHeaderEtag), "\"", ""), nil
 }

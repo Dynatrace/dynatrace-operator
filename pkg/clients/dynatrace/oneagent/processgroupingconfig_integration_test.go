@@ -30,9 +30,9 @@ func TestGetProcessGroupingConfig_Integration(t *testing.T) {
 	// TODO: This test is currently intended to be used by devs for trying the new API until it is used in
 	//       the product. Reconsider if it should be kept, once the API is used in the product.
 	apiURL := os.Getenv("DT_API_URL")
-	paasToken := os.Getenv("DT_API_TOKEN")
+	apiToken := os.Getenv("DT_API_TOKEN")
 
-	if apiURL == "" || paasToken == "" {
+	if apiURL == "" || apiToken == "" {
 		t.Skip("Skipping integration test: DT_API_URL and DT_PAAS_TOKEN must be set")
 	}
 
@@ -44,7 +44,7 @@ func TestGetProcessGroupingConfig_Integration(t *testing.T) {
 	apiClient := core.NewClient(core.Config{
 		BaseURL:    parsedURL,
 		HTTPClient: http.DefaultClient,
-		APIToken:   paasToken,
+		APIToken:   apiToken,
 	})
 
 	client := NewClient(apiClient, "", "")
