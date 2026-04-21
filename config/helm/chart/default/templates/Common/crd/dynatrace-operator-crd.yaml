@@ -6561,6 +6561,9 @@ spec:
                     nullable: true
                     type: string
                 type: object
+              requeueAfter:
+                format: int64
+                type: integer
               skipCertCheck:
                 type: boolean
               telemetryIngest:
