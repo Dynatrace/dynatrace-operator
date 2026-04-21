@@ -265,7 +265,7 @@ func WithCerts(certs []byte) Option {
 			return errors.Wrap(err, "failed to parse certificate")
 		}
 
-		log.Debug("adding custom cert to config", "certs serial number", parsed.SerialNumber)
+		log.Debug("adding custom cert to config", "certs serial number", parsed.SerialNumber.Bytes())
 
 		return nil
 	}
@@ -277,7 +277,14 @@ func getConfig(options ...Option) (*Config, error) {
 		Timeout:   30 * time.Second,
 	}
 
+	for _, opt := range options {
+		if err := opt(&config); err != nil {
+			return nil, err
+		}
+	}
+
 	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.TLSClientConfig = config.TLSConfig
 
 	if config.HTTPClient == nil {
 		config.HTTPClient = &http.Client{
@@ -291,14 +298,6 @@ func getConfig(options ...Option) (*Config, error) {
 			return nil, errors.New("unexpected transport type")
 		}
 	}
-
-	for _, opt := range options {
-		if err := opt(&config); err != nil {
-			return nil, err
-		}
-	}
-
-	t.TLSClientConfig = config.TLSConfig
 
 	log.Debug("TLS client configured", "tls-config clientCAs", config.TLSConfig.ClientCAs)
 	log.Debug("TLS client configured", "tls-config rootCAs", config.TLSConfig.RootCAs)
