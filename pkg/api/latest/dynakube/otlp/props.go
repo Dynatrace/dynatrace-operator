@@ -54,7 +54,7 @@ func (e *ExporterConfiguration) GetResourceAttributes() map[string]string {
 		return e.globalResourceAttributes
 	}
 
-	return resourceattributes.MergeResourceAttributes(e.globalResourceAttributes, e.Spec.AdditionalResourceAttributes)
+	return resourceattributes.Merge(e.globalResourceAttributes, e.Spec.AdditionalResourceAttributes)
 }
 
 func (e *ExporterConfiguration) HasAdditionalResourceAttributes() bool {

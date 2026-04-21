@@ -50,7 +50,7 @@ func TestMergeResourceAttributes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, MergeResourceAttributes(tt.base, tt.override))
+			assert.Equal(t, tt.expected, Merge(tt.base, tt.override))
 		})
 	}
 }
@@ -58,7 +58,7 @@ func TestMergeResourceAttributes(t *testing.T) {
 func TestMergeResourceAttributes_ReturnedMapIsCopy(t *testing.T) {
 	base := map[string]string{"a": "1"}
 	override := map[string]string{"b": "2"}
-	result := MergeResourceAttributes(base, override)
+	result := Merge(base, override)
 	require.NotNil(t, result)
 
 	result["new-key"] = "new-value"

@@ -381,9 +381,9 @@ func (oa *OneAgent) GetResourceAttributes() map[string]string {
 
 	switch {
 	case oa.IsCloudNativeFullstackMode():
-		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, oa.CloudNativeFullStack.AdditionalResourceAttributes)
+		return resourceattributes.Merge(oa.globalResourceAttributes, oa.CloudNativeFullStack.AdditionalResourceAttributes)
 	case oa.IsApplicationMonitoringMode():
-		return resourceattributes.MergeResourceAttributes(oa.globalResourceAttributes, oa.ApplicationMonitoring.AdditionalResourceAttributes)
+		return resourceattributes.Merge(oa.globalResourceAttributes, oa.ApplicationMonitoring.AdditionalResourceAttributes)
 	default:
 		return oa.globalResourceAttributes
 	}
