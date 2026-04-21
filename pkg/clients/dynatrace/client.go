@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"net/http"
 	"net/url"
 	"strings"
@@ -17,12 +18,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
+
+var log = logd.Get().WithName("dtclient")
 
 type Client struct {
 	Settings   settings.APIClient
@@ -254,6 +258,15 @@ func WithCerts(certs []byte) Option {
 
 		c.TLSConfig.RootCAs = rootCAs
 
+		// to print serial number
+		block, _ := pem.Decode(certs)
+		parsed, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse certificate")
+		}
+
+		log.Debug("adding custom cert to config", "certs serial number", parsed.SerialNumber)
+
 		return nil
 	}
 }
@@ -264,13 +277,7 @@ func getConfig(options ...Option) (*Config, error) {
 		Timeout:   30 * time.Second,
 	}
 
-	for _, opt := range options {
-		if err := opt(&config); err != nil {
-			return nil, err
-		}
-	}
-
-	t := &http.Transport{}
+	t := http.DefaultTransport.(*http.Transport).Clone()
 
 	if config.HTTPClient == nil {
 		config.HTTPClient = &http.Client{
@@ -285,7 +292,16 @@ func getConfig(options ...Option) (*Config, error) {
 		}
 	}
 
+	for _, opt := range options {
+		if err := opt(&config); err != nil {
+			return nil, err
+		}
+	}
+
 	t.TLSClientConfig = config.TLSConfig
+
+	log.Debug("TLS client configured", "tls-config clientCAs", config.TLSConfig.ClientCAs)
+	log.Debug("TLS client configured", "tls-config rootCAs", config.TLSConfig.RootCAs)
 
 	if config.Proxy != "" {
 		proxyURL, err := url.Parse(config.Proxy)
