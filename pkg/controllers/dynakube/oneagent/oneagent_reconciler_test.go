@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -18,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/pkg/errors"
@@ -67,7 +67,7 @@ func TestReconcile(t *testing.T) {
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, dk, dtclientmock.NewClient(t), createTokens())
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, createTokens())
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
@@ -83,7 +83,6 @@ func TestReconcile(t *testing.T) {
 		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
 		setDaemonSetCreatedCondition(dk.Conditions())
 		fakeClient := fake.NewClient(dk, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetDaemonsetName(), Namespace: dk.Namespace}})
-		dtc := dtclientmock.NewClient(t)
 
 		reconciler := &Reconciler{
 			client:                   fakeClient,
@@ -94,7 +93,7 @@ func TestReconcile(t *testing.T) {
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, dk, dtc, token.Tokens{})
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, token.Tokens{})
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
@@ -118,7 +117,7 @@ func TestReconcile(t *testing.T) {
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, dk, dtclientmock.NewClient(t), token.Tokens{})
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, token.Tokens{})
 		require.NoError(t, err)
 	})
 
@@ -147,7 +146,7 @@ func TestReconcile(t *testing.T) {
 			versionReconciler:        createVersionReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, &dk, dtclientmock.NewClient(t), createTokens())
+		err := reconciler.Reconcile(ctx, &dk, &dynatrace.Client{}, createTokens())
 		require.ErrorIs(t, err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError)
 	})
 
@@ -175,7 +174,7 @@ func TestReconcile(t *testing.T) {
 			versionReconciler:        versionReconciler,
 		}
 
-		err := reconciler.Reconcile(ctx, &dk, dtclientmock.NewClient(t), token.Tokens{})
+		err := reconciler.Reconcile(ctx, &dk, &dynatrace.Client{}, token.Tokens{})
 		require.Error(t, err)
 	})
 }
@@ -207,7 +206,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	dk.Status.OneAgent.ConnectionInfo.TenantUUID = "test-tenant"
 
 	fakeClient := fake.NewClient()
-	dtClient := dtclientmock.NewClient(t)
+	dtClient := dynatrace.Client{}
 
 	reconciler := &Reconciler{
 		client:                   fakeClient,
@@ -218,7 +217,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		versionReconciler:        createVersionReconcilerMock(t),
 	}
 
-	err := reconciler.Reconcile(ctx, dk, dtClient, createTokens())
+	err := reconciler.Reconcile(ctx, dk, &dtClient, createTokens())
 	require.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
@@ -227,7 +226,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
 	assert.Equal(t, dk.OneAgent().GetDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
-	mock.AssertExpectationsForObjects(t, dtClient)
 
 	condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
 	require.NotNil(t, condition)
@@ -297,7 +295,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 		require.NoError(t, err)
 
-		err = reconciler.Reconcile(ctx, dk, dtclientmock.NewClient(t), createTokens())
+		err = reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, createTokens())
 
 		require.NoError(t, err)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
@@ -329,7 +327,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 		require.NoError(t, err)
 
-		err = reconciler.Reconcile(ctx, dk, dtclientmock.NewClient(t), createTokens())
+		err = reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, createTokens())
 
 		require.NoError(t, err)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
@@ -736,7 +734,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, dk, dtclientmock.NewClient(t), createTokens())
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, createTokens())
 		require.NoError(t, err)
 
 		var actual corev1.ConfigMap

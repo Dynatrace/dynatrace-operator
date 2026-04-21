@@ -12,7 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
@@ -130,7 +131,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with version, unknown issue with dtc => fail before installer creation", func(t *testing.T) {
+	t.Run("dynakube with version, unknown issue with dtClient => fail before installer creation", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
 		prov.dynatraceClientBuilder = mockFailingDTClientBuilder(t)
@@ -142,12 +143,12 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with version, known issue with dtc => no error, just short requeue", func(t *testing.T) {
+	t.Run("dynakube with version, known issue with dtClient => no error, just short requeue", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
 
 		unavailableInstaller := installermock.NewInstaller(t)
-		unavailableInstaller.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, dtclient.ServerError{Code: http.StatusServiceUnavailable})
+		unavailableInstaller.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, &core.HTTPError{StatusCode: http.StatusServiceUnavailable})
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
 		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 
@@ -157,7 +158,7 @@ func TestReconcile(t *testing.T) {
 		require.Equal(t, shortRequeueDuration, result.RequeueAfter)
 	})
 
-	t.Run("dynakube with image => image installer used, dtclient not created, no error", func(t *testing.T) {
+	t.Run("dynakube with image => image installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
 		prov := createProvisioner(t, dk)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
@@ -170,7 +171,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with job => job installer used, dtclient not created, no error", func(t *testing.T) {
+	t.Run("dynakube with job => job installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t))
@@ -183,7 +184,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with job + custom-pull-secret => job installer used, dtclient not created, no error", func(t *testing.T) {
+	t.Run("dynakube with job + custom-pull-secret => job installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		dk.Spec.CustomPullSecret = "test-ps"
 		prov := createProvisioner(t, dk)
@@ -365,7 +366,7 @@ func createSuccessfulInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(true, nil)
+	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(true, nil)
 
 	return m
 }
@@ -374,7 +375,7 @@ func createNotReadyInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, nil)
+	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, nil)
 
 	return m
 }
@@ -383,7 +384,7 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, errors.New("BOOM"))
+	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, errors.New("BOOM"))
 
 	return m
 }
@@ -430,10 +431,10 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 	}
 }
 
-func mockFailingDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
+func mockFailingDTClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
-	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
+	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)
@@ -442,14 +443,14 @@ func mockFailingDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
 	return mockDtcBuilder
 }
 
-func mockSuccessfulDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
+func mockSuccessfulDTClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
-	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
+	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(&dtclient.ClientV2{}, nil)
+	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(&dynatrace.Client{}, nil)
 
 	return mockDtcBuilder
 }

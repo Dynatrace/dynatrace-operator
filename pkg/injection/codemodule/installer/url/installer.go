@@ -35,7 +35,7 @@ func (props *Properties) fillEmptyWithDefaults() {
 }
 
 type Installer struct {
-	dtc       oneagent.APIClient
+	dtClient  oneagent.APIClient
 	extractor zip.Extractor
 	props     *Properties
 }
@@ -44,9 +44,9 @@ type NewFunc func(oneagent.APIClient, *Properties) installer.Installer
 
 var _ NewFunc = NewURLInstaller
 
-func NewURLInstaller(dtc oneagent.APIClient, props *Properties) installer.Installer {
+func NewURLInstaller(dtClient oneagent.APIClient, props *Properties) installer.Installer {
 	return &Installer{
-		dtc:       dtc,
+		dtClient:  dtClient,
 		extractor: zip.NewOneAgentExtractor(props.PathResolver),
 		props:     props,
 	}

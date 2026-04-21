@@ -52,15 +52,15 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run("error when downloading latest agent", func(t *testing.T) {
 		target := filepath.Join(t.TempDir(), "target")
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().Get(t.Context(), getParams, mock.AnythingOfType("*os.File")).
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().Get(t.Context(), getParams, mock.AnythingOfType("*os.File")).
 			Return(errors.New(testErrorMessage))
 
-		dtc.EXPECT().GetVersions(t.Context(), getParams).
+		dtClient.EXPECT().GetVersions(t.Context(), getParams).
 			Return([]string{}, errors.New(testErrorMessage))
 
 		installer := &Installer{
-			dtc: dtc,
+			dtClient: dtClient,
 			props: &Properties{
 				OS:     installer.OSUnix,
 				Type:   installer.TypePaaS,
@@ -74,8 +74,8 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("error unzipping file", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, "target")
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().Get(t.Context(), getParams, mock.AnythingOfType("*os.File")).
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().Get(t.Context(), getParams, mock.AnythingOfType("*os.File")).
 			Run(func(ctx context.Context, args oneagentclient.GetParams, writer io.Writer) {
 				zipFile := zip.SetupInvalidTestZip(t, tmpDir)
 				defer func() { _ = zipFile.Close() }()
@@ -86,7 +86,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			Return(nil)
 
 		installer := &Installer{
-			dtc:       dtc,
+			dtClient:  dtClient,
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
 				OS:     installer.OSUnix,
@@ -104,8 +104,8 @@ func TestInstallAgentFromUrl(t *testing.T) {
 
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, testVersion)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().Get(
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().Get(
 			t.Context(),
 			getParams,
 			mock.AnythingOfType("*os.File"),
@@ -120,7 +120,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			Return(nil)
 
 		installer := &Installer{
-			dtc:       dtc,
+			dtClient:  dtClient,
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
 				OS:            installer.OSUnix,
@@ -136,8 +136,8 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("downloading and unzipping latest agent", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, VersionLatest)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetLatest(t.Context(), getParams,
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().GetLatest(t.Context(), getParams,
 			mock.AnythingOfType("*os.File")).
 			Run(func(ctx context.Context, args oneagentclient.GetParams, writer io.Writer) {
 				zipFile := zip.SetupTestArchive(t, zip.TestRawZip)
@@ -149,7 +149,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			Return(nil)
 
 		installer := &Installer{
-			dtc:       dtc,
+			dtClient:  dtClient,
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
 				OS:            installer.OSUnix,
@@ -165,8 +165,8 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("downloading and unzipping agent via url", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, VersionLatest)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetViaInstallerURL(t.Context(), testURL, mock.AnythingOfType("*os.File")).
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().GetViaInstallerURL(t.Context(), testURL, mock.AnythingOfType("*os.File")).
 			Run(func(ctx context.Context, url string, writer io.Writer) {
 				zipFile := zip.SetupTestArchive(t, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
@@ -177,7 +177,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			Return(nil)
 
 		installer := &Installer{
-			dtc:       dtc,
+			dtClient:  dtClient,
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
 				URL: testURL,

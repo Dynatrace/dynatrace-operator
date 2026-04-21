@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -12,30 +12,30 @@ import (
 
 type options struct {
 	ctx  context.Context
-	Opts []dtclient.Option
+	Opts []dynatrace.Option
 }
 
 func newOptions(ctx context.Context) *options {
 	return &options{
-		Opts: []dtclient.Option{},
+		Opts: []dynatrace.Option{},
 		ctx:  ctx,
 	}
 }
 
 func (opts *options) appendNetworkZone(networkZone string) {
 	if networkZone != "" {
-		opts.Opts = append(opts.Opts, dtclient.NetworkZone(networkZone))
+		opts.Opts = append(opts.Opts, dynatrace.WithNetworkZone(networkZone))
 	}
 }
 
 func (opts *options) appendHostGroup(hostGroup string) {
 	if hostGroup != "" {
-		opts.Opts = append(opts.Opts, dtclient.HostGroup(hostGroup))
+		opts.Opts = append(opts.Opts, dynatrace.WithHostGroup(hostGroup))
 	}
 }
 
 func (opts *options) appendCertCheck(skipCertCheck bool) {
-	opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(skipCertCheck))
+	opts.Opts = append(opts.Opts, dynatrace.WithSkipCertificateValidation(skipCertCheck))
 }
 
 func (opts *options) appendProxySettings(apiReader client.Reader, dk *dynakube.DynaKube) error {
@@ -53,15 +53,15 @@ func (opts *options) appendProxySettings(apiReader client.Reader, dk *dynakube.D
 	return nil
 }
 
-func (opts *options) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dtclient.Option, error) {
-	var proxyOption dtclient.Option
+func (opts *options) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dynatrace.Option, error) {
+	var proxyOption dynatrace.Option
 
 	proxyURL, err := dk.Proxy(opts.ctx, apiReader)
 	if err != nil {
 		return proxyOption, err
 	}
 
-	proxyOption = dtclient.Proxy(proxyURL, dk.FF().GetNoProxy())
+	proxyOption = dynatrace.WithProxy(proxyURL, dk.FF().GetNoProxy())
 
 	return proxyOption, nil
 }
@@ -77,7 +77,7 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
 
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dynakube.TrustedCAKey])))
+		opts.Opts = append(opts.Opts, dynatrace.WithCerts([]byte(certs.Data[dynakube.TrustedCAKey])))
 	}
 
 	return nil

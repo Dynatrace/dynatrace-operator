@@ -40,14 +40,14 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			dk: *dk,
 		}
-		dtc, err := dynatraceClientBuilder.Build(ctx)
+		dtClient, err := dynatraceClientBuilder.Build(ctx)
 
 		require.NoError(t, err)
-		assert.NotNil(t, dtc)
+		assert.NotNil(t, dtClient)
 	})
 	t.Run("BuildDynatraceClient handles nil instance", func(t *testing.T) {
-		dtc, err := builder{}.Build(ctx)
-		assert.Nil(t, dtc)
+		dtClient, err := builder{}.Build(ctx)
+		assert.Nil(t, dtClient)
 		require.Error(t, err)
 	})
 	t.Run("BuildDynatraceClient handles invalid token secret", func(t *testing.T) {
@@ -69,18 +69,18 @@ func TestBuildDynatraceClient(t *testing.T) {
 			dk: *dk,
 		}
 
-		dtc, err := dynatraceClientBuilder.Build(ctx)
+		dtClient, err := dynatraceClientBuilder.Build(ctx)
 
-		assert.Nil(t, dtc)
+		assert.Nil(t, dtClient)
 		require.Error(t, err)
 
 		dynatraceClientBuilder = builder{
 			apiReader: fakeClient,
 			dk:        *dk,
 		}
-		dtc, err = dynatraceClientBuilder.Build(ctx)
+		dtClient, err = dynatraceClientBuilder.Build(ctx)
 
-		assert.Nil(t, dtc)
+		assert.Nil(t, dtClient)
 		require.Error(t, err)
 	})
 	t.Run("BuildDynatraceClient handles missing proxy secret", func(t *testing.T) {
@@ -102,10 +102,10 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			dk: *dk,
 		}
-		dtc, err := dynatraceClientBuilder.Build(ctx)
+		dtClient, err := dynatraceClientBuilder.Build(ctx)
 
 		require.Error(t, err)
-		assert.Nil(t, dtc)
+		assert.Nil(t, dtClient)
 	})
 	t.Run("BuildDynatraceClient handles missing trusted certificate config map", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -126,9 +126,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			dk: *dk,
 		}
-		dtc, err := dtf.Build(ctx)
+		dtClient, err := dtf.Build(ctx)
 
 		require.Error(t, err)
-		assert.Nil(t, dtc)
+		assert.Nil(t, dtClient)
 	})
 }
