@@ -270,7 +270,7 @@ func getConfig(options ...Option) (*Config, error) {
 		}
 	}
 
-	t := &http.Transport{}
+	t := http.DefaultTransport.(*http.Transport).Clone()
 
 	if config.HTTPClient == nil {
 		config.HTTPClient = &http.Client{
