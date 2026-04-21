@@ -24,7 +24,7 @@ func NewReconciler() *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
 	if !dk.LogMonitoring().IsEnabled() {
 		_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *
 		log.Info("necessary scopes for logmonitoring settings creation is available, proceeding with reconciliation")
 	}
 
-	err := r.checkLogMonitoringSettings(ctx, dtc, dk)
+	err := r.checkLogMonitoringSettings(ctx, dtClient, dk)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc settings.APIClient, dk *
 	return nil
 }
 
-func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
 	log.Info("start reconciling log monitoring settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {
@@ -79,7 +79,7 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtc setting
 		return nil
 	}
 
-	logMonitoringSettings, err := dtc.GetSettingsForLogModule(ctx, dk.Status.KubernetesClusterMEID)
+	logMonitoringSettings, err := dtClient.GetSettingsForLogModule(ctx, dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		setErrorCondition(dk.Conditions())
 
@@ -99,7 +99,7 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtc setting
 		matchers = dk.LogMonitoring().IngestRuleMatchers
 	}
 
-	objectID, err := dtc.CreateLogMonitoringSetting(ctx, dk.Status.KubernetesClusterMEID, dk.Status.KubernetesClusterName, matchers)
+	objectID, err := dtClient.CreateLogMonitoringSetting(ctx, dk.Status.KubernetesClusterMEID, dk.Status.KubernetesClusterName, matchers)
 	if err != nil {
 		setErrorCondition(dk.Conditions())
 

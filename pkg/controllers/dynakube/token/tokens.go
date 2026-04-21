@@ -7,14 +7,16 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 )
 
 const (
 	PaaSKey       = "paasToken"
 	APIKey        = "apiToken"
 	DataIngestKey = "dataIngestToken"
+
+	noError = 0
 )
 
 type VerificationError struct {
@@ -65,7 +67,7 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) (map[string]bool, error) {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient token.APIClient, dk dynakube.DynaKube) (map[string]bool, error) {
 	collectedScopeErrors := make([]error, 0)
 	collectedMissingOptionalScopes := map[string]bool{}
 
@@ -103,7 +105,7 @@ func concatErrors(errs []error) error {
 		return nil
 	}
 
-	apiStatus := dynatraceapi.NoError
+	apiStatus := noError
 
 	var concatenatedError strings.Builder
 	for index, err := range errs {
@@ -113,15 +115,20 @@ func concatErrors(errs []error) error {
 			concatenatedError.WriteString("\n\t")
 		}
 
-		if apiStatus == dynatraceapi.NoError && dynatraceapi.IsUnreachable(err) {
-			apiStatus = dynatraceapi.StatusCode(err)
+		if apiStatus == noError && core.IsUnreachable(err) {
+			apiStatus = core.StatusCode(err)
 		}
 	}
 
-	if apiStatus != dynatraceapi.NoError {
-		return dtclient.ServerError{
-			Code:    apiStatus,
-			Message: concatenatedError.String(),
+	if apiStatus != noError {
+		return &core.HTTPError{
+			StatusCode: apiStatus,
+			ServerErrors: []core.ServerError{
+				{
+					Code:    apiStatus,
+					Message: concatenatedError.String(),
+				},
+			},
 		}
 	}
 

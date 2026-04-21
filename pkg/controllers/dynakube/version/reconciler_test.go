@@ -11,11 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -58,13 +55,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("no update if hash provider returns error", func(t *testing.T) {
 		versionClient := versionclientmock.NewAPIClient(t)
 		versionClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return("", errors.New("Something wrong happened"))
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
-			Version: versionClient,
-		})
 
 		versionReconciler := reconciler{
-			dtClient:     mockClient,
+			dtClient:     versionClient,
 			apiReader:    fake.NewClient(),
 			timeProvider: timeprovider.New().Freeze(),
 		}
@@ -86,17 +79,14 @@ func TestReconcile(t *testing.T) {
 
 		dkStatus := &dk.Status
 		versionClient := versionclientmock.NewAPIClient(t)
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
-			Version: versionClient,
-		})
+
 		mockLatestAgentVersion(versionClient, latestAgentVersion, 3)
 		mockLatestActiveGateVersion(versionClient, latestActiveGateVersion)
 
 		versionReconciler := reconciler{
 			apiReader:    fakeClient,
 			timeProvider: timeProvider,
-			dtClient:     mockClient,
+			dtClient:     versionClient,
 		}
 		err := versionReconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
@@ -133,9 +123,8 @@ func TestUpdateVersionStatuses(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("empty version info + failing reconcile => return error", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
 		versionReconciler := reconciler{
-			dtClient:     mockClient,
+			dtClient:     versionclientmock.NewAPIClient(t),
 			apiReader:    fake.NewClient(),
 			timeProvider: timeprovider.New().Freeze(),
 		}
@@ -144,9 +133,8 @@ func TestUpdateVersionStatuses(t *testing.T) {
 	})
 
 	t.Run("version info (.Version) set + failing reconcile => return nil", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
 		versionReconciler := reconciler{
-			dtClient:     mockClient,
+			dtClient:     versionclientmock.NewAPIClient(t),
 			apiReader:    fake.NewClient(),
 			timeProvider: timeprovider.New().Freeze(),
 		}
@@ -155,9 +143,8 @@ func TestUpdateVersionStatuses(t *testing.T) {
 	})
 
 	t.Run("version info (.ImageID) set + failing reconcile => return nil", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
 		versionReconciler := reconciler{
-			dtClient:     mockClient,
+			dtClient:     versionclientmock.NewAPIClient(t),
 			apiReader:    fake.NewClient(),
 			timeProvider: timeprovider.New().Freeze(),
 		}
@@ -306,7 +293,7 @@ func createTestPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.Dy
 	return fakeClient.Create(t.Context(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dk.Namespace,
-			Name:      dk.Name + dtpullsecret.PullSecretSuffix,
+			Name:      dk.TenantRegistryPullSecretName(),
 		},
 		Data: map[string][]byte{
 			".dockerconfigjson": []byte("{}"),

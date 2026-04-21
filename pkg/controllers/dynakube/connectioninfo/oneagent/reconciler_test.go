@@ -62,9 +62,9 @@ func TestReconcile(t *testing.T) {
 		dk.Spec = dynakube.DynaKubeSpec{}
 
 		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace}})
-		dtc := oneagentclientmock.NewAPIClient(t)
+		dtClient := oneagentclientmock.NewAPIClient(t)
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.OneAgent.ConnectionInfo)
@@ -90,10 +90,10 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		fakeClient := fake.NewClient(dk)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 		assert.NotEmpty(t, dk.Status.OneAgent.ConnectionInfo)
@@ -106,9 +106,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("set correct condition on dynatrace-client error", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient()
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(oneagentclient.ConnectionInfo{}, errors.New("BOOM")).Once()
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(oneagentclient.ConnectionInfo{}, errors.New("BOOM")).Once()
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
@@ -118,9 +118,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("set correct condition on kube-client error", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := createFailK8sClient()
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
@@ -130,9 +130,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("store OneAgent connection info to DynaKube status + create secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -153,8 +153,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("update OneAgent connection info + secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
@@ -162,7 +162,7 @@ func TestReconcile(t *testing.T) {
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		rec := r.(*reconciler)
 		rec.timeProvider.Set(rec.timeProvider.Now().Add(time.Minute * 20))
 
@@ -182,7 +182,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("do not update OneAgent connection info within timeout", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
-		dtc := oneagentclientmock.NewAPIClient(t)
+		dtClient := oneagentclientmock.NewAPIClient(t)
 
 		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
@@ -190,7 +190,7 @@ func TestReconcile(t *testing.T) {
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -207,8 +207,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("update OneAgent connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
@@ -216,7 +216,7 @@ func TestReconcile(t *testing.T) {
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -234,8 +234,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("update OneAgent connection info in case conditions is in 'False' state ", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
-		dtc := oneagentclientmock.NewAPIClient(t)
-		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
+		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
@@ -243,7 +243,7 @@ func TestReconcile(t *testing.T) {
 		}
 		setEmptyCommunicationHostsCondition(dk.Conditions())
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -273,8 +273,8 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 		},
 	}
 
-	dtc := oneagentclientmock.NewAPIClient(t)
-	dtc.EXPECT().GetConnectionInfo(anyCtx).Return(
+	dtClient := oneagentclientmock.NewAPIClient(t)
+	dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(
 		oneagentclient.ConnectionInfo{
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
@@ -282,7 +282,7 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 		}, nil).Once()
 	fakeClient := fake.NewClient(dk)
 
-	r := NewReconciler(fakeClient, fakeClient, dtc, dk)
+	r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 	err := r.Reconcile(ctx)
 	require.ErrorIs(t, err, NoOneAgentCommunicationEndpointsError)
 

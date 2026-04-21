@@ -29,7 +29,7 @@ func NewReconciler() *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.APIClient, dk *dynakube.DynaKube) error {
 	// Kubernetes Monitoring is REQUIRED for KSPM, so it is ok to just check for this.
 	if !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
 		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
@@ -65,7 +65,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk
 		log.Info("necessary scopes for kspm settings creation is available, proceeding with reconciliation")
 	}
 
-	err := r.checkKSPMSettings(ctx, dtc, dk)
+	err := r.checkKSPMSettings(ctx, dtClient, dk)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk
 	return nil
 }
 
-func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.APIClient, dk *dynakube.DynaKube) error {
 	log.Info("start reconciling kspm settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {
@@ -85,7 +85,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 		return nil
 	}
 
-	kspmSettings, err := dtc.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
+	kspmSettings, err := dtClient.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		if core.IsForbidden(err) {
 			log.Info("tenant requires additional scopes for getting KSPM settings. Skipping reconciliation")
@@ -108,7 +108,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 
 	datasetPipelineEnabled := dk.KSPM().IsEnabled()
 
-	objectID, err := dtc.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, datasetPipelineEnabled)
+	objectID, err := dtClient.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, datasetPipelineEnabled)
 	if err != nil {
 		if core.IsForbidden(err) {
 			log.Info("tenant requires additional scopes for creating KSPM settings. Skipping reconciliation")

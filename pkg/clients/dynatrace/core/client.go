@@ -36,8 +36,6 @@ type APIRequest interface {
 	WithRawQueryParams(params url.Values) APIRequest
 	// WithJSONBody sets the request body as JSON
 	WithJSONBody(body any) APIRequest
-	// WithRawBody sets the request body as raw bytes
-	WithRawBody(body []byte) APIRequest
 	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
 	// WithoutToken explicitly disables authentication for the request
@@ -46,8 +44,6 @@ type APIRequest interface {
 	WithHeader(key, value string) APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
 	Execute(model any) error
-	// ExecuteRaw executes the request and returns the raw response data
-	ExecuteRaw() ([]byte, error)
 	// ExecuteWriter executes the request, writes the response body to the provided writer,
 	// and returns the response headers on success.
 	ExecuteWriter(writer io.Writer) (http.Header, error)
@@ -178,20 +174,6 @@ func (r *Request) WithJSONBody(body any) APIRequest {
 	return r
 }
 
-// WithRawBody sets the request body as raw bytes
-func (r *Request) WithRawBody(body []byte) APIRequest {
-	r.body = body
-
-	return r
-}
-
-// WithTokenType sets the token type to use for authentication
-func (r *Request) WithTokenType(tokenType TokenType) APIRequest {
-	r.tokenType = tokenType
-
-	return r
-}
-
 // WithPaasToken sets the token type to PaaS
 func (r *Request) WithPaasToken() APIRequest {
 	r.tokenType = TokenTypePaaS
@@ -227,11 +209,6 @@ func (r *Request) Execute(model any) error {
 	}
 
 	return nil
-}
-
-// ExecuteRaw executes the request and returns the raw response data
-func (r *Request) ExecuteRaw() ([]byte, error) {
-	return r.doRequest()
 }
 
 // ExecuteWriter executes the request, writes the response body to the provided writer,
