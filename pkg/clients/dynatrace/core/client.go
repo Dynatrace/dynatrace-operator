@@ -287,13 +287,7 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 		}
 	}()
 
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
-	statusCodeThreshold := 201
-	if r.method == http.MethodDelete {
-		statusCodeThreshold = 299
-	}
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+	if !IsSuccessResponse(resp) {
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
 			return fmt.Errorf("read error response body: %w", readErr)
@@ -360,13 +354,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 
 	log.Debug("API request", loggerArgs(resp, body)...)
 
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
-	statusCodeThreshold := 201
-	if r.method == http.MethodDelete {
-		statusCodeThreshold = 299
-	}
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+	if !IsSuccessResponse(resp) {
 		err = handleErrorResponse(resp, body)
 	}
 
@@ -428,6 +416,18 @@ func handleErrorResponse(resp *http.Response, body []byte) error {
 	}
 
 	return httpErr
+}
+
+// IsSuccessResponse returns true when the HTTP response status code indicates
+// a successful operation. DELETE requests accept 200-299; all other methods
+// accept 200-201 (matching the legacy client behavior).
+func IsSuccessResponse(resp *http.Response) bool {
+	statusCodeThreshold := 201
+	if resp.Request != nil && resp.Request.Method == http.MethodDelete {
+		statusCodeThreshold = 299
+	}
+
+	return resp.StatusCode >= http.StatusOK && resp.StatusCode <= statusCodeThreshold
 }
 
 func isJSONList(body []byte) bool {

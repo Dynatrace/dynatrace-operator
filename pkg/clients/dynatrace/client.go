@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
@@ -51,6 +52,7 @@ type Config struct {
 	NoProxy           string
 	Timeout           time.Duration
 	DisableKeepAlives bool
+	CacheEntryTTL     time.Duration
 }
 
 // Option is a functional option for configuring the client
@@ -62,6 +64,8 @@ func NewClient(options ...Option) (*Client, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get client config")
 	}
+
+	addCacheMiddleware(config)
 
 	if len(config.APIToken) == 0 && len(config.PaasToken) == 0 {
 		return nil, errors.New("tokens are empty")
@@ -99,6 +103,8 @@ func NewOAuthClient(credentials clientcredentials.Config, options ...Option) (*O
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get oauth config")
 	}
+
+	addCacheMiddleware(config)
 
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, config.HTTPClient)
 
@@ -256,6 +262,18 @@ func WithCerts(certs []byte) Option {
 
 		return nil
 	}
+}
+
+func WithCacheTTL(ttl time.Duration) Option {
+	return func(c *Config) error {
+		c.CacheEntryTTL = ttl
+
+		return nil
+	}
+}
+
+func addCacheMiddleware(config *Config) {
+	config.HTTPClient.Transport = middleware.NewCacheRoundTripper(config.HTTPClient.Transport, config.CacheEntryTTL)
 }
 
 func getConfig(options ...Option) (*Config, error) {

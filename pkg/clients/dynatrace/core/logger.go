@@ -20,9 +20,15 @@ const (
 	levelFull     // full
 )
 
-// LogLevelEnv controls the verbosity of the Dynatrace API client.
-// The value will only be used when the LOG_LEVEL variable is set to "debug".
-const LogLevelEnv = "DT_CLIENT_LOG_LEVEL"
+const (
+	// LogLevelEnv controls the verbosity of the Dynatrace API client.
+	// The value will only be used when the LOG_LEVEL variable is set to "debug".
+	LogLevelEnv = "DT_CLIENT_LOG_LEVEL"
+
+	// CacheHitHeader is set on responses served from the in-memory cache so that
+	// the core client can include a "cached" field in its log output.
+	CacheHitHeader = "X-DT-Cache"
+)
 
 var logLevel = getLogLevel()
 
@@ -66,6 +72,7 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 			"query", dumpValues(resp.Request.URL.Query(), false),
 			"status_code", resp.StatusCode,
 			"duration", duration.String(),
+			"cached", resp.Header.Get(CacheHitHeader) != "",
 		}
 
 		if logLevel >= levelFull {

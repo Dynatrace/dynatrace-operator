@@ -3,7 +3,9 @@ package k8senv
 import (
 	"os"
 	"strings"
+	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -16,6 +18,11 @@ const (
 	DTOperatorPullSecretEnvName = "DT_OPERATOR_PULL_SECRET"
 	OLMOperatorNamespaceEnv     = "OLM_OPERATOR_NAMESPACE"
 	AppVersion                  = "APP_VERSION"
+
+	DTClientCacheCleanInterval        = "DT_CLIENT_CACHE_CLEAN_INTERVAL"
+	defaultDTClientCacheCleanInterval = time.Hour
+	minDTClientCacheCleanInterval     = 5 * time.Minute
+	maxDTClientCacheCleanInterval     = 100 * time.Hour
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
@@ -92,4 +99,28 @@ func GetNodeName() string {
 
 func GetCSIDataDir() string {
 	return os.Getenv(CSIDataDir)
+}
+
+func GetDTClientCacheCleanInterval(log logd.Logger) time.Duration {
+	rawDuration := os.Getenv(DTClientCacheCleanInterval)
+	if rawDuration == "" {
+		log.Debug("no custom env set, using default", "env", DTClientCacheCleanInterval, "default", defaultDTClientCacheCleanInterval)
+
+		return defaultDTClientCacheCleanInterval
+	}
+
+	parsedDuration, err := time.ParseDuration(rawDuration)
+	if err != nil {
+		log.Info("couldn't parse time.Duration from env", "env", DTClientCacheCleanInterval, "value", rawDuration, "err", err)
+
+		return defaultDTClientCacheCleanInterval
+	}
+
+	if parsedDuration < minDTClientCacheCleanInterval || parsedDuration > maxDTClientCacheCleanInterval {
+		log.Info("parsed time.Duration from env is not in the allowed range", "env", DTClientCacheCleanInterval, "value", parsedDuration, "min", minDTClientCacheCleanInterval, "max", maxDTClientCacheCleanInterval)
+
+		return defaultDTClientCacheCleanInterval
+	}
+
+	return parsedDuration
 }
