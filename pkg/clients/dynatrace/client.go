@@ -283,21 +283,13 @@ func getConfig(options ...Option) (*Config, error) {
 		}
 	}
 
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.TLSClientConfig = config.TLSConfig
-
-	if config.HTTPClient == nil {
-		config.HTTPClient = &http.Client{
-			Transport: t,
-		}
-	} else {
-		var ok bool
-
-		t, ok = config.HTTPClient.Transport.(*http.Transport)
-		if !ok {
-			return nil, errors.New("unexpected transport type")
-		}
+	config.HTTPClient = &http.Client{
+		Transport: http.DefaultTransport.(*http.Transport).Clone(),
+		Timeout:   15 * time.Minute,
 	}
+
+	t := config.HTTPClient.Transport.(*http.Transport)
+	t.TLSClientConfig = config.TLSConfig
 
 	log.Debug("TLS client configured", "tls-config clientCAs", config.TLSConfig.ClientCAs)
 	log.Debug("TLS client configured", "tls-config rootCAs", config.TLSConfig.RootCAs)
