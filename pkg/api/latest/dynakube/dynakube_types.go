@@ -5,6 +5,8 @@
 package dynakube
 
 import (
+	"time"
+
 	v1beta6 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -92,6 +94,11 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	DynatraceAPIRequestThreshold *uint16 `json:"dynatraceApiRequestThreshold,omitempty"`
+
+	// Set the duration between reconciles when no change happens in the DynaKube.
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Requeue After",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	RequeueAfter *time.Duration `json:"requeueAfter,omitempty"`
 
 	// When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)
 	// are deployed by the operator.
