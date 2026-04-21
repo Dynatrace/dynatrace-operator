@@ -85,6 +85,7 @@ var (
 		globalResourceAttributesExceedsLimit,
 		oneAgentResourceAttributesExceedsLimit,
 		otlpResourceAttributesExceedsLimit,
+		deprecatedPaasToken,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,
