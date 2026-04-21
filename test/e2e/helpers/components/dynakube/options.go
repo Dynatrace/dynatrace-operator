@@ -315,11 +315,20 @@ func setImageRefFromEnvs(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Re
 
 	envImage := os.Getenv(envVar)
 	if envImage != "" {
-		imageRef.Repository, imageRef.Tag, _ = strings.Cut(envImage, ":")
-		dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
-		t.Logf("using custom image from env %s: %s", envVar, envImage)
+		repo, tag, _ := strings.Cut(envImage, ":")
+		imageRef.Repository = repo
+		imageRef.Tag = tag
 
-		return true
+		if repo != defaultRepo {
+			dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
+			t.Logf("using private repo image from env %s: %s", envVar, envImage)
+
+			return true
+		}
+
+		t.Logf("using image from env %s: %s", envVar, envImage)
+
+		return false
 	}
 
 	uri := registry.GetLatestImageURI(t, defaultRepo)

@@ -19,21 +19,16 @@ import (
 )
 
 const (
-	AgPublicECR     = "public.ecr.aws/dynatrace/dynatrace-activegate"
-	OAPublicECR     = "public.ecr.aws/dynatrace/dynatrace-oneagent"
-	CMPublicECR     = "public.ecr.aws/dynatrace/dynatrace-codemodules"
-	EECPublicECR    = "public.ecr.aws/dynatrace/dynatrace-eec"
-	LogMonPublicECR = "public.ecr.aws/dynatrace/dynatrace-logmodule"
-	KSPMPublicECR   = "public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector"
-	OTelPublicECR   = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	DBExecPublicECR = "public.ecr.aws/dynatrace/dynatrace-database-datasource-executor"
+	agPublicECR = "public.ecr.aws/dynatrace/dynatrace-activegate"
+	oaPublicECR = "public.ecr.aws/dynatrace/dynatrace-oneagent"
+	cmPublicECR = "public.ecr.aws/dynatrace/dynatrace-codemodules"
 )
 
 // repoEnvVars maps ECR repository URIs to env var overrides for GetLatestImageURI.
 var repoEnvVars = map[string]string{
-	AgPublicECR: "E2E_AG_IMAGE",
-	OAPublicECR: "E2E_OA_IMAGE",
-	CMPublicECR: "E2E_ECR_CODEMODULES_IMAGE",
+	agPublicECR: "E2E_AG_IMAGE",
+	oaPublicECR: "E2E_OA_IMAGE",
+	cmPublicECR: "E2E_ECR_CODEMODULES_IMAGE",
 }
 
 var latestImageURIs = map[string]string{}
@@ -44,9 +39,9 @@ var latestImageURIs = map[string]string{}
 func GetLatestImageURI(t *testing.T, repoURI string) string {
 	t.Helper()
 
-	envVar, ok := repoEnvVars[repoURI]
-	if ok {
-		if val := os.Getenv(envVar); val != "" {
+	if envVar, ok := repoEnvVars[repoURI]; ok {
+		val := os.Getenv(envVar)
+		if val != "" {
 			t.Logf("using image from env %s: %s", envVar, val)
 
 			return val
@@ -54,6 +49,8 @@ func GetLatestImageURI(t *testing.T, repoURI string) string {
 	}
 
 	if uri, ok := latestImageURIs[repoURI]; ok {
+		t.Logf("using cached resolved newest image for %s: %s", repoURI, uri)
+
 		return uri
 	}
 
@@ -67,19 +64,19 @@ func GetLatestImageURI(t *testing.T, repoURI string) string {
 func GetLatestActiveGateImageURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, AgPublicECR)
+	return GetLatestImageURI(t, agPublicECR)
 }
 
 func GetLatestOneAgentImageURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, OAPublicECR)
+	return GetLatestImageURI(t, oaPublicECR)
 }
 
 func GetLatestCodeModulesImageURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, CMPublicECR)
+	return GetLatestImageURI(t, cmPublicECR)
 }
 
 func getLatestImageURI(t *testing.T, repoURI string) string {
@@ -89,7 +86,7 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 	require.NoError(t, err)
 
 	var tags []string
-	for attempt := 0; attempt < 3; attempt++ {
+	for attempt := range 3 {
 		tags, err = remote.List(repo)
 		if err == nil {
 			break
