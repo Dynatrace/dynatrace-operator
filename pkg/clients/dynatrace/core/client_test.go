@@ -49,9 +49,6 @@ func TestClient_Headers(t *testing.T) {
 
 	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/"), UserAgent: "my-user-agent"})
 	require.NoError(t, c.GET(t.Context(), "test").Execute(nil))
-
-	expectContentType = "application/json"
-	require.NoError(t, c.POST(t.Context(), "test").WithRawBody([]byte("test")).Execute(nil))
 }
 
 func TestClient_WithHeader(t *testing.T) {
@@ -63,9 +60,9 @@ func TestClient_WithHeader(t *testing.T) {
 		defer s.Close()
 
 		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-		_, err := c.GET(t.Context(), "/test").
+		err := c.GET(t.Context(), "/test").
 			WithHeader("Accept", "application/octet-stream").
-			ExecuteRaw()
+			Execute(nil)
 		require.NoError(t, err)
 	})
 
@@ -77,9 +74,9 @@ func TestClient_WithHeader(t *testing.T) {
 		defer s.Close()
 
 		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-		_, err := c.GET(t.Context(), "/test").
+		err := c.GET(t.Context(), "/test").
 			WithHeader("X-Custom", "custom-value").
-			ExecuteRaw()
+			Execute(nil)
 		require.NoError(t, err)
 	})
 
@@ -90,9 +87,9 @@ func TestClient_WithHeader(t *testing.T) {
 		defer s.Close()
 
 		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-		_, err := c.GET(t.Context(), "/test").
+		err := c.GET(t.Context(), "/test").
 			WithHeader("X-Empty", "").
-			ExecuteRaw()
+			Execute(nil)
 		require.NoError(t, err)
 	})
 }
@@ -178,33 +175,6 @@ func TestClient_Execute(t *testing.T) {
 		err := c.GET(t.Context(), "/fail").Execute(&model)
 		require.Error(t, err)
 		assert.Empty(t, model.Foo)
-	})
-}
-
-func TestClient_ExecuteRaw(t *testing.T) {
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/fail" {
-			w.WriteHeader(http.StatusTeapot)
-			_, _ = w.Write([]byte(`{"error":{}}`))
-
-			return
-		}
-		_, _ = w.Write([]byte("response"))
-	}))
-	defer s.Close()
-
-	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-
-	t.Run("ok", func(t *testing.T) {
-		body, err := c.GET(t.Context(), "/test").ExecuteRaw()
-		require.NoError(t, err)
-		assert.Equal(t, "response", string(body))
-	})
-
-	t.Run("fail", func(t *testing.T) {
-		body, err := c.GET(t.Context(), "/fail").ExecuteRaw()
-		require.Error(t, err)
-		assert.JSONEq(t, `{"error":{}}`, string(body))
 	})
 }
 
