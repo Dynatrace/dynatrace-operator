@@ -33,6 +33,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var (
+	anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+)
+
 func TestReconcile(t *testing.T) {
 	t.Run("no dynakube(ie.: delete case) => do nothing, no error", func(t *testing.T) { // TODO: Replace "do nothing" with "run GC"
 		prov := createProvisioner(t)
@@ -144,7 +148,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk, createToken(t, dk))
 
 		unavailableInstaller := installermock.NewInstaller(t)
-		unavailableInstaller.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, &core.HTTPError{StatusCode: http.StatusServiceUnavailable})
+		unavailableInstaller.EXPECT().InstallAgent(anyCtx, mock.Anything).Return(false, &core.HTTPError{StatusCode: http.StatusServiceUnavailable})
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
@@ -362,7 +366,7 @@ func createSuccessfulInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(true, nil)
+	m.EXPECT().InstallAgent(anyCtx, mock.Anything).Return(true, nil)
 
 	return m
 }
@@ -371,7 +375,7 @@ func createNotReadyInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, nil)
+	m.EXPECT().InstallAgent(anyCtx, mock.Anything).Return(false, nil)
 
 	return m
 }
@@ -380,7 +384,7 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, errors.New("BOOM"))
+	m.EXPECT().InstallAgent(anyCtx, mock.Anything).Return(false, errors.New("BOOM"))
 
 	return m
 }
