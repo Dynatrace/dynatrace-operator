@@ -59,7 +59,7 @@ func TestResourceAttributesValidation(t *testing.T) {
 		// no component additionalResourceAttributes configured → component validators do not fire
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 1)
-		assert.Contains(t, warnings, warningGlobalResourceAttributesExceedsLimit)
+		assert.Contains(t, warnings, fmt.Sprintf(warningGlobalResourceAttributesExceedsLimit, 6))
 	})
 
 	t.Run("no global warning when global count equals limit", func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestResourceAttributesValidation(t *testing.T) {
 		}
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 1)
-		assert.Contains(t, warnings, warningOneAgentResourceAttributesExceedsLimit)
+		assert.Contains(t, warnings, fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, 6))
 	})
 
 	t.Run("both global and component warning when both exceed limit", func(t *testing.T) {
@@ -114,8 +114,8 @@ func TestResourceAttributesValidation(t *testing.T) {
 		}
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 2)
-		assert.Contains(t, warnings, warningGlobalResourceAttributesExceedsLimit)
-		assert.Contains(t, warnings, warningOneAgentResourceAttributesExceedsLimit)
+		assert.Contains(t, warnings, fmt.Sprintf(warningGlobalResourceAttributesExceedsLimit, 6))
+		assert.Contains(t, warnings, fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, 7))
 	})
 
 	t.Run("multiple components each exceeding threshold independently emit one warning each", func(t *testing.T) {
@@ -139,8 +139,8 @@ func TestResourceAttributesValidation(t *testing.T) {
 		}
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 2)
-		assert.Contains(t, warnings, warningOneAgentResourceAttributesExceedsLimit)
-		assert.Contains(t, warnings, warningOTLPResourceAttributesExceedsLimit)
+		assert.Contains(t, warnings, fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, 6))
+		assert.Contains(t, warnings, fmt.Sprintf(warningOTLPResourceAttributesExceedsLimit, 6))
 	})
 
 	t.Run("overlapping keys between global and additional dedup keeps merged count within limit", func(t *testing.T) {
@@ -179,7 +179,7 @@ func TestResourceAttributesValidation(t *testing.T) {
 		}
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 1)
-		assert.Contains(t, warnings, warningOTLPResourceAttributesExceedsLimit)
+		assert.Contains(t, warnings, fmt.Sprintf(warningOTLPResourceAttributesExceedsLimit, 6))
 	})
 }
 

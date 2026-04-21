@@ -12,9 +12,9 @@ import (
 const (
 	resourceAttributesLimit = 5
 
-	warningGlobalResourceAttributesExceedsLimit   = "TODO: global resource attributes exceed limit"
-	warningOneAgentResourceAttributesExceedsLimit = "TODO: oneAgent resource attributes exceed limit"
-	warningOTLPResourceAttributesExceedsLimit     = "TODO: otlpExporterConfiguration resource attributes exceed limit"
+	warningGlobalResourceAttributesExceedsLimit   = "This resource defines %d global resource attributes, which exceeds the recommended limit of 10. Attributes increase ingestion volume resulting in higher ingest cost. Consider removing attributes or consolidating metadata before applying this DynaKube resource."
+	warningOneAgentResourceAttributesExceedsLimit = "This resource defines %d resource attributes for the OneAgent, which exceeds the recommended limit of 10. Attributes increase ingestion volume resulting in higher ingest cost. Consider removing attributes or consolidating metadata before applying this DynaKube resource."
+	warningOTLPResourceAttributesExceedsLimit     = "This resource defines %d resource attributes for OTLP exporter auto-configuration, which exceeds the recommended limit of 10. Attributes increase ingestion volume resulting in higher ingest cost. Consider removing attributes or consolidating metadata before applying this DynaKube resource."
 
 	errorResourceAttributesInvalidGlobal   = "spec.resourceAttributes contains invalid entries: %s"
 	errorResourceAttributesInvalidOneAgent = "spec.oneAgent.*.additionalResourceAttributes contains invalid entries: %s"
@@ -74,8 +74,9 @@ func invalidOTLPResourceAttributes(_ context.Context, _ *Validator, dk *dynakube
 }
 
 func globalResourceAttributesExceedsLimit(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if len(dk.Spec.ResourceAttributes) > resourceAttributesLimit {
-		return warningGlobalResourceAttributesExceedsLimit
+	count := len(dk.Spec.ResourceAttributes)
+	if count > resourceAttributesLimit {
+		return fmt.Sprintf(warningGlobalResourceAttributesExceedsLimit, count)
 	}
 
 	return ""
@@ -87,8 +88,9 @@ func oneAgentResourceAttributesExceedsLimit(_ context.Context, _ *Validator, dk 
 		return ""
 	}
 
-	if len(oa.GetResourceAttributes()) > resourceAttributesLimit {
-		return warningOneAgentResourceAttributesExceedsLimit
+	count := len(oa.GetResourceAttributes())
+	if count > resourceAttributesLimit {
+		return fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, count)
 	}
 
 	return ""
@@ -100,8 +102,9 @@ func otlpResourceAttributesExceedsLimit(_ context.Context, _ *Validator, dk *dyn
 		return ""
 	}
 
-	if len(otlpConfig.GetResourceAttributes()) > resourceAttributesLimit {
-		return warningOTLPResourceAttributesExceedsLimit
+	count := len(otlpConfig.GetResourceAttributes())
+	if count > resourceAttributesLimit {
+		return fmt.Sprintf(warningOTLPResourceAttributesExceedsLimit, count)
 	}
 
 	return ""
