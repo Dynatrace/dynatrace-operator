@@ -249,8 +249,8 @@ func (r *Request) withMethod(method string) APIRequest {
 }
 
 func (r *Request) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
-  log := logd.FromContext(r.ctx)
-  
+	log := logd.FromContext(r.ctx)
+
 	if r.err != nil {
 		return nil, r.err
 	}
