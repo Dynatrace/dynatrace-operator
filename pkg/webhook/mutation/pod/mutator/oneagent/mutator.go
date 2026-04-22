@@ -20,11 +20,11 @@ const (
 	EphemeralVolumeType = "ephemeral"
 )
 
-type InvalidInstallPathErr struct {
+type invalidInstallPathError struct {
 	InstallPath string
 }
 
-func (err InvalidInstallPathErr) Error() string {
+func (err invalidInstallPathError) Error() string {
 	return fmt.Sprintf("the installPath (%s) must be clean, absolute and without whitespace and separators like ,:", err.InstallPath)
 }
 
@@ -82,7 +82,7 @@ func validateInstallPath(installPath string) error {
 		strings.ContainsAny(installPath, "\x00,:") ||
 		filepath.Clean(installPath) != installPath {
 		return dtwebhook.MutatorError{
-			Err:      InvalidInstallPathErr{installPath},
+			Err:      invalidInstallPathError{installPath},
 			Annotate: setNotInjectedAnnotationFunc(InvalidInstallPathReason),
 		}
 	}
