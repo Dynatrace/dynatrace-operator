@@ -41,6 +41,7 @@ var (
 		conflictingNamespaceSelector,
 		isIstioNotInstalled,
 		imageFieldSetWithoutCSIFlag,
+		conflictingImageMode,
 		missingCodeModulesImage,
 		conflictingOneAgentVolumeStorageSettings,
 		nameInvalid,

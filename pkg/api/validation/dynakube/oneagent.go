@@ -174,8 +174,16 @@ func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.D
 	return ""
 }
 
+func conflictingImageMode(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if dk.FF().IsNodeImagePull() && dk.FF().IsOCIImage() {
+		return "node-image-pull and oci-image are mutually exclusive"
+	}
+
+	return ""
+}
+
 func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() {
+	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() && dk.FF().IsOCIImage() {
 		if dk.OneAgent().GetCustomCodeModulesImage() == "" {
 			return errorImagePullRequiresCodeModulesImage
 		}
