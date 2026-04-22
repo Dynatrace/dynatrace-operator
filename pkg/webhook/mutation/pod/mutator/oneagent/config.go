@@ -19,6 +19,7 @@ const (
 
 	MissingTenantUUIDReason      = "MissingTenantUUID"
 	DynaKubeStatusNotReadyReason = "DynaKubeStatusNotReady"
+	InvalidInstallPathReason     = "InvalidInstallPath"
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.
