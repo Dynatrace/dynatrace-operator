@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -73,8 +74,8 @@ func NewClient(options ...Option) (*Client, error) {
 
 	if strings.Contains(config.BaseURL.Hostname(), ".apps.") {
 		mapThirdGenAPIURL(config.BaseURL)
-	} else if !strings.HasSuffix(strings.TrimSuffix(config.BaseURL.Path, "/"), "/api") {
-		config.BaseURL.Path = strings.TrimSuffix(config.BaseURL.Path, "/") + "/api"
+	} else if path.Base(config.BaseURL.Path) != "api" {
+		config.BaseURL = config.BaseURL.JoinPath("api")
 	}
 
 	apiClient := core.NewClient(core.Config{

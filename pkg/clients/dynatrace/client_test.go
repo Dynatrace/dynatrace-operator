@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"path"
 	"testing"
 	"time"
 
@@ -336,12 +337,59 @@ func TestMapThirdGenAPIURL(t *testing.T) {
 			input:    "https://tenant.dev.apps.dynatrace.com",
 			expected: "https://tenant.dev.dynatrace.com/api",
 		},
+		{
+			input:    "https://tenant.apps.dynatrace.com:8443",
+			expected: "https://tenant.live.dynatrace.com:8443/api",
+		},
+		{
+			input:    "https://tenant.sprint.apps.dynatrace.com:9090",
+			expected: "https://tenant.sprint.dynatrace.com:9090/api",
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
 			u := mustParseURL(t, tc.input)
 			mapThirdGenAPIURL(u)
+			assert.Equal(t, tc.expected, u.String())
+		})
+	}
+}
+
+func TestNewClientAppendAPIPath(t *testing.T) {
+	tests := []struct {
+		name     string
+		inputURL string
+		expected string
+	}{
+		{
+			name:     "URL without /api gets it appended",
+			inputURL: "https://tenant.live.dynatrace.com",
+			expected: "https://tenant.live.dynatrace.com/api",
+		},
+		{
+			name:     "URL with trailing slash gets /api appended",
+			inputURL: "https://tenant.live.dynatrace.com/",
+			expected: "https://tenant.live.dynatrace.com/api",
+		},
+		{
+			name:     "URL with /api already is unchanged",
+			inputURL: "https://tenant.live.dynatrace.com/api",
+			expected: "https://tenant.live.dynatrace.com/api",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			client, err := NewClient(WithBaseURL(tc.inputURL), WithAPIToken("foo"))
+			require.NoError(t, err)
+			require.NotNil(t, client)
+
+			u := mustParseURL(t, tc.inputURL)
+			if path.Base(u.Path) != "api" {
+				u = u.JoinPath("api")
+			}
+
 			assert.Equal(t, tc.expected, u.String())
 		})
 	}
