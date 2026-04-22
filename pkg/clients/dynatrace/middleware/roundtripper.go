@@ -31,9 +31,7 @@ func NewCacheRoundTripper(next http.RoundTripper, ttl time.Duration) http.RoundT
 
 		cacheKey := buildCacheKey(r)
 
-		if ttl == 0 {
-			log.Debug("cache ttl is 0, no cache will be used")
-
+		if ttl == 0 || r.Header.Get(core.CacheSkipHeader) != "" {
 			// if the caching was turned off intermittently, those entries should be removed
 			cache.remove(cacheKey)
 

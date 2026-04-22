@@ -28,6 +28,10 @@ const (
 	// CacheHitHeader is set on responses served from the in-memory cache so that
 	// the core client can include a "cached" field in its log output.
 	CacheHitHeader = "X-DT-Cache"
+
+	// CacheSkipHeader can be set on a request to bypass the in-memory cache for
+	// that specific request. Any non-empty value disables both cache reads and writes.
+	CacheSkipHeader = "X-DT-Cache-Skip"
 )
 
 var logLevel = getLogLevel()

@@ -32,6 +32,7 @@ func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) 
 	err := c.apiClient.GET(ctx, connectionInfoPath).
 		WithQueryParams(params).
 		WithPaasToken().
+		WithSkipCache().
 		Execute(&resp)
 
 	if core.IsBadRequest(err) {

@@ -42,6 +42,8 @@ type APIRequest interface {
 	WithoutToken() APIRequest
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) APIRequest
+	// WithSkipCache bypasses the in-memory cache for this request and evicts any existing cached entry
+	WithSkipCache() APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
 	Execute(model any) error
 	// ExecuteWriter executes the request and writes the response body to the provided writer
@@ -192,6 +194,11 @@ func (r *Request) WithHeader(key, value string) APIRequest {
 	r.headers.Set(key, value)
 
 	return r
+}
+
+// WithSkipCache bypasses the in-memory cache for this request and evicts any existing cached entry
+func (r *Request) WithSkipCache() APIRequest {
+	return r.WithHeader(CacheSkipHeader, "true")
 }
 
 // Execute executes the request and unmarshals the response into the provided model

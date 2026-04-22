@@ -36,6 +36,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 		req := coremock.NewAPIRequest(t)
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(params).Return(req).Once()
+		req.EXPECT().WithSkipCache().Return(req).Once()
 		req.EXPECT().
 			Execute(&ConnectionInfo{}).
 			Run(func(model any) {

@@ -78,6 +78,31 @@ func TestNewCacheRoundTripper(t *testing.T) {
 		assert.Equal(t, 2, *calls, "POST must always reach backend")
 	})
 
+	t.Run("CacheSkipHeader bypasses cache and evicts existing entry", func(t *testing.T) {
+		rt, calls := makeCachedRT(t, time.Minute,
+			fakeResponse("r1"),
+			fakeResponse("r2"),
+			fakeResponse("r3"),
+		)
+
+		// Populate cache
+		_, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		require.NoError(t, err)
+		assert.Equal(t, 1, *calls)
+
+		// Call with skip header — evicts cached entry and calls backend
+		req2 := newRequest(t, http.MethodGet, endpoint)
+		req2.Header.Set(core.CacheSkipHeader, "true")
+		_, err = rt.RoundTrip(req2)
+		require.NoError(t, err)
+		assert.Equal(t, 2, *calls, "skip header must bypass the cache")
+
+		// Next call without skip — cache was evicted, backend is called again
+		_, err = rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		require.NoError(t, err)
+		assert.Equal(t, 3, *calls, "evicted entry must not be served from cache")
+	})
+
 	t.Run("zero TTL disables caching", func(t *testing.T) {
 		rt, calls := makeCachedRT(t, 0,
 			fakeResponse("r1"),
