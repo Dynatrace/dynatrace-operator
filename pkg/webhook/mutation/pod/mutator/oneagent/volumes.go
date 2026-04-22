@@ -19,13 +19,17 @@ const (
 	ldPreloadSubPath = preload.ConfigPath
 )
 
-func addVolumeMounts(container *corev1.Container, installPath string) {
-	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{
-			Name:      BinVolumeName,
-			MountPath: installPath,
-			ReadOnly:  true,
-		},
+func addVolumeMounts(container *corev1.Container, installPath string, oci bool) {
+	binMount := corev1.VolumeMount{
+		Name:      BinVolumeName,
+		MountPath: installPath,
+		ReadOnly:  true,
+	}
+	if oci {
+		binMount.MountPath = AgentCodeModuleSource
+	}
+
+	container.VolumeMounts = append(container.VolumeMounts, binMount,
 		corev1.VolumeMount{
 			Name:      volumes.ConfigVolumeName,
 			MountPath: ldPreloadPath,
@@ -35,13 +39,12 @@ func addVolumeMounts(container *corev1.Container, installPath string) {
 }
 
 func addInitBinMount(initContainer *corev1.Container, readonly bool) {
-	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
-		corev1.VolumeMount{
-			Name:      BinVolumeName,
-			MountPath: consts.AgentInitBinDirMount,
-			ReadOnly:  readonly,
-		},
-	)
+	binMount := corev1.VolumeMount{
+		Name:      BinVolumeName,
+		MountPath: consts.AgentInitBinDirMount,
+		ReadOnly:  readonly,
+	}
+	initContainer.VolumeMounts = append(initContainer.VolumeMounts, binMount)
 }
 
 func addEmptyDirBinVolume(pod *corev1.Pod) {

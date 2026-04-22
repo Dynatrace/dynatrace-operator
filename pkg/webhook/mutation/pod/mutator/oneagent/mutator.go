@@ -1,6 +1,8 @@
 package oneagent
 
 import (
+	"path/filepath"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -65,6 +67,9 @@ func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
+	if request.DynaKube.FF().IsOCIImage() {
+		installPath = filepath.Join(AgentCodeModuleSource, AgentCodeModuleSource)
+	}
 
 	err := mutateInitContainer(request, installPath)
 	if err != nil {
@@ -101,7 +106,7 @@ func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string) bo
 func addOneAgentToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string) {
 	log.Info("adding OneAgent to container", "name", container.Name)
 
-	addVolumeMounts(container, installPath)
+	addVolumeMounts(container, installPath, dk.FF().IsOCIImage())
 	addDeploymentMetadataEnv(container, dk)
 	addPreloadEnv(container, installPath)
 	addDTStorageEnv(container)
