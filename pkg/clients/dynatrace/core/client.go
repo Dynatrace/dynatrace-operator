@@ -17,8 +17,6 @@ import (
 
 const apiTokenHeader = "Api-Token "
 
-var log = logd.Get().WithName("dtclient-core")
-
 // Client defines the behavior required from a config provider and is mockable
 type Client interface {
 	GET(ctx context.Context, path string) Request
