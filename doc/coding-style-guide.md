@@ -463,34 +463,53 @@ import (
 
 ## Logging
 
+Use `"github.com/Dynatrace/dynatrace-operator/pkg/logd"` (alias `logd`) for all logging.
+
 ### Do's
 
-- Use a package global `logger` (1 per package), should be named `log` and be declared in the `config.go` of the package. (temporary solution)
-  - In case of larger packages it's advisable to introduce separate loggers for different parts of the package, these sub-loggers should still be derived from the main logger of the package and given a name.
-    - Example: in webhook/mutation `var nsLog = log.WithName("namespace")` (the name of this logger is `mutation-webhook.namespace`)
-- Use the logger defined in the `dynatrace-operator/src/logger` and always give it a name.
-  - The name of the logger (given via `.WithName("...")`) should use `-` to divide longer names.
-  - Example: `var log = logger.Get().WithName("mutation-webhook")`
-- **Utility functions that emit logs should accept `log logd.Logger` as a parameter** rather than closing over the package-level `log`.
-  This makes the function independently testable, its output attributable to the right component, and avoids hidden coupling to the package global.
+- **Extract the logger from context at the entry point** of any function that receives `context.Context`, using `logd.NewFromContext`. This derives a named logger, stores it back into the context, and returns both:
+
+  ```go
+  import logd "github.com/Dynatrace/dynatrace-operator/pkg/logd"
+
+  func Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+      ctx, log := logd.NewFromContext(ctx, "my-controller", "name", req.Name, "namespace", req.Namespace)
+      // ctx now carries log; downstream helpers can retrieve it with logd.FromContext(ctx)
+      ...
+  }
+  ```
+
+- **Use `logd.FromContext(ctx)` in downstream helpers** within the same package that receive the already-seeded context:
+
+  ```go
+  func (r *Reconciler) syncStatus(ctx context.Context, obj *myv1.MyKind) error {
+      log := logd.FromContext(ctx)
+      log.Info("syncing status", "name", obj.Name)
+      ...
+  }
+  ```
+
+- **Use `logd.IntoContext(ctx, log)` when explicitly seeding a logger** into a context (e.g. in tests or when constructing a sub-context manually):
+
+  ```go
+  ctx = logd.IntoContext(ctx, myLogger)
+  ```
+
+- **Utility functions that emit logs should accept `ctx context.Context` as a parameter** rather than using a package-level `log`. This includes background callbacks, sync.Once initializers, and other singleton-style helpers — if they can receive a ctx, they should.
 
   ```go
   // ✓
-  func printKubernetesVersion(log logd.Logger, kubeConfig *rest.Config) {
-      log.Info("kubernetes version", "version", ...)
-  }
-
-  // ✗ hidden dependency on package-level log
-  func printKubernetesVersion(kubeConfig *rest.Config) {
+  func printKubernetesVersion(ctx context.Context, kubeConfig *rest.Config) {
+      log := logd.FromContext(ctx)
       log.Info("kubernetes version", "version", ...)
   }
   ```
 
-- Include **enough context fields** in log messages to be useful during troubleshooting.
-  Reviewers frequently ask for additional fields (e.g. Go version, resource name, namespace). When in doubt, add more rather than less.
+- **A good rule of thumb**: a package should only rely on a package-level logger (i.e. not receive one from context) if it is a `cmd/` entrypoint (i.e. `main`). Every other package that logs should receive `ctx` and derive its logger from it.
 
 ### Don'ts
 
+- Don't declare `var log = logd.Get().WithName("...")` at the package level outside of `cmd/` packages. Instead, call `logd.NewFromContext(ctx, "name")` at the function entry point.
 - Don't use `fmt.Sprintf` for creating log messages, the values you wish to replace via `Sprintf` should be provided to the logger as key-value pairs.
   - Example: `log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)`
 - Don't start a log message with uppercase characters, unless it's a name of an exact proper noun.
@@ -537,15 +556,15 @@ if len(ecs.EdgeConnects) > 1 {
 
 ```go
 func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
-    _log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
+    ctx, log := logd.NewFromContext(ctx, "deletion", "namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
     ...
-    _log.Debug("foobar happened")
+    log.Debug("foobar happened")
 
-    _log = _log.WithValues("foobarReason", "hurga")
+    log = log.WithValues("foobarReason", "hurga")
 
     ...
-    _log.Debug("foobar happened again")
+    log.Debug("foobar happened again")
     ...
 }
 

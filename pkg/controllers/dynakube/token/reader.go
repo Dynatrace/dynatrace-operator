@@ -30,7 +30,7 @@ func (reader Reader) HasPlatformToken(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	tokens, err := reader.readTokens(ctx)
+	tokens, err := reader.ReadTokens(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -43,8 +43,8 @@ func (reader Reader) HasPlatformToken(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
-	tokens, err := reader.readTokens(ctx)
+func (reader Reader) ReadAndVerifyTokens(ctx context.Context) (Tokens, error) {
+	tokens, err := reader.ReadTokens(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
 	return tokens, nil
 }
 
-func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
+func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
 	var tokenSecret corev1.Secret
 
 	result := make(Tokens)

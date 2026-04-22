@@ -184,7 +184,7 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCac
 func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNode *cache.Entry) error {
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
-	tokens, err := tokenReader.ReadTokens(ctx)
+	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		return err
 	}

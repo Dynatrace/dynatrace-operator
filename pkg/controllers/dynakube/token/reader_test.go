@@ -37,7 +37,7 @@ func testReadTokens(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		reader := NewReader(clt, &dk)
 
-		_, err := reader.readTokens(context.Background())
+		_, err := reader.ReadTokens(context.Background())
 
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -61,7 +61,7 @@ func testReadTokens(t *testing.T) {
 
 		reader := NewReader(clt, &dk)
 
-		tokens, err := reader.readTokens(context.Background())
+		tokens, err := reader.ReadTokens(context.Background())
 
 		require.NoError(t, err)
 		assert.Len(t, tokens, 4)
