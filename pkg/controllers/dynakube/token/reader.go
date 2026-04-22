@@ -26,7 +26,7 @@ func NewReader(apiReader client.Reader, dk *dynakube.DynaKube) Reader {
 // HasPlatformToken inspects the token secret and checks if the apiToken is a platform token.
 // Returns an error if reading the secret fails.
 func (reader Reader) HasPlatformToken(ctx context.Context) (bool, error) {
-	tokens, err := reader.readTokens(ctx)
+	tokens, err := reader.ReadTokens(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -39,8 +39,8 @@ func (reader Reader) HasPlatformToken(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
-	tokens, err := reader.readTokens(ctx)
+func (reader Reader) ReadAndVerifyTokens(ctx context.Context) (Tokens, error) {
+	tokens, err := reader.ReadTokens(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
 	return tokens, nil
 }
 
-func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
+func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
 	var tokenSecret corev1.Secret
 
 	result := make(Tokens)

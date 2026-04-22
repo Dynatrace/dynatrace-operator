@@ -113,11 +113,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return err
 	}
 
-	if r.versionReconciler == nil {
-		r.versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
+	versionReconciler := r.versionReconciler
+	if versionReconciler == nil {
+		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
 	}
 
-	err = r.versionReconciler.ReconcileActiveGate(ctx, dk)
+	err = versionReconciler.ReconcileActiveGate(ctx, dk)
 	if err != nil {
 		return err
 	}
