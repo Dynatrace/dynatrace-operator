@@ -83,7 +83,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, nil
 	}
 
-	// Reset log throttling for the edge case that the user switches back to 2nd gen token and then to platform token again.
+	// Reset log throttling so the next switch from 2nd gen to a platform token logs immediately.
 	lastSkipLogTimestamp = time.Time{}
 
 	log.Info("reconciling node", "node", nodeName)
