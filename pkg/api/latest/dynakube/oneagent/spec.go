@@ -16,6 +16,8 @@ type OneAgent struct {
 	name       string
 	apiURLHost string
 
+	globalResourceAttributes map[string]string
+
 	featureOneAgentPrivileged        bool
 	featureBootstrapperInjection     bool
 	featureOneAgentSkipLivenessProbe bool
@@ -175,6 +177,11 @@ type AppInjectionSpec struct {
 	// For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+
+	// Additional resource attributes that are merged on top of the global spec.resourceAttributes.
+	// If the same key exists in both, the value from additionalResourceAttributes takes precedence.
+	// +kubebuilder:validation:Optional
+	AdditionalResourceAttributes map[string]string `json:"additionalResourceAttributes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
