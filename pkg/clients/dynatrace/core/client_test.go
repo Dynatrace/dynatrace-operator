@@ -180,13 +180,17 @@ func TestClient_Execute(t *testing.T) {
 
 func TestClient_ExecuteWriter(t *testing.T) {
 	const responseBody = "binary-blob-content"
+	const etagValue = `"v1"`
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/fail":
 			w.WriteHeader(http.StatusTeapot)
 			_, _ = w.Write([]byte(`{"error":{}}`))
+		case "/not-modified":
+			w.WriteHeader(http.StatusNotModified)
 		default:
+			w.Header().Set("ETag", etagValue)
 			_, _ = w.Write([]byte(responseBody))
 		}
 	}))
@@ -194,30 +198,43 @@ func TestClient_ExecuteWriter(t *testing.T) {
 
 	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
 
-	t.Run("streams response body to writer", func(t *testing.T) {
+	t.Run("streams response body to writer and returns headers", func(t *testing.T) {
 		var buf bytes.Buffer
-		err := c.GET(t.Context(), "/test").ExecuteWriter(&buf)
+		headers, err := c.GET(t.Context(), "/test").ExecuteWriter(&buf)
 		require.NoError(t, err)
 		assert.Equal(t, responseBody, buf.String())
+		assert.Equal(t, etagValue, headers.Get("ETag"))
 	})
 
 	t.Run("returns error and writes nothing on non-2xx", func(t *testing.T) {
 		var buf bytes.Buffer
-		err := c.GET(t.Context(), "/fail").ExecuteWriter(&buf)
+		headers, err := c.GET(t.Context(), "/fail").ExecuteWriter(&buf)
 		require.Error(t, err)
+		assert.Nil(t, headers)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns HTTPError with status 304 on Not Modified", func(t *testing.T) {
+		var buf bytes.Buffer
+		headers, err := c.GET(t.Context(), "/not-modified").ExecuteWriter(&buf)
+		require.Error(t, err)
+		assert.True(t, HasStatusCode(err, http.StatusNotModified))
+		assert.Nil(t, headers)
 		assert.Empty(t, buf.String())
 	})
 
 	t.Run("returns error on missing base URL", func(t *testing.T) {
 		var buf bytes.Buffer
-		err := new(Client).GET(t.Context(), "/test").ExecuteWriter(&buf)
+		headers, err := new(Client).GET(t.Context(), "/test").ExecuteWriter(&buf)
 		require.EqualError(t, err, "build URL: missing base URL")
+		assert.Nil(t, headers)
 		assert.Empty(t, buf.String())
 	})
 
 	t.Run("returns error on broken writer", func(t *testing.T) {
-		err := c.GET(t.Context(), "/test").ExecuteWriter(brokenWriter{})
+		headers, err := c.GET(t.Context(), "/test").ExecuteWriter(brokenWriter{})
 		require.ErrorContains(t, err, "stream response body")
+		assert.Nil(t, headers)
 	})
 }
 
