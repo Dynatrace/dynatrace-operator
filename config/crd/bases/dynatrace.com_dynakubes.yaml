@@ -5807,6 +5807,10 @@ spec:
                   applicationMonitoring:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       codeModulesImage:
                         type: string
                       codeModulesImagePullPolicy:
@@ -6064,6 +6068,10 @@ spec:
                   cloudNativeFullStack:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       annotations:
                         additionalProperties:
                           type: string
@@ -6501,6 +6509,10 @@ spec:
                 type: object
               otlpExporterConfiguration:
                 properties:
+                  additionalResourceAttributes:
+                    additionalProperties:
+                      type: string
+                    type: object
                   namespaceSelector:
                     properties:
                       matchExpressions:
@@ -6547,6 +6559,10 @@ spec:
                   valueFrom:
                     nullable: true
                     type: string
+                type: object
+              resourceAttributes:
+                additionalProperties:
+                  type: string
                 type: object
               skipCertCheck:
                 type: boolean
