@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	resourceAttributesLimit = 5
+	resourceAttributesLimit = 10
 
 	warningGlobalResourceAttributesExceedsLimit   = "This resource defines %d global resource attributes, which exceeds the recommended limit of 10. Attributes increase ingestion volume resulting in higher ingest cost. Consider removing attributes or consolidating metadata before applying this DynaKube resource."
 	warningOneAgentResourceAttributesExceedsLimit = "This resource defines %d resource attributes for the OneAgent, which exceeds the recommended limit of 10. Attributes increase ingestion volume resulting in higher ingest cost. Consider removing attributes or consolidating metadata before applying this DynaKube resource."

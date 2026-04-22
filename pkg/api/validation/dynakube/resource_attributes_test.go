@@ -29,18 +29,18 @@ func TestResourceAttributesValidation(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:             testAPIURL,
-				ResourceAttributes: makeStringMapWithPrefix("g", 3),
+				ResourceAttributes: makeStringMapWithPrefix("g", 6),
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
-							// 2 additional non-overlapping keys → merged = 5 (≤ limit)
-							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 2),
+							// 4 additional non-overlapping keys → merged = 10 (≤ limit)
+							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 4),
 						},
 					},
 				},
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
-					// 2 additional non-overlapping keys → merged = 5 (≤ limit)
-					AdditionalResourceAttributes: makeStringMapWithPrefix("o", 2),
+					// 4 additional non-overlapping keys → merged = 10 (≤ limit)
+					AdditionalResourceAttributes: makeStringMapWithPrefix("o", 4),
 				},
 			},
 		}
@@ -52,14 +52,14 @@ func TestResourceAttributesValidation(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:             testAPIURL,
-				ResourceAttributes: makeStringMapWithPrefix("g", 6),
+				ResourceAttributes: makeStringMapWithPrefix("g", 11),
 			},
 		}
-		// global>5 → globalResourceAttributesExceedsLimit fires;
+		// global>10 → globalResourceAttributesExceedsLimit fires;
 		// no component additionalResourceAttributes configured → component validators do not fire
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 1)
-		assert.Contains(t, warnings, fmt.Sprintf(warningGlobalResourceAttributesExceedsLimit, 6))
+		assert.Contains(t, warnings, fmt.Sprintf(warningGlobalResourceAttributesExceedsLimit, 11))
 	})
 
 	t.Run("no global warning when global count equals limit", func(t *testing.T) {
@@ -67,23 +67,23 @@ func TestResourceAttributesValidation(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:             testAPIURL,
-				ResourceAttributes: makeStringMapWithPrefix("g", 5),
+				ResourceAttributes: makeStringMapWithPrefix("g", 10),
 			},
 		}
 		assertAllowedWithoutWarnings(t, dk)
 	})
 
 	t.Run("component warning when global within limit but component merged count exceeds limit", func(t *testing.T) {
-		// global: 3 keys (g0,g1,g2); additional: 3 distinct keys (a0,a1,a2) → merged = 6 > 5
+		// global: 6 keys (g0..g5); additional: 5 distinct keys (a0..a4) → merged = 11 > 10
 		dk := &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:             testAPIURL,
-				ResourceAttributes: makeStringMapWithPrefix("g", 3),
+				ResourceAttributes: makeStringMapWithPrefix("g", 6),
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
-							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 3),
+							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 5),
 						},
 					},
 				},
@@ -91,18 +91,18 @@ func TestResourceAttributesValidation(t *testing.T) {
 		}
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 1)
-		assert.Contains(t, warnings, fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, 6))
+		assert.Contains(t, warnings, fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, 11))
 	})
 
 	t.Run("both global and component warning when both exceed limit", func(t *testing.T) {
-		// global: 6 keys → global warning;
-		// oneAgent additional: 1 non-overlapping key → merged = 7 > 5 → oneAgent warning;
+		// global: 11 keys → global warning;
+		// oneAgent additional: 1 non-overlapping key → merged = 12 > 10 → oneAgent warning;
 		// no OTLP additionalResourceAttributes → OTLP validator does not fire
 		dk := &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:             testAPIURL,
-				ResourceAttributes: makeStringMapWithPrefix("g", 6),
+				ResourceAttributes: makeStringMapWithPrefix("g", 11),
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -114,33 +114,33 @@ func TestResourceAttributesValidation(t *testing.T) {
 		}
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 2)
-		assert.Contains(t, warnings, fmt.Sprintf(warningGlobalResourceAttributesExceedsLimit, 6))
-		assert.Contains(t, warnings, fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, 7))
+		assert.Contains(t, warnings, fmt.Sprintf(warningGlobalResourceAttributesExceedsLimit, 11))
+		assert.Contains(t, warnings, fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, 12))
 	})
 
 	t.Run("multiple components each exceeding threshold independently emit one warning each", func(t *testing.T) {
-		// global: 3 (g0..g2); oneAgent additional: 3 (a0..a2) → merged=6; otlp additional: 3 (o0..o2) → merged=6
+		// global: 6 (g0..g5); oneAgent additional: 5 (a0..a4) → merged=11; otlp additional: 5 (o0..o4) → merged=11
 		dk := &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:             testAPIURL,
-				ResourceAttributes: makeStringMapWithPrefix("g", 3),
+				ResourceAttributes: makeStringMapWithPrefix("g", 6),
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
-							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 3),
+							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 5),
 						},
 					},
 				},
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
-					AdditionalResourceAttributes: makeStringMapWithPrefix("o", 3),
+					AdditionalResourceAttributes: makeStringMapWithPrefix("o", 5),
 				},
 			},
 		}
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 2)
-		assert.Contains(t, warnings, fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, 6))
-		assert.Contains(t, warnings, fmt.Sprintf(warningOTLPResourceAttributesExceedsLimit, 6))
+		assert.Contains(t, warnings, fmt.Sprintf(warningOneAgentResourceAttributesExceedsLimit, 11))
+		assert.Contains(t, warnings, fmt.Sprintf(warningOTLPResourceAttributesExceedsLimit, 11))
 	})
 
 	t.Run("overlapping keys between global and additional dedup keeps merged count within limit", func(t *testing.T) {
@@ -166,20 +166,20 @@ func TestResourceAttributesValidation(t *testing.T) {
 	})
 
 	t.Run("OTLP warning only when OTLP component merged count exceeds limit", func(t *testing.T) {
-		// global: 3 (g0..g2); otlp additional: 3 (o0..o2) → merged = 6 > 5
+		// global: 6 (g0..g5); otlp additional: 5 (o0..o4) → merged = 11 > 10
 		dk := &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:             testAPIURL,
-				ResourceAttributes: makeStringMapWithPrefix("g", 3),
+				ResourceAttributes: makeStringMapWithPrefix("g", 6),
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
-					AdditionalResourceAttributes: makeStringMapWithPrefix("o", 3),
+					AdditionalResourceAttributes: makeStringMapWithPrefix("o", 5),
 				},
 			},
 		}
 		warnings, _ := assertAllowed(t, dk)
 		assert.Len(t, warnings, 1)
-		assert.Contains(t, warnings, fmt.Sprintf(warningOTLPResourceAttributesExceedsLimit, 6))
+		assert.Contains(t, warnings, fmt.Sprintf(warningOTLPResourceAttributesExceedsLimit, 11))
 	})
 }
 
