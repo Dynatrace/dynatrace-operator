@@ -609,7 +609,7 @@ func TestCheckForDataIngestToken(t *testing.T) {
 }
 
 func TestDisableLookupForPlatformToken(t *testing.T) {
-	tokens := Tokens{APIKey: &Token{Value: dttoken.PlatformPrefix + "test", Features: []Feature{{}}}}
+	tokens := Tokens{APIKey: &Token{Value: dttoken.PlatformPrefix + "test", Features: []Feature{{Name: "ignoreme"}}}}
 	scopes, err := tokens.VerifyScopes(t.Context(), nil, dynakube.DynaKube{})
 	require.NoError(t, err)
 	assert.Empty(t, scopes)
