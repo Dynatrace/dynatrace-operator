@@ -98,3 +98,23 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) {
 		},
 	)
 }
+
+func addOCIBinVolume(pod *corev1.Pod, imageName string) {
+	if k8svolume.Contains(pod.Spec.Volumes, BinVolumeName) {
+		return
+	}
+
+	volumeSource := corev1.VolumeSource{
+		Image: &corev1.ImageVolumeSource{
+			Reference:  imageName,
+			PullPolicy: corev1.PullIfNotPresent,
+		},
+	}
+
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name:         BinVolumeName,
+			VolumeSource: volumeSource,
+		},
+	)
+}

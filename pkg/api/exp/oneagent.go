@@ -11,6 +11,8 @@ const (
 	OASkipLivenessProbeKey   = FFPrefix + "oneagent-skip-liveness-probe"
 
 	OANodeImagePullKey = FFPrefix + "node-image-pull"
+
+	OAOCIKey = FFPrefix + "oci-image"
 	// OANodeImagePullTechnologiesKey can be set on a Pod or DynaKube to configure which code module technologies to download. It's set to
 	// "all" if not set.
 	OANodeImagePullTechnologiesKey = "oneagent.dynatrace.com/technologies"
@@ -55,6 +57,10 @@ func (ff *FeatureFlags) SkipOneAgentLivenessProbe() bool {
 
 func (ff *FeatureFlags) IsNodeImagePull() bool {
 	return ff.getBoolWithDefault(OANodeImagePullKey, false)
+}
+
+func (ff *FeatureFlags) IsOCIImage() bool {
+	return ff.getBoolWithDefault(OAOCIKey, false)
 }
 
 func (ff *FeatureFlags) GetNodeImagePullTechnology() string {

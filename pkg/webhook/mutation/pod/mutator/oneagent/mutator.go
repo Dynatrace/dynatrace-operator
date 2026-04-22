@@ -33,7 +33,7 @@ func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
 		defaultVolumeType = CSIVolumeType
 	}
 
-	if mutationRequest.DynaKube.FF().IsNodeImagePull() {
+	if mutationRequest.DynaKube.FF().IsNodeImagePull() || mutationRequest.DynaKube.FF().IsOCIImage() {
 		return maputils.GetField(mutationRequest.Pod.Annotations, AnnotationVolumeType, defaultVolumeType) == CSIVolumeType
 	}
 

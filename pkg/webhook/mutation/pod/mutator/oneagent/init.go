@@ -44,6 +44,15 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		if customInitResources != nil {
 			mutationRequest.InstallContainer.Resources = *customInitResources
 		}
+	} else if mutationRequest.DynaKube.FF().IsOCIImage() {
+		addOCIBinVolume(mutationRequest.Pod, mutationRequest.DynaKube.OneAgent().GetCodeModulesImage())
+
+		customInitResources := mutationRequest.DynaKube.OneAgent().GetInitResources()
+		if customInitResources != nil {
+			mutationRequest.InstallContainer.Resources = *customInitResources
+		}
+
+		addInitBinMount(mutationRequest.InstallContainer, true)
 	} else {
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
 		addEmptyDirBinVolume(mutationRequest.Pod)

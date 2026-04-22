@@ -161,7 +161,7 @@ func conflictingMaxUnavailableAnnotationWithRollingUpdate(_ context.Context, _ *
 }
 
 func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if !v.modules.CSIDriver && !dk.FF().IsNodeImagePull() {
+	if !v.modules.CSIDriver && !dk.FF().IsNodeImagePull() && !dk.FF().IsOCIImage() {
 		if dk.OneAgent().IsApplicationMonitoringMode() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
 			return errorImageFieldSetWithoutCSIFlag
 		}
