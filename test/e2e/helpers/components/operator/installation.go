@@ -133,8 +133,8 @@ func PrintDeploymentMetadata() env.Func {
 			fmt.Printf("Metadata for all containers for %s\n", DeploymentName) //nolint:forbidigo
 			for _, container := range pod.Status.ContainerStatuses {
 				fmt.Printf("\tcontainer name: %s\n", container.Name) //nolint:forbidigo
-				fmt.Printf("\timage: %s\n", container.Image)             //nolint:forbidigo
-				fmt.Printf("\timageID: %s\n", container.ImageID)         //nolint:forbidigo
+				fmt.Printf("\timage: %s\n", container.Image)         //nolint:forbidigo
+				fmt.Printf("\timageID: %s\n", container.ImageID)     //nolint:forbidigo
 			}
 		})
 	}
