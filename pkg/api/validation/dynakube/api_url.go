@@ -48,7 +48,16 @@ func NoAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 func isInvalidAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	apiURL := dk.Spec.APIURL
 
-	if isThirdGenHost(apiURL) {
+	parsedURL, err := url.Parse(apiURL)
+	if err != nil {
+		log.Info("API URL is not a valid URL", "err", err.Error())
+
+		return errorInvalidAPIURL
+	}
+
+	hostname := parsedURL.Hostname()
+
+	if isThirdGenHost(hostname) {
 		return ""
 	}
 
@@ -58,14 +67,6 @@ func isInvalidAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) str
 		return errorInvalidAPIURL
 	}
 
-	parsedURL, err := url.Parse(apiURL)
-	if err != nil {
-		log.Info("API URL is not a valid URL", "err", err.Error())
-
-		return errorInvalidAPIURL
-	}
-
-	hostname := parsedURL.Hostname()
 	hostnameWithDomains := strings.FieldsFunc(hostname,
 		func(r rune) bool { return r == '.' },
 	)
@@ -79,17 +80,13 @@ func isInvalidAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) str
 	return ""
 }
 
-func isThirdGenHost(apiURL string) bool {
-	parsed, err := url.Parse(apiURL)
-	if err != nil {
-		return false
-	}
-
-	return strings.Contains(parsed.Hostname(), ".apps.")
+func isThirdGenHost(hostname string) bool {
+	return strings.Contains(hostname, ".apps.")
 }
 
 func isThirdGenAPIURL(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !isThirdGenHost(dk.APIURL()) {
+	parsed, err := url.Parse(dk.APIURL())
+	if err != nil || !isThirdGenHost(parsed.Hostname()) {
 		return ""
 	}
 
