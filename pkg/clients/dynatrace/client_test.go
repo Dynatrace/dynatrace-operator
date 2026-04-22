@@ -4,14 +4,23 @@ import (
 	"crypto/tls"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2/clientcredentials"
+)
+
+const (
+	testPaasToken      = "test-paas-token"
+	testAPIToken       = "test-api-token"
+	testPlatformToken  = dttoken.PlatformPrefix + ".test-api-token"
+	testConnectionInfo = `{"tenantUUID":"test-tenant","tenantToken":"test-tenant-token","communicationEndpoints":""}`
 )
 
 func TestNewClient(t *testing.T) {
@@ -359,3 +368,48 @@ zWDF6rXZJXT6MJUcf740v4MOLlIWcrNj/igI9VQP9cBrhvJzthHJ0gMEjNqKJPgk
 APj12zaRa05OBW3H3Ng+1MmdtrU4gAu+xwLAOz1cxT6q8LUGBGDCBYVcFXvomhKL
 kHUfKUp2W9zOWWDlwSB65QuJ3wAQSCVs4g==
 -----END CERTIFICATE-----`
+
+func TestNewClientPaasToken(t *testing.T) {
+	handlerFunc := func(token string) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			authToken := r.Header.Get("Authorization")
+			assert.Equal(t, "Api-Token "+token, authToken)
+
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(testConnectionInfo))
+		}
+	}
+
+	t.Run("gen2 apiToken, no paasToken", func(t *testing.T) {
+		srv := httptest.NewServer(handlerFunc(testAPIToken))
+		defer srv.Close()
+
+		clt, err := NewClient(WithHTTPClient(srv.Client()), WithBaseURL(srv.URL), WithAPIToken(testAPIToken))
+		require.NoError(t, err)
+		connectionInfo, err := clt.ActiveGate.GetConnectionInfo(t.Context())
+		require.NoError(t, err)
+		assert.NotNil(t, connectionInfo)
+	})
+
+	t.Run("gen2 apiToken and paasToken", func(t *testing.T) {
+		srv := httptest.NewServer(handlerFunc(testPaasToken))
+		defer srv.Close()
+
+		clt, err := NewClient(WithHTTPClient(srv.Client()), WithBaseURL(srv.URL), WithAPIToken(testAPIToken), WithPaasToken(testPaasToken))
+		require.NoError(t, err)
+		connectionInfo, err := clt.ActiveGate.GetConnectionInfo(t.Context())
+		require.NoError(t, err)
+		assert.NotNil(t, connectionInfo)
+	})
+
+	t.Run("platform token and paasToken", func(t *testing.T) {
+		srv := httptest.NewServer(handlerFunc(testPlatformToken))
+		defer srv.Close()
+
+		clt, err := NewClient(WithHTTPClient(srv.Client()), WithBaseURL(srv.URL), WithAPIToken(testPlatformToken), WithPaasToken(testPaasToken))
+		require.NoError(t, err)
+		connectionInfo, err := clt.ActiveGate.GetConnectionInfo(t.Context())
+		require.NoError(t, err)
+		assert.NotNil(t, connectionInfo)
+	})
+}
