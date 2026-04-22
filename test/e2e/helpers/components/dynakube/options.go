@@ -310,6 +310,9 @@ func WithExtensionsDBExecutorImageRef(t *testing.T) Option {
 	}
 }
 
+// setImageRefFromEnvs populates the image.Ref from an environment variable, falling back to the latest image from the registry.
+// If the image repo differs from the default repo, the custom pull secret is set on the DynaKube.
+// Returns true, if the pull secret was set.
 func setImageRefFromEnvs(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, envVar, defaultRepo string) bool {
 	t.Helper()
 

@@ -262,8 +262,11 @@ The images of components that are deployed by the operator can be configured usi
 - `E2E_OTELC_IMAGE`
 - `E2E_DB_EXECUTOR_IMAGE`
 - `E2E_CODEMODULES_IMAGE`
+- `E2E_AG_IMAGE`
+- `E2E_OA_IMAGE`
+- `E2E_ECR_CODEMODULES_IMAGE`
 
-If an image value is overwritten, `devregistry` will be used as image pull secret. Make sure it contains the proper authentication.
+If an image value is set to a different repository than the default, `devregistry` will be used as the image pull secret. Make sure it contains the proper authentication.
 
 ### Triggering E2E Tests on Kind in CI
 
