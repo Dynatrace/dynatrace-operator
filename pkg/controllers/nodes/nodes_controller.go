@@ -78,13 +78,10 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	if skip, err := token.NewReader(controller.apiReader, dk).HasPlatformToken(ctx); err != nil {
 		return reconcile.Result{}, err
 	} else if skip {
-		logEveryInterval("node controller disabled due to detected platform token in secret")
+		log.Info("node controller disabled due to detected platform token in secret", "node", nodeName)
 
 		return reconcile.Result{}, nil
 	}
-
-	// Reset log throttling so the next switch from 2nd gen to a platform token logs immediately.
-	lastSkipLogTimestamp = time.Time{}
 
 	log.Info("reconciling node", "node", nodeName)
 
@@ -287,17 +284,4 @@ func (controller *Controller) pruneCache(ctx context.Context, nodeCache *cache.C
 	}
 
 	return nil
-}
-
-var lastSkipLogTimestamp time.Time
-
-const logSkipInterval = 15 * time.Minute
-
-// NOT THREAD-SAFE!!!
-func logEveryInterval(message string) {
-	if lastSkipLogTimestamp.IsZero() || time.Since(lastSkipLogTimestamp) > logSkipInterval {
-		log.Info(message)
-
-		lastSkipLogTimestamp = time.Now()
-	}
 }

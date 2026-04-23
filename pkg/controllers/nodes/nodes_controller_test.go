@@ -3,7 +3,6 @@ package nodes
 import (
 	"errors"
 	"testing"
-	"testing/synctest"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -14,12 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -417,36 +414,3 @@ func createDefaultFakeClient() client.Client {
 			},
 		})
 }
-
-func Test_logEveryInterval(t *testing.T) {
-	lastSkipLogTimestamp = time.Time{}
-	oldLog := log
-	t.Cleanup(func() { log = oldLog })
-
-	var counter countingSink
-	log = logd.Logger{Logger: logr.New(&counter)}
-
-	synctest.Test(t, func(t *testing.T) {
-		logEveryInterval("test")
-		assert.Equal(t, 1, int(counter))
-
-		time.Sleep(logSkipInterval)
-		logEveryInterval("test")
-		assert.Equal(t, 1, int(counter))
-
-		time.Sleep(1 * time.Second)
-		logEveryInterval("test")
-		assert.Equal(t, 2, int(counter))
-	})
-}
-
-type countingSink int
-
-func (c *countingSink) Enabled(level int) bool                            { return true }
-func (c *countingSink) Error(err error, msg string, keysAndValues ...any) {}
-func (c *countingSink) Info(level int, msg string, keysAndValues ...any)  { *c++ }
-func (c *countingSink) Init(info logr.RuntimeInfo)                        {}
-func (c *countingSink) WithName(name string) logr.LogSink                 { return c }
-func (c *countingSink) WithValues(keysAndValues ...any) logr.LogSink      { return c }
-
-var _ logr.LogSink = new(countingSink)
