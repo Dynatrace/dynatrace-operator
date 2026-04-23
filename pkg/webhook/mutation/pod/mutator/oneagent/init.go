@@ -15,18 +15,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type CodeModulesStatusNotReadyErr struct {
+type codeModulesStatusNotReadyError struct {
 	dkName string
 }
 
-func (err CodeModulesStatusNotReadyErr) Error() string {
+func (err codeModulesStatusNotReadyError) Error() string {
 	return fmt.Sprintf("the dynakube's (%s) codemodules version status is not yet ready, skipping mutation", err.dkName)
 }
 
 func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath string) error {
 	if !mutationRequest.DynaKube.IsCodeModulesStatusReady() {
 		return dtwebhook.MutatorError{
-			Err:      CodeModulesStatusNotReadyErr{dkName: mutationRequest.DynaKube.Name},
+			Err:      codeModulesStatusNotReadyError{dkName: mutationRequest.DynaKube.Name},
 			Annotate: setNotInjectedAnnotationFunc(DynaKubeStatusNotReadyReason),
 		}
 	}
