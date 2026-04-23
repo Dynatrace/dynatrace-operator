@@ -3,7 +3,9 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"regexp"
 	"slices"
@@ -14,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/mod/semver"
 )
@@ -49,14 +52,14 @@ func GetLatestImageURI(t *testing.T, repoURI string) string {
 	}
 
 	if uri, ok := latestImageURIs[repoURI]; ok {
-		t.Logf("using cached resolved newest image for %s: %s", repoURI, uri)
+		t.Logf("using cached resolved newest image: %s", uri)
 
 		return uri
 	}
 
 	uri := getLatestImageURI(t, repoURI)
 	latestImageURIs[repoURI] = uri
-	t.Logf("resolved newest image for %s: %s", repoURI, uri)
+	t.Logf("resolved newest image: %s", uri)
 
 	return uri
 }
@@ -92,7 +95,8 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 			break
 		}
 
-		if strings.Contains(err.Error(), "TOOMANYREQUESTS") {
+		var transportErr *transport.Error
+		if errors.As(err, &transportErr) && transportErr.StatusCode == http.StatusTooManyRequests {
 			wait := time.Duration(5*(attempt+1)) * time.Second
 			t.Logf("rate limited listing tags for %s, retrying in %s (attempt %d/3)", repoURI, wait, attempt+1)
 			time.Sleep(wait)
