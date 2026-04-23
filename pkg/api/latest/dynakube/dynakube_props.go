@@ -46,6 +46,8 @@ func (dk *DynaKube) APIURL() string {
 
 func (dk *DynaKube) Conditions() *[]metav1.Condition { return &dk.Status.Conditions }
 
+func (dk *DynaKube) OptionalScopes() *OptionalScopes { return &dk.Status.Tenant }
+
 // APIURLHost returns the host of dk.Spec.APIURL
 // E.g. if the APIURL is set to "https://my-tenant.dynatrace.com/api", it returns "my-tenant.dynatrace.com"
 // If the URL cannot be parsed, it returns an empty string.

@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscopes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
@@ -71,7 +72,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update if outdated", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscopes.Available(dk.OptionalScopes(), token.ScopeSettingsRead)
 
 		expectedResponse := createRules()
 		specialMessage := "TESTING" // if the special message changes == condition updated
@@ -99,7 +100,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set rules correctly", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscopes.Available(dk.OptionalScopes(), token.ScopeSettingsRead)
 
 		expectedResponse := createRules()
 
@@ -118,7 +119,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no rules if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscopes.Available(dk.OptionalScopes(), token.ScopeSettingsRead)
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		dk.Annotations = map[string]string{
@@ -136,7 +137,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscopes.Available(dk.OptionalScopes(), token.ScopeSettingsRead)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, errors.New("BOOM"))
