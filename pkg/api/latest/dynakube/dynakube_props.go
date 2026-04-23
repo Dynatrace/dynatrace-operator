@@ -169,3 +169,7 @@ func (dk *DynaKube) IsCodeModulesStatusReady() bool {
 
 	return true
 }
+
+func (dk *DynaKube) GetResourceAttributes() map[string]string {
+	return dk.Spec.ResourceAttributes
+}
