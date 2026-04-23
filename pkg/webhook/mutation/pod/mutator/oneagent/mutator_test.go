@@ -287,6 +287,10 @@ func TestIsSelfExtractingImage(t *testing.T) {
 }
 
 func TestValidateInstallPath(t *testing.T) {
+	t.Run("can't be just root", func(t *testing.T) {
+		require.Error(t, validateInstallPath("/"))
+	})
+
 	t.Run("relative install path is rejected", func(t *testing.T) {
 		require.Error(t, validateInstallPath("relative/path"))
 	})

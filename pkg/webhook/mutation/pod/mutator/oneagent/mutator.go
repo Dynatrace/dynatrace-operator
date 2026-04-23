@@ -2,6 +2,7 @@ package oneagent
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"unicode"
@@ -78,6 +79,7 @@ func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 
 func validateInstallPath(installPath string) error {
 	if !filepath.IsAbs(installPath) ||
+		installPath == string(os.PathSeparator) ||
 		strings.ContainsFunc(installPath, unicode.IsSpace) ||
 		strings.ContainsAny(installPath, "\x00,:") ||
 		filepath.Clean(installPath) != installPath {
