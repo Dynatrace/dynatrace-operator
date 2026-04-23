@@ -21,7 +21,6 @@ type Properties struct {
 	Type          string
 	Flavor        string
 	TargetVersion string
-	URL           string // if this is set all settings before it will be ignored
 
 	PathResolver metadata.PathResolver
 	Technologies []string

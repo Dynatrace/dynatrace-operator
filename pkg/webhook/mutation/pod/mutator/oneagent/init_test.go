@@ -53,7 +53,7 @@ func TestMutateInitContainer(t *testing.T) {
 
 		err := mutateInitContainer(request, installPath)
 		require.ErrorAs(t, err, &webhook.MutatorError{})
-		require.ErrorAs(t, err, &CodeModulesStatusNotReadyErr{})
+		require.ErrorAs(t, err, &codeModulesStatusNotReadyError{})
 	})
 
 	t.Run("status not ready - no image", func(t *testing.T) {
@@ -75,7 +75,7 @@ func TestMutateInitContainer(t *testing.T) {
 
 		err := mutateInitContainer(request, installPath)
 		require.ErrorAs(t, err, &webhook.MutatorError{})
-		require.ErrorAs(t, err, &CodeModulesStatusNotReadyErr{})
+		require.ErrorAs(t, err, &codeModulesStatusNotReadyError{})
 	})
 
 	t.Run("status not ready - image set, version is needed", func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestMutateInitContainer(t *testing.T) {
 
 		err := mutateInitContainer(request, installPath)
 		require.ErrorAs(t, err, &webhook.MutatorError{})
-		require.ErrorAs(t, err, &CodeModulesStatusNotReadyErr{})
+		require.ErrorAs(t, err, &codeModulesStatusNotReadyError{})
 	})
 
 	t.Run("status not ready - version set, image is needed", func(t *testing.T) {
@@ -120,7 +120,7 @@ func TestMutateInitContainer(t *testing.T) {
 
 		err := mutateInitContainer(request, installPath)
 		require.ErrorAs(t, err, &webhook.MutatorError{})
-		require.ErrorAs(t, err, &CodeModulesStatusNotReadyErr{})
+		require.ErrorAs(t, err, &codeModulesStatusNotReadyError{})
 	})
 
 	t.Run("csi-scenario -> custom init-resources", func(t *testing.T) {

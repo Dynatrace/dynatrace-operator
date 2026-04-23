@@ -3,9 +3,7 @@ package k8sentity
 import (
 	"context"
 	"errors"
-	"strconv"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -436,40 +434,5 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-	})
-}
-
-func Test_logCache(t *testing.T) {
-	reset := func() {
-		logCache = make(map[string]time.Time)
-	}
-
-	t.Run("lookup", func(t *testing.T) {
-		t.Cleanup(reset)
-
-		fixedTime := time.Now()
-		timeNow = func() time.Time { return fixedTime }
-
-		assert.True(t, shouldLogMissingAppTransitionSchema("test"))
-		assert.False(t, shouldLogMissingAppTransitionSchema("test"))
-
-		// advance time to just before timeout
-		fixedTime = fixedTime.Add(logCacheTimeout)
-		assert.False(t, shouldLogMissingAppTransitionSchema("test"))
-		// advance time to after timeout
-		fixedTime = fixedTime.Add(1 * time.Second)
-		assert.True(t, shouldLogMissingAppTransitionSchema("test"))
-	})
-
-	t.Run("limit size", func(t *testing.T) {
-		t.Cleanup(reset)
-
-		for i := range 101 {
-			require.True(t, shouldLogMissingAppTransitionSchema(strconv.Itoa(i)))
-		}
-
-		require.Len(t, logCache, 100)
-		require.Contains(t, logCache, "99")
-		require.NotContains(t, logCache, "100")
 	})
 }

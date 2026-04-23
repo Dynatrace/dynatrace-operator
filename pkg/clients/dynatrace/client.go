@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
@@ -46,12 +48,11 @@ type Config struct {
 	UserAgent   string
 
 	BaseURL           *url.URL
-	HTTPClient        *http.Client
 	TLSConfig         *tls.Config
 	Proxy             string
 	NoProxy           string
-	Timeout           time.Duration
 	DisableKeepAlives bool
+	CacheEntryTTL     time.Duration
 }
 
 // Option is a functional option for configuring the client
@@ -59,10 +60,12 @@ type Option func(*Config) error
 
 // NewClient creates a new Dynatrace API client
 func NewClient(options ...Option) (*Client, error) {
-	config, err := getConfig(options...)
+	httpClient, config, err := getClientAndConfig(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get client config")
 	}
+
+	addCacheMiddleware(httpClient, config)
 
 	if len(config.APIToken) == 0 && len(config.PaasToken) == 0 {
 		return nil, errors.New("tokens are empty")
@@ -72,13 +75,15 @@ func NewClient(options ...Option) (*Client, error) {
 		config.PaasToken = config.APIToken
 	}
 
-	if !strings.HasSuffix(strings.TrimSuffix(config.BaseURL.Path, "/"), "/api") {
-		config.BaseURL.Path = strings.TrimSuffix(config.BaseURL.Path, "/") + "/api"
+	if strings.Contains(config.BaseURL.Hostname(), ".apps.") {
+		mapThirdGenAPIURL(config.BaseURL)
+	} else if path.Base(config.BaseURL.Path) != "api" {
+		config.BaseURL = config.BaseURL.JoinPath("api")
 	}
 
 	apiClient := core.NewClient(core.Config{
 		BaseURL:    config.BaseURL,
-		HTTPClient: config.HTTPClient,
+		HTTPClient: httpClient,
 		UserAgent:  config.UserAgent,
 		APIToken:   config.APIToken,
 		PaasToken:  config.PaasToken,
@@ -96,12 +101,14 @@ func NewClient(options ...Option) (*Client, error) {
 
 // NewOAuthClient creates a new Dynatrace API OAuth client
 func NewOAuthClient(credentials clientcredentials.Config, options ...Option) (*OAuthClient, error) {
-	config, err := getConfig(options...)
+	httpClient, config, err := getClientAndConfig(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get oauth config")
 	}
 
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, config.HTTPClient)
+	addCacheMiddleware(httpClient, config)
+
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 
 	oAuthHTTPClient := credentials.Client(ctx)
 
@@ -181,15 +188,6 @@ func WithUserAgentSuffix(suffix string) Option {
 	}
 }
 
-// WithHTTPClient sets a custom HTTP client
-func WithHTTPClient(httpClient *http.Client) Option {
-	return func(c *Config) error {
-		c.HTTPClient = httpClient
-
-		return nil
-	}
-}
-
 // WithProxy sets the proxy URL
 func WithProxy(proxyURL, noProxy string) Option {
 	return func(c *Config) error {
@@ -259,39 +257,38 @@ func WithCerts(certs []byte) Option {
 	}
 }
 
-func getConfig(options ...Option) (*Config, error) {
+func WithCacheTTL(ttl time.Duration) Option {
+	return func(c *Config) error {
+		c.CacheEntryTTL = ttl
+
+		return nil
+	}
+}
+
+func addCacheMiddleware(httpClient *http.Client, config *Config) {
+	httpClient.Transport = middleware.NewCacheRoundTripper(httpClient.Transport, config.CacheEntryTTL)
+}
+
+func getClientAndConfig(options ...Option) (*http.Client, *Config, error) {
 	config := Config{
 		UserAgent: operatorversion.UserAgent(),
-		Timeout:   30 * time.Second,
 	}
 
 	for _, opt := range options {
 		if err := opt(&config); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	t := http.DefaultTransport.(*http.Transport).Clone()
+	transport := http.DefaultTransport.(*http.Transport).Clone()
 
-	if config.HTTPClient == nil {
-		config.HTTPClient = &http.Client{
-			Transport: t,
-		}
-	} else {
-		var ok bool
-
-		t, ok = config.HTTPClient.Transport.(*http.Transport)
-		if !ok {
-			return nil, errors.New("unexpected transport type")
-		}
-	}
-
-	t.TLSClientConfig = config.TLSConfig
+	transport.TLSClientConfig = config.TLSConfig
+	transport.DisableKeepAlives = config.DisableKeepAlives
 
 	if config.Proxy != "" {
 		proxyURL, err := url.Parse(config.Proxy)
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid proxy URL")
+			return nil, nil, errors.Wrap(err, "invalid proxy URL")
 		}
 
 		proxyConfig := httpproxy.Config{
@@ -299,22 +296,47 @@ func getConfig(options ...Option) (*Config, error) {
 			HTTPSProxy: proxyURL.String(),
 			NoProxy:    config.NoProxy,
 		}
-		t.Proxy = proxyWrapper(proxyConfig)
+		transport.Proxy = proxyWrapper(proxyConfig)
 	}
 
-	if config.DisableKeepAlives {
-		t.DisableKeepAlives = true
-	}
-
-	if config.Timeout > 0 {
-		config.HTTPClient.Timeout = config.Timeout
-	}
-
-	return &config, nil
+	return &http.Client{
+		Transport: transport,
+		Timeout:   30 * time.Second,
+	}, &config, nil
 }
 
 func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
 	proxyFunc := proxyConfig.ProxyFunc()
 
 	return func(req *http.Request) (*url.URL, error) { return proxyFunc(req.URL) }
+}
+
+const thirdGenAPPSHostParts = 2
+
+// mapThirdGenAPIURL remaps a 3rd gen URL (*.apps.*) to its 2nd gen equivalent.
+func mapThirdGenAPIURL(u *url.URL) {
+	hostname := u.Hostname()
+
+	parts := strings.SplitN(hostname, ".apps.", thirdGenAPPSHostParts)
+	if len(parts) != thirdGenAPPSHostParts {
+		return
+	}
+
+	prefix, suffix := parts[0], parts[1]
+
+	var newHostname string
+
+	if !strings.Contains(prefix, ".") {
+		newHostname = prefix + ".live." + suffix
+	} else {
+		newHostname = prefix + "." + suffix
+	}
+
+	if port := u.Port(); port != "" {
+		u.Host = newHostname + ":" + port
+	} else {
+		u.Host = newHostname
+	}
+
+	u.Path = "/api"
 }

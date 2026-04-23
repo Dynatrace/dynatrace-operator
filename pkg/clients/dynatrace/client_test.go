@@ -2,10 +2,10 @@ package dynatrace
 
 import (
 	"crypto/tls"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path"
 	"testing"
 	"time"
 
@@ -124,13 +124,6 @@ func TestWithUserAgentSuffix(t *testing.T) {
 	})
 }
 
-func TestWithHTTPClient(t *testing.T) {
-	existing := &http.Client{Transport: &http.Transport{}}
-	cfg := &Config{}
-	require.NoError(t, WithHTTPClient(existing)(cfg))
-	assert.Same(t, existing, cfg.HTTPClient)
-}
-
 func TestWithProxy(t *testing.T) {
 	cfg := &Config{}
 	require.NoError(t, WithProxy("http://p.example.com", "no.proxy")(cfg))
@@ -200,17 +193,17 @@ func TestWithCerts(t *testing.T) {
 	})
 }
 
-func TestGetConfig(t *testing.T) {
+func TestGetClientAndConfig(t *testing.T) {
 	t.Run("default, a config with client default timeout and user agent", func(t *testing.T) {
-		c, err := getConfig()
+		httpClient, config, err := getClientAndConfig()
 		require.NoError(t, err)
-		require.NotNil(t, c)
-		assert.Equal(t, 30*time.Second, c.HTTPClient.Timeout)
-		assert.Equal(t, operatorversion.UserAgent(), c.UserAgent)
+		require.NotNil(t, config)
+		assert.Equal(t, 30*time.Second, httpClient.Timeout)
+		assert.Equal(t, operatorversion.UserAgent(), config.UserAgent)
 	})
 
 	t.Run("with different options", func(t *testing.T) {
-		c, err := getConfig(
+		_, config, err := getClientAndConfig(
 			WithAPIToken("apitoken"),
 			WithPaasToken("paastoken"),
 			WithNetworkZone("network"),
@@ -221,21 +214,21 @@ func TestGetConfig(t *testing.T) {
 		)
 
 		require.NoError(t, err)
-		assert.Equal(t, "apitoken", c.APIToken)
-		assert.Equal(t, "paastoken", c.PaasToken)
-		assert.Equal(t, "network", c.NetworkZone)
-		assert.Equal(t, "hostgroup", c.HostGroup)
-		assert.False(t, c.DisableKeepAlives)
-		assert.Equal(t, operatorversion.UserAgent()+" useragent", c.UserAgent)
+		assert.Equal(t, "apitoken", config.APIToken)
+		assert.Equal(t, "paastoken", config.PaasToken)
+		assert.Equal(t, "network", config.NetworkZone)
+		assert.Equal(t, "hostgroup", config.HostGroup)
+		assert.False(t, config.DisableKeepAlives)
+		assert.Equal(t, operatorversion.UserAgent()+" useragent", config.UserAgent)
 	})
 
 	t.Run("WithProxy configures transport proxy", func(t *testing.T) {
-		c, err := getConfig(WithProxy("http://proxy.example.com:8080", ""))
+		httpClient, config, err := getClientAndConfig(WithProxy("http://proxy.example.com:8080", ""))
 		require.NoError(t, err)
-		require.NotNil(t, c)
-		assert.Equal(t, "http://proxy.example.com:8080", c.Proxy)
+		require.NotNil(t, config)
+		assert.Equal(t, "http://proxy.example.com:8080", config.Proxy)
 
-		transport, ok := c.HTTPClient.Transport.(*http.Transport)
+		transport, ok := httpClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		require.NotNil(t, transport.Proxy)
 
@@ -245,11 +238,11 @@ func TestGetConfig(t *testing.T) {
 	})
 
 	t.Run("WithProxy excludes matching no proxy hosts", func(t *testing.T) {
-		c, err := getConfig(WithProxy("http://proxy.example.com:8080", "excluded.host"))
+		httpClient, config, err := getClientAndConfig(WithProxy("http://proxy.example.com:8080", "excluded.host"))
 		require.NoError(t, err)
-		assert.Equal(t, "excluded.host", c.NoProxy)
+		assert.Equal(t, "excluded.host", config.NoProxy)
 
-		transport, ok := c.HTTPClient.Transport.(*http.Transport)
+		transport, ok := httpClient.Transport.(*http.Transport)
 		require.True(t, ok)
 
 		noProxyURL, err := transport.Proxy(&http.Request{URL: mustParseURL(t, "https://excluded.host/path")})
@@ -262,76 +255,131 @@ func TestGetConfig(t *testing.T) {
 	})
 
 	t.Run("WithProxy invalid URL returns error", func(t *testing.T) {
-		_, err := getConfig(WithProxy("://bad-proxy", ""))
+		_, _, err := getClientAndConfig(WithProxy("://bad-proxy", ""))
 		require.Error(t, err)
 	})
 
 	t.Run("WithSkipCertificateValidation true sets InsecureSkipVerify", func(t *testing.T) {
-		c, err := getConfig(WithSkipCertificateValidation(true))
+		httpClient, _, err := getClientAndConfig(WithSkipCertificateValidation(true))
 		require.NoError(t, err)
 
-		transport, ok := c.HTTPClient.Transport.(*http.Transport)
+		transport, ok := httpClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		require.NotNil(t, transport.TLSClientConfig)
 		assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 
 	t.Run("WithSkipCertificateValidation false is no-op", func(t *testing.T) {
-		c, err := getConfig(WithSkipCertificateValidation(false))
+		httpClient, _, err := getClientAndConfig(WithSkipCertificateValidation(false))
 		require.NoError(t, err)
 
-		transport, ok := c.HTTPClient.Transport.(*http.Transport)
+		transport, ok := httpClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		assert.Nil(t, transport.TLSClientConfig)
 	})
 
 	t.Run("WithTLSConfig sets TLS config on transport", func(t *testing.T) {
 		tlsCfg := &tls.Config{MinVersion: tls.VersionTLS13}
-		c, err := getConfig(WithTLSConfig(tlsCfg))
+		httpClient, _, err := getClientAndConfig(WithTLSConfig(tlsCfg))
 		require.NoError(t, err)
 
-		transport, ok := c.HTTPClient.Transport.(*http.Transport)
+		transport, ok := httpClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		assert.Equal(t, tlsCfg, transport.TLSClientConfig)
 	})
 
 	t.Run("WithKeepAlive false disables keep-alives", func(t *testing.T) {
-		c, err := getConfig(WithKeepAlive(false))
+		httpClient, _, err := getClientAndConfig(WithKeepAlive(false))
 		require.NoError(t, err)
 
-		transport, ok := c.HTTPClient.Transport.(*http.Transport)
+		transport, ok := httpClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		assert.True(t, transport.DisableKeepAlives)
 	})
 
 	t.Run("WithKeepAlive true keeps keep-alives enabled", func(t *testing.T) {
-		c, err := getConfig(WithKeepAlive(true))
+		httpClient, _, err := getClientAndConfig(WithKeepAlive(true))
 		require.NoError(t, err)
 
-		transport, ok := c.HTTPClient.Transport.(*http.Transport)
+		transport, ok := httpClient.Transport.(*http.Transport)
 		require.True(t, ok)
 		assert.False(t, transport.DisableKeepAlives)
 	})
-
-	t.Run("WithHTTPClient uses provided client", func(t *testing.T) {
-		existing := &http.Client{Transport: &http.Transport{}}
-		c, err := getConfig(WithHTTPClient(existing))
-		require.NoError(t, err)
-		assert.Same(t, existing, c.HTTPClient)
-	})
-
-	t.Run("WithHTTPClient with unexpected transport type returns error", func(t *testing.T) {
-		bad := &http.Client{Transport: &badTransport{}}
-		_, err := getConfig(WithHTTPClient(bad))
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "unexpected transport type")
-	})
 }
 
-type badTransport struct{}
+func TestMapThirdGenAPIURL(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    "https://tenant.apps.dynatrace.com",
+			expected: "https://tenant.live.dynatrace.com/api",
+		},
+		{
+			input:    "https://tenant.sprint.apps.dynatrace.com",
+			expected: "https://tenant.sprint.dynatrace.com/api",
+		},
+		{
+			input:    "https://tenant.dev.apps.dynatrace.com",
+			expected: "https://tenant.dev.dynatrace.com/api",
+		},
+		{
+			input:    "https://tenant.apps.dynatrace.com:8443",
+			expected: "https://tenant.live.dynatrace.com:8443/api",
+		},
+		{
+			input:    "https://tenant.sprint.apps.dynatrace.com:9090",
+			expected: "https://tenant.sprint.dynatrace.com:9090/api",
+		},
+	}
 
-func (b *badTransport) RoundTrip(*http.Request) (*http.Response, error) {
-	return nil, errors.New("bad transport")
+	for _, tc := range tests {
+		t.Run(tc.input, func(t *testing.T) {
+			u := mustParseURL(t, tc.input)
+			mapThirdGenAPIURL(u)
+			assert.Equal(t, tc.expected, u.String())
+		})
+	}
+}
+
+func TestNewClientAppendAPIPath(t *testing.T) {
+	tests := []struct {
+		name     string
+		inputURL string
+		expected string
+	}{
+		{
+			name:     "URL without /api gets it appended",
+			inputURL: "https://tenant.live.dynatrace.com",
+			expected: "https://tenant.live.dynatrace.com/api",
+		},
+		{
+			name:     "URL with trailing slash gets /api appended",
+			inputURL: "https://tenant.live.dynatrace.com/",
+			expected: "https://tenant.live.dynatrace.com/api",
+		},
+		{
+			name:     "URL with /api already is unchanged",
+			inputURL: "https://tenant.live.dynatrace.com/api",
+			expected: "https://tenant.live.dynatrace.com/api",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			client, err := NewClient(WithBaseURL(tc.inputURL), WithAPIToken("foo"))
+			require.NoError(t, err)
+			require.NotNil(t, client)
+
+			u := mustParseURL(t, tc.inputURL)
+			if path.Base(u.Path) != "api" {
+				u = u.JoinPath("api")
+			}
+
+			assert.Equal(t, tc.expected, u.String())
+		})
+	}
 }
 
 func mustParseURL(t *testing.T, raw string) *url.URL {
@@ -384,7 +432,7 @@ func TestNewClientPaasToken(t *testing.T) {
 		srv := httptest.NewServer(handlerFunc(testAPIToken))
 		defer srv.Close()
 
-		clt, err := NewClient(WithHTTPClient(srv.Client()), WithBaseURL(srv.URL), WithAPIToken(testAPIToken))
+		clt, err := NewClient(WithBaseURL(srv.URL), WithAPIToken(testAPIToken))
 		require.NoError(t, err)
 		connectionInfo, err := clt.ActiveGate.GetConnectionInfo(t.Context())
 		require.NoError(t, err)
@@ -395,7 +443,7 @@ func TestNewClientPaasToken(t *testing.T) {
 		srv := httptest.NewServer(handlerFunc(testPaasToken))
 		defer srv.Close()
 
-		clt, err := NewClient(WithHTTPClient(srv.Client()), WithBaseURL(srv.URL), WithAPIToken(testAPIToken), WithPaasToken(testPaasToken))
+		clt, err := NewClient(WithBaseURL(srv.URL), WithAPIToken(testAPIToken), WithPaasToken(testPaasToken))
 		require.NoError(t, err)
 		connectionInfo, err := clt.ActiveGate.GetConnectionInfo(t.Context())
 		require.NoError(t, err)
@@ -406,7 +454,7 @@ func TestNewClientPaasToken(t *testing.T) {
 		srv := httptest.NewServer(handlerFunc(testPlatformToken))
 		defer srv.Close()
 
-		clt, err := NewClient(WithHTTPClient(srv.Client()), WithBaseURL(srv.URL), WithAPIToken(testPlatformToken), WithPaasToken(testPaasToken))
+		clt, err := NewClient(WithBaseURL(srv.URL), WithAPIToken(testPlatformToken), WithPaasToken(testPaasToken))
 		require.NoError(t, err)
 		connectionInfo, err := clt.ActiveGate.GetConnectionInfo(t.Context())
 		require.NoError(t, err)

@@ -42,6 +42,8 @@ type APIRequest interface {
 	WithoutToken() APIRequest
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) APIRequest
+	// WithSkipCache bypasses the in-memory cache for this request and evicts any existing cached entry
+	WithSkipCache() APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
 	Execute(model any) error
 	// ExecuteWriter executes the request, writes the response body to the provided writer,
@@ -195,6 +197,11 @@ func (r *Request) WithHeader(key, value string) APIRequest {
 	return r
 }
 
+// WithSkipCache bypasses the in-memory cache for this request and evicts any existing cached entry
+func (r *Request) WithSkipCache() APIRequest {
+	return r.WithHeader(CacheSkipHeader, "true")
+}
+
 // Execute executes the request and unmarshals the response into the provided model
 func (r *Request) Execute(model any) error {
 	body, err := r.doRequest()
@@ -289,13 +296,7 @@ func (r *Request) doRequestStream(writer io.Writer) (responseHeaders http.Header
 		}
 	}()
 
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
-	statusCodeThreshold := 201
-	if r.method == http.MethodDelete {
-		statusCodeThreshold = 299
-	}
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+	if !IsSuccessResponse(resp) {
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
 			return nil, fmt.Errorf("read error response body: %w", readErr)
@@ -362,13 +363,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 
 	log.Debug("API request", loggerArgs(resp, body)...)
 
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
-	statusCodeThreshold := 201
-	if r.method == http.MethodDelete {
-		statusCodeThreshold = 299
-	}
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+	if !IsSuccessResponse(resp) {
 		err = handleErrorResponse(resp, body)
 	}
 
@@ -430,6 +425,18 @@ func handleErrorResponse(resp *http.Response, body []byte) error {
 	}
 
 	return httpErr
+}
+
+// IsSuccessResponse returns true when the HTTP response status code indicates
+// a successful operation. DELETE requests accept 200-299; all other methods
+// accept 200-201 (matching the legacy client behavior).
+func IsSuccessResponse(resp *http.Response) bool {
+	statusCodeThreshold := 201
+	if resp.Request != nil && resp.Request.Method == http.MethodDelete {
+		statusCodeThreshold = 299
+	}
+
+	return resp.StatusCode >= http.StatusOK && resp.StatusCode <= statusCodeThreshold
 }
 
 func isJSONList(body []byte) bool {

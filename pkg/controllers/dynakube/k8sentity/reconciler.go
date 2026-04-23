@@ -4,7 +4,6 @@ import (
 	"context"
 	goerrors "errors"
 	"fmt"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -178,9 +177,7 @@ func (r *Reconciler) createK8sAppSettingIfAbsent(ctx context.Context, dtClient s
 				return errors.WithMessage(err, "error trying to check if app setting exists")
 			}
 
-			if shouldLogMissingAppTransitionSchema(k8sEntity.ID) {
-				log.Info("skipping app-transition creation due to missing schema", "kubernetesClusterMEID", k8sEntity.ID, "schemaID", settings.AppTransitionSchemaID)
-			}
+			log.Info("skipping app-transition creation due to missing schema", "kubernetesClusterMEID", k8sEntity.ID, "schemaID", settings.AppTransitionSchemaID)
 
 			return nil
 		}
@@ -201,27 +198,4 @@ func (r *Reconciler) createK8sAppSettingIfAbsent(ctx context.Context, dtClient s
 	}
 
 	return nil
-}
-
-const logCacheTimeout = 5 * time.Minute
-
-var logCache = make(map[string]time.Time)
-var timeNow = time.Now
-
-// NOT THREAD-SAFE!!!
-func shouldLogMissingAppTransitionSchema(meID string) bool {
-	// Limit cache size to prevent excessive memory usage at the cost of potentially spamming the logs.
-	const maxCacheSize = 100
-	if len(logCache) >= maxCacheSize {
-		return true
-	}
-
-	lastLog, exists := logCache[meID]
-	if !exists || timeNow().Sub(lastLog) > logCacheTimeout {
-		logCache[meID] = timeNow()
-
-		return true
-	}
-
-	return false
 }

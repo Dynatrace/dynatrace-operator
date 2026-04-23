@@ -84,6 +84,7 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (*dynatrace.Cli
 
 	opts.Opts = append(opts.Opts, dynatrace.WithAPIToken(apiToken))
 	opts.Opts = append(opts.Opts, dynatrace.WithPaasToken(paasToken))
+	opts.Opts = append(opts.Opts, dynatrace.WithCacheTTL(dynatraceClientBuilder.dk.APIRequestThreshold()))
 
 	return dynatrace.NewClient(opts.Opts...)
 }
