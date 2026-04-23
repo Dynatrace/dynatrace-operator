@@ -9,22 +9,11 @@ import (
 )
 
 func (installer Installer) downloadOneAgentFromURL(ctx context.Context, tmpFile *os.File) error {
-	switch {
-	case installer.props.URL != "":
-		if err := installer.downloadOneAgentViaInstallerURL(ctx, tmpFile); err != nil {
-			return errors.WithStack(err)
-		}
-	case installer.props.TargetVersion == VersionLatest:
-		if err := installer.downloadLatestOneAgent(ctx, tmpFile); err != nil {
-			return errors.WithStack(err)
-		}
-	default:
-		if err := installer.downloadOneAgentWithVersion(ctx, tmpFile); err != nil {
-			return err
-		}
+	if installer.props.TargetVersion == VersionLatest {
+		return installer.downloadLatestOneAgent(ctx, tmpFile)
 	}
 
-	return nil
+	return installer.downloadOneAgentWithVersion(ctx, tmpFile)
 }
 
 func (installer Installer) downloadLatestOneAgent(ctx context.Context, tmpFile *os.File) error {
@@ -75,10 +64,4 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 	}
 
 	return nil
-}
-
-func (installer Installer) downloadOneAgentViaInstallerURL(ctx context.Context, tmpFile *os.File) error {
-	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.URL)
-
-	return installer.dtClient.GetViaInstallerURL(ctx, installer.props.URL, tmpFile)
 }

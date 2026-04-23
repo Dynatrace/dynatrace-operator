@@ -22,7 +22,6 @@ import (
 
 const (
 	testVersion = "test"
-	testURL     = "test.url"
 
 	testErrorMessage = "BOOM"
 )
@@ -156,31 +155,6 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				Type:          installer.TypePaaS,
 				Flavor:        arch.FlavorMultidistro,
 				TargetVersion: VersionLatest,
-			},
-		}
-
-		err := installer.installAgent(t.Context(), target)
-		require.NoError(t, err)
-	})
-	t.Run("downloading and unzipping agent via url", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		target := filepath.Join(tmpDir, VersionLatest)
-		dtClient := oneagentclientmock.NewAPIClient(t)
-		dtClient.EXPECT().GetViaInstallerURL(t.Context(), testURL, mock.AnythingOfType("*os.File")).
-			Run(func(ctx context.Context, url string, writer io.Writer) {
-				zipFile := zip.SetupTestArchive(t, zip.TestRawZip)
-				defer func() { _ = zipFile.Close() }()
-
-				_, err := io.Copy(writer, zipFile)
-				require.NoError(t, err)
-			}).
-			Return(nil)
-
-		installer := &Installer{
-			dtClient:  dtClient,
-			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
-			props: &Properties{
-				URL: testURL,
 			},
 		}
 

@@ -123,19 +123,6 @@ func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, err
 	return resp.AvailableVersions, errors.WithStack(err)
 }
 
-func (c *Client) GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
-	apiRequest := c.apiClient.GET(ctx, url).WithoutToken()
-
-	sha256, err := makeRequestForBinary(apiRequest, writer)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	log.Info("downloaded agent file using given url", "url", url, "sha256", sha256)
-
-	return nil
-}
-
 func makeRequestForBinary(req core.APIRequest, writer io.Writer) (string, error) {
 	hash := sha256.New()
 	multiWriter := io.MultiWriter(writer, hash)

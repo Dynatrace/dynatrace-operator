@@ -85,7 +85,6 @@ func run(cmd *cobra.Command, _ []string) error {
 			Arch:          arch.Arch,
 			Technologies:  technologies,
 			TargetVersion: targetVersion,
-			URL:           "",
 			SkipMetadata:  false,
 			PathResolver:  metadata.PathResolver{RootDir: targetFolder},
 		}
