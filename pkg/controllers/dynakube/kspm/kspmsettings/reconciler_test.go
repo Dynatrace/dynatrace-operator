@@ -14,12 +14,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscopes"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -344,12 +344,12 @@ func TestCheckKSPMSettings(t *testing.T) {
 
 func setReadScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsRead, Status: metav1.ConditionTrue})
+	optionalscopes.Available(dk.OptionalScopes(), token.ScopeSettingsRead)
 }
 
 func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsWrite, Status: metav1.ConditionTrue})
+	optionalscopes.Available(dk.OptionalScopes(), token.ScopeSettingsWrite)
 }
 
 func verifyCondition(t *testing.T, dk *dynakube.DynaKube, expectedReason string) {

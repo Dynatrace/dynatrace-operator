@@ -63,6 +63,13 @@ type DynaKubeStatus struct { //nolint:revive
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	Tenant OptionalScopes `json:"tenant,omitempty"`
+}
+
+type OptionalScopes struct {
+	APITokenSettingsReadAvailable  bool `json:"apiTokenSettingsReadAvailable,omitempty"`
+	APITokenSettingsWriteAvailable bool `json:"apiTokenSettingsWriteAvailable,omitempty"`
 }
 
 func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {

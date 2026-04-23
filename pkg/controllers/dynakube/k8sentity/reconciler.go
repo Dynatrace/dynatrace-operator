@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscopes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/retry"
@@ -41,7 +42,7 @@ func NewReconciler() *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "automatic-api-monitoring")
 
-	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead) {
+	if !optionalscopes.IsAvailable(dk.OptionalScopes(), token.ScopeSettingsRead) {
 		msg := token.ScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
 		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
@@ -62,7 +63,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		return nil
 	}
 
-	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite) {
+	if !optionalscopes.IsAvailable(dk.OptionalScopes(), token.ScopeSettingsWrite) {
 		log.Info("api token missing optional scope, skipping reconciliation", "scope", token.ScopeSettingsWrite)
 
 		return nil

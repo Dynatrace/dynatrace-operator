@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscopes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -40,8 +41,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, 
 
 	_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType) // needed so the timestamp updates, will never actually show up in the status
 
-	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead)
-	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite)
+	hasReadScope := optionalscopes.IsAvailable(dk.OptionalScopes(), token.ScopeSettingsRead)
+	hasWriteScope := optionalscopes.IsAvailable(dk.OptionalScopes(), token.ScopeSettingsWrite)
 
 	var missingScopes []string
 	if !hasReadScope {
