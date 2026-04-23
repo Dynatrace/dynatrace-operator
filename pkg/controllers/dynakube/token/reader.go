@@ -24,8 +24,12 @@ func NewReader(apiReader client.Reader, dk *dynakube.DynaKube) Reader {
 }
 
 // HasPlatformToken inspects the token secret and checks if the apiToken is a platform token.
-// Returns an error if reading the secret fails.
+// Returns an error if reading the secret fails and false if the DynaKube is nil.
 func (reader Reader) HasPlatformToken(ctx context.Context) (bool, error) {
+	if reader.dk == nil {
+		return false, nil
+	}
+
 	tokens, err := reader.ReadTokens(ctx)
 	if err != nil {
 		return false, err

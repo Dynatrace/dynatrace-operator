@@ -147,4 +147,10 @@ func TestHasPlatformToken(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, hasPlatform)
 	})
+
+	t.Run("nil dynakube", func(t *testing.T) {
+		hasPlatform, err := NewReader(fake.NewClient(), nil).HasPlatformToken(t.Context())
+		require.NoError(t, err)
+		assert.False(t, hasPlatform)
+	})
 }
