@@ -76,6 +76,7 @@ func Test_loggerArgs(t *testing.T) {
 			levelDefault,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
+				"cached", false,
 			},
 		},
 		{
@@ -83,7 +84,7 @@ func Test_loggerArgs(t *testing.T) {
 			levelRequest,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
+				"cached", false, "request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
 			},
 		},
 		{
@@ -91,7 +92,7 @@ func Test_loggerArgs(t *testing.T) {
 			levelResponse,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
+				"cached", false, "request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
 				"response_body", "response " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
 			},
 		},
@@ -100,10 +101,19 @@ func Test_loggerArgs(t *testing.T) {
 			levelFull,
 			[]any{
 				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
+				"cached", false,
 				"request_headers", `{"Authorization":"Bearer eya.eyb.***","Request-Foo":"request-` + publicPart + `.***"}`,
 				"response_headers", `{"Response-Foo":"response-` + publicPart + `.***"}`,
 				"request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
 				"response_body", "response " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
+			},
+		},
+		{
+			"default/cached",
+			levelDefault,
+			[]any{
+				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
+				"cached", true,
 			},
 		},
 	}
@@ -121,11 +131,19 @@ func Test_loggerArgs(t *testing.T) {
 				timeNow = time.Now
 			})
 
+			resp := response
+			if tt.name == "default/cached" {
+				cached := *response
+				cached.Header = response.Header.Clone()
+				cached.Header.Set(CacheHitHeader, "true")
+				resp = &cached
+			}
+
 			get := createLoggerArgs(requestBody)
 			// Advance time to always get duration=1s
 			fixedTime = fixedTime.Add(1 * time.Second)
 
-			assert.Equal(t, tt.want, get(response, responseBody))
+			assert.Equal(t, tt.want, get(resp, responseBody))
 		})
 	}
 }
