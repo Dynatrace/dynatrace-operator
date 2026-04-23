@@ -38,7 +38,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		assert.Equal(t, testAPIToken, cfg.APIToken)
@@ -53,7 +53,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, "", "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		assert.Equal(t, testAPIToken, cfg.APIToken)
@@ -67,7 +67,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, expUserAgent)
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		assert.Equal(t, operatorversion.UserAgent()+" "+expUserAgent, cfg.UserAgent)
@@ -80,13 +80,15 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		client, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
-		transport, ok := cfg.HTTPClient.Transport.(*http.Transport)
+		transport, ok := client.Transport.(*http.Transport)
 		require.True(t, ok)
+
 		require.NotNil(t, transport.TLSClientConfig)
 		assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
+		assert.True(t, cfg.TLSConfig.InsecureSkipVerify)
 	})
 
 	t.Run("TLS transport has no InsecureSkipVerify when SkipCertCheck is false", func(t *testing.T) {
@@ -96,12 +98,14 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		client, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
-		transport, ok := cfg.HTTPClient.Transport.(*http.Transport)
+		transport, ok := client.Transport.(*http.Transport)
 		require.True(t, ok)
+
 		assert.Nil(t, transport.TLSClientConfig)
+		assert.Nil(t, cfg.TLSConfig)
 	})
 
 	t.Run("sets NetworkZone when configured", func(t *testing.T) {
@@ -112,7 +116,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		assert.Equal(t, expNetworkZone, cfg.NetworkZone)
@@ -126,7 +130,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		assert.Equal(t, expHostGroup, cfg.HostGroup)
@@ -138,7 +142,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		assert.Empty(t, cfg.NetworkZone)
@@ -155,13 +159,15 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		client, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
-		transport, ok := cfg.HTTPClient.Transport.(*http.Transport)
+		transport, ok := client.Transport.(*http.Transport)
 		require.True(t, ok)
+
 		require.NotNil(t, transport.TLSClientConfig)
 		assert.NotNil(t, transport.TLSClientConfig.RootCAs)
+		assert.NotNil(t, cfg.TLSConfig.RootCAs)
 	})
 
 	t.Run("returns error when trusted CA configmap is missing", func(t *testing.T) {
@@ -196,7 +202,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		assert.Equal(t, testProxyURL, cfg.Proxy)
@@ -217,7 +223,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		require.Equal(t, testProxyURL, cfg.Proxy)
@@ -246,7 +252,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
 
-		cfg, err := getConfig(opts...)
+		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		require.Equal(t, expAPIRequestThreshold, cfg.CacheEntryTTL)
