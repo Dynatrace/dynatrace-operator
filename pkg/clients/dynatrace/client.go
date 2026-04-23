@@ -48,11 +48,9 @@ type Config struct {
 	UserAgent   string
 
 	BaseURL           *url.URL
-	HTTPClient        *http.Client
 	TLSConfig         *tls.Config
 	Proxy             string
 	NoProxy           string
-	Timeout           time.Duration
 	DisableKeepAlives bool
 	CacheEntryTTL     time.Duration
 }
@@ -62,12 +60,12 @@ type Option func(*Config) error
 
 // NewClient creates a new Dynatrace API client
 func NewClient(options ...Option) (*Client, error) {
-	config, err := getConfig(options...)
+	httpClient, config, err := getClientAndConfig(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get client config")
 	}
 
-	addCacheMiddleware(config)
+	addCacheMiddleware(httpClient, config)
 
 	if len(config.APIToken) == 0 && len(config.PaasToken) == 0 {
 		return nil, errors.New("tokens are empty")
@@ -85,7 +83,7 @@ func NewClient(options ...Option) (*Client, error) {
 
 	apiClient := core.NewClient(core.Config{
 		BaseURL:    config.BaseURL,
-		HTTPClient: config.HTTPClient,
+		HTTPClient: httpClient,
 		UserAgent:  config.UserAgent,
 		APIToken:   config.APIToken,
 		PaasToken:  config.PaasToken,
@@ -103,14 +101,14 @@ func NewClient(options ...Option) (*Client, error) {
 
 // NewOAuthClient creates a new Dynatrace API OAuth client
 func NewOAuthClient(credentials clientcredentials.Config, options ...Option) (*OAuthClient, error) {
-	config, err := getConfig(options...)
+	httpClient, config, err := getClientAndConfig(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get oauth config")
 	}
 
-	addCacheMiddleware(config)
+	addCacheMiddleware(httpClient, config)
 
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, config.HTTPClient)
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 
 	oAuthHTTPClient := credentials.Client(ctx)
 
@@ -185,15 +183,6 @@ func WithUserAgentSuffix(suffix string) Option {
 		if suffix != "" {
 			c.UserAgent += " " + suffix
 		}
-
-		return nil
-	}
-}
-
-// WithHTTPClient sets a custom HTTP client
-func WithHTTPClient(httpClient *http.Client) Option {
-	return func(c *Config) error {
-		c.HTTPClient = httpClient
 
 		return nil
 	}
@@ -276,43 +265,30 @@ func WithCacheTTL(ttl time.Duration) Option {
 	}
 }
 
-func addCacheMiddleware(config *Config) {
-	config.HTTPClient.Transport = middleware.NewCacheRoundTripper(config.HTTPClient.Transport, config.CacheEntryTTL)
+func addCacheMiddleware(httpClient *http.Client, config *Config) {
+	httpClient.Transport = middleware.NewCacheRoundTripper(httpClient.Transport, config.CacheEntryTTL)
 }
 
-func getConfig(options ...Option) (*Config, error) {
+func getClientAndConfig(options ...Option) (*http.Client, *Config, error) {
 	config := Config{
 		UserAgent: operatorversion.UserAgent(),
-		Timeout:   30 * time.Second,
 	}
 
 	for _, opt := range options {
 		if err := opt(&config); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	t := http.DefaultTransport.(*http.Transport).Clone()
+	transport := http.DefaultTransport.(*http.Transport).Clone()
 
-	if config.HTTPClient == nil {
-		config.HTTPClient = &http.Client{
-			Transport: t,
-		}
-	} else {
-		var ok bool
-
-		t, ok = config.HTTPClient.Transport.(*http.Transport)
-		if !ok {
-			return nil, errors.New("unexpected transport type")
-		}
-	}
-
-	t.TLSClientConfig = config.TLSConfig
+	transport.TLSClientConfig = config.TLSConfig
+	transport.DisableKeepAlives = config.DisableKeepAlives
 
 	if config.Proxy != "" {
 		proxyURL, err := url.Parse(config.Proxy)
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid proxy URL")
+			return nil, nil, errors.Wrap(err, "invalid proxy URL")
 		}
 
 		proxyConfig := httpproxy.Config{
@@ -320,18 +296,13 @@ func getConfig(options ...Option) (*Config, error) {
 			HTTPSProxy: proxyURL.String(),
 			NoProxy:    config.NoProxy,
 		}
-		t.Proxy = proxyWrapper(proxyConfig)
+		transport.Proxy = proxyWrapper(proxyConfig)
 	}
 
-	if config.DisableKeepAlives {
-		t.DisableKeepAlives = true
-	}
-
-	if config.Timeout > 0 {
-		config.HTTPClient.Timeout = config.Timeout
-	}
-
-	return &config, nil
+	return &http.Client{
+		Transport: transport,
+		Timeout:   30 * time.Second,
+	}, &config, nil
 }
 
 func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
