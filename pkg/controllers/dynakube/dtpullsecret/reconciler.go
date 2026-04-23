@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -80,9 +81,12 @@ func (r *Reconciler) reconcilePullSecret(ctx context.Context, dk *dynakube.DynaK
 		return errors.WithMessage(err, "could not generate pull secret data")
 	}
 
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OperatorComponentLabel)
+
 	secret, err := k8ssecret.Build(dk,
 		extendWithPullSecretSuffix(dk.Name), pullSecretData,
 		k8ssecret.SetType(corev1.SecretTypeDockerConfigJson),
+		k8ssecret.SetLabels(coreLabels.BuildLabels()),
 	)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), PullSecretConditionType, err)

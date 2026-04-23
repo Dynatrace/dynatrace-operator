@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 )
@@ -36,13 +36,13 @@ func New(options ...Option) *Client {
 }
 
 func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, props url.Properties) error {
-	client, err := cl.createDTClientFromFs(inputDir)
+	dtClient, err := cl.createDTClientFromFs(inputDir)
 	if err != nil {
 		return err
 	}
 
 	oneAgentInstaller := cl.newInstaller(
-		client,
+		dtClient,
 		&props,
 	)
 
@@ -64,16 +64,18 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, err
 		return nil, err
 	}
 
-	options := config.toDTClientOptionsV2()
+	options := config.toDTClientOptions()
 
 	if len(certs) > 0 {
-		options = append(options, dtclient.WithCerts(certs))
+		options = append(options, dynatrace.WithCerts(certs))
 	}
 
-	client, err := dtclient.NewClientV2(config.URL, options...)
+	options = append(options, dynatrace.WithBaseURL(config.URL))
+
+	dtClient, err := dynatrace.NewClient(options...)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.OneAgent, nil
+	return dtClient.OneAgent, nil
 }

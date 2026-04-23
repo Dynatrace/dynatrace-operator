@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -113,7 +114,7 @@ func (r *Reconciler) setDynakubeStatus(dk *dynakube.DynaKube, connectionInfo agc
 }
 
 func (r *Reconciler) createTenantTokenSecret(ctx context.Context, dk *dynakube.DynaKube, secretName string, connectionInfo agclient.ConnectionInfo) error {
-	secret, err := connectioninfo.BuildTenantSecret(dk, secretName, connectionInfo.TenantToken)
+	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.ActiveGateComponentLabel, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}

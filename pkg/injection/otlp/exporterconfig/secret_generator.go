@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -16,19 +16,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// SecretGenerator manages the OTLP exporter secret secret generation for the user namespaces.
+// SecretGenerator manages the OTLP exporter secret generation for the user namespaces.
 type SecretGenerator struct {
 	client       client.Client
-	dtClient     dtclient.Client
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
 	secrets      k8ssecret.QueryObject
 }
 
-func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient dtclient.Client) *SecretGenerator {
+func NewSecretGenerator(client client.Client, apiReader client.Reader) *SecretGenerator {
 	return &SecretGenerator{
 		client:       client,
-		dtClient:     dtClient,
 		apiReader:    apiReader,
 		timeProvider: timeprovider.New(),
 		secrets:      k8ssecret.Query(client, apiReader, log),
@@ -111,14 +109,14 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if _, ok := tokens.Data[dtclient.DataIngestToken]; !ok {
+	if _, ok := tokens.Data[token.DataIngestKey]; !ok {
 		err := errors.New("data ingest token not found in tokens secret")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
 
-	data[dtclient.DataIngestToken] = tokens.Data[dtclient.DataIngestToken]
+	data[token.DataIngestKey] = tokens.Data[token.DataIngestKey]
 
 	return data, nil
 }

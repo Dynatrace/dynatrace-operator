@@ -2,27 +2,24 @@ package version
 
 import (
 	"context"
-	"fmt"
+	goerrors "errors"
 
 	"github.com/pkg/errors"
 )
 
+var errEmptyOS = goerrors.New("OS is empty")
+
 // GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch configured on the Tenant.
 func (c *Client) GetLatestActiveGateVersion(ctx context.Context, os string) (string, error) {
 	if len(os) == 0 {
-		return "", errors.New("os is empty")
+		return "", errEmptyOS
 	}
 
 	response := struct {
 		LatestGatewayVersion string `json:"latestGatewayVersion"`
 	}{}
 
-	url := getLatestActiveGateVersionPath(os)
-	err := c.apiClient.GET(ctx, url).WithPaasToken().Execute(&response)
+	err := c.apiClient.GET(ctx, "/v1/deployment/installer/gateway").WithPath(os, "latest/metainfo").WithPaasToken().Execute(&response)
 
 	return response.LatestGatewayVersion, errors.WithStack(err)
-}
-
-func getLatestActiveGateVersionPath(os string) string {
-	return fmt.Sprintf("/v1/deployment/installer/gateway/%s/latest/metainfo", os)
 }

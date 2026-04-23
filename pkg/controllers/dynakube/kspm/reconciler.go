@@ -25,7 +25,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.APIClient, dk *dynakube.DynaKube) error {
 	err := r.tokenReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM Secret")
@@ -33,7 +33,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk
 		return err
 	}
 
-	err = r.settingsReconciler.Reconcile(ctx, dtc, dk)
+	err = r.settingsReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
 		log.Info("failed to reconcile KSPM Settings")
 

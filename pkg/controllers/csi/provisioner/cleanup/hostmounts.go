@@ -1,12 +1,13 @@
 package cleanup
 
 import (
+	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"golang.org/x/exp/maps"
 	"k8s.io/mount-utils"
 )
 
@@ -42,8 +43,8 @@ func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 
 	for _, hostDK := range fsState.hostDks {
 		possibleHostDirs := []string{
-			c.path.OsAgentDir(hostDK),
-			c.path.OldOsAgentDir(hostDK),
+			c.path.OSAgentDir(hostDK),
+			c.path.OldOSAgentDir(hostDK),
 		}
 
 		for _, hostDir := range possibleHostDirs {
@@ -77,7 +78,7 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 			continue
 		}
 
-		hostDir := c.path.OsAgentDir(dk.Name)
+		hostDir := c.path.OSAgentDir(dk.Name)
 
 		hostDirs[hostDir] = true
 
@@ -90,12 +91,12 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 			continue
 		}
 
-		deprecatedHostDirLink := c.path.OldOsAgentDir(tenantUUID)
+		deprecatedHostDirLink := c.path.OldOSAgentDir(tenantUUID)
 		c.safeAddRelevantPath(deprecatedHostDirLink, hostDirs)
 	}
 
 	if len(hostDirs) > 0 {
-		log.Info("host directories to keep because they have a related dynakube", "paths", strings.Join(maps.Keys(hostDirs), ","))
+		log.Info("host directories to keep because they have a related dynakube", "paths", strings.Join(slices.Collect(maps.Keys(hostDirs)), ","))
 	}
 
 	return hostDirs

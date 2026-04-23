@@ -26,15 +26,15 @@ func (m brokenModel) MarshalJSON() ([]byte, error) {
 
 func TestClient_Verbs(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/api/"+r.Method, r.URL.Path)
+		assert.Equal(t, "/api/test/"+r.Method, r.URL.Path)
 	}))
 	defer s.Close()
 
 	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/")})
-	require.NoError(t, c.GET(t.Context(), http.MethodGet).Execute(nil))
-	require.NoError(t, c.POST(t.Context(), http.MethodPost).Execute(nil))
-	require.NoError(t, c.PUT(t.Context(), http.MethodPut).Execute(nil))
-	require.NoError(t, c.DELETE(t.Context(), http.MethodDelete).Execute(nil))
+	require.NoError(t, c.GET(t.Context(), "/").WithPath("/test//", http.MethodGet).Execute(nil))
+	require.NoError(t, c.POST(t.Context(), "/").WithPath("/test//", http.MethodPost).Execute(nil))
+	require.NoError(t, c.PUT(t.Context(), "/").WithPath("/test//", http.MethodPut).Execute(nil))
+	require.NoError(t, c.DELETE(t.Context(), "/").WithPath("/test//", http.MethodDelete).Execute(nil))
 }
 
 func TestClient_Headers(t *testing.T) {
@@ -48,10 +48,7 @@ func TestClient_Headers(t *testing.T) {
 	defer s.Close()
 
 	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/"), UserAgent: "my-user-agent"})
-	require.NoError(t, c.GET(t.Context(), "/test").Execute(nil))
-
-	expectContentType = "application/json"
-	require.NoError(t, c.POST(t.Context(), "/test").WithRawBody([]byte("test")).Execute(nil))
+	require.NoError(t, c.GET(t.Context(), "test").Execute(nil))
 }
 
 func TestClient_WithHeader(t *testing.T) {
@@ -63,9 +60,9 @@ func TestClient_WithHeader(t *testing.T) {
 		defer s.Close()
 
 		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-		_, err := c.GET(t.Context(), "/test").
+		err := c.GET(t.Context(), "/test").
 			WithHeader("Accept", "application/octet-stream").
-			ExecuteRaw()
+			Execute(nil)
 		require.NoError(t, err)
 	})
 
@@ -77,9 +74,9 @@ func TestClient_WithHeader(t *testing.T) {
 		defer s.Close()
 
 		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-		_, err := c.GET(t.Context(), "/test").
+		err := c.GET(t.Context(), "/test").
 			WithHeader("X-Custom", "custom-value").
-			ExecuteRaw()
+			Execute(nil)
 		require.NoError(t, err)
 	})
 
@@ -90,9 +87,9 @@ func TestClient_WithHeader(t *testing.T) {
 		defer s.Close()
 
 		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-		_, err := c.GET(t.Context(), "/test").
+		err := c.GET(t.Context(), "/test").
 			WithHeader("X-Empty", "").
-			ExecuteRaw()
+			Execute(nil)
 		require.NoError(t, err)
 	})
 }
@@ -181,42 +178,19 @@ func TestClient_Execute(t *testing.T) {
 	})
 }
 
-func TestClient_ExecuteRaw(t *testing.T) {
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/fail" {
-			w.WriteHeader(http.StatusTeapot)
-			_, _ = w.Write([]byte(`{"error":{}}`))
-
-			return
-		}
-		_, _ = w.Write([]byte("response"))
-	}))
-	defer s.Close()
-
-	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-
-	t.Run("ok", func(t *testing.T) {
-		body, err := c.GET(t.Context(), "/test").ExecuteRaw()
-		require.NoError(t, err)
-		assert.Equal(t, "response", string(body))
-	})
-
-	t.Run("fail", func(t *testing.T) {
-		body, err := c.GET(t.Context(), "/fail").ExecuteRaw()
-		require.Error(t, err)
-		assert.JSONEq(t, `{"error":{}}`, string(body))
-	})
-}
-
 func TestClient_ExecuteWriter(t *testing.T) {
 	const responseBody = "binary-blob-content"
+	const etagValue = `"v1"`
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/fail":
 			w.WriteHeader(http.StatusTeapot)
 			_, _ = w.Write([]byte(`{"error":{}}`))
+		case "/not-modified":
+			w.WriteHeader(http.StatusNotModified)
 		default:
+			w.Header().Set("ETag", etagValue)
 			_, _ = w.Write([]byte(responseBody))
 		}
 	}))
@@ -224,30 +198,43 @@ func TestClient_ExecuteWriter(t *testing.T) {
 
 	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
 
-	t.Run("streams response body to writer", func(t *testing.T) {
+	t.Run("streams response body to writer and returns headers", func(t *testing.T) {
 		var buf bytes.Buffer
-		err := c.GET(t.Context(), "/test").ExecuteWriter(&buf)
+		headers, err := c.GET(t.Context(), "/test").ExecuteWriter(&buf)
 		require.NoError(t, err)
 		assert.Equal(t, responseBody, buf.String())
+		assert.Equal(t, etagValue, headers.Get("ETag"))
 	})
 
 	t.Run("returns error and writes nothing on non-2xx", func(t *testing.T) {
 		var buf bytes.Buffer
-		err := c.GET(t.Context(), "/fail").ExecuteWriter(&buf)
+		headers, err := c.GET(t.Context(), "/fail").ExecuteWriter(&buf)
 		require.Error(t, err)
+		assert.Nil(t, headers)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns HTTPError with status 304 on Not Modified", func(t *testing.T) {
+		var buf bytes.Buffer
+		headers, err := c.GET(t.Context(), "/not-modified").ExecuteWriter(&buf)
+		require.Error(t, err)
+		assert.True(t, HasStatusCode(err, http.StatusNotModified))
+		assert.Nil(t, headers)
 		assert.Empty(t, buf.String())
 	})
 
 	t.Run("returns error on missing base URL", func(t *testing.T) {
 		var buf bytes.Buffer
-		err := new(Client).GET(t.Context(), "/test").ExecuteWriter(&buf)
+		headers, err := new(Client).GET(t.Context(), "/test").ExecuteWriter(&buf)
 		require.EqualError(t, err, "build URL: missing base URL")
+		assert.Nil(t, headers)
 		assert.Empty(t, buf.String())
 	})
 
 	t.Run("returns error on broken writer", func(t *testing.T) {
-		err := c.GET(t.Context(), "/test").ExecuteWriter(brokenWriter{})
+		headers, err := c.GET(t.Context(), "/test").ExecuteWriter(brokenWriter{})
 		require.ErrorContains(t, err, "stream response body")
+		assert.Nil(t, headers)
 	})
 }
 

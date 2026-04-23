@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,6 +37,7 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
 	ctx := t.Context()
 
 	t.Run("Only clean up if not standalone", func(t *testing.T) {
@@ -96,6 +98,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("Create and update works with ME not set", func(t *testing.T) {
 		dk := createDynakube(true)
+
 		dk.Status.KubernetesClusterMEID = ""
 
 		mockK8sClient := fake.NewClient()
@@ -167,7 +170,11 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestGenerateDaemonSet(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("generate daemonset", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
 		dk := createDynakube(true)
 
 		reconciler := NewReconciler(nil, fake.NewClient())
@@ -190,7 +197,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Empty(t, daemonset.Spec.Template.Spec.DNSPolicy)
 		assert.Empty(t, daemonset.Spec.Template.Spec.PriorityClassName)
 		assert.Empty(t, daemonset.Spec.Template.Spec.Tolerations)
-		assert.Len(t, daemonset.Spec.Template.Spec.ImagePullSecrets, 1)
+		// LogMonitoring does not pull from the tenant registry, so the operator-generated pull secret must not be mounted
+		assert.Empty(t, daemonset.Spec.Template.Spec.ImagePullSecrets)
 		require.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
 		assert.Equal(t, intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable) //nolint:staticcheck
 	})
@@ -342,6 +350,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.NotNil(t, daemonset)
 
 		assert.Contains(t, daemonset.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: customPullSecret})
+		// LogMonitoring must not receive the operator-generated tenant registry pull secret
+		assert.NotContains(t, daemonset.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
 	})
 
 	t.Run("respect custom tolerations", func(t *testing.T) {
@@ -396,6 +406,44 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		require.Nil(t, k8senv.Find(init.Env, entityEnv))
 	})
+
+	t.Run("keep apparmor annotations in 1.30", func(t *testing.T) {
+		version.DisableCacheForTest(30)
+
+		dk := createDynakube(true)
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			Annotations: map[string]string{
+				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName:     corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + initContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+			},
+		}
+
+		reconciler := NewReconciler(nil, fake.NewClient())
+		daemonset, err := reconciler.generateDaemonSet(dk)
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+		assert.Contains(t, daemonset.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+containerName)
+		assert.Contains(t, daemonset.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+initContainerName)
+	})
+
+	t.Run("remove apparmor annotations in 1.31", func(t *testing.T) {
+		version.DisableCacheForTest(31)
+
+		dk := createDynakube(true)
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			Annotations: map[string]string{
+				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName:     corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+				corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + initContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+			},
+		}
+
+		reconciler := NewReconciler(nil, fake.NewClient())
+		daemonset, err := reconciler.generateDaemonSet(dk)
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+		assert.NotContains(t, daemonset.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+containerName)
+		assert.NotContains(t, daemonset.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+initContainerName)
+	})
 }
 
 func createDynakube(isEnabled bool) *dynakube.DynaKube {
@@ -412,6 +460,9 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:        "test-url",
 			LogMonitoring: logMonitoring,
+			Templates: dynakube.TemplatesSpec{
+				LogMonitoring: &logmonitoring.TemplateSpec{},
+			},
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{

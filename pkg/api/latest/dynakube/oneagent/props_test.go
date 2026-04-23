@@ -68,13 +68,13 @@ func TestDefaultOneAgentImage(t *testing.T) {
 
 	t.Run("OneAgentImage adds raw postfix", func(t *testing.T) {
 		hostURL, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false, nil)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5"))
 	})
 
 	t.Run("OneAgentImage doesn't add 'raw' postfix if present", func(t *testing.T) {
 		hostURL, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false, nil)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5-raw"))
 	})
 
@@ -82,7 +82,7 @@ func TestDefaultOneAgentImage(t *testing.T) {
 		version := "1.239.14.20220325-164521"
 		expectedImage := "test-endpoint/linux/oneagent:1.239.14-raw"
 		hostURL, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false, nil)
 		assert.Equal(t, expectedImage, oneAgent.GetDefaultImage(version))
 	})
 }
@@ -139,7 +139,7 @@ func TestCodeModulesVersion(t *testing.T) {
 
 	t.Run("use status", func(t *testing.T) {
 		codeModulesStatus := &CodeModulesStatus{VersionStatus: status.VersionStatus{Version: testVersion}}
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false, false, nil)
 		version := oneAgent.GetCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
 	})
@@ -147,7 +147,7 @@ func TestCodeModulesVersion(t *testing.T) {
 		codeModulesStatus := &CodeModulesStatus{VersionStatus: status.VersionStatus{Version: "other"}}
 		oneAgent := NewOneAgent(&Spec{
 			ApplicationMonitoring: &ApplicationMonitoringSpec{Version: testVersion},
-		}, &Status{}, codeModulesStatus, "", "", false, false, false)
+		}, &Status{}, codeModulesStatus, "", "", false, false, false, nil)
 		version := oneAgent.GetCustomCodeModulesVersion()
 
 		assert.Equal(t, testVersion, version)
@@ -514,7 +514,7 @@ func TestOneAgent_IsAutoUpdateEnabled(t *testing.T) {
 		}
 
 		for _, tc := range tcs {
-			oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false)
+			oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, nil)
 			assert.Equal(t, tc.autoUpdateEnabled, oa.IsAutoUpdateEnabled(), tc.name)
 		}
 	})
@@ -528,7 +528,106 @@ func TestOneAgent_IsAutoUpdateEnabled(t *testing.T) {
 			autoUpdateEnabled: false,
 		}
 
-		oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false)
+		oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, nil)
 		assert.Equal(t, tc.autoUpdateEnabled, oa.IsAutoUpdateEnabled(), tc.name)
 	})
+}
+
+func TestOneAgent_GetResourceAttributes(t *testing.T) {
+	tests := []struct {
+		name     string
+		spec     *Spec
+		global   map[string]string
+		expected map[string]string
+	}{
+		{
+			name:     "nil spec returns nil",
+			spec:     nil,
+			global:   nil,
+			expected: nil,
+		},
+		{
+			name:     "nil spec with global returns global",
+			spec:     nil,
+			global:   map[string]string{"g": "1"},
+			expected: map[string]string{"g": "1"},
+		},
+		{
+			name:     "only global set, applicationMonitoring without additional",
+			spec:     &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{}},
+			global:   map[string]string{"a": "1"},
+			expected: map[string]string{"a": "1"},
+		},
+		{
+			name: "only additional set, applicationMonitoring, no global",
+			spec: &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{
+				AppInjectionSpec: AppInjectionSpec{
+					AdditionalResourceAttributes: map[string]string{"x": "10"},
+				},
+			}},
+			global:   nil,
+			expected: map[string]string{"x": "10"},
+		},
+		{
+			name: "both set with no overlap, applicationMonitoring",
+			spec: &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{
+				AppInjectionSpec: AppInjectionSpec{
+					AdditionalResourceAttributes: map[string]string{"b": "2"},
+				},
+			}},
+			global:   map[string]string{"a": "1"},
+			expected: map[string]string{"a": "1", "b": "2"},
+		},
+		{
+			name: "overlapping keys: additional wins, applicationMonitoring",
+			spec: &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{
+				AppInjectionSpec: AppInjectionSpec{
+					AdditionalResourceAttributes: map[string]string{"shared": "additional"},
+				},
+			}},
+			global:   map[string]string{"shared": "global"},
+			expected: map[string]string{"shared": "additional"},
+		},
+		{
+			name:     "cloudNativeFullStack without additional",
+			spec:     &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{}},
+			global:   map[string]string{"g": "1"},
+			expected: map[string]string{"g": "1"},
+		},
+		{
+			name: "cloudNativeFullStack with additional wins",
+			spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{
+				AppInjectionSpec: AppInjectionSpec{
+					AdditionalResourceAttributes: map[string]string{"shared": "cnf"},
+				},
+			}},
+			global:   map[string]string{"shared": "global"},
+			expected: map[string]string{"shared": "cnf"},
+		},
+		{
+			name:     "classicFullStack (no additional) returns global",
+			spec:     &Spec{ClassicFullStack: &HostInjectSpec{}},
+			global:   map[string]string{"a": "1"},
+			expected: map[string]string{"a": "1"},
+		},
+		{
+			name:     "hostMonitoring (no additional) returns global",
+			spec:     &Spec{HostMonitoring: &HostInjectSpec{}},
+			global:   map[string]string{"a": "1"},
+			expected: map[string]string{"a": "1"},
+		},
+		{
+			name:     "both nil/empty returns nil",
+			spec:     &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{}},
+			global:   nil,
+			expected: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			oa := &OneAgent{Spec: tt.spec, globalResourceAttributes: tt.global}
+			assert.Equal(t, tt.expected, oa.GetResourceAttributes())
+		})
+	}
 }

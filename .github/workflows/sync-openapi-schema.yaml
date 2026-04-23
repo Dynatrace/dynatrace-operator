@@ -74,7 +74,7 @@ jobs:
           SCHEMA_NAME: ${{ matrix.name }}
 
       - name: Upload source schema
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: source-schema-${{ matrix.name }}
           path: output/
@@ -97,7 +97,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: main
           persist-credentials: false
 
       - name: Download all source schemas
@@ -171,6 +170,21 @@ jobs:
           WORKFLOW_RUN_NUMBER: ${{ github.run_number }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
+      - name: Set up Go
+        if: steps.sync.outputs.changed == 'true'
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Generate Go SDKs
+        if: steps.sync.outputs.changed == 'true'
+        run: make oapi/generate
+
+      - name: Tidy Go modules
+        if: steps.sync.outputs.changed == 'true'
+        run: go mod tidy
+
       - name: Create pull request
         if: steps.sync.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
@@ -180,6 +194,9 @@ jobs:
           branch: sync-openapi-schemas
           add-paths: |
             api/oapi/*/spec3.json
+            pkg/clients/generated/
+            go.mod
+            go.sum
           title: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
           commit-message: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
           body: ${{ steps.sync.outputs.pr_body }}

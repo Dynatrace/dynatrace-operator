@@ -3,6 +3,7 @@ package daemonset
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
@@ -17,6 +18,7 @@ const (
 
 func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	securityContext := getSecurityContext()
+	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.KSPMNodeConfigurationCollector.Annotations, containerName)
 
 	container := corev1.Container{
 		Name:            containerName,

@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -37,6 +38,8 @@ const (
 )
 
 func TestUseImmutableImage(t *testing.T) {
+	t.Cleanup(k8sversion.DisableCacheForTest(123))
+
 	t.Run("use image from status", func(t *testing.T) {
 		imageID := "my.repo.com/image:my-tag"
 		dk := dynakube.DynaKube{
@@ -65,6 +68,7 @@ func TestUseImmutableImage(t *testing.T) {
 }
 
 func TestLabels(t *testing.T) {
+	t.Cleanup(k8sversion.DisableCacheForTest(123))
 	feature := strings.ReplaceAll(deploymentmetadata.ClassicFullStackDeploymentType, "_", "")
 
 	t.Run("use version when set", func(t *testing.T) {
@@ -141,6 +145,8 @@ func TestLabels(t *testing.T) {
 }
 
 func TestCustomPullSecret(t *testing.T) {
+	t.Cleanup(k8sversion.DisableCacheForTest(123))
+
 	dk := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testDynakubeName,
@@ -159,12 +165,15 @@ func TestCustomPullSecret(t *testing.T) {
 
 	podSpecs := ds.Spec.Template.Spec
 	assert.NotNil(t, podSpecs)
-	assert.Len(t, podSpecs.ImagePullSecrets, 2)
-	assert.Equal(t, testDynakubeName+dynakube.PullSecretSuffix, podSpecs.ImagePullSecrets[0].Name)
-	assert.Equal(t, testName, podSpecs.ImagePullSecrets[1].Name)
+	require.Len(t, podSpecs.ImagePullSecrets, 2)
+
+	assert.Contains(t, podSpecs.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
+	assert.Contains(t, podSpecs.ImagePullSecrets, corev1.LocalObjectReference{Name: testName})
 }
 
 func TestResources(t *testing.T) {
+	t.Cleanup(k8sversion.DisableCacheForTest(123))
+
 	t.Run("minimal cpu request of 100mC is set if no resources specified", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -258,6 +267,8 @@ func TestSecurityContextCapabilities(t *testing.T) {
 }
 
 func TestHostMonitoring_SecurityContext(t *testing.T) {
+	t.Cleanup(k8sversion.DisableCacheForTest(123))
+
 	t.Run("returns default context if instance is nil", func(t *testing.T) {
 		dsBuilder := builder{}
 		securityContext := dsBuilder.securityContext()
@@ -475,6 +486,65 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Empty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
 	})
+
+	t.Run("with default apparmor security context", func(t *testing.T) {
+		k8sversion.DisableCacheForTest(31)
+
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}},
+			},
+		}
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
+		require.NoError(t, err)
+
+		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, ds.Spec.Template.Spec.Containers[0].SecurityContext)
+		require.NotNil(t, ds.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.Equal(t, corev1.AppArmorProfileTypeUnconfined, ds.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile.Type)
+	})
+
+	t.Run("with apparmor security context override", func(t *testing.T) {
+		k8sversion.DisableCacheForTest(31)
+
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{
+						Annotations: map[string]string{
+							appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+						},
+					},
+				},
+			},
+		}
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
+		require.NoError(t, err)
+
+		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, ds.Spec.Template.Spec.Containers[0].SecurityContext)
+		require.NotNil(t, ds.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.Equal(t, corev1.AppArmorProfileTypeRuntimeDefault, ds.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile.Type)
+	})
+
+	t.Run("without apparmor security context", func(t *testing.T) {
+		k8sversion.DisableCacheForTest(30)
+
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}},
+			},
+		}
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
+		require.NoError(t, err)
+
+		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, ds.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.Nil(t, ds.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+	})
 }
 
 func TestPodSpecServiceAccountName(t *testing.T) {
@@ -685,6 +755,8 @@ func TestPriorityClass(t *testing.T) {
 }
 
 func TestUpdateStrategy(t *testing.T) {
+	t.Cleanup(k8sversion.DisableCacheForTest(123))
+
 	t.Run("returns update strategy defined by default value of feature-flag oneagent-max-unavailable", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -773,7 +845,7 @@ func TestImagePullSecrets(t *testing.T) {
 		pullSecrets := dsBuilder.imagePullSecrets()
 
 		assert.Contains(t, pullSecrets, corev1.LocalObjectReference{
-			Name: testName + dynakube.PullSecretSuffix,
+			Name: dsBuilder.dk.TenantRegistryPullSecretName(),
 		})
 	})
 	t.Run("returns custom pull secret", func(t *testing.T) {
@@ -813,80 +885,57 @@ func TestImmutableOneAgentImage(t *testing.T) {
 }
 
 func TestAnnotations(t *testing.T) {
-	t.Run("cloud native has apparmor annotation by default", func(t *testing.T) {
-		dk := dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{},
-					},
+	t.Cleanup(k8sversion.DisableCacheForTest(123))
+
+	baseDK := &dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+					HostInjectSpec: oneagent.HostInjectSpec{},
 				},
 			},
-		}
-		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
+		},
+	}
 
-		expectedTemplateAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: "false",
-			annotationUnprivileged:            annotationUnprivilegedValue,
-			annotationTenantTokenHash:         testTokenHash,
-			annotationEnableDaemonSetEviction: "false",
-		}
+	t.Run("default apparmor annotation is present in 1.30", func(t *testing.T) {
+		k8sversion.DisableCacheForTest(30)
 
-		builder := NewCloudNativeFullStack(&dk, testClusterID)
-		daemonset, err := builder.BuildDaemonSet()
-
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet()
 		require.NoError(t, err)
-		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Contains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
+		assert.Equal(t, appArmorUnconfined, ds.Spec.Template.Annotations[appArmorAnnotation])
 	})
-	t.Run("host monitoring has apparmor annotation by default", func(t *testing.T) {
-		dk := dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					HostMonitoring: &oneagent.HostInjectSpec{},
-				},
-			},
-		}
-		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
-		expectedTemplateAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: "false",
-			annotationUnprivileged:            annotationUnprivilegedValue,
-			annotationTenantTokenHash:         testTokenHash,
-			annotationEnableDaemonSetEviction: "false",
-		}
+	t.Run("apparmor annotation override is present in 1.31", func(t *testing.T) {
+		k8sversion.DisableCacheForTest(30)
 
-		builder := NewHostMonitoring(&dk, testClusterID)
-		daemonset, err := builder.BuildDaemonSet()
+		dk := baseDK.DeepCopy()
+		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
+		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet()
 		require.NoError(t, err)
-		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, corev1.DeprecatedAppArmorBetaProfileRuntimeDefault, ds.Spec.Template.Annotations[appArmorAnnotation])
 	})
-	t.Run("classic fullstack has apparmor annotation by default", func(t *testing.T) {
-		dk := dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					ClassicFullStack: &oneagent.HostInjectSpec{},
-				},
-			},
-		}
-		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
-		expectedTemplateAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: "false",
-			annotationUnprivileged:            annotationUnprivilegedValue,
-			annotationTenantTokenHash:         testTokenHash,
-			annotationEnableDaemonSetEviction: "false",
-		}
+	t.Run("apparmor annotation is absent in 1.31", func(t *testing.T) {
+		k8sversion.DisableCacheForTest(31)
 
-		builder := NewClassicFullStack(&dk, testClusterID)
-		daemonset, err := builder.BuildDaemonSet()
-
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet()
 		require.NoError(t, err)
-		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
+		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 	})
+
+	t.Run("apparmor annotation override is absent in 1.31", func(t *testing.T) {
+		k8sversion.DisableCacheForTest(31)
+
+		dk := baseDK.DeepCopy()
+		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
+
+		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet()
+		require.NoError(t, err)
+		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
+	})
+
 	t.Run("annotations are added with cloud native", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -905,7 +954,6 @@ func TestAnnotations(t *testing.T) {
 
 		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
-			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
 			annotationEnableDaemonSetEviction: "false",
@@ -934,7 +982,6 @@ func TestAnnotations(t *testing.T) {
 
 		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
-			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
 			annotationEnableDaemonSetEviction: "false",
@@ -963,7 +1010,6 @@ func TestAnnotations(t *testing.T) {
 
 		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
-			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
 			annotationEnableDaemonSetEviction: "false",
@@ -979,6 +1025,8 @@ func TestAnnotations(t *testing.T) {
 }
 
 func TestOneAgentHostGroup(t *testing.T) {
+	t.Cleanup(k8sversion.DisableCacheForTest(123))
+
 	t.Run("cloud native - host group settings", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -1005,6 +1053,8 @@ func TestOneAgentHostGroup(t *testing.T) {
 }
 
 func TestDefaultArguments(t *testing.T) {
+	t.Cleanup(k8sversion.DisableCacheForTest(123))
+
 	const (
 		namespace = "dynatrace"
 		name      = "dynakube"

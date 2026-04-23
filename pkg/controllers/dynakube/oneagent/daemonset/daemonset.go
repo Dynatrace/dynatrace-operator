@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"golang.org/x/mod/semver"
@@ -25,8 +26,8 @@ import (
 )
 
 const (
-	annotationUnprivileged            = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
-	annotationUnprivilegedValue       = "unconfined"
+	appArmorAnnotation                = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
+	appArmorUnconfined                = corev1.DeprecatedAppArmorBetaProfileNameUnconfined
 	annotationTenantTokenHash         = api.InternalFlagPrefix + "tenant-token-hash"
 	annotationEnableDaemonSetEviction = "cluster-autoscaler.kubernetes.io/enable-ds-eviction"
 
@@ -53,7 +54,7 @@ const (
 	nodeMetadataFilename   = "dt_node_metadata.properties"
 	nodeMetadataFolderPath = "/var/lib/dynatrace/enrichment"
 
-	podName = "dynatrace-oneagent"
+	containerName = "dynatrace-oneagent"
 
 	inframonHostIDSource = "k8s-node-name"
 	classicHostIDSource  = "auto"
@@ -68,9 +69,7 @@ const (
 	initContainerName = "dynatrace-operator"
 )
 
-var (
-	nodeMetadataFilePath = filepath.Join(nodeMetadataFolderPath, nodeMetadataFilename)
-)
+var nodeMetadataFilePath = filepath.Join(nodeMetadataFolderPath, nodeMetadataFilename)
 
 type hostMonitoring struct {
 	builder
@@ -168,13 +167,13 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	)
 
 	templateAnnotations := map[string]string{
-		annotationUnprivileged:            annotationUnprivilegedValue,
+		appArmorAnnotation:                appArmorUnconfined,
 		webhook.AnnotationDynatraceInject: "false",
 		annotationTenantTokenHash:         dk.Status.OneAgent.ConnectionInfo.TenantTokenHash,
 		annotationEnableDaemonSetEviction: "false",
 	}
 
-	templateAnnotations = maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations)
+	templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations), containerName, initContainerName)
 
 	result := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -229,7 +228,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 			Env:             environmentVariables,
 			Image:           b.immutableOneAgentImage(),
 			ImagePullPolicy: b.dk.OneAgent().GetImagePullPolicy(),
-			Name:            podName,
+			Name:            containerName,
 			Resources:       resources,
 			SecurityContext: b.securityContext(),
 			VolumeMounts:    volumeMounts,
@@ -429,7 +428,8 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 }
 
 func (b *builder) securityContext() *corev1.SecurityContext {
-	var securityContext corev1.SecurityContext
+	securityContext := &corev1.SecurityContext{}
+
 	if b.dk != nil && b.dk.OneAgent().IsReadOnlyFSSupported() {
 		securityContext.RunAsNonRoot = ptr.To(true)
 		securityContext.RunAsUser = ptr.To(userGroupID)
@@ -464,12 +464,16 @@ func (b *builder) securityContext() *corev1.SecurityContext {
 					Type:             corev1.SeccompProfileTypeLocalhost,
 					LocalhostProfile: &secCompName,
 				}
-			default:
 			}
 		}
 	}
 
-	return &securityContext
+	if b.hostInjectSpec != nil {
+		annotations := maputils.MergeMap(map[string]string{appArmorAnnotation: appArmorUnconfined}, b.hostInjectSpec.Annotations)
+		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(annotations, containerName)
+	}
+
+	return securityContext
 }
 
 func defaultSecurityContextCapabilities() *corev1.Capabilities {

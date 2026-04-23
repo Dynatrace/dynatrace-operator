@@ -3,11 +3,12 @@ package connectioninfo
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -40,10 +41,12 @@ func IsTenantSecretPresent(ctx context.Context, secrets k8ssecret.QueryObject, s
 	return true, nil
 }
 
-func BuildTenantSecret(owner metav1.Object, secretName string, tenantToken string) (*corev1.Secret, error) {
+func BuildTenantSecret(dk *dynakube.DynaKube, componentName string, secretName string, tenantToken string) (*corev1.Secret, error) {
 	secretData := ExtractSensitiveData(tenantToken)
 
-	return k8ssecret.Build(owner, secretName, secretData)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, componentName)
+
+	return k8ssecret.Build(dk, secretName, secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 }
 
 func ExtractSensitiveData(tenantToken string) map[string][]byte {

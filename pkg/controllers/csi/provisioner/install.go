@@ -69,13 +69,13 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 
 		return imageInstaller, nil
 	default:
-		dtc, err := buildDtc(provisioner, ctx, dk)
+		dtClient, err := buildDtc(provisioner, ctx, dk)
 		if err != nil {
 			return nil, err
 		}
 
 		props := &url.Properties{
-			OS:            installerclient.OsUnix,
+			OS:            installerclient.OSUnix,
 			Type:          installerclient.TypePaaS,
 			Arch:          arch.Arch,
 			Flavor:        arch.Flavor,
@@ -85,7 +85,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 			PathResolver:  provisioner.path,
 		}
 
-		urlInstaller := provisioner.urlInstallerBuilder(dtc.OneAgent, props)
+		urlInstaller := provisioner.urlInstallerBuilder(dtClient.OneAgent, props)
 
 		return urlInstaller, nil
 	}

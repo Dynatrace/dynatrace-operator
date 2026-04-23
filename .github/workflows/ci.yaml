@@ -39,7 +39,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: ${{ github.event_name == 'merge_group' && 0 || 2 }}
+          fetch-depth: ${{ github.event_name == 'merge_group' && '0' || '2' }}
           ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
           persist-credentials: false
       - name: Check if it is a protected branch
@@ -132,7 +132,7 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.1.1
+          version: v4.1.4
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -152,7 +152,7 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.1.1
+          version: v4.1.4
       - name: Run Linting
         id: helm-linting
         run: |
@@ -169,7 +169,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup Golang
-        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: 'stable' # Latest stable version
           cache: false
@@ -193,7 +193,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: 'stable' # Latest stable version
           cache: false
@@ -219,7 +219,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: 'stable' # Latest stable version
           cache: false
@@ -228,7 +228,7 @@ jobs:
         with:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
           version: v3.17.3
-      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           package-manager-cache: false
       - name: Check deepcopy files are up-to-date

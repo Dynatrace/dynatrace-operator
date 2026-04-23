@@ -6,13 +6,14 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	ecComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/edgeconnect"
@@ -25,7 +26,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -107,7 +107,7 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 }
 
 func WithHTTPProxy(t *testing.T) features.Feature {
-	builder := features.New("edgeconnect-install-http-proxy")
+	builder := features.New("edgeconnect-proxy-http")
 
 	builder.Setup(func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		ctx, err := istio.AssertIstioNamespace()(ctx, envConfig, t)
@@ -160,7 +160,7 @@ func WithHTTPProxy(t *testing.T) features.Feature {
 }
 
 func WithHTTPSProxy(t *testing.T) features.Feature {
-	builder := features.New("edgeconnect-install-https-proxy")
+	builder := features.New("edgeconnect-proxy-https")
 
 	builder.Setup(func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		ctx, err := istio.AssertIstioNamespace()(ctx, envConfig, t)
@@ -274,21 +274,21 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 // getTenantConfig for Provisioner and K8SAutomation modes, preserves the id of EdgeConnect configuration on the tenant
 func getTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *ecComponents.TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(clientSecret)
 		require.NoError(t, err)
 
-		ecs, err := ecClt.GetEdgeConnects(ecName)
+		ecs, err := ecClt.ListEdgeConnects(ctx, ecName)
 		require.NoError(t, err)
 
-		assert.LessOrEqual(t, len(ecs.EdgeConnects), 1, "Found multiple EdgeConnect objects with the same tenantConfigName", "count", ecs.EdgeConnects)
-		require.NotEmpty(t, ecs.EdgeConnects, "EdgeConnect object not found", "count", ecs.EdgeConnects)
+		assert.LessOrEqual(t, len(ecs), 1, "Found multiple EdgeConnect objects with the same tenantConfigName", "count", ecs)
+		require.NotEmpty(t, ecs, "EdgeConnect object not found", "count", ecs)
 
-		assert.Equal(t, ecName, ecs.EdgeConnects[0].Name, "expected EC object not found on the tenant")
-		assert.True(t, ecs.EdgeConnects[0].ManagedByDynatraceOperator)
+		assert.Equal(t, ecName, ecs[0].Name, "expected EC object not found on the tenant")
+		assert.True(t, ecs[0].ManagedByDynatraceOperator)
 
 		// the ID of EC configuration on the tenant is important only
 		// the OAuth clientSecret used by the test and the OAuth secret used by the operator are the same
-		edgeConnectTenantConfig.ID = ecs.EdgeConnects[0].ID
+		edgeConnectTenantConfig.ID = ecs[0].ID
 
 		return ctx
 	}
@@ -296,10 +296,10 @@ func getTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeC
 
 func checkHostPatternOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *ecComponents.TenantConfig, hostPattern func() string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(clientSecret)
 		require.NoError(t, err)
 
-		ec, err := ecClt.GetEdgeConnect(edgeConnectTenantConfig.ID)
+		ec, err := ecClt.GetEdgeConnect(ctx, edgeConnectTenantConfig.ID)
 		require.NoError(t, err)
 
 		host := hostPattern()
@@ -311,10 +311,10 @@ func checkHostPatternOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConn
 
 func checkECNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *ecComponents.TenantConfig) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(clientSecret)
 		require.NoError(t, err)
 
-		_, err = ecClt.GetEdgeConnect(edgeConnectTenantConfig.ID)
+		_, err = ecClt.GetEdgeConnect(ctx, edgeConnectTenantConfig.ID)
 		// err.Message: Unknown key: eb27ac05-c0c7-4d88-9bb1-804b39e3429b
 		// err.Code: 404
 		require.Error(t, err)
@@ -325,12 +325,12 @@ func checkECNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConn
 
 func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(clientSecret)
 		require.NoError(t, err)
 
 		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
 
-		envSetting, err := controller.GetConnectionSetting(ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
+		envSetting, err := controller.GetConnectionSetting(ctx, ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
 		require.NoError(t, err)
 
 		assert.Equal(t, testEdgeConnect.Name, envSetting.Value.Name)
@@ -342,12 +342,12 @@ func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testE
 
 func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		ecClt, err := ecComponents.BuildClient(ctx, clientSecret)
+		ecClt, err := ecComponents.BuildClient(clientSecret)
 		require.NoError(t, err)
 
 		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
 
-		se, err := controller.GetConnectionSetting(ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
+		se, err := controller.GetConnectionSetting(ctx, ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
 		require.NoError(t, err)
 		assert.Equal(t, edgeconnectClient.EnvironmentSetting{}, se)
 

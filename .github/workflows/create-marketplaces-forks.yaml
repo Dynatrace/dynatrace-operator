@@ -31,26 +31,38 @@ jobs:
         include:
           - marketplace: community
             original_repo: k8s-operatorhub/community-operators
-            fork_repo: dt-team-kubernetes/community-operators
+            fork_repo: Dynatrace/community-operators
+            fork_repo_name: community-operators
           - marketplace: community-prod
             original_repo: redhat-openshift-ecosystem/community-operators-prod
-            fork_repo: dt-team-kubernetes/community-operators-prod
+            fork_repo: Dynatrace/community-operators-prod
+            fork_repo_name: community-operators-prod
           - marketplace: certified
             original_repo: redhat-openshift-ecosystem/certified-operators
-            fork_repo: dt-team-kubernetes/certified-operators
+            fork_repo: Dynatrace/certified-operators
+            fork_repo_name: certified-operators
           - marketplace: redhat
             original_repo: redhat-openshift-ecosystem/redhat-marketplace-operators
-            fork_repo: dt-team-kubernetes/redhat-marketplace-operators
+            fork_repo: Dynatrace/redhat-marketplace-operators
+            fork_repo_name: redhat-marketplace-operators
     env:
       ORIGINAL_REPOSITORY_URL: ${{ matrix.original_repo }}
       FORK_REPOSITORY_URL: ${{ matrix.fork_repo }}
       MARKETPLACE: ${{ matrix.marketplace }}
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.MARKETPLACE_REPOS_APP_ID }}
+          private-key: ${{ secrets.MARKETPLACE_REPOS_APP_KEY }}
+          owner: Dynatrace
+          repositories: ${{ matrix.fork_repo_name }}
       - name: Checkout workflow scripts
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
-          token: ${{ secrets.TEAM_USER_TOKEN }}
+          token: ${{ github.token }}
           persist-credentials: false
       - name: Checkout dynatrace-operator at release-branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -58,7 +70,7 @@ jobs:
           ref: ${{ inputs.branch || github.event.pull_request.base.ref }}
           path: release-src
           fetch-depth: 0
-          token: ${{ secrets.TEAM_USER_TOKEN }}
+          token: ${{ github.token }}
           persist-credentials: false
       - name: Configure git identity
         run: |
@@ -87,13 +99,13 @@ jobs:
       - name: Clone and setup fork repository
         env:
           VERSION: ${{ steps.meta.outputs.version }}
-          TEAM_TOKEN: ${{ secrets.TEAM_USER_TOKEN }}
+          FORK_TOKEN: ${{ steps.app-token.outputs.token }}
           FORK_BRANCH_OVERRIDE: ${{ inputs.fork_branch }}
         run: |
           set -euo pipefail
 
           fork_clone_url="https://github.com/${FORK_REPOSITORY_URL}.git"
-          fork_clone_url_with_token="${fork_clone_url/https:\/\//https:\/\/x-access-token:${TEAM_TOKEN}@}"
+          fork_clone_url_with_token="${fork_clone_url/https:\/\//https:\/\/x-access-token:${FORK_TOKEN}@}"
 
           echo "Cloning fork ${FORK_REPOSITORY_URL}"
           git clone "${fork_clone_url_with_token}" fork-repo

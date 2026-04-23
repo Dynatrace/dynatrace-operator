@@ -2,11 +2,11 @@ package metadata
 
 import (
 	"encoding/json"
+	"maps"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
 )
 

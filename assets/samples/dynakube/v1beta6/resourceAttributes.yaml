@@ -1,0 +1,42 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+
+spec:
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+
+  # Required: Dynatrace apiUrl including the `/api` path at the end.
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Optional: Name of the secret holding the tokens used for connecting to Dynatrace.
+  #
+  # tokens: ""
+
+  # Global default resource attributes applied to every component that supports resource attributes.
+  # Per-component additionalResourceAttributes take precedence over these values when the same key exists in both.
+  resourceAttributes:
+    environment: production
+    team: platform
+    region: eu-west-1
+
+  oneAgent:
+    applicationMonitoring:
+      # Additional resource attributes for application monitoring injection.
+      # These are merged on top of spec.resourceAttributes; values here take precedence on key conflicts.
+      additionalResourceAttributes:
+        component: frontend
+        environment: staging  # overrides the global "environment" key
+
+  # Optional: Enable automatic configuration of the OTLP exporter in applications instrumented with OpenTelemetry SDKs.
+  otlpExporterConfiguration:
+    signals:
+      metrics: {}
+      traces: {}
+      logs: {}
+    # Additional resource attributes for OTLP exporter configuration.
+    # These are merged on top of spec.resourceAttributes; values here take precedence on key conflicts.
+    additionalResourceAttributes:
+      component: otel-collector
+      team: observability  # overrides the global "team" key

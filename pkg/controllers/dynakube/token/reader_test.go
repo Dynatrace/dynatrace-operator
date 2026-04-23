@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,7 +37,7 @@ func testReadTokens(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		reader := NewReader(clt, &dk)
 
-		_, err := reader.readTokens(context.Background())
+		_, err := reader.ReadTokens(context.Background())
 
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -50,10 +50,10 @@ func testReadTokens(t *testing.T) {
 			},
 		}
 		testSecret, err := k8ssecret.Build(&dk, "dynakube", map[string][]byte{
-			dtclient.APIToken:        []byte(testAPIToken),
-			dtclient.PaasToken:       []byte(testPaasToken),
-			dtclient.DataIngestToken: []byte(testDataIngestToken),
-			testIrrelevantTokenKey:   []byte(testIrrelevantToken),
+			APIKey:                 []byte(testAPIToken),
+			PaaSKey:                []byte(testPaasToken),
+			DataIngestKey:          []byte(testDataIngestToken),
+			testIrrelevantTokenKey: []byte(testIrrelevantToken),
 		})
 		require.NoError(t, err)
 
@@ -61,17 +61,17 @@ func testReadTokens(t *testing.T) {
 
 		reader := NewReader(clt, &dk)
 
-		tokens, err := reader.readTokens(context.Background())
+		tokens, err := reader.ReadTokens(context.Background())
 
 		require.NoError(t, err)
 		assert.Len(t, tokens, 4)
-		assert.Contains(t, tokens, dtclient.APIToken)
-		assert.Contains(t, tokens, dtclient.PaasToken)
-		assert.Contains(t, tokens, dtclient.DataIngestToken)
+		assert.Contains(t, tokens, APIKey)
+		assert.Contains(t, tokens, PaaSKey)
+		assert.Contains(t, tokens, DataIngestKey)
 		assert.Contains(t, tokens, testIrrelevantTokenKey)
-		assert.Equal(t, testAPIToken, tokens[dtclient.APIToken].Value)
-		assert.Equal(t, testPaasToken, tokens[dtclient.PaasToken].Value)
-		assert.Equal(t, testDataIngestToken, tokens[dtclient.DataIngestToken].Value)
+		assert.Equal(t, testAPIToken, tokens[APIKey].Value)
+		assert.Equal(t, testPaasToken, tokens[PaaSKey].Value)
+		assert.Equal(t, testDataIngestToken, tokens[DataIngestKey].Value)
 		assert.Equal(t, testIrrelevantToken, tokens[testIrrelevantTokenKey].Value)
 	})
 }
@@ -98,11 +98,53 @@ func testVerifyTokens(t *testing.T) {
 			testIrrelevantTokenKey: {
 				Value: testIrrelevantToken,
 			},
-			dtclient.APIToken: {
+			APIKey: {
 				Value: testAPIToken,
 			},
 		})
 
 		require.NoError(t, err)
+	})
+}
+
+func TestHasPlatformToken(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dynakubeName,
+			Namespace: dynatraceNamespace,
+		},
+	}
+
+	t.Run("no secret", func(t *testing.T) {
+		_, err := NewReader(fake.NewClient(), dk).HasPlatformToken(t.Context())
+		assert.Error(t, err)
+	})
+
+	t.Run("no apiToken", func(t *testing.T) {
+		secret, err := k8ssecret.Build(dk, "dynakube", nil)
+		require.NoError(t, err)
+		hasPlatform, err := NewReader(fake.NewClient(secret), dk).HasPlatformToken(t.Context())
+		require.NoError(t, err)
+		assert.False(t, hasPlatform)
+	})
+
+	t.Run("no platform token", func(t *testing.T) {
+		secret, err := k8ssecret.Build(dk, "dynakube", map[string][]byte{
+			APIKey: []byte("legacy token"),
+		})
+		require.NoError(t, err)
+		hasPlatform, err := NewReader(fake.NewClient(secret), dk).HasPlatformToken(t.Context())
+		require.NoError(t, err)
+		assert.False(t, hasPlatform)
+	})
+
+	t.Run("platform token", func(t *testing.T) {
+		secret, err := k8ssecret.Build(dk, "dynakube", map[string][]byte{
+			APIKey: []byte(dttoken.PlatformPrefix + "legacy token"),
+		})
+		require.NoError(t, err)
+		hasPlatform, err := NewReader(fake.NewClient(secret), dk).HasPlatformToken(t.Context())
+		require.NoError(t, err)
+		assert.True(t, hasPlatform)
 	})
 }

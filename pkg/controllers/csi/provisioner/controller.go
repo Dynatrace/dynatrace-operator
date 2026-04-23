@@ -22,18 +22,19 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -59,7 +60,7 @@ type OneAgentProvisioner struct {
 	apiReader  client.Reader
 	kubeClient client.Client
 
-	dynatraceClientBuilder dynatraceclient.BuilderV2
+	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
 	jobInstallerBuilder    jobInstallerBuilder
@@ -75,7 +76,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		apiReader:              mgr.GetAPIReader(),
 		kubeClient:             mgr.GetClient(),
 		path:                   path,
-		dynatraceClientBuilder: dynatraceclient.NewBuilderV2(mgr.GetAPIReader()),
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewURLInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
 		jobInstallerBuilder:    job.NewInstaller,
@@ -110,6 +111,12 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
+	if !installconfig.GetModules().CSIDriver {
+		log.Info("CSI driver migration mode active, running cleanup only")
+
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.cleaner.Run(ctx)
+	}
+
 	if !isProvisionerNeeded(&dk) {
 		log.Info("CSI driver provisioner not needed")
 
@@ -142,9 +149,9 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		log.Info(err.Error(), "dynakube", dk.Name)
 
 		return reconcile.Result{RequeueAfter: notReadyRequeueDuration}, nil
-	case dynatraceapi.IsUnreachable(err):
+	case core.IsUnreachable(err):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! Reconcile requeued.",
-			"errorCode", dynatraceapi.StatusCode(err), "errorMessage", dynatraceapi.Message(err), "requeueAfter", shortRequeueDuration)
+			"errorMessage", err.Error(), "requeueAfter", shortRequeueDuration)
 
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	case err != nil:
@@ -174,15 +181,15 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) er
 	return nil
 }
 
-func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube.DynaKube) (*dtclient.ClientV2, error) {
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube.DynaKube) (*dynatrace.Client, error) {
 	tokenReader := token.NewReader(provisioner.apiReader, &dk)
 
-	tokens, err := tokenReader.ReadTokens(ctx)
+	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	dynatraceClient, err := provisioner.dynatraceClientBuilder.
+	dtClient, err := provisioner.dynatraceClientBuilder.
 		SetDynakube(dk).
 		SetTokens(tokens).
 		SetUserAgentSuffix("provisioner").
@@ -191,5 +198,5 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube
 		return nil, errors.WithMessage(err, "failed to create Dynatrace client")
 	}
 
-	return dynatraceClient, nil
+	return dtClient, nil
 }

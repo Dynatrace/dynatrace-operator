@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	goerrors "errors"
 	"io"
 	"net/url"
 	"strconv"
@@ -13,6 +13,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/pkg/errors"
+)
+
+const agentDeploymentPath = "/v1/deployment/installer/agent"
+
+var (
+	errEmptyOS            = goerrors.New("OS is empty")
+	errEmptyInstallerType = goerrors.New("installerType is empty")
 )
 
 type GetParams struct {
@@ -26,11 +33,16 @@ type GetParams struct {
 
 // Get gets the agent package for the given OS, installer type, flavor, arch and version.
 func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) error {
-	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
-		return errors.New("os or installerType is empty")
+	if len(args.OS) == 0 {
+		return errEmptyOS
 	}
 
-	apiRequest := c.apiClient.GET(ctx, getURL(args.OS, args.InstallerType, args.Version)).
+	if len(args.InstallerType) == 0 {
+		return errEmptyInstallerType
+	}
+
+	apiRequest := c.apiClient.GET(ctx, agentDeploymentPath).
+		WithPath(args.OS, args.InstallerType, "version", args.Version).
 		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
@@ -50,11 +62,16 @@ func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) erro
 
 // GetLatest gets the latest agent package for the given OS, installer type, flavor and arch.
 func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer) error {
-	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
-		return errors.New("os or installerType is empty")
+	if len(args.OS) == 0 {
+		return errEmptyOS
 	}
 
-	apiRequest := c.apiClient.GET(ctx, getLatestURL(args.OS, args.InstallerType)).
+	if len(args.InstallerType) == 0 {
+		return errEmptyInstallerType
+	}
+
+	apiRequest := c.apiClient.GET(ctx, agentDeploymentPath).
+		WithPath(args.OS, args.InstallerType, "latest").
 		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
@@ -78,8 +95,12 @@ type versionsResponse struct {
 
 // GetVersions gets available agent versions for the given OS, installer type and flavor.
 func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, error) {
-	if len(args.OS) == 0 || len(args.InstallerType) == 0 {
-		return nil, errors.New("os or installerType is empty")
+	if len(args.OS) == 0 {
+		return nil, errEmptyOS
+	}
+
+	if len(args.InstallerType) == 0 {
+		return nil, errEmptyInstallerType
 	}
 
 	var resp versionsResponse
@@ -93,7 +114,8 @@ func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, err
 		params["arch"] = oaArch
 	}
 
-	err := c.apiClient.GET(ctx, getVersionsURL(args.OS, args.InstallerType)).
+	err := c.apiClient.GET(ctx, agentDeploymentPath).
+		WithPath("versions", args.OS, args.InstallerType).
 		WithQueryParams(params).
 		WithPaasToken().
 		Execute(&resp)
@@ -118,7 +140,7 @@ func makeRequestForBinary(req core.APIRequest, writer io.Writer) (string, error)
 	hash := sha256.New()
 	multiWriter := io.MultiWriter(writer, hash)
 
-	err := req.
+	_, err := req.
 		WithHeader("Accept", "application/octet-stream").
 		ExecuteWriter(multiWriter)
 	if err != nil {
@@ -126,18 +148,6 @@ func makeRequestForBinary(req core.APIRequest, writer io.Writer) (string, error)
 	}
 
 	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-func getURL(os, installerType, version string) string {
-	return fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/version/%s", os, installerType, version)
-}
-
-func getLatestURL(os, installerType string) string {
-	return fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest", os, installerType)
-}
-
-func getVersionsURL(os, installerType string) string {
-	return fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", os, installerType)
 }
 
 func technologiesQueryParams(technologies []string) url.Values {

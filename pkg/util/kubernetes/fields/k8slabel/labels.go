@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 const (
@@ -24,6 +25,8 @@ const (
 	ExtensionComponentLabel     = "dynatrace-extension-controller"
 	OtelCComponentLabel         = "dynatrace-otel-collector"
 	DatabaseSQLExecutorLabel    = "dynatrace-sql-extension-executor"
+	NodeControllerLabel         = "node-controller"
+	OperatorComponentLabel      = "operator"
 )
 
 type AppMatchLabels struct {
@@ -53,6 +56,10 @@ type CoreLabels struct {
 // which have their own version separate from the operator version.
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
 func NewAppLabels(appName, name, component, ver string) *AppLabels {
+	if len(ver) > validation.DNS1035LabelMaxLength {
+		ver = ver[:validation.DNS1035LabelMaxLength]
+	}
+
 	return &AppLabels{
 		AppMatchLabels: AppMatchLabels{
 			Name:      appName,
@@ -68,13 +75,18 @@ func NewAppLabels(appName, name, component, ver string) *AppLabels {
 // which are not specific to an application's version
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
 func NewCoreLabels(dynakubeName, component string) *CoreLabels {
+	ver := version.Version
+	if len(ver) > validation.DNS1035LabelMaxLength {
+		ver = ver[:validation.DNS1035LabelMaxLength]
+	}
+
 	return &CoreLabels{
 		coreMatchLabels: coreMatchLabels{
 			Name:      version.AppName,
 			CreatedBy: dynakubeName,
 			Component: component,
 		},
-		Version: version.Version,
+		Version: ver,
 	}
 }
 

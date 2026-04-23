@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -82,17 +82,17 @@ type Reconciler struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error {
 	log.Info("reconciling OneAgent")
 
 	versionReconciler := r.versionReconciler
 	if versionReconciler == nil {
-		versionReconciler = version.NewReconciler(r.apiReader, dtClient, timeprovider.New().Freeze())
+		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
 	}
 
 	connectionInfoReconciler := r.connectionInfoReconciler
 	if connectionInfoReconciler == nil {
-		connectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient.AsV2().OneAgent, dk)
+		connectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient.OneAgent, dk)
 	}
 
 	err := versionReconciler.ReconcileOneAgent(ctx, dk)
@@ -196,9 +196,12 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context, dk *dynakube.Dyn
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
 	configMapData := extractPublicData(dk)
 
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OneAgentComponentLabel)
+
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		configMapData,
+		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
 	)
 	if err != nil {
 		return errors.WithStack(err)

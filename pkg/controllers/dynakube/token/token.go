@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
 )
 
@@ -39,12 +39,12 @@ func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
 
-func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) (map[string]bool, error) {
+func (token *Token) verifyScopes(ctx context.Context, dtClient token.APIClient, dk dynakube.DynaKube) (map[string]bool, error) {
 	if len(token.Features) == 0 {
 		return map[string]bool{}, nil
 	}
 
-	scopes, err := dtClient.AsV2().Token.GetScopes(ctx, token.Value)
+	scopes, err := dtClient.GetScopes(ctx, token.Value)
 	if err != nil {
 		return nil, err
 	}

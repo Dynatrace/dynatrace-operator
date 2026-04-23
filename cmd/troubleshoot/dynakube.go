@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
@@ -97,14 +96,14 @@ func checkIfDynatraceAPISecretHasAPIToken(ctx context.Context, baseLog logd.Logg
 
 	tokenReader := token.NewReader(apiReader, dk)
 
-	tokens, err := tokenReader.ReadTokens(ctx)
+	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "'%s:%s' secret is missing or invalid", dk.Namespace, dk.Tokens())
 	}
 
-	_, hasAPIToken := tokens[dtclient.APIToken]
+	_, hasAPIToken := tokens[token.APIKey]
 	if !hasAPIToken {
-		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", dtclient.APIToken, dk.Namespace, dk.Tokens()))
+		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", token.APIKey, dk.Namespace, dk.Tokens()))
 	}
 
 	logInfof(log, "secret token 'apiToken' exists")
@@ -117,7 +116,7 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 
 	logInfof(log, "checking if token scopes are valid")
 
-	dtc, err := dynatraceclient.NewBuilder(apiReader).
+	dtClient, err := dynatraceclient.NewBuilder(apiReader).
 		SetDynakube(*dk).
 		SetTokens(dynatraceAPISecretTokens).
 		Build(ctx)
@@ -133,7 +132,7 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 
 	var optionalScopes map[string]bool
 
-	if optionalScopes, err = tokens.VerifyScopes(ctx, dtc, *dk); err != nil {
+	if optionalScopes, err = tokens.VerifyScopes(ctx, dtClient.Token, *dk); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.Tokens())
 	}
 
@@ -159,7 +158,7 @@ func checkAPIURLForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 
 	logInfof(log, "checking if can pull latest agent version")
 
-	dtc, err := dynatraceclient.NewBuilder(apiReader).
+	dtClient, err := dynatraceclient.NewBuilder(apiReader).
 		SetDynakube(*dk).
 		SetTokens(dynatraceAPISecretTokens).
 		Build(ctx)
@@ -167,7 +166,7 @@ func checkAPIURLForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
 
-	_, err = dtc.AsV2().Version.GetLatestAgentVersion(ctx, installer.OsUnix, installer.TypeDefault)
+	_, err = dtClient.Version.GetLatestAgentVersion(ctx, installer.OSUnix, installer.TypeDefault)
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to DynatraceAPI")
 	}

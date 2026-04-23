@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/environment"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/logs"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -42,6 +43,7 @@ func TestMain(m *testing.M) {
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
 			events.LogEvents(ctx, c, t)
+			logs.WriteOperatorLog(ctx, c, t)
 		}
 
 		return ctx, nil

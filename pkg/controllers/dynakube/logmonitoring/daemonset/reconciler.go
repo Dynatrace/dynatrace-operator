@@ -77,7 +77,12 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		return nil, err
 	}
 
-	labels := k8slabel.NewCoreLabels(dk.Name, k8slabel.LogMonitoringComponentLabel)
+	tag := ""
+	if dk.Spec.Templates.LogMonitoring != nil {
+		tag = dk.Spec.Templates.LogMonitoring.ImageRef.Tag
+	}
+
+	labels := k8slabel.NewAppLabels(k8slabel.LogMonitoringComponentLabel, dk.Name, k8slabel.LogMonitoringComponentLabel, tag)
 
 	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(*dk, tenantUUID),
 		k8sdaemonset.SetInitContainer(getInitContainer(*dk, tenantUUID)),
@@ -89,7 +94,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		k8sdaemonset.SetPriorityClass(dk.LogMonitoring().Template().PriorityClassName),
 		k8sdaemonset.SetNodeSelector(dk.LogMonitoring().Template().NodeSelector),
 		k8sdaemonset.SetTolerations(dk.LogMonitoring().Template().Tolerations),
-		k8sdaemonset.SetPullSecret(dk.ImagePullSecretReferences()...),
+		k8sdaemonset.SetPullSecret(dk.CustomPullSecretReferences()...),
 		k8sdaemonset.SetUpdateStrategy(getUpdateStrategy(dk)),
 		k8sdaemonset.SetVolumes(getVolumes(dk.Name)),
 		k8sdaemonset.SetSecurityContext(buildPodSecurityContext()),

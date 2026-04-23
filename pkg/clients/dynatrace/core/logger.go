@@ -20,9 +20,19 @@ const (
 	levelFull     // full
 )
 
-// LogLevelEnv controls the verbosity of the Dynatrace API client.
-// The value will only be used when the LOG_LEVEL variable is set to "debug".
-const LogLevelEnv = "DT_CLIENT_LOG_LEVEL"
+const (
+	// LogLevelEnv controls the verbosity of the Dynatrace API client.
+	// The value will only be used when the LOG_LEVEL variable is set to "debug".
+	LogLevelEnv = "DT_CLIENT_LOG_LEVEL"
+
+	// CacheHitHeader is set on responses served from the in-memory cache so that
+	// the core client can include a "cached" field in its log output.
+	CacheHitHeader = "X-DT-Cache"
+
+	// CacheSkipHeader can be set on a request to bypass the in-memory cache for
+	// that specific request. Any non-empty value disables both cache reads and writes.
+	CacheSkipHeader = "X-DT-Cache-Skip"
+)
 
 var logLevel = getLogLevel()
 
@@ -66,6 +76,7 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 			"query", dumpValues(resp.Request.URL.Query(), false),
 			"status_code", resp.StatusCode,
 			"duration", duration.String(),
+			"cached", resp.Header.Get(CacheHitHeader) != "",
 		}
 
 		if logLevel >= levelFull {
@@ -91,13 +102,24 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 //   - Private part is 64 base32 characters.
 var dtTokenRegex = regexp.MustCompile(`[a-z0-9]{5,}\.([A-Z0-7]{8}|[A-Z0-7]{24})\.[A-Z0-7]{64}`)
 
+// Detect JWT tokens
+var jwtBearerTokenRegex = regexp.MustCompile(`ey[A-Za-z0-9-_]+\.ey[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+`)
+
 func sanitizeBody(body []byte) string {
-	return dtTokenRegex.ReplaceAllStringFunc(string(body), func(s string) string {
-		// Only hide private part from output
+	// Only hide private parts from output
+	sanitized := dtTokenRegex.ReplaceAllStringFunc(string(body), func(s string) string {
 		idx := strings.LastIndexByte(s, '.')
 
 		return s[:idx] + ".***"
 	})
+
+	sanitized = jwtBearerTokenRegex.ReplaceAllStringFunc(sanitized, func(s string) string {
+		idx := strings.LastIndexByte(s, '.')
+
+		return s[:idx] + ".***"
+	})
+
+	return sanitized
 }
 
 // Dump objects like http.Header or url.Values into a JSON string.

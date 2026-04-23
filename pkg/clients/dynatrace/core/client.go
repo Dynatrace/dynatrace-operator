@@ -28,28 +28,27 @@ type APIClient interface {
 
 // APIRequest provides a fluent interface for building and executing HTTP requests
 type APIRequest interface {
-	// WithPath sets the path for the request
-	WithPath(path string) APIRequest
+	// WithPath sets the path for the request. Path parts will be joined, ignoring leading or trailing slashes.
+	WithPath(path ...string) APIRequest
 	// WithQueryParams adds multiple query parameters to the request, overwriting existing keys if they exist
 	WithQueryParams(params map[string]string) APIRequest
 	// WithRawQueryParams adds multiple query parameters to the request
 	WithRawQueryParams(params url.Values) APIRequest
 	// WithJSONBody sets the request body as JSON
 	WithJSONBody(body any) APIRequest
-	// WithRawBody sets the request body as raw bytes
-	WithRawBody(body []byte) APIRequest
 	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
 	// WithoutToken explicitly disables authentication for the request
 	WithoutToken() APIRequest
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) APIRequest
+	// WithSkipCache bypasses the in-memory cache for this request and evicts any existing cached entry
+	WithSkipCache() APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
 	Execute(model any) error
-	// ExecuteRaw executes the request and returns the raw response data
-	ExecuteRaw() ([]byte, error)
-	// ExecuteWriter executes the request and writes the response body to the provided writer
-	ExecuteWriter(writer io.Writer) error
+	// ExecuteWriter executes the request, writes the response body to the provided writer,
+	// and returns the response headers on success.
+	ExecuteWriter(writer io.Writer) (http.Header, error)
 }
 
 type Config struct {
@@ -128,9 +127,9 @@ func (c *Client) DELETE(ctx context.Context, path string) APIRequest {
 	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
 }
 
-// WithPath sets the path for the request
-func (r *Request) WithPath(path string) APIRequest {
-	r.path = path
+// WithPath sets the path for the request. Path parts will be joined, ignoring leading or trailing slashes
+func (r *Request) WithPath(path ...string) APIRequest {
+	r.path = (&url.URL{Path: r.path}).JoinPath(path...).Path
 
 	return r
 }
@@ -177,20 +176,6 @@ func (r *Request) WithJSONBody(body any) APIRequest {
 	return r
 }
 
-// WithRawBody sets the request body as raw bytes
-func (r *Request) WithRawBody(body []byte) APIRequest {
-	r.body = body
-
-	return r
-}
-
-// WithTokenType sets the token type to use for authentication
-func (r *Request) WithTokenType(tokenType TokenType) APIRequest {
-	r.tokenType = tokenType
-
-	return r
-}
-
 // WithPaasToken sets the token type to PaaS
 func (r *Request) WithPaasToken() APIRequest {
 	r.tokenType = TokenTypePaaS
@@ -212,6 +197,11 @@ func (r *Request) WithHeader(key, value string) APIRequest {
 	return r
 }
 
+// WithSkipCache bypasses the in-memory cache for this request and evicts any existing cached entry
+func (r *Request) WithSkipCache() APIRequest {
+	return r.WithHeader(CacheSkipHeader, "true")
+}
+
 // Execute executes the request and unmarshals the response into the provided model
 func (r *Request) Execute(model any) error {
 	body, err := r.doRequest()
@@ -228,13 +218,9 @@ func (r *Request) Execute(model any) error {
 	return nil
 }
 
-// ExecuteRaw executes the request and returns the raw response data
-func (r *Request) ExecuteRaw() ([]byte, error) {
-	return r.doRequest()
-}
-
-// ExecuteWriter executes the request and writes the response body to the provided writer.
-func (r *Request) ExecuteWriter(writer io.Writer) error {
+// ExecuteWriter executes the request, writes the response body to the provided writer,
+// and returns the response headers on success.
+func (r *Request) ExecuteWriter(writer io.Writer) (http.Header, error) {
 	return r.doRequestStream(writer)
 }
 
@@ -270,14 +256,14 @@ func (r *Request) withMethod(method string) APIRequest {
 	return r
 }
 
-func (r *Request) doRequestStream(writer io.Writer) (err error) {
+func (r *Request) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
 	if r.err != nil {
-		return r.err
+		return nil, r.err
 	}
 
 	reqURL, err := r.buildURL()
 	if err != nil {
-		return fmt.Errorf("build URL: %w", err)
+		return nil, fmt.Errorf("build URL: %w", err)
 	}
 
 	var bodyReader io.Reader
@@ -287,7 +273,7 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 
 	req, err := http.NewRequestWithContext(r.ctx, r.method, reqURL.String(), bodyReader)
 	if err != nil {
-		return fmt.Errorf("create HTTP request: %w", err)
+		return nil, fmt.Errorf("create HTTP request: %w", err)
 	}
 
 	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
@@ -301,7 +287,7 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("HTTP request: %w", err)
+		return nil, fmt.Errorf("HTTP request: %w", err)
 	}
 
 	defer func() {
@@ -310,30 +296,24 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 		}
 	}()
 
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
-	statusCodeThreshold := 201
-	if r.method == http.MethodDelete {
-		statusCodeThreshold = 299
-	}
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+	if !IsSuccessResponse(resp) {
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
-			return fmt.Errorf("read error response body: %w", readErr)
+			return nil, fmt.Errorf("read error response body: %w", readErr)
 		}
 
 		log.Debug("API request", loggerArgs(resp, body)...)
 
-		return handleErrorResponse(resp, body)
+		return nil, handleErrorResponse(resp, body)
 	}
 
 	log.Debug("API request", loggerArgs(resp, nil)...)
 
 	if _, err = io.Copy(writer, resp.Body); err != nil {
-		return fmt.Errorf("stream response body: %w", err)
+		return nil, fmt.Errorf("stream response body: %w", err)
 	}
 
-	return nil
+	return resp.Header, nil
 }
 
 func (r *Request) doRequest() (body []byte, err error) {
@@ -383,13 +363,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 
 	log.Debug("API request", loggerArgs(resp, body)...)
 
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
-	statusCodeThreshold := 201
-	if r.method == http.MethodDelete {
-		statusCodeThreshold = 299
-	}
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+	if !IsSuccessResponse(resp) {
 		err = handleErrorResponse(resp, body)
 	}
 
@@ -451,6 +425,18 @@ func handleErrorResponse(resp *http.Response, body []byte) error {
 	}
 
 	return httpErr
+}
+
+// IsSuccessResponse returns true when the HTTP response status code indicates
+// a successful operation. DELETE requests accept 200-299; all other methods
+// accept 200-201 (matching the legacy client behavior).
+func IsSuccessResponse(resp *http.Response) bool {
+	statusCodeThreshold := 201
+	if resp.Request != nil && resp.Request.Method == http.MethodDelete {
+		statusCodeThreshold = 299
+	}
+
+	return resp.StatusCode >= http.StatusOK && resp.StatusCode <= statusCodeThreshold
 }
 
 func isJSONList(body []byte) bool {

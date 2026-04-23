@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,7 +14,7 @@ type Builder interface {
 	SetDynakube(dk dynakube.DynaKube) Builder
 	SetTokens(tokens token.Tokens) Builder
 	SetUserAgentSuffix(suffix string) Builder
-	Build(ctx context.Context) (dtclient.Client, error)
+	Build(ctx context.Context) (*dynatrace.Client, error)
 }
 
 type builder struct {
@@ -57,7 +57,7 @@ func (dynatraceClientBuilder builder) getTokens() token.Tokens {
 }
 
 // Build creates a new Dynatrace client using the settings configured on the given instance.
-func (dynatraceClientBuilder builder) Build(ctx context.Context) (dtclient.Client, error) {
+func (dynatraceClientBuilder builder) Build(ctx context.Context) (*dynatrace.Client, error) {
 	namespace := dynatraceClientBuilder.dk.Namespace
 	apiReader := dynatraceClientBuilder.apiReader
 
@@ -79,11 +79,12 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (dtclient.Clien
 	apiToken := dynatraceClientBuilder.getTokens().APIToken().Value
 	paasToken := dynatraceClientBuilder.getTokens().PaasToken().Value
 
-	if paasToken == "" {
-		paasToken = apiToken
-	}
+	opts.Opts = append(opts.Opts, dynatrace.WithBaseURL(dynatraceClientBuilder.dk.Spec.APIURL))
+	opts.Opts = append(opts.Opts, dynatrace.WithUserAgentSuffix(dynatraceClientBuilder.userAgentSuffix))
 
-	opts.Opts = append(opts.Opts, dtclient.UserAgentSuffix(dynatraceClientBuilder.userAgentSuffix))
+	opts.Opts = append(opts.Opts, dynatrace.WithAPIToken(apiToken))
+	opts.Opts = append(opts.Opts, dynatrace.WithPaasToken(paasToken))
+	opts.Opts = append(opts.Opts, dynatrace.WithCacheTTL(dynatraceClientBuilder.dk.APIRequestThreshold()))
 
-	return dtclient.NewClient(dynatraceClientBuilder.dk.Spec.APIURL, apiToken, paasToken, opts.Opts...)
+	return dynatrace.NewClient(opts.Opts...)
 }

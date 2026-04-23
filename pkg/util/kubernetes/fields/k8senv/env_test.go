@@ -2,7 +2,9 @@ package k8senv
 
 import (
 	"testing"
+	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -171,6 +173,57 @@ func TestFindCaseInsensitive(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equalf(t, tt.want, FindCaseInsensitive(tt.args.envVars, tt.args.name), "FindCaseInsensitive(%v, %v)", tt.args.envVars, tt.args.name)
+		})
+	}
+}
+
+func TestGetDTClientCacheCleanInterval(t *testing.T) {
+	tests := []struct {
+		name     string
+		envValue string
+		want     time.Duration
+	}{
+		{
+			name:     "valid duration returns parsed value",
+			envValue: "10m",
+			want:     10 * time.Minute,
+		},
+		{
+			name:     "empty env var returns default",
+			envValue: "",
+			want:     defaultDTClientCacheCleanInterval,
+		},
+		{
+			name:     "invalid duration returns default",
+			envValue: "not-a-duration",
+			want:     defaultDTClientCacheCleanInterval,
+		},
+		{
+			name:     "duration below minimum returns default",
+			envValue: "1m",
+			want:     defaultDTClientCacheCleanInterval,
+		},
+		{
+			name:     "duration above maximum returns default",
+			envValue: "200h",
+			want:     defaultDTClientCacheCleanInterval,
+		},
+		{
+			name:     "duration at minimum boundary returns parsed value",
+			envValue: "5m",
+			want:     minDTClientCacheCleanInterval,
+		},
+		{
+			name:     "duration at maximum boundary returns parsed value",
+			envValue: "100h",
+			want:     maxDTClientCacheCleanInterval,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(DTClientCacheCleanInterval, tt.envValue)
+			assert.Equal(t, tt.want, GetDTClientCacheCleanInterval(logd.Logger{}))
 		})
 	}
 }

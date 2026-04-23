@@ -18,7 +18,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,6 +76,7 @@ func getTestDynakube() *dynakube.DynaKube {
 }
 
 func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+	t.Cleanup(version.DisableCacheForTest(123))
 	t.Helper()
 	mockK8sClient := fake.NewClient(dk)
 	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
@@ -120,6 +123,8 @@ func disableLegacyVolumeMounts(dk *dynakube.DynaKube) {
 }
 
 func TestConditions(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("no kubeSystemUUID", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Status.KubeSystemUUID = ""
@@ -353,6 +358,8 @@ func TestEnvironmentVariables(t *testing.T) {
 }
 
 func TestLegacyVolumeMounts(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("volume mounts, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		disableAutomaticAGCertificate(dk)
@@ -777,21 +784,25 @@ func TestAffinity(t *testing.T) {
 }
 
 func TestImagePullSecrets(t *testing.T) {
-	t.Run("the default image pull secret only", func(t *testing.T) {
+	t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
+	t.Run("no pull secrets when only tenant registry pull secret exists", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
-		assert.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 1)
+		// EEC does not pull from the tenant registry, so the operator-generated pull secret must not be mounted
+		assert.Empty(t, statefulSet.Spec.Template.Spec.ImagePullSecrets)
 	})
 
-	t.Run("custom pull secret", func(t *testing.T) {
+	t.Run("custom pull secret, no tenant registry pull secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.CustomPullSecret = testEECPullSecret
 
 		statefulSet := getStatefulset(t, dk)
 
-		require.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 2)
-		assert.Equal(t, dk.Name+dynakube.PullSecretSuffix, statefulSet.Spec.Template.Spec.ImagePullSecrets[0].Name)
-		assert.Equal(t, dk.Spec.CustomPullSecret, statefulSet.Spec.Template.Spec.ImagePullSecrets[1].Name)
+		require.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 1)
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.Spec.CustomPullSecret})
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, dk.TenantRegistryPullSecretReferences())
 	})
 }
 
@@ -1039,6 +1050,8 @@ func TestServiceAccountName(t *testing.T) {
 }
 
 func TestSecurityContext(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("securityContext is set", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
@@ -1885,5 +1898,46 @@ func TestActiveGateVolumes(t *testing.T) {
 		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
 		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedAutoAgCertVolume)
+	})
+}
+
+func TestAppArmorAnnotationHandling(t *testing.T) {
+	const appArmorAnnotationKey = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
+
+	getStatefulSet := func(t *testing.T) *appsv1.StatefulSet {
+		t.Helper()
+
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
+		clt := fake.NewClient(dk)
+
+		tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
+		require.NoError(t, clt.Create(t.Context(), &tlsSecret))
+
+		require.NoError(t, NewReconciler(clt, clt, dk).Reconcile(t.Context()))
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		return sts
+	}
+
+	t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(30))
+
+		sts := getStatefulSet(t)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+	})
+
+	t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(31))
+
+		sts := getStatefulSet(t)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
 	})
 }

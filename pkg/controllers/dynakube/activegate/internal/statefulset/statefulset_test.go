@@ -1,10 +1,11 @@
 package statefulset
 
 import (
-	"reflect"
+	"slices"
 	"strconv"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
@@ -18,10 +19,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,9 +38,7 @@ const (
 	testNamespaceName = "test-namespace"
 )
 
-var (
-	testReplicas int32 = 69
-)
+var testReplicas int32 = 69
 
 func getTestDynakube() dynakube.DynaKube {
 	return dynakube.DynaKube{
@@ -70,6 +69,8 @@ func getTestDynakube() dynakube.DynaKube {
 }
 
 func TestGetBaseObjectMeta(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	dk := getTestDynakube()
 
 	t.Run("creating object meta", func(t *testing.T) {
@@ -86,7 +87,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 	t.Run("default annotations", func(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		sts, _ := builder.CreateStatefulSet()
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
@@ -101,7 +102,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		dk.Status.ActiveGate.Source = status.TenantRegistryVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		sts, _ := builder.CreateStatefulSet()
 		expectedNodeSelectorTerms := []corev1.NodeSelectorTerm{
 			{
 				MatchExpressions: []corev1.NodeSelectorRequirement{
@@ -116,7 +117,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 						Values:   []string{"linux"},
 					},
 				},
-			}}
+			},
+		}
 
 		require.NotEmpty(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
 		assert.Contains(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, expectedNodeSelectorTerms[0])
@@ -126,7 +128,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		dk.Status.ActiveGate.Source = status.CustomImageVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		sts, _ := builder.CreateStatefulSet()
 		expectedNodeSelectorTerms := []corev1.NodeSelectorTerm{
 			{
 				MatchExpressions: []corev1.NodeSelectorRequirement{
@@ -141,7 +143,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 						Values:   []string{"linux"},
 					},
 				},
-			}}
+			},
+		}
 
 		require.NotEmpty(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
 		assert.Contains(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, expectedNodeSelectorTerms[0])
@@ -152,7 +155,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		}
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		sts, _ := builder.CreateStatefulSet()
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
@@ -221,6 +224,8 @@ func TestAddLabels(t *testing.T) {
 }
 
 func TestAddTemplateSpec(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("adds template spec", func(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
@@ -328,7 +333,7 @@ func TestAddTemplateSpec(t *testing.T) {
 
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, err := builder.CreateStatefulSet(nil)
+		sts, err := builder.CreateStatefulSet()
 		require.NoError(t, err)
 
 		assert.Equal(t, builder.defaultTopologyConstraints(), sts.Spec.Template.Spec.TopologySpreadConstraints)
@@ -343,7 +348,7 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk.Spec.ActiveGate.TopologySpreadConstraints = testTopologyConstraint
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, err := builder.CreateStatefulSet(nil)
+		sts, err := builder.CreateStatefulSet()
 		require.NoError(t, err)
 
 		assert.Equal(t, testTopologyConstraint, sts.Spec.Template.Spec.TopologySpreadConstraints)
@@ -352,7 +357,7 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, err := builder.CreateStatefulSet(nil)
+		sts, err := builder.CreateStatefulSet()
 		require.NoError(t, err)
 
 		assert.Equal(t, int32(2), sts.Spec.Template.Spec.Containers[0].ReadinessProbe.TimeoutSeconds)
@@ -365,7 +370,7 @@ func TestBuildBaseContainer(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
-		containers := builder.buildBaseContainer()
+		containers := builder.buildBaseContainer(&appsv1.StatefulSet{})
 
 		require.Len(t, containers, 1)
 		container := containers[0]
@@ -491,6 +496,8 @@ func TestBuildCommonEnvs(t *testing.T) {
 }
 
 func TestSecurityContexts(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
 	t.Run("containers have the same security context if read-only filesystem", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.KubeMonCapability.DisplayName)
@@ -498,13 +505,14 @@ func TestSecurityContexts(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+		activeGateBuilder := builder.NewBuilder(statefulsetBuilder.getBase())
+		sts, _ := activeGateBuilder.AddModifier(
 			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
 			modifiers.NewReadOnlyModifier(dk),
-		})
+		).Build()
 
 		require.NotEmpty(t, sts)
-		require.Truef(t, reflect.DeepEqual(sts.Spec.Template.Spec.InitContainers[0].SecurityContext, sts.Spec.Template.Spec.Containers[0].SecurityContext), "InitContainer and Container have different SecurityContexts")
+		require.Equal(t, sts.Spec.Template.Spec.InitContainers[0].SecurityContext, sts.Spec.Template.Spec.Containers[0].SecurityContext, "InitContainer and Container have different SecurityContexts")
 	})
 }
 
@@ -517,7 +525,7 @@ func TestUpdateStrategy(t *testing.T) {
 			MaxUnavailable: &maxUnavailable,
 		}
 		b := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, capability.NewMultiCapability(&dk))
-		sts, err := b.CreateStatefulSet(nil)
+		sts, err := b.CreateStatefulSet()
 
 		require.NoError(t, err)
 		require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
@@ -621,10 +629,11 @@ func TestTempVolume(t *testing.T) {
 
 			multiCapability := capability.NewMultiCapability(&dk)
 			statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-			sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+			activeGateBuilder := builder.NewBuilder(statefulsetBuilder.getBase())
+			sts, _ := activeGateBuilder.AddModifier(
 				modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
 				modifiers.NewReadOnlyModifier(dk),
-			})
+			).Build()
 
 			require.NotEmpty(t, sts)
 
@@ -661,10 +670,11 @@ func TestVolumeMounts(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+		activeGateBuilder := builder.NewBuilder(statefulsetBuilder.getBase())
+		sts, _ := activeGateBuilder.AddModifier(
 			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
 			modifiers.NewReadOnlyModifier(dk),
-		})
+		).Build()
 
 		require.NotEmpty(t, sts)
 
@@ -709,5 +719,67 @@ func TestTerminationGracePeriodSecondsNil(t *testing.T) {
 		dk := getTestDynakube()
 		dk.ActiveGate().TerminationGracePeriodSeconds = nil
 		assert.Nil(t, dk.ActiveGate().GetTerminationGracePeriodSeconds())
+	})
+}
+
+func TestAppArmorAnnotationHandling(t *testing.T) {
+	t.Run("feature flag set apparmor annotation present in 1.30", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(30))
+
+		dk := getTestDynakube()
+		dk.Annotations[exp.AGAppArmorKey] = "true"
+
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, capability.NewMultiCapability(&dk))
+
+		sts := builder.getBase()
+		assert.Contains(t, sts.Spec.Template.Annotations, consts.AnnotationActiveGateContainerAppArmor)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+	})
+
+	t.Run("override apparmor annotation present in 1.30", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(30))
+
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.Annotations = map[string]string{consts.AnnotationActiveGateContainerAppArmor: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
+
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, capability.NewMultiCapability(&dk))
+
+		sts := builder.getBase()
+		assert.Contains(t, sts.Spec.Template.Annotations, consts.AnnotationActiveGateContainerAppArmor)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+	})
+
+	t.Run("feature flag set apparmor annotation absent in 1.31", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(31))
+
+		dk := getTestDynakube()
+		dk.Annotations[exp.AGAppArmorKey] = "true"
+
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, capability.NewMultiCapability(&dk))
+
+		sts := builder.getBase()
+		assert.NotContains(t, sts.Spec.Template.Annotations, consts.AnnotationActiveGateContainerAppArmor)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+	})
+
+	t.Run("override apparmor annotation present in 1.31", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(31))
+
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.Annotations = map[string]string{consts.AnnotationActiveGateContainerAppArmor: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
+
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, capability.NewMultiCapability(&dk))
+
+		sts := builder.getBase()
+		assert.NotContains(t, sts.Spec.Template.Annotations, consts.AnnotationActiveGateContainerAppArmor)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
 	})
 }

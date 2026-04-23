@@ -268,6 +268,10 @@ The images of components that are deployed by the operator can be configured usi
 
 If an image value is set to a different repository than the default, `devregistry` will be used as the image pull secret. Make sure it contains the proper authentication.
 
+The following environment variables can be used to control which tests are executed:
+
+- `E2E_SKIP_SCALING` — set to `true` to skip all scaling-related tests (those covering HPA and enforce-replicas behaviour).
+
 ### Triggering E2E Tests on Kind in CI
 
 You can trigger the E2E tests on a kind cluster in GitHub Actions by commenting on a pull request with:

@@ -50,8 +50,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			log.Error(err, "failed to clean up "+ext.GetExecutionControllerStatefulsetName()+" statufulset")
 		}
 
-		r.deleteLegacyStatefulset(ctx)
-
 		return nil
 	}
 
@@ -66,8 +64,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 		return errors.New("kubeSystemUUID unknown")
 	}
-
-	defer r.deleteLegacyStatefulset(ctx)
 
 	return r.createOrUpdateStatefulset(ctx)
 }

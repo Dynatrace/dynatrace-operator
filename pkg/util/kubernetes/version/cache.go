@@ -27,7 +27,7 @@ type versionInfoCache struct {
 
 var versionInfo = new(versionInfoCache)
 
-// DisableCacheForTest disables the version cache for testing and configures a static minor version that GetMinorVersion will return.
+// DisableCacheForTest disables the global version cache for testing and configures a static minor version that GetMinorVersion will return.
 // The returned function can be used to undo this change. Calling this function multiple times with different inputs will update the minorVersion,
 // but only the first undo function will revert changes.
 //
@@ -39,10 +39,21 @@ var versionInfo = new(versionInfoCache)
 //		// Subsequent calls can ignore the return value
 //		DisableCacheForTest(35)
 //	}
-//
-// This function is safe to be called concurrently.
 func DisableCacheForTest(minorVersion int) func() {
-	return versionInfo.disableCacheForTest(minorVersion)
+	if versionInfo.disableLookup {
+		versionInfo.minorVersion = minorVersion
+		// Set the version, but only undo the first time
+		return func() {}
+	}
+
+	prevMinorVersion := versionInfo.minorVersion
+	versionInfo.minorVersion = minorVersion
+	versionInfo.disableLookup = true
+
+	return func() {
+		versionInfo.minorVersion = prevMinorVersion
+		versionInfo.disableLookup = false
+	}
 }
 
 // GetMinorVersion looks up the Kubernetes minor version from the cluster.
@@ -53,28 +64,6 @@ func GetMinorVersion() int {
 	return versionInfo.getMinorVersion()
 }
 
-func (c *versionInfoCache) disableCacheForTest(minorVersion int) func() {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	if c.disableLookup {
-		c.minorVersion = minorVersion
-		// Set the version, but only undo the first time
-		return func() {}
-	}
-
-	prevMinorVersion := c.minorVersion
-	c.minorVersion = minorVersion
-	c.disableLookup = true
-
-	return func() {
-		c.mutex.Lock()
-		c.minorVersion = prevMinorVersion
-		c.disableLookup = false
-		c.mutex.Unlock()
-	}
-}
-
 func (c *versionInfoCache) getMinorVersion() int {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -83,9 +72,7 @@ func (c *versionInfoCache) getMinorVersion() int {
 		log.Error(err, "kubernetes version lookup failed")
 	}
 
-	minorVersion := c.minorVersion
-
-	return minorVersion
+	return c.minorVersion
 }
 
 var (
@@ -127,6 +114,8 @@ func (c *versionInfoCache) refreshMinorVersion() error {
 	if err != nil {
 		return errors.Wrap(err, "invalid kubernetes minor version")
 	}
+
+	log.Debug("cached kubernetes server version", "minorVersion", info.Minor)
 
 	c.minorVersion = minor
 

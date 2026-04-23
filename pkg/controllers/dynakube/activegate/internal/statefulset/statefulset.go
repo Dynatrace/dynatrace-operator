@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
@@ -48,16 +49,12 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dk dynakube.Dyn
 	}
 }
 
-func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*appsv1.StatefulSet, error) {
+func (statefulSetBuilder Builder) CreateStatefulSet() (*appsv1.StatefulSet, error) {
 	activeGateBuilder := builder.NewBuilder(statefulSetBuilder.getBase())
+	mods := modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
+	sts, err := activeGateBuilder.AddModifier(mods...).Build()
 
-	if len(mods) == 0 {
-		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
-	}
-
-	sts, _ := activeGateBuilder.AddModifier(mods...).Build()
-
-	return &sts, nil
+	return &sts, err
 }
 
 func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
@@ -72,9 +69,8 @@ func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	statefulSetBuilder.addTemplateSpec(&sts)
 	statefulSetBuilder.addPersistentVolumeClaim(&sts)
 
-	if statefulSetBuilder.dynakube.FF().IsActiveGateAppArmor() {
-		sts.Spec.Template.Annotations[consts.AnnotationActiveGateContainerAppArmor] = "runtime/default"
-	}
+	// The annotation is needed for addTemplateSpec so remove it afterwards
+	sts.Spec.Template.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(sts.Spec.Template.Annotations, consts.ActiveGateContainerName)
 
 	return sts
 }
@@ -121,12 +117,17 @@ func (statefulSetBuilder Builder) buildAppLabels() *k8slabel.AppLabels {
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
 	sts.Annotations = maputils.MergeMap(sts.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
+
 	sts.Spec.Template.Annotations = maputils.MergeMap(sts.Spec.Template.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
+	if statefulSetBuilder.dynakube.FF().IsActiveGateAppArmor() {
+		// The annotation is needed for addTemplateSpec so it must be set here
+		sts.Spec.Template.Annotations[consts.AnnotationActiveGateContainerAppArmor] = corev1.DeprecatedAppArmorBetaProfileRuntimeDefault
+	}
 }
 
 func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 	podSpec := corev1.PodSpec{
-		Containers:                    statefulSetBuilder.buildBaseContainer(),
+		Containers:                    statefulSetBuilder.buildBaseContainer(sts),
 		NodeSelector:                  statefulSetBuilder.capability.Properties().NodeSelector,
 		ServiceAccountName:            statefulSetBuilder.dynakube.ActiveGate().GetServiceAccountName(),
 		Affinity:                      statefulSetBuilder.nodeAffinity(),
@@ -208,7 +209,10 @@ func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.Topology
 	}
 }
 
-func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
+func (statefulSetBuilder Builder) buildBaseContainer(sts *appsv1.StatefulSet) []corev1.Container {
+	securityContext := modifiers.GetSecurityContext(false)
+	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(sts.Spec.Template.Annotations, consts.ActiveGateContainerName)
+
 	container := corev1.Container{
 		Name:            consts.ActiveGateContainerName,
 		Image:           statefulSetBuilder.dynakube.ActiveGate().GetImage(),
@@ -242,7 +246,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			TimeoutSeconds:      1,
 			SuccessThreshold:    1,
 		},
-		SecurityContext: modifiers.GetSecurityContext(false),
+		SecurityContext: securityContext,
 		VolumeMounts:    statefulSetBuilder.buildVolumeMounts(),
 	}
 

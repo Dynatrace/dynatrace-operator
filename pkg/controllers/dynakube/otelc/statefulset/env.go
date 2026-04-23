@@ -6,10 +6,10 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -107,7 +107,7 @@ func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
 			corev1.EnvVar{Name: otelcConsts.EnvDataIngestToken, ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-					Key:                  dynatrace.DataIngestToken,
+					Key:                  token.DataIngestKey,
 				},
 			}},
 		)

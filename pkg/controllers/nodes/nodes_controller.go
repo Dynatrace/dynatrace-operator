@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -173,12 +174,18 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCac
 func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNode *cache.Entry) error {
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
-	tokens, err := tokenReader.ReadTokens(ctx)
+	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		return err
 	}
 
-	dynatraceClient, err := controller.dynatraceClientBuilder.
+	// NOTE: The dtclient in-memory cache is intentionally disabled here.
+	// `GetEntityIDForIP` fetches ALL host entities for the entire tenant, not just those belonging to this Kubernetes cluster.
+	// Which means a single call can pull in data from every cluster and environment reporting to the same tenant.
+	// Mark-for-termination events are rare, caching this possibly large dataset would waste memory with no meaningful benefit.
+	dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
+
+	dtClient, err := controller.dynatraceClientBuilder.
 		SetDynakube(*dk).
 		SetTokens(tokens).
 		Build(ctx)
@@ -186,7 +193,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	hostEventClient := dynatraceClient.AsV2().HostEvent
+	hostEventClient := dtClient.HostEvent
 
 	entityID, err := hostEventClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {

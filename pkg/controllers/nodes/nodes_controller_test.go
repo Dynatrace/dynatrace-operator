@@ -8,13 +8,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/stretchr/testify/assert"
@@ -53,7 +52,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					dtclient.APIToken: []byte(testAPIToken),
+					token.APIKey: []byte(testAPIToken),
 				},
 			},
 		)
@@ -100,7 +99,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					dtclient.APIToken: []byte(testAPIToken),
+					token.APIKey: []byte(testAPIToken),
 				},
 			},
 		)
@@ -108,10 +107,7 @@ func TestReconcile(t *testing.T) {
 		hostClient := hostclientmock.NewAPIClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", &core.HTTPError{StatusCode: 404})
 
-		dtClient := dtclientmock.NewClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
-
-		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -146,7 +142,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					dtclient.APIToken: []byte(testAPIToken),
+					token.APIKey: []byte(testAPIToken),
 				},
 			},
 		)
@@ -157,10 +153,7 @@ func TestReconcile(t *testing.T) {
 			return e.EventType == hostevent.MarkedForTerminationEvent
 		})).Return(&core.HTTPError{StatusCode: 404}).Once()
 
-		dtClient := dtclientmock.NewClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
-
-		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -181,7 +174,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
-		defer mock.AssertExpectationsForObjects(t, dtClient)
+		defer mock.AssertExpectationsForObjects(t, dtClient.HostEvent)
 
 		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 		reconcileAllNodes(t, ctrl, fakeClient)
@@ -247,10 +240,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
 		hostClient := hostclientmock.NewAPIClient(t)
-		dtClient := dtclientmock.NewClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
-
-		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
@@ -271,10 +261,8 @@ func TestReconcile(t *testing.T) {
 
 		hostClient := hostclientmock.NewAPIClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", hostevent.EntityNotFoundError{IP: "1.2.3.4"})
-		dtClient := dtclientmock.NewClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
 
-		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
@@ -295,7 +283,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
-		defer mock.AssertExpectationsForObjects(t, dtClient)
+		defer mock.AssertExpectationsForObjects(t, dtClient.HostEvent)
 
 		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 		// by doing this step we warm up cache by adding node1 and node2
@@ -320,7 +308,7 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 	}
 }
 
-func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *dtclientmock.Client) *Controller {
+func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *dynatrace.Client) *Controller {
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDtcBuilder.EXPECT().SetDynakube(mock.MatchedBy(func(dynakube.DynaKube) bool { return true })).Return(mockDtcBuilder)
 	mockDtcBuilder.EXPECT().SetTokens(mock.MatchedBy(func(token.Tokens) bool { return true })).Return(mockDtcBuilder)
@@ -336,16 +324,14 @@ func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *d
 	}
 }
 
-func createDTMockClient(t *testing.T, ip, host string) *dtclientmock.Client {
+func createDTMockClient(t *testing.T, ip, host string) *dynatrace.Client {
 	hostClient := hostclientmock.NewAPIClient(t)
 	hostClient.EXPECT().GetEntityIDForIP(t.Context(), ip).Return(host, nil)
 	hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
 		return e.EventType == hostevent.MarkedForTerminationEvent
 	})).Return(nil)
-	dtClient := dtclientmock.NewClient(t)
-	dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient})
 
-	return dtClient
+	return &dynatrace.Client{HostEvent: hostClient}
 }
 
 func reconcileAllNodes(t *testing.T, ctrl *Controller, fakeClient client.Client) {
@@ -387,7 +373,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte(testAPIToken),
+				token.APIKey: []byte(testAPIToken),
 			},
 		},
 		&corev1.Secret{
@@ -396,7 +382,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.APIToken: []byte(testAPIToken),
+				token.APIKey: []byte(testAPIToken),
 			},
 		})
 }

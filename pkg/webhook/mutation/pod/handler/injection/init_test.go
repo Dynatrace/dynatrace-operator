@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
@@ -200,7 +199,7 @@ func createTestHandler(oaMut, metaMut dtwebhook.Mutator, objects ...client.Objec
 	handler := New(
 		fakeClient,
 		fakeClient,
-		events.NewRecorder(toolsevents.NewFakeRecorder(10)),
+		toolsevents.NewFakeRecorder(10),
 		testWebhookImage,
 		false,
 		metaMut,
