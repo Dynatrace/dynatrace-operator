@@ -73,3 +73,15 @@ func TestLongVersion(t *testing.T) {
 	assert.Len(t, appLabels.Version, 63)
 	assert.Len(t, coreLabels.Version, 63)
 }
+
+func TestVersionWithDigest(t *testing.T) {
+	t.Run("no match", func(t *testing.T) {
+		appLabels := NewAppLabels(testComponent, testName, testComponent, "test:1234")
+		assert.Equal(t, "test:1234", appLabels.Version)
+	})
+
+	t.Run("match", func(t *testing.T) {
+		appLabels := NewAppLabels(testComponent, testName, testComponent, "test@sha256:1234")
+		assert.Equal(t, "test", appLabels.Version)
+	})
+}

@@ -60,6 +60,10 @@ func NewAppLabels(appName, name, component, ver string) *AppLabels {
 		ver = ver[:validation.DNS1035LabelMaxLength]
 	}
 
+	if idx := strings.Index(ver, "@"); idx >= 0 {
+		ver = ver[:idx]
+	}
+
 	return &AppLabels{
 		AppMatchLabels: AppMatchLabels{
 			Name:      appName,
