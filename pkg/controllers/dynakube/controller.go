@@ -34,7 +34,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -210,8 +209,8 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		k8sevent.SendCRDVersionMismatch(controller.eventRecorder, dk)
 	}
 
-	oldStatus := *dk.Status.DeepCopy()
 	controller.requeueAfter = defaultRequeueInterval
+	oldStatus := *dk.Status.DeepCopy()
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
@@ -477,15 +476,6 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 }
 
 func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
-	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
-		log.Info(dynakube.GetCacheValidMessage(
-			"token verification",
-			dk.Status.DynatraceAPI.LastTokenScopeRequest,
-			dk.APIRequestThreshold()))
-
-		return lastErrorFromCondition(&dk.Status)
-	}
-
 	tokens := controller.tokens.AddFeatureScopesToTokens()
 
 	optionalScopes, err := tokens.VerifyScopes(ctx, dtClient, *dk)
@@ -494,9 +484,6 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient to
 	}
 
 	log.Info("token verified")
-
-	dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
-
 	controller.updateOptionalScopesConditions(&dk.Status, optionalScopes)
 
 	return nil
