@@ -147,3 +147,7 @@ func RunPeriodicCacheCleanup(ctx context.Context, period time.Duration) {
 		}
 	}
 }
+
+func InvalidateCacheEntry(key string) {
+	cache.remove(key)
+}

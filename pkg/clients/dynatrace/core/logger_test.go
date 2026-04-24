@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -135,7 +136,7 @@ func Test_loggerArgs(t *testing.T) {
 			if tt.name == "default/cached" {
 				cached := *response
 				cached.Header = response.Header.Clone()
-				cached.Header.Set(CacheHitHeader, "true")
+				cached.Header.Set(middleware.CacheHitHeader, "true")
 				resp = &cached
 			}
 

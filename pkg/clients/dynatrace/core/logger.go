@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
@@ -24,14 +25,6 @@ const (
 	// LogLevelEnv controls the verbosity of the Dynatrace API client.
 	// The value will only be used when the LOG_LEVEL variable is set to "debug".
 	LogLevelEnv = "DT_CLIENT_LOG_LEVEL"
-
-	// CacheHitHeader is set on responses served from the in-memory cache so that
-	// the core client can include a "cached" field in its log output.
-	CacheHitHeader = "X-DT-Cache"
-
-	// CacheSkipHeader can be set on a request to bypass the in-memory cache for
-	// that specific request. Any non-empty value disables both cache reads and writes.
-	CacheSkipHeader = "X-DT-Cache-Skip"
 )
 
 var logLevel = getLogLevel()
@@ -76,7 +69,7 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 			"query", dumpValues(resp.Request.URL.Query(), false),
 			"status_code", resp.StatusCode,
 			"duration", duration.String(),
-			"cached", resp.Header.Get(CacheHitHeader) != "",
+			"cached", resp.Header.Get(middleware.CacheHitHeader) != "",
 		}
 
 		if logLevel >= levelFull {
