@@ -10,11 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	installerclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/helmconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 )
 
 const (
@@ -74,7 +74,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 			return nil, err
 		}
 
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:            installerclient.OSUnix,
 			Type:          installerclient.TypePaaS,
 			Arch:          arch.Arch,

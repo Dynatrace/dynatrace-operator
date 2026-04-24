@@ -18,7 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +32,7 @@ func TestNew(t *testing.T) {
 	})
 
 	t.Run("options", func(t *testing.T) {
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:   "os",
 			Arch: "arch",
 		}
@@ -60,11 +60,11 @@ func TestDo(t *testing.T) {
 		targetDir := filepath.Join(tmpDir, "target")
 
 		opts := []Option{
-			WithInstaller(installerTester(t, &url.Properties{}, nil)),
+			WithInstaller(installerTester(t, &binary.Properties{}, nil)),
 		}
 		client := New(opts...)
 
-		err := client.Do(t.Context(), inputDir, targetDir, url.Properties{})
+		err := client.Do(t.Context(), inputDir, targetDir, binary.Properties{})
 		require.Error(t, err)
 	})
 
@@ -73,7 +73,7 @@ func TestDo(t *testing.T) {
 		inputDir := filepath.Join(tmpDir, "input")
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:   "os",
 			Arch: "arch",
 		}
@@ -95,7 +95,7 @@ func TestDo(t *testing.T) {
 		inputDir := filepath.Join(tmpDir, "input")
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:   "os",
 			Arch: "arch",
 		}
@@ -122,7 +122,7 @@ func TestDo(t *testing.T) {
 		inputDir := filepath.Join(tmpDir, "input")
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:   "os",
 			Arch: "arch",
 		}
@@ -145,10 +145,10 @@ func TestDo(t *testing.T) {
 
 type mockConfigFunc func(*installermock.Installer)
 
-func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockConfigFunc) url.NewFunc {
+func installerTester(t *testing.T, expectedProps *binary.Properties, mockFunc mockConfigFunc) binary.NewFunc {
 	t.Helper()
 
-	return func(dtClient oneagent.APIClient, props *url.Properties) installer.Installer {
+	return func(dtClient oneagent.APIClient, props *binary.Properties) installer.Installer {
 		require.NotNil(t, dtClient)
 		require.NotEmpty(t, props)
 		require.Equal(t, *expectedProps, *props)

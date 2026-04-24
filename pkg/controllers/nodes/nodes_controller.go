@@ -70,13 +70,21 @@ func NewControllerFromClient(clt client.Client) *Controller {
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
 	nodeName := request.Name
-	dk, err := controller.determineDynakubeForNode(nodeName)
 
-	log.Info("reconciling node name", "node", nodeName)
-
+	dk, err := controller.determineDynakubeForNode(ctx, nodeName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+
+	if skip, err := token.NewReader(controller.apiReader, dk).HasPlatformToken(ctx); err != nil {
+		return reconcile.Result{}, err
+	} else if skip {
+		log.Info("node controller disabled due to detected platform token in secret", "node", nodeName)
+
+		return reconcile.Result{}, nil
+	}
+
+	log.Info("reconciling node", "node", nodeName)
 
 	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
@@ -145,7 +153,7 @@ func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynak
 }
 
 func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCache *cache.Cache, nodeName string) error {
-	dynakube, err := controller.determineDynakubeForNode(nodeName)
+	dynakube, err := controller.determineDynakubeForNode(ctx, nodeName)
 	if err != nil {
 		return err
 	}

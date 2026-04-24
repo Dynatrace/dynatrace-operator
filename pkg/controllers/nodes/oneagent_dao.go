@@ -7,8 +7,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (controller *Controller) determineDynakubeForNode(nodeName string) (*dynakube.DynaKube, error) {
-	dks, err := controller.getDynakubeList()
+func (controller *Controller) determineDynakubeForNode(ctx context.Context, nodeName string) (*dynakube.DynaKube, error) {
+	dks, err := controller.getDynakubeList(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -16,10 +16,10 @@ func (controller *Controller) determineDynakubeForNode(nodeName string) (*dynaku
 	return controller.filterDynakubeFromList(dks, nodeName), nil
 }
 
-func (controller *Controller) getDynakubeList() (*dynakube.DynaKubeList, error) {
+func (controller *Controller) getDynakubeList(ctx context.Context) (*dynakube.DynaKubeList, error) {
 	var dynakubeList dynakube.DynaKubeList
 
-	err := controller.apiReader.List(context.TODO(), &dynakubeList, client.InNamespace(controller.podNamespace))
+	err := controller.apiReader.List(ctx, &dynakubeList, client.InNamespace(controller.podNamespace))
 	if err != nil {
 		return nil, err
 	}

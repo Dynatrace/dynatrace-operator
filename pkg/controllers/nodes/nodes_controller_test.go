@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
 	"github.com/stretchr/testify/assert"
@@ -299,6 +300,33 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NoError(t, ctrl.pruneCache(ctx, nodesCache))
+	})
+
+	t.Run("Skip reconcile when platform token is detected", func(t *testing.T) {
+		fakeClient := fake.NewClient(
+			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: "skip-platform", Namespace: testNamespace},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						Instances: map[string]oneagent.Instance{
+							"node1": {},
+						},
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{Name: "skip-platform", Namespace: testNamespace},
+				Data: map[string][]byte{
+					token.APIKey: []byte(dttoken.PlatformPrefix + ".sometoken"),
+				},
+			},
+		)
+		ctrl := &Controller{apiReader: fakeClient, runLocal: true}
+
+		result, err := ctrl.Reconcile(t.Context(), createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.Equal(t, reconcile.Result{}, result)
 	})
 }
 

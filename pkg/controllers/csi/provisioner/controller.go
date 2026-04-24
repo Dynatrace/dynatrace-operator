@@ -30,9 +30,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
@@ -50,7 +50,7 @@ const (
 	longRequeueDuration    = 30 * time.Minute
 )
 
-type urlInstallerBuilder func(oneagent.APIClient, *url.Properties) installer.Installer
+type binaryInstallerBuilder func(oneagent.APIClient, *binary.Properties) installer.Installer
 type imageInstallerBuilder func(context.Context, *image.Properties) (installer.Installer, error)
 type jobInstallerBuilder func(context.Context, *job.Properties) installer.Installer
 
@@ -59,11 +59,11 @@ type OneAgentProvisioner struct {
 	apiReader  client.Reader
 	kubeClient client.Client
 
-	urlInstallerBuilder   urlInstallerBuilder
-	imageInstallerBuilder imageInstallerBuilder
-	jobInstallerBuilder   jobInstallerBuilder
-	cleaner               *cleanup.Cleaner
-	path                  metadata.PathResolver
+	urlInstallerBuilder    binaryInstallerBuilder
+	imageInstallerBuilder  imageInstallerBuilder
+	jobInstallerBuilder    jobInstallerBuilder
+	cleaner                *cleanup.Cleaner
+	path                   metadata.PathResolver
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -71,13 +71,13 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 	path := metadata.PathResolver{RootDir: opts.RootDir}
 
 	return &OneAgentProvisioner{
-		apiReader:             mgr.GetAPIReader(),
-		kubeClient:            mgr.GetClient(),
-		path:                  path,
-		urlInstallerBuilder:   url.NewURLInstaller,
-		imageInstallerBuilder: image.NewImageInstaller,
-		jobInstallerBuilder:   job.NewInstaller,
-		cleaner:               cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
+		apiReader:              mgr.GetAPIReader(),
+		kubeClient:             mgr.GetClient(),
+		path:                   path,
+		urlInstallerBuilder:    binary.NewInstaller,
+		imageInstallerBuilder:  image.NewImageInstaller,
+		jobInstallerBuilder:    job.NewInstaller,
+		cleaner:                cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
 	}
 }
 

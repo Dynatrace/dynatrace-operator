@@ -18,9 +18,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
@@ -385,10 +385,10 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 	return m
 }
 
-func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) urlInstallerBuilder {
+func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) binaryInstallerBuilder {
 	t.Helper()
 
-	return func(_ oneagentclient.APIClient, _ *url.Properties) installer.Installer {
+	return func(_ oneagentclient.APIClient, _ *binary.Properties) installer.Installer {
 		return mockedInstaller
 	}
 }
