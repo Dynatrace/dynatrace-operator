@@ -185,7 +185,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	// Mark-for-termination events are rare, caching this possibly large dataset would waste memory with no meaningful benefit.
 	dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
 
-	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, *dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
 	if err != nil {
 		return err
 	}

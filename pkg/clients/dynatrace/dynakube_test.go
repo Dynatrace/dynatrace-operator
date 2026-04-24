@@ -26,8 +26,8 @@ const (
 )
 
 func Test_optionsFromDynakube(t *testing.T) {
-	getDynakube := func() dynakube.DynaKube {
-		return dynakube.DynaKube{
+	getDynakube := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
 		}
@@ -238,7 +238,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 				Proxy:  &value.Source{ValueFrom: testProxySecret},
 			},
 		}
-		_, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		_, err := optionsFromDynakube(t.Context(), fake.NewClient(), &dk, testAPIToken, testPaasToken, "")
 
 		require.Error(t, err)
 	})
@@ -265,7 +265,7 @@ func TestNewClientFromDynakube(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
 		}
-		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), &dk, testAPIToken, testPaasToken, "")
 
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)
@@ -278,7 +278,7 @@ func TestNewClientFromDynakube(t *testing.T) {
 	})
 
 	t.Run("propagates option building error", func(t *testing.T) {
-		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), dynakube.DynaKube{}, "", "", "")
+		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), &dynakube.DynaKube{}, "", "", "")
 
 		require.Error(t, err)
 		assert.Nil(t, dtClient)

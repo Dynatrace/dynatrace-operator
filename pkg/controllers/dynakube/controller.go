@@ -335,7 +335,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	controller.tokens = tokens
 
-	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, *dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 

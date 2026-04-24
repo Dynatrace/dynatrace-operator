@@ -385,7 +385,7 @@ func createDefaultFakeClient() client.Client {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }

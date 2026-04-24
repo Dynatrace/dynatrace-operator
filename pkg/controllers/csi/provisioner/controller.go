@@ -120,7 +120,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.cleaner.Run(ctx)
 	}
 
-	err = provisioner.setupFileSystem(dk)
+	err = provisioner.setupFileSystem(&dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -139,7 +139,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 
-	err = provisioner.installAgent(ctx, dk)
+	err = provisioner.installAgent(ctx, &dk)
 
 	switch {
 	case errors.Is(err, errNotReady):
@@ -164,7 +164,7 @@ func isProvisionerNeeded(dk *dynakube.DynaKube) bool {
 	return dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsReadOnlyFSSupported()
 }
 
-func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) error {
+func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynakube.DynaKube) error {
 	dynakubeDir := provisioner.path.DynaKubeDir(dk.GetName())
 	if err := os.MkdirAll(dynakubeDir, 0755); err != nil {
 		return errors.WithMessagef(err, "failed to create directory %s", dynakubeDir)
@@ -178,8 +178,8 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) er
 	return nil
 }
 
-func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube.DynaKube) (*dynatrace.Client, error) {
-	tokenReader := token.NewReader(provisioner.apiReader, &dk)
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
+	tokenReader := token.NewReader(provisioner.apiReader, dk)
 
 	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {

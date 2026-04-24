@@ -931,13 +931,13 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }
 
 func newErrorClientFactory(err error) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
 		return nil, err
 	}
 }
