@@ -12,9 +12,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
