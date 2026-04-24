@@ -206,7 +206,8 @@ func (r *Request) WithHeader(key, value string) APIRequest {
 
 // Execute executes the request and unmarshals the response into the provided model
 func (r *Request) Execute(model any) error {
-	if _, ok := model.(Cacheable); ok {
+	cacheableModel, isCacheable := model.(Cacheable)
+	if isCacheable {
 		r.headers.Set(middleware.CacheRequestHeader, "true")
 	}
 
@@ -223,11 +224,8 @@ func (r *Request) Execute(model any) error {
 		}
 	}
 
-	cacheable, ok := model.(Cacheable)
-	if ok {
-		if cacheable.IsEmpty() {
-			middleware.InvalidateCacheEntry(cacheKey)
-		}
+	if isCacheable && cacheableModel.IsEmpty() {
+		middleware.InvalidateCacheEntry(cacheKey)
 	}
 
 	return nil

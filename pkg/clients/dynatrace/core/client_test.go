@@ -257,6 +257,7 @@ func TestClient_Execute_Cacheable(t *testing.T) {
 	newCachingClient := func(t *testing.T, server *httptest.Server) *Client {
 		t.Helper()
 		transport := middleware.NewCacheRoundTripper(http.DefaultTransport, time.Minute)
+
 		return NewClient(Config{
 			BaseURL:    must(url.Parse(server.URL)),
 			HTTPClient: &http.Client{Transport: transport},
@@ -330,6 +331,7 @@ func TestClient_Execute_Cacheable(t *testing.T) {
 			if calls == 1 {
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte(`{"error":{}}`))
+
 				return
 			}
 			_, _ = w.Write([]byte(`{"foo":"recovered"}`))
