@@ -59,11 +59,11 @@ type OneAgentProvisioner struct {
 	apiReader  client.Reader
 	kubeClient client.Client
 
-	urlInstallerBuilder    binaryInstallerBuilder
-	imageInstallerBuilder  imageInstallerBuilder
-	jobInstallerBuilder    jobInstallerBuilder
-	cleaner                *cleanup.Cleaner
-	path                   metadata.PathResolver
+	urlInstallerBuilder   binaryInstallerBuilder
+	imageInstallerBuilder imageInstallerBuilder
+	jobInstallerBuilder   jobInstallerBuilder
+	cleaner               *cleanup.Cleaner
+	path                  metadata.PathResolver
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -71,13 +71,13 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 	path := metadata.PathResolver{RootDir: opts.RootDir}
 
 	return &OneAgentProvisioner{
-		apiReader:              mgr.GetAPIReader(),
-		kubeClient:             mgr.GetClient(),
-		path:                   path,
-		urlInstallerBuilder:    binary.NewInstaller,
-		imageInstallerBuilder:  image.NewImageInstaller,
-		jobInstallerBuilder:    job.NewInstaller,
-		cleaner:                cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
+		apiReader:             mgr.GetAPIReader(),
+		kubeClient:            mgr.GetClient(),
+		path:                  path,
+		urlInstallerBuilder:   binary.NewInstaller,
+		imageInstallerBuilder: image.NewImageInstaller,
+		jobInstallerBuilder:   job.NewInstaller,
+		cleaner:               cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
 	}
 }
 
