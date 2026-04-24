@@ -23,7 +23,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
-	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -232,7 +231,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		assertTokenCondition(t, dk, true)
 	})
 
-	t.Run("client builder error => error + condition", func(t *testing.T) {
+	t.Run("dtClient Factory error => error + condition", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
 		tokens := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -245,15 +244,10 @@ func TestSetupTokensAndClient(t *testing.T) {
 		}
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
 
-		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDtcBuilder.EXPECT().SetDynakube(mock.AnythingOfType("dynakube.DynaKube")).Return(mockDtcBuilder).Once()
-		mockDtcBuilder.EXPECT().SetTokens(mock.AnythingOfType("token.Tokens")).Return(mockDtcBuilder).Once()
-		mockDtcBuilder.EXPECT().Build(anyCtx).Return(nil, errors.New("BOOM")).Once()
-
 		controller := &Controller{
-			client:                 fakeClient,
-			apiReader:              fakeClient,
-			dynatraceClientBuilder: mockDtcBuilder,
+			client:          fakeClient,
+			apiReader:       fakeClient,
+			dtClientFactory: newErrorClientFactory(errors.New("BOOM")),
 		}
 
 		dtClient, err := controller.setupTokensAndClient(ctx, dk)
@@ -286,13 +280,10 @@ func TestSetupTokensAndClient(t *testing.T) {
 			tokenclient.ScopeActiveGateTokenCreate,
 		}, nil).Once()
 
-		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.Client{Token: mockedTokenClient})
-
 		controller := &Controller{
-			client:                 fakeClient,
-			apiReader:              fakeClient,
-			dynatraceClientBuilder: mockDtcBuilder,
+			client:          fakeClient,
+			apiReader:       fakeClient,
+			dtClientFactory: newClientFactory(&dynatrace.Client{Token: mockedTokenClient}),
 		}
 
 		dtClient, err := controller.setupTokensAndClient(ctx, dk)
@@ -453,9 +444,6 @@ func TestReconcileDynaKube(t *testing.T) {
 		Token:    mockedTokenClient,
 	}
 
-	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDynatraceClientBuild(mockDtcBuilder, dtClient)
-
 	mockDeploymentMetadataReconciler := newMockDynakubeReconciler(t)
 	mockDeploymentMetadataReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
@@ -494,7 +482,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		apiReader:                    fakeClient,
 		client:                       fakeClient,
 		deploymentMetadataReconciler: mockDeploymentMetadataReconciler,
-		dynatraceClientBuilder:       mockDtcBuilder,
+		dtClientFactory:              newClientFactory(dtClient),
 		extensionReconciler:          mockExtensionReconciler,
 		injectionReconciler:          mockInjectionReconciler,
 		istioReconciler:              mockIstioReconciler,
@@ -666,13 +654,10 @@ func TestTokenConditions(t *testing.T) {
 			StatusCode: 1234,
 		})
 
-		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.Client{Token: mockedTokenClient})
-
 		controller := &Controller{
-			client:                 fakeClient,
-			apiReader:              fakeClient,
-			dynatraceClientBuilder: mockDtcBuilder,
+			client:          fakeClient,
+			apiReader:       fakeClient,
+			dtClientFactory: newClientFactory(&dynatrace.Client{Token: mockedTokenClient}),
 		}
 
 		_, err := controller.setupTokensAndClient(ctx, dk)
@@ -701,13 +686,12 @@ func TestTokenConditions(t *testing.T) {
 		mockedTokenClient := tokenclientmock.NewAPIClient(t)
 		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return([]string{}, nil)
 
-		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDynatraceClientBuild(mockDtcBuilder, &dynatrace.Client{Token: mockedTokenClient})
+		dtClientFactory := newClientFactory(&dynatrace.Client{Token: mockedTokenClient})
 
 		controller := &Controller{
-			client:                 fakeClient,
-			apiReader:              fakeClient,
-			dynatraceClientBuilder: mockDtcBuilder,
+			client:          fakeClient,
+			apiReader:       fakeClient,
+			dtClientFactory: dtClientFactory,
 		}
 
 		_, err := controller.setupTokensAndClient(ctx, dk)
@@ -895,20 +879,11 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes []string) *Control
 	mockedTokenClient := tokenclientmock.NewAPIClient(t)
 	mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(tokenScopes, nil)
 
-	fakeBuilder := dtbuildermock.NewBuilder(t)
-	mockDynatraceClientBuild(fakeBuilder, &dynatrace.Client{Token: mockedTokenClient})
-
 	return &Controller{
-		client:                 fakeClient,
-		apiReader:              fakeClient,
-		dynatraceClientBuilder: fakeBuilder,
+		client:          fakeClient,
+		apiReader:       fakeClient,
+		dtClientFactory: newClientFactory(&dynatrace.Client{Token: mockedTokenClient}),
 	}
-}
-
-func mockDynatraceClientBuild(builder *dtbuildermock.Builder, client *dynatrace.Client) {
-	builder.EXPECT().SetDynakube(mock.AnythingOfType("dynakube.DynaKube")).Return(builder)
-	builder.EXPECT().SetTokens(mock.AnythingOfType("token.Tokens")).Return(builder)
-	builder.EXPECT().Build(anyCtx).Return(client, nil)
 }
 
 func createDynakubeWithK8SMonitoring() *dynakube.DynaKube {
@@ -952,5 +927,17 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 				k8slabel.AppVersionLabel: "1.0.0",
 			},
 		},
+	}
+}
+
+func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+		return dtClient, nil
+	}
+}
+
+func newErrorClientFactory(err error) dynatrace.ClientFactory {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+		return nil, err
 	}
 }

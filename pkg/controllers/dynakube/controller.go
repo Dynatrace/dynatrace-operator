@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
@@ -77,13 +76,13 @@ func NewController(mgr manager.Manager, clusterID string) *Controller {
 
 func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, eventRecorder events.EventRecorder, config *rest.Config, clusterID string) *Controller {
 	return &Controller{
-		client:                 kubeClient,
-		apiReader:              apiReader,
-		eventRecorder:          eventRecorder,
-		config:                 config,
-		operatorNamespace:      os.Getenv(k8senv.PodNamespace),
-		clusterID:              clusterID,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
+		client:            kubeClient,
+		apiReader:         apiReader,
+		eventRecorder:     eventRecorder,
+		config:            config,
+		operatorNamespace: os.Getenv(k8senv.PodNamespace),
+		clusterID:         clusterID,
+		dtClientFactory:   dynatrace.NewClientFromDynakube,
 
 		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
@@ -172,14 +171,15 @@ type Controller struct {
 	activeGateReconciler         activeGateReconciler
 	injectionReconciler          injectionReconciler
 
-	dynatraceClientBuilder dynatraceclient.Builder
-	config                 *rest.Config
+	config *rest.Config
 
 	tokens            token.Tokens
 	operatorNamespace string
 	clusterID         string
 
 	requeueAfter time.Duration
+
+	dtClientFactory dynatrace.ClientFactory
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -335,11 +335,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	controller.tokens = tokens
 
-	dynatraceClientBuilder := controller.dynatraceClientBuilder.
-		SetDynakube(*dk).
-		SetTokens(tokens)
-
-	dtClient, err := dynatraceClientBuilder.Build(ctx)
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 

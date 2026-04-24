@@ -1,6 +1,7 @@
 package nodes
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -16,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
-	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -337,18 +337,15 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 }
 
 func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *dynatrace.Client) *Controller {
-	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDtcBuilder.EXPECT().SetDynakube(mock.MatchedBy(func(dynakube.DynaKube) bool { return true })).Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().SetTokens(mock.MatchedBy(func(token.Tokens) bool { return true })).Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().Build(t.Context()).Return(dtClient, nil)
+	t.Helper()
 
 	return &Controller{
-		client:                 fakeClient,
-		apiReader:              fakeClient,
-		dynatraceClientBuilder: mockDtcBuilder,
-		podNamespace:           testNamespace,
-		runLocal:               true,
-		timeProvider:           timeprovider.New().Freeze(),
+		client:          fakeClient,
+		apiReader:       fakeClient,
+		dtClientFactory: newClientFactory(dtClient),
+		podNamespace:    testNamespace,
+		runLocal:        true,
+		timeProvider:    timeprovider.New().Freeze(),
 	}
 }
 
@@ -413,4 +410,10 @@ func createDefaultFakeClient() client.Client {
 				token.APIKey: []byte(testAPIToken),
 			},
 		})
+}
+
+func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+		return dtClient, nil
+	}
 }

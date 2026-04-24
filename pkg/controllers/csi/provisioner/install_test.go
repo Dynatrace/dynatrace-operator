@@ -12,7 +12,7 @@ func TestGetTargetDir(t *testing.T) {
 		prov := createProvisioner(t)
 		dk := createDynaKubeWithVersion(t)
 
-		targetDir := prov.getTargetDir(*dk)
+		targetDir := prov.getTargetDir(dk)
 		require.Contains(t, targetDir, dk.OneAgent().GetCodeModulesVersion())
 	})
 
@@ -21,7 +21,7 @@ func TestGetTargetDir(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
 
 		expectedDir := base64.StdEncoding.EncodeToString([]byte(dk.OneAgent().GetCodeModulesImage()))
-		targetDir := prov.getTargetDir(*dk)
+		targetDir := prov.getTargetDir(dk)
 		require.Contains(t, targetDir, expectedDir)
 	})
 }
