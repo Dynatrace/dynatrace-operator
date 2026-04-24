@@ -1,4 +1,4 @@
-package url
+package binary
 
 import (
 	"context"
@@ -41,9 +41,7 @@ type Installer struct {
 
 type NewFunc func(oneagent.APIClient, *Properties) installer.Installer
 
-var _ NewFunc = NewURLInstaller
-
-func NewURLInstaller(dtClient oneagent.APIClient, props *Properties) installer.Installer {
+func NewInstaller(dtClient oneagent.APIClient, props *Properties) installer.Installer {
 	return &Installer{
 		dtClient:  dtClient,
 		extractor: zip.NewOneAgentExtractor(props.PathResolver),
@@ -110,7 +108,7 @@ func (installer Installer) installAgent(ctx context.Context, targetDir string) e
 		}
 	}()
 
-	if err := installer.downloadOneAgentFromURL(ctx, tmpFile); err != nil {
+	if err := installer.downloadOneAgent(ctx, tmpFile); err != nil {
 		return err
 	}
 
@@ -133,6 +131,56 @@ func (installer Installer) isAlreadyDownloaded(targetDir string) bool {
 	_, err := os.Stat(targetDir)
 
 	return !os.IsNotExist(err)
+}
+
+func (installer Installer) downloadOneAgent(ctx context.Context, tmpFile *os.File) error {
+	if installer.props.TargetVersion == VersionLatest {
+		log.Info("downloading latest OneAgent package", "props", installer.props)
+
+		return installer.dtClient.GetLatest(ctx, oneagent.GetParams{
+			OS:            installer.props.OS,
+			InstallerType: installer.props.Type,
+			Flavor:        installer.props.Flavor,
+			Technologies:  installer.props.Technologies,
+			SkipMetadata:  installer.props.SkipMetadata,
+		},
+			tmpFile,
+		)
+	}
+
+	log.Info("downloading specific OneAgent package", "version", installer.props.TargetVersion)
+
+	err := installer.dtClient.Get(ctx,
+		oneagent.GetParams{
+			OS:            installer.props.OS,
+			InstallerType: installer.props.Type,
+			Flavor:        installer.props.Flavor,
+			Version:       installer.props.TargetVersion,
+			Technologies:  installer.props.Technologies,
+			SkipMetadata:  installer.props.SkipMetadata,
+		},
+		tmpFile,
+	)
+	if err != nil {
+		availableVersions, getVersionsError := installer.dtClient.GetVersions(ctx,
+			oneagent.GetParams{
+				OS:            installer.props.OS,
+				InstallerType: installer.props.Type,
+				Flavor:        installer.props.Flavor,
+			},
+		)
+		if getVersionsError != nil {
+			log.Info("failed to get available versions", "err", getVersionsError)
+
+			return errors.WithStack(getVersionsError)
+		}
+
+		log.Info("failed to download specific OneAgent package", "version", installer.props.TargetVersion, "available versions", availableVersions)
+
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 func isStandaloneInstall(targetDir string) bool {

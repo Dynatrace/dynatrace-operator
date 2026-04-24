@@ -31,9 +31,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
@@ -51,7 +51,7 @@ const (
 	longRequeueDuration    = 30 * time.Minute
 )
 
-type urlInstallerBuilder func(oneagent.APIClient, *url.Properties) installer.Installer
+type binaryInstallerBuilder func(oneagent.APIClient, *binary.Properties) installer.Installer
 type imageInstallerBuilder func(context.Context, *image.Properties) (installer.Installer, error)
 type jobInstallerBuilder func(context.Context, *job.Properties) installer.Installer
 
@@ -61,7 +61,7 @@ type OneAgentProvisioner struct {
 	kubeClient client.Client
 
 	dynatraceClientBuilder dynatraceclient.Builder
-	urlInstallerBuilder    urlInstallerBuilder
+	urlInstallerBuilder    binaryInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
 	jobInstallerBuilder    jobInstallerBuilder
 	cleaner                *cleanup.Cleaner
@@ -77,7 +77,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		kubeClient:             mgr.GetClient(),
 		path:                   path,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
-		urlInstallerBuilder:    url.NewURLInstaller,
+		urlInstallerBuilder:    binary.NewInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
 		jobInstallerBuilder:    job.NewInstaller,
 		cleaner:                cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
