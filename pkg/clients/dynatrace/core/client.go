@@ -27,7 +27,7 @@ type APIClient interface {
 	DELETE(ctx context.Context, path string) APIRequest
 }
 
-// Cacheable must be implemented by types passed to ExecuteWithCache.
+// Cacheable must be implemented by types passed to Execute if they supposed to be cached.
 // IsEmpty indicates whether the parsed response is considered empty.
 // If IsEmpty returns true after a successful parse, the cache entry is removed.
 type Cacheable interface {
