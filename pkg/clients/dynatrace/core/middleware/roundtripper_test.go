@@ -122,25 +122,6 @@ func TestNewCacheRoundTripper(t *testing.T) {
 		assert.Equal(t, 2, *calls, "zero TTL must bypass cache")
 	})
 
-	t.Run("octet-stream Accept header bypasses cache", func(t *testing.T) {
-		rt, calls := makeCachedRT(t, time.Minute,
-			fakeResponse("bin1"),
-			fakeResponse("bin2"),
-		)
-
-		req1 := newCachedRequest(t, http.MethodGet, endpoint)
-		req1.Header.Set("Accept", "application/octet-stream")
-		_, err := rt.RoundTrip(req1)
-		require.NoError(t, err)
-
-		req2 := newCachedRequest(t, http.MethodGet, endpoint)
-		req2.Header.Set("Accept", "application/octet-stream")
-		_, err = rt.RoundTrip(req2)
-		require.NoError(t, err)
-
-		assert.Equal(t, 2, *calls, "octet-stream requests must bypass cache")
-	})
-
 	t.Run("different URLs have separate cache entries", func(t *testing.T) {
 		rt, calls := makeCachedRT(t, time.Minute,
 			fakeResponse("url-a"),

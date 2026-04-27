@@ -35,10 +35,6 @@ func (rt roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func NewCacheRoundTripper(next http.RoundTripper, ttl time.Duration) http.RoundTripper {
 	return roundTripperFunc(func(r *http.Request) (*http.Response, error) {
-		if r.Header.Get("Accept") == "application/octet-stream" {
-			return next.RoundTrip(r)
-		}
-
 		cacheKey := buildCacheKey(r)
 
 		if ttl == 0 || r.Header.Get(CacheRequestHeader) == "" {
