@@ -179,7 +179,7 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 
 	for _, namespace := range namespaces {
 		if namespace.Status.Phase == corev1.NamespaceTerminating {
-			log.Info("skipping terminating namespace", "namespace", namespace.Name)
+			logd.FromContext(ctx).Info("skipping terminating namespace", "namespace", namespace.Name)
 
 			continue
 		}
