@@ -16,6 +16,7 @@ const (
 
 	eventsPath = "/v1/events"
 	hostsPath  = "/v1/entity/infrastructure/hosts"
+	loggerName = "dtclient-hostevent"
 )
 
 type Client interface {
@@ -58,7 +59,7 @@ type hostEntityMap map[string]string
 // The reason we do this "overwrite check" is somewhat unknown, it used to be part of a "caching" logic, however that cache was actually never really used.
 // Kept it "as is" mainly to not introduce new behavior, it is unknown how the API we use handles repeated IP usage. But it can be just dead code.
 func (entityMap hostEntityMap) Update(ctx context.Context, info HostResponse) {
-	ctx, log = logd.NewFromContext(ctx, "dtclient-hostevent")
+	_, log := logd.NewFromContext(ctx, loggerName)
 
 	for _, ip := range info.IPAddresses {
 		if oldEntityID, ok := entityMap[ip]; ok {
@@ -71,7 +72,7 @@ func (entityMap hostEntityMap) Update(ctx context.Context, info HostResponse) {
 
 // GetEntityIDForIP returns the host entity ID for a given IP address.
 func (c *ClientImpl) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
-	ctx, _ = logd.NewFromContext(ctx, "dtclient-hostevent")
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 	if ip == "" {
 		return "", errors.New("must provide IP")
 	}
@@ -141,7 +142,7 @@ func NewMarkedForTerminationEvent(entityID, source, description string, timestam
 
 // SendEvent posts an event to the Dynatrace API.
 func (c *ClientImpl) SendEvent(ctx context.Context, event Event) error {
-	ctx, _ = logd.NewFromContext(ctx, "dtclient-hostevent")
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 	if event.EventType == "" {
 		return errors.New("no key set for eventType in eventData payload")
 	}

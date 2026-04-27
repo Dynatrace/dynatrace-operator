@@ -140,7 +140,6 @@ func (c Generic[T, L]) Recreate(ctx context.Context, object T) error {
 }
 
 func (c Generic[T, L]) GetAllFromNamespaces(ctx context.Context, objectName string) ([]T, error) {
-	log := logd.FromContext(ctx)
 	logd.FromContext(ctx).Info("querying from all namespaces", "name", objectName)
 
 	listOps := []client.ListOption{
@@ -171,7 +170,6 @@ func (c Generic[T, L]) CreateOrUpdateForNamespaces(ctx context.Context, object T
 }
 
 func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T, namespacesContainingSecret map[string]T, namespaces []corev1.Namespace) error {
-	log := logd.FromContext(ctx)
 	updateCount := 0
 	creationCount := 0
 
@@ -219,7 +217,6 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 }
 
 func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string, options ...client.DeleteOption) error {
-	log := logd.FromContext(ctx)
 	logd.FromContext(ctx).Info("deleting object from namespace", "name", objectName, "namespace", namespace)
 
 	c.Target.SetName(objectName)
@@ -229,7 +226,6 @@ func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string
 }
 
 func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName string, namespaces []string) error {
-	log := logd.FromContext(ctx)
 	logd.FromContext(ctx).Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
 
 	errs := make([]error, 0, len(namespaces))
