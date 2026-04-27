@@ -58,7 +58,7 @@ type hostEntityMap map[string]string
 // The reason we do this "overwrite check" is somewhat unknown, it used to be part of a "caching" logic, however that cache was actually never really used.
 // Kept it "as is" mainly to not introduce new behavior, it is unknown how the API we use handles repeated IP usage. But it can be just dead code.
 func (entityMap hostEntityMap) Update(ctx context.Context, info HostResponse) {
-	log := logd.FromContext(ctx)
+	ctx, log = logd.NewFromContext(ctx, "dtclient-hostevent")
 
 	for _, ip := range info.IPAddresses {
 		if oldEntityID, ok := entityMap[ip]; ok {
