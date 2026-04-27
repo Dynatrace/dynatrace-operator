@@ -37,7 +37,7 @@ type Client struct {
 }
 
 type OAuthClient struct {
-	EdgeConnect edgeconnect.APIClient
+	EdgeConnect edgeconnect.Client
 }
 
 type Config struct {

@@ -115,7 +115,7 @@ packages:
       APIClient:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect:
     interfaces:
-      APIClient:
+      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers:
     interfaces:
       Reconciler:

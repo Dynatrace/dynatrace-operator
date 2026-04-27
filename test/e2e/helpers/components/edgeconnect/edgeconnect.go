@@ -140,7 +140,7 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 	}
 }
 
-func BuildClient(secret tenant.EdgeConnectSecret) (edgeconnectClient.APIClient, error) {
+func BuildClient(secret tenant.EdgeConnectSecret) (edgeconnectClient.Client, error) {
 	oAuthClient, err := dynatrace.NewOAuthClient(
 		clientcredentials.Config{
 			ClientID:     secret.OauthClientID,
