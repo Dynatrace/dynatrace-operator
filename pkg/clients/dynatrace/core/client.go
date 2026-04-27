@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
@@ -24,6 +25,13 @@ type APIClient interface {
 	POST(ctx context.Context, path string) APIRequest
 	PUT(ctx context.Context, path string) APIRequest
 	DELETE(ctx context.Context, path string) APIRequest
+}
+
+// Cacheable must be implemented by types passed to Execute if they supposed to be cached.
+// IsEmpty indicates whether the parsed response is considered empty.
+// If IsEmpty returns true after a successful parse, the cache entry is removed.
+type Cacheable interface {
+	IsEmpty() bool
 }
 
 // APIRequest provides a fluent interface for building and executing HTTP requests
@@ -42,9 +50,8 @@ type APIRequest interface {
 	WithoutToken() APIRequest
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) APIRequest
-	// WithSkipCache bypasses the in-memory cache for this request and evicts any existing cached entry
-	WithSkipCache() APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
+	// If the provided model implements the Cacheable interface, then the client will cache the response.
 	Execute(model any) error
 	// ExecuteWriter executes the request, writes the response body to the provided writer,
 	// and returns the response headers on success.
@@ -197,15 +204,17 @@ func (r *Request) WithHeader(key, value string) APIRequest {
 	return r
 }
 
-// WithSkipCache bypasses the in-memory cache for this request and evicts any existing cached entry
-func (r *Request) WithSkipCache() APIRequest {
-	return r.WithHeader(CacheSkipHeader, "true")
-}
-
 // Execute executes the request and unmarshals the response into the provided model
 func (r *Request) Execute(model any) error {
-	body, err := r.doRequest()
+	cacheableModel, isCacheable := model.(Cacheable)
+	if isCacheable {
+		r.headers.Set(middleware.CacheRequestHeader, "true")
+	}
+
+	body, cacheKey, err := r.doRequest()
 	if err != nil {
+		middleware.InvalidateCacheEntry(cacheKey)
+
 		return err
 	}
 
@@ -213,6 +222,10 @@ func (r *Request) Execute(model any) error {
 		if err := json.Unmarshal(body, model); err != nil {
 			return fmt.Errorf("unmarshal response body: %w", err)
 		}
+	}
+
+	if isCacheable && cacheableModel.IsEmpty() {
+		middleware.InvalidateCacheEntry(cacheKey)
 	}
 
 	return nil
@@ -316,14 +329,14 @@ func (r *Request) doRequestStream(writer io.Writer) (responseHeaders http.Header
 	return resp.Header, nil
 }
 
-func (r *Request) doRequest() (body []byte, err error) {
+func (r *Request) doRequest() (body []byte, cacheKey string, err error) {
 	if r.err != nil {
-		return nil, r.err
+		return nil, "", r.err
 	}
 
 	reqURL, err := r.buildURL()
 	if err != nil {
-		return nil, fmt.Errorf("build URL: %w", err)
+		return nil, "", fmt.Errorf("build URL: %w", err)
 	}
 
 	var bodyReader io.Reader
@@ -333,7 +346,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 
 	req, err := http.NewRequestWithContext(r.ctx, r.method, reqURL.String(), bodyReader)
 	if err != nil {
-		return nil, fmt.Errorf("create HTTP request: %w", err)
+		return nil, "", fmt.Errorf("create HTTP request: %w", err)
 	}
 
 	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
@@ -347,7 +360,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("HTTP request: %w", err)
+		return nil, "", fmt.Errorf("HTTP request: %w", err)
 	}
 
 	defer func() {
@@ -358,7 +371,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read response body: %w", err)
+		return nil, "", fmt.Errorf("read response body: %w", err)
 	}
 
 	log.Debug("API request", loggerArgs(resp, body)...)
@@ -367,7 +380,7 @@ func (r *Request) doRequest() (body []byte, err error) {
 		err = handleErrorResponse(resp, body)
 	}
 
-	return body, err
+	return body, resp.Header.Get(middleware.CacheKeyHeader), err
 }
 
 // setHeaders sets the common headers for the request
