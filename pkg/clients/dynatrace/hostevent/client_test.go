@@ -134,7 +134,7 @@ func Test_buildHostEntityMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := buildHostEntityMap(context.Background(), tt.hosts, tt.networkZone)
+			got := buildHostEntityMap(t.Context(), tt.hosts, tt.networkZone)
 			assert.Equal(t, tt.want, got)
 		})
 	}
