@@ -2,7 +2,6 @@ package oneagent
 
 import (
 	"context"
-
 	"fmt"
 	"os"
 	"path/filepath"
@@ -118,6 +117,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 
 func (mut *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
 	_, log := logd.NewFromContext(ctx, "oa-mutation")
+
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 	if err := validateInstallPath(installPath); err != nil {
 		return false

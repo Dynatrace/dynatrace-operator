@@ -138,6 +138,8 @@ func (installer Installer) isAlreadyDownloaded(targetDir string) bool {
 }
 
 func (installer Installer) downloadOneAgent(ctx context.Context, tmpFile *os.File) error {
+	log := logd.FromContext(ctx)
+
 	if installer.props.TargetVersion == VersionLatest {
 		log.Info("downloading latest OneAgent package", "props", installer.props)
 

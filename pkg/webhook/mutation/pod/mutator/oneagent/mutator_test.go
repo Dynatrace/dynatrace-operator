@@ -382,25 +382,25 @@ func TestMutate(t *testing.T) {
 	})
 
 	t.Run("install-path with separator => error", func(t *testing.T) {
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 		request.Pod.Annotations = map[string]string{
 			AnnotationInstallPath: "my:install",
 		}
 
 		err := mut.Mutate(request)
 		require.ErrorAs(t, err, new(dtwebhook.MutatorError))
-		assert.False(t, mut.IsInjected(request.BaseRequest))
+		assert.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("install-path with whitespace => error", func(t *testing.T) {
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 		request.Pod.Annotations = map[string]string{
 			AnnotationInstallPath: "my install",
 		}
 
 		err := mut.Mutate(request)
 		require.ErrorAs(t, err, new(dtwebhook.MutatorError))
-		assert.False(t, mut.IsInjected(request.BaseRequest))
+		assert.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("no tenantUUID + cloudnative => error", func(t *testing.T) {
@@ -479,12 +479,12 @@ func TestReinvoke(t *testing.T) {
 	})
 
 	t.Run("incorrect install-path => no update", func(t *testing.T) {
-		request := createTestMutationRequestWithoutInjectedContainers()
+		request := createTestMutationRequestWithoutInjectedContainers(t)
 		request.Pod.Annotations = map[string]string{
 			AnnotationInstallPath: "my install",
 		}
 
-		updated := mut.Reinvoke(request.ToReinvocationRequest())
+		updated := mut.Reinvoke(t.Context(), request.ToReinvocationRequest())
 		require.False(t, updated)
 	})
 }
