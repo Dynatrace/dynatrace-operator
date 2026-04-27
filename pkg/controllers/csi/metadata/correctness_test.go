@@ -200,7 +200,7 @@ func buildReader(t *testing.T, dks ...dynakube.DynaKube) client.Reader {
 func setupLogForTest(t *testing.T) context.Context {
 	t.Helper()
 	base := logd.Get()
-	instrumented := logd.Logger{Logger: base.WithSink(testFailingLogSink{LogSink: base.GetSink(), t: t})}
+	instrumented := logd.Logger{Logger: logd.Get().WithSink(testFailingLogSink{LogSink: base.GetSink(), t: t})}
 
 	return logd.IntoContext(t.Context(), instrumented)
 }
