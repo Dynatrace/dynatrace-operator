@@ -18,7 +18,7 @@ func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody(hierarchicalMonitoringSettingsSchemaVersion)).Return(request).Once()
@@ -32,7 +32,7 @@ func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 	})
 
 	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody(hierarchicalMonitoringSettingsSchemaVersion)).Return(request).Once()
@@ -46,7 +46,7 @@ func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 	})
 
 	t.Run("fallback to v1 on 404", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request2 := coremock.NewAPIRequest(t)
 
@@ -68,7 +68,7 @@ func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 	})
 
 	t.Run("empty kubeSystemUUID", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		client := NewClient(apiClient)
 		objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", "", "scope-1")
 		require.ErrorIs(t, err, errMissingKubeSystemUUID)
@@ -76,7 +76,7 @@ func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 	})
 
 	t.Run("invalid response", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody(hierarchicalMonitoringSettingsSchemaVersion)).Return(request).Once()
@@ -97,7 +97,7 @@ func TestCreateOrUpdateKubernetesAppSetting(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
@@ -111,7 +111,7 @@ func TestCreateOrUpdateKubernetesAppSetting(t *testing.T) {
 	})
 
 	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()

@@ -28,11 +28,11 @@ type Client interface {
 }
 
 type client struct {
-	apiClient   core.APIClient
+	apiClient   core.Client
 	networkZone string
 }
 
-func NewClient(apiClient core.APIClient, networkZone string) *client {
+func NewClient(apiClient core.Client, networkZone string) *client {
 	return &client{
 		apiClient:   apiClient,
 		networkZone: networkZone,

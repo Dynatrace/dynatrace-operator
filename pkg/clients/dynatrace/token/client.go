@@ -37,7 +37,7 @@ type Client interface {
 }
 
 type client struct {
-	apiClient core.APIClient
+	apiClient core.Client
 }
 
 type lookupRequest struct {
@@ -55,7 +55,7 @@ func (s *scopesResponse) IsEmpty() bool {
 	return false
 }
 
-func NewClient(apiClient core.APIClient) *client {
+func NewClient(apiClient core.Client) *client {
 	return &client{
 		apiClient: apiClient,
 	}

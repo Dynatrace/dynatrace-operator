@@ -19,8 +19,8 @@ const apiTokenHeader = "Api-Token "
 
 var log = logd.Get().WithName("dtclient-core")
 
-// APIClient defines the behavior required from a config provider and is mockable
-type APIClient interface {
+// Client defines the behavior required from a config provider and is mockable
+type Client interface {
 	GET(ctx context.Context, path string) APIRequest
 	POST(ctx context.Context, path string) APIRequest
 	PUT(ctx context.Context, path string) APIRequest
@@ -66,18 +66,18 @@ type Config struct {
 	PaasToken  string
 }
 
-type Client struct {
+type client struct {
 	cfg Config
 }
 
-func NewClient(cfg Config) *Client {
-	return &Client{
+func NewClient(cfg Config) *client {
+	return &client{
 		cfg: cfg,
 	}
 }
 
 type Request struct {
-	client *Client
+	client *client
 
 	ctx       context.Context
 	query     url.Values
@@ -98,7 +98,7 @@ const (
 	TokenTypeNone
 )
 
-func (c *Client) newRequest(ctx context.Context) *Request {
+func (c *client) newRequest(ctx context.Context) *Request {
 	headers := make(http.Header)
 
 	query := make(url.Values)
@@ -115,22 +115,22 @@ func (c *Client) newRequest(ctx context.Context) *Request {
 }
 
 // GET creates a GET request builder
-func (c *Client) GET(ctx context.Context, path string) APIRequest {
+func (c *client) GET(ctx context.Context, path string) APIRequest {
 	return c.newRequest(ctx).withMethod(http.MethodGet).WithPath(path)
 }
 
 // POST creates a POST request builder
-func (c *Client) POST(ctx context.Context, path string) APIRequest {
+func (c *client) POST(ctx context.Context, path string) APIRequest {
 	return c.newRequest(ctx).withMethod(http.MethodPost).WithPath(path)
 }
 
 // PUT creates a PUT request builder
-func (c *Client) PUT(ctx context.Context, path string) APIRequest {
+func (c *client) PUT(ctx context.Context, path string) APIRequest {
 	return c.newRequest(ctx).withMethod(http.MethodPut).WithPath(path)
 }
 
 // DELETE creates a DELETE request builder
-func (c *Client) DELETE(ctx context.Context, path string) APIRequest {
+func (c *client) DELETE(ctx context.Context, path string) APIRequest {
 	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
 }
 

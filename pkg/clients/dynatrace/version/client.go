@@ -23,10 +23,10 @@ type Client interface {
 }
 
 type client struct {
-	apiClient core.APIClient
+	apiClient core.Client
 }
 
-func NewClient(apiClient core.APIClient) *client {
+func NewClient(apiClient core.Client) *client {
 	return &client{
 		apiClient: apiClient,
 	}

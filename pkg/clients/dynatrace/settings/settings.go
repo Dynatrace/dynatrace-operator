@@ -141,10 +141,10 @@ func (num notSingleEntryError) Error() string {
 }
 
 type client struct {
-	apiClient core.APIClient
+	apiClient core.Client
 }
 
-func NewClient(apiClient core.APIClient) Client {
+func NewClient(apiClient core.Client) Client {
 	return &client{
 		apiClient: apiClient,
 	}

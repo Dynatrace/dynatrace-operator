@@ -49,10 +49,10 @@ func TestGetLatest(t *testing.T) {
 			require.NoError(t, copyErr)
 		}).Return(nil, rawErr).Once()
 
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
 
-		return NewClient(client, "", ""), file
+		return NewClient(coreClient, "", ""), file
 	}
 
 	t.Run("file download successful", func(t *testing.T) {
@@ -106,10 +106,10 @@ func TestGet(t *testing.T) {
 			require.NoError(t, copyErr)
 		}).Return(nil, rawErr).Once()
 
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
 
-		return NewClient(client, "", ""), file
+		return NewClient(coreClient, "", ""), file
 	}
 
 	t.Run("handle response correctly", func(t *testing.T) {
@@ -157,10 +157,10 @@ func TestGetVersions(t *testing.T) {
 			}
 		}).Return(execErr).Once()
 
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
 
-		return NewClient(client, "", "")
+		return NewClient(coreClient, "", "")
 	}
 
 	t.Run("handle response correctly", func(t *testing.T) {

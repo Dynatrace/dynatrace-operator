@@ -19,7 +19,7 @@ func TestGetKSPMSettings(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(KSPMSettingsResponse)).Run(injectResponse(KSPMSettingsResponse{TotalCount: 3})).Return(nil).Once()
@@ -32,7 +32,7 @@ func TestGetKSPMSettings(t *testing.T) {
 	})
 
 	t.Run("empty monitoredEntity", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		client := NewClient(apiClient)
 		resp, err := client.GetKSPMSettings(ctx, "")
 		require.NoError(t, err)
@@ -48,7 +48,7 @@ func TestCreateKSPMSetting(t *testing.T) {
 	}
 
 	t.Run("no ME", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 
 		client := NewClient(apiClient)
 		objectID, err := client.CreateKSPMSetting(ctx, "", true)
@@ -57,21 +57,21 @@ func TestCreateKSPMSetting(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-123"}})).Return(nil).Once()
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
-		client := NewClient(apiClient)
-		objectID, err := client.CreateKSPMSetting(ctx, "scope-1", true)
+		settingsClient := NewClient(apiClient)
+		objectID, err := settingsClient.CreateKSPMSetting(ctx, "scope-1", true)
 		require.NoError(t, err)
 		assert.Equal(t, "obj-123", objectID)
 	})
 
 	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
@@ -85,15 +85,15 @@ func TestCreateKSPMSetting(t *testing.T) {
 	})
 
 	t.Run("response not exactly one entry", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()
 		apiClient.On("POST", ctx, ObjectsPath).Return(request)
 
-		client := NewClient(apiClient)
-		objectID, err := client.CreateKSPMSetting(ctx, "scope-1", true)
+		settingsClient := NewClient(apiClient)
+		objectID, err := settingsClient.CreateKSPMSetting(ctx, "scope-1", true)
 		require.ErrorAs(t, err, new(notSingleEntryError))
 		assert.Empty(t, objectID)
 	})

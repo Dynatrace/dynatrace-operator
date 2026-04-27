@@ -20,10 +20,10 @@ func TestGetScopes(t *testing.T) {
 			}
 		}).Return(expectErr).Once()
 
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().POST(t.Context(), lookupPath).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().POST(t.Context(), lookupPath).Return(req).Once()
 
-		return NewClient(client)
+		return NewClient(coreClient)
 	}
 
 	t.Run("success", func(t *testing.T) {

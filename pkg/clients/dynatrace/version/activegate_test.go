@@ -26,10 +26,10 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 				resp.LatestGatewayVersion = "1.2.3"
 			}).
 			Return(err).Once()
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), "/v1/deployment/installer/gateway").Return(req).Once()
+		apiClient := coremock.NewClient(t)
+		apiClient.EXPECT().GET(t.Context(), "/v1/deployment/installer/gateway").Return(req).Once()
 
-		return NewClient(client)
+		return NewClient(apiClient)
 	}
 
 	t.Run("ok - returns version", func(t *testing.T) {

@@ -119,7 +119,7 @@ func TestClient_URL(t *testing.T) {
 
 func TestClient_Errors(t *testing.T) {
 	t.Run("missing base URL", func(t *testing.T) {
-		c := new(Client)
+		c := new(client)
 		assert.EqualError(t, c.GET(t.Context(), "/test").Execute(nil), "build URL: missing base URL")
 	})
 
@@ -234,7 +234,7 @@ func TestClient_ExecuteWriter(t *testing.T) {
 
 	t.Run("returns error on missing base URL", func(t *testing.T) {
 		var buf bytes.Buffer
-		headers, err := new(Client).GET(t.Context(), "/test").ExecuteWriter(&buf)
+		headers, err := new(client).GET(t.Context(), "/test").ExecuteWriter(&buf)
 		require.EqualError(t, err, "build URL: missing base URL")
 		assert.Nil(t, headers)
 		assert.Empty(t, buf.String())
@@ -254,7 +254,7 @@ func (brokenWriter) Write(_ []byte) (int, error) {
 }
 
 func TestClient_Execute_Cacheable(t *testing.T) {
-	newCachingClient := func(t *testing.T, server *httptest.Server) *Client {
+	newCachingClient := func(t *testing.T, server *httptest.Server) *client {
 		t.Helper()
 		transport := middleware.NewCacheRoundTripper(http.DefaultTransport, time.Minute)
 
