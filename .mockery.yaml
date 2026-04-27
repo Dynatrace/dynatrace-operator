@@ -93,7 +93,7 @@ packages:
   # =============================================================================
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate:
     interfaces:
-      APIClient:
+      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core:
     interfaces:
       APIClient:

@@ -29,7 +29,7 @@ import (
 )
 
 type authTokenReconciler interface {
-	Reconcile(ctx context.Context, agClient agclient.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error
 }
 
 type istioReconciler interface {
@@ -37,7 +37,7 @@ type istioReconciler interface {
 }
 
 type connectionReconciler interface {
-	Reconcile(ctx context.Context, agClient agclient.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error
 }
 
 type versionReconciler interface {

@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 		})
 
 		fakeClient := fake.NewClient(buildActiveGateSecret(*dk, testTenantUUID))
-		dtClient := agclientmock.NewAPIClient(t)
+		dtClient := agclientmock.NewClient(t)
 
 		r := NewReconciler(fakeClient, fakeClient)
 		err := r.Reconcile(ctx, dtClient, dk)
@@ -66,7 +66,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("store ActiveGate connection info to DynaKube status + create tenant secret", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		dtClient := agclientmock.NewAPIClient(t)
+		dtClient := agclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk)
@@ -91,7 +91,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("update ActiveGate connection info + update tenant secret", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		dtClient := agclientmock.NewAPIClient(t)
+		dtClient := agclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk, buildActiveGateSecret(*dk, testTenantUUID))
@@ -125,7 +125,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("update ActiveGate connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		dtClient := agclientmock.NewAPIClient(t)
+		dtClient := agclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk)
@@ -159,7 +159,7 @@ func TestReconcile(t *testing.T) {
 			},
 		})
 
-		dtClient := agclientmock.NewAPIClient(t)
+		dtClient := agclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		r := NewReconciler(fakeClient, fakeClient)

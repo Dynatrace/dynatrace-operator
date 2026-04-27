@@ -43,7 +43,7 @@ func (_m *mockAuthTokenReconciler) EXPECT() *mockAuthTokenReconciler_Expecter {
 }
 
 // Reconcile provides a mock function for the type mockAuthTokenReconciler
-func (_mock *mockAuthTokenReconciler) Reconcile(ctx context.Context, agClient activegate.APIClient, dk *dynakube.DynaKube) error {
+func (_mock *mockAuthTokenReconciler) Reconcile(ctx context.Context, agClient activegate.Client, dk *dynakube.DynaKube) error {
 	ret := _mock.Called(ctx, agClient, dk)
 
 	if len(ret) == 0 {
@@ -51,7 +51,7 @@ func (_mock *mockAuthTokenReconciler) Reconcile(ctx context.Context, agClient ac
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, activegate.APIClient, *dynakube.DynaKube) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, activegate.Client, *dynakube.DynaKube) error); ok {
 		r0 = returnFunc(ctx, agClient, dk)
 	} else {
 		r0 = ret.Error(0)
@@ -66,21 +66,21 @@ type mockAuthTokenReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - agClient activegate.APIClient
+//   - agClient activegate.Client
 //   - dk *dynakube.DynaKube
 func (_e *mockAuthTokenReconciler_Expecter) Reconcile(ctx interface{}, agClient interface{}, dk interface{}) *mockAuthTokenReconciler_Reconcile_Call {
 	return &mockAuthTokenReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, agClient, dk)}
 }
 
-func (_c *mockAuthTokenReconciler_Reconcile_Call) Run(run func(ctx context.Context, agClient activegate.APIClient, dk *dynakube.DynaKube)) *mockAuthTokenReconciler_Reconcile_Call {
+func (_c *mockAuthTokenReconciler_Reconcile_Call) Run(run func(ctx context.Context, agClient activegate.Client, dk *dynakube.DynaKube)) *mockAuthTokenReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 activegate.APIClient
+		var arg1 activegate.Client
 		if args[1] != nil {
-			arg1 = args[1].(activegate.APIClient)
+			arg1 = args[1].(activegate.Client)
 		}
 		var arg2 *dynakube.DynaKube
 		if args[2] != nil {
@@ -100,7 +100,7 @@ func (_c *mockAuthTokenReconciler_Reconcile_Call) Return(err error) *mockAuthTok
 	return _c
 }
 
-func (_c *mockAuthTokenReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, agClient activegate.APIClient, dk *dynakube.DynaKube) error) *mockAuthTokenReconciler_Reconcile_Call {
+func (_c *mockAuthTokenReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, agClient activegate.Client, dk *dynakube.DynaKube) error) *mockAuthTokenReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -217,7 +217,7 @@ func (_m *mockConnectionReconciler) EXPECT() *mockConnectionReconciler_Expecter 
 }
 
 // Reconcile provides a mock function for the type mockConnectionReconciler
-func (_mock *mockConnectionReconciler) Reconcile(ctx context.Context, agClient activegate.APIClient, dk *dynakube.DynaKube) error {
+func (_mock *mockConnectionReconciler) Reconcile(ctx context.Context, agClient activegate.Client, dk *dynakube.DynaKube) error {
 	ret := _mock.Called(ctx, agClient, dk)
 
 	if len(ret) == 0 {
@@ -225,7 +225,7 @@ func (_mock *mockConnectionReconciler) Reconcile(ctx context.Context, agClient a
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, activegate.APIClient, *dynakube.DynaKube) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, activegate.Client, *dynakube.DynaKube) error); ok {
 		r0 = returnFunc(ctx, agClient, dk)
 	} else {
 		r0 = ret.Error(0)
@@ -240,21 +240,21 @@ type mockConnectionReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - agClient activegate.APIClient
+//   - agClient activegate.Client
 //   - dk *dynakube.DynaKube
 func (_e *mockConnectionReconciler_Expecter) Reconcile(ctx interface{}, agClient interface{}, dk interface{}) *mockConnectionReconciler_Reconcile_Call {
 	return &mockConnectionReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, agClient, dk)}
 }
 
-func (_c *mockConnectionReconciler_Reconcile_Call) Run(run func(ctx context.Context, agClient activegate.APIClient, dk *dynakube.DynaKube)) *mockConnectionReconciler_Reconcile_Call {
+func (_c *mockConnectionReconciler_Reconcile_Call) Run(run func(ctx context.Context, agClient activegate.Client, dk *dynakube.DynaKube)) *mockConnectionReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 activegate.APIClient
+		var arg1 activegate.Client
 		if args[1] != nil {
-			arg1 = args[1].(activegate.APIClient)
+			arg1 = args[1].(activegate.Client)
 		}
 		var arg2 *dynakube.DynaKube
 		if args[2] != nil {
@@ -274,7 +274,7 @@ func (_c *mockConnectionReconciler_Reconcile_Call) Return(err error) *mockConnec
 	return _c
 }
 
-func (_c *mockConnectionReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, agClient activegate.APIClient, dk *dynakube.DynaKube) error) *mockConnectionReconciler_Reconcile_Call {
+func (_c *mockConnectionReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, agClient activegate.Client, dk *dynakube.DynaKube) error) *mockConnectionReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

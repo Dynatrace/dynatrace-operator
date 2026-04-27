@@ -16,17 +16,17 @@ const (
 	connectionInfoPath = "/v1/deployment/installer/gateway/connectioninfo"
 )
 
-type APIClient interface {
+type Client interface {
 	GetAuthToken(ctx context.Context, dynakubeName string) (*AuthTokenInfo, error)
 	GetConnectionInfo(ctx context.Context) (ConnectionInfo, error)
 }
 
-type Client struct {
+type client struct {
 	apiClient core.APIClient
 }
 
-func NewClient(apiClient core.APIClient) *Client {
-	return &Client{
+func NewClient(apiClient core.APIClient) *client {
+	return &client{
 		apiClient: apiClient,
 	}
 }
@@ -43,7 +43,7 @@ type authTokenParams struct {
 	SeedToken      bool   `json:"seedToken"`
 }
 
-func (c *Client) GetAuthToken(ctx context.Context, dynakubeName string) (*AuthTokenInfo, error) {
+func (c *client) GetAuthToken(ctx context.Context, dynakubeName string) (*AuthTokenInfo, error) {
 	body := authTokenParams{
 		Name:           dynakubeName,
 		SeedToken:      false,
@@ -79,7 +79,7 @@ type connectionInfoJSONResponse struct {
 	CommunicationEndpoints string `json:"communicationEndpoints"`
 }
 
-func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
+func (c *client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
 	var resp connectionInfoJSONResponse
 
 	err := c.apiClient.GET(ctx, connectionInfoPath).
