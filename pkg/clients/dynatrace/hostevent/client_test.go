@@ -35,7 +35,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 			}).
 			Return(err).Once()
 		coreClient := coremock.NewClient(t)
-		coreClient.EXPECT().GET(t.Context(), hostsPath).Return(req).Once()
+		coreClient.EXPECT().GET(anyCtx, hostsPath).Return(req).Once()
 
 		return NewClient(coreClient, "")
 	}
@@ -146,7 +146,7 @@ func TestSendEvent(t *testing.T) {
 		req.EXPECT().WithJSONBody(Event{EventType: "TEST"}).Return(req).Once()
 		req.EXPECT().Execute(nil).Return(err).Once()
 		client := coremock.NewClient(t)
-		client.EXPECT().POST(t.Context(), eventsPath).Return(req).Once()
+		client.EXPECT().POST(anyCtx, eventsPath).Return(req).Once()
 
 		return NewClient(client, "")
 	}

@@ -178,7 +178,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 
 		return nil
 	case !tenantEdgeConnect.ManagedByDynatraceOperator:
-		_log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user")
+		log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user")
 
 		return nil
 	case edgeConnectIDFromSecret == "":

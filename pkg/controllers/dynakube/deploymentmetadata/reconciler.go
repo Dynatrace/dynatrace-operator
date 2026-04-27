@@ -25,7 +25,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, clusterID string)
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-deploymentmetadata")
+	ctx, _ = logd.NewFromContext(ctx, "dynakube-deployment-metadata")
 
 	configMapData := map[string]string{}
 

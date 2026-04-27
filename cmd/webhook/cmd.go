@@ -126,8 +126,6 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func startCertificateWatcher(ctx context.Context, webhookManager manager.Manager, namespace string) error {
-	ctx, _ = logd.NewFromContext(ctx, "webhook")
-
 	if !system.IsDeployedViaOLM() {
 		watcher, err := certificates.NewCertificateWatcher(webhookManager, namespace, webhook.SecretCertsName)
 		if err != nil {

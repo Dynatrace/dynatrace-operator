@@ -49,14 +49,7 @@ func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
 
-<<<<<<< HEAD
 func (token *Token) verifyScopes(ctx context.Context, dtClient token.Client, dk dynakube.DynaKube) (map[string]bool, error) {
-||||||| parent of 73e658a3c (build and test errors)
-func (token *Token) verifyScopes(ctx context.Context, dtClient token.APIClient, dk dynakube.DynaKube) (map[string]bool, error) {
-<<<<<<< HEAD
-=======
-func (token *Token) verifyScopes(ctx context.Context, dtClient token.APIClient, dk dynakube.DynaKube) (map[string]bool, error) {
->>>>>>> 73e658a3c (build and test errors)
 	ctx, log := logd.NewFromContext(ctx, "tokens")
 	// The scopes endpoint will no longer be available in 3rd gen
 	if len(token.Features) == 0 || dttoken.IsPlatform(token.Value) {

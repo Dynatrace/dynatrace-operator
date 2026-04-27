@@ -23,6 +23,7 @@ type ConnectionInfo struct {
 
 func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
 	ctx, log := logd.NewFromContext(ctx, loggerName)
+
 	var resp ConnectionInfo
 
 	params := map[string]string{}
