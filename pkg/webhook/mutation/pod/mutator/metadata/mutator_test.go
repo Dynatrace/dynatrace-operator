@@ -352,10 +352,10 @@ func TestMutate(t *testing.T) {
 
 				request := dtwebhook.MutationRequest{
 					Context: t.Context(),
-			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: pod,
-				DynaKube: dynakube.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
+					BaseRequest: &dtwebhook.BaseRequest{
+						Pod: pod,
+						DynaKube: dynakube.DynaKube{
+							ObjectMeta: metav1.ObjectMeta{
 								Annotations: tc.annotations,
 							},
 							Spec: dynakube.DynaKubeSpec{

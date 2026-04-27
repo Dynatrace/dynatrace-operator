@@ -1,6 +1,7 @@
 package logmonitoring
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestReconcile(t *testing.T) {
 	ctx := t.Context()
@@ -26,7 +29,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx, nil, dk)
 		require.Error(t, err)
 
-		failOAConnectionInfo.AssertCalled(t, "Reconcile", ctx)
+		failOAConnectionInfo.AssertCalled(t, "Reconcile", anyCtx)
 	})
 
 	t.Run("config-secret fail => error", func(t *testing.T) {
@@ -34,7 +37,7 @@ func TestReconcile(t *testing.T) {
 		dk := &dynakube.DynaKube{}
 
 		failConfigSecret := newMockSubReconciler(t)
-		failConfigSecret.EXPECT().Reconcile(mock.Anything, dk).Return(errors.New("BOOM")).Once()
+		failConfigSecret.EXPECT().Reconcile(anyCtx, dk).Return(errors.New("BOOM")).Once()
 
 		r := Reconciler{
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
@@ -54,15 +57,15 @@ func TestReconcile(t *testing.T) {
 		}
 
 		passConfigSecret := newMockSubReconciler(t)
-		passConfigSecret.EXPECT().Reconcile(t.Context(), dk).Return(nil).Once()
+		passConfigSecret.EXPECT().Reconcile(anyCtx, dk).Return(nil).Once()
 
 		passDaemonSet := newMockSubReconciler(t)
-		passDaemonSet.EXPECT().Reconcile(t.Context(), dk).Return(nil).Once()
+		passDaemonSet.EXPECT().Reconcile(anyCtx, dk).Return(nil).Once()
 
 		dtClient := &dynatrace.Client{Settings: settings.NewClient(nil)}
 
 		passLogMonSetting := newMockLogmonsettingsSubReconciler(t)
-		passLogMonSetting.EXPECT().Reconcile(t.Context(), dtClient.Settings, dk).Return(nil).Once()
+		passLogMonSetting.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()
 
 		r := Reconciler{
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
