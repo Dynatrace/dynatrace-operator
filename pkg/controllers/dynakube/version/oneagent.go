@@ -20,13 +20,13 @@ const (
 type oneAgentUpdater struct {
 	dk            *dynakube.DynaKube
 	apiReader     client.Reader
-	versionClient version.APIClient
+	versionClient version.Client
 }
 
 func newOneAgentUpdater(
 	dk *dynakube.DynaKube,
 	apiReader client.Reader,
-	versionClient version.APIClient,
+	versionClient version.Client,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
 		dk:            dk,

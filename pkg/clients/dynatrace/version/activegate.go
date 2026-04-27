@@ -10,7 +10,7 @@ import (
 var errEmptyOS = goerrors.New("OS is empty")
 
 // GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch configured on the Tenant.
-func (c *Client) GetLatestActiveGateVersion(ctx context.Context, os string) (string, error) {
+func (c *client) GetLatestActiveGateVersion(ctx context.Context, os string) (string, error) {
 	if len(os) == 0 {
 		return "", errEmptyOS
 	}

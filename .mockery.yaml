@@ -112,7 +112,7 @@ packages:
       Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version:
     interfaces:
-      APIClient:
+      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect:
     interfaces:
       Client:

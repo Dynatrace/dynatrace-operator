@@ -32,7 +32,7 @@ type Client struct {
 	ActiveGate activegate.Client
 	HostEvent  hostevent.Client
 	OneAgent   oneagent.Client
-	Version    version.APIClient
+	Version    version.Client
 	Token      token.Client
 }
 

@@ -34,7 +34,7 @@ func TestCodeModulesUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 
 		updater := newCodeModulesUpdater(dk, mockVersionClient)
 
@@ -63,7 +63,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 
 		updater := newCodeModulesUpdater(dk, mockVersionClient)
 
@@ -85,7 +85,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
 		updater := newCodeModulesUpdater(dk, mockVersionClient)
@@ -109,7 +109,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 			},
 		}
 
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 		mockVersionClient.EXPECT().GetLatestAgentVersion(anyCtx, installer.OSUnix, installer.TypePaaS).Return("", errors.New("BOOM")).Once()
 
 		updater := newCodeModulesUpdater(dk, mockVersionClient)
