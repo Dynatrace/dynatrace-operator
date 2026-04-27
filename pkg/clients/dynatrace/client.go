@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
@@ -67,7 +68,7 @@ func NewClient(options ...Option) (*Client, error) {
 		return nil, errors.New("tokens are empty")
 	}
 
-	if config.PaasToken == "" {
+	if dttoken.IsPlatform(config.APIToken) || config.PaasToken == "" {
 		config.PaasToken = config.APIToken
 	}
 
@@ -270,7 +271,7 @@ func getConfig(options ...Option) (*Config, error) {
 		}
 	}
 
-	t := &http.Transport{}
+	t := http.DefaultTransport.(*http.Transport).Clone()
 
 	if config.HTTPClient == nil {
 		config.HTTPClient = &http.Client{

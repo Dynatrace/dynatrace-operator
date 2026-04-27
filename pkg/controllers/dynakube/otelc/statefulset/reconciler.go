@@ -216,7 +216,7 @@ func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName s
 func (r *Reconciler) checkDataIngestTokenExists(ctx context.Context, dk *dynakube.DynaKube) bool {
 	tokenReader := token.NewReader(r.apiReader, dk)
 
-	tokens, err := tokenReader.ReadTokens(ctx)
+	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		return false
 	}

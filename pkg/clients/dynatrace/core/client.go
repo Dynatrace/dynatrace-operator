@@ -42,8 +42,9 @@ type APIRequest interface {
 	WithHeader(key, value string) APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
 	Execute(model any) error
-	// ExecuteWriter executes the request and writes the response body to the provided writer
-	ExecuteWriter(writer io.Writer) error
+	// ExecuteWriter executes the request, writes the response body to the provided writer,
+	// and returns the response headers on success.
+	ExecuteWriter(writer io.Writer) (http.Header, error)
 }
 
 type Config struct {
@@ -209,8 +210,9 @@ func (r *Request) Execute(model any) error {
 	return nil
 }
 
-// ExecuteWriter executes the request and writes the response body to the provided writer.
-func (r *Request) ExecuteWriter(writer io.Writer) error {
+// ExecuteWriter executes the request, writes the response body to the provided writer,
+// and returns the response headers on success.
+func (r *Request) ExecuteWriter(writer io.Writer) (http.Header, error) {
 	return r.doRequestStream(writer)
 }
 
@@ -246,16 +248,16 @@ func (r *Request) withMethod(method string) APIRequest {
 	return r
 }
 
-func (r *Request) doRequestStream(writer io.Writer) (err error) {
+func (r *Request) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
 	log := logd.FromContext(r.ctx)
 
 	if r.err != nil {
-		return r.err
+		return nil, r.err
 	}
 
 	reqURL, err := r.buildURL()
 	if err != nil {
-		return fmt.Errorf("build URL: %w", err)
+		return nil, fmt.Errorf("build URL: %w", err)
 	}
 
 	var bodyReader io.Reader
@@ -265,7 +267,7 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 
 	req, err := http.NewRequestWithContext(r.ctx, r.method, reqURL.String(), bodyReader)
 	if err != nil {
-		return fmt.Errorf("create HTTP request: %w", err)
+		return nil, fmt.Errorf("create HTTP request: %w", err)
 	}
 
 	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
@@ -279,7 +281,7 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("HTTP request: %w", err)
+		return nil, fmt.Errorf("HTTP request: %w", err)
 	}
 
 	defer func() {
@@ -297,21 +299,21 @@ func (r *Request) doRequestStream(writer io.Writer) (err error) {
 	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
-			return fmt.Errorf("read error response body: %w", readErr)
+			return nil, fmt.Errorf("read error response body: %w", readErr)
 		}
 
 		log.Debug("API request", loggerArgs(resp, body)...)
 
-		return handleErrorResponse(resp, body)
+		return nil, handleErrorResponse(resp, body)
 	}
 
 	log.Debug("API request", loggerArgs(resp, nil)...)
 
 	if _, err = io.Copy(writer, resp.Body); err != nil {
-		return fmt.Errorf("stream response body: %w", err)
+		return nil, fmt.Errorf("stream response body: %w", err)
 	}
 
-	return nil
+	return resp.Header, nil
 }
 
 func (r *Request) doRequest() (body []byte, err error) {

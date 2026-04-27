@@ -147,7 +147,7 @@ func makeRequestForBinary(req core.APIRequest, writer io.Writer) (string, error)
 	hash := sha256.New()
 	multiWriter := io.MultiWriter(writer, hash)
 
-	err := req.
+	_, err := req.
 		WithHeader("Accept", "application/octet-stream").
 		ExecuteWriter(multiWriter)
 	if err != nil {

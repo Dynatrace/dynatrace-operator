@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"io"
+	"net/http"
 	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -91,20 +92,31 @@ func (_c *APIRequest_Execute_Call) RunAndReturn(run func(model any) error) *APIR
 }
 
 // ExecuteWriter provides a mock function for the type APIRequest
-func (_mock *APIRequest) ExecuteWriter(writer io.Writer) error {
+func (_mock *APIRequest) ExecuteWriter(writer io.Writer) (http.Header, error) {
 	ret := _mock.Called(writer)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ExecuteWriter")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(io.Writer) error); ok {
+	var r0 http.Header
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(io.Writer) (http.Header, error)); ok {
+		return returnFunc(writer)
+	}
+	if returnFunc, ok := ret.Get(0).(func(io.Writer) http.Header); ok {
 		r0 = returnFunc(writer)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.Header)
+		}
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(io.Writer) error); ok {
+		r1 = returnFunc(writer)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // APIRequest_ExecuteWriter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecuteWriter'
@@ -131,12 +143,12 @@ func (_c *APIRequest_ExecuteWriter_Call) Run(run func(writer io.Writer)) *APIReq
 	return _c
 }
 
-func (_c *APIRequest_ExecuteWriter_Call) Return(err error) *APIRequest_ExecuteWriter_Call {
-	_c.Call.Return(err)
+func (_c *APIRequest_ExecuteWriter_Call) Return(header http.Header, err error) *APIRequest_ExecuteWriter_Call {
+	_c.Call.Return(header, err)
 	return _c
 }
 
-func (_c *APIRequest_ExecuteWriter_Call) RunAndReturn(run func(writer io.Writer) error) *APIRequest_ExecuteWriter_Call {
+func (_c *APIRequest_ExecuteWriter_Call) RunAndReturn(run func(writer io.Writer) (http.Header, error)) *APIRequest_ExecuteWriter_Call {
 	_c.Call.Return(run)
 	return _c
 }

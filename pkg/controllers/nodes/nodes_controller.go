@@ -177,7 +177,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	log := logd.FromContext(ctx)
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
-	tokens, err := tokenReader.ReadTokens(ctx)
+	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		return err
 	}
