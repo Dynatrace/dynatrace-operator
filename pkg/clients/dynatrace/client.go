@@ -30,7 +30,7 @@ import (
 type Client struct {
 	Settings   settings.APIClient
 	ActiveGate activegate.Client
-	HostEvent  hostevent.APIClient
+	HostEvent  hostevent.Client
 	OneAgent   oneagent.APIClient
 	Version    version.APIClient
 	Token      token.APIClient

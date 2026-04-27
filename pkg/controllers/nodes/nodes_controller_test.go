@@ -105,7 +105,7 @@ func TestReconcile(t *testing.T) {
 			},
 		)
 
-		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient := hostclientmock.NewClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", &core.HTTPError{StatusCode: 404})
 
 		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
@@ -148,7 +148,7 @@ func TestReconcile(t *testing.T) {
 			},
 		)
 
-		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient := hostclientmock.NewClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("HOST-42", nil).Once()
 		hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
 			return e.EventType == hostevent.MarkedForTerminationEvent
@@ -240,7 +240,7 @@ func TestReconcile(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 
-		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient := hostclientmock.NewClient(t)
 		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 
 		reconcileAllNodes(t, ctrl, fakeClient)
@@ -260,7 +260,7 @@ func TestReconcile(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 
-		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient := hostclientmock.NewClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", hostevent.EntityNotFoundError{IP: "1.2.3.4"})
 
 		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
@@ -350,7 +350,7 @@ func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *d
 }
 
 func createDTMockClient(t *testing.T, ip, host string) *dynatrace.Client {
-	hostClient := hostclientmock.NewAPIClient(t)
+	hostClient := hostclientmock.NewClient(t)
 	hostClient.EXPECT().GetEntityIDForIP(t.Context(), ip).Return(host, nil)
 	hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
 		return e.EventType == hostevent.MarkedForTerminationEvent
