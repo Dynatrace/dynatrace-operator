@@ -150,15 +150,15 @@ func TestDeleteEdgeConnect(t *testing.T) {
 	})
 }
 
-func newTestSetup(t *testing.T) (*coremock.Client, *coremock.APIRequest, *client) {
+func newTestSetup(t *testing.T) (*coremock.Client, *coremock.Request, *client) {
 	t.Helper()
 	apiClient := coremock.NewClient(t)
-	request := coremock.NewAPIRequest(t)
+	request := coremock.NewRequest(t)
 
 	return apiClient, request, NewClient(apiClient)
 }
 
-func expectGET(t *testing.T, apiClient *coremock.Client, request *coremock.APIRequest, path, id string) {
+func expectGET(t *testing.T, apiClient *coremock.Client, request *coremock.Request, path, id string) {
 	t.Helper()
 	request.EXPECT().WithoutToken().Return(request).Once()
 	if id != "" {
@@ -167,14 +167,14 @@ func expectGET(t *testing.T, apiClient *coremock.Client, request *coremock.APIRe
 	apiClient.EXPECT().GET(t.Context(), path).Return(request).Once()
 }
 
-func expectPOST(t *testing.T, apiClient *coremock.Client, request *coremock.APIRequest, path string, body any) {
+func expectPOST(t *testing.T, apiClient *coremock.Client, request *coremock.Request, path string, body any) {
 	t.Helper()
 	request.EXPECT().WithoutToken().Return(request).Once()
 	request.EXPECT().WithJSONBody(body).Return(request).Once()
 	apiClient.EXPECT().POST(t.Context(), path).Return(request).Once()
 }
 
-func expectPUT(t *testing.T, apiClient *coremock.Client, request *coremock.APIRequest, path, id string, body any) {
+func expectPUT(t *testing.T, apiClient *coremock.Client, request *coremock.Request, path, id string, body any) {
 	t.Helper()
 	request.EXPECT().WithoutToken().Return(request).Once()
 	request.EXPECT().WithJSONBody(body).Return(request).Once()
@@ -183,7 +183,7 @@ func expectPUT(t *testing.T, apiClient *coremock.Client, request *coremock.APIRe
 }
 
 // expectDELETE sets up WithoutToken and DELETE mock expectations for the given path.
-func expectDELETE(t *testing.T, apiClient *coremock.Client, request *coremock.APIRequest, path, id string) {
+func expectDELETE(t *testing.T, apiClient *coremock.Client, request *coremock.Request, path, id string) {
 	t.Helper()
 	request.EXPECT().WithoutToken().Return(request).Once()
 	request.EXPECT().WithPath([]string{id}).Return(request).Once()

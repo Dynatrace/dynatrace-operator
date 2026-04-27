@@ -21,7 +21,7 @@ func TestGetSettingsForLogModule(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(TotalCountSettingsResponse)).Run(injectResponse(TotalCountSettingsResponse{TotalCount: 3})).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
@@ -50,7 +50,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-123"}})).Return(nil).Once()
@@ -64,7 +64,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 
 	t.Run("error from API", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
@@ -78,7 +78,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 
 	t.Run("response not exactly one entry", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()

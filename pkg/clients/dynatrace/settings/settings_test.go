@@ -22,7 +22,7 @@ func TestGetK8sClusterME(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(getKubernetesObjectsResponse)).Run(func(obj any) {
 			target := obj.(*getKubernetesObjectsResponse)
@@ -40,7 +40,7 @@ func TestGetK8sClusterME(t *testing.T) {
 
 	t.Run("error from API", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(getKubernetesObjectsResponse)).Return(errors.New("api error")).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
@@ -61,7 +61,7 @@ func TestGetK8sClusterME(t *testing.T) {
 
 	t.Run("no settings returned", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(getKubernetesObjectsResponse)).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
@@ -78,7 +78,7 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{
 			validateOnlyQueryParam: "true",
 			schemaIDsQueryParam:    "schema-1",
@@ -111,7 +111,7 @@ func TestDeleteSettings(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().Execute(nil).Return(nil).Once()
 		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
 
@@ -122,7 +122,7 @@ func TestDeleteSettings(t *testing.T) {
 
 	t.Run("error from API", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().Execute(nil).Return(errors.New("api error")).Once()
 		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
 

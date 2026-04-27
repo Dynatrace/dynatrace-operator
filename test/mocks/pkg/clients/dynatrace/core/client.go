@@ -39,19 +39,19 @@ func (_m *Client) EXPECT() *Client_Expecter {
 }
 
 // DELETE provides a mock function for the type Client
-func (_mock *Client) DELETE(ctx context.Context, path string) core.APIRequest {
+func (_mock *Client) DELETE(ctx context.Context, path string) core.Request {
 	ret := _mock.Called(ctx, path)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DELETE")
 	}
 
-	var r0 core.APIRequest
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) core.APIRequest); ok {
+	var r0 core.Request
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) core.Request); ok {
 		r0 = returnFunc(ctx, path)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.APIRequest)
+			r0 = ret.Get(0).(core.Request)
 		}
 	}
 	return r0
@@ -87,30 +87,30 @@ func (_c *Client_DELETE_Call) Run(run func(ctx context.Context, path string)) *C
 	return _c
 }
 
-func (_c *Client_DELETE_Call) Return(aPIRequest core.APIRequest) *Client_DELETE_Call {
-	_c.Call.Return(aPIRequest)
+func (_c *Client_DELETE_Call) Return(request core.Request) *Client_DELETE_Call {
+	_c.Call.Return(request)
 	return _c
 }
 
-func (_c *Client_DELETE_Call) RunAndReturn(run func(ctx context.Context, path string) core.APIRequest) *Client_DELETE_Call {
+func (_c *Client_DELETE_Call) RunAndReturn(run func(ctx context.Context, path string) core.Request) *Client_DELETE_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GET provides a mock function for the type Client
-func (_mock *Client) GET(ctx context.Context, path string) core.APIRequest {
+func (_mock *Client) GET(ctx context.Context, path string) core.Request {
 	ret := _mock.Called(ctx, path)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GET")
 	}
 
-	var r0 core.APIRequest
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) core.APIRequest); ok {
+	var r0 core.Request
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) core.Request); ok {
 		r0 = returnFunc(ctx, path)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.APIRequest)
+			r0 = ret.Get(0).(core.Request)
 		}
 	}
 	return r0
@@ -146,30 +146,30 @@ func (_c *Client_GET_Call) Run(run func(ctx context.Context, path string)) *Clie
 	return _c
 }
 
-func (_c *Client_GET_Call) Return(aPIRequest core.APIRequest) *Client_GET_Call {
-	_c.Call.Return(aPIRequest)
+func (_c *Client_GET_Call) Return(request core.Request) *Client_GET_Call {
+	_c.Call.Return(request)
 	return _c
 }
 
-func (_c *Client_GET_Call) RunAndReturn(run func(ctx context.Context, path string) core.APIRequest) *Client_GET_Call {
+func (_c *Client_GET_Call) RunAndReturn(run func(ctx context.Context, path string) core.Request) *Client_GET_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // POST provides a mock function for the type Client
-func (_mock *Client) POST(ctx context.Context, path string) core.APIRequest {
+func (_mock *Client) POST(ctx context.Context, path string) core.Request {
 	ret := _mock.Called(ctx, path)
 
 	if len(ret) == 0 {
 		panic("no return value specified for POST")
 	}
 
-	var r0 core.APIRequest
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) core.APIRequest); ok {
+	var r0 core.Request
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) core.Request); ok {
 		r0 = returnFunc(ctx, path)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.APIRequest)
+			r0 = ret.Get(0).(core.Request)
 		}
 	}
 	return r0
@@ -205,30 +205,30 @@ func (_c *Client_POST_Call) Run(run func(ctx context.Context, path string)) *Cli
 	return _c
 }
 
-func (_c *Client_POST_Call) Return(aPIRequest core.APIRequest) *Client_POST_Call {
-	_c.Call.Return(aPIRequest)
+func (_c *Client_POST_Call) Return(request core.Request) *Client_POST_Call {
+	_c.Call.Return(request)
 	return _c
 }
 
-func (_c *Client_POST_Call) RunAndReturn(run func(ctx context.Context, path string) core.APIRequest) *Client_POST_Call {
+func (_c *Client_POST_Call) RunAndReturn(run func(ctx context.Context, path string) core.Request) *Client_POST_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // PUT provides a mock function for the type Client
-func (_mock *Client) PUT(ctx context.Context, path string) core.APIRequest {
+func (_mock *Client) PUT(ctx context.Context, path string) core.Request {
 	ret := _mock.Called(ctx, path)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PUT")
 	}
 
-	var r0 core.APIRequest
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) core.APIRequest); ok {
+	var r0 core.Request
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) core.Request); ok {
 		r0 = returnFunc(ctx, path)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.APIRequest)
+			r0 = ret.Get(0).(core.Request)
 		}
 	}
 	return r0
@@ -264,12 +264,12 @@ func (_c *Client_PUT_Call) Run(run func(ctx context.Context, path string)) *Clie
 	return _c
 }
 
-func (_c *Client_PUT_Call) Return(aPIRequest core.APIRequest) *Client_PUT_Call {
-	_c.Call.Return(aPIRequest)
+func (_c *Client_PUT_Call) Return(request core.Request) *Client_PUT_Call {
+	_c.Call.Return(request)
 	return _c
 }
 
-func (_c *Client_PUT_Call) RunAndReturn(run func(ctx context.Context, path string) core.APIRequest) *Client_PUT_Call {
+func (_c *Client_PUT_Call) RunAndReturn(run func(ctx context.Context, path string) core.Request) *Client_PUT_Call {
 	_c.Call.Return(run)
 	return _c
 }

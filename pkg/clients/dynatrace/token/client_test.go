@@ -11,7 +11,7 @@ import (
 
 func TestGetScopes(t *testing.T) {
 	setupClient := func(t *testing.T, token string, expectErr error, expectScopes []string) *client {
-		req := coremock.NewAPIRequest(t)
+		req := coremock.NewRequest(t)
 		req.EXPECT().WithJSONBody(lookupRequest{Token: token}).Return(req).Once()
 		req.EXPECT().Execute(new(scopesResponse)).Run(func(obj any) {
 			if expectErr == nil {

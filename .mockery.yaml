@@ -97,7 +97,7 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core:
     interfaces:
       Client:
-      APIRequest:
+      Request:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent:
     interfaces:
       Client:

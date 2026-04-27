@@ -15,7 +15,7 @@ func TestGetAuthToken(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 
 		request.EXPECT().WithJSONBody(mock.Anything).Return(request).Once()
 		request.EXPECT().Execute(new(AuthTokenInfo)).Run(func(obj any) {
@@ -36,7 +36,7 @@ func TestGetAuthToken(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 
 		request.EXPECT().WithJSONBody(mock.Anything).Return(request).Once()
 		request.EXPECT().Execute(new(AuthTokenInfo)).Return(errors.New("api error")).Once()
@@ -56,7 +56,7 @@ func TestGetConnectionInfo(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 
 		request.EXPECT().WithPaasToken().Return(request).Once()
 		request.EXPECT().Execute(new(connectionInfoJSONResponse)).Run(func(obj any) {
@@ -79,7 +79,7 @@ func TestGetConnectionInfo(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 
 		request.EXPECT().WithPaasToken().Return(request).Once()
 		request.EXPECT().Execute(new(connectionInfoJSONResponse)).Return(errors.New("api error")).Once()
@@ -95,7 +95,7 @@ func TestGetConnectionInfo(t *testing.T) {
 
 	t.Run("no endpoints", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		request := coremock.NewAPIRequest(t)
+		request := coremock.NewRequest(t)
 
 		request.EXPECT().WithPaasToken().Return(request).Once()
 		request.EXPECT().Execute(new(connectionInfoJSONResponse)).Run(func(obj any) {

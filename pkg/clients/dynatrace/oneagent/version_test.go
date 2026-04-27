@@ -38,7 +38,7 @@ func TestGetLatest(t *testing.T) {
 		hash := sha256.New()
 		multiWriter := io.MultiWriter(file, hash)
 
-		req := coremock.NewAPIRequest(t)
+		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{args.OS, args.InstallerType, "latest"}).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
@@ -95,7 +95,7 @@ func TestGet(t *testing.T) {
 		hash := sha256.New()
 		multiWriter := io.MultiWriter(file, hash)
 
-		req := coremock.NewAPIRequest(t)
+		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{args.OS, args.InstallerType, "version", args.Version}).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
@@ -146,7 +146,7 @@ func TestGetVersions(t *testing.T) {
 	setupClient := func(t *testing.T, execErr error) *client {
 		var resp versionsResponse
 
-		req := coremock.NewAPIRequest(t)
+		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{"versions", args.OS, args.InstallerType}).Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()

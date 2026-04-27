@@ -35,7 +35,7 @@ func setupMockedProcessGroupingClient(
 ) *client {
 	t.Helper()
 
-	req := coremock.NewAPIRequest(t)
+	req := coremock.NewRequest(t)
 	req.EXPECT().
 		WithQueryParams(params).
 		Return(req).Once()

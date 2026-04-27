@@ -21,10 +21,10 @@ var log = logd.Get().WithName("dtclient-core")
 
 // Client defines the behavior required from a config provider and is mockable
 type Client interface {
-	GET(ctx context.Context, path string) APIRequest
-	POST(ctx context.Context, path string) APIRequest
-	PUT(ctx context.Context, path string) APIRequest
-	DELETE(ctx context.Context, path string) APIRequest
+	GET(ctx context.Context, path string) Request
+	POST(ctx context.Context, path string) Request
+	PUT(ctx context.Context, path string) Request
+	DELETE(ctx context.Context, path string) Request
 }
 
 // Cacheable must be implemented by types passed to Execute if they supposed to be cached.
@@ -34,22 +34,22 @@ type Cacheable interface {
 	IsEmpty() bool
 }
 
-// APIRequest provides a fluent interface for building and executing HTTP requests
-type APIRequest interface {
+// Request provides a fluent interface for building and executing HTTP requests
+type Request interface {
 	// WithPath sets the path for the request. Path parts will be joined, ignoring leading or trailing slashes.
-	WithPath(path ...string) APIRequest
+	WithPath(path ...string) Request
 	// WithQueryParams adds multiple query parameters to the request, overwriting existing keys if they exist
-	WithQueryParams(params map[string]string) APIRequest
+	WithQueryParams(params map[string]string) Request
 	// WithRawQueryParams adds multiple query parameters to the request
-	WithRawQueryParams(params url.Values) APIRequest
+	WithRawQueryParams(params url.Values) Request
 	// WithJSONBody sets the request body as JSON
-	WithJSONBody(body any) APIRequest
+	WithJSONBody(body any) Request
 	// WithPaasToken sets the token type to PaaS
-	WithPaasToken() APIRequest
+	WithPaasToken() Request
 	// WithoutToken explicitly disables authentication for the request
-	WithoutToken() APIRequest
+	WithoutToken() Request
 	// WithHeader sets a custom header for the request, overriding any default value
-	WithHeader(key, value string) APIRequest
+	WithHeader(key, value string) Request
 	// Execute executes the request and unmarshals the response into the provided model
 	// If the provided model implements the Cacheable interface, then the client will cache the response.
 	Execute(model any) error
@@ -76,7 +76,7 @@ func NewClient(cfg Config) *client {
 	}
 }
 
-type Request struct {
+type request struct {
 	client *client
 
 	ctx       context.Context
@@ -98,7 +98,7 @@ const (
 	TokenTypeNone
 )
 
-func (c *client) newRequest(ctx context.Context) *Request {
+func (c *client) newRequest(ctx context.Context) *request {
 	headers := make(http.Header)
 
 	query := make(url.Values)
@@ -106,7 +106,7 @@ func (c *client) newRequest(ctx context.Context) *Request {
 		query = c.cfg.BaseURL.Query()
 	}
 
-	return &Request{
+	return &request{
 		headers: headers,
 		client:  c,
 		ctx:     ctx,
@@ -115,34 +115,34 @@ func (c *client) newRequest(ctx context.Context) *Request {
 }
 
 // GET creates a GET request builder
-func (c *client) GET(ctx context.Context, path string) APIRequest {
+func (c *client) GET(ctx context.Context, path string) Request {
 	return c.newRequest(ctx).withMethod(http.MethodGet).WithPath(path)
 }
 
 // POST creates a POST request builder
-func (c *client) POST(ctx context.Context, path string) APIRequest {
+func (c *client) POST(ctx context.Context, path string) Request {
 	return c.newRequest(ctx).withMethod(http.MethodPost).WithPath(path)
 }
 
 // PUT creates a PUT request builder
-func (c *client) PUT(ctx context.Context, path string) APIRequest {
+func (c *client) PUT(ctx context.Context, path string) Request {
 	return c.newRequest(ctx).withMethod(http.MethodPut).WithPath(path)
 }
 
 // DELETE creates a DELETE request builder
-func (c *client) DELETE(ctx context.Context, path string) APIRequest {
+func (c *client) DELETE(ctx context.Context, path string) Request {
 	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
 }
 
 // WithPath sets the path for the request. Path parts will be joined, ignoring leading or trailing slashes
-func (r *Request) WithPath(path ...string) APIRequest {
+func (r *request) WithPath(path ...string) Request {
 	r.path = (&url.URL{Path: r.path}).JoinPath(path...).Path
 
 	return r
 }
 
 // WithQueryParams adds multiple query parameters to the request, overwriting existing keys if they exist
-func (r *Request) WithQueryParams(params map[string]string) APIRequest {
+func (r *request) WithQueryParams(params map[string]string) Request {
 	if r.query == nil {
 		r.query = make(url.Values)
 	}
@@ -155,7 +155,7 @@ func (r *Request) WithQueryParams(params map[string]string) APIRequest {
 }
 
 // WithRawQueryParams adds multiple query parameters to the request
-func (r *Request) WithRawQueryParams(params url.Values) APIRequest {
+func (r *request) WithRawQueryParams(params url.Values) Request {
 	if r.query == nil {
 		r.query = make(url.Values)
 	}
@@ -170,7 +170,7 @@ func (r *Request) WithRawQueryParams(params url.Values) APIRequest {
 }
 
 // WithJSONBody sets the request body as JSON
-func (r *Request) WithJSONBody(body any) APIRequest {
+func (r *request) WithJSONBody(body any) Request {
 	if body != nil {
 		bodyBytes, err := json.Marshal(body)
 		if err != nil {
@@ -184,28 +184,28 @@ func (r *Request) WithJSONBody(body any) APIRequest {
 }
 
 // WithPaasToken sets the token type to PaaS
-func (r *Request) WithPaasToken() APIRequest {
+func (r *request) WithPaasToken() Request {
 	r.tokenType = TokenTypePaaS
 
 	return r
 }
 
 // WithoutToken explicitly disables authentication for the request
-func (r *Request) WithoutToken() APIRequest {
+func (r *request) WithoutToken() Request {
 	r.tokenType = TokenTypeNone
 
 	return r
 }
 
 // WithHeader sets a custom header for the request, overriding existing value
-func (r *Request) WithHeader(key, value string) APIRequest {
+func (r *request) WithHeader(key, value string) Request {
 	r.headers.Set(key, value)
 
 	return r
 }
 
 // Execute executes the request and unmarshals the response into the provided model
-func (r *Request) Execute(model any) error {
+func (r *request) Execute(model any) error {
 	cacheableModel, isCacheable := model.(Cacheable)
 	if isCacheable {
 		r.headers.Set(middleware.CacheRequestHeader, "true")
@@ -233,11 +233,11 @@ func (r *Request) Execute(model any) error {
 
 // ExecuteWriter executes the request, writes the response body to the provided writer,
 // and returns the response headers on success.
-func (r *Request) ExecuteWriter(writer io.Writer) (http.Header, error) {
+func (r *request) ExecuteWriter(writer io.Writer) (http.Header, error) {
 	return r.doRequestStream(writer)
 }
 
-func (r *Request) getToken() string {
+func (r *request) getToken() string {
 	switch r.tokenType {
 	case TokenTypePaaS:
 		return r.client.cfg.PaasToken
@@ -248,7 +248,7 @@ func (r *Request) getToken() string {
 	}
 }
 
-func (r *Request) buildURL() (*url.URL, error) {
+func (r *request) buildURL() (*url.URL, error) {
 	if r.client.cfg.BaseURL == nil {
 		return nil, errors.New("missing base URL")
 	}
@@ -263,13 +263,13 @@ func (r *Request) buildURL() (*url.URL, error) {
 }
 
 // WithMethod sets the HTTP method for the request
-func (r *Request) withMethod(method string) APIRequest {
+func (r *request) withMethod(method string) Request {
 	r.method = method
 
 	return r
 }
 
-func (r *Request) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
+func (r *request) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
 	if r.err != nil {
 		return nil, r.err
 	}
@@ -329,7 +329,7 @@ func (r *Request) doRequestStream(writer io.Writer) (responseHeaders http.Header
 	return resp.Header, nil
 }
 
-func (r *Request) doRequest() (body []byte, cacheKey string, err error) {
+func (r *request) doRequest() (body []byte, cacheKey string, err error) {
 	if r.err != nil {
 		return nil, "", r.err
 	}

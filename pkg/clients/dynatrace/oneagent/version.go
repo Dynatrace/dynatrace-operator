@@ -123,7 +123,7 @@ func (c *client) GetVersions(ctx context.Context, args GetParams) ([]string, err
 	return resp.AvailableVersions, errors.WithStack(err)
 }
 
-func makeRequestForBinary(req core.APIRequest, writer io.Writer) (string, error) {
+func makeRequestForBinary(req core.Request, writer io.Writer) (string, error) {
 	hash := sha256.New()
 	multiWriter := io.MultiWriter(writer, hash)
 
