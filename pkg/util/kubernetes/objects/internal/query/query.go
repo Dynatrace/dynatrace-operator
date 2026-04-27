@@ -141,7 +141,7 @@ func (c Generic[T, L]) Recreate(ctx context.Context, object T) error {
 
 func (c Generic[T, L]) GetAllFromNamespaces(ctx context.Context, objectName string) ([]T, error) {
 	log := logd.FromContext(ctx)
-	log.Info("querying from all namespaces", "name", objectName)
+	logd.FromContext(ctx).Info("querying from all namespaces", "name", objectName)
 
 	listOps := []client.ListOption{
 		client.MatchingFields{
