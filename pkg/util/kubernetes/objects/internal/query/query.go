@@ -220,7 +220,7 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 
 func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string, options ...client.DeleteOption) error {
 	log := logd.FromContext(ctx)
-	log.Info("deleting object from namespace", "name", objectName, "namespace", namespace)
+	logd.FromContext(ctx).Info("deleting object from namespace", "name", objectName, "namespace", namespace)
 
 	c.Target.SetName(objectName)
 	c.Target.SetNamespace(namespace)
