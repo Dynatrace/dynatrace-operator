@@ -17,7 +17,7 @@ func TestDeprecatedFeatureFlag(t *testing.T) {
 }
 
 func DeprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
-	for _, featureFlag := range deprecatedFeatureFlags {
+	for _, featureFlag := range deprecatedFeatureFlagKeys {
 		t.Run(featureFlag, func(t *testing.T) {
 			dk := &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
@@ -27,8 +27,8 @@ func DeprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
 					},
 				},
 			}
-			expected := fmt.Sprintf(warningFeatureFlagDeprecated, featureFlag)
-			result := deprecatedFeatureFlag(context.Background(), nil, dk)
+			expected := []string{fmt.Sprintf(warningFeatureFlagDeprecated, featureFlag)}
+			result := deprecatedFeatureFlags(context.Background(), nil, dk)
 
 			assert.Equal(t, expected, result)
 		})
@@ -44,14 +44,14 @@ func DeprecatedFeatureFlagWithoutDeprecatedFlags(t *testing.T) {
 			},
 		},
 	}
-	result := deprecatedFeatureFlag(context.Background(), nil, dk)
+	result := deprecatedFeatureFlags(context.Background(), nil, dk)
 
 	assert.Empty(t, result)
 }
 
 func DeprecatedFeatureFlagWithNoAnnotations(t *testing.T) {
 	dk := &dynakube.DynaKube{}
-	result := deprecatedFeatureFlag(context.Background(), nil, dk)
+	result := deprecatedFeatureFlags(context.Background(), nil, dk)
 
 	assert.Empty(t, result)
 }
