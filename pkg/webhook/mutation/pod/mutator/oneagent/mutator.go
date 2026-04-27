@@ -1,6 +1,12 @@
 package oneagent
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"unicode"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -14,6 +20,14 @@ const (
 	CSIVolumeType       = "csi"
 	EphemeralVolumeType = "ephemeral"
 )
+
+type invalidInstallPathError struct {
+	InstallPath string
+}
+
+func (err invalidInstallPathError) Error() string {
+	return fmt.Sprintf("the installPath (%s) must be clean, absolute and without whitespace and separators like ,:", err.InstallPath)
+}
 
 type Mutator struct{}
 
@@ -63,8 +77,27 @@ func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
+func validateInstallPath(installPath string) error {
+	if !filepath.IsAbs(installPath) ||
+		installPath == string(os.PathSeparator) ||
+		strings.ContainsFunc(installPath, unicode.IsSpace) ||
+		strings.ContainsAny(installPath, "\x00,:") ||
+		filepath.Clean(installPath) != installPath {
+		return dtwebhook.MutatorError{
+			Err:      invalidInstallPathError{installPath},
+			Annotate: setNotInjectedAnnotationFunc(InvalidInstallPathReason),
+		}
+	}
+
+	return nil
+}
+
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
+
+	if err := validateInstallPath(installPath); err != nil {
+		return err
+	}
 
 	err := mutateInitContainer(request, installPath)
 	if err != nil {
@@ -81,6 +114,9 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 
 func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
+	if err := validateInstallPath(installPath); err != nil {
+		return false
+	}
 
 	return mutateUserContainers(request.BaseRequest, installPath)
 }

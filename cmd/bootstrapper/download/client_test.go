@@ -1,7 +1,6 @@
 package download
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -16,13 +15,12 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,7 +32,7 @@ func TestNew(t *testing.T) {
 	})
 
 	t.Run("options", func(t *testing.T) {
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:   "os",
 			Arch: "arch",
 		}
@@ -45,7 +43,7 @@ func TestNew(t *testing.T) {
 
 		require.NotNil(t, client.newInstaller)
 
-		dtClient, err := dtclient.NewClientV2(dtclient.WithBaseURL("url"))
+		dtClient, err := dynatrace.NewClient(dynatrace.WithBaseURL("url"), dynatrace.WithAPIToken("foo"), dynatrace.WithPaasToken("paas"))
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)
 
@@ -56,19 +54,17 @@ func TestNew(t *testing.T) {
 }
 
 func TestDo(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("no config ==> error", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		inputDir := filepath.Join(tmpDir, "input")
 		targetDir := filepath.Join(tmpDir, "target")
 
 		opts := []Option{
-			WithInstaller(installerTester(t, &url.Properties{}, nil)),
+			WithInstaller(installerTester(t, &binary.Properties{}, nil)),
 		}
 		client := New(opts...)
 
-		err := client.Do(ctx, inputDir, targetDir, url.Properties{})
+		err := client.Do(t.Context(), inputDir, targetDir, binary.Properties{})
 		require.Error(t, err)
 	})
 
@@ -77,7 +73,7 @@ func TestDo(t *testing.T) {
 		inputDir := filepath.Join(tmpDir, "input")
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:   "os",
 			Arch: "arch",
 		}
@@ -85,12 +81,12 @@ func TestDo(t *testing.T) {
 
 		opts := []Option{
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
-				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(true, nil)
+				i.EXPECT().InstallAgent(t.Context(), targetDir).Return(true, nil)
 			})),
 		}
 		client := New(opts...)
 
-		err := client.Do(ctx, inputDir, targetDir, *props)
+		err := client.Do(t.Context(), inputDir, targetDir, *props)
 		require.NoError(t, err)
 	})
 
@@ -99,7 +95,7 @@ func TestDo(t *testing.T) {
 		inputDir := filepath.Join(tmpDir, "input")
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:   "os",
 			Arch: "arch",
 		}
@@ -112,12 +108,12 @@ func TestDo(t *testing.T) {
 
 		opts := []Option{
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
-				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(true, nil)
+				i.EXPECT().InstallAgent(t.Context(), targetDir).Return(true, nil)
 			})),
 		}
 		client := New(opts...)
 
-		err = client.Do(ctx, inputDir, targetDir, *props)
+		err = client.Do(t.Context(), inputDir, targetDir, *props)
 		require.NoError(t, err)
 	})
 
@@ -126,7 +122,7 @@ func TestDo(t *testing.T) {
 		inputDir := filepath.Join(tmpDir, "input")
 		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:   "os",
 			Arch: "arch",
 		}
@@ -136,12 +132,12 @@ func TestDo(t *testing.T) {
 
 		opts := []Option{
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
-				i.On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).Return(false, expectedErr)
+				i.EXPECT().InstallAgent(t.Context(), targetDir).Return(false, expectedErr)
 			})),
 		}
 		client := New(opts...)
 
-		err := client.Do(ctx, inputDir, targetDir, *props)
+		err := client.Do(t.Context(), inputDir, targetDir, *props)
 		require.Error(t, err)
 		require.ErrorIs(t, err, expectedErr)
 	})
@@ -149,11 +145,11 @@ func TestDo(t *testing.T) {
 
 type mockConfigFunc func(*installermock.Installer)
 
-func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockConfigFunc) url.NewFunc {
+func installerTester(t *testing.T, expectedProps *binary.Properties, mockFunc mockConfigFunc) binary.NewFunc {
 	t.Helper()
 
-	return func(dtc oneagent.APIClient, props *url.Properties) installer.Installer {
-		require.NotNil(t, dtc)
+	return func(dtClient oneagent.APIClient, props *binary.Properties) installer.Installer {
+		require.NotNil(t, dtClient)
 		require.NotEmpty(t, props)
 		require.Equal(t, *expectedProps, *props)
 

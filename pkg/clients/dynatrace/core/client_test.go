@@ -7,7 +7,9 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,6 +17,13 @@ import (
 type apiModel struct {
 	Foo string `json:"foo"`
 }
+
+// cacheableModel implements Cacheable: it is considered empty when Foo is unset.
+type cacheableModel struct {
+	Foo string `json:"foo"`
+}
+
+func (m *cacheableModel) IsEmpty() bool { return m.Foo == "" }
 
 type brokenModel struct {
 	A string
@@ -49,9 +58,6 @@ func TestClient_Headers(t *testing.T) {
 
 	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/"), UserAgent: "my-user-agent"})
 	require.NoError(t, c.GET(t.Context(), "test").Execute(nil))
-
-	expectContentType = "application/json"
-	require.NoError(t, c.POST(t.Context(), "test").WithRawBody([]byte("test")).Execute(nil))
 }
 
 func TestClient_WithHeader(t *testing.T) {
@@ -63,9 +69,9 @@ func TestClient_WithHeader(t *testing.T) {
 		defer s.Close()
 
 		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-		_, err := c.GET(t.Context(), "/test").
+		err := c.GET(t.Context(), "/test").
 			WithHeader("Accept", "application/octet-stream").
-			ExecuteRaw()
+			Execute(nil)
 		require.NoError(t, err)
 	})
 
@@ -77,9 +83,9 @@ func TestClient_WithHeader(t *testing.T) {
 		defer s.Close()
 
 		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-		_, err := c.GET(t.Context(), "/test").
+		err := c.GET(t.Context(), "/test").
 			WithHeader("X-Custom", "custom-value").
-			ExecuteRaw()
+			Execute(nil)
 		require.NoError(t, err)
 	})
 
@@ -90,9 +96,9 @@ func TestClient_WithHeader(t *testing.T) {
 		defer s.Close()
 
 		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-		_, err := c.GET(t.Context(), "/test").
+		err := c.GET(t.Context(), "/test").
 			WithHeader("X-Empty", "").
-			ExecuteRaw()
+			Execute(nil)
 		require.NoError(t, err)
 	})
 }
@@ -181,42 +187,19 @@ func TestClient_Execute(t *testing.T) {
 	})
 }
 
-func TestClient_ExecuteRaw(t *testing.T) {
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/fail" {
-			w.WriteHeader(http.StatusTeapot)
-			_, _ = w.Write([]byte(`{"error":{}}`))
-
-			return
-		}
-		_, _ = w.Write([]byte("response"))
-	}))
-	defer s.Close()
-
-	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
-
-	t.Run("ok", func(t *testing.T) {
-		body, err := c.GET(t.Context(), "/test").ExecuteRaw()
-		require.NoError(t, err)
-		assert.Equal(t, "response", string(body))
-	})
-
-	t.Run("fail", func(t *testing.T) {
-		body, err := c.GET(t.Context(), "/fail").ExecuteRaw()
-		require.Error(t, err)
-		assert.JSONEq(t, `{"error":{}}`, string(body))
-	})
-}
-
 func TestClient_ExecuteWriter(t *testing.T) {
 	const responseBody = "binary-blob-content"
+	const etagValue = `"v1"`
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/fail":
 			w.WriteHeader(http.StatusTeapot)
 			_, _ = w.Write([]byte(`{"error":{}}`))
+		case "/not-modified":
+			w.WriteHeader(http.StatusNotModified)
 		default:
+			w.Header().Set("ETag", etagValue)
 			_, _ = w.Write([]byte(responseBody))
 		}
 	}))
@@ -224,30 +207,43 @@ func TestClient_ExecuteWriter(t *testing.T) {
 
 	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
 
-	t.Run("streams response body to writer", func(t *testing.T) {
+	t.Run("streams response body to writer and returns headers", func(t *testing.T) {
 		var buf bytes.Buffer
-		err := c.GET(t.Context(), "/test").ExecuteWriter(&buf)
+		headers, err := c.GET(t.Context(), "/test").ExecuteWriter(&buf)
 		require.NoError(t, err)
 		assert.Equal(t, responseBody, buf.String())
+		assert.Equal(t, etagValue, headers.Get("ETag"))
 	})
 
 	t.Run("returns error and writes nothing on non-2xx", func(t *testing.T) {
 		var buf bytes.Buffer
-		err := c.GET(t.Context(), "/fail").ExecuteWriter(&buf)
+		headers, err := c.GET(t.Context(), "/fail").ExecuteWriter(&buf)
 		require.Error(t, err)
+		assert.Nil(t, headers)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("returns HTTPError with status 304 on Not Modified", func(t *testing.T) {
+		var buf bytes.Buffer
+		headers, err := c.GET(t.Context(), "/not-modified").ExecuteWriter(&buf)
+		require.Error(t, err)
+		assert.True(t, HasStatusCode(err, http.StatusNotModified))
+		assert.Nil(t, headers)
 		assert.Empty(t, buf.String())
 	})
 
 	t.Run("returns error on missing base URL", func(t *testing.T) {
 		var buf bytes.Buffer
-		err := new(Client).GET(t.Context(), "/test").ExecuteWriter(&buf)
+		headers, err := new(Client).GET(t.Context(), "/test").ExecuteWriter(&buf)
 		require.EqualError(t, err, "build URL: missing base URL")
+		assert.Nil(t, headers)
 		assert.Empty(t, buf.String())
 	})
 
 	t.Run("returns error on broken writer", func(t *testing.T) {
-		err := c.GET(t.Context(), "/test").ExecuteWriter(brokenWriter{})
+		headers, err := c.GET(t.Context(), "/test").ExecuteWriter(brokenWriter{})
 		require.ErrorContains(t, err, "stream response body")
+		assert.Nil(t, headers)
 	})
 }
 
@@ -255,6 +251,106 @@ type brokenWriter struct{}
 
 func (brokenWriter) Write(_ []byte) (int, error) {
 	return 0, io.ErrClosedPipe
+}
+
+func TestClient_Execute_Cacheable(t *testing.T) {
+	newCachingClient := func(t *testing.T, server *httptest.Server) *Client {
+		t.Helper()
+		transport := middleware.NewCacheRoundTripper(http.DefaultTransport, time.Minute)
+
+		return NewClient(Config{
+			BaseURL:    must(url.Parse(server.URL)),
+			HTTPClient: &http.Client{Transport: transport},
+		})
+	}
+
+	t.Run("non-empty response is cached", func(t *testing.T) {
+		calls := 0
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			calls++
+			_, _ = w.Write([]byte(`{"foo":"bar"}`))
+		}))
+		defer s.Close()
+
+		c := newCachingClient(t, s)
+
+		var m1 cacheableModel
+		require.NoError(t, c.GET(t.Context(), "/test").Execute(&m1))
+		assert.Equal(t, 1, calls)
+		assert.Equal(t, "bar", m1.Foo)
+
+		var m2 cacheableModel
+		require.NoError(t, c.GET(t.Context(), "/test").Execute(&m2))
+		assert.Equal(t, 1, calls, "second call must hit cache, not backend")
+		assert.Equal(t, "bar", m2.Foo)
+	})
+
+	t.Run("empty response invalidates cache", func(t *testing.T) {
+		calls := 0
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			calls++
+			_, _ = w.Write([]byte(`{"foo":""}`))
+		}))
+		defer s.Close()
+
+		c := newCachingClient(t, s)
+
+		var m1 cacheableModel
+		require.NoError(t, c.GET(t.Context(), "/test").Execute(&m1))
+		assert.Equal(t, 1, calls)
+		assert.True(t, m1.IsEmpty())
+
+		var m2 cacheableModel
+		require.NoError(t, c.GET(t.Context(), "/test").Execute(&m2))
+		assert.Equal(t, 2, calls, "empty response must invalidate cache; second call must reach backend")
+	})
+
+	t.Run("non-Cacheable model is not cached", func(t *testing.T) {
+		calls := 0
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			calls++
+			_, _ = w.Write([]byte(`{"foo":"bar"}`))
+		}))
+		defer s.Close()
+
+		c := newCachingClient(t, s)
+
+		var m1 apiModel // does not implement Cacheable
+		require.NoError(t, c.GET(t.Context(), "/test").Execute(&m1))
+		assert.Equal(t, 1, calls)
+
+		var m2 apiModel
+		require.NoError(t, c.GET(t.Context(), "/test").Execute(&m2))
+		assert.Equal(t, 2, calls, "non-Cacheable model must not be cached")
+	})
+
+	t.Run("HTTP error invalidates cached entry", func(t *testing.T) {
+		calls := 0
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			calls++
+			if calls == 1 {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(`{"error":{}}`))
+
+				return
+			}
+			_, _ = w.Write([]byte(`{"foo":"recovered"}`))
+		}))
+		defer s.Close()
+
+		c := newCachingClient(t, s)
+
+		var m1 cacheableModel
+		err := c.GET(t.Context(), "/test").Execute(&m1)
+		require.Error(t, err)
+		assert.Equal(t, 1, calls)
+
+		// The cached 500 must have been invalidated by Execute; backend must be called again
+		var m2 cacheableModel
+		require.NoError(t, c.GET(t.Context(), "/test").Execute(&m2))
+		assert.Equal(t, 2, calls, "HTTP error must invalidate cached entry")
+		assert.Equal(t, "recovered", m2.Foo)
+	})
 }
 
 func TestHandleErrorResponse_SingleServerError(t *testing.T) {

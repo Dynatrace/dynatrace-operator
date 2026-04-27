@@ -7,6 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestHasApiUrl(t *testing.T) {
@@ -70,25 +72,33 @@ func TestHasApiUrl(t *testing.T) {
 			},
 		})
 	})
-	t.Run("third gen API URL", func(t *testing.T) {
+	t.Run("third gen API URL with regular token is rejected", func(t *testing.T) {
 		assertDenied(t, []string{errorThirdGenAPIURL}, &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://tenantid.doma.apps.in/api",
 			},
-		})
+		}, regularTokenSecret())
+	})
+	t.Run("third gen API URL with platform token is allowed", func(t *testing.T) {
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: "https://tenant.apps.dynatrace.com",
+			},
+		}, platformTokenSecret())
 	})
 	t.Run("unmutated API URL", func(t *testing.T) {
 		assertUpdateAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: "https://tenant.live.dynatrace.com/api",
-				},
+				ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+				Spec:       dynakube.DynaKubeSpec{APIURL: "https://tenant.live.dynatrace.com/api"},
 			},
 			&dynakube.DynaKube{
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: "https://tenant.live.dynatrace.com/api",
-				},
+				ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+				Spec:       dynakube.DynaKubeSpec{APIURL: "https://tenant.live.dynatrace.com/api"},
 			},
+			regularTokenSecret(),
 		)
 	})
 	t.Run("mutated API URL", func(t *testing.T) {
@@ -106,4 +116,44 @@ func TestHasApiUrl(t *testing.T) {
 			},
 		)
 	})
+	t.Run("switch from 2nd gen to 3rd gen URL (same tenant)", func(t *testing.T) {
+		assertUpdateAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+				Spec:       dynakube.DynaKubeSpec{APIURL: "https://tenant.live.dynatrace.com/api"},
+			},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+				Spec:       dynakube.DynaKubeSpec{APIURL: "https://tenant.apps.dynatrace.com"},
+			},
+			platformTokenSecret(),
+		)
+	})
+	t.Run("switch from 3rd gen to 2nd gen URL (same tenant)", func(t *testing.T) {
+		assertUpdateAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+				Spec:       dynakube.DynaKubeSpec{APIURL: "https://tenant.apps.dynatrace.com"},
+			},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+				Spec:       dynakube.DynaKubeSpec{APIURL: "https://tenant.live.dynatrace.com/api"},
+			},
+			regularTokenSecret(),
+		)
+	})
+}
+
+func regularTokenSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+		Data:       map[string][]byte{"apiToken": []byte("dt0c.regulartoken")},
+	}
+}
+
+func platformTokenSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+		Data:       map[string][]byte{"apiToken": []byte("dt0s16.platformtoken")},
+	}
 }

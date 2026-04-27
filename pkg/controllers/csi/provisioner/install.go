@@ -10,11 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	installerclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/helmconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 )
 
 const (
@@ -23,7 +23,7 @@ const (
 
 var errNotReady = errors.New("download job is not ready yet")
 
-func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dynakube.DynaKube) error {
+func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk *dynakube.DynaKube) error {
 	agentInstaller, err := provisioner.getInstaller(ctx, dk)
 	if err != nil {
 		log.Info("failed to create CodeModule installer", "dk", dk.GetName())
@@ -50,7 +50,7 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dynakube.DynaKube) (installer.Installer, error) {
+func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dynakube.DynaKube) (installer.Installer, error) {
 	switch {
 	case dk.FF().IsNodeImagePull():
 		return provisioner.getJobInstaller(ctx, dk), nil
@@ -58,7 +58,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 		props := &image.Properties{
 			ImageURI:     dk.OneAgent().GetCodeModulesImage(),
 			APIReader:    provisioner.apiReader,
-			Dynakube:     &dk,
+			Dynakube:     dk,
 			PathResolver: provisioner.path,
 		}
 
@@ -69,12 +69,12 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 
 		return imageInstaller, nil
 	default:
-		dtc, err := buildDtc(provisioner, ctx, dk)
+		dtClient, err := buildDtc(provisioner, ctx, dk)
 		if err != nil {
 			return nil, err
 		}
 
-		props := &url.Properties{
+		props := &binary.Properties{
 			OS:            installerclient.OSUnix,
 			Type:          installerclient.TypePaaS,
 			Arch:          arch.Arch,
@@ -85,13 +85,13 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 			PathResolver:  provisioner.path,
 		}
 
-		urlInstaller := provisioner.urlInstallerBuilder(dtc.OneAgent, props)
+		urlInstaller := provisioner.urlInstallerBuilder(dtClient.OneAgent, props)
 
 		return urlInstaller, nil
 	}
 }
 
-func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk dynakube.DynaKube) installer.Installer {
+func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk *dynakube.DynaKube) installer.Installer {
 	imageURI := dk.OneAgent().GetCustomCodeModulesImage()
 	if imageURI == "" {
 		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
@@ -100,7 +100,7 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 	props := &job.Properties{
 		ImageURI:        imageURI,
 		ImagePullPolicy: dk.OneAgent().GetCodeModulesImagePullPolicy(),
-		Owner:           &dk,
+		Owner:           dk,
 		PullSecrets:     dk.PullSecretNames(),
 		APIReader:       provisioner.apiReader,
 		Client:          provisioner.kubeClient,
@@ -111,7 +111,7 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 	return provisioner.jobInstallerBuilder(ctx, props)
 }
 
-func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) string {
+func (provisioner *OneAgentProvisioner) getTargetDir(dk *dynakube.DynaKube) string {
 	var dirName string
 
 	if dk.OneAgent().GetCustomCodeModulesImage() != "" {
@@ -125,7 +125,7 @@ func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) strin
 	return provisioner.path.AgentSharedBinaryDirForAgent(dirName)
 }
 
-func (provisioner *OneAgentProvisioner) createLatestVersionSymlink(dk dynakube.DynaKube, targetDir string) error {
+func (provisioner *OneAgentProvisioner) createLatestVersionSymlink(dk *dynakube.DynaKube, targetDir string) error {
 	symlinkPath := provisioner.path.LatestAgentBinaryForDynaKube(dk.GetName())
 	if err := symlink.Remove(symlinkPath); err != nil {
 		return err

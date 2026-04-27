@@ -225,6 +225,84 @@ func (_c *APIClient_GetLatest_Call) RunAndReturn(run func(ctx context.Context, a
 	return _c
 }
 
+// GetProcessGroupingConfig provides a mock function for the type APIClient
+func (_mock *APIClient) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error) {
+	ret := _mock.Called(ctx, kubernetesClusterID, etag, writer)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetProcessGroupingConfig")
+	}
+
+	var r0 string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, io.Writer) (string, error)); ok {
+		return returnFunc(ctx, kubernetesClusterID, etag, writer)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, io.Writer) string); ok {
+		r0 = returnFunc(ctx, kubernetesClusterID, etag, writer)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, io.Writer) error); ok {
+		r1 = returnFunc(ctx, kubernetesClusterID, etag, writer)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// APIClient_GetProcessGroupingConfig_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetProcessGroupingConfig'
+type APIClient_GetProcessGroupingConfig_Call struct {
+	*mock.Call
+}
+
+// GetProcessGroupingConfig is a helper method to define mock.On call
+//   - ctx context.Context
+//   - kubernetesClusterID string
+//   - etag string
+//   - writer io.Writer
+func (_e *APIClient_Expecter) GetProcessGroupingConfig(ctx interface{}, kubernetesClusterID interface{}, etag interface{}, writer interface{}) *APIClient_GetProcessGroupingConfig_Call {
+	return &APIClient_GetProcessGroupingConfig_Call{Call: _e.mock.On("GetProcessGroupingConfig", ctx, kubernetesClusterID, etag, writer)}
+}
+
+func (_c *APIClient_GetProcessGroupingConfig_Call) Run(run func(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer)) *APIClient_GetProcessGroupingConfig_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 io.Writer
+		if args[3] != nil {
+			arg3 = args[3].(io.Writer)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_GetProcessGroupingConfig_Call) Return(s string, err error) *APIClient_GetProcessGroupingConfig_Call {
+	_c.Call.Return(s, err)
+	return _c
+}
+
+func (_c *APIClient_GetProcessGroupingConfig_Call) RunAndReturn(run func(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error)) *APIClient_GetProcessGroupingConfig_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetProcessModuleConfig provides a mock function for the type APIClient
 func (_mock *APIClient) GetProcessModuleConfig(ctx context.Context) (*oneagent.ProcessModuleConfig, error) {
 	ret := _mock.Called(ctx)
@@ -351,69 +429,6 @@ func (_c *APIClient_GetVersions_Call) Return(strings []string, err error) *APICl
 }
 
 func (_c *APIClient_GetVersions_Call) RunAndReturn(run func(ctx context.Context, args oneagent.GetParams) ([]string, error)) *APIClient_GetVersions_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetViaInstallerURL provides a mock function for the type APIClient
-func (_mock *APIClient) GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
-	ret := _mock.Called(ctx, url, writer)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetViaInstallerURL")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, io.Writer) error); ok {
-		r0 = returnFunc(ctx, url, writer)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// APIClient_GetViaInstallerURL_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetViaInstallerURL'
-type APIClient_GetViaInstallerURL_Call struct {
-	*mock.Call
-}
-
-// GetViaInstallerURL is a helper method to define mock.On call
-//   - ctx context.Context
-//   - url string
-//   - writer io.Writer
-func (_e *APIClient_Expecter) GetViaInstallerURL(ctx interface{}, url interface{}, writer interface{}) *APIClient_GetViaInstallerURL_Call {
-	return &APIClient_GetViaInstallerURL_Call{Call: _e.mock.On("GetViaInstallerURL", ctx, url, writer)}
-}
-
-func (_c *APIClient_GetViaInstallerURL_Call) Run(run func(ctx context.Context, url string, writer io.Writer)) *APIClient_GetViaInstallerURL_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 io.Writer
-		if args[2] != nil {
-			arg2 = args[2].(io.Writer)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *APIClient_GetViaInstallerURL_Call) Return(err error) *APIClient_GetViaInstallerURL_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *APIClient_GetViaInstallerURL_Call) RunAndReturn(run func(ctx context.Context, url string, writer io.Writer) error) *APIClient_GetViaInstallerURL_Call {
 	_c.Call.Return(run)
 	return _c
 }

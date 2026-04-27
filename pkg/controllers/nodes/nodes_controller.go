@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -26,12 +27,12 @@ import (
 )
 
 type Controller struct {
-	client                 client.Client
-	apiReader              client.Reader
-	dynatraceClientBuilder dynatraceclient.Builder
-	timeProvider           *timeprovider.Provider
-	podNamespace           string
-	runLocal               bool
+	client          client.Client
+	apiReader       client.Reader
+	dtClientFactory dynatrace.ClientFactory
+	timeProvider    *timeprovider.Provider
+	podNamespace    string
+	runLocal        bool
 }
 
 func Add(mgr manager.Manager, _ string) error {
@@ -47,35 +48,43 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 
 func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
-		client:                 mgr.GetClient(),
-		apiReader:              mgr.GetAPIReader(),
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
-		runLocal:               system.IsRunLocally(),
-		podNamespace:           os.Getenv(k8senv.PodNamespace),
-		timeProvider:           timeprovider.New(),
+		client:          mgr.GetClient(),
+		apiReader:       mgr.GetAPIReader(),
+		dtClientFactory: dynatrace.NewClientFromDynakube,
+		runLocal:        system.IsRunLocally(),
+		podNamespace:    os.Getenv(k8senv.PodNamespace),
+		timeProvider:    timeprovider.New(),
 	}
 }
 
 func NewControllerFromClient(clt client.Client) *Controller {
 	return &Controller{
-		client:                 clt,
-		apiReader:              clt,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(clt),
-		runLocal:               system.IsRunLocally(),
-		podNamespace:           os.Getenv(k8senv.PodNamespace),
-		timeProvider:           timeprovider.New(),
+		client:          clt,
+		apiReader:       clt,
+		dtClientFactory: dynatrace.NewClientFromDynakube,
+		runLocal:        system.IsRunLocally(),
+		podNamespace:    os.Getenv(k8senv.PodNamespace),
+		timeProvider:    timeprovider.New(),
 	}
 }
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
 	nodeName := request.Name
-	dk, err := controller.determineDynakubeForNode(nodeName)
 
-	log.Info("reconciling node name", "node", nodeName)
-
+	dk, err := controller.determineDynakubeForNode(ctx, nodeName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+
+	if skip, err := token.NewReader(controller.apiReader, dk).HasPlatformToken(ctx); err != nil {
+		return reconcile.Result{}, err
+	} else if skip {
+		log.Info("node controller disabled due to detected platform token in secret", "node", nodeName)
+
+		return reconcile.Result{}, nil
+	}
+
+	log.Info("reconciling node", "node", nodeName)
 
 	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
@@ -144,7 +153,7 @@ func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynak
 }
 
 func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCache *cache.Cache, nodeName string) error {
-	dynakube, err := controller.determineDynakubeForNode(nodeName)
+	dynakube, err := controller.determineDynakubeForNode(ctx, nodeName)
 	if err != nil {
 		return err
 	}
@@ -173,20 +182,23 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCac
 func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNode *cache.Entry) error {
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
-	tokens, err := tokenReader.ReadTokens(ctx)
+	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		return err
 	}
 
-	dynatraceClient, err := controller.dynatraceClientBuilder.
-		SetDynakube(*dk).
-		SetTokens(tokens).
-		Build(ctx)
+	// NOTE: The dtclient in-memory cache is intentionally disabled here.
+	// `GetEntityIDForIP` fetches ALL host entities for the entire tenant, not just those belonging to this Kubernetes cluster.
+	// Which means a single call can pull in data from every cluster and environment reporting to the same tenant.
+	// Mark-for-termination events are rare, caching this possibly large dataset would waste memory with no meaningful benefit.
+	dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
+
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
 	if err != nil {
 		return err
 	}
 
-	hostEventClient := dynatraceClient.AsV2().HostEvent
+	hostEventClient := dtClient.HostEvent
 
 	entityID, err := hostEventClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {

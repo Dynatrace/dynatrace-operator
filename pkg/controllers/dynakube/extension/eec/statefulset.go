@@ -106,7 +106,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		k8sstatefulset.SetServiceAccount(serviceAccountName),
 		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
 		k8sstatefulset.SetRollingUpdateStrategyType(),
-		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
+		setImagePullSecrets(r.dk.CustomPullSecretReferences()),
 		setVolumes(r.dk),
 		setPersistentVolumeClaim(r.dk),
 	)

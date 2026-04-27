@@ -6,6 +6,7 @@ package mocks
 
 import (
 	"io"
+	"net/http"
 	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -90,76 +91,32 @@ func (_c *APIRequest_Execute_Call) RunAndReturn(run func(model any) error) *APIR
 	return _c
 }
 
-// ExecuteRaw provides a mock function for the type APIRequest
-func (_mock *APIRequest) ExecuteRaw() ([]byte, error) {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for ExecuteRaw")
-	}
-
-	var r0 []byte
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func() ([]byte, error)); ok {
-		return returnFunc()
-	}
-	if returnFunc, ok := ret.Get(0).(func() []byte); ok {
-		r0 = returnFunc()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func() error); ok {
-		r1 = returnFunc()
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// APIRequest_ExecuteRaw_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecuteRaw'
-type APIRequest_ExecuteRaw_Call struct {
-	*mock.Call
-}
-
-// ExecuteRaw is a helper method to define mock.On call
-func (_e *APIRequest_Expecter) ExecuteRaw() *APIRequest_ExecuteRaw_Call {
-	return &APIRequest_ExecuteRaw_Call{Call: _e.mock.On("ExecuteRaw")}
-}
-
-func (_c *APIRequest_ExecuteRaw_Call) Run(run func()) *APIRequest_ExecuteRaw_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *APIRequest_ExecuteRaw_Call) Return(bytes []byte, err error) *APIRequest_ExecuteRaw_Call {
-	_c.Call.Return(bytes, err)
-	return _c
-}
-
-func (_c *APIRequest_ExecuteRaw_Call) RunAndReturn(run func() ([]byte, error)) *APIRequest_ExecuteRaw_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // ExecuteWriter provides a mock function for the type APIRequest
-func (_mock *APIRequest) ExecuteWriter(writer io.Writer) error {
+func (_mock *APIRequest) ExecuteWriter(writer io.Writer) (http.Header, error) {
 	ret := _mock.Called(writer)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ExecuteWriter")
 	}
 
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(io.Writer) error); ok {
+	var r0 http.Header
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(io.Writer) (http.Header, error)); ok {
+		return returnFunc(writer)
+	}
+	if returnFunc, ok := ret.Get(0).(func(io.Writer) http.Header); ok {
 		r0 = returnFunc(writer)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.Header)
+		}
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(io.Writer) error); ok {
+		r1 = returnFunc(writer)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // APIRequest_ExecuteWriter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecuteWriter'
@@ -186,12 +143,12 @@ func (_c *APIRequest_ExecuteWriter_Call) Run(run func(writer io.Writer)) *APIReq
 	return _c
 }
 
-func (_c *APIRequest_ExecuteWriter_Call) Return(err error) *APIRequest_ExecuteWriter_Call {
-	_c.Call.Return(err)
+func (_c *APIRequest_ExecuteWriter_Call) Return(header http.Header, err error) *APIRequest_ExecuteWriter_Call {
+	_c.Call.Return(header, err)
 	return _c
 }
 
-func (_c *APIRequest_ExecuteWriter_Call) RunAndReturn(run func(writer io.Writer) error) *APIRequest_ExecuteWriter_Call {
+func (_c *APIRequest_ExecuteWriter_Call) RunAndReturn(run func(writer io.Writer) (http.Header, error)) *APIRequest_ExecuteWriter_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -465,59 +422,6 @@ func (_c *APIRequest_WithQueryParams_Call) Return(aPIRequest core.APIRequest) *A
 }
 
 func (_c *APIRequest_WithQueryParams_Call) RunAndReturn(run func(params map[string]string) core.APIRequest) *APIRequest_WithQueryParams_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// WithRawBody provides a mock function for the type APIRequest
-func (_mock *APIRequest) WithRawBody(body []byte) core.APIRequest {
-	ret := _mock.Called(body)
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithRawBody")
-	}
-
-	var r0 core.APIRequest
-	if returnFunc, ok := ret.Get(0).(func([]byte) core.APIRequest); ok {
-		r0 = returnFunc(body)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.APIRequest)
-		}
-	}
-	return r0
-}
-
-// APIRequest_WithRawBody_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithRawBody'
-type APIRequest_WithRawBody_Call struct {
-	*mock.Call
-}
-
-// WithRawBody is a helper method to define mock.On call
-//   - body []byte
-func (_e *APIRequest_Expecter) WithRawBody(body interface{}) *APIRequest_WithRawBody_Call {
-	return &APIRequest_WithRawBody_Call{Call: _e.mock.On("WithRawBody", body)}
-}
-
-func (_c *APIRequest_WithRawBody_Call) Run(run func(body []byte)) *APIRequest_WithRawBody_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 []byte
-		if args[0] != nil {
-			arg0 = args[0].([]byte)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *APIRequest_WithRawBody_Call) Return(aPIRequest core.APIRequest) *APIRequest_WithRawBody_Call {
-	_c.Call.Return(aPIRequest)
-	return _c
-}
-
-func (_c *APIRequest_WithRawBody_Call) RunAndReturn(run func(body []byte) core.APIRequest) *APIRequest_WithRawBody_Call {
 	_c.Call.Return(run)
 	return _c
 }

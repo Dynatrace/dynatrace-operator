@@ -6,9 +6,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -55,16 +54,15 @@ func TestReconcile(t *testing.T) {
 		}
 
 		passConfigSecret := newMockSubReconciler(t)
-		passConfigSecret.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		passConfigSecret.EXPECT().Reconcile(t.Context(), dk).Return(nil).Once()
 
 		passDaemonSet := newMockSubReconciler(t)
-		passDaemonSet.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		passDaemonSet.EXPECT().Reconcile(t.Context(), dk).Return(nil).Once()
 
-		mockDtc := dtclientmock.NewClient(t)
-		mockDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
+		dtClient := &dynatrace.Client{Settings: &settings.Client{}}
 
 		passLogMonSetting := newMockLogmonsettingsSubReconciler(t)
-		passLogMonSetting.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		passLogMonSetting.EXPECT().Reconcile(t.Context(), dtClient.Settings, dk).Return(nil).Once()
 
 		r := Reconciler{
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
@@ -73,7 +71,7 @@ func TestReconcile(t *testing.T) {
 			logmonsettingsReconciler:         passLogMonSetting,
 		}
 
-		err := r.Reconcile(ctx, mockDtc, dk)
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)
 	})
 }

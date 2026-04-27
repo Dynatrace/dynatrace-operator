@@ -12,17 +12,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,6 +48,24 @@ func TestReconcile(t *testing.T) {
 	t.Run("dynakube doesn't need app-injection => no error, long requeue", func(t *testing.T) {
 		dk := createDynaKubeNoCSI(t)
 		prov := createProvisioner(t, dk)
+
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, longRequeueDuration, result.RequeueAfter)
+
+		assert.False(t, areFsDirsCreated(t, prov, dk))
+	})
+
+	t.Run("migration mode (csiDriver=false in modules.json) => cleanup only, no install, long requeue", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := createDynaKubeWithImage(t)
+		prov := createProvisioner(t, dk)
+		// imageInstallerBuilder is intentionally NOT set, if it were called the test would panic
+		prov.imageInstallerBuilder = func(_ context.Context, _ *image.Properties) (installer.Installer, error) {
+			return nil, errors.New("imageInstallerBuilder should not be called in migration mode")
+		}
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -101,7 +118,6 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, createSuccessfulInstaller(t))
-		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -111,10 +127,10 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with version, unknown issue with dtc => fail before installer creation", func(t *testing.T) {
+	t.Run("dynakube with version, unknown issue with dtClient => fail before installer creation", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
+		dk.Spec.APIURL = ""
 		prov := createProvisioner(t, dk, createToken(t, dk))
-		prov.dynatraceClientBuilder = mockFailingDTClientBuilder(t)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
@@ -123,14 +139,13 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with version, known issue with dtc => no error, just short requeue", func(t *testing.T) {
+	t.Run("dynakube with version, known issue with dtClient => no error, just short requeue", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
 
 		unavailableInstaller := installermock.NewInstaller(t)
-		unavailableInstaller.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, dtclient.ServerError{Code: http.StatusServiceUnavailable})
+		unavailableInstaller.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, &core.HTTPError{StatusCode: http.StatusServiceUnavailable})
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
-		prov.dynatraceClientBuilder = mockSuccessfulDTClientBuilder(t)
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -138,7 +153,7 @@ func TestReconcile(t *testing.T) {
 		require.Equal(t, shortRequeueDuration, result.RequeueAfter)
 	})
 
-	t.Run("dynakube with image => image installer used, dtclient not created, no error", func(t *testing.T) {
+	t.Run("dynakube with image => image installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
 		prov := createProvisioner(t, dk)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
@@ -151,7 +166,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with job => job installer used, dtclient not created, no error", func(t *testing.T) {
+	t.Run("dynakube with job => job installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t))
@@ -164,7 +179,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with job + custom-pull-secret => job installer used, dtclient not created, no error", func(t *testing.T) {
+	t.Run("dynakube with job + custom-pull-secret => job installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		dk.Spec.CustomPullSecret = "test-ps"
 		prov := createProvisioner(t, dk)
@@ -339,6 +354,7 @@ func createDynaKubeBase(t *testing.T) *dynakube.DynaKube {
 			Name:      "test-dk",
 			Namespace: "test-ns",
 		},
+		Spec: dynakube.DynaKubeSpec{APIURL: "https://csi-provisioner-dummy-url:9090"},
 	}
 }
 
@@ -346,7 +362,7 @@ func createSuccessfulInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(true, nil)
+	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(true, nil)
 
 	return m
 }
@@ -355,7 +371,7 @@ func createNotReadyInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, nil)
+	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, nil)
 
 	return m
 }
@@ -364,15 +380,15 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, errors.New("BOOM"))
+	m.EXPECT().InstallAgent(t.Context(), mock.Anything).Return(false, errors.New("BOOM"))
 
 	return m
 }
 
-func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) urlInstallerBuilder {
+func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) binaryInstallerBuilder {
 	t.Helper()
 
-	return func(_ oneagentclient.APIClient, _ *url.Properties) installer.Installer {
+	return func(_ oneagentclient.APIClient, _ *binary.Properties) installer.Installer {
 		return mockedInstaller
 	}
 }
@@ -409,28 +425,4 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 			token.APIKey: []byte("this is a token"),
 		},
 	}
-}
-
-func mockFailingDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
-	t.Helper()
-
-	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
-	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(nil, errors.New("BOOM"))
-
-	return mockDtcBuilder
-}
-
-func mockSuccessfulDTClientBuilder(t *testing.T) dynatraceclient.BuilderV2 {
-	t.Helper()
-
-	mockDtcBuilder := dtbuildermock.NewBuilderV2(t)
-	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().SetUserAgentSuffix("provisioner").Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(&dtclient.ClientV2{}, nil)
-
-	return mockDtcBuilder
 }

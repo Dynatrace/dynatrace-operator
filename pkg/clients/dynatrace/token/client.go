@@ -28,6 +28,8 @@ var (
 		ScopeSettingsRead:  ConditionTypeAPITokenSettingsRead,
 		ScopeSettingsWrite: ConditionTypeAPITokenSettingsWrite,
 	}
+
+	_ core.Cacheable = &scopesResponse{}
 )
 
 type APIClient interface {
@@ -44,6 +46,13 @@ type lookupRequest struct {
 
 type scopesResponse struct {
 	Scopes []string `json:"scopes"`
+}
+
+// IsEmpty always returns false: an empty scope list is a valid, cacheable response.
+// It means the token has no scopes assigned, which is a configuration error in the Operator.
+// The cache is automatically invalidated when the user updates their token.
+func (s *scopesResponse) IsEmpty() bool {
+	return false
 }
 
 func NewClient(apiClient core.APIClient) *Client {

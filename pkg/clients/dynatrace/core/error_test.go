@@ -7,15 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestServerError(t *testing.T) {
+func TestFormatServerError(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-		serverErr := &ServerError{}
-		assert.EqualError(t, serverErr, "unknown server error")
+		assert.Equal(t, "unknown server error", formatServerError(&ServerError{}))
 	})
 
 	t.Run("simple", func(t *testing.T) {
 		serverErr := &ServerError{Code: 404, Message: "not found"}
-		assert.EqualError(t, serverErr, "dynatrace server error 404: not found")
+		assert.Equal(t, "dynatrace server error 404: not found", formatServerError(serverErr))
 	})
 
 	t.Run("single constraint", func(t *testing.T) {
@@ -32,7 +31,7 @@ func TestServerError(t *testing.T) {
 				},
 			},
 		}
-		assert.EqualError(t, serverErr, "dynatrace server error 422: invalid\n\t- test path: test message")
+		assert.Equal(t, "dynatrace server error 422: invalid\n\t- test path: test message", formatServerError(serverErr))
 	})
 
 	t.Run("multiple constraints", func(t *testing.T) {
@@ -44,7 +43,7 @@ func TestServerError(t *testing.T) {
 				{Message: "message2", Path: "path2"},
 			},
 		}
-		assert.EqualError(t, serverErr, "dynatrace server error 422: invalid\n\t- path1: message1\n\t- path2: message2")
+		assert.Equal(t, "dynatrace server error 422: invalid\n\t- path1: message1\n\t- path2: message2", formatServerError(serverErr))
 	})
 }
 

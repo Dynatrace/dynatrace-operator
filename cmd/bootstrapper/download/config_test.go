@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,29 +18,29 @@ func TestToDTClientOptions(t *testing.T) {
 	type testCase struct {
 		title string
 		in    Config
-		out   []dtclient.OptionV2
+		out   []dynatrace.Option
 	}
 
 	tests := []testCase{
 		{
 			title: "host group propagated",
 			in:    Config{HostGroup: "host"},
-			out:   []dtclient.OptionV2{dtclient.WithHostGroup("host")},
+			out:   []dynatrace.Option{dynatrace.WithHostGroup("host")},
 		},
 		{
 			title: "network zone propagated",
 			in:    Config{NetworkZone: "network"},
-			out:   []dtclient.OptionV2{dtclient.WithNetworkZone("network")},
+			out:   []dynatrace.Option{dynatrace.WithNetworkZone("network")},
 		},
 		{
 			title: "proxy propagated",
 			in:    Config{Proxy: "proxy", NoProxy: "no-proxy"},
-			out:   []dtclient.OptionV2{dtclient.WithProxy("proxy", "no-proxy")},
+			out:   []dynatrace.Option{dynatrace.WithProxy("proxy", "no-proxy")},
 		},
 		{
 			title: "skip cert check propagated",
 			in:    Config{SkipCertCheck: true},
-			out:   []dtclient.OptionV2{dtclient.WithSkipCertificateValidation(true)},
+			out:   []dynatrace.Option{dynatrace.WithSkipCertificateValidation(true)},
 		},
 		{
 			title: "everything propagated",
@@ -51,18 +51,18 @@ func TestToDTClientOptions(t *testing.T) {
 				NoProxy:       "no-proxy",
 				SkipCertCheck: true,
 			},
-			out: []dtclient.OptionV2{
-				dtclient.WithHostGroup("host"),
-				dtclient.WithNetworkZone("network"),
-				dtclient.WithProxy("proxy", "no-proxy"),
-				dtclient.WithSkipCertificateValidation(true),
+			out: []dynatrace.Option{
+				dynatrace.WithHostGroup("host"),
+				dynatrace.WithNetworkZone("network"),
+				dynatrace.WithProxy("proxy", "no-proxy"),
+				dynatrace.WithSkipCertificateValidation(true),
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.title, func(t *testing.T) {
-			options := test.in.toDTClientOptionsV2()
+			options := test.in.toDTClientOptions()
 
 			compareDTOptions(t, test.out, options)
 		})
@@ -129,7 +129,7 @@ func setupConfig(t *testing.T, inputDir string, config Config) {
 	require.NoError(t, err)
 }
 
-func compareDTOptions(t *testing.T, opts1 []dtclient.OptionV2, opts2 []dtclient.OptionV2) {
+func compareDTOptions(t *testing.T, opts1 []dynatrace.Option, opts2 []dynatrace.Option) {
 	require.Len(t, opts1, len(opts2))
 	for i := range opts1 {
 		expected := getNameOfCalledFunc(t, opts1[i])
@@ -138,7 +138,7 @@ func compareDTOptions(t *testing.T, opts1 []dtclient.OptionV2, opts2 []dtclient.
 	}
 }
 
-func getNameOfCalledFunc(t *testing.T, option dtclient.OptionV2) string {
+func getNameOfCalledFunc(t *testing.T, option dynatrace.Option) string {
 	t.Helper()
 
 	funcPath := strings.Split(runtime.FuncForPC(reflect.ValueOf(option).Pointer()).Name(), ".")

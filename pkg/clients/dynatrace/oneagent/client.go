@@ -16,9 +16,9 @@ type APIClient interface {
 	Get(ctx context.Context, args GetParams, writer io.Writer) error
 	GetLatest(ctx context.Context, args GetParams, writer io.Writer) error
 	GetVersions(ctx context.Context, args GetParams) ([]string, error)
-	GetViaInstallerURL(ctx context.Context, url string, writer io.Writer) error
 
 	GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error)
+	GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error)
 }
 
 type Client struct {

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
@@ -26,6 +27,13 @@ type APIClient interface {
 	DELETE(ctx context.Context, path string) APIRequest
 }
 
+// Cacheable must be implemented by types passed to Execute if they supposed to be cached.
+// IsEmpty indicates whether the parsed response is considered empty.
+// If IsEmpty returns true after a successful parse, the cache entry is removed.
+type Cacheable interface {
+	IsEmpty() bool
+}
+
 // APIRequest provides a fluent interface for building and executing HTTP requests
 type APIRequest interface {
 	// WithPath sets the path for the request. Path parts will be joined, ignoring leading or trailing slashes.
@@ -36,8 +44,6 @@ type APIRequest interface {
 	WithRawQueryParams(params url.Values) APIRequest
 	// WithJSONBody sets the request body as JSON
 	WithJSONBody(body any) APIRequest
-	// WithRawBody sets the request body as raw bytes
-	WithRawBody(body []byte) APIRequest
 	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
 	// WithoutToken explicitly disables authentication for the request
@@ -45,11 +51,11 @@ type APIRequest interface {
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) APIRequest
 	// Execute executes the request and unmarshals the response into the provided model
+	// If the provided model implements the Cacheable interface, then the client will cache the response.
 	Execute(model any) error
-	// ExecuteRaw executes the request and returns the raw response data
-	ExecuteRaw() ([]byte, error)
-	// ExecuteWriter executes the request and writes the response body to the provided writer
-	ExecuteWriter(writer io.Writer) error
+	// ExecuteWriter executes the request, writes the response body to the provided writer,
+	// and returns the response headers on success.
+	ExecuteWriter(writer io.Writer) (http.Header, error)
 }
 
 type Config struct {
@@ -177,20 +183,6 @@ func (r *Request) WithJSONBody(body any) APIRequest {
 	return r
 }
 
-// WithRawBody sets the request body as raw bytes
-func (r *Request) WithRawBody(body []byte) APIRequest {
-	r.body = body
-
-	return r
-}
-
-// WithTokenType sets the token type to use for authentication
-func (r *Request) WithTokenType(tokenType TokenType) APIRequest {
-	r.tokenType = tokenType
-
-	return r
-}
-
 // WithPaasToken sets the token type to PaaS
 func (r *Request) WithPaasToken() APIRequest {
 	r.tokenType = TokenTypePaaS
@@ -214,8 +206,15 @@ func (r *Request) WithHeader(key, value string) APIRequest {
 
 // Execute executes the request and unmarshals the response into the provided model
 func (r *Request) Execute(model any) error {
-	body, err := r.doRequest()
+	cacheableModel, isCacheable := model.(Cacheable)
+	if isCacheable {
+		r.headers.Set(middleware.CacheRequestHeader, "true")
+	}
+
+	body, cacheKey, err := r.doRequest()
 	if err != nil {
+		middleware.InvalidateCacheEntry(cacheKey)
+
 		return err
 	}
 
@@ -225,16 +224,16 @@ func (r *Request) Execute(model any) error {
 		}
 	}
 
+	if isCacheable && cacheableModel.IsEmpty() {
+		middleware.InvalidateCacheEntry(cacheKey)
+	}
+
 	return nil
 }
 
-// ExecuteRaw executes the request and returns the raw response data
-func (r *Request) ExecuteRaw() ([]byte, error) {
-	return r.doRequest()
-}
-
-// ExecuteWriter executes the request and writes the response body to the provided writer.
-func (r *Request) ExecuteWriter(writer io.Writer) error {
+// ExecuteWriter executes the request, writes the response body to the provided writer,
+// and returns the response headers on success.
+func (r *Request) ExecuteWriter(writer io.Writer) (http.Header, error) {
 	return r.doRequestStream(writer)
 }
 
@@ -270,73 +269,7 @@ func (r *Request) withMethod(method string) APIRequest {
 	return r
 }
 
-func (r *Request) doRequestStream(writer io.Writer) (err error) {
-	if r.err != nil {
-		return r.err
-	}
-
-	reqURL, err := r.buildURL()
-	if err != nil {
-		return fmt.Errorf("build URL: %w", err)
-	}
-
-	var bodyReader io.Reader
-	if r.body != nil {
-		bodyReader = bytes.NewReader(r.body)
-	}
-
-	req, err := http.NewRequestWithContext(r.ctx, r.method, reqURL.String(), bodyReader)
-	if err != nil {
-		return fmt.Errorf("create HTTP request: %w", err)
-	}
-
-	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
-
-	httpClient := r.client.cfg.HTTPClient
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-
-	loggerArgs := createLoggerArgs(r.body)
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("HTTP request: %w", err)
-	}
-
-	defer func() {
-		if errClose := resp.Body.Close(); errClose != nil {
-			err = errors.Join(err, errClose)
-		}
-	}()
-
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
-	statusCodeThreshold := 201
-	if r.method == http.MethodDelete {
-		statusCodeThreshold = 299
-	}
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
-		body, readErr := io.ReadAll(resp.Body)
-		if readErr != nil {
-			return fmt.Errorf("read error response body: %w", readErr)
-		}
-
-		log.Debug("API request", loggerArgs(resp, body)...)
-
-		return handleErrorResponse(resp, body)
-	}
-
-	log.Debug("API request", loggerArgs(resp, nil)...)
-
-	if _, err = io.Copy(writer, resp.Body); err != nil {
-		return fmt.Errorf("stream response body: %w", err)
-	}
-
-	return nil
-}
-
-func (r *Request) doRequest() (body []byte, err error) {
+func (r *Request) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
 	if r.err != nil {
 		return nil, r.err
 	}
@@ -376,24 +309,78 @@ func (r *Request) doRequest() (body []byte, err error) {
 		}
 	}()
 
+	if !IsSuccessResponse(resp) {
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("read error response body: %w", readErr)
+		}
+
+		log.Debug("API request", loggerArgs(resp, body)...)
+
+		return nil, handleErrorResponse(resp, body)
+	}
+
+	log.Debug("API request", loggerArgs(resp, nil)...)
+
+	if _, err = io.Copy(writer, resp.Body); err != nil {
+		return nil, fmt.Errorf("stream response body: %w", err)
+	}
+
+	return resp.Header, nil
+}
+
+func (r *Request) doRequest() (body []byte, cacheKey string, err error) {
+	if r.err != nil {
+		return nil, "", r.err
+	}
+
+	reqURL, err := r.buildURL()
+	if err != nil {
+		return nil, "", fmt.Errorf("build URL: %w", err)
+	}
+
+	var bodyReader io.Reader
+	if r.body != nil {
+		bodyReader = bytes.NewReader(r.body)
+	}
+
+	req, err := http.NewRequestWithContext(r.ctx, r.method, reqURL.String(), bodyReader)
+	if err != nil {
+		return nil, "", fmt.Errorf("create HTTP request: %w", err)
+	}
+
+	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
+
+	httpClient := r.client.cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	loggerArgs := createLoggerArgs(r.body)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("HTTP request: %w", err)
+	}
+
+	defer func() {
+		if errClose := resp.Body.Close(); errClose != nil {
+			err = errors.Join(err, errClose)
+		}
+	}()
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read response body: %w", err)
+		return nil, "", fmt.Errorf("read response body: %w", err)
 	}
 
 	log.Debug("API request", loggerArgs(resp, body)...)
 
-	// Legacy client only checked by 200-201, but DELETE requests are only handled by v2 client.
-	statusCodeThreshold := 201
-	if r.method == http.MethodDelete {
-		statusCodeThreshold = 299
-	}
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode > statusCodeThreshold {
+	if !IsSuccessResponse(resp) {
 		err = handleErrorResponse(resp, body)
 	}
 
-	return body, err
+	return body, resp.Header.Get(middleware.CacheKeyHeader), err
 }
 
 // setHeaders sets the common headers for the request
@@ -451,6 +438,18 @@ func handleErrorResponse(resp *http.Response, body []byte) error {
 	}
 
 	return httpErr
+}
+
+// IsSuccessResponse returns true when the HTTP response status code indicates
+// a successful operation. DELETE requests accept 200-299; all other methods
+// accept 200-201 (matching the legacy client behavior).
+func IsSuccessResponse(resp *http.Response) bool {
+	statusCodeThreshold := 201
+	if resp.Request != nil && resp.Request.Method == http.MethodDelete {
+		statusCodeThreshold = 299
+	}
+
+	return resp.StatusCode >= http.StatusOK && resp.StatusCode <= statusCodeThreshold
 }
 
 func isJSONList(body []byte) bool {

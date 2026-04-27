@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
@@ -78,14 +78,13 @@ func run(cmd *cobra.Command, _ []string) error {
 	if targetVersion != "" {
 		inputDir, _ := cmd.Flags().GetString(configure.InputFolderFlag)
 
-		props := url.Properties{
+		props := binary.Properties{
 			OS:            installer.OSUnix,
 			Type:          installer.TypePaaS,
 			Flavor:        flavor,
 			Arch:          arch.Arch,
 			Technologies:  technologies,
 			TargetVersion: targetVersion,
-			URL:           "",
 			SkipMetadata:  false,
 			PathResolver:  metadata.PathResolver{RootDir: targetFolder},
 		}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,8 +23,28 @@ func NewReader(apiReader client.Reader, dk *dynakube.DynaKube) Reader {
 	}
 }
 
-func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
-	tokens, err := reader.readTokens(ctx)
+// HasPlatformToken inspects the token secret and checks if the apiToken is a platform token.
+// Returns an error if reading the secret fails and false if the DynaKube is nil.
+func (reader Reader) HasPlatformToken(ctx context.Context) (bool, error) {
+	if reader.dk == nil {
+		return false, nil
+	}
+
+	tokens, err := reader.ReadTokens(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	token := tokens.APIToken()
+	if token != nil {
+		return dttoken.IsPlatform(token.Value), nil
+	}
+
+	return false, nil
+}
+
+func (reader Reader) ReadAndVerifyTokens(ctx context.Context) (Tokens, error) {
+	tokens, err := reader.ReadTokens(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +57,7 @@ func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
 	return tokens, nil
 }
 
-func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
+func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
 	var tokenSecret corev1.Secret
 
 	result := make(Tokens)

@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
@@ -88,7 +88,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error {
 	// If AG is not used or was not cleaned up due to being previously enabled
 	// Split the `if` for better logging.
 	if !dk.ActiveGate().IsEnabled() {
@@ -103,7 +103,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		log.Info("activeGate was disabled, starting cleanup")
 	}
 
-	err := r.connectionReconciler.Reconcile(ctx, dtClient.AsV2().ActiveGate, dk)
+	err := r.connectionReconciler.Reconcile(ctx, dtClient.ActiveGate, dk)
 	if err != nil {
 		return err
 	}
@@ -113,11 +113,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return err
 	}
 
-	if r.versionReconciler == nil {
-		r.versionReconciler = version.NewReconciler(r.apiReader, dtClient, timeprovider.New().Freeze())
+	versionReconciler := r.versionReconciler
+	if versionReconciler == nil {
+		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
 	}
 
-	err = r.versionReconciler.ReconcileActiveGate(ctx, dk)
+	err = versionReconciler.ReconcileActiveGate(ctx, dk)
 	if err != nil {
 		return err
 	}
@@ -132,7 +133,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return err
 	}
 
-	err = r.authTokenReconciler.Reconcile(ctx, dtClient.AsV2().ActiveGate, dk)
+	err = r.authTokenReconciler.Reconcile(ctx, dtClient.ActiveGate, dk)
 	if err != nil {
 		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 	}

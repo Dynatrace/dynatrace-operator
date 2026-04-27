@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -59,7 +60,10 @@ func runInPod(kubeCfg *rest.Config) error {
 		return err
 	}
 
-	return errors.WithStack(operatorManager.Start(ctrl.SetupSignalHandler()))
+	signalHandler := ctrl.SetupSignalHandler()
+	go middleware.RunPeriodicCacheCleanup(signalHandler, k8senv.GetDTClientCacheCleanInterval(log))
+
+	return errors.WithStack(operatorManager.Start(signalHandler))
 }
 
 func runLocally(ctx context.Context, kubeCfg *rest.Config) error {

@@ -31,8 +31,8 @@ var (
 		duplicateOneAgentArguments,
 		forbiddenHostIDSourceArgument,
 		NoAPIURL,
-		IsInvalidAPIURL,
-		IsThirdGenAPIUrl,
+		isInvalidAPIURL,
+		isThirdGenAPIURL,
 		invalidActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
 		invalidActiveGateProxyURL,
@@ -63,6 +63,9 @@ var (
 		missingDatabaseExecutorImage,
 		conflictingOrInvalidDatabasesVolumeMounts,
 		unusedDatabasesVolume,
+		invalidGlobalResourceAttributes,
+		invalidOneAgentResourceAttributes,
+		invalidOTLPResourceAttributes,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -79,6 +82,10 @@ var (
 		hostPathDatabaseVolumeFound,
 		disabledMetadataEnrichmentForInjectionModes,
 		activeGateRollingUpdateWithOldK8sVersion,
+		globalResourceAttributesExceedsLimit,
+		oneAgentResourceAttributesExceedsLimit,
+		otlpResourceAttributesExceedsLimit,
+		deprecatedPaasToken,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

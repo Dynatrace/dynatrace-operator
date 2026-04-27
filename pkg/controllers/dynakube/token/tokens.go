@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"maps"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 )
 
 const (
@@ -16,14 +14,6 @@ const (
 	APIKey        = "apiToken"
 	DataIngestKey = "dataIngestToken"
 )
-
-type VerificationError struct {
-	Errs []error
-}
-
-func (v VerificationError) Error() string {
-	return concatErrors(v.Errs).Error()
-}
 
 type Tokens map[string]*Token
 
@@ -65,71 +55,62 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) (map[string]bool, error) {
-	collectedScopeErrors := make([]error, 0)
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient token.APIClient, dk dynakube.DynaKube) (map[string]bool, error) {
+	var err error
+
 	collectedMissingOptionalScopes := map[string]bool{}
 
 	for _, token := range tokens {
 		missingOptionalScopes, scopeError := token.verifyScopes(ctx, dtClient, dk)
 		if scopeError != nil {
-			collectedScopeErrors = append(collectedScopeErrors, scopeError)
+			err = errors.Join(err, scopeError)
 		}
 
 		maps.Insert(collectedMissingOptionalScopes, maps.All(missingOptionalScopes))
 	}
 
-	if len(collectedScopeErrors) == 0 {
-		return collectedMissingOptionalScopes, nil
-	}
-
-	return collectedMissingOptionalScopes, VerificationError{Errs: collectedScopeErrors}
+	return collectedMissingOptionalScopes, err
 }
 
-func (tokens Tokens) VerifyValues() error {
-	valueErrors := make([]error, 0)
-
+func (tokens Tokens) VerifyValues() (err error) {
 	for _, token := range tokens {
-		err := token.verifyValue()
-		if err != nil {
-			valueErrors = append(valueErrors, err)
+		verifyErr := token.verifyValue()
+		if verifyErr != nil {
+			err = errors.Join(err, verifyErr)
 		}
 	}
 
-	return concatErrors(valueErrors)
-}
-
-func concatErrors(errs []error) error {
-	if len(errs) == 0 {
-		return nil
-	}
-
-	apiStatus := dynatraceapi.NoError
-
-	var concatenatedError strings.Builder
-	for index, err := range errs {
-		concatenatedError.WriteString(err.Error())
-
-		if index < len(errs)-1 {
-			concatenatedError.WriteString("\n\t")
-		}
-
-		if apiStatus == dynatraceapi.NoError && dynatraceapi.IsUnreachable(err) {
-			apiStatus = dynatraceapi.StatusCode(err)
-		}
-	}
-
-	if apiStatus != dynatraceapi.NoError {
-		return dtclient.ServerError{
-			Code:    apiStatus,
-			Message: concatenatedError.String(),
-		}
-	}
-
-	return errors.New(concatenatedError.String())
+	return
 }
 
 func CheckForDataIngestToken(tokens Tokens) bool {
 	dataIngestToken, hasDataIngestToken := tokens[DataIngestKey]
 
 	return hasDataIngestToken && len(dataIngestToken.Value) != 0
+}
+
+// GetMissingScopes inspects the provided error for ScopeError values and extracts their missing scopes.
+// Returns a nil slice if no ScopeError is encountered.
+func GetMissingScopes(err error) []string {
+	if err == nil {
+		return nil
+	}
+
+	var errs []error
+
+	if unwrap, ok := err.(interface{ Unwrap() []error }); !ok {
+		errs = []error{err}
+	} else {
+		errs = unwrap.Unwrap()
+	}
+
+	var missingScopes []string
+
+	for _, err := range errs {
+		if scopeErr := new(ScopeError); errors.As(err, scopeErr) {
+			missingScopes = append(missingScopes, scopeErr.MissingScopes...)
+		}
+	}
+
+	return missingScopes
 }

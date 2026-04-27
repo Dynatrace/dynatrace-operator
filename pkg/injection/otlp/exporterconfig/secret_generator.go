@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -17,19 +16,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// SecretGenerator manages the OTLP exporter secret secret generation for the user namespaces.
+// SecretGenerator manages the OTLP exporter secret generation for the user namespaces.
 type SecretGenerator struct {
 	client       client.Client
-	dtClient     dtclient.Client
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
 	secrets      k8ssecret.QueryObject
 }
 
-func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient dtclient.Client) *SecretGenerator {
+func NewSecretGenerator(client client.Client, apiReader client.Reader) *SecretGenerator {
 	return &SecretGenerator{
 		client:       client,
-		dtClient:     dtClient,
 		apiReader:    apiReader,
 		timeProvider: timeprovider.New(),
 		secrets:      k8ssecret.Query(client, apiReader, log),

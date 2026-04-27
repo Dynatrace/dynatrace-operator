@@ -123,6 +123,13 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 		*out = new(telemetryingest.Spec)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ResourceAttributes != nil {
+		in, out := &in.ResourceAttributes, &out.ResourceAttributes
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.OTLPExporterConfiguration != nil {
 		in, out := &in.OTLPExporterConfiguration, &out.OTLPExporterConfiguration
 		*out = new(otlp.ExporterConfigurationSpec)
