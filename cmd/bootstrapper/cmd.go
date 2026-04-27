@@ -22,9 +22,10 @@ const (
 	SuppressErrorsFlag = k8sinit.SuppressErrorsFlag
 	TechnologiesFlag   = move.TechnologyFlag
 
-	TargetVersionFlag      = "version"
-	FlavorFlag             = "flavor"
-	MetadataEnrichmentFlag = "metadata-enrichment"
+	TargetVersionFlag                = "version"
+	FlavorFlag                       = "flavor"
+	MetadataEnrichmentFlag           = "metadata-enrichment"
+	EnableAttributesDTKubernetesFlag = "enable-attributes-dt-kubernetes"
 )
 
 var (
@@ -34,7 +35,8 @@ var (
 	technologies        []string
 	flavor              string
 
-	needsMetadataEnrichment bool
+	needsMetadataEnrichment      bool
+	enableAttributesDTKubernetes bool
 
 	log = logd.Get().WithName("bootstrap")
 )
@@ -59,15 +61,13 @@ func AddFlags(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().BoolVar(&areErrorsSuppressed, SuppressErrorsFlag, false, "(Optional) Always return exit code 0, even on error")
 
-	cmd.PersistentFlags().Lookup(SuppressErrorsFlag).NoOptDefVal = "true"
-
 	cmd.PersistentFlags().StringSliceVar(&technologies, TechnologiesFlag, []string{"all"}, "comma separated list of technologies that will be used to download the code modules image.")
 
 	cmd.PersistentFlags().StringVar(&flavor, FlavorFlag, arch.Flavor, "flavor of the code modules image.")
 
 	cmd.PersistentFlags().BoolVar(&needsMetadataEnrichment, MetadataEnrichmentFlag, false, "(Optional) Should the enrichment with metadata be performed.")
 
-	cmd.PersistentFlags().Lookup(MetadataEnrichmentFlag).NoOptDefVal = "true"
+	cmd.PersistentFlags().BoolVar(&enableAttributesDTKubernetes, EnableAttributesDTKubernetesFlag, true, "(Optional) Should the deprecated attributes dt.kubernetes be added to the metadata enrichment.")
 
 	configure.AddFlags(cmd)
 }
@@ -132,7 +132,7 @@ func runConfigure() error {
 	}
 
 	if needsMetadataEnrichment {
-		err := configure.EnrichWithMetadata(log.Logger)
+		err := configure.EnrichWithMetadata(log.Logger, enableAttributesDTKubernetes)
 		if err != nil {
 			log.Info("error during metadata enrichment")
 

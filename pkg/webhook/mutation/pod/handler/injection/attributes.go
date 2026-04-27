@@ -28,8 +28,6 @@ func addPodAttributes(request *dtwebhook.MutationRequest) error {
 		UserDefined: map[string]string{},
 	}
 
-	setDeprecatedAttributes(&attrs)
-
 	envs := []corev1.EnvVar{
 		{Name: K8sPodNameEnv, ValueFrom: k8senv.NewSourceForField("metadata.name")},
 		{Name: K8sPodUIDEnv, ValueFrom: k8senv.NewSourceForField("metadata.uid")},
