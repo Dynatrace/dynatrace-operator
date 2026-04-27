@@ -26,7 +26,7 @@ type ingestRuleMatchers struct {
 }
 
 // GetSettingsForLogModule returns the settings response with the number of settings objects and their values.
-func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (TotalCountSettingsResponse, error) {
+func (c *client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (TotalCountSettingsResponse, error) {
 	if monitoredEntity == "" {
 		return TotalCountSettingsResponse{}, nil
 	}
@@ -48,7 +48,7 @@ func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity st
 }
 
 // CreateLogMonitoringSetting returns the object ID of the created logmonitoring settings.
-func (c *Client) CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
+func (c *client) CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
 	body := newPostObjectsBody(
 		logMonitoringSettingsSchemaID,
 		logMonitoringSchemaVersion,

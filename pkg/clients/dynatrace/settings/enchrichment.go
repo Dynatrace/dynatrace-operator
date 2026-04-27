@@ -29,7 +29,7 @@ type ruleItemValue struct {
 }
 
 // GetRules returns metadata enrichment rules with the number of settings objects and their values.
-func (c *Client) GetRules(ctx context.Context, kubeSystemUUID, entityID string) ([]metadataenrichment.Rule, error) {
+func (c *client) GetRules(ctx context.Context, kubeSystemUUID, entityID string) ([]metadataenrichment.Rule, error) {
 	if kubeSystemUUID == "" {
 		return nil, errMissingKubeSystemUUID
 	}

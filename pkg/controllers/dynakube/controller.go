@@ -128,7 +128,7 @@ type dynakubeReconciler interface {
 
 // dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
 type dtSettingReconciler interface {
-	Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
 }
 
 type logMonitoringReconciler interface {
@@ -144,7 +144,7 @@ type activeGateReconciler interface {
 }
 
 type kspmReconciler interface {
-	Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
 }
 
 type injectionReconciler interface {
@@ -153,7 +153,7 @@ type injectionReconciler interface {
 
 // Controller reconciles a DynaKube object
 type Controller struct {
-	// This client, initialized using mgr.Client() above, is a split client
+	// This client, initialized using mgr.client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
 	client        client.Client
 	apiReader     client.Reader

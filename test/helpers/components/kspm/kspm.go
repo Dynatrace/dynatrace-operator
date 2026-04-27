@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func BuildSettingsClient(secretConfig tenant.Secret) (dtsettings.APIClient, error) {
+func BuildSettingsClient(secretConfig tenant.Secret) (dtsettings.Client, error) {
 	dtClient, err := dynatrace.NewClient(
 		dynatrace.WithBaseURL(secretConfig.APIURL),
 		dynatrace.WithAPIToken(secretConfig.APIToken),

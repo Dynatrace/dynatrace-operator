@@ -127,7 +127,7 @@ func TestReconciler(t *testing.T) {
 		versionClient := versionclientmock.NewAPIClient(t)
 		versionClient.EXPECT().GetLatestAgentVersion(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
-		settingsClient := settingsmock.NewAPIClient(t)
+		settingsClient := settingsmock.NewClient(t)
 		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
@@ -177,7 +177,7 @@ func TestReconciler(t *testing.T) {
 			}),
 			dk,
 		)
-		settingsClient := settingsmock.NewAPIClient(t)
+		settingsClient := settingsmock.NewClient(t)
 		dtClient := &dynatrace.Client{Settings: settingsClient}
 
 		rec := NewReconciler(clt, clt)
@@ -229,7 +229,7 @@ func TestReconciler(t *testing.T) {
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
 		oneAgentClient := oneagentclientmock.NewClient(t)
-		settingsClient := settingsmock.NewAPIClient(t)
+		settingsClient := settingsmock.NewClient(t)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient}

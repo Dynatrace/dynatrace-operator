@@ -39,7 +39,7 @@ func TestReconcile(t *testing.T) {
 	}
 
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
@@ -56,7 +56,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, mock.Anything).
@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 
 		dk := getDK()
 		r := NewReconciler()
@@ -90,7 +90,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 
 		dk := getDK()
 
@@ -105,7 +105,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("cleanup condition if logmon is turned off", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 
 		dk := &dynakube.DynaKube{}
 
@@ -120,7 +120,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("update condition timestamp if outdated", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
@@ -149,7 +149,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("don't update condition timestamp if not outdated", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 
 		dk := getDK()
 
@@ -194,7 +194,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	}
 
 	t.Run("error fetching log monitoring settings", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{}, errors.New("error when fetching settings"))
 
@@ -210,7 +210,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("KubernetesClusterMEID is missing -> skip", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		dk := getDK()
 		dk.Status.KubernetesClusterMEID = ""
 
@@ -223,7 +223,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("log monitoring settings already exist", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
@@ -238,7 +238,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("create log monitoring settings", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).
@@ -265,7 +265,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("error creating log monitoring settings", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).

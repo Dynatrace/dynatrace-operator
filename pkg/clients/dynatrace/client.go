@@ -28,7 +28,7 @@ import (
 )
 
 type Client struct {
-	Settings   settings.APIClient
+	Settings   settings.Client
 	ActiveGate activegate.Client
 	HostEvent  hostevent.Client
 	OneAgent   oneagent.Client

@@ -29,7 +29,7 @@ func NewReconciler() *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error {
 	// Kubernetes Monitoring is REQUIRED for KSPM, so it is ok to just check for this.
 	if !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
 		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
@@ -73,7 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.APIClien
 	return nil
 }
 
-func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error {
 	log.Info("start reconciling kspm settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {

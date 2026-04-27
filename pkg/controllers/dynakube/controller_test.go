@@ -362,7 +362,7 @@ func TestReconcileComponents(t *testing.T) {
 			activeGateReconciler:    mockActiveGateReconciler,
 			injectionReconciler:     mockInjectionReconciler,
 		}
-		dtClient := &dynatrace.Client{Settings: &settings.Client{}}
+		dtClient := &dynatrace.Client{Settings: settings.NewClient(nil)}
 
 		var err error
 
@@ -372,8 +372,8 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockLogMonitoringReconciler, &err, dtClient, dk)
 		expectReconcileError(t, mockExtensionReconciler, &err, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
-		expectReconcileError(t, mockKSPMReconciler, &err, &settings.Client{}, dk)
-		expectReconcileError(t, mockK8sEntityReconciler, &err, &settings.Client{}, dk)
+		expectReconcileError(t, mockKSPMReconciler, &err, settings.NewClient(nil), dk)
+		expectReconcileError(t, mockK8sEntityReconciler, &err, settings.NewClient(nil), dk)
 
 		err = controller.reconcileComponents(ctx, dtClient, dk)
 		require.Error(t, err)
@@ -390,7 +390,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockIstioReconciler := newMockIstioReconciler(t)
 		mockKSPMReconciler := newMockKspmReconciler(t)
 
-		dtClient := &dynatrace.Client{Settings: &settings.Client{}}
+		dtClient := &dynatrace.Client{Settings: settings.NewClient(nil)}
 
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
@@ -411,8 +411,8 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockActiveGateReconciler, &err, dk, dtClient, token.Tokens(nil))
 		expectReconcileError(t, mockExtensionReconciler, &err, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
-		expectReconcileError(t, k8sEntityReconciler, &err, &settings.Client{}, dk)
-		expectReconcileError(t, mockKSPMReconciler, &err, &settings.Client{}, dk)
+		expectReconcileError(t, k8sEntityReconciler, &err, settings.NewClient(nil), dk)
+		expectReconcileError(t, mockKSPMReconciler, &err, settings.NewClient(nil), dk)
 
 		err = controller.reconcileComponents(ctx, dtClient, dk)
 		require.Error(t, err)
@@ -440,7 +440,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	}, nil)
 
 	dtClient := &dynatrace.Client{
-		Settings: &settings.Client{},
+		Settings: settings.NewClient(nil),
 		Token:    mockedTokenClient,
 	}
 
@@ -473,10 +473,10 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockIstioReconciler.EXPECT().ReconcileAPIURL(anyCtx, anyDynaKube).Return(nil)
 
 	mockKSPMReconciler := newMockDtSettingReconciler(t)
-	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, &settings.Client{}, anyDynaKube).Return(nil)
+	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, settings.NewClient(nil), anyDynaKube).Return(nil)
 
 	mockK8sEntityReconciler := newMockDtSettingReconciler(t)
-	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, &settings.Client{}, anyDynaKube).Return(nil)
+	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, settings.NewClient(nil), anyDynaKube).Return(nil)
 
 	baseController := &Controller{
 		apiReader:                    fakeClient,
