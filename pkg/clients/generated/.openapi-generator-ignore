@@ -17,10 +17,15 @@ docs/*.md
 # Then explicitly reverse the ignore rule for a single file:
 # !docs/README.md
 
+#
+.travis.yml
+
+# Internal openapi yaml spec
+api/*
+
 # These are JAVA specific generated files which are incompatible with go
 model_immutable_*
 
-# Filter out all models to explicitly reverse the ignore rules of the used
 model_*.go
 
 # Shared error models

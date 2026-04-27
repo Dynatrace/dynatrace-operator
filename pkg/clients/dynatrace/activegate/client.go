@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	openapi "github.com/Dynatrace/dynatrace-operator/pkg/clients/generated"
 	"github.com/pkg/errors"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -22,12 +24,14 @@ type APIClient interface {
 }
 
 type Client struct {
-	apiClient core.APIClient
+	apiClient      core.APIClient
+	tokenAPIClient openapi.AccessTokensActiveGateTokensAPI
 }
 
-func NewClient(apiClient core.APIClient) *Client {
+func NewClient(apiClient core.APIClient, tokenAPIClient openapi.AccessTokensActiveGateTokensAPI) *Client {
 	return &Client{
-		apiClient: apiClient,
+		apiClient:      apiClient,
+		tokenAPIClient: tokenAPIClient,
 	}
 }
 
@@ -36,31 +40,46 @@ type AuthTokenInfo struct {
 	Token   string `json:"token"`
 }
 
-type authTokenParams struct {
-	Name           string `json:"name"`
-	ActiveGateType string `json:"activeGateType"`
-	ExpirationDate string `json:"expirationDate"`
-	SeedToken      bool   `json:"seedToken"`
-}
+//type authTokenParams struct {
+//	Name           string `json:"name"`
+//	ActiveGateType string `json:"activeGateType"`
+//	ExpirationDate string `json:"expirationDate"`
+//	SeedToken      bool   `json:"seedToken"`
+//}
 
 func (c *Client) GetAuthToken(ctx context.Context, dynakubeName string) (*AuthTokenInfo, error) {
-	body := authTokenParams{
-		Name:           dynakubeName,
-		SeedToken:      false,
+	execute, _, err := c.tokenAPIClient.CreateToken(ctx).ActiveGateTokenCreate(openapi.ActiveGateTokenCreate{
 		ActiveGateType: activeGateType,
-		ExpirationDate: getAuthTokenExpirationDate(),
-	}
+		ExpirationDate: ptr.To(getAuthTokenExpirationDate()),
+		Name:           dynakubeName,
+		SeedToken:      ptr.To(false),
+	}).Execute()
 
-	var authTokenInfo AuthTokenInfo
-
-	err := c.apiClient.POST(ctx, authTokenPath).
-		WithJSONBody(body).
-		Execute(&authTokenInfo)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to retrieve ag-auth-token")
 	}
 
-	return &authTokenInfo, nil
+	return &AuthTokenInfo{
+		TokenID: execute.Id,
+		Token:   execute.Token,
+	}, nil
+	//body := authTokenParams{
+	//	Name:           dynakubeName,
+	//	SeedToken:      false,
+	//	ActiveGateType: activeGateType,
+	//	ExpirationDate: getAuthTokenExpirationDate(),
+	//}
+	//
+	//var authTokenInfo AuthTokenInfo
+	//
+	//err := c.apiClient.POST(ctx, authTokenPath).
+	//	WithJSONBody(body).
+	//	Execute(&authTokenInfo)
+	//if err != nil {
+	//	return nil, errors.WithMessage(err, "failed to retrieve ag-auth-token")
+	//}
+	//
+	//return &authTokenInfo, nil
 }
 
 func getAuthTokenExpirationDate() string {

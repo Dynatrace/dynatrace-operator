@@ -16,9 +16,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/problem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	openapi "github.com/Dynatrace/dynatrace-operator/pkg/clients/generated"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -34,6 +36,7 @@ type Client struct {
 	OneAgent   oneagent.APIClient
 	Version    version.APIClient
 	Token      token.APIClient
+	Problems   problem.APIClient
 }
 
 type OAuthClient struct {
@@ -89,13 +92,17 @@ func NewClient(options ...Option) (*Client, error) {
 		PaasToken:  config.PaasToken,
 	})
 
+	// Build the open api client similar to the core client
+	openApiClient := openapi.NewAPIClient(openAPIConfig(*config, httpClient))
+
 	return &Client{
 		Settings:   settings.NewClient(apiClient),
-		ActiveGate: activegate.NewClient(apiClient),
+		ActiveGate: activegate.NewClient(apiClient, openApiClient.AccessTokensActiveGateTokensAPI),
 		HostEvent:  hostevent.NewClient(apiClient, config.NetworkZone),
 		OneAgent:   oneagent.NewClient(apiClient, config.HostGroup, config.NetworkZone),
 		Version:    version.NewClient(apiClient),
 		Token:      token.NewClient(apiClient),
+		Problems:   problem.NewClient(openApiClient.ProblemsAPI),
 	}, nil
 }
 
@@ -339,4 +346,17 @@ func mapThirdGenAPIURL(u *url.URL) {
 	}
 
 	u.Path = "/api"
+}
+
+func openAPIConfig(c Config, httpClient *http.Client) *openapi.Configuration {
+	generatedCfg := openapi.NewConfiguration()
+	generatedCfg.Host = c.BaseURL.Host
+	generatedCfg.Scheme = c.BaseURL.Scheme
+	generatedCfg.HTTPClient = httpClient
+	generatedCfg.UserAgent = c.UserAgent
+	generatedCfg.DefaultHeader = map[string]string{
+		"Authorization": "Api-Token " + c.APIToken,
+	}
+
+	return generatedCfg
 }
