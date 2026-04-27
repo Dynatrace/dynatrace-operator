@@ -33,7 +33,7 @@ type Client struct {
 	HostEvent  hostevent.Client
 	OneAgent   oneagent.Client
 	Version    version.APIClient
-	Token      token.APIClient
+	Token      token.Client
 }
 
 type OAuthClient struct {

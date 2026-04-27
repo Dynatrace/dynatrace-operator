@@ -48,7 +48,7 @@ func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
 
-func (token *Token) verifyScopes(ctx context.Context, dtClient token.APIClient, dk dynakube.DynaKube) (map[string]bool, error) {
+func (token *Token) verifyScopes(ctx context.Context, dtClient token.Client, dk dynakube.DynaKube) (map[string]bool, error) {
 	// The scopes endpoint will no longer be available in 3rd gen
 	if len(token.Features) == 0 || dttoken.IsPlatform(token.Value) {
 		return map[string]bool{}, nil

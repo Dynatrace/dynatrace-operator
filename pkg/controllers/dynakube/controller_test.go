@@ -271,7 +271,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		}
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
 
-		mockedTokenClient := tokenclientmock.NewAPIClient(t)
+		mockedTokenClient := tokenclientmock.NewClient(t)
 		mockedTokenClient.EXPECT().GetScopes(anyCtx, "this is a token").Return([]string{
 			tokenclient.ScopeDataExport,
 			tokenclient.ScopeSettingsRead,
@@ -430,7 +430,7 @@ func TestReconcileDynaKube(t *testing.T) {
 
 	fakeClient := fake.NewClient(baseDK, createCRD(t), createAPISecret())
 
-	mockedTokenClient := tokenclientmock.NewAPIClient(t)
+	mockedTokenClient := tokenclientmock.NewClient(t)
 	mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return([]string{
 		tokenclient.ScopeDataExport,
 		tokenclient.ScopeSettingsRead,
@@ -648,7 +648,7 @@ func TestTokenConditions(t *testing.T) {
 			},
 		})
 
-		mockedTokenClient := tokenclientmock.NewAPIClient(t)
+		mockedTokenClient := tokenclientmock.NewClient(t)
 		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(nil, &core.HTTPError{
 			Message:    "test-error",
 			StatusCode: 1234,
@@ -683,7 +683,7 @@ func TestTokenConditions(t *testing.T) {
 			},
 		})
 
-		mockedTokenClient := tokenclientmock.NewAPIClient(t)
+		mockedTokenClient := tokenclientmock.NewClient(t)
 		mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return([]string{}, nil)
 
 		dtClientFactory := newClientFactory(&dynatrace.Client{Token: mockedTokenClient})
@@ -876,7 +876,7 @@ func TestLastErrorFromCondition(t *testing.T) {
 func createFakeControllerAndClients(t *testing.T, tokenScopes []string) *Controller {
 	fakeClient := fake.NewClient(createAPISecret())
 
-	mockedTokenClient := tokenclientmock.NewAPIClient(t)
+	mockedTokenClient := tokenclientmock.NewClient(t)
 	mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(tokenScopes, nil)
 
 	return &Controller{

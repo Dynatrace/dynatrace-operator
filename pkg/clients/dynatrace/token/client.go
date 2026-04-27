@@ -32,11 +32,11 @@ var (
 	_ core.Cacheable = &scopesResponse{}
 )
 
-type APIClient interface {
+type Client interface {
 	GetScopes(ctx context.Context, token string) ([]string, error)
 }
 
-type Client struct {
+type client struct {
 	apiClient core.APIClient
 }
 
@@ -55,13 +55,13 @@ func (s *scopesResponse) IsEmpty() bool {
 	return false
 }
 
-func NewClient(apiClient core.APIClient) *Client {
-	return &Client{
+func NewClient(apiClient core.APIClient) *client {
+	return &client{
 		apiClient: apiClient,
 	}
 }
 
-func (c *Client) GetScopes(ctx context.Context, token string) ([]string, error) {
+func (c *client) GetScopes(ctx context.Context, token string) ([]string, error) {
 	req := lookupRequest{Token: token}
 
 	var resp scopesResponse

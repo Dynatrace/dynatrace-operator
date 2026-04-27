@@ -462,7 +462,7 @@ func (controller *Controller) warnAboutDeprecatedTokens() {
 	}
 }
 
-func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
+func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
 	err := controller.tokens.VerifyValues()
 	if err != nil {
 		return err
@@ -476,7 +476,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 	return nil
 }
 
-func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
+func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
 	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",
