@@ -230,7 +230,7 @@ func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string
 
 func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName string, namespaces []string) error {
 	log := logd.FromContext(ctx)
-	log.Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
+	logd.FromContext(ctx).Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
 
 	errs := make([]error, 0, len(namespaces))
 
