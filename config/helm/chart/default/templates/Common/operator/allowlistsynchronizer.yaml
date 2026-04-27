@@ -17,7 +17,7 @@ kind: AllowlistSynchronizer
 metadata:
   name: dynatrace-operator
   annotations:
-    "helm.sh/hook": pre-install, post-delete, pre-upgrade, pre-rollback
+    "helm.sh/hook": pre-install, pre-upgrade, pre-rollback
 spec:
   allowlistPaths:
   - Dynatrace/csidriver/{{ .Chart.AppVersion }}/*
