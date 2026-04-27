@@ -3,6 +3,7 @@ package certificates
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -72,6 +73,8 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 
 	if _, err = os.Stat(watcher.certificateDirectory); os.IsNotExist(err) {
 		err = os.MkdirAll(watcher.certificateDirectory, permDirUser)
+		log.Debug("creating certificate directory %s", watcher.certificateDirectory)
+
 		if err != nil {
 			return false, errors.WithMessage(err, "could not create cert directory")
 		}
@@ -98,6 +101,9 @@ func (watcher *CertificateWatcher) ensureCertificateFile(secret corev1.Secret, f
 
 	data, err := os.ReadFile(f)
 	if os.IsNotExist(err) || !bytes.Equal(data, secret.Data[filename]) {
+		f := filepath.Join(watcher.certificateDirectory, filename)
+		log.Debug(fmt.Sprintf("creating certificate %s from secret %s", f, secret.Name))
+
 		if err := os.WriteFile(f, secret.Data[filename], permAll); err != nil {
 			return false, err
 		}
