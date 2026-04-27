@@ -23,7 +23,7 @@ const (
 
 // IsLatestVersion checks if the CRD version matches the application version and logs an error if they do not match.
 func IsLatestVersion(ctx context.Context, apiReader client.Reader, crdName string) (bool, error) {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, "operator-k8scrd")
 	crdMetadata := metav1.PartialObjectMetadata{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: apiVersion,
