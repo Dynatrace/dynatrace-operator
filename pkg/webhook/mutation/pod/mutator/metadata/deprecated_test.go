@@ -15,6 +15,9 @@ func Test_setDeprecatedAttributes(t *testing.T) {
 				WorkloadKind: "kind",
 				WorkloadName: "name",
 			},
+			ClusterInfo: podattr.ClusterInfo{
+				ClusterUID: "clusterID",
+			},
 		}
 
 		setDeprecatedAttributes(&attrs)
@@ -33,4 +36,8 @@ func assertDeprecatedAttributes(t *testing.T, attrs podattr.Attributes) {
 	depWorkloadName, ok := attrs.UserDefined[DeprecatedWorkloadNameKey]
 	require.True(t, ok)
 	assert.Equal(t, attrs.WorkloadName, depWorkloadName)
+
+	depClusterID, ok := attrs.UserDefined[DeprecatedClusterIDKey]
+	require.True(t, ok)
+	assert.Equal(t, attrs.ClusterUID, depClusterID)
 }

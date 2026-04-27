@@ -67,6 +67,9 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		WorkloadKind: workloadInfo.Kind,
 		WorkloadName: workloadInfo.Name,
 	}
+	attrs.ClusterInfo = podattr.ClusterInfo{
+		ClusterUID: request.DynaKube.Status.KubeSystemUUID,
+	}
 
 	withDeprecatedAttributesArg := arg.Arg{
 		Name:  bootstrapper.EnableAttributesDTKubernetesFlag,
