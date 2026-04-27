@@ -348,7 +348,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 		return nil, err
 	}
 
-	controller.warnAboutDeprecatedTokens()
+	controller.warnAboutDeprecatedTokens(ctx)
 
 	err = controller.verifyTokens(ctx, dtClient.Token, dk)
 	if err != nil {
@@ -460,7 +460,9 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	return &dkMapper
 }
 
-func (controller *Controller) warnAboutDeprecatedTokens() {
+func (controller *Controller) warnAboutDeprecatedTokens(ctx context.Context) {
+	log := logd.FromContext(ctx)
+
 	if controller.tokens.PaasToken().Value != "" {
 		if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
 			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be ignored because the '" + token.APIKey + "' field in the secret contains a platform token, which will be used for authentication.")
