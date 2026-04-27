@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"context"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook/certificates"
@@ -94,7 +95,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	signalHandler := ctrl.SetupSignalHandler()
 
-	err = startCertificateWatcher(webhookManager, namespace)
+	err = startCertificateWatcher(cmd.Context(), webhookManager, namespace)
 	if err != nil {
 		return err
 	}
@@ -124,14 +125,16 @@ func run(cmd *cobra.Command, args []string) error {
 	return errors.WithStack(err)
 }
 
-func startCertificateWatcher(webhookManager manager.Manager, namespace string) error {
+func startCertificateWatcher(ctx context.Context, webhookManager manager.Manager, namespace string) error {
+	ctx, _ = logd.NewFromContext(ctx, "webhook")
+
 	if !system.IsDeployedViaOLM() {
 		watcher, err := certificates.NewCertificateWatcher(webhookManager, namespace, webhook.SecretCertsName)
 		if err != nil {
 			return err
 		}
 
-		watcher.WaitForCertificates()
+		watcher.WaitForCertificates(ctx)
 	}
 
 	return nil
