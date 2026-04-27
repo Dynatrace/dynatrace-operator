@@ -388,7 +388,7 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) binaryInstallerBuilder {
 	t.Helper()
 
-	return func(_ oneagentclient.APIClient, _ *binary.Properties) installer.Installer {
+	return func(_ oneagentclient.Client, _ *binary.Properties) installer.Installer {
 		return mockedInstaller
 	}
 }

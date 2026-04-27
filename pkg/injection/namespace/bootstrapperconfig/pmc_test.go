@@ -67,7 +67,7 @@ func TestPreparePMC(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
@@ -119,7 +119,7 @@ func TestPreparePMC(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
@@ -155,7 +155,7 @@ func TestPreparePMC(t *testing.T) {
 
 		clt := fake.NewClient(dk)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		expectedError := errors.New("API error")
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(nil, expectedError)
@@ -187,7 +187,7 @@ func TestPreparePMC(t *testing.T) {
 
 		clt := fake.NewClient(dk) // No tenant secret
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
@@ -233,7 +233,7 @@ func TestPreparePMC(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).
 			Return(&oneagentclient.ProcessModuleConfig{Properties: []oneagentclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
@@ -290,7 +290,7 @@ func TestPreparePMC(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		// Should NOT call GetProcessModuleConfig when using cached data
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -323,7 +323,7 @@ func TestGetCachedPMC(t *testing.T) {
 		k8sconditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated")
 
 		clt := fake.NewClient(dk)
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -355,7 +355,7 @@ func TestGetCachedPMC(t *testing.T) {
 		})
 
 		clt := fake.NewClient(dk, sourceSecret, targetSecret)
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -376,7 +376,7 @@ func TestGetCachedPMC(t *testing.T) {
 		k8sconditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")
 
 		clt := fake.NewClient(dk) // No secrets
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -405,7 +405,7 @@ func TestGetCachedPMC(t *testing.T) {
 		})
 
 		clt := fake.NewClient(dk, sourceSecret, targetSecret)
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -430,7 +430,7 @@ func TestGetCachedPMC(t *testing.T) {
 		})
 
 		clt := fake.NewClient(dk, sourceSecret)
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
@@ -465,7 +465,7 @@ func TestGetCachedPMC(t *testing.T) {
 			},
 		})
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
 

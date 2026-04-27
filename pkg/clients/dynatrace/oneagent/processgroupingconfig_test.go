@@ -21,7 +21,7 @@ const (
 	testClusterID       = "my-cluster"
 )
 
-// setupMockedProcessGroupingClient builds a Client backed by a mock core.APIClient.
+// setupMockedProcessGroupingClient builds a client backed by a mock core.APIClient.
 // params:       expected query params
 // extraHeaders: additional headers expected to be set (e.g. If-None-Match)
 // responseHeaders, responseBody, execErr: what ExecuteWriter returns
@@ -32,7 +32,7 @@ func setupMockedProcessGroupingClient(
 	responseHeaders http.Header,
 	responseBody []byte,
 	execErr error,
-) *Client {
+) *client {
 	t.Helper()
 
 	req := coremock.NewAPIRequest(t)

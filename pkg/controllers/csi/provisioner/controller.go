@@ -50,7 +50,7 @@ const (
 	longRequeueDuration    = 30 * time.Minute
 )
 
-type binaryInstallerBuilder func(oneagent.APIClient, *binary.Properties) installer.Installer
+type binaryInstallerBuilder func(oneagent.Client, *binary.Properties) installer.Installer
 type imageInstallerBuilder func(context.Context, *image.Properties) (installer.Installer, error)
 type jobInstallerBuilder func(context.Context, *job.Properties) installer.Installer
 

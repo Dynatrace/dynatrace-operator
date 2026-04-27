@@ -148,7 +148,7 @@ type mockConfigFunc func(*installermock.Installer)
 func installerTester(t *testing.T, expectedProps *binary.Properties, mockFunc mockConfigFunc) binary.NewFunc {
 	t.Helper()
 
-	return func(dtClient oneagent.APIClient, props *binary.Properties) installer.Installer {
+	return func(dtClient oneagent.Client, props *binary.Properties) installer.Installer {
 		require.NotNil(t, dtClient)
 		require.NotEmpty(t, props)
 		require.Equal(t, *expectedProps, *props)

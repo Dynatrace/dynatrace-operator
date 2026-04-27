@@ -33,7 +33,7 @@ const (
 )
 
 func TestGetProcessModuleConfig(t *testing.T) {
-	setupMockedClient := func(t *testing.T, param map[string]string, hostGroup string, response string, err error) *Client {
+	setupMockedClient := func(t *testing.T, param map[string]string, hostGroup string, response string, err error) *client {
 		req := coremock.NewAPIRequest(t)
 		req.EXPECT().
 			WithQueryParams(param).

@@ -32,7 +32,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 		Endpoints:   testCommunicationEndpoint,
 	}
 
-	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *ConnectionInfo, err error) *Client {
+	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *ConnectionInfo, err error) *client {
 		req := coremock.NewAPIRequest(t)
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(params).Return(req).Once()

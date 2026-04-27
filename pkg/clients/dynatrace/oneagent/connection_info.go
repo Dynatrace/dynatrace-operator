@@ -20,7 +20,7 @@ type ConnectionInfo struct {
 	// use the pre-formatted Endpoints string above. The slice is available if needed in the future.
 }
 
-func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
+func (c *client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
 	var resp ConnectionInfo
 
 	params := map[string]string{}

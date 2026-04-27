@@ -51,7 +51,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run("error when downloading latest agent", func(t *testing.T) {
 		target := filepath.Join(t.TempDir(), "target")
-		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().Get(t.Context(), getParams, mock.AnythingOfType("*os.File")).
 			Return(errors.New(testErrorMessage))
 
@@ -73,7 +73,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("error unzipping file", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, "target")
-		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().Get(t.Context(), getParams, mock.AnythingOfType("*os.File")).
 			Run(func(ctx context.Context, args oneagentclient.GetParams, writer io.Writer) {
 				zipFile := zip.SetupInvalidTestZip(t, tmpDir)
@@ -103,7 +103,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, testVersion)
-		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().Get(
 			t.Context(),
 			getParams,
@@ -135,7 +135,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run("downloading and unzipping latest agent", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		target := filepath.Join(tmpDir, VersionLatest)
-		dtClient := oneagentclientmock.NewAPIClient(t)
+		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().GetLatest(t.Context(), getParams,
 			mock.AnythingOfType("*os.File")).
 			Run(func(ctx context.Context, args oneagentclient.GetParams, writer io.Writer) {

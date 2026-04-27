@@ -31,7 +31,7 @@ type Client struct {
 	Settings   settings.APIClient
 	ActiveGate activegate.Client
 	HostEvent  hostevent.Client
-	OneAgent   oneagent.APIClient
+	OneAgent   oneagent.Client
 	Version    version.APIClient
 	Token      token.APIClient
 }
