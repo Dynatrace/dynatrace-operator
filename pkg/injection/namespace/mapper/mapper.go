@@ -68,14 +68,6 @@ func addNamespaceInjectLabel(dkName string, ns *corev1.Namespace) {
 	ns.Labels[dtwebhook.InjectionInstanceLabel] = dkName
 }
 
-func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
-	if ns.Annotations == nil {
-		ns.Annotations = make(map[string]string)
-	}
-
-	ns.Annotations[UpdatedViaDynakubeAnnotation] = "true"
-}
-
 func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (matchResult, error) {
 	var result matchResult
 
