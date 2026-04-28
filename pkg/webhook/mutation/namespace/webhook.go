@@ -33,18 +33,18 @@ type webhook struct {
 	serviceAccount string
 }
 
-// Handle does the mapping between the namespace and dynakube from the namespace's side.
+// Handle does the mapping between the namespace and DynaKube from the namespace's side.
 // There are 2 special cases:
 //  1. ignore the webhook's namespace: this is necessary because if we want to monitor the whole cluster
 //     we would tag our own namespace which would cause the podInjector webhook to inject into our pods which can cause issues. (infra-monitoring pod injected into == bad)
-//  2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
-//     but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselves. So we just remove the annotation.
+//  2. if the namespace was updated by the operator => don't do the mapping: we do this because the operator also does the mapping
+//     but from the DynaKube's side (during DynaKube reconcile) and we don't want to repeat ourselves
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
 	if wh.namespace == request.Namespace {
 		return admission.Allowed("")
 	}
 
-	logger := log.WithValues("namespace", request.Name, "operator", request.Operation)
+	logger := log.WithValues("namespace", request.Name, "operation", request.Operation)
 
 	if request.UserInfo.Username == wh.serviceAccount {
 		logger.Info("ignoring change from operator", "serviceAccount", wh.serviceAccount)
