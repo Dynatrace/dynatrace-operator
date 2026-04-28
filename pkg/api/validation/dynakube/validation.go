@@ -74,6 +74,7 @@ var (
 		conflictingMaxUnavailableAnnotationWithRollingUpdate,
 		deprecatedAutoUpdate,
 		deprecatedOneAgentVersionField,
+		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,
 		noMappedHostPaths,
@@ -86,9 +87,6 @@ var (
 		otlpResourceAttributesExceedsLimit,
 		deprecatedPaasToken,
 	}
-	validatorWarningsMultiFuncs = []multiValidatorFunc{
-		deprecatedFeatureFlags,
-	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,
 	}
@@ -96,7 +94,6 @@ var (
 
 type validatorFunc func(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string
 type updateValidatorFunc func(ctx context.Context, dv *Validator, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string
-type multiValidatorFunc func(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) []string
 
 func New(apiReader client.Reader) admission.Validator[runtime.Object] {
 	return &Validator{
@@ -112,7 +109,7 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (war
 	}
 
 	errMessages := v.runValidators(ctx, validatorErrorFuncs, dk)
-	warnings = append(v.runValidators(ctx, validatorWarningFuncs, dk), v.runMultiValidators(ctx, validatorWarningsMultiFuncs, dk)...)
+	warnings = v.runValidators(ctx, validatorWarningFuncs, dk)
 
 	if len(errMessages) != 0 {
 		err = errors.New(validation.SumErrors(errMessages, "DynaKube"))
@@ -133,7 +130,7 @@ func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	}
 
 	errMessages := v.runValidators(ctx, validatorErrorFuncs, newDK)
-	warnings = append(v.runValidators(ctx, validatorWarningFuncs, newDK), v.runMultiValidators(ctx, validatorWarningsMultiFuncs, newDK)...)
+	warnings = v.runValidators(ctx, validatorWarningFuncs, newDK)
 
 	errMessages = append(errMessages, v.runUpdateValidators(ctx, updateValidatorErrorFuncs, oldDK, newDK)...)
 
@@ -191,14 +188,4 @@ func getDynakube(obj runtime.Object) (dk *dynakube.DynaKube, err error) {
 	}
 
 	return
-}
-
-func (v *Validator) runMultiValidators(ctx context.Context, validators []multiValidatorFunc, dk *dynakube.DynaKube) []string {
-	results := []string{} //nolint:prealloc // each multiValidator returns a variable-length []string, so the total size is unknown upfront
-
-	for _, validate := range validators {
-		results = append(results, validate(ctx, v, dk)...)
-	}
-
-	return results
 }

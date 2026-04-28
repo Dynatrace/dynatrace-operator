@@ -3,30 +3,35 @@ package validation
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 )
 
 const (
-	warningFeatureFlagDeprecated = `Feature flag %s is deprecated.`
+	warningFeatureFlagDeprecated = `Using deprecated feature flags: %s`
 )
 
-var deprecatedFeatureFlagKeys = []string{
+var deprecatedFeatureFlags = []string{
 	exp.OAProxyIgnoredKey,   //nolint:staticcheck
 	exp.AGUpdatesKey,        //nolint:staticcheck
 	exp.AGDisableUpdatesKey, //nolint:staticcheck
 	exp.OAMaxUnavailableKey, //nolint:staticcheck
 }
 
-func deprecatedFeatureFlags(_ context.Context, _ *Validator, dk *dynakube.DynaKube) []string {
+func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	var results []string
 
-	for _, flag := range deprecatedFeatureFlagKeys {
+	for _, flag := range deprecatedFeatureFlags {
 		if dk.Annotations != nil && dk.Annotations[flag] != "" {
-			results = append(results, fmt.Sprintf(warningFeatureFlagDeprecated, flag))
+			results = append(results, flag)
 		}
 	}
 
-	return results
+	if len(results) > 0 {
+		return fmt.Sprintf(warningFeatureFlagDeprecated, strings.Join(results, ", "))
+	}
+
+	return ""
 }

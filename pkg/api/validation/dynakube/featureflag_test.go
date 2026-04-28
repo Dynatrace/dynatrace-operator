@@ -1,7 +1,9 @@
 package validation
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -17,7 +19,7 @@ func TestDeprecatedFeatureFlag(t *testing.T) {
 }
 
 func DeprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
-	for _, featureFlag := range deprecatedFeatureFlagKeys {
+	for _, featureFlag := range deprecatedFeatureFlags {
 		t.Run(featureFlag, func(t *testing.T) {
 			dk := &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
@@ -27,8 +29,8 @@ func DeprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
 					},
 				},
 			}
-			expected := []string{fmt.Sprintf(warningFeatureFlagDeprecated, featureFlag)}
-			result := deprecatedFeatureFlags(t.Context(), nil, dk)
+			expected := fmt.Sprintf(warningFeatureFlagDeprecated, featureFlag)
+			result := deprecatedFeatureFlag(context.Background(), nil, dk)
 
 			assert.Equal(t, expected, result)
 		})
@@ -44,14 +46,14 @@ func DeprecatedFeatureFlagWithoutDeprecatedFlags(t *testing.T) {
 			},
 		},
 	}
-	result := deprecatedFeatureFlags(t.Context(), nil, dk)
+	result := deprecatedFeatureFlag(context.Background(), nil, dk)
 
 	assert.Empty(t, result)
 }
 
 func DeprecatedFeatureFlagWithNoAnnotations(t *testing.T) {
 	dk := &dynakube.DynaKube{}
-	result := deprecatedFeatureFlags(t.Context(), nil, dk)
+	result := deprecatedFeatureFlag(context.Background(), nil, dk)
 
 	assert.Empty(t, result)
 }
@@ -59,7 +61,7 @@ func DeprecatedFeatureFlagWithNoAnnotations(t *testing.T) {
 func DeprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 	annotations := map[string]string{}
 
-	for _, flag := range deprecatedFeatureFlagKeys {
+	for _, flag := range deprecatedFeatureFlags {
 		annotations[flag] = "true"
 	}
 
@@ -70,9 +72,7 @@ func DeprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 		},
 	}
 
-	result := deprecatedFeatureFlags(t.Context(), nil, dk)
-	assert.Len(t, result, len(deprecatedFeatureFlagKeys))
-	for _, flag := range deprecatedFeatureFlagKeys {
-		assert.Contains(t, result, fmt.Sprintf(warningFeatureFlagDeprecated, flag))
-	}
+	result := deprecatedFeatureFlag(t.Context(), nil, dk)
+	expected := fmt.Sprintf(warningFeatureFlagDeprecated, strings.Join(deprecatedFeatureFlags, ", "))
+	assert.Equal(t, expected, result)
 }
