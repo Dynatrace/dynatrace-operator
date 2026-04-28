@@ -46,9 +46,6 @@ type DynaKubeStatus struct { //nolint:revive
 	// This annotation will cause the component to be restarted if the proxy changes.
 	ProxyURLHash string `json:"proxyURLHash,omitempty"`
 
-	// Observed state of Dynatrace API
-	DynatraceAPI DynatraceAPIStatus `json:"dynatraceApi,omitempty"`
-
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
@@ -65,11 +62,6 @@ type DynaKubeStatus struct { //nolint:revive
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-type DynatraceAPIStatus struct {
-	// Time of the last token request
-	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
 }
 
 func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
