@@ -27,8 +27,7 @@ const (
 	fieldsQueryParam               = "fields"
 	kubernetesSettingsNeededFields = "value,scope"
 
-	schemaIDsQueryParam        = "schemaIds"
-	kubernetesSettingsSchemaID = "builtin:cloud.kubernetes"
+	schemaIDsQueryParam = "schemaIds"
 
 	ObjectsPath = "/v2/settings/objects"
 )
@@ -168,7 +167,7 @@ func (c *ClientImpl) GetK8sClusterME(ctx context.Context, kubeSystemUUID string)
 		WithQueryParams(map[string]string{
 			validateOnlyQueryParam: "true",
 			pageSizeQueryParam:     entitiesPageSize,
-			schemaIDsQueryParam:    kubernetesSettingsSchemaID,
+			schemaIDsQueryParam:    KubernetesSettingsSchemaID,
 			fieldsQueryParam:       kubernetesSettingsNeededFields,
 			filterQueryParam:       fmt.Sprintf("value.clusterId='%s'", kubeSystemUUID),
 		}).
