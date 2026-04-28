@@ -76,7 +76,7 @@ func NewClient(cfg Config) *ClientImpl {
 	}
 }
 
-type request struct {
+type RequestImpl struct {
 	client *ClientImpl
 
 	ctx       context.Context
@@ -98,7 +98,7 @@ const (
 	TokenTypeNone
 )
 
-func (c *ClientImpl) newRequest(ctx context.Context) *request {
+func (c *ClientImpl) newRequest(ctx context.Context) *RequestImpl {
 	headers := make(http.Header)
 
 	query := make(url.Values)
@@ -106,7 +106,7 @@ func (c *ClientImpl) newRequest(ctx context.Context) *request {
 		query = c.cfg.BaseURL.Query()
 	}
 
-	return &request{
+	return &RequestImpl{
 		headers: headers,
 		client:  c,
 		ctx:     ctx,
@@ -135,14 +135,14 @@ func (c *ClientImpl) DELETE(ctx context.Context, path string) Request {
 }
 
 // WithPath sets the path for the request. Path parts will be joined, ignoring leading or trailing slashes
-func (r *request) WithPath(path ...string) Request {
+func (r *RequestImpl) WithPath(path ...string) Request {
 	r.path = (&url.URL{Path: r.path}).JoinPath(path...).Path
 
 	return r
 }
 
 // WithQueryParams adds multiple query parameters to the request, overwriting existing keys if they exist
-func (r *request) WithQueryParams(params map[string]string) Request {
+func (r *RequestImpl) WithQueryParams(params map[string]string) Request {
 	if r.query == nil {
 		r.query = make(url.Values)
 	}
@@ -155,7 +155,7 @@ func (r *request) WithQueryParams(params map[string]string) Request {
 }
 
 // WithRawQueryParams adds multiple query parameters to the request
-func (r *request) WithRawQueryParams(params url.Values) Request {
+func (r *RequestImpl) WithRawQueryParams(params url.Values) Request {
 	if r.query == nil {
 		r.query = make(url.Values)
 	}
@@ -170,7 +170,7 @@ func (r *request) WithRawQueryParams(params url.Values) Request {
 }
 
 // WithJSONBody sets the request body as JSON
-func (r *request) WithJSONBody(body any) Request {
+func (r *RequestImpl) WithJSONBody(body any) Request {
 	if body != nil {
 		bodyBytes, err := json.Marshal(body)
 		if err != nil {
@@ -184,28 +184,28 @@ func (r *request) WithJSONBody(body any) Request {
 }
 
 // WithPaasToken sets the token type to PaaS
-func (r *request) WithPaasToken() Request {
+func (r *RequestImpl) WithPaasToken() Request {
 	r.tokenType = TokenTypePaaS
 
 	return r
 }
 
 // WithoutToken explicitly disables authentication for the request
-func (r *request) WithoutToken() Request {
+func (r *RequestImpl) WithoutToken() Request {
 	r.tokenType = TokenTypeNone
 
 	return r
 }
 
 // WithHeader sets a custom header for the request, overriding existing value
-func (r *request) WithHeader(key, value string) Request {
+func (r *RequestImpl) WithHeader(key, value string) Request {
 	r.headers.Set(key, value)
 
 	return r
 }
 
 // Execute executes the request and unmarshals the response into the provided model
-func (r *request) Execute(model any) error {
+func (r *RequestImpl) Execute(model any) error {
 	cacheableModel, isCacheable := model.(Cacheable)
 	if isCacheable {
 		r.headers.Set(middleware.CacheRequestHeader, "true")
@@ -233,11 +233,11 @@ func (r *request) Execute(model any) error {
 
 // ExecuteWriter executes the request, writes the response body to the provided writer,
 // and returns the response headers on success.
-func (r *request) ExecuteWriter(writer io.Writer) (http.Header, error) {
+func (r *RequestImpl) ExecuteWriter(writer io.Writer) (http.Header, error) {
 	return r.doRequestStream(writer)
 }
 
-func (r *request) getToken() string {
+func (r *RequestImpl) getToken() string {
 	switch r.tokenType {
 	case TokenTypePaaS:
 		return r.client.cfg.PaasToken
@@ -248,7 +248,7 @@ func (r *request) getToken() string {
 	}
 }
 
-func (r *request) buildURL() (*url.URL, error) {
+func (r *RequestImpl) buildURL() (*url.URL, error) {
 	if r.client.cfg.BaseURL == nil {
 		return nil, errors.New("missing base URL")
 	}
@@ -263,13 +263,13 @@ func (r *request) buildURL() (*url.URL, error) {
 }
 
 // WithMethod sets the HTTP method for the request
-func (r *request) withMethod(method string) Request {
+func (r *RequestImpl) withMethod(method string) Request {
 	r.method = method
 
 	return r
 }
 
-func (r *request) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
+func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
 	if r.err != nil {
 		return nil, r.err
 	}
@@ -329,7 +329,7 @@ func (r *request) doRequestStream(writer io.Writer) (responseHeaders http.Header
 	return resp.Header, nil
 }
 
-func (r *request) doRequest() (body []byte, cacheKey string, err error) {
+func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
 	if r.err != nil {
 		return nil, "", r.err
 	}
