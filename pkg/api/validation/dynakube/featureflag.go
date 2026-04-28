@@ -2,7 +2,6 @@ package validation
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -30,7 +29,7 @@ func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKub
 	}
 
 	if len(results) > 0 {
-		return fmt.Sprintf(warningFeatureFlagDeprecated, strings.Join(results, ", "))
+		return warningFeatureFlagDeprecated + strings.Join(results, ", ")
 	}
 
 	return ""
