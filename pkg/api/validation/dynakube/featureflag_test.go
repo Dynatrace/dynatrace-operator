@@ -1,8 +1,6 @@
 package validation
 
 import (
-	"context"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -29,8 +27,8 @@ func DeprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
 					},
 				},
 			}
-			expected := fmt.Sprintf(warningFeatureFlagDeprecated, featureFlag)
-			result := deprecatedFeatureFlag(context.Background(), nil, dk)
+			expected := warningFeatureFlagDeprecated + featureFlag
+			result := deprecatedFeatureFlag(t.Context(), nil, dk)
 
 			assert.Equal(t, expected, result)
 		})
@@ -46,14 +44,14 @@ func DeprecatedFeatureFlagWithoutDeprecatedFlags(t *testing.T) {
 			},
 		},
 	}
-	result := deprecatedFeatureFlag(context.Background(), nil, dk)
+	result := deprecatedFeatureFlag(t.Context(), nil, dk)
 
 	assert.Empty(t, result)
 }
 
 func DeprecatedFeatureFlagWithNoAnnotations(t *testing.T) {
 	dk := &dynakube.DynaKube{}
-	result := deprecatedFeatureFlag(context.Background(), nil, dk)
+	result := deprecatedFeatureFlag(t.Context(), nil, dk)
 
 	assert.Empty(t, result)
 }
@@ -73,6 +71,6 @@ func DeprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 	}
 
 	result := deprecatedFeatureFlag(t.Context(), nil, dk)
-	expected := fmt.Sprintf(warningFeatureFlagDeprecated, strings.Join(deprecatedFeatureFlags, ", "))
+	expected := warningFeatureFlagDeprecated + strings.Join(deprecatedFeatureFlags, ", ")
 	assert.Equal(t, expected, result)
 }
