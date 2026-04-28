@@ -23,7 +23,7 @@ type DockerKeychain struct {
 }
 
 func NewDockerKeychains(ctx context.Context, apiReader client.Reader, namespaceName string, pullSecretNames []string) (authn.Keychain, error) {
-	ctx, log := logd.NewFromContext(ctx, "oci-dockerkeychain")
+	ctx, log := logd.NewFromContext(ctx, "docker-keychain")
 	keychain := &DockerKeychain{}
 
 	if len(pullSecretNames) == 0 {

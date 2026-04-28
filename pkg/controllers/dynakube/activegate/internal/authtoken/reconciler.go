@@ -62,7 +62,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 }
 
 func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-activegate-authtoken")
+	log := logd.FromContext(ctx)
 
 	secret, err := r.secrets.Get(ctx, client.ObjectKey{Name: dk.ActiveGate().GetAuthTokenSecretName(), Namespace: dk.Namespace})
 	if err != nil {
