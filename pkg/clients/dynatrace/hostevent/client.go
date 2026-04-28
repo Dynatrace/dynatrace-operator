@@ -20,20 +20,20 @@ const (
 
 var log = logd.Get().WithName("dtclient-hostevent")
 
-type APIClient interface {
+type Client interface {
 	// GetEntityIDForIP returns the host entity ID for a given IP address.
 	GetEntityIDForIP(ctx context.Context, ip string) (string, error)
 	// SendEvent posts an event to the Dynatrace API.
 	SendEvent(ctx context.Context, event Event) error
 }
 
-type Client struct {
-	apiClient   core.APIClient
+type ClientImpl struct {
+	apiClient   core.Client
 	networkZone string
 }
 
-func NewClient(apiClient core.APIClient, networkZone string) *Client {
-	return &Client{
+func NewClient(apiClient core.Client, networkZone string) *ClientImpl {
+	return &ClientImpl{
 		apiClient:   apiClient,
 		networkZone: networkZone,
 	}
@@ -70,7 +70,7 @@ func (entityMap hostEntityMap) Update(info HostResponse) {
 }
 
 // GetEntityIDForIP returns the host entity ID for a given IP address.
-func (c *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
+func (c *ClientImpl) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
 	if ip == "" {
 		return "", errors.New("must provide IP")
 	}
@@ -139,7 +139,7 @@ func NewMarkedForTerminationEvent(entityID, source, description string, timestam
 }
 
 // SendEvent posts an event to the Dynatrace API.
-func (c *Client) SendEvent(ctx context.Context, event Event) error {
+func (c *ClientImpl) SendEvent(ctx context.Context, event Event) error {
 	if event.EventType == "" {
 		return errors.New("no key set for eventType in eventData payload")
 	}

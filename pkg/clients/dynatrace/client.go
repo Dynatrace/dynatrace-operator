@@ -28,16 +28,16 @@ import (
 )
 
 type Client struct {
-	Settings   settings.APIClient
-	ActiveGate activegate.APIClient
-	HostEvent  hostevent.APIClient
-	OneAgent   oneagent.APIClient
-	Version    version.APIClient
-	Token      token.APIClient
+	Settings   settings.Client
+	ActiveGate activegate.Client
+	HostEvent  hostevent.Client
+	OneAgent   oneagent.Client
+	Version    version.Client
+	Token      token.Client
 }
 
 type OAuthClient struct {
-	EdgeConnect edgeconnect.APIClient
+	EdgeConnect edgeconnect.Client
 }
 
 type Config struct {

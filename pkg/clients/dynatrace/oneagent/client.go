@@ -10,7 +10,7 @@ import (
 
 var log = logd.Get().WithName("dtclient-oneagent")
 
-type APIClient interface {
+type Client interface {
 	GetConnectionInfo(ctx context.Context) (ConnectionInfo, error)
 
 	Get(ctx context.Context, args GetParams, writer io.Writer) error
@@ -21,15 +21,15 @@ type APIClient interface {
 	GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error)
 }
 
-type Client struct {
-	apiClient core.APIClient
+type ClientImpl struct {
+	apiClient core.Client
 
 	hostGroup   string
 	networkZone string
 }
 
-func NewClient(apiClient core.APIClient, hostGroup, networkZone string) *Client {
-	return &Client{
+func NewClient(apiClient core.Client, hostGroup, networkZone string) *ClientImpl {
+	return &ClientImpl{
 		apiClient:   apiClient,
 		hostGroup:   hostGroup,
 		networkZone: networkZone,

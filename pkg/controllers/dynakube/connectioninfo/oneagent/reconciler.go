@@ -23,13 +23,13 @@ import (
 
 type reconciler struct {
 	client       client.Client
-	dtClient     oneagent.APIClient
+	dtClient     oneagent.Client
 	timeProvider *timeprovider.Provider
 	dk           *dynakube.DynaKube
 	secrets      k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dtClient oneagent.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dtClient oneagent.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
 		dk:           dk,

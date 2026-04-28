@@ -12,7 +12,7 @@ import (
 var errEmptyOSOrInstallerType = goerrors.New("OS or installerType is empty")
 
 // GetLatestAgentVersion gets the latest agent version for the given OS and installer type configured on the Tenant.
-func (c *Client) GetLatestAgentVersion(ctx context.Context, os, installerType string) (string, error) {
+func (c *ClientImpl) GetLatestAgentVersion(ctx context.Context, os, installerType string) (string, error) {
 	if len(os) == 0 || len(installerType) == 0 {
 		return "", errEmptyOSOrInstallerType
 	}

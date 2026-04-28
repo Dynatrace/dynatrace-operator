@@ -59,7 +59,7 @@ var (
 
 func TestNewSecretGenerator(t *testing.T) {
 	client := fake.NewClient()
-	mockDTClient := oneagentclientmock.NewAPIClient(t)
+	mockDTClient := oneagentclientmock.NewClient(t)
 
 	secretGenerator := NewSecretGenerator(client, client, mockDTClient)
 	assert.NotNil(t, secretGenerator)
@@ -98,7 +98,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -175,7 +175,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -274,7 +274,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -337,7 +337,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			}),
 		)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -400,7 +400,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		)
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
@@ -462,7 +462,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			})
 
-		mockDTClient := oneagentclientmock.NewAPIClient(t)
+		mockDTClient := oneagentclientmock.NewClient(t)
 		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)

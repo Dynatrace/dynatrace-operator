@@ -128,7 +128,7 @@ type dynakubeReconciler interface {
 
 // dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
 type dtSettingReconciler interface {
-	Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
 }
 
 type logMonitoringReconciler interface {
@@ -144,7 +144,7 @@ type activeGateReconciler interface {
 }
 
 type kspmReconciler interface {
-	Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
 }
 
 type injectionReconciler interface {
@@ -153,7 +153,7 @@ type injectionReconciler interface {
 
 // Controller reconciles a DynaKube object
 type Controller struct {
-	// This client, initialized using mgr.Client() above, is a split client
+	// This client, initialized using mgr.client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
 	client        client.Client
 	apiReader     client.Reader
@@ -186,7 +186,7 @@ type Controller struct {
 // and what is in the DynaKube.Spec
 // a Pod as an example
 // Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
+// The Controller will requeue the request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
@@ -462,7 +462,7 @@ func (controller *Controller) warnAboutDeprecatedTokens() {
 	}
 }
 
-func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
+func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
 	err := controller.tokens.VerifyValues()
 	if err != nil {
 		return err
@@ -476,7 +476,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 	return nil
 }
 
-func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient tokenclient.APIClient, dk *dynakube.DynaKube) error {
+func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
 	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",

@@ -34,14 +34,14 @@ func (props *Properties) fillEmptyWithDefaults() {
 }
 
 type Installer struct {
-	dtClient  oneagent.APIClient
+	dtClient  oneagent.Client
 	extractor zip.Extractor
 	props     *Properties
 }
 
-type NewFunc func(oneagent.APIClient, *Properties) installer.Installer
+type NewFunc func(oneagent.Client, *Properties) installer.Installer
 
-func NewInstaller(dtClient oneagent.APIClient, props *Properties) installer.Installer {
+func NewInstaller(dtClient oneagent.Client, props *Properties) installer.Installer {
 	return &Installer{
 		dtClient:  dtClient,
 		extractor: zip.NewOneAgentExtractor(props.PathResolver),

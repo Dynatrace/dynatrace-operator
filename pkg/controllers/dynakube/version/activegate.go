@@ -20,13 +20,13 @@ const (
 type activeGateUpdater struct {
 	dk            *dynakube.DynaKube
 	apiReader     client.Reader
-	versionClient version.APIClient
+	versionClient version.Client
 }
 
 func newActiveGateUpdater(
 	dk *dynakube.DynaKube,
 	apiReader client.Reader,
-	versionClient version.APIClient,
+	versionClient version.Client,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
 		dk:            dk,

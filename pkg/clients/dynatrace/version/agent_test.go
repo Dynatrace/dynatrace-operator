@@ -12,8 +12,8 @@ import (
 )
 
 func TestGetLatestAgentVersion(t *testing.T) {
-	setupMockedClient := func(t *testing.T, os, installerType string, queryParams map[string]string, err error) *Client {
-		req := coremock.NewAPIRequest(t)
+	setupMockedClient := func(t *testing.T, os, installerType string, queryParams map[string]string, err error) *ClientImpl {
+		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{os, installerType, "latest/metainfo"}).Return(req).Once()
 		req.EXPECT().WithQueryParams(queryParams).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()
@@ -28,10 +28,10 @@ func TestGetLatestAgentVersion(t *testing.T) {
 				resp.LatestAgentVersion = "1.2.3"
 			}).
 			Return(err).Once()
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), "/v1/deployment/installer/agent").Return(req).Once()
+		apiClient := coremock.NewClient(t)
+		apiClient.EXPECT().GET(t.Context(), "/v1/deployment/installer/agent").Return(req).Once()
 
-		return NewClient(client)
+		return NewClient(apiClient)
 	}
 
 	t.Run("ok, uses paas token, installer.TypeDefault", func(t *testing.T) {

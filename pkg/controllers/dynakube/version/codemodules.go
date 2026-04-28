@@ -18,10 +18,10 @@ const (
 
 type codeModulesUpdater struct {
 	dk            *dynakube.DynaKube
-	versionClient version.APIClient
+	versionClient version.Client
 }
 
-func newCodeModulesUpdater(dk *dynakube.DynaKube, versionClient version.APIClient) *codeModulesUpdater {
+func newCodeModulesUpdater(dk *dynakube.DynaKube, versionClient version.Client) *codeModulesUpdater {
 	return &codeModulesUpdater{
 		dk:            dk,
 		versionClient: versionClient,

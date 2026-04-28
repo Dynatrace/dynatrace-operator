@@ -29,7 +29,7 @@ func TestOneAgentUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockVerionClient := versionclientmock.NewAPIClient(t)
+		mockVerionClient := versionclientmock.NewClient(t)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVerionClient)
 
@@ -84,7 +84,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
 
@@ -107,7 +107,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
@@ -140,7 +140,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
@@ -174,7 +174,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 		mockLatestAgentVersion(mockVersionClient, "BOOM", 1)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)

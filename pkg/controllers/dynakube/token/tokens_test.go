@@ -66,8 +66,8 @@ func TestTokens(t *testing.T) {
 		fakeTokenAllTelemetryIngestPermissions       = "all-telemetry-ingest-permissions"
 	)
 
-	createFakeClient := func(t *testing.T) *tokenclientmock.APIClient {
-		mockedTokenClient := tokenclientmock.NewAPIClient(t)
+	createFakeClient := func(t *testing.T) *tokenclientmock.Client {
+		mockedTokenClient := tokenclientmock.NewClient(t)
 
 		tokenScopes := []struct {
 			token  string
@@ -441,7 +441,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			tokenValue := "test-token"
-			mockedTokenClient := tokenclientmock.NewAPIClient(t)
+			mockedTokenClient := tokenclientmock.NewClient(t)
 			mockedTokenClient.EXPECT().GetScopes(t.Context(), tokenValue).Return(c.availableScopes, nil).Once()
 
 			apiToken := newToken(APIKey, tokenValue)

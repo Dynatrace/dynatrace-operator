@@ -55,7 +55,7 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient token.APIClient, dk dynakube.DynaKube) (map[string]bool, error) {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient token.Client, dk dynakube.DynaKube) (map[string]bool, error) {
 	var err error
 
 	collectedMissingOptionalScopes := map[string]bool{}

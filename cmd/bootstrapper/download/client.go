@@ -51,7 +51,7 @@ func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, pro
 	return err
 }
 
-func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, error) {
+func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.Client, error) {
 	config, err := configFromFs(inputDir)
 	if err != nil {
 		return nil, err

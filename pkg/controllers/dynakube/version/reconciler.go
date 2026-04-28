@@ -18,13 +18,13 @@ type Reconciler interface {
 }
 
 type reconciler struct {
-	dtClient     version.APIClient
+	dtClient     version.Client
 	timeProvider *timeprovider.Provider
 
 	apiReader client.Reader
 }
 
-func NewReconciler(apiReader client.Reader, dtClient version.APIClient, timeProvider *timeprovider.Provider) Reconciler {
+func NewReconciler(apiReader client.Reader, dtClient version.Client, timeProvider *timeprovider.Provider) Reconciler {
 	return &reconciler{
 		apiReader:    apiReader,
 		timeProvider: timeProvider,

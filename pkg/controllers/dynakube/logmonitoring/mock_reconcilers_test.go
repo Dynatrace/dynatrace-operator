@@ -124,7 +124,7 @@ func (_m *mockLogmonsettingsSubReconciler) EXPECT() *mockLogmonsettingsSubReconc
 }
 
 // Reconcile provides a mock function for the type mockLogmonsettingsSubReconciler
-func (_mock *mockLogmonsettingsSubReconciler) Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
+func (_mock *mockLogmonsettingsSubReconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
 	ret := _mock.Called(ctx, dtClient, dk)
 
 	if len(ret) == 0 {
@@ -132,7 +132,7 @@ func (_mock *mockLogmonsettingsSubReconciler) Reconcile(ctx context.Context, dtC
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.APIClient, *dynakube.DynaKube) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.Client, *dynakube.DynaKube) error); ok {
 		r0 = returnFunc(ctx, dtClient, dk)
 	} else {
 		r0 = ret.Error(0)
@@ -147,21 +147,21 @@ type mockLogmonsettingsSubReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtClient settings.APIClient
+//   - dtClient settings.Client
 //   - dk *dynakube.DynaKube
 func (_e *mockLogmonsettingsSubReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockLogmonsettingsSubReconciler_Reconcile_Call {
 	return &mockLogmonsettingsSubReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
-func (_c *mockLogmonsettingsSubReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube)) *mockLogmonsettingsSubReconciler_Reconcile_Call {
+func (_c *mockLogmonsettingsSubReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube)) *mockLogmonsettingsSubReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 settings.APIClient
+		var arg1 settings.Client
 		if args[1] != nil {
-			arg1 = args[1].(settings.APIClient)
+			arg1 = args[1].(settings.Client)
 		}
 		var arg2 *dynakube.DynaKube
 		if args[2] != nil {
@@ -181,7 +181,7 @@ func (_c *mockLogmonsettingsSubReconciler_Reconcile_Call) Return(err error) *moc
 	return _c
 }
 
-func (_c *mockLogmonsettingsSubReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error) *mockLogmonsettingsSubReconciler_Reconcile_Call {
+func (_c *mockLogmonsettingsSubReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error) *mockLogmonsettingsSubReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -32,7 +32,7 @@ type GetParams struct {
 }
 
 // Get gets the agent package for the given OS, installer type, flavor, arch and version.
-func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) error {
+func (c *ClientImpl) Get(ctx context.Context, args GetParams, writer io.Writer) error {
 	if len(args.OS) == 0 {
 		return errEmptyOS
 	}
@@ -61,7 +61,7 @@ func (c *Client) Get(ctx context.Context, args GetParams, writer io.Writer) erro
 }
 
 // GetLatest gets the latest agent package for the given OS, installer type, flavor and arch.
-func (c *Client) GetLatest(ctx context.Context, args GetParams, writer io.Writer) error {
+func (c *ClientImpl) GetLatest(ctx context.Context, args GetParams, writer io.Writer) error {
 	if len(args.OS) == 0 {
 		return errEmptyOS
 	}
@@ -94,7 +94,7 @@ type versionsResponse struct {
 }
 
 // GetVersions gets available agent versions for the given OS, installer type and flavor.
-func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, error) {
+func (c *ClientImpl) GetVersions(ctx context.Context, args GetParams) ([]string, error) {
 	if len(args.OS) == 0 {
 		return nil, errEmptyOS
 	}
@@ -123,7 +123,7 @@ func (c *Client) GetVersions(ctx context.Context, args GetParams) ([]string, err
 	return resp.AvailableVersions, errors.WithStack(err)
 }
 
-func makeRequestForBinary(req core.APIRequest, writer io.Writer) (string, error) {
+func makeRequestForBinary(req core.Request, writer io.Writer) (string, error) {
 	hash := sha256.New()
 	multiWriter := io.MultiWriter(writer, hash)
 

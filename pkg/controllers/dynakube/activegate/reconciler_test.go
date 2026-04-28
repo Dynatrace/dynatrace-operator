@@ -43,7 +43,7 @@ const (
 var (
 	anyCtx                       = mock.MatchedBy(func(context.Context) bool { return true })
 	anyDynakube                  = mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })
-	anyAgClient                  = mock.MatchedBy(func(apiClient agclient.APIClient) bool { return true })
+	anyAgClient                  = mock.MatchedBy(func(apiClient agclient.Client) bool { return true })
 	anyTokens                    = mock.MatchedBy(func(token.Tokens) bool { return true })
 	anyCapability                = mock.MatchedBy(func(capability.Capability) bool { return true })
 	anyCustomPropertiesOwnerName = mock.MatchedBy(func(string) bool { return true })
@@ -769,7 +769,7 @@ func createIstioReconcilerMock(t *testing.T) istioReconciler {
 func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dynatrace.Client {
 	t.Helper()
 
-	agClient := agclientmock.NewAPIClient(t)
+	agClient := agclientmock.NewClient(t)
 
 	if authTokenRouteRequired {
 		agClient.EXPECT().GetAuthToken(anyCtx, testName).Return(&agclient.AuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil).Maybe()
