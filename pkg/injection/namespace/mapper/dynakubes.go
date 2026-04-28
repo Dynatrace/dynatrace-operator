@@ -86,8 +86,11 @@ func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error
 	for _, ns := range namespaces {
 		delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
 
+		if err := dm.client.Update(dm.ctx, &ns); err != nil {
+			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
+		}
+
 		if err := goerrors.Join(
-			errors.WithMessagef(dm.client.Update(dm.ctx, &ns), "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name),
 			dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, ns.Name),
 			dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitCertsSecretName, ns.Name),
 			dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterSecretName, ns.Name),
