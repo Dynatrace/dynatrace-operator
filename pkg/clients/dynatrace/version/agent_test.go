@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetLatestAgentVersion(t *testing.T) {
-	setupMockedClient := func(t *testing.T, os, installerType string, queryParams map[string]string, err error) *client {
+	setupMockedClient := func(t *testing.T, os, installerType string, queryParams map[string]string, err error) *ClientImpl {
 		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{os, installerType, "latest/metainfo"}).Return(req).Once()
 		req.EXPECT().WithQueryParams(queryParams).Return(req).Once()

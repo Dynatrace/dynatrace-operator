@@ -140,12 +140,12 @@ func (num notSingleEntryError) Error() string {
 	return fmt.Sprintf("response is not containing exactly one entry, got %d entries", int(num))
 }
 
-type client struct {
+type ClientImpl struct {
 	apiClient core.Client
 }
 
 func NewClient(apiClient core.Client) Client {
-	return &client{
+	return &ClientImpl{
 		apiClient: apiClient,
 	}
 }
@@ -157,7 +157,7 @@ func NewClient(apiClient core.Client) Client {
 //   - The `label` of the setting is the Name (example: my-dynakube) of the Kubernetes Cluster Monitored Entity
 //
 // In case 0 settings are found, so no Kubernetes Cluster Monitored Entity exists, we return an empty object, without an error.
-func (c *client) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error) {
+func (c *ClientImpl) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error) {
 	if kubeSystemUUID == "" {
 		return K8sClusterME{}, errMissingKubeSystemUUID
 	}
@@ -190,7 +190,7 @@ func (c *client) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8
 }
 
 // GetSettingsForMonitoredEntity returns the settings response with the number of settings objects.
-func (c *client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (TotalCountSettingsResponse, error) {
+func (c *ClientImpl) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (TotalCountSettingsResponse, error) {
 	if monitoredEntity.ID == "" {
 		return TotalCountSettingsResponse{}, nil
 	}
@@ -212,7 +212,7 @@ func (c *client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEnt
 }
 
 // DeleteSettings deletes the settings using the settings object ID.
-func (c *client) DeleteSettings(ctx context.Context, objectID string) error {
+func (c *ClientImpl) DeleteSettings(ctx context.Context, objectID string) error {
 	if objectID == "" {
 		return errNoSettingsIDProvided
 	}

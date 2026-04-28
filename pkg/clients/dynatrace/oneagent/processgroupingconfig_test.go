@@ -32,7 +32,7 @@ func setupMockedProcessGroupingClient(
 	responseHeaders http.Header,
 	responseBody []byte,
 	execErr error,
-) *client {
+) *ClientImpl {
 	t.Helper()
 
 	req := coremock.NewRequest(t)

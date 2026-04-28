@@ -26,7 +26,7 @@ type KSPMSettingsValue struct {
 }
 
 // GetKSPMSettings returns the settings response with the number of settings objects and their values.
-func (c *client) GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error) {
+func (c *ClientImpl) GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error) {
 	if monitoredEntity == "" {
 		return KSPMSettingsResponse{}, nil
 	}
@@ -48,7 +48,7 @@ func (c *client) GetKSPMSettings(ctx context.Context, monitoredEntity string) (K
 }
 
 // CreateKSPMSetting returns the object ID of the created kspm settings.
-func (c *client) CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error) {
+func (c *ClientImpl) CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error) {
 	if monitoredEntity == "" {
 		return "", errors.New("no scope (MEID) was provided for creating the KSPM setting object")
 	}

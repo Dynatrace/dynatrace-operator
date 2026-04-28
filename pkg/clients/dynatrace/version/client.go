@@ -22,12 +22,12 @@ type Client interface {
 	GetLatestActiveGateVersion(ctx context.Context, os string) (string, error)
 }
 
-type client struct {
+type ClientImpl struct {
 	apiClient core.Client
 }
 
-func NewClient(apiClient core.Client) *client {
-	return &client{
+func NewClient(apiClient core.Client) *ClientImpl {
+	return &ClientImpl{
 		apiClient: apiClient,
 	}
 }

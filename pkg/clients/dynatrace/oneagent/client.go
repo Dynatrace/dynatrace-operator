@@ -21,15 +21,15 @@ type Client interface {
 	GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error)
 }
 
-type client struct {
+type ClientImpl struct {
 	apiClient core.Client
 
 	hostGroup   string
 	networkZone string
 }
 
-func NewClient(apiClient core.Client, hostGroup, networkZone string) *client {
-	return &client{
+func NewClient(apiClient core.Client, hostGroup, networkZone string) *ClientImpl {
+	return &ClientImpl{
 		apiClient:   apiClient,
 		hostGroup:   hostGroup,
 		networkZone: networkZone,

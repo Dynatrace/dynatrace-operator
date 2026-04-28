@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetLatestActiveGateVersion(t *testing.T) {
-	setupMockedClient := func(t *testing.T, os string, err error) *client {
+	setupMockedClient := func(t *testing.T, os string, err error) *ClientImpl {
 		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{os, "latest/metainfo"}).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()

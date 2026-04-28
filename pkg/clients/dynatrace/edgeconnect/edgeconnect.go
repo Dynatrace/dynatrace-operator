@@ -56,7 +56,7 @@ func NewUpdateRequest(name string, hostPatterns []string, hostMappings []edgecon
 }
 
 // GetEdgeConnect returns EdgeConnect if it exists
-func (c *client) GetEdgeConnect(ctx context.Context, id string) (APIResponse, error) {
+func (c *ClientImpl) GetEdgeConnect(ctx context.Context, id string) (APIResponse, error) {
 	if id == "" {
 		return APIResponse{}, errNoEdgeConnectID
 	}
@@ -72,7 +72,7 @@ func (c *client) GetEdgeConnect(ctx context.Context, id string) (APIResponse, er
 }
 
 // CreateEdgeConnect creates new EdgeConnect
-func (c *client) CreateEdgeConnect(ctx context.Context, request *Request) (APIResponse, error) {
+func (c *ClientImpl) CreateEdgeConnect(ctx context.Context, request *Request) (APIResponse, error) {
 	var response APIResponse
 
 	err := c.apiClient.POST(ctx, edgeConnectsPath).WithoutToken().WithJSONBody(request).Execute(&response)
@@ -84,7 +84,7 @@ func (c *client) CreateEdgeConnect(ctx context.Context, request *Request) (APIRe
 }
 
 // UpdateEdgeConnect updates existing EdgeConnect
-func (c *client) UpdateEdgeConnect(ctx context.Context, id string, request *Request) error {
+func (c *ClientImpl) UpdateEdgeConnect(ctx context.Context, id string, request *Request) error {
 	if id == "" {
 		return errNoEdgeConnectID
 	}
@@ -98,7 +98,7 @@ func (c *client) UpdateEdgeConnect(ctx context.Context, id string, request *Requ
 }
 
 // ListEdgeConnects get list of EdgeConnects
-func (c *client) ListEdgeConnects(ctx context.Context, name string) ([]APIResponse, error) {
+func (c *ClientImpl) ListEdgeConnects(ctx context.Context, name string) ([]APIResponse, error) {
 	var response listResponse
 
 	qp := map[string]string{
@@ -115,7 +115,7 @@ func (c *client) ListEdgeConnects(ctx context.Context, name string) ([]APIRespon
 }
 
 // DeleteEdgeConnect deletes EdgeConnect using DELETE method for given id
-func (c *client) DeleteEdgeConnect(ctx context.Context, id string) error {
+func (c *ClientImpl) DeleteEdgeConnect(ctx context.Context, id string) error {
 	if id == "" {
 		return errNoEdgeConnectID
 	}

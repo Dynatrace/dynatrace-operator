@@ -30,7 +30,7 @@ func TestGetLatest(t *testing.T) {
 		SkipMetadata:  false,
 	}
 
-	setupClient := func(t *testing.T, response []byte, rawErr error) (*client, *os.File) {
+	setupClient := func(t *testing.T, response []byte, rawErr error) (*ClientImpl, *os.File) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 		t.Cleanup(func() { require.NoError(t, file.Close()) })
@@ -72,8 +72,8 @@ func TestGetLatest(t *testing.T) {
 	})
 
 	t.Run("missing params", func(t *testing.T) {
-		require.ErrorIs(t, (&client{}).GetLatest(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
-		require.ErrorIs(t, (&client{}).GetLatest(t.Context(), GetParams{OS: installer.OSUnix}, nil), errEmptyInstallerType)
+		require.ErrorIs(t, (&ClientImpl{}).GetLatest(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
+		require.ErrorIs(t, (&ClientImpl{}).GetLatest(t.Context(), GetParams{OS: installer.OSUnix}, nil), errEmptyInstallerType)
 	})
 }
 
@@ -87,7 +87,7 @@ func TestGet(t *testing.T) {
 		SkipMetadata:  false,
 	}
 
-	setupClient := func(t *testing.T, response []byte, rawErr error) (*client, *os.File) {
+	setupClient := func(t *testing.T, response []byte, rawErr error) (*ClientImpl, *os.File) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 		t.Cleanup(func() { require.NoError(t, file.Close()) })
@@ -130,8 +130,8 @@ func TestGet(t *testing.T) {
 	})
 
 	t.Run("missing params", func(t *testing.T) {
-		require.ErrorIs(t, (&client{}).Get(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
-		require.ErrorIs(t, (&client{}).Get(t.Context(), GetParams{OS: installer.OSUnix}, nil), errEmptyInstallerType)
+		require.ErrorIs(t, (&ClientImpl{}).Get(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
+		require.ErrorIs(t, (&ClientImpl{}).Get(t.Context(), GetParams{OS: installer.OSUnix}, nil), errEmptyInstallerType)
 	})
 }
 
@@ -143,7 +143,7 @@ func TestGetVersions(t *testing.T) {
 	}
 	responseString := []string{"1.123.1", "1.123.2", "1.123.3", "1.123.4"}
 
-	setupClient := func(t *testing.T, execErr error) *client {
+	setupClient := func(t *testing.T, execErr error) *ClientImpl {
 		var resp versionsResponse
 
 		req := coremock.NewRequest(t)
@@ -185,9 +185,9 @@ func TestGetVersions(t *testing.T) {
 	})
 
 	t.Run("missing params", func(t *testing.T) {
-		_, err := (&client{}).GetVersions(t.Context(), GetParams{InstallerType: installer.TypePaaS})
+		_, err := (&ClientImpl{}).GetVersions(t.Context(), GetParams{InstallerType: installer.TypePaaS})
 		require.ErrorIs(t, err, errEmptyOS)
-		_, err = (&client{}).GetVersions(t.Context(), GetParams{OS: installer.OSUnix})
+		_, err = (&ClientImpl{}).GetVersions(t.Context(), GetParams{OS: installer.OSUnix})
 		require.ErrorIs(t, err, errEmptyInstallerType)
 	})
 }

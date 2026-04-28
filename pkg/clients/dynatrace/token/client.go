@@ -36,7 +36,7 @@ type Client interface {
 	GetScopes(ctx context.Context, token string) ([]string, error)
 }
 
-type client struct {
+type ClientImpl struct {
 	apiClient core.Client
 }
 
@@ -55,13 +55,13 @@ func (s *scopesResponse) IsEmpty() bool {
 	return false
 }
 
-func NewClient(apiClient core.Client) *client {
-	return &client{
+func NewClient(apiClient core.Client) *ClientImpl {
+	return &ClientImpl{
 		apiClient: apiClient,
 	}
 }
 
-func (c *client) GetScopes(ctx context.Context, token string) ([]string, error) {
+func (c *ClientImpl) GetScopes(ctx context.Context, token string) ([]string, error) {
 	req := lookupRequest{Token: token}
 
 	var resp scopesResponse

@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetEntityIDForIP(t *testing.T) {
-	setupClient := func(t *testing.T, err error) *client {
+	setupClient := func(t *testing.T, err error) *ClientImpl {
 		req := coremock.NewRequest(t)
 		req.EXPECT().
 			WithQueryParams(map[string]string{
@@ -137,7 +137,7 @@ func Test_buildHostEntityMap(t *testing.T) {
 }
 
 func TestSendEvent(t *testing.T) {
-	setupClient := func(t *testing.T, err error) *client {
+	setupClient := func(t *testing.T, err error) *ClientImpl {
 		req := coremock.NewRequest(t)
 		req.EXPECT().WithJSONBody(Event{EventType: "TEST"}).Return(req).Once()
 		req.EXPECT().Execute(nil).Return(err).Once()

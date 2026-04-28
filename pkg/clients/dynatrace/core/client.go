@@ -51,7 +51,7 @@ type Request interface {
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) Request
 	// Execute executes the request and unmarshals the response into the provided model
-	// If the provided model implements the Cacheable interface, then the client will cache the response.
+	// If the provided model implements the Cacheable interface, then the ClientImpl will cache the response.
 	Execute(model any) error
 	// ExecuteWriter executes the request, writes the response body to the provided writer,
 	// and returns the response headers on success.
@@ -66,18 +66,18 @@ type Config struct {
 	PaasToken  string
 }
 
-type client struct {
+type ClientImpl struct {
 	cfg Config
 }
 
-func NewClient(cfg Config) *client {
-	return &client{
+func NewClient(cfg Config) *ClientImpl {
+	return &ClientImpl{
 		cfg: cfg,
 	}
 }
 
 type request struct {
-	client *client
+	client *ClientImpl
 
 	ctx       context.Context
 	query     url.Values
@@ -98,7 +98,7 @@ const (
 	TokenTypeNone
 )
 
-func (c *client) newRequest(ctx context.Context) *request {
+func (c *ClientImpl) newRequest(ctx context.Context) *request {
 	headers := make(http.Header)
 
 	query := make(url.Values)
@@ -115,22 +115,22 @@ func (c *client) newRequest(ctx context.Context) *request {
 }
 
 // GET creates a GET request builder
-func (c *client) GET(ctx context.Context, path string) Request {
+func (c *ClientImpl) GET(ctx context.Context, path string) Request {
 	return c.newRequest(ctx).withMethod(http.MethodGet).WithPath(path)
 }
 
 // POST creates a POST request builder
-func (c *client) POST(ctx context.Context, path string) Request {
+func (c *ClientImpl) POST(ctx context.Context, path string) Request {
 	return c.newRequest(ctx).withMethod(http.MethodPost).WithPath(path)
 }
 
 // PUT creates a PUT request builder
-func (c *client) PUT(ctx context.Context, path string) Request {
+func (c *ClientImpl) PUT(ctx context.Context, path string) Request {
 	return c.newRequest(ctx).withMethod(http.MethodPut).WithPath(path)
 }
 
 // DELETE creates a DELETE request builder
-func (c *client) DELETE(ctx context.Context, path string) Request {
+func (c *ClientImpl) DELETE(ctx context.Context, path string) Request {
 	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
 }
 

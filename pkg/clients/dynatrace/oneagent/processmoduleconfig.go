@@ -154,7 +154,7 @@ func (pmc ProcessModuleConfig) IsEmpty() bool {
 	return len(pmc.Properties) == 0
 }
 
-func (c *client) GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error) {
+func (c *ClientImpl) GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error) {
 	var resp ProcessModuleConfig
 
 	params := map[string]string{

@@ -150,7 +150,7 @@ func TestDeleteEdgeConnect(t *testing.T) {
 	})
 }
 
-func newTestSetup(t *testing.T) (*coremock.Client, *coremock.Request, *client) {
+func newTestSetup(t *testing.T) (*coremock.Client, *coremock.Request, *ClientImpl) {
 	t.Helper()
 	apiClient := coremock.NewClient(t)
 	request := coremock.NewRequest(t)
