@@ -636,8 +636,6 @@ func Test_Controller_Reconcile(t *testing.T) {
 		}
 
 		testController := func(t *testing.T, ec *edgeconnect.EdgeConnect, provisioner bool, objs ...client.Object) *Controller {
-			t.Helper()
-
 			if !provisioner {
 				return testFakeClientAndReconciler(t, ec, objs...)
 			}
@@ -904,8 +902,6 @@ func testConfigMap(name, namespace string, data map[string]string) *corev1.Confi
 }
 
 func testGetEdgeConnectCR(t *testing.T, apiReader client.Reader, name string, namespace string) (edgeconnect.EdgeConnect, error) {
-	t.Helper()
-
 	var ec edgeconnect.EdgeConnect
 	err := apiReader.Get(
 		t.Context(),
@@ -923,8 +919,6 @@ func testGetEdgeConnectCR(t *testing.T, apiReader client.Reader, name string, na
 // Use this for tests that do not go through the full Reconcile path (e.g. direct calls to
 // reconcileEdgeConnectRegular, or Reconcile with a missing EC that returns early).
 func testFakeClientNoVersionCheck(t *testing.T, ec *edgeconnect.EdgeConnect, objects ...client.Object) *Controller {
-	t.Helper()
-
 	fakeClient := fake.NewClientWithIndex(testCRD(t))
 
 	if ec != nil {
@@ -951,8 +945,6 @@ func testFakeClientNoVersionCheck(t *testing.T, ec *edgeconnect.EdgeConnect, obj
 }
 
 func testFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, objects ...client.Object) *Controller {
-	t.Helper()
-
 	fakeClient := fake.NewClientWithIndex(testCRD(t))
 
 	if ec != nil {
@@ -989,8 +981,6 @@ func testFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, obje
 }
 
 func testFakeClientAndReconcilerForProvisioner(t *testing.T, ec *edgeconnect.EdgeConnect, builder edgeConnectClientBuilderType, objects ...client.Object) *Controller {
-	t.Helper()
-
 	fakeClient := fake.NewClientWithIndex(testCRD(t))
 
 	if ec != nil {
@@ -1023,8 +1013,6 @@ func testFakeClientAndReconcilerForProvisioner(t *testing.T, ec *edgeconnect.Edg
 // testFakeClientForDeletion builds a controller without a version-check registry mock.
 // The deletion reconcile path skips updateVersionInfo, so GetImageVersion is never called.
 func testFakeClientForDeletion(t *testing.T, ec *edgeconnect.EdgeConnect, builder edgeConnectClientBuilderType, objects ...client.Object) *Controller {
-	t.Helper()
-
 	fakeClient := fake.NewClientWithIndex(testCRD(t))
 
 	if ec != nil {
@@ -1212,7 +1200,6 @@ func testDeployment(namespace, name string, replicas, readyReplicas int32) *apps
 }
 
 func testCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
-	t.Helper()
 	t.Setenv(k8senv.AppVersion, "1.0.0")
 
 	return &apiextensionsv1.CustomResourceDefinition{

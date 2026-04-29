@@ -27,7 +27,6 @@ func TestPrepareConfigFile(t *testing.T) {
 	)
 
 	testNewSecret := func(name, namespace string, kv map[string]string) *corev1.Secret {
-		t.Helper()
 		data := make(map[string][]byte)
 		for k, v := range kv {
 			data[k] = []byte(v)
@@ -37,8 +36,6 @@ func TestPrepareConfigFile(t *testing.T) {
 	}
 
 	testClientSecret := func(name string, namespace string) *corev1.Secret {
-		t.Helper()
-
 		return testNewSecret(name, namespace, map[string]string{
 			consts.KeyEdgeConnectID:                testCreatedID,
 			consts.KeyEdgeConnectOauthClientID:     testCreatedOauthClientID,
