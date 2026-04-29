@@ -1,7 +1,6 @@
 package version
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -12,14 +11,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewReconcile(t *testing.T) {
-	edgeConnect := createBasicEdgeConnect()
-	fakeRegistryClient := registrymock.NewImageGetter(t)
-	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+func TestNewReconciler(t *testing.T) {
+	t.Run("creates reconciler successfully", func(t *testing.T) {
+		ec := testBasicEdgeConnect()
+		fakeRegistryClient := registrymock.NewImageGetter(t)
 
-	reconciler := NewReconciler(fake.NewClient(), fakeRegistryClient, timeprovider.New(), edgeConnect)
+		reconciler := NewReconciler(fake.NewClient(), fakeRegistryClient, timeprovider.New(), ec)
 
-	require.NotNil(t, reconciler)
-	require.NoError(t, reconciler.Reconcile(context.Background()))
+		require.NotNil(t, reconciler)
+	})
+}
+
+func Test_Reconciler_Reconcile(t *testing.T) {
+	t.Run("reconcile succeeds", func(t *testing.T) {
+		ec := testBasicEdgeConnect()
+		fakeRegistryClient := registrymock.NewImageGetter(t)
+		fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
+		fakeRegistryClient.EXPECT().GetImageVersion(mock.Anything, mock.Anything).Return(fakeImageVersion, nil).Once()
+
+		reconciler := NewReconciler(fake.NewClient(), fakeRegistryClient, timeprovider.New(), ec)
+
+		require.NoError(t, reconciler.Reconcile(t.Context()))
+	})
 }

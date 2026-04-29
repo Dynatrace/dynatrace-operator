@@ -1,7 +1,6 @@
 package secret
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -15,22 +14,42 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	testName                       = "test-name-edgeconnect"
-	testNamespace                  = "test-namespace"
-	testOauthClientID              = "client-id"
-	testOauthClientSecret          = "client-secret"
-	testOauthClientResource        = "client-resource"
-	testToken                      = "dummy-token"
-	testCreatedOauthClientID       = "created-client-id"
-	testCreatedOauthClientSecret   = "created-client-secret"
-	testCreatedOauthClientResource = "created-client-resource"
-	testCreatedID                  = "id"
-	testProxyAuthRef               = "proxy-auth-ref"
-)
+func TestPrepareConfigFile(t *testing.T) {
+	const (
+		testName      = "test-name-edgeconnect"
+		testNamespace = "test-namespace"
+		testToken     = "dummy-token"
+		testProxyAuthRef               = "proxy-auth-ref"
+		testCreatedID                  = "id"
+		testCreatedOauthClientID       = "created-client-id"
+		testCreatedOauthClientSecret   = "created-client-secret"
+		testCreatedOauthClientResource = "created-client-resource"
+	)
 
-func Test_prepareEdgeConnectConfigFile(t *testing.T) {
+	testNewSecret := func(name, namespace string, kv map[string]string) *corev1.Secret {
+		t.Helper()
+		data := make(map[string][]byte)
+		for k, v := range kv {
+			data[k] = []byte(v)
+		}
+
+		return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
+	}
+
+	testClientSecret := func(name string, namespace string) *corev1.Secret {
+		t.Helper()
+
+		return testNewSecret(name, namespace, map[string]string{
+			consts.KeyEdgeConnectID:                testCreatedID,
+			consts.KeyEdgeConnectOauthClientID:     testCreatedOauthClientID,
+			consts.KeyEdgeConnectOauthClientSecret: testCreatedOauthClientSecret,
+			consts.KeyEdgeConnectOauthResource:     testCreatedOauthClientResource,
+		})
+	}
+
 	t.Run("Create basic config", func(t *testing.T) {
+		const testSecretName = "test-secret"
+
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -41,14 +60,13 @@ func Test_prepareEdgeConnectConfigFile(t *testing.T) {
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: "test-secret",
+					ClientSecret: testSecretName,
 				},
 			},
 		}
 
-		testSecretName := "test-secret"
-		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
-		cfg, err := PrepareConfigFile(context.Background(), ec, kubeReader, testToken)
+		kubeReader := fake.NewClient(testClientSecret(testSecretName, testNamespace))
+		cfg, err := PrepareConfigFile(t.Context(), ec, kubeReader, testToken)
 
 		require.NoError(t, err)
 
@@ -66,6 +84,8 @@ root_certificate_paths:
 	})
 
 	t.Run("Create full config", func(t *testing.T) {
+		const testSecretName = "test-secret"
+
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -76,7 +96,7 @@ root_certificate_paths:
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: "test-secret",
+					ClientSecret: testSecretName,
 				},
 				CaCertsRef: "certs",
 				Proxy: &proxy.Spec{
@@ -87,13 +107,13 @@ root_certificate_paths:
 				},
 			},
 		}
-		testSecretName := "test-secret"
-		authRef := newSecret(testProxyAuthRef, ec.Namespace, map[string]string{
+
+		authRef := testNewSecret(testProxyAuthRef, ec.Namespace, map[string]string{
 			edgeconnect.ProxyAuthUserKey:     "user",
 			edgeconnect.ProxyAuthPasswordKey: "pass",
 		})
-		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace), authRef)
-		cfg, err := PrepareConfigFile(context.Background(), ec, kubeReader, testToken)
+		kubeReader := fake.NewClient(testClientSecret(testSecretName, testNamespace), authRef)
+		cfg, err := PrepareConfigFile(t.Context(), ec, kubeReader, testToken)
 
 		require.NoError(t, err)
 
@@ -117,7 +137,10 @@ proxy:
 `
 		assert.Equal(t, expected, string(cfg))
 	})
+
 	t.Run("Create config k8s automation enabled", func(t *testing.T) {
+		const testSecretName = "test-secret"
+
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -128,16 +151,16 @@ proxy:
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
-					ClientSecret: "test-secret",
+					ClientSecret: testSecretName,
 				},
 				KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{
 					Enabled: true,
 				},
 			},
 		}
-		testSecretName := "test-secret"
-		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
-		cfg, err := PrepareConfigFile(context.Background(), ec, kubeReader, testToken)
+
+		kubeReader := fake.NewClient(testClientSecret(testSecretName, testNamespace))
+		cfg, err := PrepareConfigFile(t.Context(), ec, kubeReader, testToken)
 
 		require.NoError(t, err)
 
@@ -159,8 +182,10 @@ secrets:
 `
 		assert.Equal(t, expected, string(cfg))
 	})
+}
 
-	t.Run("safeEdgeConnectCfg", func(t *testing.T) {
+func Test_safeEdgeConnectCfg(t *testing.T) {
+	t.Run("redacts client secret and token", func(t *testing.T) {
 		cfg := config.EdgeConnect{
 			Name:            "test",
 			APIEndpointHost: "test",
@@ -212,22 +237,4 @@ secrets:
 `
 		assert.Equal(t, expected, safeEdgeConnectCfg(cfg))
 	})
-}
-
-func createClientSecret(name string, namespace string) *corev1.Secret {
-	return newSecret(name, namespace, map[string]string{
-		consts.KeyEdgeConnectID:                testCreatedID,
-		consts.KeyEdgeConnectOauthClientID:     testCreatedOauthClientID,
-		consts.KeyEdgeConnectOauthClientSecret: testCreatedOauthClientSecret,
-		consts.KeyEdgeConnectOauthResource:     testCreatedOauthClientResource,
-	})
-}
-
-func newSecret(name, namespace string, kv map[string]string) *corev1.Secret {
-	data := make(map[string][]byte)
-	for k, v := range kv {
-		data[k] = []byte(v)
-	}
-
-	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
 }
