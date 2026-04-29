@@ -25,6 +25,50 @@ const (
 func TestNew(t *testing.T) {
 	t.Cleanup(version.DisableCacheForTest(123))
 
+	const (
+		testObjectMetaLabelKey        = "test-om-label-key"
+		testObjectMetaLabelValue      = "test-om-label-value"
+		testObjectMetaAnnotationKey   = "test-om-annotation-key"
+		testObjectMetaAnnotationValue = "test-om-annotation-value"
+		testLabelKey                  = "test-label-key"
+		testLabelValue                = "test-label-value"
+		testAnnotationKey             = "test-annotation-key"
+		testAnnotationValue           = "test-annotation-value"
+	)
+
+	testECWithLabels := func(specLabels map[string]string) *edgeconnect.EdgeConnect {
+		return &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Labels:    map[string]string{testObjectMetaLabelKey: testObjectMetaLabelValue},
+			},
+			Spec: edgeconnect.EdgeConnectSpec{Labels: specLabels},
+		}
+	}
+
+	testECWithAnnotations := func(specAnnotations map[string]string) *edgeconnect.EdgeConnect {
+		return &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        testName,
+				Namespace:   testNamespace,
+				Annotations: map[string]string{testObjectMetaAnnotationKey: testObjectMetaAnnotationValue},
+			},
+			Spec: edgeconnect.EdgeConnectSpec{Annotations: specAnnotations},
+		}
+	}
+
+	testECWithAppArmor := func() *edgeconnect.EdgeConnect {
+		return &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+			Spec: edgeconnect.EdgeConnectSpec{
+				Annotations: map[string]string{
+					corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + consts.EdgeConnectContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
+				},
+			},
+		}
+	}
+
 	t.Run("create new edgeconnect deployment", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
@@ -45,21 +89,7 @@ func TestNew(t *testing.T) {
 	})
 
 	t.Run("check empty custom labels", func(t *testing.T) {
-		const (
-			testObjectMetaLabelKey = "test-om-label-key"
-			testObjectMetaValue    = "test-om-label-value"
-		)
-
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels: map[string]string{
-					testObjectMetaLabelKey: testObjectMetaValue,
-				},
-			},
-			Spec: edgeconnect.EdgeConnectSpec{},
-		}
+		ec := testECWithLabels(nil)
 
 		deployment := New(ec)
 
@@ -79,27 +109,7 @@ func TestNew(t *testing.T) {
 	})
 
 	t.Run("check custom label set correctly", func(t *testing.T) {
-		const (
-			testObjectMetaLabelKey = "test-om-label-key"
-			testObjectMetaValue    = "test-om-label-value"
-			testLabelKey           = "test-label-key"
-			testLabelValue         = "test-label-value"
-		)
-
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels: map[string]string{
-					testObjectMetaLabelKey: testObjectMetaValue,
-				},
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				Labels: map[string]string{
-					testLabelKey: testLabelValue,
-				},
-			},
-		}
+		ec := testECWithLabels(map[string]string{testLabelKey: testLabelValue})
 
 		deployment := New(ec)
 
@@ -122,21 +132,7 @@ func TestNew(t *testing.T) {
 	})
 
 	t.Run("check empty annotations", func(t *testing.T) {
-		const (
-			testObjectMetaAnnotationKey   = "test-om-annotation-key"
-			testObjectMetaAnnotationValue = "test-om-annotation-value"
-		)
-
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
-				},
-			},
-			Spec: edgeconnect.EdgeConnectSpec{},
-		}
+		ec := testECWithAnnotations(nil)
 
 		deployment := New(ec)
 
@@ -148,27 +144,7 @@ func TestNew(t *testing.T) {
 	})
 
 	t.Run("check custom annotations set correctly", func(t *testing.T) {
-		const (
-			testObjectMetaAnnotationKey   = "test-om-annotation-key"
-			testObjectMetaAnnotationValue = "test-om-annotation-value"
-			testAnnotationKey             = "test-annotation-key"
-			testAnnotationValue           = "test-annotation-value"
-		)
-
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
-				},
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				Annotations: map[string]string{
-					testAnnotationKey: testAnnotationValue,
-				},
-			},
-		}
+		ec := testECWithAnnotations(map[string]string{testAnnotationKey: testAnnotationValue})
 
 		deployment := New(ec)
 
@@ -185,19 +161,7 @@ func TestNew(t *testing.T) {
 	t.Run("apparmor is untouched in 1.30", func(t *testing.T) {
 		version.DisableCacheForTest(30)
 
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				Annotations: map[string]string{
-					corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + consts.EdgeConnectContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
-				},
-			},
-		}
-
-		deployment := New(ec)
+		deployment := New(testECWithAppArmor())
 
 		assert.Contains(t, deployment.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+consts.EdgeConnectContainerName)
 		require.Len(t, deployment.Spec.Template.Spec.Containers, 1)
@@ -207,19 +171,7 @@ func TestNew(t *testing.T) {
 	t.Run("apparmor is migrated in 1.31", func(t *testing.T) {
 		version.DisableCacheForTest(31)
 
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				Annotations: map[string]string{
-					corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + consts.EdgeConnectContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
-				},
-			},
-		}
-
-		deployment := New(ec)
+		deployment := New(testECWithAppArmor())
 
 		assert.NotContains(t, deployment.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+consts.EdgeConnectContainerName)
 		require.Len(t, deployment.Spec.Template.Spec.Containers, 1)
@@ -257,12 +209,9 @@ func Test_buildAppLabels(t *testing.T) {
 }
 
 func Test_prepareResourceRequirements(t *testing.T) {
-	t.Run("check limits requirements are set correctly", func(t *testing.T) {
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+	testEC := func(resources corev1.ResourceRequirements) *edgeconnect.EdgeConnect {
+		return &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
 			Spec: edgeconnect.EdgeConnectSpec{
 				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
@@ -270,17 +219,19 @@ func Test_prepareResourceRequirements(t *testing.T) {
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 				},
-				Resources: corev1.ResourceRequirements{
-					Limits: k8sresource.NewResourceList("500m", "256Mi"),
-				},
+				Resources: resources,
 			},
 			Status: edgeconnect.EdgeConnectStatus{
-				Version: status.VersionStatus{
-					Version: "",
-				},
+				Version:          status.VersionStatus{},
 				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		}
+	}
+
+	t.Run("check limits requirements are set correctly", func(t *testing.T) {
+		ec := testEC(corev1.ResourceRequirements{
+			Limits: k8sresource.NewResourceList("500m", "256Mi"),
+		})
 
 		resourceRequirements := prepareResourceRequirements(ec)
 
@@ -290,29 +241,9 @@ func Test_prepareResourceRequirements(t *testing.T) {
 	})
 
 	t.Run("check requests in requirements are set correctly", func(t *testing.T) {
-		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				APIServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnect.OAuthSpec{
-					ClientSecret: "secret-name",
-					Endpoint:     "https://test.com/sso/oauth2/token",
-					Resource:     "urn:dtenvironment:test12345",
-				},
-				Resources: corev1.ResourceRequirements{
-					Requests: k8sresource.NewResourceList("500m", "256Mi"),
-				},
-			},
-			Status: edgeconnect.EdgeConnectStatus{
-				Version: status.VersionStatus{
-					Version: "",
-				},
-				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
-			},
-		}
+		ec := testEC(corev1.ResourceRequirements{
+			Requests: k8sresource.NewResourceList("500m", "256Mi"),
+		})
 
 		resourceRequirements := prepareResourceRequirements(ec)
 

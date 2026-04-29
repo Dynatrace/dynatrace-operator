@@ -261,8 +261,7 @@ func Test_Controller_Reconcile_replicas(t *testing.T) {
 		}
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
-		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+		testMockEnvironmentSettingsUpdate(ecClient)
 
 		return testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -362,8 +361,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
-		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+		testMockEnvironmentSettingsUpdate(ecClient)
 
 		controller := testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -380,45 +378,14 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 
-		edgeConnectCR, err := testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
-		require.NoError(t, err)
-		require.NotEmpty(t, edgeConnectCR.Finalizers)
-
-		ecOauthClientID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientID, ecOauthClientID)
-
-		ecOauthClientSecret, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientSecret, ecOauthClientSecret)
-
-		ecOauthResource, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthResource, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientResource, ecOauthResource)
-
-		ecID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedID, ecID)
-
-		var ecDeployment appsv1.Deployment
-		err = controller.apiReader.Get(
-			t.Context(),
-			client.ObjectKey{
-				Name:      ec.Name,
-				Namespace: ec.Namespace,
-			},
-			&ecDeployment,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, "edge-connect", ecDeployment.Spec.Template.Spec.Containers[0].Name)
+		testAssertCreatedEdgeConnect(t, controller, ec)
 	})
 
 	t.Run("recreate due to missing client secret", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
-		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+		testMockEnvironmentSettingsUpdate(ecClient)
 
 		controller := testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -435,37 +402,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 
-		edgeConnectCR, err := testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
-		require.NoError(t, err)
-		require.NotEmpty(t, edgeConnectCR.Finalizers)
-
-		ecOauthClientID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientID, ecOauthClientID)
-
-		ecOauthClientSecret, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientSecret, ecOauthClientSecret)
-
-		ecOauthResource, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthResource, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientResource, ecOauthResource)
-
-		ecID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedID, ecID)
-
-		var ecDeployment appsv1.Deployment
-		err = controller.apiReader.Get(
-			t.Context(),
-			client.ObjectKey{
-				Name:      ec.Name,
-				Namespace: ec.Namespace,
-			},
-			&ecDeployment,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, "edge-connect", ecDeployment.Spec.Template.Spec.Containers[0].Name)
+		testAssertCreatedEdgeConnect(t, controller, ec)
 	})
 
 	t.Run("recreate due to invalid id", func(t *testing.T) {
@@ -474,8 +411,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
-		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+		testMockEnvironmentSettingsUpdate(ecClient)
 
 		controller := testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -493,45 +429,14 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 
-		edgeConnectCR, err := testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
-		require.NoError(t, err)
-		require.NotEmpty(t, edgeConnectCR.Finalizers)
-
-		ecOauthClientID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientID, ecOauthClientID)
-
-		ecOauthClientSecret, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientSecret, ecOauthClientSecret)
-
-		ecOauthResource, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthResource, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientResource, ecOauthResource)
-
-		ecID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedID, ecID)
-
-		var ecDeployment appsv1.Deployment
-		err = controller.apiReader.Get(
-			t.Context(),
-			client.ObjectKey{
-				Name:      ec.Name,
-				Namespace: ec.Namespace,
-			},
-			&ecDeployment,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, "edge-connect", ecDeployment.Spec.Template.Spec.Containers[0].Name)
+		testAssertCreatedEdgeConnect(t, controller, ec)
 	})
 
 	t.Run("delete", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
-		ecClient.EXPECT().DeleteEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+		testMockEnvironmentSettingsDelete(ecClient)
 
 		controller := testFakeClientForDeletion(
 			t,
@@ -558,8 +463,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
-		ecClient.EXPECT().DeleteEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+		testMockEnvironmentSettingsDelete(ecClient)
 
 		controller := testFakeClientForDeletion(
 			t,
@@ -635,8 +539,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		}
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
-		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+		testMockEnvironmentSettingsUpdate(ecClient)
 
 		controller := testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -653,37 +556,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 
-		edgeConnectCR, err := testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
-		require.NoError(t, err)
-		require.NotEmpty(t, edgeConnectCR.Finalizers)
-
-		ecOauthClientID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientID, ecOauthClientID)
-
-		ecOauthClientSecret, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientSecret, ecOauthClientSecret)
-
-		ecOauthResource, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthResource, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientResource, ecOauthResource)
-
-		ecID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
-		require.NoError(t, err)
-		assert.Equal(t, testCreatedID, ecID)
-
-		var ecDeployment appsv1.Deployment
-		err = controller.apiReader.Get(
-			t.Context(),
-			client.ObjectKey{
-				Name:      ec.Name,
-				Namespace: ec.Namespace,
-			},
-			&ecDeployment,
-		)
-		require.NoError(t, err)
-		assert.Equal(t, "edge-connect", ecDeployment.Spec.Template.Spec.Containers[0].Name)
+		testAssertCreatedEdgeConnect(t, controller, ec)
 	})
 
 	t.Run("k8s automation update", func(t *testing.T) {
@@ -883,6 +756,45 @@ func testGetEdgeConnectCR(t *testing.T, apiReader client.Reader, name string, na
 	)
 
 	return ec, err
+}
+
+func testAssertCreatedEdgeConnect(t *testing.T, controller *Controller, ec *edgeconnect.EdgeConnect) {
+	t.Helper()
+
+	ecCR, err := testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
+	require.NoError(t, err)
+	require.NotEmpty(t, ecCR.Finalizers)
+
+	ecOauthClientID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
+	require.NoError(t, err)
+	assert.Equal(t, testCreatedOauthClientID, ecOauthClientID)
+
+	ecOauthClientSecret, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
+	require.NoError(t, err)
+	assert.Equal(t, testCreatedOauthClientSecret, ecOauthClientSecret)
+
+	ecOauthResource, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthResource, log)
+	require.NoError(t, err)
+	assert.Equal(t, testCreatedOauthClientResource, ecOauthResource)
+
+	ecID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
+	require.NoError(t, err)
+	assert.Equal(t, testCreatedID, ecID)
+
+	var ecDeployment appsv1.Deployment
+	err = controller.apiReader.Get(t.Context(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, &ecDeployment)
+	require.NoError(t, err)
+	assert.Equal(t, "edge-connect", ecDeployment.Spec.Template.Spec.Containers[0].Name)
+}
+
+func testMockEnvironmentSettingsUpdate(ecClient *edgeconnectmock.Client) {
+	ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+	ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+}
+
+func testMockEnvironmentSettingsDelete(ecClient *edgeconnectmock.Client) {
+	ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+	ecClient.EXPECT().DeleteEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 }
 
 // testFakeClientNoVersionCheck builds a controller without a GetImageVersion mock expectation.
@@ -1114,8 +1026,7 @@ func testNewEdgeConnectClientUpdate(ecClient *edgeconnectmock.Client, fromHostPa
 
 	ecClient.EXPECT().UpdateEdgeConnect(mock.Anything, testCreatedID, edgeconnectClient.NewUpdateRequest(testName, toHostPatterns, testHostMappings, testCreatedOauthClientID)).Return(nil).Once()
 
-	ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
-	ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+	testMockEnvironmentSettingsUpdate(ecClient)
 
 	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, _ []byte) (edgeconnectClient.Client, error) {
 		return ecClient, nil
