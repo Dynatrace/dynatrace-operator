@@ -53,8 +53,8 @@ spec:
     spec:
       {{- include "dynatrace-operator.webhook.topologySpreadConstraints" . | nindent 6 }}
       volumes:
-      - emptyDir:
-          sizeLimit: {{ .Values.webhook.volumes.certsDir.sizeLimit }}
+      - secret:
+          secretName: my-app-tls
         name: certs-dir
       {{- include "dynatrace-operator.nodeAffinity" . | nindent 6 }}
       containers:

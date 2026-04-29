@@ -17,6 +17,8 @@ metadata:
   name: dynatrace-webhook
   labels:
   {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/inject-ca-from: "dynatrace/my-app-cert"
 webhooks:
   - admissionReviewVersions:
       - v1

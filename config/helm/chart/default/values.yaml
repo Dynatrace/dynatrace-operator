@@ -65,6 +65,7 @@ operator:
   startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
 
 webhook:
+  certManager: true
   hostNetwork: false
   ports:
     server: 8443
