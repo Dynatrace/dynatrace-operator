@@ -15,14 +15,14 @@ func TestGetK8sClusterME(t *testing.T) {
 	params := map[string]string{
 		validateOnlyQueryParam: "true",
 		pageSizeQueryParam:     entitiesPageSize,
-		schemaIDsQueryParam:    kubernetesSettingsSchemaID,
+		schemaIDsQueryParam:    KubernetesSettingsSchemaID,
 		fieldsQueryParam:       kubernetesSettingsNeededFields,
 		filterQueryParam:       "value.clusterId='uuid-1'",
 	}
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(getKubernetesObjectsResponse)).Run(func(obj any) {
 			target := obj.(*getKubernetesObjectsResponse)
@@ -39,8 +39,8 @@ func TestGetK8sClusterME(t *testing.T) {
 	})
 
 	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(getKubernetesObjectsResponse)).Return(errors.New("api error")).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
@@ -52,7 +52,7 @@ func TestGetK8sClusterME(t *testing.T) {
 	})
 
 	t.Run("empty kubeSystemUUID", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "")
 		require.ErrorIs(t, err, errMissingKubeSystemUUID)
@@ -60,8 +60,8 @@ func TestGetK8sClusterME(t *testing.T) {
 	})
 
 	t.Run("no settings returned", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(getKubernetesObjectsResponse)).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
@@ -77,8 +77,8 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{
 			validateOnlyQueryParam: "true",
 			schemaIDsQueryParam:    "schema-1",
@@ -97,7 +97,7 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 	})
 
 	t.Run("empty monitoredEntity.ID", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{}, "schema-1")
 		require.NoError(t, err)
@@ -110,8 +110,8 @@ func TestDeleteSettings(t *testing.T) {
 	objectID := "settings-object-123"
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().Execute(nil).Return(nil).Once()
 		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
 
@@ -121,8 +121,8 @@ func TestDeleteSettings(t *testing.T) {
 	})
 
 	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().Execute(nil).Return(errors.New("api error")).Once()
 		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
 
@@ -133,7 +133,7 @@ func TestDeleteSettings(t *testing.T) {
 	})
 
 	t.Run("empty objectID", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		client := NewClient(apiClient)
 		err := client.DeleteSettings(ctx, "")
 		require.Error(t, err)

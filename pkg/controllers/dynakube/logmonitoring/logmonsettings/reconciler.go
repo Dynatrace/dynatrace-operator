@@ -24,7 +24,7 @@ func NewReconciler() *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
 	if !dk.LogMonitoring().IsEnabled() {
 		_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
@@ -67,7 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.APIClient,
 	return nil
 }
 
-func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
 	log.Info("start reconciling log monitoring settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {

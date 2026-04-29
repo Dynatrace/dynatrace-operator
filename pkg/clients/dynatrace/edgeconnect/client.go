@@ -6,10 +6,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 )
 
-var _ APIClient = (*Client)(nil)
+var _ Client = (*ClientImpl)(nil)
 
-// APIClient is the interface for the Dynatrace EdgeConnect REST API Client.
-type APIClient interface {
+// Client is the interface for the Dynatrace EdgeConnect REST API client.
+type Client interface {
 	// GetEdgeConnect return details of single EdgeConnect
 	GetEdgeConnect(ctx context.Context, id string) (APIResponse, error)
 
@@ -38,12 +38,12 @@ type APIClient interface {
 	DeleteEnvironmentSetting(ctx context.Context, objectID string) error
 }
 
-type Client struct {
-	apiClient core.APIClient
+type ClientImpl struct {
+	apiClient core.Client
 }
 
-func NewClient(apiClient core.APIClient) *Client {
-	return &Client{
+func NewClient(apiClient core.Client) *ClientImpl {
+	return &ClientImpl{
 		apiClient: apiClient,
 	}
 }

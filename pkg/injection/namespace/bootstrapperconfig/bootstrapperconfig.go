@@ -28,13 +28,13 @@ import (
 // SecretGenerator manages the bootstrapper init secret generation for the user namespaces.
 type SecretGenerator struct {
 	client       client.Client
-	dtClient     oneagent.APIClient
+	dtClient     oneagent.Client
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
 	secrets      k8ssecret.QueryObject
 }
 
-func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient oneagent.APIClient) *SecretGenerator {
+func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient oneagent.Client) *SecretGenerator {
 	return &SecretGenerator{
 		client:       client,
 		dtClient:     dtClient,

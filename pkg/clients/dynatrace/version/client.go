@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 )
 
-type APIClient interface {
+type Client interface {
 	// GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
 	// Returns the version as received from the server on success.
 	//
@@ -22,12 +22,12 @@ type APIClient interface {
 	GetLatestActiveGateVersion(ctx context.Context, os string) (string, error)
 }
 
-type Client struct {
-	apiClient core.APIClient
+type ClientImpl struct {
+	apiClient core.Client
 }
 
-func NewClient(apiClient core.APIClient) *Client {
-	return &Client{
+func NewClient(apiClient core.Client) *ClientImpl {
+	return &ClientImpl{
 		apiClient: apiClient,
 	}
 }

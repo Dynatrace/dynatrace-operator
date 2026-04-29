@@ -28,7 +28,7 @@ const (
 // Returns:
 //   - The ETag value from the response header on success (HTTP 200), or the original etag on 304.
 //   - An error if the request failed. On HTTP 304, the error satisfies core.HasStatusCode(err, http.StatusNotModified).
-func (c *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error) {
+func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error) {
 	params := map[string]string{}
 	if kubernetesClusterID != "" {
 		params[parameterKubernetesClusterID] = kubernetesClusterID

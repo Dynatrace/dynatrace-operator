@@ -15,12 +15,12 @@ import (
 )
 
 type Reconciler struct {
-	dtClient     settings.APIClient
+	dtClient     settings.Client
 	dk           *dynakube.DynaKube
 	timeProvider *timeprovider.Provider
 }
 
-func NewReconciler(dtClient settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(dtClient settings.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &Reconciler{
 		dtClient:     dtClient,
 		dk:           dk,

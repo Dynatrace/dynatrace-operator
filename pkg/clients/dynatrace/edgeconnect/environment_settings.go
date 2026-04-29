@@ -37,7 +37,7 @@ type environmentSettingsResponse struct {
 }
 
 // ListEnvironmentSettings get environment settings
-func (c *Client) ListEnvironmentSettings(ctx context.Context) ([]EnvironmentSetting, error) {
+func (c *ClientImpl) ListEnvironmentSettings(ctx context.Context) ([]EnvironmentSetting, error) {
 	qp := map[string]string{
 		"schemaIds": KubernetesConnectionSchemaID,
 		"scopes":    KubernetesConnectionScope,
@@ -54,7 +54,7 @@ func (c *Client) ListEnvironmentSettings(ctx context.Context) ([]EnvironmentSett
 }
 
 // CreateEnvironmentSetting create environment setting
-func (c *Client) CreateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
+func (c *ClientImpl) CreateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
 	err := c.apiClient.POST(ctx, settingsObjectsPath).WithoutToken().WithJSONBody([]EnvironmentSetting{es}).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create environment setting")
@@ -64,7 +64,7 @@ func (c *Client) CreateEnvironmentSetting(ctx context.Context, es EnvironmentSet
 }
 
 // UpdateEnvironmentSetting update environment setting
-func (c *Client) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
+func (c *ClientImpl) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
 	if es.ObjectID == "" {
 		return errNoEnvSettingObjectID
 	}
@@ -78,7 +78,7 @@ func (c *Client) UpdateEnvironmentSetting(ctx context.Context, es EnvironmentSet
 }
 
 // DeleteEnvironmentSetting deletes environment setting
-func (c *Client) DeleteEnvironmentSetting(ctx context.Context, objectID string) error {
+func (c *ClientImpl) DeleteEnvironmentSetting(ctx context.Context, objectID string) error {
 	if objectID == "" {
 		return errNoEnvSettingObjectID
 	}

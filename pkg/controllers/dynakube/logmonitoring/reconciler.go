@@ -19,7 +19,7 @@ type subReconciler interface {
 }
 
 type logmonsettingsSubReconciler interface {
-	Reconcile(ctx context.Context, dtClient settings.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
 }
 
 type Reconciler struct {

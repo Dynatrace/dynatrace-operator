@@ -32,7 +32,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
 	if !dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), activeGateConnectionInfoConditionType) == nil {
 			return nil
@@ -58,7 +58,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.APIClient,
 	return err
 }
 
-func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.APIClient) error {
+func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client) error {
 	secretNamespacedName := types.NamespacedName{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace}
 
 	if !k8sconditions.IsOutdated(r.timeProvider, dk, activeGateConnectionInfoConditionType) {

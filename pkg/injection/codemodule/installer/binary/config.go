@@ -1,4 +1,4 @@
-package url
+package binary
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"

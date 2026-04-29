@@ -1,6 +1,7 @@
 package nodes
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -13,9 +14,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
-	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -104,7 +105,7 @@ func TestReconcile(t *testing.T) {
 			},
 		)
 
-		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient := hostclientmock.NewClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", &core.HTTPError{StatusCode: 404})
 
 		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
@@ -147,7 +148,7 @@ func TestReconcile(t *testing.T) {
 			},
 		)
 
-		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient := hostclientmock.NewClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("HOST-42", nil).Once()
 		hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
 			return e.EventType == hostevent.MarkedForTerminationEvent
@@ -239,7 +240,7 @@ func TestReconcile(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 
-		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient := hostclientmock.NewClient(t)
 		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 
 		reconcileAllNodes(t, ctrl, fakeClient)
@@ -259,7 +260,7 @@ func TestReconcile(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 
-		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient := hostclientmock.NewClient(t)
 		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", hostevent.EntityNotFoundError{IP: "1.2.3.4"})
 
 		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
@@ -300,6 +301,33 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, ctrl.pruneCache(ctx, nodesCache))
 	})
+
+	t.Run("Skip reconcile when platform token is detected", func(t *testing.T) {
+		fakeClient := fake.NewClient(
+			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: "skip-platform", Namespace: testNamespace},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						Instances: map[string]oneagent.Instance{
+							"node1": {},
+						},
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{Name: "skip-platform", Namespace: testNamespace},
+				Data: map[string][]byte{
+					token.APIKey: []byte(dttoken.PlatformPrefix + ".sometoken"),
+				},
+			},
+		)
+		ctrl := &Controller{apiReader: fakeClient, runLocal: true}
+
+		result, err := ctrl.Reconcile(t.Context(), createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.Equal(t, reconcile.Result{}, result)
+	})
 }
 
 func createReconcileRequest(nodeName string) reconcile.Request {
@@ -309,23 +337,20 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 }
 
 func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *dynatrace.Client) *Controller {
-	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDtcBuilder.EXPECT().SetDynakube(mock.MatchedBy(func(dynakube.DynaKube) bool { return true })).Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().SetTokens(mock.MatchedBy(func(token.Tokens) bool { return true })).Return(mockDtcBuilder)
-	mockDtcBuilder.EXPECT().Build(t.Context()).Return(dtClient, nil)
+	t.Helper()
 
 	return &Controller{
-		client:                 fakeClient,
-		apiReader:              fakeClient,
-		dynatraceClientBuilder: mockDtcBuilder,
-		podNamespace:           testNamespace,
-		runLocal:               true,
-		timeProvider:           timeprovider.New().Freeze(),
+		client:          fakeClient,
+		apiReader:       fakeClient,
+		dtClientFactory: newClientFactory(dtClient),
+		podNamespace:    testNamespace,
+		runLocal:        true,
+		timeProvider:    timeprovider.New().Freeze(),
 	}
 }
 
 func createDTMockClient(t *testing.T, ip, host string) *dynatrace.Client {
-	hostClient := hostclientmock.NewAPIClient(t)
+	hostClient := hostclientmock.NewClient(t)
 	hostClient.EXPECT().GetEntityIDForIP(t.Context(), ip).Return(host, nil)
 	hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
 		return e.EventType == hostevent.MarkedForTerminationEvent
@@ -385,4 +410,10 @@ func createDefaultFakeClient() client.Client {
 				token.APIKey: []byte(testAPIToken),
 			},
 		})
+}
+
+func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+		return dtClient, nil
+	}
 }

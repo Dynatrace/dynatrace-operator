@@ -23,7 +23,7 @@ import (
 )
 
 func TestAddPodAttributes(t *testing.T) {
-	validateAttributes := func(t *testing.T, request dtwebhook.MutationRequest) podattr.Attributes {
+	validateAttributes := func(t *testing.T, request dtwebhook.MutationRequest) {
 		t.Helper()
 
 		require.NotEmpty(t, request.InstallContainer.Args)
@@ -47,14 +47,10 @@ func TestAddPodAttributes(t *testing.T) {
 		assert.Contains(t, attr.NodeName, K8sNodeNameEnv)
 		assert.Equal(t, request.Pod.Namespace, attr.NamespaceName)
 
-		assertDeprecatedAttributes(t, attr)
-
 		require.Len(t, request.InstallContainer.Env, 3)
 		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodNameEnv))
 		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodUIDEnv))
 		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sNodeNameEnv))
-
-		return attr
 	}
 
 	t.Run("args and envs added", func(t *testing.T) {

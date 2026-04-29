@@ -9,7 +9,6 @@ import (
 	"testing/synctest"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,6 +20,14 @@ func TestNewCacheRoundTripper(t *testing.T) {
 		t.Helper()
 		r, err := http.NewRequest(method, rawURL, nil)
 		require.NoError(t, err)
+
+		return r
+	}
+
+	newCachedRequest := func(t *testing.T, method, rawURL string) *http.Request {
+		t.Helper()
+		r := newRequest(t, method, rawURL)
+		r.Header.Set(CacheRequestHeader, "true")
 
 		return r
 	}
@@ -51,34 +58,34 @@ func TestNewCacheRoundTripper(t *testing.T) {
 			fakeResponse("hello"),
 		)
 
-		resp1, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		resp1, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		body1, _ := io.ReadAll(resp1.Body)
 		assert.Equal(t, "hello", string(body1))
 		assert.Equal(t, 1, *calls)
 
-		resp2, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		resp2, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		body2, _ := io.ReadAll(resp2.Body)
 		assert.Equal(t, "hello", string(body2))
 		assert.Equal(t, 1, *calls, "second call must hit cache, not backend")
 	})
 
-	t.Run("non-GET requests bypass cache", func(t *testing.T) {
+	t.Run("requests without CacheRequestHeader bypass cache", func(t *testing.T) {
 		rt, calls := makeCachedRT(t, time.Minute,
 			fakeResponse("r1"),
 			fakeResponse("r2"),
 		)
 
-		_, err := rt.RoundTrip(newRequest(t, http.MethodPost, endpoint))
+		_, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
-		_, err = rt.RoundTrip(newRequest(t, http.MethodPost, endpoint))
+		_, err = rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 
-		assert.Equal(t, 2, *calls, "POST must always reach backend")
+		assert.Equal(t, 2, *calls, "requests without CacheRequestHeader must always reach backend")
 	})
 
-	t.Run("CacheSkipHeader bypasses cache and evicts existing entry", func(t *testing.T) {
+	t.Run("requests without CacheRequestHeader evict cached entries", func(t *testing.T) {
 		rt, calls := makeCachedRT(t, time.Minute,
 			fakeResponse("r1"),
 			fakeResponse("r2"),
@@ -86,19 +93,17 @@ func TestNewCacheRoundTripper(t *testing.T) {
 		)
 
 		// Populate cache
-		_, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		_, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		assert.Equal(t, 1, *calls)
 
-		// Call with skip header — evicts cached entry and calls backend
-		req2 := newRequest(t, http.MethodGet, endpoint)
-		req2.Header.Set(core.CacheSkipHeader, "true")
-		_, err = rt.RoundTrip(req2)
-		require.NoError(t, err)
-		assert.Equal(t, 2, *calls, "skip header must bypass the cache")
-
-		// Next call without skip — cache was evicted, backend is called again
+		// Call without CacheRequestHeader — evicts the cached entry and calls backend
 		_, err = rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		require.NoError(t, err)
+		assert.Equal(t, 2, *calls, "request without CacheRequestHeader must bypass cache")
+
+		// Next call with CacheRequestHeader — cache was evicted, backend is called again
+		_, err = rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		assert.Equal(t, 3, *calls, "evicted entry must not be served from cache")
 	})
@@ -109,31 +114,12 @@ func TestNewCacheRoundTripper(t *testing.T) {
 			fakeResponse("r2"),
 		)
 
-		_, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		_, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
-		_, err = rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		_, err = rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 
 		assert.Equal(t, 2, *calls, "zero TTL must bypass cache")
-	})
-
-	t.Run("octet-stream Accept header bypasses cache", func(t *testing.T) {
-		rt, calls := makeCachedRT(t, time.Minute,
-			fakeResponse("bin1"),
-			fakeResponse("bin2"),
-		)
-
-		req1 := newRequest(t, http.MethodGet, endpoint)
-		req1.Header.Set("Accept", "application/octet-stream")
-		_, err := rt.RoundTrip(req1)
-		require.NoError(t, err)
-
-		req2 := newRequest(t, http.MethodGet, endpoint)
-		req2.Header.Set("Accept", "application/octet-stream")
-		_, err = rt.RoundTrip(req2)
-		require.NoError(t, err)
-
-		assert.Equal(t, 2, *calls, "octet-stream requests must bypass cache")
 	})
 
 	t.Run("different URLs have separate cache entries", func(t *testing.T) {
@@ -142,11 +128,11 @@ func TestNewCacheRoundTripper(t *testing.T) {
 			fakeResponse("url-b"),
 		)
 
-		resp1, err := rt.RoundTrip(newRequest(t, http.MethodGet, "http://api.example.com/v1/a"))
+		resp1, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, "http://api.example.com/v1/a"))
 		require.NoError(t, err)
 		body1, _ := io.ReadAll(resp1.Body)
 
-		resp2, err := rt.RoundTrip(newRequest(t, http.MethodGet, "http://api.example.com/v1/b"))
+		resp2, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, "http://api.example.com/v1/b"))
 		require.NoError(t, err)
 		body2, _ := io.ReadAll(resp2.Body)
 
@@ -161,13 +147,13 @@ func TestNewCacheRoundTripper(t *testing.T) {
 			fakeResponse("token-xyz"),
 		)
 
-		req1 := newRequest(t, http.MethodGet, endpoint)
+		req1 := newCachedRequest(t, http.MethodGet, endpoint)
 		req1.Header.Set("Authorization", "Api-Token abc")
 		resp1, err := rt.RoundTrip(req1)
 		require.NoError(t, err)
 		body1, _ := io.ReadAll(resp1.Body)
 
-		req2 := newRequest(t, http.MethodGet, endpoint)
+		req2 := newCachedRequest(t, http.MethodGet, endpoint)
 		req2.Header.Set("Authorization", "Api-Token xyz")
 		resp2, err := rt.RoundTrip(req2)
 		require.NoError(t, err)
@@ -185,12 +171,12 @@ func TestNewCacheRoundTripper(t *testing.T) {
 				fakeResponse("second"),
 			)
 
-			_, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+			_, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 			require.NoError(t, err)
 
 			time.Sleep(time.Minute + time.Second)
 
-			resp2, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+			resp2, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 			require.NoError(t, err)
 			body2, _ := io.ReadAll(resp2.Body)
 
@@ -202,11 +188,11 @@ func TestNewCacheRoundTripper(t *testing.T) {
 	t.Run("cached response body can be read independently on each call", func(t *testing.T) {
 		rt, _ := makeCachedRT(t, time.Minute, fakeResponse("body-content"))
 
-		resp1, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		resp1, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		body1, _ := io.ReadAll(resp1.Body)
 
-		resp2, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		resp2, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		body2, _ := io.ReadAll(resp2.Body)
 
@@ -218,17 +204,17 @@ func TestNewCacheRoundTripper(t *testing.T) {
 		rt, _ := makeCachedRT(t, time.Minute, fakeResponse("data"))
 
 		// First call — backend response, header must NOT be set
-		req1 := newRequest(t, http.MethodGet, endpoint)
+		req1 := newCachedRequest(t, http.MethodGet, endpoint)
 		resp1, err := rt.RoundTrip(req1)
 		require.NoError(t, err)
-		assert.Empty(t, resp1.Header.Get(core.CacheHitHeader), "first (uncached) response must not have cache-hit header")
+		assert.Empty(t, resp1.Header.Get(CacheHitHeader), "first (uncached) response must not have cache-hit header")
 		assert.Same(t, req1, resp1.Request)
 
 		// Second call — served from cache, header must be set + its Request must point to req2, not req1
-		req2 := newRequest(t, http.MethodGet, endpoint)
+		req2 := newCachedRequest(t, http.MethodGet, endpoint)
 		resp2, err := rt.RoundTrip(req2)
 		require.NoError(t, err)
-		assert.Equal(t, "true", resp2.Header.Get(core.CacheHitHeader), "cached response must have cache-hit header")
+		assert.Equal(t, "true", resp2.Header.Get(CacheHitHeader), "cached response must have cache-hit header")
 		assert.Same(t, req2, resp2.Request, "cached response must carry the request that triggered the cache hit")
 		assert.NotSame(t, req1, resp2.Request, "cached response must not carry the original request that populated the cache")
 	})
@@ -237,17 +223,33 @@ func TestNewCacheRoundTripper(t *testing.T) {
 		rt, _ := makeCachedRT(t, time.Minute, fakeResponse("data"))
 
 		// Populate cache
-		_, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		_, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 
 		// Two independent cache-hit responses should each have the header
-		resp2, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		resp2, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
-		assert.Equal(t, "true", resp2.Header.Get(core.CacheHitHeader))
+		assert.Equal(t, "true", resp2.Header.Get(CacheHitHeader))
 
-		resp3, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		resp3, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
-		assert.Equal(t, "true", resp3.Header.Get(core.CacheHitHeader))
+		assert.Equal(t, "true", resp3.Header.Get(CacheHitHeader))
+	})
+
+	t.Run("response has CacheKeyHeader set for invalidation", func(t *testing.T) {
+		rt, _ := makeCachedRT(t, time.Minute, fakeResponse("data"))
+
+		// Fresh response must carry the cache key
+		req1 := newCachedRequest(t, http.MethodGet, endpoint)
+		resp1, err := rt.RoundTrip(req1)
+		require.NoError(t, err)
+		assert.NotEmpty(t, resp1.Header.Get(CacheKeyHeader), "fresh response must have CacheKeyHeader set")
+
+		// Cached response must carry the same cache key
+		req2 := newCachedRequest(t, http.MethodGet, endpoint)
+		resp2, err := rt.RoundTrip(req2)
+		require.NoError(t, err)
+		assert.Equal(t, resp1.Header.Get(CacheKeyHeader), resp2.Header.Get(CacheKeyHeader), "cached response must have same CacheKeyHeader")
 	})
 
 	t.Run("zero TTL removes a previously cached entry", func(t *testing.T) {
@@ -264,23 +266,23 @@ func TestNewCacheRoundTripper(t *testing.T) {
 
 		// First: cache the response with a non-zero TTL
 		rtWithTTL := NewCacheRoundTripper(fake, time.Minute)
-		_, err := rtWithTTL.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		_, err := rtWithTTL.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		assert.Equal(t, 1, calls)
 
 		// Second call hits cache, not backend
-		_, err = rtWithTTL.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		_, err = rtWithTTL.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		assert.Equal(t, 1, calls, "second call must hit cache")
 
 		// Now use zero TTL — the cached entry must be removed and the backend must be called
 		rtNoTTL := NewCacheRoundTripper(fake, 0)
-		_, err = rtNoTTL.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		_, err = rtNoTTL.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		assert.Equal(t, 2, calls, "zero TTL must remove cached entry and call backend")
 
 		// Restore a non-zero TTL; since the entry was removed, the backend is called again
-		_, err = rtWithTTL.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		_, err = rtWithTTL.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		assert.Equal(t, 3, calls, "after removal, next non-zero TTL call must hit backend again")
 	})
@@ -302,7 +304,7 @@ func TestNewCacheRoundTripper(t *testing.T) {
 		})
 
 		rt := NewCacheRoundTripper(fake, time.Minute)
-		resp, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		resp, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err, "round trip must not return an error even if caching fails")
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -317,43 +319,40 @@ func TestNewCacheRoundTripper(t *testing.T) {
 		})
 		rt2 := NewCacheRoundTripper(fake2, time.Minute)
 		// populate fresh cache for same key
-		_, err = rt2.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		_, err = rt2.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		assert.Equal(t, 1, calls, "backend must be called because previous set failed")
 	})
 
-	t.Run("error responses are not cached", func(t *testing.T) {
+	t.Run("all successful transport responses are cached regardless of status code", func(t *testing.T) {
 		_ = freshCache(t)
 
 		calls := 0
 		errorResp := &http.Response{
 			StatusCode: http.StatusInternalServerError,
+			Header:     make(http.Header),
 			Body:       io.NopCloser(bytes.NewBufferString("error")),
 		}
-		successResp := fakeResponse("ok")
 
 		fake := roundTripperFunc(func(r *http.Request) (*http.Response, error) {
 			calls++
 			errorResp.Request = r
-			successResp.Request = r
-			if calls == 1 {
-				return errorResp, nil
-			}
 
-			return successResp, nil
+			return errorResp, nil
 		})
 
 		rt := NewCacheRoundTripper(fake, time.Minute)
 
-		resp1, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		resp1, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusInternalServerError, resp1.StatusCode)
+		assert.Equal(t, 1, calls)
 
-		resp2, err := rt.RoundTrip(newRequest(t, http.MethodGet, endpoint))
+		// Second call — 500 is served from cache; caller is responsible for invalidation
+		resp2, err := rt.RoundTrip(newCachedRequest(t, http.MethodGet, endpoint))
 		require.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp2.StatusCode)
-
-		assert.Equal(t, 2, calls, "error response must not be cached; second call must reach backend")
+		assert.Equal(t, http.StatusInternalServerError, resp2.StatusCode)
+		assert.Equal(t, 1, calls, "500 response must be served from cache; use InvalidateCacheEntry to evict")
 	})
 }
 func TestBuildCacheKey(t *testing.T) {

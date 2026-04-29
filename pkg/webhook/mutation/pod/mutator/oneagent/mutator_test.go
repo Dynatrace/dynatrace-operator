@@ -286,6 +286,47 @@ func TestIsSelfExtractingImage(t *testing.T) {
 	}
 }
 
+func TestValidateInstallPath(t *testing.T) {
+	t.Run("can't be just root", func(t *testing.T) {
+		require.Error(t, validateInstallPath("/"))
+	})
+
+	t.Run("relative install path is rejected", func(t *testing.T) {
+		require.Error(t, validateInstallPath("relative/path"))
+	})
+
+	t.Run("install path with separator is rejected", func(t *testing.T) {
+		for _, path := range []string{
+			"/valid/path,/injected/path",
+			"/valid/path:/other",
+			"/valid/path\x00/other",
+		} {
+			require.Error(t, validateInstallPath(path))
+		}
+	})
+
+	t.Run("install path with whitespace is rejected", func(t *testing.T) {
+		for _, path := range []string{
+			"/valid/path\n/injected/path",
+			"/valid/path\r/other",
+			"/valid/path\t/other",
+			"/valid/path\x00/other",
+		} {
+			require.Error(t, validateInstallPath(path))
+		}
+	})
+
+	t.Run("unclean install path is rejected", func(t *testing.T) {
+		require.Error(t, validateInstallPath("/valid/../path"))
+	})
+
+	// Valid but rejected: spaces in paths are indistinguishable from
+	// whitespace separators in ld.so.preload, so we treat them as invalid.
+	t.Run("path with space is rejected despite being a valid linux path", func(t *testing.T) {
+		require.Error(t, validateInstallPath("/opt/my agent/dynatrace"))
+	})
+}
+
 func TestMutate(t *testing.T) {
 	mut := NewMutator()
 
@@ -308,7 +349,7 @@ func TestMutate(t *testing.T) {
 		assert.True(t, mut.IsInjected(request.BaseRequest))
 	})
 	t.Run("install-path respected", func(t *testing.T) {
-		expectedInstallPath := "my-install"
+		expectedInstallPath := "/my-install"
 		request := createTestMutationRequestWithoutInjectedContainers()
 		request.Pod.Annotations = map[string]string{
 			AnnotationInstallPath: expectedInstallPath,
@@ -337,6 +378,28 @@ func TestMutate(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.True(t, mut.IsInjected(request.BaseRequest))
+	})
+
+	t.Run("install-path with separator => error", func(t *testing.T) {
+		request := createTestMutationRequestWithoutInjectedContainers()
+		request.Pod.Annotations = map[string]string{
+			AnnotationInstallPath: "my:install",
+		}
+
+		err := mut.Mutate(request)
+		require.ErrorAs(t, err, new(dtwebhook.MutatorError))
+		assert.False(t, mut.IsInjected(request.BaseRequest))
+	})
+
+	t.Run("install-path with whitespace => error", func(t *testing.T) {
+		request := createTestMutationRequestWithoutInjectedContainers()
+		request.Pod.Annotations = map[string]string{
+			AnnotationInstallPath: "my install",
+		}
+
+		err := mut.Mutate(request)
+		require.ErrorAs(t, err, new(dtwebhook.MutatorError))
+		assert.False(t, mut.IsInjected(request.BaseRequest))
 	})
 
 	t.Run("no tenantUUID + cloudnative => error", func(t *testing.T) {
@@ -388,7 +451,7 @@ func TestReinvoke(t *testing.T) {
 	})
 
 	t.Run("install-path respected", func(t *testing.T) {
-		expectedInstallPath := "my-install"
+		expectedInstallPath := "/my-install"
 		request := createTestMutationRequestWithoutInjectedContainers()
 		request.Pod.Annotations = map[string]string{
 			AnnotationInstallPath: expectedInstallPath,
@@ -408,6 +471,16 @@ func TestReinvoke(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers()
 		for i := range request.Pod.Spec.Containers {
 			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
+		}
+
+		updated := mut.Reinvoke(request.ToReinvocationRequest())
+		require.False(t, updated)
+	})
+
+	t.Run("incorrect install-path => no update", func(t *testing.T) {
+		request := createTestMutationRequestWithoutInjectedContainers()
+		request.Pod.Annotations = map[string]string{
+			AnnotationInstallPath: "my install",
 		}
 
 		updated := mut.Reinvoke(request.ToReinvocationRequest())

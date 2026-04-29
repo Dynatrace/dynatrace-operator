@@ -28,12 +28,11 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
@@ -51,7 +50,7 @@ const (
 	longRequeueDuration    = 30 * time.Minute
 )
 
-type urlInstallerBuilder func(oneagent.APIClient, *url.Properties) installer.Installer
+type binaryInstallerBuilder func(oneagent.Client, *binary.Properties) installer.Installer
 type imageInstallerBuilder func(context.Context, *image.Properties) (installer.Installer, error)
 type jobInstallerBuilder func(context.Context, *job.Properties) installer.Installer
 
@@ -60,12 +59,11 @@ type OneAgentProvisioner struct {
 	apiReader  client.Reader
 	kubeClient client.Client
 
-	dynatraceClientBuilder dynatraceclient.Builder
-	urlInstallerBuilder    urlInstallerBuilder
-	imageInstallerBuilder  imageInstallerBuilder
-	jobInstallerBuilder    jobInstallerBuilder
-	cleaner                *cleanup.Cleaner
-	path                   metadata.PathResolver
+	urlInstallerBuilder   binaryInstallerBuilder
+	imageInstallerBuilder imageInstallerBuilder
+	jobInstallerBuilder   jobInstallerBuilder
+	cleaner               *cleanup.Cleaner
+	path                  metadata.PathResolver
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -73,14 +71,13 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 	path := metadata.PathResolver{RootDir: opts.RootDir}
 
 	return &OneAgentProvisioner{
-		apiReader:              mgr.GetAPIReader(),
-		kubeClient:             mgr.GetClient(),
-		path:                   path,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
-		urlInstallerBuilder:    url.NewURLInstaller,
-		imageInstallerBuilder:  image.NewImageInstaller,
-		jobInstallerBuilder:    job.NewInstaller,
-		cleaner:                cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
+		apiReader:             mgr.GetAPIReader(),
+		kubeClient:            mgr.GetClient(),
+		path:                  path,
+		urlInstallerBuilder:   binary.NewInstaller,
+		imageInstallerBuilder: image.NewImageInstaller,
+		jobInstallerBuilder:   job.NewInstaller,
+		cleaner:               cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
 	}
 }
 
@@ -123,7 +120,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.cleaner.Run(ctx)
 	}
 
-	err = provisioner.setupFileSystem(dk)
+	err = provisioner.setupFileSystem(&dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -142,7 +139,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 
-	err = provisioner.installAgent(ctx, dk)
+	err = provisioner.installAgent(ctx, &dk)
 
 	switch {
 	case errors.Is(err, errNotReady):
@@ -167,7 +164,7 @@ func isProvisionerNeeded(dk *dynakube.DynaKube) bool {
 	return dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsReadOnlyFSSupported()
 }
 
-func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) error {
+func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynakube.DynaKube) error {
 	dynakubeDir := provisioner.path.DynaKubeDir(dk.GetName())
 	if err := os.MkdirAll(dynakubeDir, 0755); err != nil {
 		return errors.WithMessagef(err, "failed to create directory %s", dynakubeDir)
@@ -181,19 +178,15 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) er
 	return nil
 }
 
-func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube.DynaKube) (*dynatrace.Client, error) {
-	tokenReader := token.NewReader(provisioner.apiReader, &dk)
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
+	tokenReader := token.NewReader(provisioner.apiReader, dk)
 
 	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	dtClient, err := provisioner.dynatraceClientBuilder.
-		SetDynakube(dk).
-		SetTokens(tokens).
-		SetUserAgentSuffix("provisioner").
-		Build(ctx)
+	dtClient, err := dynatrace.NewClientFromDynakube(ctx, provisioner.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "provisioner")
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create Dynatrace client")
 	}

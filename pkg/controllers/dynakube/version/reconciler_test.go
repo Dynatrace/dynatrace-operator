@@ -53,7 +53,7 @@ func TestReconcile(t *testing.T) {
 	}
 
 	t.Run("no update if hash provider returns error", func(t *testing.T) {
-		versionClient := versionclientmock.NewAPIClient(t)
+		versionClient := versionclientmock.NewClient(t)
 		versionClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return("", errors.New("Something wrong happened"))
 
 		versionReconciler := reconciler{
@@ -78,7 +78,7 @@ func TestReconcile(t *testing.T) {
 		setupPullSecret(t, fakeClient, *dk)
 
 		dkStatus := &dk.Status
-		versionClient := versionclientmock.NewAPIClient(t)
+		versionClient := versionclientmock.NewClient(t)
 
 		mockLatestAgentVersion(versionClient, latestAgentVersion, 3)
 		mockLatestActiveGateVersion(versionClient, latestActiveGateVersion)
@@ -124,7 +124,7 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 	t.Run("empty version info + failing reconcile => return error", func(t *testing.T) {
 		versionReconciler := reconciler{
-			dtClient:     versionclientmock.NewAPIClient(t),
+			dtClient:     versionclientmock.NewClient(t),
 			apiReader:    fake.NewClient(),
 			timeProvider: timeprovider.New().Freeze(),
 		}
@@ -134,7 +134,7 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 	t.Run("version info (.Version) set + failing reconcile => return nil", func(t *testing.T) {
 		versionReconciler := reconciler{
-			dtClient:     versionclientmock.NewAPIClient(t),
+			dtClient:     versionclientmock.NewClient(t),
 			apiReader:    fake.NewClient(),
 			timeProvider: timeprovider.New().Freeze(),
 		}
@@ -144,7 +144,7 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 	t.Run("version info (.ImageID) set + failing reconcile => return nil", func(t *testing.T) {
 		versionReconciler := reconciler{
-			dtClient:     versionclientmock.NewAPIClient(t),
+			dtClient:     versionclientmock.NewClient(t),
 			apiReader:    fake.NewClient(),
 			timeProvider: timeprovider.New().Freeze(),
 		}
@@ -311,10 +311,10 @@ func setOneAgentCustomImageStatus(dk *dynakube.DynaKube, image string) {
 	dk.Status.OneAgent.ImageID = image
 }
 
-func mockLatestAgentVersion(mockClient *versionclientmock.APIClient, latestVersion string, expectedCalls int) {
+func mockLatestAgentVersion(mockClient *versionclientmock.Client, latestVersion string, expectedCalls int) {
 	mockClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.Anything, mock.Anything).Return(latestVersion, nil).Times(expectedCalls)
 }
 
-func mockLatestActiveGateVersion(mockClient *versionclientmock.APIClient, latestVersion string) {
+func mockLatestActiveGateVersion(mockClient *versionclientmock.Client, latestVersion string) {
 	mockClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return(latestVersion, nil).Once()
 }

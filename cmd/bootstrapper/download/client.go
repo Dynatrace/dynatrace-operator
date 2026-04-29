@@ -8,16 +8,16 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 )
 
 type Client struct {
-	newInstaller url.NewFunc
+	newInstaller binary.NewFunc
 }
 
 type Option func(*Client)
 
-func WithInstaller(builder url.NewFunc) Option {
+func WithInstaller(builder binary.NewFunc) Option {
 	return func(cl *Client) {
 		cl.newInstaller = builder
 	}
@@ -25,7 +25,7 @@ func WithInstaller(builder url.NewFunc) Option {
 
 func New(options ...Option) *Client {
 	cl := &Client{
-		newInstaller: url.NewURLInstaller,
+		newInstaller: binary.NewInstaller,
 	}
 
 	for _, opt := range options {
@@ -35,7 +35,7 @@ func New(options ...Option) *Client {
 	return cl
 }
 
-func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, props url.Properties) error {
+func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, props binary.Properties) error {
 	dtClient, err := cl.createDTClientFromFs(inputDir)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, pro
 	return err
 }
 
-func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, error) {
+func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.Client, error) {
 	config, err := configFromFs(inputDir)
 	if err != nil {
 		return nil, err

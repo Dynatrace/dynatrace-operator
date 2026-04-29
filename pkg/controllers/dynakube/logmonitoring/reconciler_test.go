@@ -59,7 +59,7 @@ func TestReconcile(t *testing.T) {
 		passDaemonSet := newMockSubReconciler(t)
 		passDaemonSet.EXPECT().Reconcile(t.Context(), dk).Return(nil).Once()
 
-		dtClient := &dynatrace.Client{Settings: &settings.Client{}}
+		dtClient := &dynatrace.Client{Settings: settings.NewClient(nil)}
 
 		passLogMonSetting := newMockLogmonsettingsSubReconciler(t)
 		passLogMonSetting.EXPECT().Reconcile(t.Context(), dtClient.Settings, dk).Return(nil).Once()

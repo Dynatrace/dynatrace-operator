@@ -33,8 +33,8 @@ const (
 )
 
 func TestGetProcessModuleConfig(t *testing.T) {
-	setupMockedClient := func(t *testing.T, param map[string]string, hostGroup string, response string, err error) *Client {
-		req := coremock.NewAPIRequest(t)
+	setupMockedClient := func(t *testing.T, param map[string]string, hostGroup string, response string, err error) *ClientImpl {
+		req := coremock.NewRequest(t)
 		req.EXPECT().
 			WithQueryParams(param).
 			Return(req).
@@ -50,10 +50,10 @@ func TestGetProcessModuleConfig(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(err).Once()
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), processModuleConfigPath).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().GET(t.Context(), processModuleConfigPath).Return(req).Once()
 
-		return NewClient(client, hostGroup, "")
+		return NewClient(coreClient, hostGroup, "")
 	}
 
 	ctx := t.Context()

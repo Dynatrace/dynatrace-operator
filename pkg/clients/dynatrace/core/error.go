@@ -54,7 +54,7 @@ func HasStatusCode(err error, statusCode int) bool {
 	return StatusCode(err) == statusCode
 }
 
-// IsBadRequest checks if the given error represents an HTTP 400 Bad Request error
+// IsBadRequest checks if the given error represents an HTTP 400 Bad request error
 func IsBadRequest(err error) bool {
 	return HasStatusCode(err, http.StatusBadRequest)
 }

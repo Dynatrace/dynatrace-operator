@@ -122,12 +122,12 @@ func TestReconciler(t *testing.T) {
 			}),
 			dk,
 		)
-		oneAgentClient := oneagentclientmock.NewAPIClient(t)
+		oneAgentClient := oneagentclientmock.NewClient(t)
 		oneAgentClient.EXPECT().GetConnectionInfo(t.Context()).Return(expectedOneAgentConnectionInfo, nil).Once()
-		versionClient := versionclientmock.NewAPIClient(t)
+		versionClient := versionclientmock.NewClient(t)
 		versionClient.EXPECT().GetLatestAgentVersion(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
-		settingsClient := settingsmock.NewAPIClient(t)
+		settingsClient := settingsmock.NewClient(t)
 		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
@@ -177,7 +177,7 @@ func TestReconciler(t *testing.T) {
 			}),
 			dk,
 		)
-		settingsClient := settingsmock.NewAPIClient(t)
+		settingsClient := settingsmock.NewClient(t)
 		dtClient := &dynatrace.Client{Settings: settingsClient}
 
 		rec := NewReconciler(clt, clt)
@@ -228,8 +228,8 @@ func TestReconciler(t *testing.T) {
 		fakeReconciler := createReconcilerMock(t)
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
-		oneAgentClient := oneagentclientmock.NewAPIClient(t)
-		settingsClient := settingsmock.NewAPIClient(t)
+		oneAgentClient := oneagentclientmock.NewClient(t)
+		settingsClient := settingsmock.NewClient(t)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient}
@@ -414,7 +414,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			tenantSecret,
 		)
 
-		oneAgentClient := oneagentclientmock.NewAPIClient(t)
+		oneAgentClient := oneagentclientmock.NewClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
@@ -482,7 +482,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 			autoTLSSecret,
 		)
 
-		oneAgentClient := oneagentclientmock.NewAPIClient(t)
+		oneAgentClient := oneagentclientmock.NewClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
