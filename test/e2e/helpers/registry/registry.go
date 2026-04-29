@@ -3,17 +3,24 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
+	"os"
 	"regexp"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/mod/semver"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -22,40 +29,62 @@ const (
 	cmPublicECR = "public.ecr.aws/dynatrace/dynatrace-codemodules"
 )
 
-var (
-	latestActiveGateURI string
-	latestOneAgentURI   string
-	latestCodeModuleURI string
+const (
+	agImageEnv = "E2E_AG_IMAGE"
+	oaImageEnv = "E2E_OA_IMAGE"
+	cmImageEnv = "E2E_ECR_CODEMODULES_IMAGE"
 )
+
+var latestImageURIs = map[string]string{}
+
+// GetLatestImageURI returns the image URI for the given repository.
+// If the envVar is set, its value is returned directly.
+// Otherwise the latest tag is resolved from the registry and cached per repo for the lifetime of the test binary.
+func GetLatestImageURI(t *testing.T, repoURI string, envVar string) string {
+	t.Helper()
+
+	val := os.Getenv(envVar)
+	if val != "" {
+		t.Logf("using image from env %s: %s", envVar, val)
+
+		return val
+	}
+
+	if uri, ok := latestImageURIs[repoURI]; ok {
+		t.Logf("using cached resolved newest image: %s", uri)
+
+		return uri
+	}
+
+	uri := getLatestImageURI(t, repoURI)
+	latestImageURIs[repoURI] = uri
+	t.Logf("resolved newest image: %s", uri)
+
+	return uri
+}
 
 func GetLatestActiveGateImageURI(t *testing.T) string {
 	t.Helper()
 
-	if latestActiveGateURI == "" {
-		latestActiveGateURI = getLatestImageURI(t, agPublicECR)
-	}
-
-	return latestActiveGateURI
+	return GetLatestImageURI(t, agPublicECR, agImageEnv)
 }
 
 func GetLatestOneAgentImageURI(t *testing.T) string {
 	t.Helper()
 
-	if latestOneAgentURI == "" {
-		latestOneAgentURI = getLatestImageURI(t, oaPublicECR)
-	}
-
-	return latestOneAgentURI
+	return GetLatestImageURI(t, oaPublicECR, oaImageEnv)
 }
 
 func GetLatestCodeModulesImageURI(t *testing.T) string {
 	t.Helper()
 
-	if latestCodeModuleURI == "" {
-		latestCodeModuleURI = getLatestImageURI(t, cmPublicECR)
-	}
+	return GetLatestImageURI(t, cmPublicECR, cmImageEnv)
+}
 
-	return latestCodeModuleURI
+func isRateLimited(err error) bool {
+	var transportErr *transport.Error
+
+	return errors.As(err, &transportErr) && transportErr.StatusCode == http.StatusTooManyRequests
 }
 
 func getLatestImageURI(t *testing.T, repoURI string) string {
@@ -64,7 +93,24 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 	repo, err := name.NewRepository(repoURI)
 	require.NoError(t, err)
 
-	tags, err := remote.List(repo)
+	backoff := wait.Backoff{
+		Steps:    3,
+		Duration: 5 * time.Second,
+		Factor:   2.0,
+	}
+
+	var tags []string
+
+	err = retry.OnError(backoff, isRateLimited, func() error {
+		var listErr error
+		tags, listErr = remote.List(repo)
+		if listErr != nil {
+			t.Logf("rate limited listing tags for %s, retrying...", repoURI)
+		}
+
+		return listErr
+	})
+	require.NoError(t, err)
 
 	// We should skip tags that are technology-specific or sha digests,
 	// e.g., "latest", "1.327.30.20251107-111521-python", "sha256:abcd1234..."
@@ -82,7 +128,8 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 
 		return semver.Compare(semverA, semverB)
 	})
-	require.NoError(t, err)
+
+	require.NotEmpty(t, filteredTags, "no valid semver tags found for %s", repoURI)
 
 	return fmt.Sprintf("%s:%s", repoURI, filteredTags[len(filteredTags)-1])
 }

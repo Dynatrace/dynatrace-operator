@@ -23,7 +23,7 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKSPM(),
-		componentDynakube.WithKSPMImageRef(),
+		componentDynakube.WithKSPMImageRef(t),
 		componentDynakube.WithActiveGate(),
 	}
 
@@ -56,7 +56,7 @@ func OptionalScopes(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKSPM(),
-		componentDynakube.WithKSPMImageRef(),
+		componentDynakube.WithKSPMImageRef(t),
 		componentDynakube.WithActiveGate(),
 	}
 
