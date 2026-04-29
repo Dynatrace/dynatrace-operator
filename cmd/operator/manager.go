@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
@@ -34,9 +33,9 @@ func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 		funcs = append(funcs, nodes.Add)
 	}
 
-	if !isOLM {
-		funcs = append(funcs, certificates.Add)
-	}
+	//if !isOLM {
+	//	funcs = append(funcs, certificates.Add)
+	//}
 
 	return funcs
 }

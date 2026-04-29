@@ -7,3 +7,6 @@ kind: Kustomization
 patches:
 - path: patches/webhook_in_dynakubes.yaml
 - path: patches/webhook_in_edgeconnects.yaml
+- path: patches/manager_webhook_patch.yaml
+  target:
+    kind: Deployment

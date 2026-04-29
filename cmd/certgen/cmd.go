@@ -4,10 +4,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,8 +35,8 @@ func run(cmd *cobra.Command, args []string) error {
 	if err := checkCRDs(clt); err != nil {
 		return err
 	}
-
-	return certificates.InitReconcile(cmd.Context(), clt, k8senv.DefaultNamespace())
+	return nil
+	//return certificates.InitReconcile(cmd.Context(), clt, k8senv.DefaultNamespace())
 }
 
 func checkCRDs(clt client.Client) error {

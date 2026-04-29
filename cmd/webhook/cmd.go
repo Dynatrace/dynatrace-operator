@@ -3,7 +3,6 @@ package webhook
 import (
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/webhook/certificates"
 	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	edgeconnectvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -11,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	namespacemutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace"
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
 	"github.com/pkg/errors"
@@ -126,12 +124,12 @@ func run(cmd *cobra.Command, args []string) error {
 
 func startCertificateWatcher(webhookManager manager.Manager, namespace string) error {
 	if !system.IsDeployedViaOLM() {
-		watcher, err := certificates.NewCertificateWatcher(webhookManager, namespace, webhook.SecretCertsName)
-		if err != nil {
-			return err
-		}
-
-		watcher.WaitForCertificates()
+		//watcher, err := certificates.NewCertificateWatcher(webhookManager, namespace, webhook.SecretCertsName)
+		//if err != nil {
+		//	return err
+		//}
+		//
+		//watcher.WaitForCertificates()
 	}
 
 	return nil
