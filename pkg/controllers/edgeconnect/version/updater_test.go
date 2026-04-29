@@ -1,6 +1,7 @@
 package version
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -20,6 +21,8 @@ import (
 
 const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
 
+var anyCtx = mock.MatchedBy(func(_ context.Context) bool { return true })
+
 func testBasicEdgeConnect() *edgeconnect.EdgeConnect {
 	return &edgeconnect.EdgeConnect{
 		Spec: edgeconnect.EdgeConnectSpec{
@@ -34,7 +37,7 @@ func Test_updater_Update(t *testing.T) {
 		ec := testBasicEdgeConnect()
 		fakeRegistryClient := registrymock.NewImageGetter(t)
 		fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-		fakeRegistryClient.EXPECT().GetImageVersion(mock.Anything, mock.Anything).Return(fakeImageVersion, nil).Once()
+		fakeRegistryClient.EXPECT().GetImageVersion(anyCtx, ec.Image()).Return(fakeImageVersion, nil).Once()
 
 		u := newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, ec)
 
@@ -53,7 +56,7 @@ func Test_updater_Update(t *testing.T) {
 
 		fakeRegistryClient := registrymock.NewImageGetter(t)
 		fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-		fakeRegistryClient.EXPECT().GetImageVersion(mock.Anything, mock.Anything).Return(fakeImageVersion, nil).Once()
+		fakeRegistryClient.EXPECT().GetImageVersion(anyCtx, ec.Image()).Return(fakeImageVersion, nil).Once()
 
 		u := newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, ec)
 

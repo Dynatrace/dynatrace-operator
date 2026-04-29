@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/util/oci/registry"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,7 +26,7 @@ func Test_Reconciler_Reconcile(t *testing.T) {
 		ec := testBasicEdgeConnect()
 		fakeRegistryClient := registrymock.NewImageGetter(t)
 		fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-		fakeRegistryClient.EXPECT().GetImageVersion(mock.Anything, mock.Anything).Return(fakeImageVersion, nil).Once()
+		fakeRegistryClient.EXPECT().GetImageVersion(anyCtx, ec.Image()).Return(fakeImageVersion, nil).Once()
 
 		reconciler := NewReconciler(fake.NewClient(), fakeRegistryClient, timeprovider.New(), ec)
 
