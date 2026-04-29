@@ -50,6 +50,10 @@ jobs:
           DIGEST=$(docker buildx imagetools inspect \
             "public.ecr.aws/dynatrace/dynatrace-operator:${TAG}" \
             --format '{{.Manifest.Digest}}')
+          if [ -z "$DIGEST" ]; then
+            echo "Failed to fetch digest for ${TAG} — image may not exist on public.ecr.aws"
+            exit 1
+          fi
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
       - name: Generate release notes
         env:
