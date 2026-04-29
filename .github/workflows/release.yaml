@@ -319,12 +319,6 @@ jobs:
           prerelease: false
           draft: true
           fail_on_unmatched_files: true
-      - name: Upload Changelog as artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: changelog
-          path: CHANGELOG.md
-          if-no-files-found: warn
       - name: Update index helm file
         if: ${{ !contains(github.ref, '-rc.') }}
         env:
@@ -359,27 +353,3 @@ jobs:
             ## Checklist
             - [x] PR is labeled accordingly
 
-  update-csv-bundles:
-    name: Update Operatorhub Bundles
-    needs: [release, prepare, build-push]
-    runs-on: ubuntu-24.04
-    if: ${{ !contains(github.ref, '-rc.') }}
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      with:
-          persist-credentials: false
-    - name: Download changelog
-      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-      with:
-        name: changelog
-        path: changelog_artifact
-    - uses: ./.github/actions/update-csv-bundles
-      with:
-        digest: ${{ needs.build-push.outputs.digest }}
-        version: ${{ needs.prepare.outputs.version_without_prefix }}
-        changelog-path: ./changelog_artifact/CHANGELOG.md
-        app-id: ${{ secrets.RELEASE_APP_ID }}
-        private-key: ${{ secrets.RELEASE_APP_KEY }}

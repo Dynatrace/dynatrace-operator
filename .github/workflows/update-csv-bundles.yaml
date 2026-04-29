@@ -1,0 +1,56 @@
+name: Update CSV Bundles
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.2.3)"
+        required: true
+        type: string
+
+jobs:
+  update-csv-bundles:
+    name: Update Operatorhub Bundles
+    runs-on: ubuntu-24.04
+    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Resolve tag and version
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.event.release.tag_name }}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ steps.vars.outputs.tag }}
+          persist-credentials: false
+      - name: Fetch image digest
+        id: digest
+        env:
+          TAG: ${{ steps.vars.outputs.tag }}
+        run: |
+          DIGEST=$(docker buildx imagetools inspect \
+            "public.ecr.aws/dynatrace/dynatrace-operator:${TAG}" \
+            --format '{{.Manifest.Digest}}')
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+      - name: Generate release notes
+        env:
+          GITHUB_REF_NAME: ${{ steps.vars.outputs.tag }}
+        run: |
+          hack/build/ci/generate-release-notes.sh
+      - uses: ./.github/actions/update-csv-bundles
+        with:
+          digest: ${{ steps.digest.outputs.digest }}
+          version: ${{ steps.vars.outputs.version }}
+          changelog-path: ./CHANGELOG.md
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_KEY }}
