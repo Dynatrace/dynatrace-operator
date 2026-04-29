@@ -241,8 +241,124 @@ func Test_Controller_Reconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.SecretGenerationFailed, condition.Reason)
 		assert.Contains(t, condition.Message, "Failed to generate secret")
 	})
+}
 
-	t.Run("provisioner create", func(t *testing.T) {
+func Test_Controller_Reconcile_replicas(t *testing.T) {
+	testEdgeConnect := func(provisioner bool, replicas *int32) *edgeconnect.EdgeConnect {
+		ec := testEdgeConnectRegularCR()
+		if provisioner {
+			ec = testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
+		}
+
+		ec.Spec.Replicas = replicas
+
+		return ec
+	}
+
+	testController := func(t *testing.T, ec *edgeconnect.EdgeConnect, provisioner bool, objs ...client.Object) *Controller {
+		if !provisioner {
+			return testFakeClientAndReconciler(t, ec, objs...)
+		}
+
+		ecClient := edgeconnectmock.NewClient(t)
+		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
+		ecClient.On("UpdateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+
+		return testFakeClientAndReconcilerForProvisioner(
+			t,
+			ec,
+			testNewEdgeConnectClientCreate(ecClient, testHostPatterns),
+			objs...,
+		)
+	}
+
+	testObjects := func(ec *edgeconnect.EdgeConnect, provisioner bool, existingReplicas *int32) []client.Object {
+		objs := []client.Object{
+			testKubeSystemNamespace(),
+			testOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
+		}
+
+		if provisioner {
+			objs = append(objs, testClientSecret(ec.ClientSecretName(), ec.Namespace))
+		}
+
+		if existingReplicas != nil {
+			existing := deployment.New(ec)
+			existing.Spec.Replicas = existingReplicas
+			objs = append(objs, existing)
+		}
+
+		return objs
+	}
+
+	testAssertDeploymentReplicas := func(t *testing.T, apiReader client.Reader, ec *edgeconnect.EdgeConnect, expectedReplicas int32) {
+		t.Helper()
+
+		d := &appsv1.Deployment{}
+		err := apiReader.Get(t.Context(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, d)
+		require.NoError(t, err)
+		require.NotNil(t, d.Spec.Replicas)
+		assert.Equal(t, expectedReplicas, *d.Spec.Replicas)
+	}
+
+	modes := []struct {
+		name        string
+		provisioner bool
+	}{
+		{name: "regular", provisioner: false},
+		{name: "provisioner", provisioner: true},
+	}
+
+	tests := []struct {
+		name             string
+		specReplicas     *int32
+		existingReplicas *int32
+		expectedReplicas int32
+	}{
+		{
+			name:             "uses explicit spec replicas over existing deployment",
+			specReplicas:     ptr.To(int32(2)),
+			existingReplicas: ptr.To(int32(3)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses existing deployment replicas when spec replicas are nil",
+			specReplicas:     nil,
+			existingReplicas: ptr.To(int32(2)),
+			expectedReplicas: int32(2),
+		},
+		{
+			name:             "uses default replicas when spec replicas are nil and deployment does not exist",
+			specReplicas:     nil,
+			existingReplicas: nil,
+			expectedReplicas: int32(1),
+		},
+	}
+
+	for _, mode := range modes {
+		t.Run(mode.name, func(t *testing.T) {
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					ec := testEdgeConnect(mode.provisioner, tc.specReplicas)
+
+					objs := testObjects(ec, mode.provisioner, tc.existingReplicas)
+
+					controller := testController(t, ec, mode.provisioner, objs...)
+
+					_, err := controller.Reconcile(t.Context(), reconcile.Request{
+						NamespacedName: types.NamespacedName{Namespace: ec.Namespace, Name: ec.Name},
+					})
+					require.NoError(t, err)
+
+					testAssertDeploymentReplicas(t, controller.apiReader, ec, tc.expectedReplicas)
+				})
+			}
+		})
+	}
+}
+
+func Test_Controller_Reconcile_provisioner(t *testing.T) {
+	t.Run("create", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
@@ -300,7 +416,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 		ecClient.AssertCalled(t, "CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings))
 	})
 
-	t.Run("provisioner recreate due to missing client secret", func(t *testing.T) {
+	t.Run("recreate due to missing client secret", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
@@ -359,7 +475,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 		ecClient.AssertCalled(t, "CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings))
 	})
 
-	t.Run("provisioner recreate due to invalid id", func(t *testing.T) {
+	t.Run("recreate due to invalid id", func(t *testing.T) {
 		const testRecreatedInvalidID = "id-somehow-different"
 
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
@@ -421,7 +537,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 		ecClient.AssertCalled(t, "CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings))
 	})
 
-	t.Run("provisioner delete", func(t *testing.T) {
+	t.Run("delete", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
@@ -451,7 +567,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 		ecClient.AssertCalled(t, "DeleteEdgeConnect", mock.Anything, testCreatedID)
 	})
 
-	t.Run("provisioner delete - missing client secret", func(t *testing.T) {
+	t.Run("delete - missing client secret", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
@@ -480,7 +596,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 		ecClient.AssertCalled(t, "DeleteEdgeConnect", mock.Anything, testCreatedID)
 	})
 
-	t.Run("provisioner delete - missing EdgeConnect on the tenant", func(t *testing.T) {
+	t.Run("delete - missing EdgeConnect on the tenant", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
@@ -507,7 +623,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 		ecClient.AssertNotCalled(t, "DeleteEdgeConnect", mock.Anything, testCreatedID)
 	})
 
-	t.Run("provisioner update", func(t *testing.T) {
+	t.Run("update", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns2)
 
 		ecClient := edgeconnectmock.NewClient(t)
@@ -533,7 +649,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 		ecClient.AssertCalled(t, "UpdateEdgeConnect", mock.Anything, testCreatedID, edgeconnectClient.NewUpdateRequest(testName, testHostPatterns2, testHostMappings, testCreatedOauthClientID))
 	})
 
-	t.Run("provisioner with k8s automation create", func(t *testing.T) {
+	t.Run("k8s automation create", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 		ec.Spec.KubernetesAutomation = &edgeconnect.KubernetesAutomationSpec{
 			Enabled: true,
@@ -594,7 +710,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 		ecClient.AssertCalled(t, "CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings))
 	})
 
-	t.Run("provisioner with k8s automation update", func(t *testing.T) {
+	t.Run("k8s automation update", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns2)
 		ec.Spec.KubernetesAutomation = &edgeconnect.KubernetesAutomationSpec{
 			Enabled: true,
@@ -621,120 +737,6 @@ func Test_Controller_Reconcile(t *testing.T) {
 		ecClient.AssertCalled(t, "ListEdgeConnects", mock.Anything, testName)
 		ecClient.AssertCalled(t, "GetEdgeConnect", mock.Anything, testCreatedID)
 		ecClient.AssertCalled(t, "UpdateEdgeConnect", mock.Anything, testCreatedID, edgeconnectClient.NewUpdateRequest(testName, testHostPatterns2, testHostMappings, testCreatedOauthClientID))
-	})
-
-	t.Run("replicas", func(t *testing.T) {
-		testEdgeConnect := func(provisioner bool, replicas *int32) *edgeconnect.EdgeConnect {
-			ec := testEdgeConnectRegularCR()
-			if provisioner {
-				ec = testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
-			}
-
-			ec.Spec.Replicas = replicas
-
-			return ec
-		}
-
-		testController := func(t *testing.T, ec *edgeconnect.EdgeConnect, provisioner bool, objs ...client.Object) *Controller {
-			if !provisioner {
-				return testFakeClientAndReconciler(t, ec, objs...)
-			}
-
-			ecClient := edgeconnectmock.NewClient(t)
-			ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-			ecClient.On("UpdateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
-
-			return testFakeClientAndReconcilerForProvisioner(
-				t,
-				ec,
-				testNewEdgeConnectClientCreate(ecClient, testHostPatterns),
-				objs...,
-			)
-		}
-
-		testObjects := func(ec *edgeconnect.EdgeConnect, provisioner bool, existingReplicas *int32) []client.Object {
-			objs := []client.Object{
-				testKubeSystemNamespace(),
-				testOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
-			}
-
-			if provisioner {
-				objs = append(objs, testClientSecret(ec.ClientSecretName(), ec.Namespace))
-			}
-
-			if existingReplicas != nil {
-				existing := deployment.New(ec)
-				existing.Spec.Replicas = existingReplicas
-				objs = append(objs, existing)
-			}
-
-			return objs
-		}
-
-		testAssertDeploymentReplicas := func(t *testing.T, apiReader client.Reader, ec *edgeconnect.EdgeConnect, expectedReplicas int32) {
-			t.Helper()
-
-			d := &appsv1.Deployment{}
-			err := apiReader.Get(t.Context(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, d)
-			require.NoError(t, err)
-			require.NotNil(t, d.Spec.Replicas)
-			assert.Equal(t, expectedReplicas, *d.Spec.Replicas)
-		}
-
-		modes := []struct {
-			name        string
-			provisioner bool
-		}{
-			{name: "regular", provisioner: false},
-			{name: "provisioner", provisioner: true},
-		}
-
-		tests := []struct {
-			name             string
-			specReplicas     *int32
-			existingReplicas *int32
-			expectedReplicas int32
-		}{
-			{
-				name:             "uses explicit spec replicas over existing deployment",
-				specReplicas:     ptr.To(int32(2)),
-				existingReplicas: ptr.To(int32(3)),
-				expectedReplicas: int32(2),
-			},
-			{
-				name:             "uses existing deployment replicas when spec replicas are nil",
-				specReplicas:     nil,
-				existingReplicas: ptr.To(int32(2)),
-				expectedReplicas: int32(2),
-			},
-			{
-				name:             "uses default replicas when spec replicas are nil and deployment does not exist",
-				specReplicas:     nil,
-				existingReplicas: nil,
-				expectedReplicas: int32(1),
-			},
-		}
-
-		for _, mode := range modes {
-			t.Run(mode.name, func(t *testing.T) {
-				for _, tc := range tests {
-					t.Run(tc.name, func(t *testing.T) {
-						ec := testEdgeConnect(mode.provisioner, tc.specReplicas)
-
-						objs := testObjects(ec, mode.provisioner, tc.existingReplicas)
-
-						controller := testController(t, ec, mode.provisioner, objs...)
-
-						_, err := controller.Reconcile(t.Context(), reconcile.Request{
-							NamespacedName: types.NamespacedName{Namespace: ec.Namespace, Name: ec.Name},
-						})
-						require.NoError(t, err)
-
-						testAssertDeploymentReplicas(t, controller.apiReader, ec, tc.expectedReplicas)
-					})
-				}
-			})
-		}
 	})
 }
 

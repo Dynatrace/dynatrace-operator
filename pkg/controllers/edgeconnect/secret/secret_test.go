@@ -16,9 +16,9 @@ import (
 
 func TestPrepareConfigFile(t *testing.T) {
 	const (
-		testName      = "test-name-edgeconnect"
-		testNamespace = "test-namespace"
-		testToken     = "dummy-token"
+		testName                       = "test-name-edgeconnect"
+		testNamespace                  = "test-namespace"
+		testToken                      = "dummy-token"
 		testProxyAuthRef               = "proxy-auth-ref"
 		testCreatedID                  = "id"
 		testCreatedOauthClientID       = "created-client-id"
