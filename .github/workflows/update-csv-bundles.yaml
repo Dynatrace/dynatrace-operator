@@ -9,28 +9,36 @@ on:
         description: "Release tag (e.g. v1.2.3)"
         required: true
         type: string
+      dry-run:
+        description: "Generate bundles without creating a PR (outputs an artifact instead)"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   update-csv-bundles:
     name: Update Operatorhub Bundles
     environment: Release
     runs-on: ubuntu-24.04
-    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - name: Resolve tag and version
+      - name: Resolve tag, version and dry-run mode
         id: vars
         env:
           GH_EVENT_NAME: ${{ github.event_name }}
           GH_INPUT_TAG: ${{ inputs.tag }}
           GH_RELEASE_TAG: ${{ github.event.release.tag_name }}
+          GH_IS_PRERELEASE: ${{ github.event.release.prerelease }}
+          GH_INPUT_DRY_RUN: ${{ inputs.dry-run }}
         run: |
           if [ "$GH_EVENT_NAME" = "workflow_dispatch" ]; then
             TAG="$GH_INPUT_TAG"
+            DRY_RUN="$GH_INPUT_DRY_RUN"
           else
             TAG="$GH_RELEASE_TAG"
+            DRY_RUN="$GH_IS_PRERELEASE"
           fi
           if ! echo "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
             echo "Invalid tag format: $TAG"
@@ -38,6 +46,7 @@ jobs:
           fi
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "dry-run=${DRY_RUN}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ steps.vars.outputs.tag }}
@@ -61,5 +70,6 @@ jobs:
           digest: ${{ steps.digest.outputs.digest }}
           version: ${{ steps.vars.outputs.version }}
           changelog-path: ./CHANGELOG.md
+          dry-run: ${{ steps.vars.outputs.dry-run }}
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_KEY }}
