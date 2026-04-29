@@ -161,7 +161,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("server_error", func(t *testing.T) {
 		var buf bytes.Buffer
-		serverErr := &core.HTTPError{StatusCode: 500, Message: "internal server error"}
+		serverErr := &core.HTTPError{StatusCode: http.StatusInternalServerError, Message: "internal server error"}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
@@ -173,7 +173,27 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", "", &buf)
 		require.Error(t, err)
-		require.False(t, core.HasStatusCode(err, http.StatusNotModified))
+		require.True(t, core.HasStatusCode(err, http.StatusInternalServerError))
+		assert.Empty(t, returnedETag)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("bad_request", func(t *testing.T) {
+		const badETag = "bad_etag"
+		var buf bytes.Buffer
+		serverErr := &core.HTTPError{StatusCode: http.StatusBadRequest, Message: "bad request"}
+
+		client := setupMockedProcessGroupingClient(t,
+			map[string]string{},
+			map[string]string{"If-None-Match": badETag},
+			nil,
+			nil,
+			serverErr,
+		)
+
+		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", badETag, &buf)
+		require.Error(t, err)
+		require.True(t, core.HasStatusCode(err, http.StatusBadRequest))
 		assert.Empty(t, returnedETag)
 		assert.Empty(t, buf.String())
 	})
