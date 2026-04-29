@@ -2,9 +2,7 @@ package deployment
 
 import (
 	"testing"
-	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -77,9 +75,6 @@ func TestNew(t *testing.T) {
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
 				APIServer: "abc12345.dynatrace.com",
-			},
-			Status: edgeconnect.EdgeConnectStatus{
-				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		}
 
@@ -194,12 +189,6 @@ func Test_buildAppLabels(t *testing.T) {
 					Resource:     "urn:dtenvironment:test12345",
 				},
 			},
-			Status: edgeconnect.EdgeConnectStatus{
-				Version: status.VersionStatus{
-					Version: "",
-				},
-				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
-			},
 		}
 
 		labels := buildAppLabels(ec)
@@ -220,10 +209,6 @@ func Test_prepareResourceRequirements(t *testing.T) {
 					Resource:     "urn:dtenvironment:test12345",
 				},
 				Resources: resources,
-			},
-			Status: edgeconnect.EdgeConnectStatus{
-				Version:          status.VersionStatus{},
-				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		}
 	}
