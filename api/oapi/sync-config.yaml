@@ -1,5 +1,12 @@
+# TODO: Leave comment to leave a example structure with explanations of each field
 schemas:
  - name: tenantApiV2
-   branch: release/1.334.x
+   repoEnvVar: ""   # env var holding the base repo URL
+   specPath: ""     # path to the spec file within the repo
+   authEnvVar: ""   # env var holding the Bearer token
    generate:
      packageName: tenantapiv2
+     globalProperties:
+       models: []
+       apis: []
+       additional: "" # Additional scheme specific global properties as raw string
