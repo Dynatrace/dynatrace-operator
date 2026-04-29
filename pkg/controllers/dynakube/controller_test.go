@@ -209,12 +209,26 @@ func TestHandleError(t *testing.T) {
 
 func TestSetupTokensAndClient(t *testing.T) {
 	ctx := t.Context()
+
+	const (
+		tokenValue = "this-is-a-token"
+	)
+
 	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
 		},
 		Spec: dynakube.DynaKubeSpec{APIURL: "https://test123.dev.dynatracelabs.com/api"},
+	}
+	tokenSecretBase := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dkBase.Tokens(),
+			Namespace: dkBase.Namespace,
+		},
+		Data: map[string][]byte{
+			token.APIKey: []byte(tokenValue),
+		},
 	}
 
 	t.Run("no tokens => error + condition", func(t *testing.T) {
@@ -233,16 +247,8 @@ func TestSetupTokensAndClient(t *testing.T) {
 
 	t.Run("dtClient Factory error => error + condition", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
-		tokens := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.Tokens(),
-				Namespace: dk.Namespace,
-			},
-			Data: map[string][]byte{
-				token.APIKey: []byte("this is a token"),
-			},
-		}
-		fakeClient := fake.NewClientWithIndex(dk, tokens)
+		tokenSecret := tokenSecretBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk, tokenSecret)
 
 		controller := &Controller{
 			client:          fakeClient,
@@ -629,7 +635,6 @@ func TestTokenConditions(t *testing.T) {
 
 		require.Error(t, err)
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenVerificationFailedConditionMessage)
-		assert.Empty(t, dk.Status.DynatraceAPI.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
 	t.Run("token condition error is set if token verification fails", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -664,7 +669,6 @@ func TestTokenConditions(t *testing.T) {
 
 		require.Error(t, err)
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenVerificationFailedConditionMessage)
-		assert.Empty(t, dk.Status.DynatraceAPI.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
 	t.Run("token condition is set if required scopes are missing", func(t *testing.T) {
 		dk := &dynakube.DynaKube{

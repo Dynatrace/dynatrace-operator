@@ -15,7 +15,7 @@ func TestGetK8sClusterME(t *testing.T) {
 	params := map[string]string{
 		validateOnlyQueryParam: "true",
 		pageSizeQueryParam:     entitiesPageSize,
-		schemaIDsQueryParam:    kubernetesSettingsSchemaID,
+		schemaIDsQueryParam:    KubernetesSettingsSchemaID,
 		fieldsQueryParam:       kubernetesSettingsNeededFields,
 		filterQueryParam:       "value.clusterId='uuid-1'",
 	}

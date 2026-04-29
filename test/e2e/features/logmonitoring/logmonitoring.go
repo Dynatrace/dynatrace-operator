@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -43,7 +44,7 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithLogMonitoring(),
-		componentDynakube.WithLogMonitoringImageRef(),
+		componentDynakube.WithLogMonitoringImageRef(t),
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
@@ -95,7 +96,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithLogMonitoring(),
-		componentDynakube.WithLogMonitoringImageRef(),
+		componentDynakube.WithLogMonitoringImageRef(t),
 		componentDynakube.WithActiveGate(),
 	}
 
@@ -170,7 +171,7 @@ func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
 
 		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, &dk))
 		// Force reconciliation by simulating the passage of time
-		dk.Status.DynatraceAPI.LastTokenScopeRequest.Time = dk.Status.DynatraceAPI.LastTokenScopeRequest.Add(-2 * dk.APIRequestThreshold())
+		dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
 		expireLastTransitionTime(&dk, "MonitoredEntity")
 		expireLastTransitionTime(&dk, logmonsettings.ConditionType)
 		require.NoError(t, resources.UpdateStatus(ctx, &dk))
