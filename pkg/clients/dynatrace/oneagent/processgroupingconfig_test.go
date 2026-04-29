@@ -14,11 +14,10 @@ import (
 )
 
 const (
-	testCBORData        = "\x81\x01" // minimal CBOR: array of one integer
-	testETag            = `"abc123"`
-	testResponseETag    = "def456"
-	testResponseETagRaw = `"` + testResponseETag + `"`
-	testClusterID       = "my-cluster"
+	testCBORData     = "\x81\x01" // minimal CBOR: array of one integer
+	testETag         = `"abc123"`
+	testResponseETag = `"def456"`
+	testClusterID    = "my-cluster"
 )
 
 // setupMockedProcessGroupingClient builds a client backed by a mock core.Client.
@@ -70,7 +69,7 @@ func setupMockedProcessGroupingClient(
 func TestGetProcessGroupingConfig(t *testing.T) {
 	t.Run("success_200_with_etag", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
+		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
@@ -90,7 +89,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("success_200_without_etag", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
+		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
@@ -128,7 +127,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("with_kubernetes_cluster_id", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
+		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{"kubernetesClusterId": testClusterID},
@@ -145,7 +144,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("without_kubernetes_cluster_id", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
+		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
