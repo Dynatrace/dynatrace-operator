@@ -91,7 +91,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.NotEmpty(t, result)
 	})
 
 	t.Run("timestamp update in EdgeConnect status works", func(t *testing.T) {
@@ -115,7 +115,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 		require.NoError(t, err)
-		require.NotNil(t, result)
+		require.NotEmpty(t, result)
 
 		err = controller.apiReader.Get(t.Context(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, ec)
 		require.NoError(t, err)
@@ -376,7 +376,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.NotEmpty(t, result)
 
 		testAssertCreatedEdgeConnect(t, controller, ec)
 	})
@@ -400,7 +400,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.NotEmpty(t, result)
 
 		testAssertCreatedEdgeConnect(t, controller, ec)
 	})
@@ -427,7 +427,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.NotEmpty(t, result)
 
 		testAssertCreatedEdgeConnect(t, controller, ec)
 	})
@@ -452,7 +452,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.Empty(t, result)
 
 		_, err = testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.Error(t, err)
@@ -478,7 +478,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.Empty(t, result)
 
 		_, err = testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.Error(t, err)
@@ -503,7 +503,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.Empty(t, result)
 
 		_, err = testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.Error(t, err)
@@ -529,7 +529,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.NotEmpty(t, result)
 	})
 
 	t.Run("k8s automation create", func(t *testing.T) {
@@ -554,7 +554,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.NotEmpty(t, result)
 
 		testAssertCreatedEdgeConnect(t, controller, ec)
 	})
@@ -581,7 +581,7 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.NotEmpty(t, result)
 	})
 }
 
