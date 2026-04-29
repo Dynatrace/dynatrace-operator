@@ -261,8 +261,8 @@ func Test_Controller_Reconcile_replicas(t *testing.T) {
 		}
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-		ecClient.On("UpdateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 
 		return testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -362,8 +362,8 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-		ecClient.On("UpdateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 
 		controller := testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -411,17 +411,14 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, "edge-connect", ecDeployment.Spec.Template.Spec.Containers[0].Name)
-
-		ecClient.AssertCalled(t, "ListEdgeConnects", mock.Anything, testName)
-		ecClient.AssertCalled(t, "CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings))
 	})
 
 	t.Run("recreate due to missing client secret", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-		ecClient.On("UpdateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 
 		controller := testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -469,10 +466,6 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, "edge-connect", ecDeployment.Spec.Template.Spec.Containers[0].Name)
-
-		ecClient.AssertCalled(t, "ListEdgeConnects", mock.Anything, testName)
-		ecClient.AssertCalled(t, "DeleteEdgeConnect", mock.Anything, testCreatedID)
-		ecClient.AssertCalled(t, "CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings))
 	})
 
 	t.Run("recreate due to invalid id", func(t *testing.T) {
@@ -481,8 +474,8 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-		ecClient.On("UpdateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 
 		controller := testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -531,18 +524,14 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, "edge-connect", ecDeployment.Spec.Template.Spec.Containers[0].Name)
-
-		ecClient.AssertCalled(t, "ListEdgeConnects", mock.Anything, testName)
-		ecClient.AssertCalled(t, "DeleteEdgeConnect", mock.Anything, testRecreatedInvalidID)
-		ecClient.AssertCalled(t, "CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings))
 	})
 
 	t.Run("delete", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-		ecClient.On("DeleteEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+		ecClient.EXPECT().DeleteEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 
 		controller := testFakeClientForDeletion(
 			t,
@@ -563,16 +552,14 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		_, err = testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.Error(t, err)
 		require.True(t, k8serrors.IsNotFound(err))
-
-		ecClient.AssertCalled(t, "DeleteEdgeConnect", mock.Anything, testCreatedID)
 	})
 
 	t.Run("delete - missing client secret", func(t *testing.T) {
 		ec := testEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-		ecClient.On("DeleteEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+		ecClient.EXPECT().DeleteEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 
 		controller := testFakeClientForDeletion(
 			t,
@@ -592,8 +579,6 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		_, err = testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.Error(t, err)
 		require.True(t, k8serrors.IsNotFound(err))
-
-		ecClient.AssertCalled(t, "DeleteEdgeConnect", mock.Anything, testCreatedID)
 	})
 
 	t.Run("delete - missing EdgeConnect on the tenant", func(t *testing.T) {
@@ -619,8 +604,6 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		_, err = testGetEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.Error(t, err)
 		require.True(t, k8serrors.IsNotFound(err))
-
-		ecClient.AssertNotCalled(t, "DeleteEdgeConnect", mock.Anything, testCreatedID)
 	})
 
 	t.Run("update", func(t *testing.T) {
@@ -643,10 +626,6 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
-
-		ecClient.AssertCalled(t, "ListEdgeConnects", mock.Anything, testName)
-		ecClient.AssertCalled(t, "GetEdgeConnect", mock.Anything, testCreatedID)
-		ecClient.AssertCalled(t, "UpdateEdgeConnect", mock.Anything, testCreatedID, edgeconnectClient.NewUpdateRequest(testName, testHostPatterns2, testHostMappings, testCreatedOauthClientID))
 	})
 
 	t.Run("k8s automation create", func(t *testing.T) {
@@ -656,8 +635,8 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		}
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-		ecClient.On("UpdateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+		ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 
 		controller := testFakeClientAndReconcilerForProvisioner(
 			t,
@@ -705,9 +684,6 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, "edge-connect", ecDeployment.Spec.Template.Spec.Containers[0].Name)
-
-		ecClient.AssertCalled(t, "ListEdgeConnects", mock.Anything, testName)
-		ecClient.AssertCalled(t, "CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings))
 	})
 
 	t.Run("k8s automation update", func(t *testing.T) {
@@ -733,10 +709,6 @@ func Test_Controller_Reconcile_provisioner(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
-
-		ecClient.AssertCalled(t, "ListEdgeConnects", mock.Anything, testName)
-		ecClient.AssertCalled(t, "GetEdgeConnect", mock.Anything, testCreatedID)
-		ecClient.AssertCalled(t, "UpdateEdgeConnect", mock.Anything, testCreatedID, edgeconnectClient.NewUpdateRequest(testName, testHostPatterns2, testHostMappings, testCreatedOauthClientID))
 	})
 }
 
@@ -744,8 +716,8 @@ func Test_Controller_createOrUpdateConnectionSetting(t *testing.T) {
 	t.Run("create connection setting object", func(t *testing.T) {
 		controller := testNewController()
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{}, nil)
-		ecClient.On("CreateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{}, nil).Once()
+		ecClient.EXPECT().CreateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 		err := controller.createOrUpdateConnectionSetting(t.Context(), ecClient, testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.NoError(t, err)
 	})
@@ -753,10 +725,9 @@ func Test_Controller_createOrUpdateConnectionSetting(t *testing.T) {
 	t.Run("existing connection setting object", func(t *testing.T) {
 		controller := testNewController()
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
 		err := controller.createOrUpdateConnectionSetting(t.Context(), ecClient, testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.NoError(t, err)
-		ecClient.AssertNotCalled(t, "CreateEnvironmentSetting", mock.Anything)
 	})
 
 	t.Run("existing object with same cluster ID but different name", func(t *testing.T) {
@@ -766,20 +737,17 @@ func Test_Controller_createOrUpdateConnectionSetting(t *testing.T) {
 		differentEnvironmentSetting.Value.Namespace = "different-namespace"
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{differentEnvironmentSetting}, nil)
-		ecClient.On("CreateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{differentEnvironmentSetting}, nil).Once()
+		ecClient.EXPECT().CreateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
 		err := controller.createOrUpdateConnectionSetting(t.Context(), ecClient, testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.NoError(t, err)
 	})
 
 	t.Run("server fails", func(t *testing.T) {
 		controller := testNewController()
-		expectedEnvironmentSetting := testEnvironmentSetting
-		expectedEnvironmentSetting.Value.Name = "different-name"
-		expectedEnvironmentSetting.Value.Namespace = "different-namespace"
 
 		ecClient := edgeconnectmock.NewClient(t)
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return(nil, errors.New("something went wrong"))
+		ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return(nil, errors.New("something went wrong")).Once()
 		err := controller.createOrUpdateConnectionSetting(t.Context(), ecClient, testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.Error(t, err)
 	})
@@ -958,7 +926,7 @@ func testFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, obje
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
 
 	mockImageGetter := registrymock.NewImageGetter(t)
-	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+	mockImageGetter.EXPECT().GetImageVersion(mock.Anything, mock.Anything).Return(fakeImageVersion, nil).Maybe()
 
 	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
 		return mockImageGetter, nil
@@ -994,7 +962,7 @@ func testFakeClientAndReconcilerForProvisioner(t *testing.T, ec *edgeconnect.Edg
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
 
 	mockImageGetter := registrymock.NewImageGetter(t)
-	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+	mockImageGetter.EXPECT().GetImageVersion(mock.Anything, mock.Anything).Return(fakeImageVersion, nil).Maybe()
 
 	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
 		return mockImageGetter, nil
@@ -1035,121 +1003,121 @@ func testFakeClientForDeletion(t *testing.T, ec *edgeconnect.EdgeConnect, builde
 }
 
 func testNewEdgeConnectClientCreate(ecClient *edgeconnectmock.Client, hostPatterns []string) func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
+	ecClient.EXPECT().ListEdgeConnects(mock.Anything, testName).Return(
+		[]edgeconnectClient.APIResponse{},
+		nil,
+	).Once()
+
+	ecClient.EXPECT().CreateEdgeConnect(mock.Anything, edgeconnectClient.NewCreateRequest(testName, hostPatterns, testHostMappings)).Return(
+		edgeconnectClient.APIResponse{
+			ID:                  testCreatedID,
+			Name:                testName,
+			HostPatterns:        hostPatterns,
+			OauthClientID:       testCreatedOauthClientID,
+			OauthClientSecret:   testCreatedOauthClientSecret,
+			OauthClientResource: testCreatedOauthClientResource,
+		},
+		nil,
+	).Once()
+
 	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, _ []byte) (edgeconnectClient.Client, error) {
-		ecClient.On("ListEdgeConnects", mock.Anything, testName).Return(
-			[]edgeconnectClient.APIResponse{},
-			nil,
-		)
-
-		ecClient.On("CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, hostPatterns, testHostMappings)).Return(
-			edgeconnectClient.APIResponse{
-				ID:                  testCreatedID,
-				Name:                testName,
-				HostPatterns:        hostPatterns,
-				OauthClientID:       testCreatedOauthClientID,
-				OauthClientSecret:   testCreatedOauthClientSecret,
-				OauthClientResource: testCreatedOauthClientResource,
-			},
-			nil,
-		)
-
 		return ecClient, nil
 	}
 }
 
 func testNewEdgeConnectClientRecreate(ecClient *edgeconnectmock.Client, id string) func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
+	ecClient.EXPECT().ListEdgeConnects(mock.Anything, testName).Return(
+		[]edgeconnectClient.APIResponse{
+			{
+				ID:                         id,
+				Name:                       testName,
+				HostPatterns:               testHostPatterns,
+				OauthClientID:              testOauthClientID,
+				ManagedByDynatraceOperator: true,
+			},
+		},
+		nil,
+	).Once()
+
+	ecClient.EXPECT().DeleteEdgeConnect(mock.Anything, id).Return(nil).Once()
+	ecClient.EXPECT().CreateEdgeConnect(mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings)).Return(
+		edgeconnectClient.APIResponse{
+			ID:                  testCreatedID,
+			Name:                testName,
+			HostPatterns:        testHostPatterns,
+			OauthClientID:       testCreatedOauthClientID,
+			OauthClientSecret:   testCreatedOauthClientSecret,
+			OauthClientResource: testCreatedOauthClientResource,
+		},
+		nil,
+	).Once()
+
 	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, _ []byte) (edgeconnectClient.Client, error) {
-		ecClient.On("ListEdgeConnects", mock.Anything, testName).Return(
-			[]edgeconnectClient.APIResponse{
-				{
-					ID:                         id,
-					Name:                       testName,
-					HostPatterns:               testHostPatterns,
-					OauthClientID:              testOauthClientID,
-					ManagedByDynatraceOperator: true,
-				},
-			},
-			nil,
-		)
-
-		ecClient.On("DeleteEdgeConnect", mock.Anything, id).Return(nil)
-		ecClient.On("CreateEdgeConnect", mock.Anything, edgeconnectClient.NewCreateRequest(testName, testHostPatterns, testHostMappings)).Return(
-			edgeconnectClient.APIResponse{
-				ID:                  testCreatedID,
-				Name:                testName,
-				HostPatterns:        testHostPatterns,
-				OauthClientID:       testCreatedOauthClientID,
-				OauthClientSecret:   testCreatedOauthClientSecret,
-				OauthClientResource: testCreatedOauthClientResource,
-			},
-			nil,
-		)
-
 		return ecClient, nil
 	}
 }
 
 func testNewEdgeConnectClientDelete(ecClient *edgeconnectmock.Client) func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
-	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, _ []byte) (edgeconnectClient.Client, error) {
-		ecClient.On("ListEdgeConnects", mock.Anything, testName).Return(
-			[]edgeconnectClient.APIResponse{
-				{
-					ID:                         testCreatedID,
-					Name:                       testName,
-					HostPatterns:               testHostPatterns,
-					OauthClientID:              testOauthClientID,
-					ManagedByDynatraceOperator: true,
-				},
+	ecClient.EXPECT().ListEdgeConnects(mock.Anything, testName).Return(
+		[]edgeconnectClient.APIResponse{
+			{
+				ID:                         testCreatedID,
+				Name:                       testName,
+				HostPatterns:               testHostPatterns,
+				OauthClientID:              testOauthClientID,
+				ManagedByDynatraceOperator: true,
 			},
-			nil,
-		)
-		ecClient.On("DeleteEdgeConnect", mock.Anything, testCreatedID).Return(nil)
+		},
+		nil,
+	).Once()
+	ecClient.EXPECT().DeleteEdgeConnect(mock.Anything, testCreatedID).Return(nil).Once()
 
+	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, _ []byte) (edgeconnectClient.Client, error) {
 		return ecClient, nil
 	}
 }
 
 func testNewEdgeConnectClientDeleteNotFoundOnTenant(ecClient *edgeconnectmock.Client) func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
-	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, _ []byte) (edgeconnectClient.Client, error) {
-		ecClient.On("ListEdgeConnects", mock.Anything, testName).Return(
-			[]edgeconnectClient.APIResponse{},
-			nil,
-		)
+	ecClient.EXPECT().ListEdgeConnects(mock.Anything, testName).Return(
+		[]edgeconnectClient.APIResponse{},
+		nil,
+	).Once()
 
+	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, _ []byte) (edgeconnectClient.Client, error) {
 		return ecClient, nil
 	}
 }
 
 func testNewEdgeConnectClientUpdate(ecClient *edgeconnectmock.Client, fromHostPatterns []string, toHostPatterns []string) func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
+	ecClient.EXPECT().ListEdgeConnects(mock.Anything, testName).Return(
+		[]edgeconnectClient.APIResponse{
+			{
+				ID:                         testCreatedID,
+				Name:                       testName,
+				HostPatterns:               fromHostPatterns,
+				OauthClientID:              testOauthClientID,
+				ManagedByDynatraceOperator: true,
+			},
+		},
+		nil,
+	).Once()
+
+	ecClient.EXPECT().GetEdgeConnect(mock.Anything, testCreatedID).Return(
+		edgeconnectClient.APIResponse{
+			ID:            testCreatedID,
+			Name:          testName,
+			HostPatterns:  fromHostPatterns,
+			OauthClientID: testOauthClientID,
+		},
+		nil,
+	).Once()
+
+	ecClient.EXPECT().UpdateEdgeConnect(mock.Anything, testCreatedID, edgeconnectClient.NewUpdateRequest(testName, toHostPatterns, testHostMappings, testCreatedOauthClientID)).Return(nil).Once()
+
+	ecClient.EXPECT().ListEnvironmentSettings(mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil).Once()
+	ecClient.EXPECT().UpdateEnvironmentSetting(mock.Anything, mock.Anything).Return(nil).Once()
+
 	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, _ []byte) (edgeconnectClient.Client, error) {
-		ecClient.On("ListEdgeConnects", mock.Anything, testName).Return(
-			[]edgeconnectClient.APIResponse{
-				{
-					ID:                         testCreatedID,
-					Name:                       testName,
-					HostPatterns:               fromHostPatterns,
-					OauthClientID:              testOauthClientID,
-					ManagedByDynatraceOperator: true,
-				},
-			},
-			nil,
-		)
-
-		ecClient.On("GetEdgeConnect", mock.Anything, testCreatedID).Return(
-			edgeconnectClient.APIResponse{
-				ID:            testCreatedID,
-				Name:          testName,
-				HostPatterns:  fromHostPatterns,
-				OauthClientID: testOauthClientID,
-			},
-			nil,
-		)
-
-		ecClient.On("UpdateEdgeConnect", mock.Anything, testCreatedID, edgeconnectClient.NewUpdateRequest(testName, toHostPatterns, testHostMappings, testCreatedOauthClientID)).Return(nil)
-
-		ecClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
-		ecClient.On("UpdateEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
-
 		return ecClient, nil
 	}
 }
