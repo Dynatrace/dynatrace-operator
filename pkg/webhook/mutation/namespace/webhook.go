@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +41,8 @@ type webhook struct {
 //  2. if the namespace was updated by the operator => don't do the mapping: we do this because the operator also does the mapping
 //     but from the DynaKube's side (during DynaKube reconcile) and we don't want to repeat ourselves
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
+	ctx, log := logd.NewFromContext(ctx, "namespace-mutation")
+
 	if wh.namespace == request.Namespace {
 		return admission.Allowed("")
 	}

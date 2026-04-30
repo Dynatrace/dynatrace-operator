@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -46,11 +47,13 @@ func NewReconciler(clt client.Client,
 	apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		apiReader: apiReader,
-		secrets:   k8ssecret.Query(clt, apiReader, log),
+		secrets:   k8ssecret.Query(clt, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "logmonitoring-config-secret")
+
 	if !dk.LogMonitoring().IsStandalone() {
 		if meta.FindStatusCondition(*dk.Conditions(), LmcConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
@@ -92,6 +95,8 @@ func (r *Reconciler) reconcileSecret(ctx context.Context, dk *dynakube.DynaKube)
 }
 
 func (r *Reconciler) prepareSecret(ctx context.Context, dk *dynakube.DynaKube) (*corev1.Secret, error) {
+	log := logd.FromContext(ctx)
+
 	data, err := r.getSecretData(ctx, dk)
 	if err != nil {
 		return nil, err
@@ -116,10 +121,12 @@ func (r *Reconciler) prepareSecret(ctx context.Context, dk *dynakube.DynaKube) (
 }
 
 func (r *Reconciler) getSecretData(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+	log := logd.FromContext(ctx)
+
 	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
 		Name:      dk.OneAgent().GetTenantSecret(),
 		Namespace: dk.Namespace,
-	}, connectioninfo.TenantTokenKey, log)
+	}, connectioninfo.TenantTokenKey)
 	if err != nil {
 		log.Info("failed to get the oneagent-tenant secret")
 

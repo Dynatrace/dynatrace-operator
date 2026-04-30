@@ -23,13 +23,11 @@ var (
 
 	// BuildDate is the date when the binary was build. Assigned externally.
 	BuildDate = ""
-
-	log = logd.Get().WithName("version")
 )
 
 // LogVersion logs metadata about the Operator.
 func LogVersion() {
-	LogVersionToLogger(log)
+	LogVersionToLogger(logd.Get().WithName("version"))
 }
 
 func LogVersionToLogger(log logd.Logger) {

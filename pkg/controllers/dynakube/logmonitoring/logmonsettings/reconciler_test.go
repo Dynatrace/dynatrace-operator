@@ -40,7 +40,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
@@ -57,7 +57,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, mock.Anything).
 			Return("test-object-id", nil)
@@ -121,7 +121,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update condition timestamp if outdated", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()

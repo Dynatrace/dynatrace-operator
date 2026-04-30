@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	certsutils "github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -48,12 +49,14 @@ func NewCertificateWatcher(mgr manager.Manager, namespace string, secretName str
 	}, nil
 }
 
-func (watcher *CertificateWatcher) watchForCertificatesSecret() {
+func (watcher *CertificateWatcher) watchForCertificatesSecret(ctx context.Context) {
+	log := logd.FromContext(ctx)
+
 	for {
 		<-time.After(certificateRenewalInterval)
 		log.Info("checking for new certificates")
 
-		if updated, err := watcher.updateCertificatesFromSecret(); err != nil {
+		if updated, err := watcher.updateCertificatesFromSecret(ctx); err != nil {
 			log.Info("failed to update certificates", "error", err)
 		} else if updated {
 			log.Info("updated certificate successfully")
@@ -61,10 +64,10 @@ func (watcher *CertificateWatcher) watchForCertificatesSecret() {
 	}
 }
 
-func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) {
+func (watcher *CertificateWatcher) updateCertificatesFromSecret(ctx context.Context) (bool, error) {
 	var secret corev1.Secret
 
-	err := watcher.apiReader.Get(context.TODO(),
+	err := watcher.apiReader.Get(ctx,
 		client.ObjectKey{Name: watcher.certificateSecretName, Namespace: watcher.namespace}, &secret)
 	if err != nil {
 		return false, err
@@ -83,7 +86,7 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 		}
 	}
 
-	isValid, err := certsutils.ValidateCertificateExpiration(secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now(), log)
+	isValid, err := certsutils.ValidateCertificateExpiration(ctx, secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now())
 	if err != nil {
 		return false, err
 	} else if !isValid {
@@ -108,9 +111,11 @@ func (watcher *CertificateWatcher) ensureCertificateFile(secret corev1.Secret, f
 	return true, nil
 }
 
-func (watcher *CertificateWatcher) WaitForCertificates() {
+func (watcher *CertificateWatcher) WaitForCertificates(ctx context.Context) {
+	ctx, log := logd.NewFromContext(ctx, "certificate-watcher")
+
 	for threshold := time.Now().Add(fiveMinutes); time.Now().Before(threshold); {
-		_, err := watcher.updateCertificatesFromSecret()
+		_, err := watcher.updateCertificatesFromSecret(ctx)
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				log.Info("waiting for certificate secret to be available.")
@@ -126,5 +131,5 @@ func (watcher *CertificateWatcher) WaitForCertificates() {
 		break
 	}
 
-	go watcher.watchForCertificatesSecret()
+	go watcher.watchForCertificatesSecret(ctx)
 }

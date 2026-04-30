@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
@@ -69,6 +70,8 @@ func NewControllerFromClient(clt client.Client) *Controller {
 }
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
+	ctx, log := logd.NewFromContext(ctx, "nodes")
+
 	nodeName := request.Name
 
 	dk, err := controller.determineDynakubeForNode(ctx, nodeName)
@@ -180,6 +183,7 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCac
 }
 
 func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNode *cache.Entry) error {
+	log := logd.FromContext(ctx)
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
 	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
@@ -231,6 +235,8 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 }
 
 func (controller *Controller) markForTermination(ctx context.Context, dk *dynakube.DynaKube, cacheEntry *cache.Entry) error {
+	log := logd.FromContext(ctx)
+
 	if !cacheEntry.IsMarkableForTermination(controller.timeProvider.Now().UTC()) {
 		return nil
 	}
@@ -273,6 +279,8 @@ func (controller *Controller) getCache(ctx context.Context) (*cache.Cache, error
 }
 
 func (controller *Controller) pruneCache(ctx context.Context, nodeCache *cache.Cache) error {
+	log := logd.FromContext(ctx)
+
 	missingCachedNodes, err := nodeCache.Prune(ctx, controller.client, controller.timeProvider.Now().UTC())
 	if err != nil {
 		return err

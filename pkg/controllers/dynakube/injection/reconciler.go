@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
@@ -47,6 +48,8 @@ func NewReconciler(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "dynakube-injection")
+
 	err := r.reconcileSubReconcilers(ctx, dtClient, dk)
 	if err != nil {
 		return err
@@ -143,6 +146,8 @@ func (r *Reconciler) setupInitSecret(ctx context.Context, dtClient *dynatrace.Cl
 }
 
 func (r *Reconciler) unmap(ctx context.Context, dk *dynakube.DynaKube) {
+	log := logd.FromContext(ctx)
+
 	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
 	if err != nil {
 		log.Error(err, "failed to list namespaces for dynakube", "dkName", dk.Name)
@@ -155,6 +160,8 @@ func (r *Reconciler) unmap(ctx context.Context, dk *dynakube.DynaKube) {
 }
 
 func (r *Reconciler) setupOneAgentInjection(ctx context.Context, dk *dynakube.DynaKube, versionReconciler version.Reconciler, connectionInfoReconciler controllers.Reconciler) error {
+	log := logd.FromContext(ctx)
+
 	err := versionReconciler.ReconcileCodeModules(ctx, dk)
 	if err != nil {
 		return err
@@ -210,6 +217,8 @@ func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1
 }
 
 func (r *Reconciler) setupEnrichmentInjection(ctx context.Context, dk *dynakube.DynaKube, enrichmentRulesReconciler controllers.Reconciler) error {
+	log := logd.FromContext(ctx)
+
 	err := enrichmentRulesReconciler.Reconcile(ctx)
 	if err != nil {
 		log.Info("couldn't reconcile metadata-enrichment rules")
@@ -234,6 +243,8 @@ func (r *Reconciler) createDynakubeMapper(ctx context.Context, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.Namespace, dk *dynakube.DynaKube) {
+	log := logd.FromContext(ctx)
+
 	if meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType) == nil &&
 		meta.FindStatusCondition(*dk.Conditions(), metaDataEnrichmentConditionType) == nil {
 		return
@@ -249,6 +260,8 @@ func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.
 }
 
 func (r *Reconciler) cleanupOTLPSecret(ctx context.Context, namespaces []corev1.Namespace, dk *dynakube.DynaKube) {
+	log := logd.FromContext(ctx)
+
 	if meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType) == nil {
 		return
 	}

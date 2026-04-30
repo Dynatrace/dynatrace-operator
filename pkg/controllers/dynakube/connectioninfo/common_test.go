@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,6 @@ import (
 
 func TestIsTenantSecretPresent(t *testing.T) {
 	ctx := t.Context()
-	log := logd.Get().WithName("test-connectioninfo")
 	secretNamespacedName := types.NamespacedName{Name: "secret-not-found", Namespace: "test-namespace"}
 
 	t.Run("secret found", func(t *testing.T) {
@@ -34,9 +32,9 @@ func TestIsTenantSecretPresent(t *testing.T) {
 
 		existingSecretNamespacedName := types.NamespacedName{Name: testName, Namespace: testNamespace}
 
-		secrets := k8ssecret.Query(fakeClient, fakeClient, log)
+		secrets := k8ssecret.Query(fakeClient, fakeClient)
 
-		isPresent, err := IsTenantSecretPresent(ctx, secrets, existingSecretNamespacedName, log)
+		isPresent, err := IsTenantSecretPresent(ctx, secrets, existingSecretNamespacedName)
 		assert.True(t, isPresent)
 		assert.NoError(t, err)
 	})
@@ -44,9 +42,9 @@ func TestIsTenantSecretPresent(t *testing.T) {
 	t.Run("secret not found", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 
-		secrets := k8ssecret.Query(fakeClient, fakeClient, log)
+		secrets := k8ssecret.Query(fakeClient, fakeClient)
 
-		isPresent, err := IsTenantSecretPresent(ctx, secrets, secretNamespacedName, log)
+		isPresent, err := IsTenantSecretPresent(ctx, secrets, secretNamespacedName)
 		assert.False(t, isPresent)
 		assert.NoError(t, err)
 	})
@@ -60,9 +58,9 @@ func TestIsTenantSecretPresent(t *testing.T) {
 			},
 		})
 
-		secrets := k8ssecret.Query(fakeClient, fakeClient, log)
+		secrets := k8ssecret.Query(fakeClient, fakeClient)
 
-		isPresent, err := IsTenantSecretPresent(ctx, secrets, secretNamespacedName, log)
+		isPresent, err := IsTenantSecretPresent(ctx, secrets, secretNamespacedName)
 		assert.False(t, isPresent)
 		assert.ErrorIs(t, err, testError)
 	})

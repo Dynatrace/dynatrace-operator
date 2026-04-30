@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
@@ -23,11 +24,13 @@ type Reconciler struct {
 
 func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		configMaps: k8sconfigmap.Query(client, apiReader, log),
+		configMaps: k8sconfigmap.Query(client, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "telemetry-ingest-api-credentials-secret")
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), configMapConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
@@ -49,6 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 func (r *Reconciler) deleteConfigMap(ctx context.Context, configMap *corev1.ConfigMap, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	log.Info("deleting configmap", "name", configMap.Name)
 
 	err := r.configMaps.Delete(ctx, configMap)
@@ -63,6 +67,8 @@ func (r *Reconciler) deleteConfigMap(ctx context.Context, configMap *corev1.Conf
 }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	configMapData, err := r.generateData(dk)
 	if err != nil {
 		return errors.WithMessage(err, "could not generate config map data")

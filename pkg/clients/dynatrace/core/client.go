@@ -15,9 +15,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
-const apiTokenHeader = "Api-Token "
-
-var log = logd.Get().WithName("dtclient-core")
+const (
+	apiTokenHeader = "Api-Token "
+	loggerName     = "dtclient-core"
+)
 
 // Client defines the behavior required from a config provider and is mockable
 type Client interface {
@@ -116,21 +117,29 @@ func (c *ClientImpl) newRequest(ctx context.Context) *RequestImpl {
 
 // GET creates a GET request builder
 func (c *ClientImpl) GET(ctx context.Context, path string) Request {
+	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodGet)
+
 	return c.newRequest(ctx).withMethod(http.MethodGet).WithPath(path)
 }
 
 // POST creates a POST request builder
 func (c *ClientImpl) POST(ctx context.Context, path string) Request {
+	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodPost)
+
 	return c.newRequest(ctx).withMethod(http.MethodPost).WithPath(path)
 }
 
 // PUT creates a PUT request builder
 func (c *ClientImpl) PUT(ctx context.Context, path string) Request {
+	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodPut)
+
 	return c.newRequest(ctx).withMethod(http.MethodPut).WithPath(path)
 }
 
 // DELETE creates a DELETE request builder
 func (c *ClientImpl) DELETE(ctx context.Context, path string) Request {
+	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodDelete)
+
 	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
 }
 
@@ -270,6 +279,7 @@ func (r *RequestImpl) withMethod(method string) Request {
 }
 
 func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.Header, err error) {
+	log := logd.FromContext(r.ctx)
 	if r.err != nil {
 		return nil, r.err
 	}
@@ -330,6 +340,7 @@ func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.He
 }
 
 func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
+	log := logd.FromContext(r.ctx)
 	if r.err != nil {
 		return nil, "", r.err
 	}

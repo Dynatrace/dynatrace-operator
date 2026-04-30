@@ -33,6 +33,7 @@ import (
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/app"
 	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/host"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
@@ -74,6 +75,8 @@ func (srv *Server) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (srv *Server) Start(ctx context.Context) error {
+	ctx, log := logd.NewFromContext(ctx, "csi-driver")
+
 	endpoint, err := url.Parse(srv.opts.Endpoint)
 	if err != nil {
 		return errors.WithMessage(err, fmt.Sprintf("failed to parse endpoint '%s'", srv.opts.Endpoint))
@@ -138,13 +141,15 @@ func (srv *Server) Start(ctx context.Context) error {
 	return err
 }
 
-func (srv *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
+func (srv *Server) GetPluginInfo(ctx context.Context, _ *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
+	log := logd.FromContext(ctx)
 	log.Debug("received GetPluginInfo")
 
 	return &csi.GetPluginInfoResponse{Name: dtcsi.DriverName, VendorVersion: version.Version}, nil
 }
 
-func (srv *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+func (srv *Server) Probe(ctx context.Context, _ *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	log := logd.FromContext(ctx)
 	log.Debug("received Probe")
 
 	return &csi.ProbeResponse{}, nil
@@ -155,6 +160,8 @@ func (srv *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabili
 }
 
 func (srv *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	log := logd.FromContext(ctx)
+
 	volumeCfg, err := csivolumes.ParseNodePublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
@@ -190,17 +197,19 @@ func (srv *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 		return nil, err
 	}
 
-	srv.unmount(volumeInfo)
+	srv.unmount(ctx, volumeInfo)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
+func (srv *Server) unmount(ctx context.Context, volumeInfo csivolumes.VolumeInfo) {
+	log := logd.FromContext(ctx)
+
 	if err := srv.mounter.Unmount(volumeInfo.TargetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", volumeInfo.TargetPath)
 	}
 
-	_ = srv.unmountMappedMount(srv.path.AppMountMappedDir(volumeInfo.VolumeID))
+	_ = srv.unmountMappedMount(ctx, srv.path.AppMountMappedDir(volumeInfo.VolumeID))
 
 	appMountDir := srv.path.AppMountForID(volumeInfo.VolumeID)
 	needsCleanUp := []string{
@@ -209,7 +218,7 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 	}
 
 	if err := srv.mounter.Unmount(appMountDir); err == nil {
-		podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo)
+		podInfoSymlinkPath := srv.findPodInfoSymlink(ctx, volumeInfo)
 
 		for _, path := range needsCleanUp {
 			if podInfoSymlinkPath != "" {
@@ -232,7 +241,9 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 
 // unmountMappedMount unmounts the legacy mapped directory.
 // The mapped folder was just a bind mount to a binary folder, that only exists on "old mounts".
-func (srv *Server) unmountMappedMount(path string) error {
+func (srv *Server) unmountMappedMount(ctx context.Context, path string) error {
+	log := logd.FromContext(ctx)
+
 	if path == "" {
 		return nil
 	}
@@ -251,7 +262,8 @@ func (srv *Server) unmountMappedMount(path string) error {
 	return err
 }
 
-func (srv *Server) findPodInfoSymlink(volumeInfo csivolumes.VolumeInfo) string {
+func (srv *Server) findPodInfoSymlink(ctx context.Context, volumeInfo csivolumes.VolumeInfo) string {
+	log := logd.FromContext(ctx)
 	podInfoPath := srv.path.OverlayVarPodInfo(volumeInfo.VolumeID)
 
 	podInfoBytes, err := os.ReadFile(podInfoPath)
@@ -292,6 +304,8 @@ func (srv *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeReques
 
 func grpcLimiter(maxGRPCRequests int32) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		ctx, log := logd.NewFromContext(ctx, "csi-driver")
+
 		var methodName string
 
 		var logValues []any

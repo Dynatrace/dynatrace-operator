@@ -47,7 +47,7 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		// Mutator disabled - no injection should occur
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(false)
+		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
 
 		h := createTestHandler(
 			mockEnvVarMutator,
@@ -75,8 +75,8 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
-		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
+		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
 
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
@@ -102,9 +102,9 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
 
-		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
+		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
 
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
@@ -133,12 +133,12 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
 
-		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(true)
 
-		mockEnvVarMutator.On("Reinvoke", mock.Anything).Return(true)
-		mockResourceAttributeMutator.On("Reinvoke", mock.Anything).Return(true)
+		mockEnvVarMutator.On("Reinvoke", mock.Anything, mock.Anything).Return(true)
+		mockResourceAttributeMutator.On("Reinvoke", mock.Anything, mock.Anything).Return(true)
 
 		h := createTestHandler(
 			mockEnvVarMutator,
@@ -161,8 +161,8 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
-		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
+		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(errors.New("error"))
 
 		h := createTestHandler(
@@ -182,8 +182,8 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
-		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
+		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
 
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(errors.New("error"))
@@ -206,7 +206,7 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		// enable env var mutator so that secret presence is checked
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
 
 		// create handler with NO secrets present
 		h := createTestHandler(
@@ -229,7 +229,7 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		// enable env var mutator so that secret presence is checked
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
 
 		// create handler with NO cert secret present
 		h := createTestHandler(
@@ -257,8 +257,8 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
-		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
+		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
 

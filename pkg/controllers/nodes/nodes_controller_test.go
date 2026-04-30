@@ -32,6 +32,10 @@ const (
 	testAPIToken  = "test-api-token"
 )
 
+var (
+	anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+)
+
 func TestReconcile(t *testing.T) {
 	t.Run("Create node and then delete it", func(t *testing.T) {
 		ctx := t.Context()
@@ -106,7 +110,7 @@ func TestReconcile(t *testing.T) {
 		)
 
 		hostClient := hostclientmock.NewClient(t)
-		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", &core.HTTPError{StatusCode: 404})
+		hostClient.EXPECT().GetEntityIDForIP(anyCtx, "1.2.3.4").Return("", &core.HTTPError{StatusCode: 404})
 
 		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
@@ -149,8 +153,8 @@ func TestReconcile(t *testing.T) {
 		)
 
 		hostClient := hostclientmock.NewClient(t)
-		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("HOST-42", nil).Once()
-		hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
+		hostClient.EXPECT().GetEntityIDForIP(anyCtx, "1.2.3.4").Return("HOST-42", nil).Once()
+		hostClient.EXPECT().SendEvent(anyCtx, mock.MatchedBy(func(e hostevent.Event) bool {
 			return e.EventType == hostevent.MarkedForTerminationEvent
 		})).Return(&core.HTTPError{StatusCode: 404}).Once()
 
@@ -351,8 +355,8 @@ func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *d
 
 func createDTMockClient(t *testing.T, ip, host string) *dynatrace.Client {
 	hostClient := hostclientmock.NewClient(t)
-	hostClient.EXPECT().GetEntityIDForIP(t.Context(), ip).Return(host, nil)
-	hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
+	hostClient.EXPECT().GetEntityIDForIP(anyCtx, ip).Return(host, nil)
+	hostClient.EXPECT().SendEvent(anyCtx, mock.MatchedBy(func(e hostevent.Event) bool {
 		return e.EventType == hostevent.MarkedForTerminationEvent
 	})).Return(nil)
 

@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -83,6 +84,8 @@ func useLegacyMounts(dk *dynakube.DynaKube) bool {
 }
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	appLabels := buildAppLabels(r.dk)
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
@@ -116,7 +119,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
 		k8sconditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
@@ -130,7 +133,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 }
 
 func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
-	secrets := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      r.dk.Extensions().GetTLSSecretName(),

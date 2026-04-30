@@ -7,6 +7,7 @@ import (
 	v1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,6 +43,8 @@ func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.
 }
 
 func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ admission.Warnings, err error) {
+	ctx, _ = logd.NewFromContext(ctx, "edgeconnect-validation")
+
 	ec, err := getEdgeConnect(obj)
 	if err != nil {
 		return
@@ -57,6 +60,8 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ a
 }
 
 func (v *Validator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (warnings admission.Warnings, err error) {
+	ctx, _ = logd.NewFromContext(ctx, "edgeconnect-validation")
+
 	ec, err := getEdgeConnect(newObj)
 	if err != nil {
 		return

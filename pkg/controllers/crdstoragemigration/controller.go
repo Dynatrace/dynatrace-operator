@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -19,6 +20,7 @@ const retryInterval = 10 * time.Second
 var run = Run
 
 func InitReconcile(ctx context.Context, clt client.Client, namespace string) error {
+	ctx, log := logd.NewFromContext(ctx, "crd-storage-migration")
 	request := types.NamespacedName{Name: webhook.DeploymentName, Namespace: namespace}
 
 	return wait.PollUntilContextCancel(ctx, retryInterval, true, func(ctx context.Context) (bool, error) {

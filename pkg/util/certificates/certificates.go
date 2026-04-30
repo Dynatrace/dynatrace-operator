@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -99,7 +100,9 @@ func (c *Certificate) ToPEM() (pemCert []byte, pemPk []byte, err error) {
 	return pemCert, pemPk, nil
 }
 
-func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Duration, now time.Time, log logd.Logger) (bool, error) {
+func ValidateCertificateExpiration(ctx context.Context, certData []byte, renewalThreshold time.Duration, now time.Time) (bool, error) {
+	log := logd.FromContext(ctx)
+
 	if block, _ := pem.Decode(certData); block == nil {
 		log.Info("failed to parse certificate", "error", "can't decode PEM file")
 

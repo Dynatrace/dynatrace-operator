@@ -194,11 +194,11 @@ func TestIsEnabled(t *testing.T) {
 
 			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
 
-			assert.Equal(t, test.withCSI, mut.IsEnabled(req.BaseRequest))
+			assert.Equal(t, test.withCSI, mut.IsEnabled(t.Context(), req.BaseRequest))
 
 			installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
-			assert.Equal(t, test.withoutCSI, mut.IsEnabled(req.BaseRequest))
+			assert.Equal(t, test.withoutCSI, mut.IsEnabled(t.Context(), req.BaseRequest))
 		})
 	}
 }
@@ -206,35 +206,35 @@ func TestIsEnabled(t *testing.T) {
 func Test_setInjectedAnnotation(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
 		mut := NewMutator(nil)
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(t, nil, nil)
 
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
 		require.Len(t, request.Pod.Annotations, 1)
-		require.True(t, mut.IsInjected(request.BaseRequest))
+		require.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("should remove reason from map", func(t *testing.T) {
 		mut := NewMutator(nil)
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(t, nil, nil)
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
 		require.Len(t, request.Pod.Annotations, 1)
-		require.True(t, mut.IsInjected(request.BaseRequest))
+		require.True(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 }
 
 func Test_setNotInjectedAnnotationFunc(t *testing.T) {
 	t.Run("should add annotations to nil map", func(t *testing.T) {
 		mut := NewMutator(nil)
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(t, nil, nil)
 
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 		require.Len(t, request.Pod.Annotations, 2)
-		require.False(t, mut.IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
 	})
 }
 
@@ -243,7 +243,7 @@ func TestWorkloadAnnotations(t *testing.T) {
 	workloadInfoKind := "workload-kind"
 
 	t.Run("should add annotation to nil map", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(t, nil, nil)
 
 		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
 		SetWorkloadAnnotations(request.Pod, &workload.Info{Name: workloadInfoName, Kind: workloadInfoKind})
@@ -252,7 +252,7 @@ func TestWorkloadAnnotations(t *testing.T) {
 		assert.Equal(t, workloadInfoKind, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadKind, "not-found"))
 	})
 	t.Run("should lower case kind annotation", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(t, nil, nil)
 		objectMeta := &metav1.PartialObjectMetadata{
 			ObjectMeta: metav1.ObjectMeta{Name: workloadInfoName},
 			TypeMeta:   metav1.TypeMeta{Kind: "SuperWorkload"},
@@ -281,6 +281,7 @@ func TestMutate(t *testing.T) {
 
 	t.Run("metadata enrichment fails => error", func(t *testing.T) {
 		request := dtwebhook.MutationRequest{
+			Context: t.Context(),
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: pod.DeepCopy(),
 				DynaKube: dynakube.DynaKube{
@@ -350,6 +351,7 @@ func TestMutate(t *testing.T) {
 				expectedPod := pod.DeepCopy()
 
 				request := dtwebhook.MutationRequest{
+					Context: t.Context(),
 					BaseRequest: &dtwebhook.BaseRequest{
 						Pod: pod,
 						DynaKube: dynakube.DynaKube{

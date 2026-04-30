@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -20,13 +21,14 @@ type StatusUpdater interface {
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
 	IsAutoRegistryEnabled() bool
-	CheckForDowngrade(latestVersion string) (bool, error)
-	ValidateStatus() error
+	CheckForDowngrade(ctx context.Context, latestVersion string) (bool, error)
+	ValidateStatus(ctx context.Context) error
 
 	UseTenantRegistry(context.Context) error
 }
 
 func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
+	log := logd.FromContext(ctx)
 	currentSource := determineSource(updater)
 
 	var err error
@@ -40,7 +42,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 
 	if currentSource == status.CustomImageVersionSource {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		setImageIDToCustomImage(updater.Target(), updater.CustomImage())
+		setImageIDToCustomImage(ctx, updater.Target(), updater.CustomImage())
 
 		return nil
 	}
@@ -63,7 +65,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 			return err
 		}
 
-		return updater.ValidateStatus()
+		return updater.ValidateStatus(ctx)
 	}
 
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
@@ -73,10 +75,11 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		return err
 	}
 
-	return updater.ValidateStatus()
+	return updater.ValidateStatus(ctx)
 }
 
-func (r *reconciler) processAutoRegistry(_ context.Context, updater StatusUpdater) error {
+func (r *reconciler) processAutoRegistry(ctx context.Context, updater StatusUpdater) error {
+	log := logd.FromContext(ctx)
 	log.Info("updating version status according to public registry", "updater", updater.Name())
 	// TODO: implement in ICP-1077
 	return errors.New("auto registry is not yet supported")
@@ -99,9 +102,11 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 }
 
 func setImageIDToCustomImage(
+	ctx context.Context,
 	target *status.VersionStatus,
 	imageURI string,
 ) {
+	log := logd.FromContext(ctx)
 	log.Info("updating image version info",
 		"image", imageURI,
 		"oldImageID", target.ImageID)
@@ -114,10 +119,13 @@ func setImageIDToCustomImage(
 }
 
 func updateVersionStatusForTenantRegistry(
+	ctx context.Context,
 	target *status.VersionStatus,
 	imageURI string,
 	latestVersion string,
 ) error {
+	log := logd.FromContext(ctx)
+
 	ref, err := name.ParseReference(imageURI)
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse image uri")
@@ -164,11 +172,12 @@ func getTagFromImageID(imageID string) (string, error) {
 	return taggedRef.TagStr(), nil
 }
 
-func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, error) {
+func isDowngrade(ctx context.Context, updaterName, previousVersion, latestVersion string) (bool, error) {
 	if previousVersion != "" {
 		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
 			return false, err
 		} else if downgrade {
+			log := logd.FromContext(ctx)
 			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updaterName, "from", previousVersion, "to", latestVersion)
 
 			return true, err

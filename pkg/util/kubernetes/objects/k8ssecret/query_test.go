@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,8 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
-
-var secretLog = logd.Get().WithName("test-secret")
 
 const (
 	testDeploymentName = "deployment-as-owner-of-secret"
@@ -38,7 +35,7 @@ func TestGetSecret(t *testing.T) {
 			},
 		},
 	)
-	secretQuery := Query(fakeClient, fakeClient, secretLog)
+	secretQuery := Query(fakeClient, fakeClient)
 
 	t.Run("get existing secret", func(t *testing.T) {
 		secret, err := secretQuery.Get(t.Context(), types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
@@ -97,7 +94,7 @@ func newClientWithSecrets() client.Client {
 func TestMultipleNamespaces(t *testing.T) {
 	t.Run("deletion of test secret in namespaces 1 and 2", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := Query(fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient)
 
 		namespaces := []string{"ns1", "ns2"}
 		err := secretQuery.DeleteForNamespaces(t.Context(), testSecretName, namespaces)
@@ -112,7 +109,7 @@ func TestMultipleNamespaces(t *testing.T) {
 	})
 	t.Run("deletion of test secret in namespaces 1 and 2 and empty", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := Query(fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient)
 
 		// secret does not exist in this namespace => other secrets should still get deleted
 		ns := corev1.Namespace{
@@ -138,7 +135,7 @@ func TestMultipleNamespaces(t *testing.T) {
 func TestMultipleSecrets(t *testing.T) {
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := Query(fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient)
 
 		secrets, err := secretQuery.GetAllFromNamespaces(t.Context(), testSecretName)
 		require.NoError(t, err)
@@ -146,7 +143,7 @@ func TestMultipleSecrets(t *testing.T) {
 	})
 	t.Run("update and create secret in specific namespaces", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := Query(fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient)
 
 		namespaces := []corev1.Namespace{
 			{
@@ -247,7 +244,7 @@ func TestMultipleSecrets(t *testing.T) {
 				},
 			},
 		}
-		secretQuery := Query(boomClient, fakeReader, secretLog)
+		secretQuery := Query(boomClient, fakeReader)
 
 		err := secretQuery.CreateOrUpdateForNamespaces(t.Context(), &secret, namespaces)
 		require.Error(t, err)
@@ -258,7 +255,7 @@ func TestMultipleSecrets(t *testing.T) {
 func TestInitialMultipleSecrets(t *testing.T) {
 	testSecretName := "testSecret"
 	fakeClient := fake.NewClientWithIndex()
-	secretQuery := Query(fakeClient, fakeClient, secretLog)
+	secretQuery := Query(fakeClient, fakeClient)
 
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
 		secrets, err := secretQuery.GetAllFromNamespaces(t.Context(), testSecretName)
@@ -289,7 +286,7 @@ func TestCreateOrUpdate(t *testing.T) {
 
 	t.Run("create secret", func(t *testing.T) {
 		// empty client
-		secretQuery := Query(fake.NewClient(), fake.NewClient(), secretLog)
+		secretQuery := Query(fake.NewClient(), fake.NewClient())
 
 		created, err := secretQuery.CreateOrUpdate(t.Context(), getTestSecret())
 		require.NoError(t, err)
@@ -300,7 +297,7 @@ func TestCreateOrUpdate(t *testing.T) {
 	})
 	t.Run("existing equal secret", func(t *testing.T) {
 		// existing mocked secret in fakeClient
-		secretQuery := Query(fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient)
 
 		updated, err := secretQuery.CreateOrUpdate(t.Context(), getTestSecret())
 		require.NoError(t, err)
@@ -311,7 +308,7 @@ func TestCreateOrUpdate(t *testing.T) {
 	})
 	t.Run("update secret", func(t *testing.T) {
 		// existing mocked secret in fakeClient
-		secretQuery := Query(fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient)
 		newValue := []byte("dGVzdCB2YWx1ZSBudW1iZXIgMg==")
 		updatedSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{

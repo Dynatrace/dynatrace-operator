@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
@@ -68,11 +69,13 @@ func (updater codeModulesUpdater) IsAutoRegistryEnabled() bool {
 	return false
 }
 
-func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
+func (updater *codeModulesUpdater) CheckForDowngrade(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
 func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
 		updater.dk.Status.CodeModules = oneagent.CodeModulesStatus{
@@ -104,6 +107,6 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 	return nil
 }
 
-func (updater codeModulesUpdater) ValidateStatus() error {
+func (updater codeModulesUpdater) ValidateStatus(_ context.Context) error {
 	return nil
 }

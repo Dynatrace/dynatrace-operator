@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
@@ -23,6 +24,7 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "dynakube-proxy")
 	if dk.NeedsActiveGateProxy() || dk.NeedsOneAgentProxy() {
 		return r.generateForDynakube(ctx, dk)
 	}
@@ -52,7 +54,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dk *dynakube.DynaK
 		return errors.WithStack(err)
 	}
 
-	secrets := k8ssecret.Query(r.client, r.apiReader, log)
+	secrets := k8ssecret.Query(r.client, r.apiReader)
 
 	_, err = secrets.CreateOrUpdate(ctx, secret)
 
@@ -60,6 +62,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dk *dynakube.DynaK
 }
 
 func (r *Reconciler) ensureDeleted(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	secretName := BuildSecretName(dk.Name)
 
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dk.Namespace}}
@@ -97,7 +100,7 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) 
 		return nil, err
 	}
 
-	scheme, host, port, username, password, err := parseProxyURL(proxyURL)
+	scheme, host, port, username, password, err := parseProxyURL(ctx, proxyURL)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +114,9 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) 
 	}, nil
 }
 
-func parseProxyURL(proxy string) (scheme, host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 6
+func parseProxyURL(ctx context.Context, proxy string) (scheme, host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 6
 	if !strings.HasPrefix(strings.ToLower(proxy), "http://") && !strings.HasPrefix(strings.ToLower(proxy), "https://") {
+		log := logd.FromContext(ctx)
 		log.Info("proxy url has no scheme. The default 'http://' scheme used")
 
 		proxy = "http://" + proxy

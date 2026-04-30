@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -151,7 +152,7 @@ func matchOTLPExporterConfiguration(dk *dynakube.DynaKube, namespace *corev1.Nam
 // updateNamespace tries to match the namespace to every dynakube with codeModules
 // finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
 // adds/updates/removes labels from the namespace.
-func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynakube.DynaKubeList) (bool, error) {
+func updateNamespace(ctx context.Context, namespace *corev1.Namespace, deployedDynakubes *dynakube.DynaKubeList) (bool, error) {
 	namespaceUpdated := false
 	conflict := ConflictChecker{}
 
@@ -169,14 +170,16 @@ func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynakube.Dy
 			}
 		}
 
-		labelsUpdated := updateLabels(matches.IsAny(), dk, namespace)
+		labelsUpdated := updateLabels(ctx, matches.IsAny(), dk, namespace)
 		namespaceUpdated = labelsUpdated || namespaceUpdated
 	}
 
 	return namespaceUpdated, nil
 }
 
-func updateLabels(matches bool, dk *dynakube.DynaKube, namespace *corev1.Namespace) bool {
+func updateLabels(ctx context.Context, matches bool, dk *dynakube.DynaKube, namespace *corev1.Namespace) bool {
+	log := logd.FromContext(ctx)
+
 	updated := false
 
 	if namespace.Labels == nil {

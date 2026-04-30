@@ -122,12 +122,12 @@ func TestReconciler(t *testing.T) {
 			dk,
 		)
 		oneAgentClient := oneagentclientmock.NewClient(t)
-		oneAgentClient.EXPECT().GetConnectionInfo(t.Context()).Return(expectedOneAgentConnectionInfo, nil).Once()
+		oneAgentClient.EXPECT().GetConnectionInfo(anyCtx).Return(expectedOneAgentConnectionInfo, nil).Once()
 		versionClient := versionclientmock.NewClient(t)
-		versionClient.EXPECT().GetLatestAgentVersion(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
-		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
+		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 		settingsClient := settingsmock.NewClient(t)
-		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
+		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient,
@@ -807,7 +807,7 @@ func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 func createIstioReconcilerMock(t *testing.T, dk *dynakube.DynaKube) istioReconciler {
 	rec := newMockIstioReconciler(t)
 
-	rec.EXPECT().ReconcileCodeModules(t.Context(), dk).Return(nil).Once()
+	rec.EXPECT().ReconcileCodeModules(anyCtx, dk).Return(nil).Once()
 
 	return rec
 }
