@@ -14,11 +14,10 @@ import (
 )
 
 const (
-	testCBORData        = "\x81\x01" // minimal CBOR: array of one integer
-	testETag            = `"abc123"`
-	testResponseETag    = "def456"
-	testResponseETagRaw = `"` + testResponseETag + `"`
-	testClusterID       = "my-cluster"
+	testCBORData     = "\x81\x01" // minimal CBOR: array of one integer
+	testETag         = `"abc123"`
+	testResponseETag = `"def456"`
+	testClusterID    = "my-cluster"
 )
 
 // setupMockedProcessGroupingClient builds a client backed by a mock core.Client.
@@ -70,7 +69,7 @@ func setupMockedProcessGroupingClient(
 func TestGetProcessGroupingConfig(t *testing.T) {
 	t.Run("success_200_with_etag", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
+		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
@@ -90,7 +89,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("success_200_without_etag", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
+		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
@@ -128,7 +127,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("with_kubernetes_cluster_id", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
+		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{"kubernetesClusterId": testClusterID},
@@ -145,7 +144,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("without_kubernetes_cluster_id", func(t *testing.T) {
 		var buf bytes.Buffer
-		respHeaders := http.Header{"Etag": []string{testResponseETagRaw}}
+		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
@@ -162,7 +161,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 	t.Run("server_error", func(t *testing.T) {
 		var buf bytes.Buffer
-		serverErr := &core.HTTPError{StatusCode: 500, Message: "internal server error"}
+		serverErr := &core.HTTPError{StatusCode: http.StatusInternalServerError, Message: "internal server error"}
 
 		client := setupMockedProcessGroupingClient(t,
 			map[string]string{},
@@ -174,7 +173,27 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 
 		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", "", &buf)
 		require.Error(t, err)
-		require.False(t, core.HasStatusCode(err, http.StatusNotModified))
+		require.True(t, core.HasStatusCode(err, http.StatusInternalServerError))
+		assert.Empty(t, returnedETag)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("bad_request", func(t *testing.T) {
+		const badETag = "bad_etag"
+		var buf bytes.Buffer
+		serverErr := &core.HTTPError{StatusCode: http.StatusBadRequest, Message: "bad request"}
+
+		client := setupMockedProcessGroupingClient(t,
+			map[string]string{},
+			map[string]string{"If-None-Match": badETag},
+			nil,
+			nil,
+			serverErr,
+		)
+
+		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", badETag, &buf)
+		require.Error(t, err)
+		require.True(t, core.HasStatusCode(err, http.StatusBadRequest))
 		assert.Empty(t, returnedETag)
 		assert.Empty(t, buf.String())
 	})

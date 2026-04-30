@@ -3,6 +3,7 @@ package namespace
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -27,39 +28,39 @@ func AddWebhookToManager(manager ctrl.Manager, namespace string) error {
 
 // webhook adds the necessary label to namespaces that match a dynakubes namespace selector
 type webhook struct {
-	client    client.Client
-	apiReader client.Reader
-	namespace string
+	client         client.Client
+	apiReader      client.Reader
+	namespace      string
+	serviceAccount string
 }
 
-// Handle does the mapping between the namespace and dynakube from the namespace's side.
+// Handle does the mapping between the namespace and DynaKube from the namespace's side.
 // There are 2 special cases:
 //  1. ignore the webhook's namespace: this is necessary because if we want to monitor the whole cluster
 //     we would tag our own namespace which would cause the podInjector webhook to inject into our pods which can cause issues. (infra-monitoring pod injected into == bad)
-//  2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
-//     but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselves. So we just remove the annotation.
+//  2. if the namespace was updated by the operator => don't do the mapping: we do this because the operator also does the mapping
+//     but from the DynaKube's side (during DynaKube reconcile) and we don't want to repeat ourselves
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
 	ctx, log := logd.NewFromContext(ctx, "namespace-mutation")
 
 	if wh.namespace == request.Namespace {
-		return admission.Patched("")
+		return admission.Allowed("")
 	}
 
-	log.Info("namespace request", "namespace", request.Name, "operation", request.Operation)
+	logger := log.WithValues("namespace", request.Name, "operation", request.Operation)
+
+	if request.UserInfo.Username == wh.serviceAccount {
+		logger.Info("ignoring change from operator", "serviceAccount", wh.serviceAccount)
+
+		return admission.Allowed("")
+	}
+
+	log.Info("namespace request")
 
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-
-	if _, ok := ns.Annotations[mapper.UpdatedViaDynakubeAnnotation]; ok {
-		log.Info("checking namespace labels not necessary", "namespace", request.Name)
-		delete(ns.Annotations, mapper.UpdatedViaDynakubeAnnotation)
-
-		return getResponseForNamespace(&ns, &request)
-	}
-
-	log.Info("checking namespace labels", "namespace", request.Name)
 
 	nsMapper := mapper.NewNamespaceMapper(wh.client, wh.apiReader, wh.namespace, &ns)
 
@@ -69,10 +70,10 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 	}
 
 	if !updatedNamespace {
-		return admission.Patched("")
+		return admission.Allowed("")
 	}
 
-	log.Info("namespace", "labels", ns.Labels)
+	log.Info("updated labels", "labels", ns.Labels)
 
 	return getResponseForNamespace(&ns, &request)
 }
@@ -90,9 +91,10 @@ func decodeRequestToNamespace(request admission.Request, namespace *corev1.Names
 
 func newNamespaceMutator(client client.Client, apiReader client.Reader, namespace string) admission.Handler {
 	return &webhook{
-		apiReader: apiReader,
-		namespace: namespace,
-		client:    client,
+		apiReader:      apiReader,
+		client:         client,
+		namespace:      namespace,
+		serviceAccount: fmt.Sprintf("system:serviceaccount:%s:dynatrace-operator", namespace),
 	}
 }
 

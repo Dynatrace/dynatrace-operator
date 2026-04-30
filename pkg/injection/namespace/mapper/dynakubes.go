@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"context"
+	goerrors "errors"
 	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -54,8 +55,10 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 		return err
 	}
 
-	if err := dm.updateNamespaces(modifiedNs); err != nil {
-		return err
+	for _, ns := range modifiedNs {
+		if err := dm.client.Update(dm.ctx, ns); err != nil {
+			return err
+		}
 	}
 
 	oaActive := dm.dk.OneAgent().IsAppInjectionNeeded()
@@ -83,31 +86,19 @@ func (dm *DynakubeMapper) MatchingNamespaces() ([]*corev1.Namespace, error) {
 }
 
 func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error {
-	for i, ns := range namespaces {
+	for _, ns := range namespaces {
 		delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
-		setUpdatedViaDynakubeAnnotation(&namespaces[i])
 
-		if err := dm.client.Update(dm.ctx, &namespaces[i]); err != nil {
+		if err := dm.client.Update(dm.ctx, &ns); err != nil {
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
 		}
 
-		err := dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, ns.Name)
-		if err != nil {
-			return err
-		}
-
-		err = dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitCertsSecretName, ns.Name)
-		if err != nil {
-			return err
-		}
-
-		err = dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterSecretName, ns.Name)
-		if err != nil {
-			return err
-		}
-
-		err = dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterCertsSecretName, ns.Name)
-		if err != nil {
+		if err := goerrors.Join(
+			dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, ns.Name),
+			dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitCertsSecretName, ns.Name),
+			dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterSecretName, ns.Name),
+			dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterCertsSecretName, ns.Name),
+		); err != nil {
 			return err
 		}
 	}
@@ -172,16 +163,4 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 	slices.Sort(dm.matchedOTLPNamespaces)
 
 	return modifiedNs, nil
-}
-
-func (dm *DynakubeMapper) updateNamespaces(modifiedNs []*corev1.Namespace) error {
-	for _, ns := range modifiedNs {
-		setUpdatedViaDynakubeAnnotation(ns)
-
-		if err := dm.client.Update(dm.ctx, ns); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

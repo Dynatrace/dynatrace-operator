@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 )
@@ -51,5 +50,5 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 		return "", err
 	}
 
-	return strings.ReplaceAll(headers.Get(responseHeaderEtag), "\"", ""), nil
+	return headers.Get(responseHeaderEtag), nil
 }

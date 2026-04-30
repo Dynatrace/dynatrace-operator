@@ -20,7 +20,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -270,8 +269,6 @@ func TestRemoveAppInjection(t *testing.T) {
 	err = clt.Get(t.Context(), client.ObjectKey{Name: testNamespace, Namespace: ""}, &namespace)
 	require.NoError(t, err)
 	assert.Nil(t, namespace.Labels)
-	require.NotNil(t, namespace.Annotations)
-	assert.Equal(t, "true", namespace.Annotations[mapper.UpdatedViaDynakubeAnnotation])
 
 	err = clt.Get(t.Context(), client.ObjectKey{Name: testNamespace2, Namespace: ""}, &namespace)
 	require.NoError(t, err)
