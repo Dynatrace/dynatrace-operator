@@ -69,6 +69,11 @@ type DynaKubeStatus struct { //nolint:revive
 
 type APITokenStatus struct {
 	AvailableOptionalScopes AvailableOptionalScopes `json:"availableOptionalScopes,omitempty"`
+
+	// Platform is true if the token secret contains a platform token.
+	// It is set per reconcile for downstream reconcilers to use.
+	// We may expose this information to users at some point, but for now we keep it for internal use.
+	Platform bool `json:"-"`
 }
 
 type AvailableOptionalScopes struct {

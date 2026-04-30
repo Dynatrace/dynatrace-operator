@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -59,7 +60,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	rules, err := r.getEnrichmentRules(ctx)
 	if err != nil {
-		return err
+		if !core.IsForbidden(err) {
+			return err
+		}
+
+		log.Info("metadata-enrichment rules are not set in the status because the optional scope is not available", "scope", "settings:objects:read")
+		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are not set in the status because the optional 'settings:objects:read' scope is not available")
+
+		return nil
 	}
 
 	r.dk.Status.MetadataEnrichment.Rules = rules

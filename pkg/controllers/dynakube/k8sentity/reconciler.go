@@ -55,11 +55,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 	}
 
 	if err := r.reconcileMEID(ctx, dtClient, dk); err != nil {
+		if core.IsForbidden(err) {
+			msg := "settings:objects:read optional scope not available"
+			log.Info(msg)
+			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
+
+			return nil
+		}
+
 		return err
 	}
 
-	if !dk.FF().IsAutomaticK8sAPIMonitoring() ||
-		!dk.ActiveGate().IsKubernetesMonitoringEnabled() {
+	if !dk.FF().IsAutomaticK8sAPIMonitoring() || !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
 		return nil
 	}
 
@@ -71,6 +78,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 
 	objectID, err := r.createK8sConnectionSettingIfAbsent(ctx, dtClient, dk)
 	if err != nil {
+		if core.IsForbidden(err) {
+			log.Info("api token missing optional scope, skipping reconciliation", "scope", "settings:objects:write")
+
+			return nil
+		}
+
 		return err
 	}
 
@@ -100,8 +113,6 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client
 
 	k8sEntity, err := dtClient.GetK8sClusterME(ctx, dk.Status.KubeSystemUUID)
 	if err != nil {
-		log.Info("failed to retrieve MEs")
-
 		return fmt.Errorf("get kubernetesClusterMEID: %w", err)
 	}
 

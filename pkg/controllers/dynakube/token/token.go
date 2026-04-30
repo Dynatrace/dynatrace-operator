@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/pkg/errors"
 )
 
@@ -51,8 +50,8 @@ func (token *Token) addFeatures(features []Feature) {
 
 func (token *Token) verifyScopes(ctx context.Context, dtClient token.Client, dk dynakube.DynaKube) (map[string]bool, error) {
 	ctx, log := logd.NewFromContext(ctx, "tokens")
-	// The scopes endpoint will no longer be available in 3rd gen
-	if len(token.Features) == 0 || dttoken.IsPlatform(token.Value) {
+
+	if len(token.Features) == 0 {
 		return map[string]bool{}, nil
 	}
 

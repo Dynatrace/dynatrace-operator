@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -41,31 +42,42 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 
 	_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
-	hasReadScope := optionalscope.IsAvailable(dk, token.ScopeSettingsRead)
-	hasWriteScope := optionalscope.IsAvailable(dk, token.ScopeSettingsWrite)
+	if !dk.Status.APIToken.Platform {
+		hasReadScope := optionalscope.IsAvailable(dk, token.ScopeSettingsRead)
+		hasWriteScope := optionalscope.IsAvailable(dk, token.ScopeSettingsWrite)
 
-	var missingScopes []string
-	if !hasReadScope {
-		missingScopes = append(missingScopes, token.ScopeSettingsRead)
-	}
+		var missingScopes []string
+		if !hasReadScope {
+			missingScopes = append(missingScopes, token.ScopeSettingsRead)
+		}
 
-	if !hasWriteScope {
-		missingScopes = append(missingScopes, token.ScopeSettingsWrite)
-	}
+		if !hasWriteScope {
+			missingScopes = append(missingScopes, token.ScopeSettingsWrite)
+		}
 
-	if len(missingScopes) > 0 {
-		message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing log monitoring setting and/or safely create new one."
-		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, message)
-		log.Info(message)
+		if len(missingScopes) > 0 {
+			message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing log monitoring setting and/or safely create new one."
+			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, message)
+			log.Info(message)
 
-		return nil
-	} else {
+			return nil
+		}
+
 		log.Info("necessary scopes for logmonitoring settings creation is available, proceeding with reconciliation")
 	}
 
 	err := r.checkLogMonitoringSettings(ctx, dtClient, dk)
 	if err != nil {
-		return err
+		if !core.IsForbidden(err) {
+			return err
+		}
+
+		log.Info("skipping reconciliation: tenant requires additional scopes for managing log monitoring settings")
+
+		if dk.Status.APIToken.Platform {
+			message := "platform token scope(s) missing: cannot query existing log monitoring monitoring setting and/or safely create new one."
+			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, message)
+		}
 	}
 
 	return nil

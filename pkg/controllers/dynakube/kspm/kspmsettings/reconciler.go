@@ -41,25 +41,27 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, 
 
 	_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType) // needed so the timestamp updates, will never actually show up in the status
 
-	hasReadScope := optionalscope.IsAvailable(dk, token.ScopeSettingsRead)
-	hasWriteScope := optionalscope.IsAvailable(dk, token.ScopeSettingsWrite)
+	if !dk.Status.APIToken.Platform {
+		hasReadScope := optionalscope.IsAvailable(dk, token.ScopeSettingsRead)
+		hasWriteScope := optionalscope.IsAvailable(dk, token.ScopeSettingsWrite)
 
-	var missingScopes []string
-	if !hasReadScope {
-		missingScopes = append(missingScopes, token.ScopeSettingsRead)
-	}
+		var missingScopes []string
+		if !hasReadScope {
+			missingScopes = append(missingScopes, token.ScopeSettingsRead)
+		}
 
-	if !hasWriteScope {
-		missingScopes = append(missingScopes, token.ScopeSettingsWrite)
-	}
+		if !hasWriteScope {
+			missingScopes = append(missingScopes, token.ScopeSettingsWrite)
+		}
 
-	if len(missingScopes) > 0 {
-		message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing kspm monitoring setting and/or safely create new one."
-		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), conditionType, message)
-		log.Info(message)
+		if len(missingScopes) > 0 {
+			message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing kspm monitoring setting and/or safely create new one."
+			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), conditionType, message)
+			log.Info(message)
 
-		return nil
-	} else {
+			return nil
+		}
+
 		log.Info("necessary scopes for kspm settings creation is available, proceeding with reconciliation")
 	}
 
@@ -87,7 +89,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 	kspmSettings, err := dtClient.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		if core.IsForbidden(err) {
-			log.Info("tenant requires additional scopes for getting KSPM settings. Skipping reconciliation")
+			setMissingScopes(ctx, dk)
 
 			return nil
 		}
@@ -110,7 +112,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 	objectID, err := dtClient.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, datasetPipelineEnabled)
 	if err != nil {
 		if core.IsForbidden(err) {
-			log.Info("tenant requires additional scopes for creating KSPM settings. Skipping reconciliation")
+			setMissingScopes(ctx, dk)
 
 			return nil
 		}
@@ -124,4 +126,13 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 	log.Info("kspm setting created", "settings", objectID, "configurationDatasetPipelineEnabled", datasetPipelineEnabled)
 
 	return nil
+}
+
+func setMissingScopes(ctx context.Context, dk *dynakube.DynaKube) {
+	logd.FromContext(ctx).Info("skipping reconciliation: tenant requires additional scopes for managing KSPM settings")
+
+	if dk.Status.APIToken.Platform {
+		message := "platform token scope(s) missing: cannot query existing kspm monitoring setting and/or safely create new one."
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), conditionType, message)
+	}
 }

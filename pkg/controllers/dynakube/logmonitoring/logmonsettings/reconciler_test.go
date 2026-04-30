@@ -2,11 +2,13 @@ package logmonsettings
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -170,6 +172,39 @@ func TestReconcile(t *testing.T) {
 		currentTS := condition.LastTransitionTime.Time
 
 		require.Equal(t, currentTS, prevTS)
+	})
+
+	t.Run("platform token cannot read settings", func(t *testing.T) {
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+			Return(settings.TotalCountSettingsResponse{}, &core.HTTPError{StatusCode: http.StatusForbidden}).
+			Once()
+
+		dk := getDK()
+		dk.Status.APIToken.Platform = true
+		r := NewReconciler()
+
+		err := r.Reconcile(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
+	})
+
+	t.Run("platform token cannot write settings", func(t *testing.T) {
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+			Return(settings.TotalCountSettingsResponse{}, nil).Once()
+		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, []logmonitoring.IngestRuleMatchers{}).
+			Return("", &core.HTTPError{StatusCode: http.StatusForbidden})
+
+		dk := getDK()
+		dk.Status.APIToken.Platform = true
+		r := NewReconciler()
+
+		err := r.Reconcile(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
 	})
 }
 

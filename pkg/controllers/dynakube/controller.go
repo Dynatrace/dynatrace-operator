@@ -483,6 +483,14 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 		return err
 	}
 
+	if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
+		dk.Status.APIToken.Platform = true
+
+		logd.FromContext(ctx).Info("skipping token scope lookup due to platform token")
+
+		return nil
+	}
+
 	err = controller.verifyTokenScopes(ctx, dtClient, dk)
 	if err != nil {
 		return err
