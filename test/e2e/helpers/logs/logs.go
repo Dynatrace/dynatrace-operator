@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -20,15 +22,23 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-// WriteOperatorLog fetches the operator pod logs and writes the to the testing log sink.
-func WriteOperatorLog(ctx context.Context, envConfig *envconf.Config, t *testing.T) {
+const operatorLogFileSuffix = "_operator.log"
+
+// WriteOperatorLogToFile fetches the operator pod logs and writes them to a file in the test/e2e directory.
+// The filename is generated from the test name and has the suffix "_operator.log",
+func WriteOperatorLogToFile(ctx context.Context, envConfig *envconf.Config, t *testing.T) {
 	resources := envConfig.Client().Resources()
 
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 	require.NoError(t, err)
 
+	resultsDir := filepath.Join(findProjectRoot(t), "results")
+	require.NoError(t, os.MkdirAll(resultsDir, 0755))
+	logFile, err := os.Create(filepath.Join(resultsDir, t.Name()+operatorLogFileSuffix))
+	require.NoError(t, err)
+
 	err = k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{Name: operator.DeploymentName, Namespace: operator.DefaultNamespace}).ForEachPod(func(pod corev1.Pod) {
-		err = copyLogStream(ctx, clientset, t.Output(), logParams{
+		err = copyLogStream(ctx, clientset, logFile, logParams{
 			namespace:     pod.Namespace,
 			podName:       pod.Name,
 			containerName: operator.ContainerName,
@@ -101,4 +111,23 @@ func copyLogStream(ctx context.Context, clientset kubernetes.Interface, w io.Wri
 	_, err = io.Copy(w, logStream)
 
 	return err
+}
+
+func findProjectRoot(t *testing.T) string {
+	path := "."
+
+	for {
+		var err error
+		path, err = filepath.Abs(path)
+		require.NoError(t, err)
+
+		require.NotEqual(t, "/", path, "reached filesystem root")
+		require.NotEqual(t, os.Getenv("HOME"), path, "reached user home directory")
+
+		if _, err := os.Stat(filepath.Join(path, "PROJECT")); err == nil {
+			return path
+		}
+
+		path = filepath.Join(path, "..")
+	}
 }
