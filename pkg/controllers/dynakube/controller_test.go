@@ -22,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	platformmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/platform"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -211,7 +212,8 @@ func TestSetupTokensAndClient(t *testing.T) {
 	ctx := t.Context()
 
 	const (
-		tokenValue = "this-is-a-token"
+		tokenValue         = "this-is-a-token"
+		platformTokenValue = "dt0s16.test-public-portion.test-private-portion"
 	)
 
 	dkBase := &dynakube.DynaKube{
@@ -296,6 +298,69 @@ func TestSetupTokensAndClient(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, dtClient)
 		assertTokenCondition(t, dk, false)
+	})
+
+	t.Run("platform token => phase set in status, scope validation skipped", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.Tokens(),
+				Namespace: dk.Namespace,
+			},
+			Data: map[string][]byte{
+				token.APIKey: []byte(platformTokenValue),
+			},
+		})
+
+		mockedPlatformClient := platformmock.NewClient(t)
+		mockedPlatformClient.EXPECT().GetTenantPhase(anyCtx).Return(3, nil).Once()
+
+		// Verifies scope validation is skipped
+		mockedTokenClient := tokenclientmock.NewClient(t)
+
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+			dtClientFactory: newClientFactory(&dynatrace.Client{
+				Platform: mockedPlatformClient,
+				Token:    mockedTokenClient,
+			}),
+		}
+
+		dtClient, err := controller.setupTokensAndClient(ctx, dk)
+		require.NoError(t, err)
+		assert.NotNil(t, dtClient)
+		assert.Equal(t, 3, dk.Status.Tenant.Phase)
+		assertTokenCondition(t, dk, false)
+	})
+
+	t.Run("platform token + GetTenantPhase error => error + condition", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.Tokens(),
+				Namespace: dk.Namespace,
+			},
+			Data: map[string][]byte{
+				token.APIKey: []byte(platformTokenValue),
+			},
+		})
+
+		mockedPlatformClient := platformmock.NewClient(t)
+		mockedPlatformClient.EXPECT().GetTenantPhase(anyCtx).Return(0, errors.New("api unavailable")).Once()
+
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+			dtClientFactory: newClientFactory(&dynatrace.Client{
+				Platform: mockedPlatformClient,
+			}),
+		}
+
+		dtClient, err := controller.setupTokensAndClient(ctx, dk)
+		require.Error(t, err)
+		assert.Nil(t, dtClient)
+		assertTokenCondition(t, dk, true)
 	})
 }
 

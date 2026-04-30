@@ -347,7 +347,19 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 		return nil, err
 	}
 
-	controller.warnAboutDeprecatedTokens(ctx)
+	isPlatform := dttoken.IsPlatform(controller.tokens.APIToken().Value)
+	if isPlatform {
+		phaseID, err := dtClient.Platform.GetTenantPhase(ctx)
+		if err != nil {
+			controller.setConditionTokenError(dk, err)
+
+			return nil, err
+		}
+
+		dk.Status.Tenant.Phase = phaseID
+	}
+
+	controller.warnAboutDeprecatedTokens(ctx, isPlatform)
 
 	err = controller.verifyTokens(ctx, dtClient.Token, dk)
 	if err != nil {
@@ -459,11 +471,11 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	return &dkMapper
 }
 
-func (controller *Controller) warnAboutDeprecatedTokens(ctx context.Context) {
+func (controller *Controller) warnAboutDeprecatedTokens(ctx context.Context, isPlatform bool) {
 	log := logd.FromContext(ctx)
 
 	if controller.tokens.PaasToken().Value != "" {
-		if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
+		if isPlatform {
 			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be ignored because the '" + token.APIKey + "' field in the secret contains a platform token, which will be used for authentication.")
 		} else {
 			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be used for authentication because the '" + token.APIKey + "' field in the secret does not contain a platform token.")

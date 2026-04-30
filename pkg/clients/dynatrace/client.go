@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/platform"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
@@ -34,6 +35,7 @@ type Client struct {
 	OneAgent   oneagent.Client
 	Version    version.Client
 	Token      token.Client
+	Platform   platform.Client
 }
 
 type OAuthClient struct {
@@ -96,6 +98,7 @@ func NewClient(options ...Option) (*Client, error) {
 		OneAgent:   oneagent.NewClient(apiClient, config.HostGroup, config.NetworkZone),
 		Version:    version.NewClient(apiClient),
 		Token:      token.NewClient(apiClient),
+		Platform:   platform.NewClient(apiClient),
 	}, nil
 }
 
