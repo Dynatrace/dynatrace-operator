@@ -2013,7 +2013,7 @@ spec:
                 type: string
             type: object
         type: object
-    served: true
+    served: false
     storage: false
     subresources:
       status: {}
@@ -2027,6 +2027,10 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    deprecated: true
+    deprecationWarning: This dynakube API version is deprecated and will be removed
+      in a future operator version. Please visit our documentation for details and
+      timeline.
     name: v1beta5
     schema:
       openAPIV3Schema:
