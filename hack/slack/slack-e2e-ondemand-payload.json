@@ -83,7 +83,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-28"
+                    "text": "k8s_1-30"
                   }
                 ]
               }
@@ -97,12 +97,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_28_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_30_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_28_EMOJI }}"
+                    "name": "${{ env.K8S_1_30_EMOJI }}"
                   }
                 ]
               }
@@ -151,7 +151,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-29"
+                    "text": "k8s_1-31"
                   }
                 ]
               }
@@ -165,12 +165,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_29_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_31_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_29_EMOJI }}"
+                    "name": "${{ env.K8S_1_31_EMOJI }}"
                   }
                 ]
               }
@@ -219,7 +219,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-30"
+                    "text": "k8s_1-32"
                   }
                 ]
               }
@@ -233,12 +233,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_30_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_32_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_30_EMOJI }}"
+                    "name": "${{ env.K8S_1_32_EMOJI }}"
                   }
                 ]
               }
@@ -287,7 +287,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-31"
+                    "text": "k8s_1-33"
                   }
                 ]
               }
@@ -301,12 +301,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_31_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_33_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_31_EMOJI }}"
+                    "name": "${{ env.K8S_1_33_EMOJI }}"
                   }
                 ]
               }
@@ -355,7 +355,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-32"
+                    "text": "k8s_1-34"
                   }
                 ]
               }
@@ -369,12 +369,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_32_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_34_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_32_EMOJI }}"
+                    "name": "${{ env.K8S_1_34_EMOJI }}"
                   }
                 ]
               }
@@ -423,7 +423,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-33"
+                    "text": "k8s_1-35"
                   }
                 ]
               }
@@ -437,12 +437,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_33_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_35_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_33_EMOJI }}"
+                    "name": "${{ env.K8S_1_35_EMOJI }}"
                   }
                 ]
               }
@@ -491,7 +491,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-34"
+                    "text": "k8s_1-36"
                   }
                 ]
               }
@@ -505,12 +505,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_34_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_36_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_34_EMOJI }}"
+                    "name": "${{ env.K8S_1_36_EMOJI }}"
                   }
                 ]
               }
@@ -559,7 +559,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-35"
+                    "text": "n/a"
                   }
                 ]
               }
@@ -572,13 +572,8 @@
                 "type": "rich_text_section",
                 "elements": [
                   {
-                    "type": "link",
-                    "url": "${{ env.K8S_1_35_RUN_ID_URL }}",
-                    "text": "tests "
-                  },
-                  {
-                    "type": "emoji",
-                    "name": "${{ env.K8S_1_35_EMOJI }}"
+                    "type": "text",
+                    "text": "n/a"
                   }
                 ]
               }
@@ -612,6 +607,69 @@
                   {
                     "type": "emoji",
                     "name": "${{ env.OCP_4_20_OLM_EMOJI }}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "n/a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "n/a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "ocp_4-21"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "${{ env.OCP_4_21_RUN_ID_URL }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.OCP_4_21_EMOJI }}"
                   }
                 ]
               }
