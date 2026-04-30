@@ -44,7 +44,7 @@ runs:
       PREFLIGHT_LOG: "preflight.log"
       PREFLIGHT_REPORT_NAME: ${{ inputs.report-name }}
       # renovate datasource=github-releases depName=redhat-openshift-ecosystem/openshift-preflight
-      PREFLIGHT_VERSION: 1.16.0
+      PREFLIGHT_VERSION: 1.17.2
       RHCC_APITOKEN: ${{ inputs.pyxis-api-token }}
       RHCC_PROJECT_ID: ${{ inputs.redhat-project-id }}
       SHOULD_SUBMIT: ${{ inputs.should-submit }}
