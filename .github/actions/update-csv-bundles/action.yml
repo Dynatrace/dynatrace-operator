@@ -11,6 +11,10 @@ inputs:
   changelog-path:
     description: "Path to the changelog file"
     required: true
+  dry-run:
+    description: "Generate bundles without creating a PR (uploads artifact instead)"
+    required: false
+    default: "false"
   app-id:
     description: "GitHub App ID for creating release PR"
     required: true
@@ -103,12 +107,14 @@ runs:
       run: |
         make bundle
     - name: Create GitHub app token
+      if: ${{ inputs.dry-run != 'true' }}
       uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
       id: create-github-app-token
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
     - name: Create CSV update PR
+      if: ${{ inputs.dry-run != 'true' }}
       uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
       with:
         base: release-${{ steps.vars.outputs.major_minor }}
@@ -126,3 +132,15 @@ runs:
         title: "[Automatic] Update OLM CSV bundles for v${{ inputs.version }}"
         body: |
             This PR updates the OLM bundles/CSVs on `release-${{ steps.vars.outputs.major_minor }}` for version `v${{ inputs.version }}`.
+    - name: Upload generated bundles as artifact
+      if: ${{ inputs.dry-run == 'true' }}
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      with:
+        name: csv-bundles-${{ inputs.version }}
+        path: |
+          config/olm/
+          config/deploy/kubernetes/kustomization.yaml
+          config/deploy/openshift/kustomization.yaml
+          config/manifests/bases/
+          config/helm/
+        if-no-files-found: error
