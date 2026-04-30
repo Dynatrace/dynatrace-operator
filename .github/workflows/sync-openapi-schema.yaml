@@ -47,39 +47,13 @@ jobs:
       pull-requests: write
     env:
       # Per-schema secrets — add entries here when adding new schemas to sync-config.yaml
-      TENANT_API_V2_REPO_URL: ${{ secrets.TENANT_API_V2_REPO_URL }}
+      TENANT_API_V2_SPEC_URL: ${{ secrets.TENANT_API_V2_SPEC_URL }}
       TENANT_API_V2_TOKEN: ${{ secrets.TENANT_API_V2_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-
-      - name: Fetch specs
-        run: |
-          set -euo pipefail
-          for row in $(echo "${SCHEMAS_JSON}" | jq -c '.[]'); do
-            name=$(echo "${row}" | jq -r '.name')
-            repo_var=$(echo "${row}" | jq -r '.repoEnvVar // ""')
-            spec_path=$(echo "${row}" | jq -r '.specPath // "spec3.json"')
-            auth_var=$(echo "${row}" | jq -r '.authEnvVar // ""')
-
-            repo_url=$([ -n "${repo_var}" ] && printenv "${repo_var}" || echo "")
-            auth_val=$([ -n "${auth_var}" ] && printenv "${auth_var}" || echo "")
-
-            [ -n "${repo_url}" ] || { echo "WARNING: repoEnvVar '${repo_var}' not set for ${name}, skipping."; continue; }
-
-            echo "Fetching ${name} from ${repo_url}/${spec_path}..."
-            mkdir -p "api/oapi/${name}"
-            curl -sSfL \
-              ${auth_val:+-H "Authorization: Bearer ${auth_val}"} \
-              "${repo_url}/${spec_path}" \
-              -o "api/oapi/${name}/spec3.json"
-
-            sed -E -i 's/(dt[^.]*)\.([A-Z0-9]{8})(\.([A-Z0-9]{64})?|)/example-token/g' "api/oapi/${name}/spec3.json"
-          done
-        env:
-          SCHEMAS_JSON: ${{ needs.prepare.outputs.schemas_json }}
 
       - name: Generate Go SDKs
         run: make oapi/generate
@@ -89,35 +63,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          if git diff --quiet; then
+          if [ -z "$(git status --porcelain)" ]; then
             echo "No changes detected, nothing to do."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas from the source repositories."$'\n\n'
-          pr_body+="| Schema | API version | Source URL |"$'\n'
-          pr_body+="|---|---|---|"$'\n'
-          schemas_summary=""
+          schemas_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[].name] | join(", ")')
 
-          for row in $(echo "${SCHEMAS_JSON}" | jq -c '.[]'); do
-            name=$(echo "${row}" | jq -r '.name')
-            repo_var=$(echo "${row}" | jq -r '.repoEnvVar // ""')
-            spec_path=$(echo "${row}" | jq -r '.specPath // "spec3.json"')
-            repo_url=$([ -n "${repo_var}" ] && printenv "${repo_var}" || echo "")
-            target_file="api/oapi/${name}/spec3.json"
-
-            git diff --quiet "${target_file}" 2>/dev/null && continue
-
-            old_version=$(git show HEAD:"${target_file}" 2>/dev/null | jq -r '.info.version // "unknown"' 2>/dev/null || echo "N/A")
-            new_version=$(jq -r '.info.version // "unknown"' "${target_file}")
-
-            pr_body+="| \`${name}\` | \`${old_version}\` → \`${new_version}\` | \`${repo_url}/${spec_path}\` |"$'\n'
-            schemas_summary+="${name}, "
-          done
-
-          schemas_summary="${schemas_summary%, }"
-          pr_body+=$'\n'"| | |"$'\n'"|---|---|"$'\n'
+          pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and regenerates Go SDKs."$'\n\n'
+          pr_body+="| | |"$'\n'"|---|---|"$'\n'
+          pr_body+="| **Schemas** | \`${schemas_summary}\` |"$'\n'
           pr_body+="| **Workflow run** | [#${WORKFLOW_RUN_NUMBER}](${WORKFLOW_RUN_URL}) |"$'\n'
 
           echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -140,10 +96,7 @@ jobs:
           delete-branch: true
           branch: sync-openapi-schemas
           add-paths: |
-            api/oapi/*/spec3.json
             pkg/clients/generated/
-            go.mod
-            go.sum
           title: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
           commit-message: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
           body: ${{ steps.sync.outputs.pr_body }}

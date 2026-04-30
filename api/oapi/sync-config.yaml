@@ -1,9 +1,8 @@
 # TODO: Leave comment to leave a example structure with explanations of each field
 schemas:
  - name: tenantApiV2
-   repoEnvVar: ""   # env var holding the base repo URL
-   specPath: ""     # path to the spec file within the repo
-   authEnvVar: ""   # env var holding the Bearer token
+   specUrlEnvVar: "TENANT_API_V2_SPEC_URL" # env var holding the full URL to the spec file
+   authEnvVar: "TENANT_API_V2_TOKEN"       # env var holding the Bearer token
    generate:
      packageName: tenantapiv2
      globalProperties:

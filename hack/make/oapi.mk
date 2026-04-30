@@ -34,13 +34,12 @@ oapi/generate: prerequisites/openapi-generator-cli
 		props=$$(echo "$$row" | jq -r '.generate.additionalProperties // "$(OAPI_ADDITIONAL_PROPS)"'); \
 		gprops=$$(echo "$$row" | jq -r '$(jq_global_props)'); \
 		out=$$(echo "$$row" | jq -r '.generate.outputDir // "$(OAPI_OUTPUT_DIR)/'"$$pkg"'"'); \
-		repo_var=$$(echo "$$row" | jq -r '.repoEnvVar // ""'); \
-		repo_url=$$([ -n "$$repo_var" ] && printenv "$$repo_var" || echo ""); \
-		spec_path=$$(echo "$$row" | jq -r '.specPath // "spec3.json"'); \
-		spec=$$([ -n "$$repo_url" ] && echo "$$repo_url/$$spec_path" || echo "$(OAPI_CONFIG_DIR)/$$name/$$spec_path"); \
+		spec_var=$$(echo "$$row" | jq -r '.specUrlEnvVar // ""'); \
+		spec_url=$$([ -n "$$spec_var" ] && printenv "$$spec_var" || echo ""); \
+		spec=$$([ -n "$$spec_url" ] && echo "$$spec_url" || echo "$(OAPI_CONFIG_DIR)/$$name/spec3.json"); \
 		auth_var=$$(echo "$$row" | jq -r '.authEnvVar // ""'); \
 		auth_val=$$([ -n "$$auth_var" ] && printenv "$$auth_var" || echo ""); \
-		[ -n "$$repo_url" ] || [ -f "$$spec" ] || { echo "WARNING: $$spec not found, skipping $$name."; continue; }; \
+		[ -n "$$spec_url" ] || [ -f "$$spec" ] || { echo "WARNING: $$spec not found, skipping $$name."; continue; }; \
 		echo "Generating $$name ($$gen $$ver, package: $$pkg)..."; \
 		rm -rf "$$out" && mkdir -p "$$out"; \
 		cp "$(OAPI_IGNORE_FILE)" "$$out/.openapi-generator-ignore"; \
