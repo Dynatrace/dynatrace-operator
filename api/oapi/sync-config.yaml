@@ -1,11 +1,30 @@
-# TODO: Leave comment to leave a example structure with explanations of each field
+# Schema sync configuration for OpenAPI generator.
+# Each schema entry supports the following fields:
+#
+# schemas:
+#  - name: <string>                   # Schema name, used as the local directory under api/oapi/
+#    specUrlEnvVar: <string>          # Name of the env var holding the full raw URL to the spec file
+#                                     # e.g. https://raw.githubusercontent.com/org/repo/branch/spec3.json
+#    authEnvVar: <string>             # Name of the env var holding the Bearer token for private repos (optional)
+#    generate:
+#      packageName: <string>          # Go package name for the generated SDK (defaults to schema name)
+#      generatorVersion: <string>     # Override openapi-generator version (defaults to generator-config.yaml)
+#      generator: <string>            # Override generator type (defaults to generator-config.yaml)
+#      additionalProperties: <string> # Extra generator properties, e.g. "enumClassPrefix=true"
+#      outputDir: <string>            # Override output directory (defaults to outputDir/packageName)
+#      globalProperties:
+#        models:                      # List of model names to generate (empty = all)
+#          - ModelName
+#        apis:                        # List of API names to generate (empty = all)
+#          - ApiName
+#        additional: <string>         # Additional raw global properties, e.g. "supportingFiles=pom.xml"
+
 schemas:
  - name: tenantApiV2
-   specUrlEnvVar: "TENANT_API_V2_SPEC_URL" # env var holding the full URL to the spec file
-   authEnvVar: "TENANT_API_V2_TOKEN"       # env var holding the Bearer token
+   specUrlEnvVar: "TENANT_API_V2_SPEC_URL"
+   authEnvVar: "TENANT_API_V2_TOKEN"
    generate:
      packageName: tenantapiv2
      globalProperties:
-       models: []
        apis: []
-       additional: "" # Additional scheme specific global properties as raw string
+       additional: ""

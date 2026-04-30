@@ -1,5 +1,5 @@
 # Default configuration for OpenAPI Generator (Go).
-# Per-schema overrides can be set in sync-config.yaml under the 'generates' key.
+# Per-schema overrides can be set in sync-config.yaml under the 'generate' key.
 
 generator: go
 generatorVersion: v7.12.0

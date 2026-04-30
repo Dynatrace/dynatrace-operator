@@ -12,7 +12,6 @@ jobs:
     permissions:
       contents: read
     outputs:
-      matrix: ${{ steps.config.outputs.matrix }}
       schemas_json: ${{ steps.config.outputs.schemas_json }}
       has_schemas: ${{ steps.config.outputs.has_schemas }}
     steps:
@@ -20,7 +19,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: 'false'
-      - name: Parse config into matrix
+      - name: Parse sync config
         id: config
         run: |
           set -euo pipefail
@@ -32,7 +31,6 @@ jobs:
             echo "has_schemas=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_schemas=true" >> "$GITHUB_OUTPUT"
-            echo "matrix={\"include\":${schemas}}" >> "$GITHUB_OUTPUT"
             echo "schemas_json=${schemas}" >> "$GITHUB_OUTPUT"
             echo "Schemas (${count}): ${schemas}"
           fi
@@ -46,9 +44,8 @@ jobs:
       contents: write
       pull-requests: write
     env:
-      # Per-schema secrets — add entries here when adding new schemas to sync-config.yaml
       TENANT_API_V2_SPEC_URL: ${{ secrets.TENANT_API_V2_SPEC_URL }}
-      TENANT_API_V2_TOKEN: ${{ secrets.TENANT_API_V2_TOKEN }}
+      TENANT_API_V2_TOKEN: ${{ secrets.BITBUCKET_ACCESS_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
