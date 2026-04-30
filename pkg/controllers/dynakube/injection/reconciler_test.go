@@ -20,7 +20,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -123,12 +122,12 @@ func TestReconciler(t *testing.T) {
 			dk,
 		)
 		oneAgentClient := oneagentclientmock.NewClient(t)
-		oneAgentClient.EXPECT().GetConnectionInfo(t.Context()).Return(expectedOneAgentConnectionInfo, nil).Once()
+		oneAgentClient.EXPECT().GetConnectionInfo(anyCtx).Return(expectedOneAgentConnectionInfo, nil).Once()
 		versionClient := versionclientmock.NewClient(t)
-		versionClient.EXPECT().GetLatestAgentVersion(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
-		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
+		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 		settingsClient := settingsmock.NewClient(t)
-		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
+		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient,
@@ -270,8 +269,6 @@ func TestRemoveAppInjection(t *testing.T) {
 	err = clt.Get(t.Context(), client.ObjectKey{Name: testNamespace, Namespace: ""}, &namespace)
 	require.NoError(t, err)
 	assert.Nil(t, namespace.Labels)
-	require.NotNil(t, namespace.Annotations)
-	assert.Equal(t, "true", namespace.Annotations[mapper.UpdatedViaDynakubeAnnotation])
 
 	err = clt.Get(t.Context(), client.ObjectKey{Name: testNamespace2, Namespace: ""}, &namespace)
 	require.NoError(t, err)
@@ -810,7 +807,7 @@ func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 func createIstioReconcilerMock(t *testing.T, dk *dynakube.DynaKube) istioReconciler {
 	rec := newMockIstioReconciler(t)
 
-	rec.EXPECT().ReconcileCodeModules(t.Context(), dk).Return(nil).Once()
+	rec.EXPECT().ReconcileCodeModules(anyCtx, dk).Return(nil).Once()
 
 	return rec
 }

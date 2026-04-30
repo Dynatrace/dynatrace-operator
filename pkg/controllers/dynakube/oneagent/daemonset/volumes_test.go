@@ -128,7 +128,7 @@ func TestPrepareVolumes(t *testing.T) {
 				clusterID:      "",
 			},
 		}
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		volumes := ds.Spec.Template.Spec.Volumes
@@ -269,7 +269,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			},
 		}
 
-		podSpec, _ := dsBuilder.podSpec()
+		podSpec, _ := dsBuilder.podSpec(t.Context())
 		volumeMounts := podSpec.Containers[0].VolumeMounts
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())

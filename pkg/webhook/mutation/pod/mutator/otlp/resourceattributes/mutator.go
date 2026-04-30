@@ -14,10 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	log = logd.Get().WithName("otlp-exporter-pod-mutation")
-)
-
 const (
 	OTELResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES"
 )
@@ -30,31 +26,34 @@ func New(apiReader client.Client) dtwebhook.Mutator {
 	return &Mutator{kubeClient: apiReader}
 }
 
-func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
+func (Mutator) IsEnabled(_ context.Context, _ *dtwebhook.BaseRequest) bool {
 	// always return true, as this mutator is only called if OTLP exporter mutator is enabled
 	return true
 }
 
-func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
+func (Mutator) IsInjected(_ context.Context, _ *dtwebhook.BaseRequest) bool {
 	// always return false, as this mutator is only called if OTLP exporter mutator is enabled
 	return false
 }
 
 func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_, err := m.mutate(request.Context, request.BaseRequest)
+	ctx, _ := logd.NewFromContext(request.Context, "otlp-exporter-pod-mutation")
+	_, err := m.mutate(ctx, request.BaseRequest)
 
 	return err
 }
 
-func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+func (m *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
+	ctx, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation")
 	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	mutated, _ := m.mutate(context.Background(), request.BaseRequest)
+	mutated, _ := m.mutate(ctx, request.BaseRequest)
 
 	return mutated
 }
 
 func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (bool, error) {
+	log := logd.FromContext(ctx)
 	mutated := false
 
 	log.Debug("injecting OTLP resource Attributes")
@@ -70,7 +69,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 	}
 
-	annotationAttributes := sanitizeMap(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
+	annotationAttributes := sanitizeMap(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, log))
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]

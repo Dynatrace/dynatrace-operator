@@ -6,6 +6,7 @@ import (
 	"maps"
 	"sync"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 	dockertypes "github.com/docker/cli/cli/config/types"
@@ -22,6 +23,7 @@ type DockerKeychain struct {
 }
 
 func NewDockerKeychains(ctx context.Context, apiReader client.Reader, namespaceName string, pullSecretNames []string) (authn.Keychain, error) {
+	ctx, log := logd.NewFromContext(ctx, "docker-keychain")
 	keychain := &DockerKeychain{}
 
 	if len(pullSecretNames) == 0 {
@@ -65,6 +67,7 @@ func NewDockerKeychains(ctx context.Context, apiReader client.Reader, namespaceN
 }
 
 func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret corev1.Secret) (authn.Keychain, error) {
+	ctx, log := logd.NewFromContext(ctx, "oci-dockerkeychain")
 	keychain := &DockerKeychain{}
 
 	if pullSecret.Name == "" {

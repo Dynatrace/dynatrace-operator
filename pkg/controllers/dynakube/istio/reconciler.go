@@ -17,10 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	log = logd.Get().WithName("dynakube-istio")
-)
-
 const (
 	OperatorComponent     = "operator"
 	operatorConditionName = "Operator"
@@ -41,11 +37,13 @@ type Reconciler struct {
 
 func NewReconciler(kubeClient client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		serviceEntry:   k8sserviceentry.Query(kubeClient, apiReader, log),
-		virtualService: k8svirtualservice.Query(kubeClient, apiReader, log),
+		serviceEntry:   k8sserviceentry.Query(kubeClient, apiReader),
+		virtualService: k8svirtualservice.Query(kubeClient, apiReader),
 	}
 }
 func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "dynakube-istio")
+
 	log.Info("reconciling istio components for the Dynatrace API url")
 
 	if dk == nil {
@@ -84,6 +82,8 @@ func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube)
 }
 
 func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
 
 	if dk == nil {
@@ -134,6 +134,8 @@ func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	log.Info("reconciling istio components for activegate communication hosts")
 
 	if dk == nil {
@@ -196,6 +198,8 @@ func isIstioConfigured(dk *dynakube.DynaKube, conditionComponent string) bool {
 }
 
 func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []CommunicationHost, owner client.Object, componentName string) error {
+	log := logd.FromContext(ctx)
+
 	err := r.reconcileCommunicationHosts(ctx, comHosts, owner, componentName)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")

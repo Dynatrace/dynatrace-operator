@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -71,7 +72,7 @@ func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
 	return !updater.dk.FF().IsActiveGateUpdatesDisabled()
 }
 
-func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
+func (updater *activeGateUpdater) CheckForDowngrade(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
@@ -80,6 +81,8 @@ func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
 }
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	latestVersion, err := updater.versionClient.GetLatestActiveGateVersion(ctx, installer.OSUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
@@ -90,7 +93,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 
 	defaultImage := updater.dk.ActiveGate().GetDefaultImage(latestVersion)
 
-	err = updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
+	err = updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, latestVersion)
 	if err != nil {
 		return err
 	}
@@ -100,7 +103,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	return nil
 }
 
-func (updater activeGateUpdater) ValidateStatus() error {
+func (updater activeGateUpdater) ValidateStatus(_ context.Context) error {
 	imageVersion := updater.Target().Version
 	if imageVersion == "" {
 		return errors.New("build version of ActiveGate image is not set")

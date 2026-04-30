@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -18,12 +19,14 @@ type Reconciler struct {
 
 func NewReconciler(clt client.Client, apiReader client.Reader, clusterID string) *Reconciler {
 	return &Reconciler{
-		configMaps: k8sconfigmap.Query(clt, apiReader, log),
+		configMaps: k8sconfigmap.Query(clt, apiReader),
 		clusterID:  clusterID,
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "dynakube-deployment-metadata")
+
 	configMapData := map[string]string{}
 
 	r.addOneAgentDeploymentMetadata(dk, configMapData)

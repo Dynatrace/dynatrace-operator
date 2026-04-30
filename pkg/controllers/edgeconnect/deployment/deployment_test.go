@@ -1,6 +1,7 @@
 package deployment
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
@@ -78,7 +79,7 @@ func TestNew(t *testing.T) {
 			},
 		}
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		assert.NotNil(t, deployment)
 	})
@@ -86,7 +87,7 @@ func TestNew(t *testing.T) {
 	t.Run("check empty custom labels", func(t *testing.T) {
 		ec := testECWithLabels(nil)
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		require.Len(t, deployment.Spec.Template.Labels, 5)
 		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppNameLabel)
@@ -106,7 +107,7 @@ func TestNew(t *testing.T) {
 	t.Run("check custom label set correctly", func(t *testing.T) {
 		ec := testECWithLabels(map[string]string{testLabelKey: testLabelValue})
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		assert.Len(t, deployment.Spec.Template.Labels, 6)
 		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppNameLabel)
@@ -129,7 +130,7 @@ func TestNew(t *testing.T) {
 	t.Run("check empty annotations", func(t *testing.T) {
 		ec := testECWithAnnotations(nil)
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		assert.Len(t, deployment.Spec.Template.Annotations, 1)
 		assert.Contains(t, deployment.Spec.Template.Annotations, webhook.AnnotationDynatraceInject)
@@ -141,7 +142,7 @@ func TestNew(t *testing.T) {
 	t.Run("check custom annotations set correctly", func(t *testing.T) {
 		ec := testECWithAnnotations(map[string]string{testAnnotationKey: testAnnotationValue})
 
-		deployment := New(ec)
+		deployment := New(context.Background(), ec)
 
 		assert.Len(t, deployment.Spec.Template.Annotations, 2)
 		assert.Contains(t, deployment.Spec.Template.Annotations, testAnnotationKey)
@@ -156,7 +157,7 @@ func TestNew(t *testing.T) {
 	t.Run("apparmor is untouched in 1.30", func(t *testing.T) {
 		version.DisableCacheForTest(30)
 
-		deployment := New(testECWithAppArmor())
+		deployment := New(t.Context(), testECWithAppArmor())
 
 		assert.Contains(t, deployment.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+consts.EdgeConnectContainerName)
 		require.Len(t, deployment.Spec.Template.Spec.Containers, 1)
@@ -166,7 +167,7 @@ func TestNew(t *testing.T) {
 	t.Run("apparmor is migrated in 1.31", func(t *testing.T) {
 		version.DisableCacheForTest(31)
 
-		deployment := New(testECWithAppArmor())
+		deployment := New(t.Context(), testECWithAppArmor())
 
 		assert.NotContains(t, deployment.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+consts.EdgeConnectContainerName)
 		require.Len(t, deployment.Spec.Template.Spec.Containers, 1)

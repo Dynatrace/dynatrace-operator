@@ -171,10 +171,12 @@ func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
 
 		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, &dk))
 		// Force reconciliation by simulating the passage of time
-		dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
 		expireLastTransitionTime(&dk, "MonitoredEntity")
 		expireLastTransitionTime(&dk, logmonsettings.ConditionType)
 		require.NoError(t, resources.UpdateStatus(ctx, &dk))
+
+		dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
+		require.NoError(t, resources.Update(ctx, &dk))
 
 		// Verify that the operator picked up the update
 		err = wait.For(func(ctx context.Context) (bool, error) {

@@ -5,10 +5,7 @@ import (
 	"io"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
-
-var log = logd.Get().WithName("dtclient-oneagent")
 
 type Client interface {
 	GetConnectionInfo(ctx context.Context) (ConnectionInfo, error)

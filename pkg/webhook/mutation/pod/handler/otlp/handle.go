@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/secrets"
@@ -35,6 +36,9 @@ func New(
 }
 
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
+	ctx, log := logd.NewFromContext(mutationRequest.Context, "pod-mutation-otlp")
+	mutationRequest.Context = ctx
+
 	if !mutationRequest.DynaKube.OTLPExporterConfiguration().IsEnabled() {
 		log.Info("OTLP injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
@@ -44,7 +48,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	// the execution of both the env var mutator and the resource attribute mutator
 	// is controlled by the env var mutator's IsEnabled method
 	// therefore, we only need to check it here
-	if h.envVarMutator.IsEnabled(mutationRequest.BaseRequest) {
+	if h.envVarMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
 		if !h.isTokenSecretPresent(
 			mutationRequest,
 			exporterconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name),
@@ -62,12 +66,12 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 			return nil
 		}
 
-		if h.envVarMutator.IsInjected(mutationRequest.BaseRequest) {
-			if h.envVarMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {
+		if h.envVarMutator.IsInjected(mutationRequest.Context, mutationRequest.BaseRequest) {
+			if h.envVarMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest()) {
 				log.Info("OTLP exporter env var reinvocation policy applied", "podName", mutationRequest.PodName())
 			}
 
-			if h.resourceAttributeMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {
+			if h.resourceAttributeMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest()) {
 				log.Info("OTLP resource attribute reinvocation policy applied", "podName", mutationRequest.PodName())
 			}
 		} else {
@@ -94,6 +98,8 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 }
 
 func (h *Handler) isTokenSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName string) bool {
+	log := logd.FromContext(mutationRequest.Context)
+
 	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, consts.OTLPExporterSecretName, log)
 	if k8serrors.IsNotFound(err) {
 		annotations.SetNotInjected(
@@ -123,6 +129,7 @@ func (h *Handler) isTokenSecretPresent(mutationRequest *dtwebhook.MutationReques
 }
 
 func (h *Handler) isExporterActiveGateCertSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName string) bool {
+	log := logd.FromContext(mutationRequest.Context)
 	if !mutationRequest.DynaKube.ActiveGate().HasCaCert() && mutationRequest.DynaKube.Spec.TrustedCAs == "" {
 		// no ActiveGate, no certs needed
 		return true

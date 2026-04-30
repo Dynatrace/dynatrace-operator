@@ -11,7 +11,7 @@ func TestExtractZip(t *testing.T) {
 	t.Run("file nil", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		extractor := createTestExtractor()
-		err := extractor.ExtractZip(nil, tmpDir)
+		err := extractor.ExtractZip(t.Context(), nil, tmpDir)
 		require.EqualError(t, err, "file is nil")
 	})
 	t.Run("unzip test zip file", func(t *testing.T) {

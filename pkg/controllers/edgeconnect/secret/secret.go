@@ -6,11 +6,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func PrepareConfigFile(ctx context.Context, ec *edgeconnect.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
+	_, log := logd.NewFromContext(ctx, "edgeconnect-secret")
+
 	cfg := config.EdgeConnect{
 		Name:            ec.Name,
 		APIEndpointHost: ec.Spec.APIServer,

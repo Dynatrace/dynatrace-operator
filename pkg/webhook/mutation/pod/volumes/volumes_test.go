@@ -70,7 +70,7 @@ func TestAddConfigVolume(t *testing.T) {
 			},
 		}
 
-		AddConfigVolume(pod)
+		AddConfigVolume(t.Context(), pod)
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 		assert.Equal(t, corev1.Volume{
@@ -102,7 +102,7 @@ func TestAddConfigVolume(t *testing.T) {
 			},
 		}
 
-		AddConfigVolume(pod)
+		AddConfigVolume(t.Context(), pod)
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 		assert.Equal(t, corev1.Volume{

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"k8s.io/apimachinery/pkg/labels"
@@ -47,7 +48,9 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	warningDeprecatedVersion = `version field is deprecated. Please use "%s" field instead to set a version.`
 )
 
-func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	counter := 0
 	if dk.OneAgent().IsApplicationMonitoringMode() {
 		counter += 1
@@ -75,6 +78,8 @@ func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynak
 }
 
 func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.OneAgent().IsDaemonsetRequired() && !dk.LogMonitoring().IsStandalone() {
 		return ""
 	}

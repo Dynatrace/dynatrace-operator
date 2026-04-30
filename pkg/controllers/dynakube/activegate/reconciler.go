@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -84,11 +85,12 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		customPropertiesReconciler: customproperties.NewReconciler(clt, apiReader),
 		statefulsetReconciler:      statefulset.NewReconciler(clt, apiReader),
 		tlsSecretReconciler:        tls.NewReconciler(clt, apiReader),
-		configMaps:                 k8sconfigmap.Query(clt, apiReader, log),
+		configMaps:                 k8sconfigmap.Query(clt, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error {
+	ctx, log := logd.NewFromContext(ctx, "dynakube-activegate")
 	// If AG is not used or was not cleaned up due to being previously enabled
 	// Split the `if` for better logging.
 	if !dk.ActiveGate().IsEnabled() {
@@ -153,6 +155,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 }
 
 func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	if !dk.ActiveGate().IsEnabled() {
 		// TODO: Add clean up of the config map
 		return nil

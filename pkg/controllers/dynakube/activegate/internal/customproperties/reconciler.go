@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	corev1 "k8s.io/api/core/v1"
@@ -33,11 +34,13 @@ type Reconciler struct {
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		secrets: k8ssecret.Query(clt, apiReader, log),
+		secrets: k8ssecret.Query(clt, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) error {
+	ctx, log := logd.NewFromContext(ctx, "activegate-customproperties")
+
 	if customPropertiesSource == nil && !dk.NeedsCustomNoProxy() {
 		if meta.FindStatusCondition(*dk.Conditions(), customPropertiesConditionType) == nil {
 			return nil

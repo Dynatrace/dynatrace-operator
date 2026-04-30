@@ -1,7 +1,6 @@
 package k8sdaemonset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
@@ -11,7 +10,7 @@ import (
 
 type QueryObject = query.Generic[*appsv1.DaemonSet, *appsv1.DaemonSetList]
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) QueryObject {
+func Query(kubeClient client.Client, kubeReader client.Reader) QueryObject {
 	return query.Generic[*appsv1.DaemonSet, *appsv1.DaemonSetList]{
 		Target:     &appsv1.DaemonSet{},
 		ListTarget: &appsv1.DaemonSetList{},
@@ -28,7 +27,6 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 		KubeClient: kubeClient,
 		KubeReader: kubeReader,
-		Log:        log,
 	}
 }
 

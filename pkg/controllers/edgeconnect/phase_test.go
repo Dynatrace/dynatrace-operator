@@ -29,7 +29,7 @@ func Test_Controller_determineEdgeConnectPhase(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(ec)
+		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
 		assert.Equal(t, status.Deploying, phase)
 	})
 
@@ -43,7 +43,7 @@ func Test_Controller_determineEdgeConnectPhase(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(ec)
+		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
 		assert.Equal(t, status.Error, phase)
 	})
 
@@ -59,7 +59,7 @@ func Test_Controller_determineEdgeConnectPhase(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(ec)
+		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
 		assert.Equal(t, status.Deploying, phase)
 	})
 
@@ -75,7 +75,7 @@ func Test_Controller_determineEdgeConnectPhase(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(ec)
+		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
 		assert.Equal(t, status.Running, phase)
 	})
 }

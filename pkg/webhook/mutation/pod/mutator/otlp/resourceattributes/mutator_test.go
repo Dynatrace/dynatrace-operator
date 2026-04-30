@@ -481,6 +481,6 @@ func Test_Mutator_Reinvoke(t *testing.T) {
 		},
 	}
 
-	result := mut.Reinvoke(req)
+	result := mut.Reinvoke(t.Context(), req)
 	assert.False(t, result, "Reinvoke should return false when mutation occurs")
 }

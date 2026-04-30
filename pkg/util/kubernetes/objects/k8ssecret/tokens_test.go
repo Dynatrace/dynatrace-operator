@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +32,7 @@ func TestGetDataFromSecretName(t *testing.T) {
 	fakeClient.Create(t.Context(), getTestSecret())
 
 	t.Run("get secret data", func(t *testing.T) {
-		data, err := GetDataFromSecretName(t.Context(), fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logd.Logger{})
+		data, err := GetDataFromSecretName(t.Context(), fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey)
 		require.NoError(t, err)
 		assert.Equal(t, string(dataValue), data)
 	})

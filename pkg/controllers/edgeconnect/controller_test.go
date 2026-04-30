@@ -232,7 +232,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 			},
 		})
 		controller.apiReader = boomClient
-		controller.secrets = k8ssecret.Query(controller.client, controller.apiReader, log)
+		controller.secrets = k8ssecret.Query(controller.client, controller.apiReader)
 
 		err := controller.reconcileEdgeConnectRegular(t.Context(), ec)
 		require.Error(t, err)
@@ -248,6 +248,7 @@ func Test_Controller_Reconcile(t *testing.T) {
 func Test_Controller_Reconcile_replicas(t *testing.T) {
 	testEdgeConnect := func(provisioner bool, replicas *int32) *edgeconnect.EdgeConnect {
 		ec := testEdgeConnectRegularCR()
+
 		if provisioner {
 			ec = testEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 		}
@@ -284,7 +285,7 @@ func Test_Controller_Reconcile_replicas(t *testing.T) {
 		}
 
 		if existingReplicas != nil {
-			existing := deployment.New(ec)
+			existing := deployment.New(context.Background(), ec)
 			existing.Spec.Replicas = existingReplicas
 			objs = append(objs, existing)
 		}
@@ -767,19 +768,19 @@ func testAssertCreatedEdgeConnect(t *testing.T, controller *Controller, ec *edge
 	require.NoError(t, err)
 	require.NotEmpty(t, ecCR.Finalizers)
 
-	ecOauthClientID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
+	ecOauthClientID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID)
 	require.NoError(t, err)
 	assert.Equal(t, testCreatedOauthClientID, ecOauthClientID)
 
-	ecOauthClientSecret, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
+	ecOauthClientSecret, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret)
 	require.NoError(t, err)
 	assert.Equal(t, testCreatedOauthClientSecret, ecOauthClientSecret)
 
-	ecOauthResource, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthResource, log)
+	ecOauthResource, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthResource)
 	require.NoError(t, err)
 	assert.Equal(t, testCreatedOauthClientResource, ecOauthResource)
 
-	ecID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
+	ecID, err := k8ssecret.GetDataFromSecretName(t.Context(), controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID)
 	require.NoError(t, err)
 	assert.Equal(t, testCreatedID, ecID)
 
@@ -822,7 +823,7 @@ func testFakeClientNoVersionCheck(t *testing.T, ec *edgeconnect.EdgeConnect, obj
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    registry.NewClient,
 		edgeConnectClientBuilder: mockEdgeConnectClientBuilder,
-		secrets:                  k8ssecret.Query(fakeClient, fakeClient, log),
+		secrets:                  k8ssecret.Query(fakeClient, fakeClient),
 	}
 
 	return controller
@@ -858,7 +859,7 @@ func testFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, obje
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: mockEdgeConnectClientBuilder,
-		secrets:                  k8ssecret.Query(fakeClient, fakeClient, log),
+		secrets:                  k8ssecret.Query(fakeClient, fakeClient),
 	}
 
 	return controller
@@ -888,7 +889,7 @@ func testFakeClientAndReconcilerForProvisioner(t *testing.T, ec *edgeconnect.Edg
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: builder,
-		secrets:                  k8ssecret.Query(fakeClient, fakeClient, log),
+		secrets:                  k8ssecret.Query(fakeClient, fakeClient),
 	}
 
 	return controller
@@ -910,7 +911,7 @@ func testFakeClientForDeletion(t *testing.T, ec *edgeconnect.EdgeConnect, builde
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    registry.NewClient,
 		edgeConnectClientBuilder: builder,
-		secrets:                  k8ssecret.Query(fakeClient, fakeClient, log),
+		secrets:                  k8ssecret.Query(fakeClient, fakeClient),
 	}
 
 	return controller

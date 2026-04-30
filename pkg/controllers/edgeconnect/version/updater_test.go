@@ -89,7 +89,7 @@ func Test_updater_combineImageWithDigest(t *testing.T) {
 		fakeRegistryClient := registrymock.NewImageGetter(t)
 		u := newUpdater(fake.NewClient(), nil, fakeRegistryClient, ec)
 
-		combined, err := u.combineImageWithDigest(fakeDigest)
+		combined, err := u.combineImageWithDigest(t.Context(), fakeDigest)
 
 		require.NoError(t, err)
 		require.Equal(t, "docker.io/dynatrace/edgeconnect:latest@"+fakeDigest, combined)
@@ -102,7 +102,7 @@ func Test_updater_combineImageWithDigest(t *testing.T) {
 		fakeRegistryClient := registrymock.NewImageGetter(t)
 		u := newUpdater(fake.NewClient(), nil, fakeRegistryClient, ec)
 
-		_, err := u.combineImageWithDigest(fakeDigest)
+		_, err := u.combineImageWithDigest(t.Context(), fakeDigest)
 		require.Error(t, err)
 	})
 }
