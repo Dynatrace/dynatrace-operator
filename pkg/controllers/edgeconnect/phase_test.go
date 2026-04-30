@@ -2,6 +2,7 @@ package edgeconnect
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -10,9 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func TestEdgeConnectPhaseChanges(t *testing.T) {
+func Test_Controller_determineEdgeConnectPhase(t *testing.T) {
 	ec := &edgeconnect.EdgeConnect{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
@@ -32,7 +34,11 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 	})
 
 	t.Run("error accessing k8s api -> error", func(t *testing.T) {
-		fakeClient := errorClient{}
+		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				return errors.New("fake error")
+			},
+		})
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -44,7 +50,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 	t.Run("edgeConnect pods not ready -> deploying", func(t *testing.T) {
 		replicas, readyReplicas := int32(1), int32(0)
 		objects := []client.Object{
-			createDeployment(testNamespace, testName, replicas, readyReplicas),
+			testDeployment(testNamespace, testName, replicas, readyReplicas),
 		}
 
 		fakeClient := fake.NewClient(objects...)
@@ -60,7 +66,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 	t.Run("edgeConnect deployed -> running", func(t *testing.T) {
 		replicas, readyReplicas := int32(1), int32(1)
 		objects := []client.Object{
-			createDeployment(testNamespace, testName, replicas, readyReplicas),
+			testDeployment(testNamespace, testName, replicas, readyReplicas),
 		}
 
 		fakeClient := fake.NewClient(objects...)
