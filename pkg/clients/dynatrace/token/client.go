@@ -10,9 +10,6 @@ import (
 const lookupPath = "/v2/apiTokens/lookup"
 
 const (
-	ConditionTypeAPITokenSettingsRead  = "ApiTokenSettingsRead"
-	ConditionTypeAPITokenSettingsWrite = "ApiTokenSettingsWrite"
-
 	ScopeActiveGateTokenCreate    = "activeGateTokenManagement.create"
 	ScopeDataExport               = "DataExport"
 	ScopeInstallerDownload        = "InstallerDownload"
@@ -24,9 +21,9 @@ const (
 )
 
 var (
-	OptionalScopes = map[string]string{
-		ScopeSettingsRead:  ConditionTypeAPITokenSettingsRead,
-		ScopeSettingsWrite: ConditionTypeAPITokenSettingsWrite,
+	OptionalScopes = []string{
+		ScopeSettingsRead,
+		ScopeSettingsWrite,
 	}
 
 	_ core.Cacheable = &scopesResponse{}

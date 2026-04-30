@@ -4,6 +4,7 @@ import (
 	"context"
 	goerrors "errors"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -35,6 +36,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscopes"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -54,6 +56,8 @@ const (
 	defaultRequeueInterval = 15 * time.Minute
 
 	controllerName = "dynakube-controller"
+
+	conditionTypeAPITokenOptionalScopes = "ApiTokenOptionalScopes"
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -495,22 +499,31 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient to
 	}
 
 	log.Info("token verified")
-	controller.updateOptionalScopesConditions(&dk.Status, optionalScopes)
+	controller.updateOptionalScopesConditions(dk, optionalScopes)
 
 	return nil
 }
 
-func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, optionalScopes map[string]bool) {
-	for scope, conditionType := range tokenclient.OptionalScopes {
+func (controller *Controller) updateOptionalScopesConditions(dk *dynakube.DynaKube, optionalScopes map[string]bool) {
+	unavailableScopes := []string{}
+
+	for _, scope := range tokenclient.OptionalScopes {
 		available, ok := optionalScopes[scope]
 		switch {
-		case !ok: // no enabled feature uses the `scope` -> doesn't need to be in the status
-			_ = meta.RemoveStatusCondition(&dkStatus.Conditions, conditionType)
+		case !ok:
+			optionalscopes.Missing(dk.OptionalScopes(), scope)
 		case available:
-			k8sconditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
+			optionalscopes.Available(dk.OptionalScopes(), scope)
 		case !available:
-			k8sconditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
+			optionalscopes.Missing(dk.OptionalScopes(), scope)
+			unavailableScopes = append(unavailableScopes, scope)
 		}
+	}
+
+	if len(unavailableScopes) > 0 {
+		k8sconditions.SetOptionalScopeMissing(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes, strings.Join(unavailableScopes, ",")+" optional scope(s) not available, some features may not work")
+	} else {
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes)
 	}
 }
 

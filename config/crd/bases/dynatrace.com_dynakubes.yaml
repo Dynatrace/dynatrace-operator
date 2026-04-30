@@ -7529,6 +7529,13 @@ spec:
                 type: string
               proxyURLHash:
                 type: string
+              tenant:
+                properties:
+                  apiTokenSettingsReadAvailable:
+                    type: boolean
+                  apiTokenSettingsWriteAvailable:
+                    type: boolean
+                type: object
               updatedTimestamp:
                 format: date-time
                 type: string
