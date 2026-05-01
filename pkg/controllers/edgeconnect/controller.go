@@ -151,13 +151,6 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		return err
 	}
 
-	ec.Finalizers = nil
-	if err := controller.client.Update(ctx, ec); err != nil {
-		log.Debug("updating the EdgeConnect object failed, couldn't remove the finalizers")
-
-		return errors.WithStack(err)
-	}
-
 	edgeConnectClient, err := controller.buildEdgeConnectClient(ctx, ec)
 	if err != nil {
 		log.Debug("building EdgeConnect client failed")
@@ -171,6 +164,24 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 
 		return err
 	}
+
+	if err := controller.cleanupTenantEdgeConnect(ctx, edgeConnectClient, ec, tenantEdgeConnect, edgeConnectIDFromSecret); err != nil {
+		return err
+	}
+
+	if controllerutil.RemoveFinalizer(ec, finalizerName) {
+		if err := controller.client.Update(ctx, ec); err != nil {
+			log.Debug("updating the EdgeConnect object failed, couldn't remove the finalizers")
+
+			return errors.WithStack(err)
+		}
+	}
+
+	return nil
+}
+
+func (controller *Controller) cleanupTenantEdgeConnect(ctx context.Context, edgeConnectClient edgeconnectClient.Client, ec *edgeconnect.EdgeConnect, tenantEdgeConnect edgeconnectClient.APIResponse, edgeConnectIDFromSecret string) error {
+	log := logd.FromContext(ctx)
 
 	switch {
 	case tenantEdgeConnect.ID == "":
@@ -190,8 +201,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 	}
 
 	if ec.IsK8SAutomationEnabled() && ec.IsProvisionerModeEnabled() {
-		err = controller.deleteConnectionSetting(ctx, edgeConnectClient, ec)
-		if err != nil {
+		if err := controller.deleteConnectionSetting(ctx, edgeConnectClient, ec); err != nil {
 			log.Info("reconcile deletion: Deleting connection setting failed")
 
 			return err

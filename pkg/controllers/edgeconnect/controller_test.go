@@ -510,6 +510,56 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 
 		edgeConnectClient.AssertNotCalled(t, "DeleteEdgeConnect", mock.Anything, testCreatedID)
 	})
+
+	t.Run("finalizer is kept when tenant cleanup fails", func(t *testing.T) {
+		ec := createEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
+
+		edgeConnectClient := edgeconnectmock.NewClient(t)
+
+		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
+			ec,
+			mockNewEdgeConnectClientDeleteFails(edgeConnectClient),
+			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
+			createClientSecret(ec.ClientSecretName(), ec.Namespace),
+			createKubeSystemNamespace(),
+		)
+
+		_, err := controller.Reconcile(context.Background(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+		require.Error(t, err)
+
+		edgeConnectCR, err := getEdgeConnectCR(controller.apiReader, ec.Name, ec.Namespace)
+		require.NoError(t, err)
+		require.Contains(t, edgeConnectCR.Finalizers, finalizerName)
+
+		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", mock.Anything, testCreatedID)
+	})
+
+	t.Run("finalizer is kept when buildEdgeConnectClient fails", func(t *testing.T) {
+		ec := createEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
+
+		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
+			ec,
+			func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
+				return nil, errors.New("oauth secret rotated")
+			},
+			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
+			createClientSecret(ec.ClientSecretName(), ec.Namespace),
+			createKubeSystemNamespace(),
+		)
+
+		_, err := controller.Reconcile(context.Background(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+		require.Error(t, err)
+
+		edgeConnectCR, err := getEdgeConnectCR(controller.apiReader, ec.Name, ec.Namespace)
+		require.NoError(t, err)
+		require.Contains(t, edgeConnectCR.Finalizers, finalizerName)
+	})
 }
 
 func TestReconcileProvisionerUpdate(t *testing.T) {
@@ -952,6 +1002,28 @@ func mockNewEdgeConnectClientDelete(edgeConnectClient *edgeconnectmock.Client) f
 			nil,
 		)
 		edgeConnectClient.On("DeleteEdgeConnect", mock.Anything, testCreatedID).Return(nil)
+
+		return edgeConnectClient, nil
+	}
+}
+
+func mockNewEdgeConnectClientDeleteFails(edgeConnectClient *edgeconnectmock.Client) func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
+	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, _ []byte) (edgeconnectClient.Client, error) {
+		edgeConnectClient.On("ListEdgeConnects", mock.Anything, testName).Return(
+			[]edgeconnectClient.APIResponse{
+				{
+					ID:                         testCreatedID,
+					Name:                       testName,
+					HostPatterns:               testHostPatterns,
+					OauthClientID:              testOauthClientID,
+					ManagedByDynatraceOperator: true,
+				},
+			},
+			nil,
+		)
+		edgeConnectClient.On("ListEnvironmentSettings", mock.Anything).Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
+		edgeConnectClient.On("DeleteEnvironmentSetting", mock.Anything, mock.Anything).Return(nil)
+		edgeConnectClient.On("DeleteEdgeConnect", mock.Anything, testCreatedID).Return(errors.New("tenant unreachable"))
 
 		return edgeConnectClient, nil
 	}
