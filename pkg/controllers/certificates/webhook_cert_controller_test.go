@@ -219,6 +219,45 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, expectedBundle, actualCrd.Spec.Conversion.Webhook.ClientConfig.CABundle)
 	})
 
+	t.Run("edgeconnect crd ca bundle is fixed even if dynakube crd is already valid", func(t *testing.T) {
+		deployment := &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      webhook.DeploymentName,
+				Namespace: testNamespace,
+			},
+		}
+		// First, run a full reconcile to seed the secret and both CRDs
+		fakeClient := fake.NewClient(dkCrd.DeepCopy(), ecCrd.DeepCopy(), deployment)
+		controller, request := prepareController(fakeClient)
+		_, err := controller.Reconcile(t.Context(), request)
+		require.NoError(t, err)
+
+		// Capture the expected bundle that should now be on every CRD
+		secret := &corev1.Secret{}
+		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret))
+
+		expectedBundle := append([]byte{}, secret.Data[RootCert]...)
+
+		dynaKubeAfter := &apiextensionsv1.CustomResourceDefinition{}
+		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: k8scrd.DynaKubeName}, dynaKubeAfter))
+		require.Equal(t, expectedBundle, dynaKubeAfter.Spec.Conversion.Webhook.ClientConfig.CABundle)
+
+		// Simulate someone reinstalling the EdgeConnect CRD with an empty CA bundle.
+		// DynaKube CRD stays valid, so the old isUpToDate would short-circuit and
+		// EdgeConnect CRD's CA bundle would never get repaired.
+		ecAfter := &apiextensionsv1.CustomResourceDefinition{}
+		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: k8scrd.EdgeConnectName}, ecAfter))
+		ecAfter.Spec.Conversion.Webhook.ClientConfig.CABundle = nil
+		require.NoError(t, fakeClient.Update(t.Context(), ecAfter))
+
+		_, err = controller.Reconcile(t.Context(), request)
+		require.NoError(t, err)
+
+		ecRepaired := &apiextensionsv1.CustomResourceDefinition{}
+		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: k8scrd.EdgeConnectName}, ecRepaired))
+		assert.Equal(t, expectedBundle, ecRepaired.Spec.Conversion.Webhook.ClientConfig.CABundle)
+	})
+
 	// Generation must not be skipped because webhook startup routine listens for the secret
 	// See cmd/operator/manager.go and cmd/operator/watcher.go
 	t.Run("do not skip certificates generation if no configuration exists", func(t *testing.T) {
