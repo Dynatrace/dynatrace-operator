@@ -16,13 +16,13 @@
 #          - ApiName
 #        additional: <string>         # (optional) Additional raw global properties
 
-#schemas:
-# - name: tenantApiV2
-#   specUrlEnvVar: "TENANT_API_V2_SPEC_URL"
-#   authEnvVar: "TENANT_API_V2_TOKEN"
-#   generate:
-#     packageName: tenantapiv2
-#     globalProperties:
-#       apis:
-#        - "ActiveGates"
-#       additional: ""
+schemas:
+ - name: tenantApiV2
+   specUrlEnvVar: "TENANT_API_V2_SPEC_URL"
+   authEnvVar: "TENANT_API_V2_TOKEN"
+   generate:
+     packageName: tenantapiv2
+     globalProperties:
+       apis:
+        - "ActiveGates"
+       additional: ""
