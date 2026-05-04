@@ -446,7 +446,13 @@ func TestSelectClientURLs(t *testing.T) {
 			name:             "2nd-gen already with /api: api unchanged, platform strips /api",
 			input:            "https://tenant.live.dynatrace.com/api",
 			expectedAPI:      "https://tenant.live.dynatrace.com/api",
-			expectedPlatform: "https://tenant.live.dynatrace.com",
+			expectedPlatform: "https://tenant.live.dynatrace.com/",
+		},
+		{
+			name:             "activegate URL with sub-path: platform strips /api suffix only",
+			input:            "https://activegate.some.domain:9999/e/tenant123/api",
+			expectedAPI:      "https://activegate.some.domain:9999/e/tenant123/api",
+			expectedPlatform: "https://activegate.some.domain:9999/e/tenant123",
 		},
 	}
 

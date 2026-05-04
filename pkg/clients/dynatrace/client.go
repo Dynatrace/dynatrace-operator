@@ -331,7 +331,7 @@ func selectClientURLs(base *url.URL) (apiURL, platformURL *url.URL) {
 		} else {
 			apiURL = base
 			withoutAPI := *base
-			withoutAPI.Path = strings.TrimSuffix(base.Path, "/api")
+			withoutAPI.Path = path.Dir(path.Clean(base.Path))
 			platformURL = &withoutAPI
 		}
 	}
