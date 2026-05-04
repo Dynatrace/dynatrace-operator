@@ -25,7 +25,7 @@ oapi/generate: prerequisites/openapi-generator-cli
 	| while read -r row; do \
 		name=$$(echo "$$row" | jq -r '.name'); \
 		pkg=$$(echo "$$row" | jq -r '.generate.packageName // .name'); \
-		ver=$$(echo "$$row" | jq -r '.generate.generatorVersion // "$(OAPI_GENERATOR_VERSION)"'); \
+		ver=$$(echo "$$row" | jq -r '.generate.generatorVersion // "$(OAPI_GENERATOR_VERSION)"' | sed 's/^v//'); \
 		props=$$(echo "$$row" | jq -r '.generate.additionalProperties // "$(OAPI_ADDITIONAL_PROPS)"'); \
 		out=$$(echo "$$row" | jq -r '.generate.outputDir // "$(OAPI_OUTPUT_DIR)/'"$$pkg"'"'); \
 		spec_url=$$(echo "$$row" | jq -r '.specUrlEnvVar // ""' | xargs -I{} printenv {} 2>/dev/null || echo ""); \

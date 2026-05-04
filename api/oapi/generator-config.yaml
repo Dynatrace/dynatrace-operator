@@ -1,7 +1,8 @@
 # Default configuration for OpenAPI Generator (Go).
 # Per-schema overrides can be set in sync-config.yaml under the 'generate' key.
 
-generatorVersion: v7.12.0
+# renovate datasource=github-releases depName=OpenAPITools/openapi-generator
+generatorVersion: v7.22.0
 outputDir: pkg/clients/generated
 additionalProperties: "generateInterfaces"
 globalProperties: "supportingFiles"
