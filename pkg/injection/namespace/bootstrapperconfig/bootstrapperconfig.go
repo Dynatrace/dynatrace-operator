@@ -217,6 +217,10 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 			initialConnectRetryMs := strconv.Itoa(dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio))
 			data[curl.InputFileName] = []byte(initialConnectRetryMs)
 		}
+
+		if err := s.addDeclarativeConfig(ctx, dk, data); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 
 	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichment().IsEnabled() {

@@ -126,6 +126,7 @@ func TestReconciler(t *testing.T) {
 		versionClient := versionclientmock.NewClient(t)
 		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, mock.Anything, "", mock.Anything).Return("", nil).Once()
 		settingsClient := settingsmock.NewClient(t)
 		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient := &dynatrace.Client{
@@ -413,6 +414,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 
 		oneAgentClient := oneagentclientmock.NewClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, mock.Anything, "", mock.Anything).Return("", nil).Once()
 
 		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
@@ -481,6 +483,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 
 		oneAgentClient := oneagentclientmock.NewClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, mock.Anything, "", mock.Anything).Return("", nil).Twice()
 
 		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
