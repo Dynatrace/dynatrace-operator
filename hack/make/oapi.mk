@@ -45,7 +45,7 @@ oapi/generate: prerequisites/openapi-generator-cli
 			api_models=$$($(OAPI_MODELS_FOR_API) "$$tmp_spec" "$$api" | tr '\n' ' ') || { echo "ERROR: model resolution failed for api $$api"; exit 1; }; \
 			models="$$models $$api_models"; \
 		done; \
-		models=$$(echo "$$models" | tr ' ' '\n' | sort -u | grep -v '^$$' || true | tr '\n' ':' | sed 's/:$$//'); \
+		models=$$(echo "$$models" | tr ' ' '\n' | sort -u | grep -v '^$$' | tr '\n' ':' | sed 's/:$$//' || true); \
 		gprops=$$(echo "$$row" | jq -r '$(jq_global_props)'); \
 		gprops=$$(printf '%s' "$${models:+models=$$models$${gprops:+,}}$$gprops"); \
 		echo "Generating $$name (go $$ver, package: $$pkg)..."; \
