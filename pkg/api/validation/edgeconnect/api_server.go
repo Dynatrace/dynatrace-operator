@@ -36,26 +36,10 @@ var (
 	}
 )
 
-func isAllowedSuffixAPIServer(ctx context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
-	log := logd.FromContext(ctx)
-
+func isAllowedSuffixAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
 	for _, suffix := range allowedSuffix {
-		if strings.HasSuffix(ec.Spec.APIServer, suffix) {
-			hostnameWithDomains := strings.FieldsFunc(suffix,
-				func(r rune) bool { return r == '.' },
-			)
-
-			hostnameWithTenant := strings.FieldsFunc(ec.Spec.APIServer,
-				func(r rune) bool { return r == '.' },
-			)
-
-			if len(hostnameWithTenant) > len(hostnameWithDomains) {
-				return ""
-			}
-
-			log.Info("apiServer is not a valid hostname", "apiServer", ec.Spec.APIServer)
-
-			break
+		if strings.HasSuffix(ec.Spec.APIServer, suffix) && len(ec.Spec.APIServer) > len(suffix) {
+			return ""
 		}
 	}
 
