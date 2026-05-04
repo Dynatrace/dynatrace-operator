@@ -67,6 +67,7 @@ jobs:
           fi
 
           schemas_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[].name] | join(", ")')
+          apis_summary=$(echo "${SCHEMAS_JSON}" | jq -r '.[] | .name + ": " + (.generate.globalProperties.apis // [] | if length == 0 then "all" else join(", ") end)' | paste -sd ', ')
 
           output_dir=$(yq -r '.outputDir' api/oapi/generator-config.yaml)
           git add "${output_dir}/"
@@ -77,6 +78,7 @@ jobs:
           pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and regenerates Go clients."$'\n\n'
           pr_body+="| | |"$'\n'"|---|---|"$'\n'
           pr_body+="| **Schemas** | \`${schemas_summary}\` |"$'\n'
+          pr_body+="| **APIs generated** | \`${apis_summary}\` |"$'\n'
           pr_body+="| **Packages changed** | \`${changed_packages}\` |"$'\n'
           pr_body+="| **Changes** | \`${diff_stat}\` |"$'\n'
           pr_body+="| **Workflow run** | [#${WORKFLOW_RUN_NUMBER}](${WORKFLOW_RUN_URL}) |"$'\n'
