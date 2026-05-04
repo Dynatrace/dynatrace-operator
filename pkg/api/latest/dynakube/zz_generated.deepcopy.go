@@ -158,6 +158,7 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	in.CodeModules.DeepCopyInto(&out.CodeModules)
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
 	out.KSPM = in.KSPM
+	out.Tenant = in.Tenant
 	in.UpdatedTimestamp.DeepCopyInto(&out.UpdatedTimestamp)
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions

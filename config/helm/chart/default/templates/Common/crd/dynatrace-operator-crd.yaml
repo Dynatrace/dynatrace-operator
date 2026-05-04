@@ -7542,6 +7542,11 @@ spec:
                 type: string
               proxyURLHash:
                 type: string
+              tenant:
+                properties:
+                  phase:
+                    type: integer
+                type: object
               updatedTimestamp:
                 format: date-time
                 type: string
