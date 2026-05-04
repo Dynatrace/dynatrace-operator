@@ -18,7 +18,7 @@ func TestHostPatternsRequired(t *testing.T) {
 				APIServer: "tenantid-test.dev.apps.dynatracelabs.com",
 				OAuth: edgeconnect.OAuthSpec{
 					ClientSecret: "secret",
-					Endpoint:     "endpoint",
+					Endpoint:     testValidOAuthEndpoint,
 					Resource:     "resource",
 				},
 			},
