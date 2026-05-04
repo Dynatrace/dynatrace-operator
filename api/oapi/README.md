@@ -41,10 +41,10 @@ schemas:
       packageName: myapi
       globalProperties:
         apis:
-          - Users
+          - Users # Models for the api will be autoresolved
 ```
 
-Triggering the workflow now produces the SDK at `pkg/clients/generated/myapi/`.
+Triggering the workflow now produces the clients at `pkg/clients/generated/<packageName>/`.
 
 ## 5. Tweak ignored files (optional)
 
@@ -55,7 +55,7 @@ Triggering the workflow now produces the SDK at `pkg/clients/generated/myapi/`.
 `api/oapi/generator-config.yaml` holds the defaults that apply to every schema unless overridden per-schema:
 
 ```yaml
-generatorVersion: v7.12.0
+generatorVersion: v7.22.0
 outputDir: pkg/clients/generated
 additionalProperties: "generateInterfaces"
 globalProperties: "supportingFiles"
