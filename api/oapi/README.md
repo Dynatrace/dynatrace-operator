@@ -12,7 +12,7 @@ Browser "raw" links usually don't work, they rely on session cookies, not Bearer
 
 ## 2. Add secrets in GitHub
 
-Repo settings → *Secrets and variables* → *Actions*:
+Secrets are stored in the **`oapi` environment** (repo Settings → *Environments* → `oapi`):
 
 - `<NAME>_SPEC_URL` — the URL from step 1
 - `<NAME>_TOKEN` — Bearer token (skip for public specs)

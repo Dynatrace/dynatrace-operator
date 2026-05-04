@@ -39,7 +39,8 @@ jobs:
     name: Sync OpenAPI schemas
     needs: prepare
     if: needs.prepare.outputs.has_schemas == 'true'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    environment: oapi
     permissions:
       contents: write
       pull-requests: write
