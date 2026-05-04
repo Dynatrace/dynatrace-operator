@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Usage: oapi-models-for-tag.sh <spec-file> <tag>
-# Prints all model names (direct + transitive) used by operations with the given tag.
+# Usage: oapi-models-for-api.sh <spec-file> <api>
+# Prints all model names (direct + transitive) used by operations with the given API tag
 set -euo pipefail
 
-SPEC="${1:?Usage: $0 <spec-file> <tag>}"
-TAG="${2:?Usage: $0 <spec-file> <tag>}"
+SPEC="${1:?Usage: $0 <spec-file> <api>}"
+API="${2:?Usage: $0 <spec-file> <api>}"
 
-jq -r --arg tag "$TAG" '
+# BFS to find all models of an api
+jq -r --arg tag "$API" '
   . as $spec |
 
   def refs_in($ref):
