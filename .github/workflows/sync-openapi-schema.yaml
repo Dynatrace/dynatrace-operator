@@ -68,10 +68,18 @@ jobs:
 
           schemas_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[].name] | join(", ")')
 
-          pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and regenerates Go SDKs."$'\n\n'
+          output_dir=$(yq -r '.outputDir' api/oapi/generator-config.yaml)
+          diff_stat=$(git diff --stat HEAD | tail -1)
+          diff_details=$(git diff --stat HEAD)
+          changed_packages=$(git diff --name-only HEAD | grep "^${output_dir}/" | sed "s|^${output_dir}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ')
+
+          pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and regenerates Go clients."$'\n\n'
           pr_body+="| | |"$'\n'"|---|---|"$'\n'
           pr_body+="| **Schemas** | \`${schemas_summary}\` |"$'\n'
+          pr_body+="| **Packages changed** | \`${changed_packages}\` |"$'\n'
+          pr_body+="| **Changes** | \`${diff_stat}\` |"$'\n'
           pr_body+="| **Workflow run** | [#${WORKFLOW_RUN_NUMBER}](${WORKFLOW_RUN_URL}) |"$'\n'
+          pr_body+=$'\n''<details><summary>Changed files</summary>'$'\n\n''```'$'\n'"${diff_details}"$'\n''```'$'\n''</details>'
 
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "schemas_summary=${schemas_summary}" >> "$GITHUB_OUTPUT"

@@ -20,7 +20,7 @@ jq_global_props = .generate.globalProperties as $$gp \
 
 ## Generate Go SDKs from OpenAPI specs
 oapi/generate: prerequisites/openapi-generator-cli
-	@yq -o=json '.schemas | map(select(.generate))' "$(OAPI_SYNC_CONFIG)" \
+	@yq -o=json '.schemas' "$(OAPI_SYNC_CONFIG)" \
 	| jq -c '.[]' \
 	| while read -r row; do \
 		name=$$(echo "$$row" | jq -r '.name'); \
