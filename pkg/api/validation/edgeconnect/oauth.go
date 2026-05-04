@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/url"
 	"slices"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 )
@@ -51,7 +50,7 @@ func checkSSOServerProtocol(ctx context.Context, _ *Validator, ec *edgeconnect.E
 		return ""
 	}
 
-	if strings.ToLower(url.Scheme) != "https" {
+	if url.Scheme != "https" {
 		return errorProtocolIsMissingOauthEndpoint
 	}
 
@@ -64,7 +63,7 @@ func isAllowedSSOServer(ctx context.Context, _ *Validator, ec *edgeconnect.EdgeC
 		return ""
 	}
 
-	if !slices.Contains(allowedSSODomains, strings.ToLower(url.Host)) {
+	if !slices.Contains(allowedSSODomains, url.Host) {
 		return errorUnknownSSOServer
 	}
 
