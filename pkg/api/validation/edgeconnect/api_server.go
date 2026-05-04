@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -15,7 +14,7 @@ const (
 	`
 
 	errorMissingAllowedSuffixAPIServer = `The EdgeConnect's specification has an invalid apiServer value set.
-	Example valid values: 
+	Example valid values:
 	-  For prod: "<tenantID>.apps.dynatrace.com"
 	-  For dev: "<tenantID>.dev.apps.dynatracelabs.com"
 	-  For sprint: "<tenantID>.sprint.apps.dynatracelabs.com"
@@ -46,13 +45,9 @@ func isAllowedSuffixAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.E
 	return errorMissingAllowedSuffixAPIServer
 }
 
-func checkAPIServerProtocolNotSet(ctx context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
-	log := logd.FromContext(ctx)
-
+func checkAPIServerProtocolNotSet(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
 	parsedURL, err := url.Parse(ec.Spec.APIServer)
 	if err != nil {
-		log.Info("API Server URL is not a valid URL", "err", err.Error())
-
 		return errorInvalidAPIServer
 	}
 
