@@ -419,9 +419,9 @@ kHUfKUp2W9zOWWDlwSB65QuJ3wAQSCVs4g==
 
 func TestSelectClientURLs(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
-		expectedAPI     string
+		name             string
+		input            string
+		expectedAPI      string
 		expectedPlatform string
 	}{
 		{

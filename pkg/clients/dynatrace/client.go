@@ -331,6 +331,7 @@ func selectClientURLs(base *url.URL) (apiURL, platformURL *url.URL) {
 		} else {
 			apiURL = base
 		}
+
 		platformURL = apiURL
 	}
 
