@@ -71,7 +71,7 @@ jobs:
           output_dir=$(yq -r '.outputDir' api/oapi/generator-config.yaml)
           diff_stat=$(git diff --stat HEAD | tail -1)
           diff_details=$(git diff --stat HEAD)
-          changed_packages=$(git diff --name-only HEAD | grep "^${output_dir}/" | sed "s|^${output_dir}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ')
+          changed_packages=$(git diff --name-only HEAD | grep "^${output_dir}/" | sed "s|^${output_dir}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ' || true)
 
           pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and regenerates Go clients."$'\n\n'
           pr_body+="| | |"$'\n'"|---|---|"$'\n'
