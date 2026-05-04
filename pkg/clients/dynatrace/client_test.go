@@ -437,16 +437,16 @@ func TestSelectClientURLs(t *testing.T) {
 			expectedPlatform: "https://tenant.apps.dynatrace.com:8443",
 		},
 		{
-			name:             "2nd-gen without /api: both get /api appended",
+			name:             "2nd-gen without /api: api gets /api appended, platform stays as base",
 			input:            "https://tenant.live.dynatrace.com",
 			expectedAPI:      "https://tenant.live.dynatrace.com/api",
-			expectedPlatform: "https://tenant.live.dynatrace.com/api",
+			expectedPlatform: "https://tenant.live.dynatrace.com",
 		},
 		{
-			name:             "2nd-gen already with /api: unchanged",
+			name:             "2nd-gen already with /api: api unchanged, platform strips /api",
 			input:            "https://tenant.live.dynatrace.com/api",
 			expectedAPI:      "https://tenant.live.dynatrace.com/api",
-			expectedPlatform: "https://tenant.live.dynatrace.com/api",
+			expectedPlatform: "https://tenant.live.dynatrace.com",
 		},
 	}
 

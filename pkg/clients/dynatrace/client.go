@@ -92,7 +92,6 @@ func NewClient(options ...Option) (*Client, error) {
 		HTTPClient: httpClient,
 		UserAgent:  config.UserAgent,
 		APIToken:   config.APIToken,
-		PaasToken:  config.PaasToken,
 	})
 
 	return &Client{
@@ -328,11 +327,13 @@ func selectClientURLs(base *url.URL) (apiURL, platformURL *url.URL) {
 	} else {
 		if path.Base(base.Path) != "api" {
 			apiURL = base.JoinPath("api")
+			platformURL = base
 		} else {
 			apiURL = base
+			withoutAPI := *base
+			withoutAPI.Path = strings.TrimSuffix(base.Path, "/api")
+			platformURL = &withoutAPI
 		}
-
-		platformURL = apiURL
 	}
 
 	return apiURL, platformURL
