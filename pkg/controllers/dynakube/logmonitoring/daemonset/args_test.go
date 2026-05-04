@@ -14,7 +14,7 @@ const (
 )
 
 func Test_getInitArgs(t *testing.T) {
-	newDk := func() dynakube.DynaKube {
+	newDK := func() dynakube.DynaKube {
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 
@@ -22,7 +22,7 @@ func Test_getInitArgs(t *testing.T) {
 	}
 
 	t.Run("get base init args", func(t *testing.T) {
-		dk := newDk()
+		dk := newDK()
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
@@ -36,7 +36,7 @@ func Test_getInitArgs(t *testing.T) {
 	})
 
 	t.Run("add user defined args to existing init args", func(t *testing.T) {
-		dk := newDk()
+		dk := newDK()
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
@@ -55,7 +55,7 @@ func Test_getInitArgs(t *testing.T) {
 	})
 
 	t.Run("get base init args when no MEID or not all necessary scopes are set", func(t *testing.T) {
-		dk := newDk()
+		dk := newDK()
 
 		args := getInitArgs(dk)
 
@@ -67,7 +67,7 @@ func Test_getInitArgs(t *testing.T) {
 	})
 
 	t.Run("propagate spec.resourceAttributes as -p args", func(t *testing.T) {
-		dk := newDk()
+		dk := newDK()
 		dk.Spec.ResourceAttributes = map[string]string{
 			"team":    "platform",
 			"env":     "staging",
@@ -83,7 +83,7 @@ func Test_getInitArgs(t *testing.T) {
 	})
 
 	t.Run("propagate spec.resourceAttributes as -p args together with MEID args", func(t *testing.T) {
-		dk := newDk()
+		dk := newDK()
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 		dk.Spec.ResourceAttributes = map[string]string{
