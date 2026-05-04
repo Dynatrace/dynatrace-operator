@@ -77,9 +77,14 @@ func Test_getInitArgs(t *testing.T) {
 
 		assert.Len(t, args, expectedBaseInitArgsLenWithoutMEID+len(dk.Spec.ResourceAttributes))
 
-		assert.Contains(t, args, "-p env=staging")
-		assert.Contains(t, args, "-p service=logmodule")
-		assert.Contains(t, args, "-p team=platform")
+		// Verify resourceAttributes are in sorted order
+		attrArgs := args[len(args)-len(dk.Spec.ResourceAttributes):]
+		expectedAttrs := []string{
+			"-p env=staging",
+			"-p service=logmodule",
+			"-p team=platform",
+		}
+		assert.Equal(t, expectedAttrs, attrArgs)
 	})
 
 	t.Run("propagate spec.resourceAttributes as -p args together with MEID args", func(t *testing.T) {
@@ -87,9 +92,9 @@ func Test_getInitArgs(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 		dk.Spec.ResourceAttributes = map[string]string{
+			"service": "logmodule",
 			"team":    "platform",
 			"env":     "staging",
-			"service": "logmodule",
 		}
 
 		args := getInitArgs(dk)
@@ -98,8 +103,14 @@ func Test_getInitArgs(t *testing.T) {
 
 		assert.Contains(t, args, "-p k8s.cluster.name=$(K8S_CLUSTER_NAME)")
 		assert.Contains(t, args, "-p dt.entity.kubernetes_cluster=$(DT_ENTITY_KUBERNETES_CLUSTER)")
-		assert.Contains(t, args, "-p env=staging")
-		assert.Contains(t, args, "-p service=logmodule")
-		assert.Contains(t, args, "-p team=platform")
+
+		// Verify resourceAttributes are in sorted order
+		attrArgs := args[len(args)-len(dk.Spec.ResourceAttributes):]
+		expectedAttrs := []string{
+			"-p env=staging",
+			"-p service=logmodule",
+			"-p team=platform",
+		}
+		assert.Equal(t, expectedAttrs, attrArgs)
 	})
 }
