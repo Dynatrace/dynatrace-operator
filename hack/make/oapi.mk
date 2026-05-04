@@ -38,18 +38,18 @@ oapi/generate: prerequisites/openapi-generator-cli
 			curl -sSfL --location-trusted -H "Authorization: Bearer $$auth_val" "$$spec_url" -o "$$tmp_spec"; \
 		else \
 			curl -sSfL "$$spec_url" -o "$$tmp_spec"; \
-		fi; \
+		fi || { echo "ERROR: failed to download spec for $$name"; exit 1; }; \
 		apis=$$(echo "$$row" | jq -r '.generate.globalProperties.apis // [] | .[]'); \
 		models=""; \
 		for api in $$apis; do \
-			api_models=$$($(OAPI_MODELS_FOR_API) "$$tmp_spec" "$$api" | tr '\n' ' '); \
+			api_models=$$($(OAPI_MODELS_FOR_API) "$$tmp_spec" "$$api" | tr '\n' ' ') || { echo "ERROR: model resolution failed for api $$api"; exit 1; }; \
 			models="$$models $$api_models"; \
 		done; \
-		models=$$(echo "$$models" | tr ' ' '\n' | sort -u | grep -v '^$$' | tr '\n' ':' | sed 's/:$$//'); \
+		models=$$(echo "$$models" | tr ' ' '\n' | sort -u | grep -v '^$$' || true | tr '\n' ':' | sed 's/:$$//'); \
 		gprops=$$(echo "$$row" | jq -r '$(jq_global_props)'); \
 		gprops=$$(printf '%s' "$${models:+models=$$models$${gprops:+,}}$$gprops"); \
 		echo "Generating $$name (go $$ver, package: $$pkg)..."; \
-		rm -rf "$$out" && mkdir -p "$$out"; \
+		rm -rf "$$out" && mkdir -p "$$out" || { echo "ERROR: failed to prepare output directory $$out"; exit 1; }; \
 		cp "$(OAPI_IGNORE_FILE)" "$$out/.openapi-generator-ignore"; \
 		OPENAPI_GENERATOR_VERSION="$$ver" $(OPENAPI_GENERATOR_CLI) generate \
 			-i "$$tmp_spec" -g go -o "$$out" \
@@ -58,7 +58,8 @@ oapi/generate: prerequisites/openapi-generator-cli
 			$${gprops:+--global-property="$$gprops"} \
 			$${auth_header:+--auth "$$auth_header"} \
 			--skip-validate-spec \
-			--minimal-update; \
+			--minimal-update \
+		|| { echo "ERROR: generation failed for $$name"; exit 1; }; \
 		rm -f "$$tmp_spec" "$$out/.openapi-generator-ignore"; \
 		echo "Done: $$out"; \
 	done
