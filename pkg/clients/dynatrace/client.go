@@ -77,14 +77,18 @@ func NewClient(options ...Option) (*Client, error) {
 		config.PaasToken = config.APIToken
 	}
 
-	if strings.Contains(config.BaseURL.Hostname(), ".apps.") {
-		mapThirdGenAPIURL(config.BaseURL)
-	} else if path.Base(config.BaseURL.Path) != "api" {
-		config.BaseURL = config.BaseURL.JoinPath("api")
-	}
+	apiURL, platformURL := selectClientURLs(config.BaseURL)
 
 	apiClient := core.NewClient(core.Config{
-		BaseURL:    config.BaseURL,
+		BaseURL:    apiURL,
+		HTTPClient: httpClient,
+		UserAgent:  config.UserAgent,
+		APIToken:   config.APIToken,
+		PaasToken:  config.PaasToken,
+	})
+
+	platformAPIClient := core.NewClient(core.Config{
+		BaseURL:    platformURL,
 		HTTPClient: httpClient,
 		UserAgent:  config.UserAgent,
 		APIToken:   config.APIToken,
@@ -98,7 +102,7 @@ func NewClient(options ...Option) (*Client, error) {
 		OneAgent:   oneagent.NewClient(apiClient, config.HostGroup, config.NetworkZone),
 		Version:    version.NewClient(apiClient),
 		Token:      token.NewClient(apiClient),
-		Platform:   platform.NewClient(apiClient),
+		Platform:   platform.NewClient(platformAPIClient),
 	}, nil
 }
 
@@ -312,6 +316,25 @@ func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.UR
 	proxyFunc := proxyConfig.ProxyFunc()
 
 	return func(req *http.Request) (*url.URL, error) { return proxyFunc(req.URL) }
+}
+
+func selectClientURLs(base *url.URL) (apiURL, platformURL *url.URL) {
+	if strings.Contains(base.Hostname(), ".apps.") {
+		original := *base
+		platformURL = &original
+		apiCopy := *base
+		mapThirdGenAPIURL(&apiCopy)
+		apiURL = &apiCopy
+	} else {
+		if path.Base(base.Path) != "api" {
+			apiURL = base.JoinPath("api")
+		} else {
+			apiURL = base
+		}
+		platformURL = apiURL
+	}
+
+	return apiURL, platformURL
 }
 
 const thirdGenAPPSHostParts = 2

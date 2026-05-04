@@ -417,6 +417,50 @@ APj12zaRa05OBW3H3Ng+1MmdtrU4gAu+xwLAOz1cxT6q8LUGBGDCBYVcFXvomhKL
 kHUfKUp2W9zOWWDlwSB65QuJ3wAQSCVs4g==
 -----END CERTIFICATE-----`
 
+func TestSelectClientURLs(t *testing.T) {
+	tests := []struct {
+		name            string
+		input           string
+		expectedAPI     string
+		expectedPlatform string
+	}{
+		{
+			name:             "3rd-gen: platform keeps original URL, api client gets remapped 2nd-gen URL",
+			input:            "https://tenant.apps.dynatrace.com",
+			expectedAPI:      "https://tenant.live.dynatrace.com/api",
+			expectedPlatform: "https://tenant.apps.dynatrace.com",
+		},
+		{
+			name:             "3rd-gen with port: platform keeps original, api gets remapped",
+			input:            "https://tenant.apps.dynatrace.com:8443",
+			expectedAPI:      "https://tenant.live.dynatrace.com:8443/api",
+			expectedPlatform: "https://tenant.apps.dynatrace.com:8443",
+		},
+		{
+			name:             "2nd-gen without /api: both get /api appended",
+			input:            "https://tenant.live.dynatrace.com",
+			expectedAPI:      "https://tenant.live.dynatrace.com/api",
+			expectedPlatform: "https://tenant.live.dynatrace.com/api",
+		},
+		{
+			name:             "2nd-gen already with /api: unchanged",
+			input:            "https://tenant.live.dynatrace.com/api",
+			expectedAPI:      "https://tenant.live.dynatrace.com/api",
+			expectedPlatform: "https://tenant.live.dynatrace.com/api",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			base := mustParseURL(t, tc.input)
+			apiURL, platformURL := selectClientURLs(base)
+
+			assert.Equal(t, tc.expectedAPI, apiURL.String())
+			assert.Equal(t, tc.expectedPlatform, platformURL.String())
+		})
+	}
+}
+
 func TestNewClientPaasToken(t *testing.T) {
 	handlerFunc := func(token string) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {

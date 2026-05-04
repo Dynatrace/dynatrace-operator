@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/tenant"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
@@ -17,6 +16,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type TenantStatus struct {
+	Phase int `json:"phase,omitempty"`
+}
 
 // DynaKubeStatus defines the observed state of DynaKube
 // +k8s:openapi-gen=true
@@ -38,7 +41,7 @@ type DynaKubeStatus struct { //nolint:revive
 	KSPM kspm.Status `json:"kspm,omitempty"`
 
 	// Observed state of the Dynatrace tenant
-	Tenant tenant.Status `json:"tenant,omitempty"`
+	Tenant TenantStatus `json:"tenant,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
