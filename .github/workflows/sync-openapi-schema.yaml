@@ -67,7 +67,7 @@ jobs:
           fi
 
           schemas_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[].name] | join(", ")')
-          apis_summary=$(echo "${SCHEMAS_JSON}" | jq -r '.[] | .name + ": " + (.generate.globalProperties.apis // [] | if length == 0 then "all" else join(", ") end)' | paste -sd ', ')
+          apis_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[] | .name + ": " + (.generate.globalProperties.apis // [] | if length == 0 then "all" else join(", ") end)] | join(", ")')
 
           output_dir=$(yq -r '.outputDir' api/oapi/generator-config.yaml)
           git add "${output_dir}/"
