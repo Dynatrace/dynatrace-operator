@@ -23,4 +23,6 @@ schemas:
    generate:
      packageName: tenantapiv2
      globalProperties:
+       apis:
+        - "ActiveGates"
        additional: ""
