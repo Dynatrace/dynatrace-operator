@@ -7,24 +7,26 @@ permissions: {}
 
 jobs:
   prepare:
-    name: Read sync config
+    name: Read config
     runs-on: ubuntu-latest
     permissions:
       contents: read
     outputs:
       schemas_json: ${{ steps.config.outputs.schemas_json }}
       has_schemas: ${{ steps.config.outputs.has_schemas }}
+      output_dir: ${{ steps.config.outputs.output_dir }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: 'false'
-      - name: Parse sync config
+      - name: Parse config
         id: config
         run: |
           set -euo pipefail
           schemas=$(yq -o=json -I=0 '.schemas // []' api/oapi/sync-config.yaml)
           count=$(echo "${schemas}" | jq 'length')
+          output_dir=$(yq -r '.outputDir' api/oapi/generator-config.yaml)
 
           if [ "${count}" -eq 0 ]; then
             echo "No schemas configured, nothing to sync."
@@ -34,6 +36,7 @@ jobs:
             echo "schemas_json=${schemas}" >> "$GITHUB_OUTPUT"
             echo "Schemas (${count}): ${schemas}"
           fi
+          echo "output_dir=${output_dir}" >> "$GITHUB_OUTPUT"
 
   sync-schemas:
     name: Sync OpenAPI schemas
@@ -88,11 +91,9 @@ jobs:
           schemas_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[].name] | join(", ")')
           apis_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[] | .name + ": " + (.generate.globalProperties.apis // [] | if length == 0 then "all" else join(", ") end)] | join(", ")')
 
-          output_dir=$(./bin/yq -r '.outputDir' api/oapi/generator-config.yaml)
-          git add "${output_dir}/"
-          changed_packages=$(git diff --cached --name-only HEAD | grep "^${output_dir}/" | sed "s|^${output_dir}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ' || true)
+          changed_packages=$(git diff --name-only | grep "^${OUTPUT_DIR}/" | sed "s|^${OUTPUT_DIR}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ' || true)
 
-          pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and regenerates Go clients."$'\n\n'
+          pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and (re-)generates Go clients."$'\n\n'
           pr_body+="| | |"$'\n'"|---|---|"$'\n'
           pr_body+="| **Schemas** | \`${schemas_summary}\` |"$'\n'
           pr_body+="| **APIs generated** | \`${apis_summary}\` |"$'\n'
@@ -108,6 +109,7 @@ jobs:
           echo "${EOF}" >> "$GITHUB_OUTPUT"
         env:
           SCHEMAS_JSON: ${{ needs.prepare.outputs.schemas_json }}
+          OUTPUT_DIR: ${{ needs.prepare.outputs.output_dir }}
           WORKFLOW_RUN_NUMBER: ${{ github.run_number }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
@@ -118,8 +120,6 @@ jobs:
           base: main
           delete-branch: true
           branch: sync-openapi-schemas
-          add-paths: |
-            pkg/clients/generated/
           title: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
           commit-message: "chore: sync OpenAPI schemas (${{ steps.sync.outputs.schemas_summary }})"
           body: ${{ steps.sync.outputs.pr_body }}

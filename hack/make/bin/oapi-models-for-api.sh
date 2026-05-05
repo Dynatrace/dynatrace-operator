@@ -11,11 +11,11 @@ jq -r --arg tag "$API" '
   . as $spec |
 
   def refs_in($ref):
-    ($ref | ltrimstr("#/") | split("/")) as $parts |
-    if ($parts | length) == 3
-    then $spec | getpath(["components", $parts[1], $parts[2]]) // {}
-    else {} end |
-    [.. | objects | select(has("$ref")) | .["$ref"]] | .[];
+    if ($ref | startswith("#/")) then
+      ($ref | ltrimstr("#/") | split("/")) as $parts |
+      ($spec | getpath($parts) // {}) |
+      [.. | objects | select(has("$ref")) | .["$ref"]] | .[]
+    else empty end;
 
   ([.paths | to_entries[] |
     .value | to_entries[] |

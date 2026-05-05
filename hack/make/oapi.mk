@@ -27,8 +27,9 @@ oapi/generate: prerequisites/openapi-generator-cli prerequisites/yq
 		pkg=$$(echo "$$row" | jq -r '.generate.packageName // .name'); \
 		ver=$$(echo "$$row" | jq -r '.generate.generatorVersion // "$(OAPI_GENERATOR_VERSION)"' | sed 's/^v//'); \
 		props=$$(echo "$$row" | jq -r '.generate.additionalProperties // "$(OAPI_ADDITIONAL_PROPS)"'); \
-		out=$$(echo "$$row" | jq -r '.generate.outputDir // "$(OAPI_OUTPUT_DIR)/'"$$pkg"'"'); \
-		spec_url=$$(echo "$$row" | jq -r '.specUrlEnvVar // ""' | xargs -I{} printenv {} 2>/dev/null || echo ""); \
+		out="$(OAPI_OUTPUT_DIR)/$$pkg"; \
+		spec_url_var=$$(echo "$$row" | jq -r '.specUrlEnvVar // ""'); \
+		spec_url=$$([ -n "$$spec_url_var" ] && printenv "$$spec_url_var" || echo ""); \
 		auth_var=$$(echo "$$row" | jq -r '.authEnvVar // ""'); \
 		auth_val=$$([ -n "$$auth_var" ] && printenv "$$auth_var" || echo ""); \
 		auth_header=$$([ -n "$$auth_val" ] && printf 'Authorization:Bearer%%20%s' "$$auth_val" || echo ""); \

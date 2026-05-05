@@ -10,7 +10,6 @@
 #      packageName: <string>          # (optional) Go package name for the generated SDK (defaults to schema name)
 #      generatorVersion: <string>     # (optional) Override openapi-generator version (defaults to generator-config.yaml)
 #      additionalProperties: <string> # (optional) Extra generator properties, e.g. "enumClassPrefix=true"
-#      outputDir: <string>            # (optional) Override output directory (defaults to <generator-config outputDir>/<packageName>)
 #      globalProperties:              # (optional)
 #        apis:                        # (optional) List of API names to generate (empty/omitted = all), models are autoresolved
 #          - ApiName
