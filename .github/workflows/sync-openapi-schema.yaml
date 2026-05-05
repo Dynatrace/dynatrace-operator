@@ -39,7 +39,7 @@ jobs:
     name: Sync OpenAPI schemas
     needs: prepare
     if: needs.prepare.outputs.has_schemas == 'true'
-    runs-on: ubuntu-latest
+    runs-on: operator-e2e
     environment: oapi
     permissions:
       contents: write
