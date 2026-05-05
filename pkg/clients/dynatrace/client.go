@@ -318,25 +318,25 @@ func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.UR
 }
 
 func selectClientURLs(base *url.URL) (apiURL, platformURL *url.URL) {
+	platform := *base
+	// If gen3: remap to 2nd-gen for the API client, keep original for platform
 	if strings.Contains(base.Hostname(), ".apps.") {
-		original := *base
-		platformURL = &original
-		apiCopy := *base
-		mapThirdGenAPIURL(&apiCopy)
-		apiURL = &apiCopy
-	} else {
-		if path.Base(base.Path) != "api" {
-			apiURL = base.JoinPath("api")
-			platformURL = base
-		} else {
-			apiURL = base
-			withoutAPI := *base
-			withoutAPI.Path = path.Dir(path.Clean(base.Path))
-			platformURL = &withoutAPI
-		}
+		api := *base
+		mapThirdGenAPIURL(&api)
+
+		return &api, &platform
 	}
 
-	return apiURL, platformURL
+	// If gen2 with no /api path: append /api for the API client
+	if path.Base(base.Path) != "api" {
+		return base.JoinPath("api"), &platform
+	}
+
+	// Gen2 already has /api: strip it for platform
+	api := *base
+	platform.Path = path.Dir(path.Clean(base.Path))
+
+	return &api, &platform
 }
 
 const thirdGenAPPSHostParts = 2
