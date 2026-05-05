@@ -14,6 +14,7 @@ import (
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -692,6 +693,72 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDKey])
 		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsKey])
+	})
+}
+
+func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
+	t.Run("skips if ActiveGate is not enabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+		}
+		fakeClient := fake.NewClient()
+		r := &Reconciler{configMaps: k8sconfigmap.Query(fakeClient, fakeClient)}
+
+		err := r.createDeploymentPropertiesConfigMap(t.Context(), dk)
+		require.NoError(t, err)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+
+	t.Run("creates configmap when ActiveGate is enabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+			},
+		}
+		fakeClient := fake.NewClient()
+		r := &Reconciler{configMaps: k8sconfigmap.Query(fakeClient, fakeClient)}
+
+		err := r.createDeploymentPropertiesConfigMap(t.Context(), dk)
+		require.NoError(t, err)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
+		require.NoError(t, err)
+		assert.Contains(t, cm.Data, consts.DeploymentPropertiesFileName)
+		assert.Equal(t, deploymentproperties.BuildContent(nil), cm.Data[consts.DeploymentPropertiesFileName])
+	})
+
+	t.Run("configmap content reflects resource attributes", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate:         activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				ResourceAttributes: map[string]string{"key": "value"},
+			},
+		}
+		fakeClient := fake.NewClient()
+		r := &Reconciler{configMaps: k8sconfigmap.Query(fakeClient, fakeClient)}
+
+		err := r.createDeploymentPropertiesConfigMap(t.Context(), dk)
+		require.NoError(t, err)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
+		require.NoError(t, err)
+		assert.Equal(t, deploymentproperties.BuildContent(dk.Spec.ResourceAttributes), cm.Data[consts.DeploymentPropertiesFileName])
 	})
 }
 
