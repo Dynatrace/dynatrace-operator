@@ -3,6 +3,7 @@ package configsecret
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -185,12 +186,8 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 		expectedLines = append(expectedLines, noProxyKey+"="+createNoProxyValue(*dk))
 	}
 
-	split := strings.Split(strings.Trim(string(deploymentConfig), "\n"), "\n")
-	require.Len(t, split, len(expectedLines))
-
-	for _, line := range split {
-		assert.Contains(t, expectedLines, line)
-	}
+	slices.Sort(expectedLines)
+	assert.Equal(t, strings.Join(expectedLines, "\n")+"\n", string(deploymentConfig))
 }
 
 func createDynakube(isLogMonitoringEnabled bool) *dynakube.DynaKube {
