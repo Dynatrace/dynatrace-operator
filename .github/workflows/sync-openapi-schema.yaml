@@ -47,9 +47,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    env:
-      TENANT_API_V2_SPEC_URL: ${{ secrets.TENANT_API_V2_SPEC_URL }}
-      TENANT_API_V2_TOKEN: ${{ secrets.BITBUCKET_ACCESS_TOKEN }}
+    # env vars for specUrlEnvVar / authEnvVar referenced in sync-config.yaml must be added here as secrets
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
