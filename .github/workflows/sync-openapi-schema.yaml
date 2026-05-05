@@ -53,6 +53,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
+
       - name: Generate Go SDKs
         run: make oapi/generate
 
