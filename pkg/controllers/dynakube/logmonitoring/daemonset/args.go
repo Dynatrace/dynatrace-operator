@@ -26,12 +26,10 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv), fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 	}
 
-	baseArgs = append(baseArgs, dk.LogMonitoring().Template().Args...)
-
 	attrs := dk.GetResourceAttributes()
 	for _, key := range slices.Sorted(maps.Keys(attrs)) {
 		baseArgs = append(baseArgs, fmt.Sprintf("-p %s=%s", key, attrs[key]))
 	}
 
-	return baseArgs
+	return append(baseArgs, dk.LogMonitoring().Template().Args...)
 }

@@ -13,10 +13,11 @@ const (
 	expectedBaseInitArgsLenWithoutMEID = 10
 )
 
-func assertResourceAttrArgsAreSorted(t *testing.T, args []string, attrs map[string]string, expectedAttrs []string) {
+func assertResourceAttrArgsAreSorted(t *testing.T, args []string, attrs map[string]string, templateArgs []string, expectedAttrs []string) {
 	t.Helper()
 
-	attrArgs := args[len(args)-len(attrs):]
+	offset := len(templateArgs)
+	attrArgs := args[len(args)-len(attrs)-offset : len(args)-offset]
 	assert.Equal(t, expectedAttrs, attrArgs)
 }
 
@@ -132,7 +133,7 @@ func Test_getInitArgs(t *testing.T) {
 			}
 
 			if tt.expectedAttrArgs != nil {
-				assertResourceAttrArgsAreSorted(t, args, tt.resourceAttrs, tt.expectedAttrArgs)
+				assertResourceAttrArgsAreSorted(t, args, tt.resourceAttrs, tt.templateArgs, tt.expectedAttrArgs)
 			}
 		})
 	}
