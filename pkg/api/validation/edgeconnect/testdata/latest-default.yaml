@@ -33,7 +33,7 @@ spec:
     kubernetes.io/os: linux
   oauth:
     clientSecret: secret
-    endpoint: https://url
+    endpoint: https://sso.dynatrace.com/url
     provisioner: true
     resource: resource
   proxy:

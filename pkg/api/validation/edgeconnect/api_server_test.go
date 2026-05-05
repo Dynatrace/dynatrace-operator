@@ -24,7 +24,7 @@ func TestApiServer(t *testing.T) {
 					APIServer: "tenantid" + suffix,
 					OAuth: edgeconnect.OAuthSpec{
 						ClientSecret: "secret",
-						Endpoint:     "endpoint",
+						Endpoint:     testValidOAuthEndpoint,
 						Resource:     "resource",
 					},
 				},
