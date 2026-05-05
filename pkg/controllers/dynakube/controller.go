@@ -36,7 +36,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscopes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -57,6 +57,8 @@ const (
 
 	controllerName = "dynakube-controller"
 
+	conditionTypeAPITokenSettingsRead   = "ApiTokenSettingsRead"
+	conditionTypeAPITokenSettingsWrite  = "ApiTokenSettingsWrite"
 	conditionTypeAPITokenOptionalScopes = "ApiTokenOptionalScopes"
 )
 
@@ -511,11 +513,11 @@ func (controller *Controller) updateOptionalScopesConditions(dk *dynakube.DynaKu
 		available, ok := optionalScopes[scope]
 		switch {
 		case !ok:
-			optionalscopes.Missing(dk.OptionalScopes(), scope)
+			optionalscope.SetMissing(dk, scope)
 		case available:
-			optionalscopes.Available(dk.OptionalScopes(), scope)
+			optionalscope.SetAvailable(dk, scope)
 		case !available:
-			optionalscopes.Missing(dk.OptionalScopes(), scope)
+			optionalscope.SetMissing(dk, scope)
 			unavailableScopes = append(unavailableScopes, scope)
 		}
 	}
@@ -525,6 +527,9 @@ func (controller *Controller) updateOptionalScopesConditions(dk *dynakube.DynaKu
 	} else {
 		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes)
 	}
+
+	_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsRead)
+	_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsWrite)
 }
 
 func lastErrorFromCondition(dkStatus *dynakube.DynaKubeStatus) error {

@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscopes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -41,8 +41,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 
 	_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
-	hasReadScope := optionalscopes.IsAvailable(dk.OptionalScopes(), token.ScopeSettingsRead)
-	hasWriteScope := optionalscopes.IsAvailable(dk.OptionalScopes(), token.ScopeSettingsWrite)
+	hasReadScope := optionalscope.IsAvailable(dk, token.ScopeSettingsRead)
+	hasWriteScope := optionalscope.IsAvailable(dk, token.ScopeSettingsWrite)
 
 	var missingScopes []string
 	if !hasReadScope {

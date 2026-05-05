@@ -788,8 +788,8 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		require.Error(t, err)
 
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenVerificationFailedConditionMessage)
-		assert.False(t, dk.Status.Tenant.APITokenSettingsReadAvailable)
-		assert.False(t, dk.Status.Tenant.APITokenSettingsWriteAvailable)
+		assert.Nil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		assert.Nil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 	})
 	t.Run("no missing scopes", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
@@ -805,8 +805,10 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.NoError(t, err)
 
-		assert.True(t, dk.Status.Tenant.APITokenSettingsReadAvailable)
-		assert.True(t, dk.Status.Tenant.APITokenSettingsWriteAvailable)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 	})
 	t.Run("one optional scopes missing", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
@@ -822,8 +824,10 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.NoError(t, err)
 
-		assert.True(t, dk.Status.Tenant.APITokenSettingsReadAvailable)
-		assert.True(t, dk.Status.Tenant.APITokenSettingsWriteAvailable)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 	})
 	t.Run("all optional scopes missing", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
@@ -837,8 +841,10 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.NoError(t, err)
 
-		assert.False(t, dk.Status.Tenant.APITokenSettingsReadAvailable)
-		assert.False(t, dk.Status.Tenant.APITokenSettingsWriteAvailable)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		assert.False(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.False(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 	})
 	t.Run("state of the optional scopes condition", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()

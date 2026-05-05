@@ -7406,6 +7406,16 @@ spec:
                   version:
                     type: string
                 type: object
+              apiToken:
+                properties:
+                  availableOptionalScopes:
+                    properties:
+                      settingsRead:
+                        type: boolean
+                      settingsWrite:
+                        type: boolean
+                    type: object
+                type: object
               codeModules:
                 properties:
                   imageID:
@@ -7529,13 +7539,6 @@ spec:
                 type: string
               proxyURLHash:
                 type: string
-              tenant:
-                properties:
-                  apiTokenSettingsReadAvailable:
-                    type: boolean
-                  apiTokenSettingsWriteAvailable:
-                    type: boolean
-                type: object
               updatedTimestamp:
                 format: date-time
                 type: string

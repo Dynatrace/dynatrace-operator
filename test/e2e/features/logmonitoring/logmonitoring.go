@@ -16,7 +16,7 @@ import (
 	lmdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/logmonsettings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscopes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
@@ -153,7 +153,7 @@ func checkConditions(name string, namespace string, scopesEnabled bool) features
 		}
 
 		for _, scope := range token.OptionalScopes {
-			hasScope := optionalscopes.IsAvailable(dk.OptionalScopes(), scope)
+			hasScope := optionalscope.IsAvailable(dk, scope)
 			assert.Equalf(t, scopesEnabled, hasScope, "expected %s condition to be %t", scope, scopesEnabled)
 		}
 
