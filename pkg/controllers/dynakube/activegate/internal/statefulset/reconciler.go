@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -101,12 +102,14 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 		return "", err
 	}
 
-	if len(customPropertyData) < 1 && len(authTokenData) < 1 {
+	resourceAttributesData := deploymentproperties.BuildContent(dk.Spec.ResourceAttributes)
+
+	if len(customPropertyData) < 1 && len(authTokenData) < 1 && len(resourceAttributesData) < 1 {
 		return "", nil
 	}
 
 	hash := fnv.New32()
-	if _, err := hash.Write([]byte(customPropertyData + authTokenData)); err != nil {
+	if _, err := hash.Write([]byte(customPropertyData + authTokenData + resourceAttributesData)); err != nil {
 		return "", errors.WithStack(err)
 	}
 

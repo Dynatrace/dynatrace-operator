@@ -20,6 +20,10 @@ const (
 	AuthTokenSecretVolumeName = "ag-authtoken-secret"
 	AuthTokenMountPoint       = connectioninfo.TokenBasePath + "/auth-token"
 
+	DeploymentPropertiesVolumeName = "deployment-properties"
+	DeploymentPropertiesFileName   = "deployment.properties"
+	DeploymentPropertiesBasePath   = "/var/lib/dynatrace/secrets/config"
+
 	EnvDTCapabilities    = "DT_CAPABILITIES"
 	EnvDTIDSeedNamespace = "DT_ID_SEED_NAMESPACE"
 	EnvDTIDSeedClusterID = "DT_ID_SEED_K8S_CLUSTER_ID"

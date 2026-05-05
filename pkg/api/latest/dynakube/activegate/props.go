@@ -11,11 +11,12 @@ import (
 )
 
 const (
-	TenantSecretSuffix            = "-activegate-tenant-secret"
-	TLSSecretSuffix               = "-activegate-tls-secret"
-	ConnectionInfoConfigMapSuffix = "-activegate-connection-info"
-	AuthTokenSecretSuffix         = "-activegate-authtoken-secret"
-	DefaultImageRegistrySubPath   = "/linux/activegate"
+	TenantSecretSuffix                    = "-activegate-tenant-secret"
+	TLSSecretSuffix                       = "-activegate-tls-secret"
+	ConnectionInfoConfigMapSuffix         = "-activegate-connection-info"
+	DeploymentPropertiesConfigMapSuffix   = "-activegate-deployment-properties"
+	AuthTokenSecretSuffix                 = "-activegate-authtoken-secret"
+	DefaultImageRegistrySubPath           = "/linux/activegate"
 )
 
 func (ag *Spec) SetAPIURL(apiURL string) {
@@ -126,6 +127,10 @@ func (ag *Spec) GetAutoTLSSecretName() string {
 
 func (ag *Spec) GetConnectionInfoConfigMapName() string {
 	return ag.name + ConnectionInfoConfigMapSuffix
+}
+
+func (ag *Spec) GetDeploymentPropertiesConfigMapName() string {
+	return ag.name + DeploymentPropertiesConfigMapSuffix
 }
 
 // GetDefaultImage provides the image reference for the ActiveGate from tenant registry.

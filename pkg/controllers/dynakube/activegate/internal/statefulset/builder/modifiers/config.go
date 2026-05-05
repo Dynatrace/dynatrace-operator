@@ -32,6 +32,7 @@ func GenerateAllModifiers(dk dynakube.DynaKube, capability capability.Capability
 		NewSSLVolumeModifier(dk),
 		NewCertificatesModifier(dk),
 		NewTrustedCAsVolumeModifier(dk),
+		NewDeploymentPropertiesModifier(dk),
 		NewCustomPropertiesModifier(dk, capability),
 		NewProxyModifier(dk),
 		NewRawImageModifier(dk, agBaseContainerEnvMap),
