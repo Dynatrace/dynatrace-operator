@@ -10,9 +10,14 @@ import (
 )
 
 const (
+	_ = 1 << (10 * iota) //nolint:mnd
+	KiB
+)
+
+const (
 	declarativeInputFileName = "declarative.cbor"
-	declarativeWarnSizeBytes = 800 * 1024 // 800 KiB
-	declarativeMaxSizeBytes  = 980 * 1024 // 980 KiB
+	declarativeWarnSizeBytes = 800 * KiB
+	declarativeMaxSizeBytes  = 980 * KiB
 )
 
 func (s *SecretGenerator) addDeclarativeConfig(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte) error {
@@ -33,7 +38,7 @@ func (s *SecretGenerator) prepareDeclarativeConfig(ctx context.Context, dk *dyna
 
 	var buf bytes.Buffer
 
-	_, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubeSystemUUID, "", &buf)
+	_, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, "", &buf)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 

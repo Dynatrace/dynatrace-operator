@@ -21,6 +21,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 		testDynakube       = "dk"
 		testNamespace      = "ns"
 		testKubeSystemUUID = "kube-system-uuid"
+		testClusterMEID    = "KUBERNETES_CLUSTER-test"
 	)
 
 	newDK := func() *dynakube.DynaKube {
@@ -30,7 +31,8 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: testKubeSystemUUID,
+				KubeSystemUUID:        testKubeSystemUUID,
+				KubernetesClusterMEID: testClusterMEID,
 			},
 		}
 	}
@@ -42,7 +44,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 
 		payload := bytes.Repeat([]byte("a"), 100*1024) // 100 KiB
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testKubeSystemUUID, "", mock.AnythingOfType("*bytes.Buffer")).
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
 			Run(func(_ context.Context, _ string, _ string, writer io.Writer) {
 				_, _ = writer.Write(payload)
 			}).
@@ -62,7 +64,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 
 		payload := bytes.Repeat([]byte("a"), 850*1024) // 850 KiB — above warn, below max
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testKubeSystemUUID, "", mock.AnythingOfType("*bytes.Buffer")).
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
 			Run(func(_ context.Context, _ string, _ string, writer io.Writer) {
 				_, _ = writer.Write(payload)
 			}).
@@ -82,7 +84,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 
 		payload := bytes.Repeat([]byte("a"), 990*1024) // 990 KiB — above max
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testKubeSystemUUID, "", mock.AnythingOfType("*bytes.Buffer")).
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
 			Run(func(_ context.Context, _ string, _ string, writer io.Writer) {
 				_, _ = writer.Write(payload)
 			}).
@@ -102,7 +104,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 
 		expectedErr := errors.New("API error")
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testKubeSystemUUID, "", mock.AnythingOfType("*bytes.Buffer")).
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
 			Return("", expectedErr)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
@@ -119,7 +121,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 		mockDTClient := oneagentclientmock.NewClient(t)
 
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testKubeSystemUUID, "", mock.AnythingOfType("*bytes.Buffer")).
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
 			Return("", nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
