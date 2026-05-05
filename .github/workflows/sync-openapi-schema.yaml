@@ -90,7 +90,6 @@ jobs:
 
           output_dir=$(./bin/yq -r '.outputDir' api/oapi/generator-config.yaml)
           git add "${output_dir}/"
-          diff_stat=$(git diff --cached --stat HEAD | tail -1)
           changed_packages=$(git diff --cached --name-only HEAD | grep "^${output_dir}/" | sed "s|^${output_dir}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ' || true)
 
           pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and regenerates Go clients."$'\n\n'
@@ -98,7 +97,6 @@ jobs:
           pr_body+="| **Schemas** | \`${schemas_summary}\` |"$'\n'
           pr_body+="| **APIs generated** | \`${apis_summary}\` |"$'\n'
           pr_body+="| **Packages changed** | \`${changed_packages}\` |"$'\n'
-          pr_body+="| **Changes** | \`${diff_stat}\` |"$'\n'
           pr_body+="| **Workflow run** | [#${WORKFLOW_RUN_NUMBER}](${WORKFLOW_RUN_URL}) |"$'\n'
 
           echo "changed=true" >> "$GITHUB_OUTPUT"
