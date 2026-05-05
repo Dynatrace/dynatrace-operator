@@ -26,7 +26,7 @@ type DeploymentPropertiesModifier struct {
 }
 
 func (mod DeploymentPropertiesModifier) Enabled() bool {
-	return true
+	return len(mod.dk.GetResourceAttributes()) > 0
 }
 
 func (mod DeploymentPropertiesModifier) Modify(sts *appsv1.StatefulSet) error {

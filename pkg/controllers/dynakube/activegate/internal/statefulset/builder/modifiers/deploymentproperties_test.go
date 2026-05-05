@@ -10,10 +10,17 @@ import (
 )
 
 func TestDeploymentPropertiesModifierEnabled(t *testing.T) {
-	t.Run("always enabled", func(t *testing.T) {
+	t.Run("enabled when resource attributes are set", func(t *testing.T) {
 		dk := getBaseDynakube()
+		dk.Spec.ResourceAttributes = map[string]string{"key": "value"}
 		mod := NewDeploymentPropertiesModifier(dk)
 		assert.True(t, mod.Enabled())
+	})
+
+	t.Run("disabled without resource attributes", func(t *testing.T) {
+		dk := getBaseDynakube()
+		mod := NewDeploymentPropertiesModifier(dk)
+		assert.False(t, mod.Enabled())
 	})
 }
 
@@ -21,6 +28,7 @@ func TestDeploymentPropertiesModifierModify(t *testing.T) {
 	t.Run("adds volume and volumeMount with correct paths", func(t *testing.T) {
 		dk := getBaseDynakube()
 		enableKubeMonCapability(&dk)
+		dk.Spec.ResourceAttributes = map[string]string{"key": "value"}
 
 		mod := NewDeploymentPropertiesModifier(dk)
 		b := createBuilderForTesting()
