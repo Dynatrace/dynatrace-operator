@@ -91,7 +91,7 @@ jobs:
           schemas_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[].name] | join(", ")')
           apis_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[] | .name + ": " + (.generate.globalProperties.apis // [] | if length == 0 then "all" else join(", ") end)] | join(", ")')
 
-          changed_packages=$(git diff --name-only | grep "^${OUTPUT_DIR}/" | sed "s|^${OUTPUT_DIR}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ' || true)
+          changed_packages=$(git status --porcelain -u | sed 's/^...//' | grep "^${OUTPUT_DIR}/" | sed "s|^${OUTPUT_DIR}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ' || true)
 
           pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and (re-)generates Go clients."$'\n\n'
           pr_body+="| | |"$'\n'"|---|---|"$'\n'
