@@ -47,8 +47,8 @@ func TestDeploymentPropertiesModifierModify(t *testing.T) {
 		volumes := mod.getVolumes()
 		require.Len(t, volumes, 1)
 		assert.Equal(t, consts.DeploymentPropertiesVolumeName, volumes[0].Name)
-		assert.Equal(t, dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), volumes[0].VolumeSource.ConfigMap.Name)
-		assert.Equal(t, testDynakubeName+activegate.DeploymentPropertiesConfigMapSuffix, volumes[0].VolumeSource.ConfigMap.Name)
+		assert.Equal(t, dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), volumes[0].ConfigMap.Name)
+		assert.Equal(t, testDynakubeName+activegate.DeploymentPropertiesConfigMapSuffix, volumes[0].ConfigMap.Name)
 	})
 
 	t.Run("volumeMount has correct mountPath and subPath", func(t *testing.T) {

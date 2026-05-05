@@ -2,7 +2,7 @@ package deploymentproperties
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -12,7 +12,7 @@ func BuildContent(attrs map[string]string) string {
 		keys = append(keys, k)
 	}
 
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	var sb strings.Builder
 
