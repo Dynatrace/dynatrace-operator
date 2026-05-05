@@ -52,10 +52,11 @@ Triggering the workflow now produces the clients at `pkg/clients/generated/<pack
 
 ## 6. Cross-schema defaults (optional)
 
-`api/oapi/generator-config.yaml` holds the defaults that apply to every schema unless overridden per-schema:
+`api/oapi/generator-config.yaml` holds the defaults that apply to every schema unless overridden per-schema.
+Example:
 
 ```yaml
-generatorVersion: v7.22.0
+generatorVersion: vX.X.X
 outputDir: pkg/clients/generated
 additionalProperties: "generateInterfaces"
 globalProperties: "supportingFiles"
