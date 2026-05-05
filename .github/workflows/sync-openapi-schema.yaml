@@ -83,7 +83,7 @@ jobs:
           schemas_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[].name] | join(", ")')
           apis_summary=$(echo "${SCHEMAS_JSON}" | jq -r '[.[] | .name + ": " + (.generate.globalProperties.apis // [] | if length == 0 then "all" else join(", ") end)] | join(", ")')
 
-          output_dir=$(yq -r '.outputDir' api/oapi/generator-config.yaml)
+          output_dir=$(./bin/yq -r '.outputDir' api/oapi/generator-config.yaml)
           git add "${output_dir}/"
           diff_stat=$(git diff --cached --stat HEAD | tail -1)
           changed_packages=$(git diff --cached --name-only HEAD | grep "^${output_dir}/" | sed "s|^${output_dir}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ' || true)

@@ -5,10 +5,10 @@ OAPI_IGNORE_FILE := $(OAPI_CONFIG_DIR)/.openapi-generator-ignore
 OAPI_MODELS_FOR_API := hack/make/bin/oapi-models-for-api.sh
 
 # Defaults from generator-config.yaml (lazily evaluated, only when target runs)
-OAPI_GENERATOR_VERSION ?= $(shell yq -r '.generatorVersion' $(OAPI_GENERATOR_CONFIG))
-OAPI_OUTPUT_DIR ?= $(shell yq -r '.outputDir' $(OAPI_GENERATOR_CONFIG))
-OAPI_ADDITIONAL_PROPS ?= $(shell yq -r '.additionalProperties // ""' $(OAPI_GENERATOR_CONFIG))
-OAPI_GLOBAL_PROPS ?= $(shell yq -r '.globalProperties // ""' $(OAPI_GENERATOR_CONFIG))
+OAPI_GENERATOR_VERSION ?= $(shell $(YQ) -r '.generatorVersion' $(OAPI_GENERATOR_CONFIG))
+OAPI_OUTPUT_DIR ?= $(shell $(YQ) -r '.outputDir' $(OAPI_GENERATOR_CONFIG))
+OAPI_ADDITIONAL_PROPS ?= $(shell $(YQ) -r '.additionalProperties // ""' $(OAPI_GENERATOR_CONFIG))
+OAPI_GLOBAL_PROPS ?= $(shell $(YQ) -r '.globalProperties // ""' $(OAPI_GENERATOR_CONFIG))
 
 # Builds the --global-property value from per-schema and global config
 jq_global_props = .generate.globalProperties as $$gp \
@@ -19,8 +19,8 @@ jq_global_props = .generate.globalProperties as $$gp \
 
 
 ## Generate Go SDKs from OpenAPI specs
-oapi/generate: prerequisites/openapi-generator-cli
-	@yq -o=json '.schemas' "$(OAPI_SYNC_CONFIG)" \
+oapi/generate: prerequisites/openapi-generator-cli prerequisites/yq
+	@$(YQ) -o=json '.schemas' "$(OAPI_SYNC_CONFIG)" \
 	| jq -c '.[]' \
 	| while read -r row; do \
 		name=$$(echo "$$row" | jq -r '.name'); \

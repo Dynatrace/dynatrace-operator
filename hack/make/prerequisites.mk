@@ -18,6 +18,8 @@ GOLANGCI_LINT_VERSION ?= v2.11.4
 GOLANG_TOOLS_VERSION ?= v0.42.0
 # renovate depName=github.com/vektra/mockery
 MOCKERY_VERSION ?= v3.6.4
+# renovate depName=github.com/mikefarah/yq/v4
+YQ_VERSION ?= v4.53.2
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 MARKDOWNLINT_CLI_VERSION ?= v0.48.0
 # renovate depName=github.com/tcort/markdown-link-check
@@ -38,6 +40,7 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 DEADCODE ?= $(LOCALBIN)/deadcode
 MOCKERY ?= $(LOCALBIN)/mockery
+YQ ?= $(LOCALBIN)/yq
 GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
 PYTHON ?= $(LOCALBIN)/.venv/bin/python3
@@ -84,6 +87,10 @@ prerequisites/kustomize:
 ## Install verktra/mockery
 prerequisites/mockery:
 	$(call go-install-tool,$(MOCKERY),github.com/vektra/mockery/v3,$(MOCKERY_VERSION))
+
+## Install 'yq' if it is missing
+prerequisites/yq:
+	$(call go-install-tool,$(YQ),github.com/mikefarah/yq/v4,$(YQ_VERSION))
 
 ## Install setup-envtest locally
 prerequisites/envtest:
