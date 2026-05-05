@@ -53,8 +53,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install make
-        run: sudo apt-get update && sudo apt-get install -y make
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y make jq yq curl
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
