@@ -73,35 +73,6 @@ tests:
           path: spec.template.spec
           value:
             initContainers:
-              - name: webhook-cert-generator
-                image: image-name
-                args:
-                  - certgen
-                env:
-                  - name: POD_NAMESPACE
-                    valueFrom:
-                      fieldRef:
-                        apiVersion: v1
-                        fieldPath: metadata.namespace
-                resources:
-                  requests:
-                    cpu: 50m
-                    memory: 64Mi
-                  limits:
-                    cpu: 100m
-                    memory: 128Mi
-                securityContext:
-                  seccompProfile:
-                    type: RuntimeDefault
-                  privileged: false
-                  allowPrivilegeEscalation: false
-                  readOnlyRootFilesystem: true
-                  runAsNonRoot: true
-                  runAsUser: 1001
-                  runAsGroup: 1001
-                  capabilities:
-                    drop:
-                      - ALL
               - name: crd-storage-migrator
                 image: image-name
                 args:

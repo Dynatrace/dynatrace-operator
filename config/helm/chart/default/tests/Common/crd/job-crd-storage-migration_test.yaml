@@ -55,6 +55,32 @@ tests:
       - isNotEmpty:
           path: spec.template.spec.containers[0].securityContext
 
+  - it: should have correct init container configuration
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: webhook-cert-generator
+      - contains:
+          path: spec.template.spec.initContainers[0].args
+          content: certgen
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+      - isNotEmpty:
+          path: spec.template.spec.initContainers[0].resources.requests
+      - isNotEmpty:
+          path: spec.template.spec.initContainers[0].resources.limits
+      - isNotEmpty:
+          path: spec.template.spec.initContainers[0].securityContex
+
   - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0
     set:
       platform: kubernetes

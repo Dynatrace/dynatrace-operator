@@ -52,6 +52,30 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- $needsCertgen := not (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+      {{- if $needsCertgen }}
+      initContainers:
+        - name: webhook-cert-generator
+          image: {{ include "dynatrace-operator.image" . }}
+          {{- with .Values.imageRef.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
+          args:
+            - certgen
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              {{- toYaml .Values.operator.requests | nindent 14 }}
+            limits:
+              {{- toYaml .Values.operator.limits | nindent 14 }}
+          securityContext:
+            {{- toYaml .Values.operator.securityContext | nindent 12 }}
+      {{- end }}
       containers:
         - name: crd-storage-migration
           image: {{ include "dynatrace-operator.image" . }}
