@@ -104,10 +104,6 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 
 	resourceAttributesData := deploymentproperties.BuildContent(dk.Spec.ResourceAttributes)
 
-	if len(customPropertyData) == 0 && len(authTokenData) == 0 && len(resourceAttributesData) == 0 {
-		return "", nil
-	}
-
 	hash := fnv.New32()
 	if _, err := hash.Write([]byte(customPropertyData + authTokenData + resourceAttributesData)); err != nil {
 		return "", errors.WithStack(err)

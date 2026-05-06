@@ -7,14 +7,14 @@ import (
 )
 
 func TestBuildContent(t *testing.T) {
-	t.Run("nil map produces empty section", func(t *testing.T) {
+	t.Run("nil map produces empty string", func(t *testing.T) {
 		content := BuildContent(nil)
-		assert.Equal(t, "[resource_attributes]\n", content)
+		assert.Empty(t, content)
 	})
 
-	t.Run("empty map produces empty section", func(t *testing.T) {
+	t.Run("empty map produces empty string", func(t *testing.T) {
 		content := BuildContent(map[string]string{})
-		assert.Equal(t, "[resource_attributes]\n", content)
+		assert.Empty(t, content)
 	})
 
 	t.Run("single entry", func(t *testing.T) {
