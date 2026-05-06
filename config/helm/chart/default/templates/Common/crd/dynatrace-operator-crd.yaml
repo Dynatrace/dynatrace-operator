@@ -7419,6 +7419,16 @@ spec:
                   version:
                     type: string
                 type: object
+              apiToken:
+                properties:
+                  availableOptionalScopes:
+                    properties:
+                      settingsRead:
+                        type: boolean
+                      settingsWrite:
+                        type: boolean
+                    type: object
+                type: object
               codeModules:
                 properties:
                   imageID:

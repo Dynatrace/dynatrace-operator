@@ -267,6 +267,8 @@ spec:
 status:
   activeGate:
     connectionInfoStatus: {}
+  apiToken:
+    availableOptionalScopes: {}
   codeModules: {}
   kspm: {}
   metadataEnrichment: {}

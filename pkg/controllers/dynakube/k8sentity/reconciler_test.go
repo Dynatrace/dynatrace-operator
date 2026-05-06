@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,8 +31,8 @@ func newDynaKube() *dynakube.DynaKube {
 		},
 	}
 
-	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, token.ConditionTypeAPITokenSettingsRead, "available")
-	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, token.ConditionTypeAPITokenSettingsWrite, "available")
+	optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
+	optionalscope.SetAvailable(dk, token.ScopeSettingsWrite)
 
 	return dk
 }
@@ -72,7 +73,7 @@ func TestReconcile(t *testing.T) {
 	)
 	t.Run("optional scope settings.read not available", func(t *testing.T) {
 		dk := newDynaKube()
-		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "not available")
+		optionalscope.SetMissing(dk, token.ScopeSettingsRead)
 
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), settingsmock.NewClient(t), dk)

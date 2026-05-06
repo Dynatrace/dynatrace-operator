@@ -788,8 +788,8 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		require.Error(t, err)
 
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenVerificationFailedConditionMessage)
-		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, tokenclient.ConditionTypeAPITokenSettingsRead))
-		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, tokenclient.ConditionTypeAPITokenSettingsWrite))
+		assert.Nil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		assert.Nil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 	})
 	t.Run("no missing scopes", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
@@ -805,12 +805,10 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.NoError(t, err)
 
-		cond := meta.FindStatusCondition(dk.Status.Conditions, tokenclient.ConditionTypeAPITokenSettingsRead)
-		require.NotNil(t, cond)
-		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		cond = meta.FindStatusCondition(dk.Status.Conditions, tokenclient.ConditionTypeAPITokenSettingsWrite)
-		require.NotNil(t, cond)
-		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 	})
 	t.Run("one optional scopes missing", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
@@ -826,12 +824,10 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.NoError(t, err)
 
-		cond := meta.FindStatusCondition(dk.Status.Conditions, tokenclient.ConditionTypeAPITokenSettingsRead)
-		require.NotNil(t, cond)
-		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		cond = meta.FindStatusCondition(dk.Status.Conditions, tokenclient.ConditionTypeAPITokenSettingsWrite)
-		require.NotNil(t, cond)
-		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 	})
 	t.Run("all optional scopes missing", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
@@ -845,12 +841,97 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.NoError(t, err)
 
-		cond := meta.FindStatusCondition(dk.Status.Conditions, tokenclient.ConditionTypeAPITokenSettingsRead)
-		require.NotNil(t, cond)
-		assert.Equal(t, metav1.ConditionFalse, cond.Status)
-		cond = meta.FindStatusCondition(dk.Status.Conditions, tokenclient.ConditionTypeAPITokenSettingsWrite)
-		require.NotNil(t, cond)
-		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		assert.False(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.False(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+	})
+	t.Run("state of the optional scopes condition", func(t *testing.T) {
+		dk := createDynakubeWithK8SMonitoring()
+		tokenScopesWithoutSettingsWrite := []string{
+			tokenclient.ScopeDataExport,
+			tokenclient.ScopeSettingsRead,
+			tokenclient.ScopeInstallerDownload,
+			tokenclient.ScopeActiveGateTokenCreate,
+		}
+		tokenScopes := []string{
+			tokenclient.ScopeDataExport,
+			tokenclient.ScopeSettingsRead,
+			tokenclient.ScopeSettingsWrite,
+			tokenclient.ScopeInstallerDownload,
+			tokenclient.ScopeActiveGateTokenCreate,
+		}
+
+		testCases := []struct {
+			description          string
+			firstCallReturns     []string
+			secondCallReturns    []string
+			firstCallCondExists  bool
+			secondCallCondExists bool
+		}{
+			{
+				description:          "condition not exists",
+				firstCallReturns:     tokenScopes,
+				secondCallReturns:    tokenScopes,
+				firstCallCondExists:  false,
+				secondCallCondExists: false,
+			},
+			{
+				description:          "condition exists",
+				firstCallReturns:     tokenScopesWithoutSettingsWrite,
+				secondCallReturns:    tokenScopesWithoutSettingsWrite,
+				firstCallCondExists:  true,
+				secondCallCondExists: true,
+			},
+			{
+				description:          "condition set",
+				firstCallReturns:     tokenScopes,
+				secondCallReturns:    tokenScopesWithoutSettingsWrite,
+				firstCallCondExists:  false,
+				secondCallCondExists: true,
+			},
+			{
+				description:          "condition deleted",
+				firstCallReturns:     tokenScopesWithoutSettingsWrite,
+				secondCallReturns:    tokenScopes,
+				firstCallCondExists:  true,
+				secondCallCondExists: false,
+			},
+		}
+
+		for _, testCase := range testCases {
+			fakeClient := fake.NewClient(createAPISecret())
+
+			mockedTokenClient := tokenclientmock.NewClient(t)
+			mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(testCase.firstCallReturns, nil).Once()
+			mockedTokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(testCase.secondCallReturns, nil).Once()
+
+			controller := &Controller{
+				client:          fakeClient,
+				apiReader:       fakeClient,
+				dtClientFactory: newClientFactory(&dynatrace.Client{Token: mockedTokenClient}),
+			}
+
+			_, err := controller.setupTokensAndClient(t.Context(), dk)
+			require.NoError(t, err, testCase.description)
+
+			condition := meta.FindStatusCondition(*dk.Conditions(), conditionTypeAPITokenOptionalScopes)
+			if testCase.firstCallCondExists {
+				assert.NotNil(t, condition, testCase.description)
+			} else {
+				assert.Nil(t, condition, testCase.description)
+			}
+
+			_, err = controller.setupTokensAndClient(t.Context(), dk)
+			require.NoError(t, err)
+
+			condition = meta.FindStatusCondition(*dk.Conditions(), conditionTypeAPITokenOptionalScopes)
+			if testCase.secondCallCondExists {
+				assert.NotNil(t, condition, testCase.description)
+			} else {
+				assert.Nil(t, condition, testCase.description)
+			}
+		}
 	})
 }
 
