@@ -64,7 +64,7 @@ func (checker *CorrectnessChecker) migrateAppMounts(ctx context.Context) {
 		}
 	}
 
-	err = os.MkdirAll(checker.path.AppMountsBaseDir(), os.ModePerm)
+	err = os.MkdirAll(checker.path.AppMountsBaseDir(), 0755)
 	if err != nil {
 		log.Error(err, "failed to create app mounts base directory")
 	}

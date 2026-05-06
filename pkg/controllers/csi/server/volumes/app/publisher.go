@@ -214,7 +214,7 @@ func (pub *Publisher) addPodInfoSymlink(ctx context.Context, volumeCfg *csivolum
 func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (string, error) {
 	upperDir := pub.path.AppMountVarDir(volumeCfg.VolumeID)
 
-	err := os.MkdirAll(upperDir, os.ModePerm)
+	err := os.MkdirAll(upperDir, 0755)
 	if err != nil {
 		return "", err
 	}
