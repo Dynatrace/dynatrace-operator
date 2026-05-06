@@ -125,6 +125,11 @@ webhook:
   mutatingWebhook:
     failurePolicy: Ignore
     timeoutSeconds: 10
+  certs:
+    rootDuration: 8760h # 365 days
+    serverDuration: 168h # 7 days
+    renewalThreshold: 12h
+    controllerSuccessRequeueInterval: 3h # interval of certificate controller in case when certificate is up to date
   volumes:
     certsDir:
       sizeLimit: 10Mi
