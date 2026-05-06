@@ -6577,6 +6577,8 @@ spec:
                     nullable: true
                     type: string
                 type: object
+              publicRegistryOverride:
+                type: string
               resourceAttributes:
                 additionalProperties:
                   type: string
