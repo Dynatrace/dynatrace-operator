@@ -104,7 +104,7 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 
 	resourceAttributesData := deploymentproperties.BuildContent(dk.Spec.ResourceAttributes)
 
-	if len(customPropertyData) < 1 && len(authTokenData) < 1 && len(resourceAttributesData) < 1 {
+	if len(customPropertyData) == 0 && len(authTokenData) == 0 && len(resourceAttributesData) == 0 {
 		return "", nil
 	}
 

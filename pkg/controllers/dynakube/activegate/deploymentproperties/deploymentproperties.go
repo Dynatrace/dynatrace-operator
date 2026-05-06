@@ -2,16 +2,17 @@ package deploymentproperties
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
 
 func BuildContent(attrs map[string]string) string {
-	keys := make([]string, 0, len(attrs))
-	for k := range attrs {
-		keys = append(keys, k)
+	if len(attrs) == 0 {
+		return ""
 	}
 
+	keys := slices.Collect(maps.Keys(attrs))
 	slices.Sort(keys)
 
 	var sb strings.Builder

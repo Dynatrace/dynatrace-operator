@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	"path"
+	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -70,5 +70,5 @@ func (mod DeploymentPropertiesModifier) getVolumeMounts() []corev1.VolumeMount {
 }
 
 func getMountPath() string {
-	return path.Join(consts.DeploymentPropertiesBasePath, consts.DeploymentPropertiesFileName)
+	return filepath.Join(consts.DeploymentPropertiesBasePath, consts.DeploymentPropertiesFileName)
 }
