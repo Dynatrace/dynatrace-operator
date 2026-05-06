@@ -360,7 +360,7 @@ func TestHandleErrorResponse_SingleServerError(t *testing.T) {
 	require.ErrorAs(t, err, &httpErr)
 	require.Len(t, httpErr.ServerErrors, 1)
 	assert.Equal(t, 400, httpErr.ServerErrors[0].Code)
-	assert.EqualError(t, err, "HTTP 400: dynatrace server error 400: bad request")
+	assert.EqualError(t, err, "HTTP 400: bad request")
 }
 
 func TestHandleErrorResponse_MultipleServerErrors(t *testing.T) {
@@ -369,7 +369,7 @@ func TestHandleErrorResponse_MultipleServerErrors(t *testing.T) {
 	httpErr := &HTTPError{}
 	require.ErrorAs(t, err, &httpErr)
 	require.Len(t, httpErr.ServerErrors, 2)
-	assert.EqualError(t, err, "HTTP 400: dynatrace server error 400: bad1; dynatrace server error 400: bad2")
+	assert.EqualError(t, err, "HTTP 400: bad1; bad2")
 }
 
 func TestHandleErrorResponse_GenericHTTPError(t *testing.T) {
