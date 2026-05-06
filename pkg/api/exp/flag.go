@@ -9,6 +9,7 @@ const (
 	NoProxyKey = FFPrefix + "no-proxy"
 
 	UseEECLegacyMountsKey = FFPrefix + "use-eec-legacy-mounts"
+	UsePublicRegistryKey  = FFPrefix + "use-public-registry"
 
 	silentPhrase = "silent"
 	failPhrase   = "fail"
@@ -31,6 +32,10 @@ func (ff *FeatureFlags) GetNoProxy() string {
 
 func (ff *FeatureFlags) UseEECLegacyMounts() bool {
 	return ff.getBoolWithDefault(UseEECLegacyMountsKey, true)
+}
+
+func (ff *FeatureFlags) IsPublicRegistry() bool {
+	return ff.getBoolWithDefault(UsePublicRegistryKey, false)
 }
 
 // Deprecated: Do not use "disable" feature flags.

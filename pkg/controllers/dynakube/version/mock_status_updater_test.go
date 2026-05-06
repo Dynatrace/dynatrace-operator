@@ -192,50 +192,6 @@ func (_c *MockStatusUpdater_CustomVersion_Call) RunAndReturn(run func() string) 
 	return _c
 }
 
-// IsAutoRegistryEnabled provides a mock function for the type MockStatusUpdater
-func (_mock *MockStatusUpdater) IsAutoRegistryEnabled() bool {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for IsAutoRegistryEnabled")
-	}
-
-	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func() bool); ok {
-		r0 = returnFunc()
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-	return r0
-}
-
-// MockStatusUpdater_IsAutoRegistryEnabled_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsAutoRegistryEnabled'
-type MockStatusUpdater_IsAutoRegistryEnabled_Call struct {
-	*mock.Call
-}
-
-// IsAutoRegistryEnabled is a helper method to define mock.On call
-func (_e *MockStatusUpdater_Expecter) IsAutoRegistryEnabled() *MockStatusUpdater_IsAutoRegistryEnabled_Call {
-	return &MockStatusUpdater_IsAutoRegistryEnabled_Call{Call: _e.mock.On("IsAutoRegistryEnabled")}
-}
-
-func (_c *MockStatusUpdater_IsAutoRegistryEnabled_Call) Run(run func()) *MockStatusUpdater_IsAutoRegistryEnabled_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *MockStatusUpdater_IsAutoRegistryEnabled_Call) Return(b bool) *MockStatusUpdater_IsAutoRegistryEnabled_Call {
-	_c.Call.Return(b)
-	return _c
-}
-
-func (_c *MockStatusUpdater_IsAutoRegistryEnabled_Call) RunAndReturn(run func() bool) *MockStatusUpdater_IsAutoRegistryEnabled_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // IsAutoUpdateEnabled provides a mock function for the type MockStatusUpdater
 func (_mock *MockStatusUpdater) IsAutoUpdateEnabled() bool {
 	ret := _mock.Called()
@@ -320,6 +276,50 @@ func (_c *MockStatusUpdater_IsEnabled_Call) Return(b bool) *MockStatusUpdater_Is
 }
 
 func (_c *MockStatusUpdater_IsEnabled_Call) RunAndReturn(run func() bool) *MockStatusUpdater_IsEnabled_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IsPublicRegistryEnabled provides a mock function for the type MockStatusUpdater
+func (_mock *MockStatusUpdater) IsPublicRegistryEnabled() bool {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsPublicRegistryEnabled")
+	}
+
+	var r0 bool
+	if returnFunc, ok := ret.Get(0).(func() bool); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	return r0
+}
+
+// MockStatusUpdater_IsPublicRegistryEnabled_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsPublicRegistryEnabled'
+type MockStatusUpdater_IsPublicRegistryEnabled_Call struct {
+	*mock.Call
+}
+
+// IsPublicRegistryEnabled is a helper method to define mock.On call
+func (_e *MockStatusUpdater_Expecter) IsPublicRegistryEnabled() *MockStatusUpdater_IsPublicRegistryEnabled_Call {
+	return &MockStatusUpdater_IsPublicRegistryEnabled_Call{Call: _e.mock.On("IsPublicRegistryEnabled")}
+}
+
+func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) Run(run func()) *MockStatusUpdater_IsPublicRegistryEnabled_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) Return(b bool) *MockStatusUpdater_IsPublicRegistryEnabled_Call {
+	_c.Call.Return(b)
+	return _c
+}
+
+func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) RunAndReturn(run func() bool) *MockStatusUpdater_IsPublicRegistryEnabled_Call {
 	_c.Call.Return(run)
 	return _c
 }

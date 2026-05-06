@@ -231,7 +231,7 @@ func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image str
 func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version string, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsAutoRegistryEnabled").Maybe().Maybe().Return(false)
+	updater.On("IsPublicRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return(version)
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
 
@@ -241,7 +241,7 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, true)
 	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsAutoRegistryEnabled").Maybe().Maybe().Return(false)
+	updater.On("IsPublicRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return("")
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(errors.New("BOOM"))
 
@@ -251,7 +251,7 @@ func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUp
 func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsAutoRegistryEnabled").Maybe().Maybe().Return(false)
+	updater.On("IsPublicRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return("")
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
 
@@ -260,7 +260,7 @@ func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bo
 
 func newClassicFullStackUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
-	updater.On("IsAutoRegistryEnabled").Maybe().Return(false)
+	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
 
 	return updater
 }

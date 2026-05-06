@@ -20,7 +20,7 @@ type StatusUpdater interface {
 	CustomImage() string
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
-	IsAutoRegistryEnabled() bool
+	IsPublicRegistryEnabled() bool
 	CheckForDowngrade(ctx context.Context, latestVersion string) (bool, error)
 	ValidateStatus(ctx context.Context) error
 
@@ -59,8 +59,8 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		}
 	}
 
-	if updater.IsAutoRegistryEnabled() {
-		err = r.processAutoRegistry(ctx, updater)
+	if updater.IsPublicRegistryEnabled() {
+		err = r.processPublicRegistry(ctx, updater)
 		if err != nil {
 			return err
 		}
@@ -78,11 +78,11 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	return updater.ValidateStatus(ctx)
 }
 
-func (r *reconciler) processAutoRegistry(ctx context.Context, updater StatusUpdater) error {
+func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
 	log := logd.FromContext(ctx)
 	log.Info("updating version status according to public registry", "updater", updater.Name())
 	// TODO: implement in ICP-1077
-	return errors.New("auto registry is not yet supported")
+	return errors.New("public registry is not yet supported")
 }
 
 func determineSource(updater StatusUpdater) status.VersionSource {
@@ -90,7 +90,7 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 		return status.CustomImageVersionSource
 	}
 
-	if updater.IsAutoRegistryEnabled() {
+	if updater.IsPublicRegistryEnabled() {
 		return status.AutomaticRegistryVersionSource
 	}
 

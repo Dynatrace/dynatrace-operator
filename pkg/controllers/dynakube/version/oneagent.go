@@ -73,8 +73,8 @@ func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
 	return updater.dk.OneAgent().IsAutoUpdateEnabled()
 }
 
-func (updater oneAgentUpdater) IsAutoRegistryEnabled() bool {
-	return false
+func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
+	return updater.dk.FF().IsPublicRegistry()
 }
 
 func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {

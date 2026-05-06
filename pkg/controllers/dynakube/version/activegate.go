@@ -76,7 +76,7 @@ func (updater *activeGateUpdater) CheckForDowngrade(_ context.Context, _ string)
 	return false, nil
 }
 
-func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
+func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
 	return false
 }
 
