@@ -477,6 +477,9 @@ func (controller *Controller) warnAboutDeprecatedTokens(ctx context.Context) {
 	}
 }
 
+// Verify the provided tokens for structural and functional correctness. The former checks that there aren't any unexpected characters in the token values and
+// the latter validates the token scopes using the tenant API.
+// If a platform token is provided, no API call is made and all optional scope related fields and conditions are cleared from the status.
 func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
 	err := controller.tokens.VerifyValues()
 	if err != nil {
@@ -487,6 +490,14 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 		dk.Status.APIToken.Platform = true
 
 		logd.FromContext(ctx).Info("skipping token scope lookup due to platform token")
+
+		// Scope related conditions are obsolete when using a platform token
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsRead)
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsWrite)
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes)
+		// Also clear the optional scopes from the status
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsRead = nil
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite = nil
 
 		return nil
 	}

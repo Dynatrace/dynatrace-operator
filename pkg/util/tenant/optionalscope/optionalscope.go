@@ -6,12 +6,18 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// IsAvailable returns true if the DynaKube status has the matching optional scope.
+// Always returns true if the used apiToken is a platform token.
 func IsAvailable(dk *dynakube.DynaKube, scope string) bool {
+	if dk.Status.APIToken.Platform {
+		return true
+	}
+
 	switch scope {
 	case token.ScopeSettingsRead:
-		return dk.Status.APIToken.AvailableOptionalScopes.SettingsRead != nil && *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead
+		return ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsRead, false)
 	case token.ScopeSettingsWrite:
-		return dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite != nil && *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite
+		return ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite, false)
 	}
 
 	return false

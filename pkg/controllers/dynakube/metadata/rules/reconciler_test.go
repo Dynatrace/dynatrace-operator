@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
@@ -165,6 +166,23 @@ func TestReconcile(t *testing.T) {
 		require.NotNil(t, condition)
 		assert.Equal(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+
+	t.Run("handle missing scope in platform token", func(t *testing.T) {
+		dk := createDynaKube()
+		dk.Status.APIToken.Platform = true
+
+		dtClient := settingsmock.NewClient(t)
+		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, &core.HTTPError{StatusCode: 403})
+		reconciler := NewReconciler(dtClient, &dk)
+
+		err := reconciler.Reconcile(ctx)
+
+		require.NoError(t, err)
+		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
 	})
 }
 

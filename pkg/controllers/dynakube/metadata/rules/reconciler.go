@@ -64,8 +64,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		log.Info("metadata-enrichment rules are not set in the status because the optional scope is not available", "scope", "settings:objects:read")
-		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are not set in the status because the optional 'settings:objects:read' scope is not available")
+		msg := "provided token cannot read metadata-enrichment rules due to missing scopes"
+		log.Info(msg)
+		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, msg)
 
 		return nil
 	}

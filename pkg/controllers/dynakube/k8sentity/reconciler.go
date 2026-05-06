@@ -54,16 +54,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		return errMissingKubeSystemUUID
 	}
 
-	if err := r.reconcileMEID(ctx, dtClient, dk); err != nil {
-		if core.IsForbidden(err) {
-			msg := "settings:objects:read optional scope not available"
-			log.Info(msg)
-			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
-
-			return nil
+	handleMissingScope := func(scope string, err error) error {
+		if !core.IsForbidden(err) {
+			return err
 		}
 
-		return err
+		msg := scope + " optional scope not available"
+		log.Info(msg)
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
+
+		return nil
+	}
+
+	if err := r.reconcileMEID(ctx, dtClient, dk); err != nil {
+		return handleMissingScope("settings:objects:read", err)
 	}
 
 	if !dk.FF().IsAutomaticK8sAPIMonitoring() || !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
@@ -78,13 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 
 	objectID, err := r.createK8sConnectionSettingIfAbsent(ctx, dtClient, dk)
 	if err != nil {
-		if core.IsForbidden(err) {
-			log.Info("api token missing optional scope, skipping reconciliation", "scope", "settings:objects:write")
-
-			return nil
-		}
-
-		return err
+		return handleMissingScope("settings:objects:write", err)
 	}
 
 	if objectID != "" {

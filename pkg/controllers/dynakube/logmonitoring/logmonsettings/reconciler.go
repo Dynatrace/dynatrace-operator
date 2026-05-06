@@ -42,28 +42,24 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 
 	_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
-	if !dk.Status.APIToken.Platform {
-		hasReadScope := optionalscope.IsAvailable(dk, token.ScopeSettingsRead)
-		hasWriteScope := optionalscope.IsAvailable(dk, token.ScopeSettingsWrite)
+	hasReadScope := optionalscope.IsAvailable(dk, token.ScopeSettingsRead)
+	hasWriteScope := optionalscope.IsAvailable(dk, token.ScopeSettingsWrite)
 
-		var missingScopes []string
-		if !hasReadScope {
-			missingScopes = append(missingScopes, token.ScopeSettingsRead)
-		}
+	var missingScopes []string
+	if !hasReadScope {
+		missingScopes = append(missingScopes, token.ScopeSettingsRead)
+	}
 
-		if !hasWriteScope {
-			missingScopes = append(missingScopes, token.ScopeSettingsWrite)
-		}
+	if !hasWriteScope {
+		missingScopes = append(missingScopes, token.ScopeSettingsWrite)
+	}
 
-		if len(missingScopes) > 0 {
-			message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing log monitoring setting and/or safely create new one."
-			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, message)
-			log.Info(message)
+	if len(missingScopes) > 0 {
+		message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing log monitoring setting and/or safely create new one."
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, message)
+		log.Info(message)
 
-			return nil
-		}
-
-		log.Info("necessary scopes for logmonitoring settings creation is available, proceeding with reconciliation")
+		return nil
 	}
 
 	err := r.checkLogMonitoringSettings(ctx, dtClient, dk)
@@ -72,11 +68,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 			return err
 		}
 
-		log.Info("skipping reconciliation: tenant requires additional scopes for managing log monitoring settings")
+		msg := "provided token cannot manage log monitoring settings due to missing scopes"
+		log.Info(msg)
 
 		if dk.Status.APIToken.Platform {
-			message := "platform token scope(s) missing: cannot query existing log monitoring monitoring setting and/or safely create new one."
-			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, message)
+			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, msg)
 		}
 	}
 

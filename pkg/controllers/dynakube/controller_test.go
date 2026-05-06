@@ -18,9 +18,11 @@ import (
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
@@ -933,6 +935,61 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestSetupTokensAndClientForPlatformToken(t *testing.T) {
+	fakeClient := fake.NewClient(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			token.APIKey: []byte(dttoken.PlatformPrefix + testAPIToken),
+		},
+	})
+
+	controller := &Controller{
+		client:          fakeClient,
+		apiReader:       fakeClient,
+		dtClientFactory: newClientFactory(&dynatrace.Client{}),
+	}
+
+	tests := []struct {
+		name string
+		dk   *dynakube.DynaKube
+	}{
+		{
+			"first reconcile",
+			createDynakubeWithK8SMonitoring(),
+		},
+		{
+			"migrate from classic token",
+			func() *dynakube.DynaKube {
+				dk := createDynakubeWithK8SMonitoring()
+				optionalscope.SetAvailable(dk, tokenclient.ScopeSettingsRead)
+				optionalscope.SetAvailable(dk, tokenclient.ScopeSettingsWrite)
+				meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: conditionTypeAPITokenOptionalScopes, Status: "True", Reason: "Test", Message: "test"})
+				meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: conditionTypeAPITokenSettingsRead, Status: "True", Reason: "Test", Message: "test"})
+				meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: conditionTypeAPITokenSettingsWrite, Status: "True", Reason: "Test", Message: "test"})
+
+				return dk
+			}(),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dk := test.dk
+			_, err := controller.setupTokensAndClient(t.Context(), dk)
+			require.NoError(t, err)
+
+			assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, conditionTypeAPITokenOptionalScopes))
+			assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, conditionTypeAPITokenSettingsRead))
+			assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, conditionTypeAPITokenSettingsWrite))
+			assert.Nil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+			assert.Nil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		})
+	}
 }
 
 func TestLastErrorFromCondition(t *testing.T) {
