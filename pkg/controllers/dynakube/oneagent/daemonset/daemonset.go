@@ -2,8 +2,10 @@ package daemonset
 
 import (
 	"context"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -296,6 +298,15 @@ func (b *builder) initContainerArguments() []string {
 
 	if b.dk.Status.KubernetesClusterMEID != "" {
 		attributes = append(attributes, "dt.entity.kubernetes_cluster="+b.dk.Status.KubernetesClusterMEID)
+	}
+
+	if resourceAttrs := b.dk.OneAgent().GetResourceAttributes(); len(resourceAttrs) > 0 {
+		keys := slices.Collect(maps.Keys(resourceAttrs))
+		slices.Sort(keys)
+
+		for _, k := range keys {
+			attributes = append(attributes, k+"="+resourceAttrs[k])
+		}
 	}
 
 	return []string{
