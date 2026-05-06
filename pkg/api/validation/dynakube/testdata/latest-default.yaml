@@ -274,3 +274,4 @@ status:
   metadataEnrichment: {}
   oneAgent:
     connectionInfoStatus: {}
+  tenant: {}
