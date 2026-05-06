@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/tenant"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
@@ -35,6 +36,9 @@ type DynaKubeStatus struct { //nolint:revive
 
 	// Observed state of KSPM
 	KSPM kspm.Status `json:"kspm,omitempty"`
+
+	// Observed state of the Dynatrace tenant
+	Tenant tenant.Status `json:"tenant,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
