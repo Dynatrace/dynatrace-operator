@@ -7415,6 +7415,8 @@ spec:
                       settingsWrite:
                         type: boolean
                     type: object
+                  platform:
+                    type: boolean
                 type: object
               codeModules:
                 properties:

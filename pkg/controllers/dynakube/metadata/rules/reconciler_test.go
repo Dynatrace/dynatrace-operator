@@ -170,7 +170,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("handle missing scope in platform token", func(t *testing.T) {
 		dk := createDynaKube()
-		dk.Status.APIToken.Platform = true
+		dk.Status.APIToken.Platform = ptr.To(true)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, &core.HTTPError{StatusCode: 403})

@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/utils/ptr"
 )
 
 func TestReconcile(t *testing.T) {
@@ -181,7 +182,7 @@ func TestReconcile(t *testing.T) {
 			Once()
 
 		dk := getDK()
-		dk.Status.APIToken.Platform = true
+		dk.Status.APIToken.Platform = ptr.To(true)
 		r := NewReconciler()
 
 		err := r.Reconcile(t.Context(), mockClient, dk)
@@ -198,7 +199,7 @@ func TestReconcile(t *testing.T) {
 			Return("", &core.HTTPError{StatusCode: http.StatusForbidden})
 
 		dk := getDK()
-		dk.Status.APIToken.Platform = true
+		dk.Status.APIToken.Platform = ptr.To(true)
 		r := NewReconciler()
 
 		err := r.Reconcile(t.Context(), mockClient, dk)

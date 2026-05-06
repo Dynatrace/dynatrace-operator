@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -811,6 +812,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
 		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.False(t, ptr.Deref(dk.Status.APIToken.Platform, false))
 	})
 	t.Run("one optional scopes missing", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
@@ -830,6 +832,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
 		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 		assert.True(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.False(t, ptr.Deref(dk.Status.APIToken.Platform, false))
 	})
 	t.Run("all optional scopes missing", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
@@ -847,6 +850,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		assert.False(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
 		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
 		assert.False(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.False(t, ptr.Deref(dk.Status.APIToken.Platform, false))
 	})
 	t.Run("state of the optional scopes condition", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
@@ -933,7 +937,29 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 			} else {
 				assert.Nil(t, condition, testCase.description)
 			}
+
+			assert.False(t, ptr.Deref(dk.Status.APIToken.Platform, false))
 		}
+	})
+
+	t.Run("migrate away from platform token", func(t *testing.T) {
+		dk := createDynakubeWithK8SMonitoring()
+		dk.Status.APIToken.Platform = ptr.To(true)
+
+		controller := createFakeControllerAndClients(t, []string{
+			tokenclient.ScopeDataExport,
+			tokenclient.ScopeInstallerDownload,
+			tokenclient.ScopeActiveGateTokenCreate,
+		})
+
+		_, err := controller.setupTokensAndClient(t.Context(), dk)
+		require.NoError(t, err)
+
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		assert.False(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsRead)
+		require.NotNil(t, dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.False(t, *dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite)
+		assert.False(t, ptr.Deref(dk.Status.APIToken.Platform, false))
 	})
 }
 
@@ -983,6 +1009,7 @@ func TestSetupTokensAndClientForPlatformToken(t *testing.T) {
 			_, err := controller.setupTokensAndClient(t.Context(), dk)
 			require.NoError(t, err)
 
+			assert.True(t, ptr.Deref(dk.Status.APIToken.Platform, false))
 			assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, conditionTypeAPITokenOptionalScopes))
 			assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, conditionTypeAPITokenSettingsRead))
 			assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, conditionTypeAPITokenSettingsWrite))

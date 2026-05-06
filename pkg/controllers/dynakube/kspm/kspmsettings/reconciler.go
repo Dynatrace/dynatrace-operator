@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/utils/ptr"
 )
 
 type Reconciler struct {
@@ -92,7 +93,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 		msg := "cannot manage KSPM settings due to missing token scopes or tenant configuration"
 		logd.FromContext(ctx).Info(msg)
 
-		if dk.Status.APIToken.Platform {
+		if ptr.Deref(dk.Status.APIToken.Platform, false) {
 			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), conditionType, msg)
 		}
 

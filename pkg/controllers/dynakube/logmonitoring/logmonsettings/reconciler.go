@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/utils/ptr"
 )
 
 type Reconciler struct {
@@ -71,7 +72,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		msg := "provided token cannot manage log monitoring settings due to missing scopes"
 		log.Info(msg)
 
-		if dk.Status.APIToken.Platform {
+		if ptr.Deref(dk.Status.APIToken.Platform, false) {
 			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, msg)
 		}
 	}
