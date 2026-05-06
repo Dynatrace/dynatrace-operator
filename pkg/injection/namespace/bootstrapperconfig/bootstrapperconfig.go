@@ -218,7 +218,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 			data[curl.InputFileName] = []byte(initialConnectRetryMs)
 		}
 
-		if err := s.addDeclarativeConfig(ctx, dk, data); err != nil {
+		if err := s.addPGC(ctx, dk, data); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}

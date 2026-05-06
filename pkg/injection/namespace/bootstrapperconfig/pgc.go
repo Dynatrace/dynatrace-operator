@@ -20,8 +20,8 @@ const (
 	declarativeMaxSizeBytes  = 980 * KiB
 )
 
-func (s *SecretGenerator) addDeclarativeConfig(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte) error {
-	config, err := s.prepareDeclarativeConfig(ctx, dk)
+func (s *SecretGenerator) addPGC(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte) error {
+	config, err := s.preparePGC(ctx, dk)
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func (s *SecretGenerator) addDeclarativeConfig(ctx context.Context, dk *dynakube
 	return nil
 }
 
-func (s *SecretGenerator) prepareDeclarativeConfig(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
+func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
 	log := logd.FromContext(ctx)
 
 	var buf bytes.Buffer

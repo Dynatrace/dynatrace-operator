@@ -51,7 +51,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 			Return("", nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.prepareDeclarativeConfig(t.Context(), dk)
+		result, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
 		assert.Equal(t, payload, result)
@@ -71,7 +71,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 			Return("", nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.prepareDeclarativeConfig(t.Context(), dk)
+		result, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
 		assert.Equal(t, payload, result)
@@ -91,7 +91,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 			Return("", nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.prepareDeclarativeConfig(t.Context(), dk)
+		result, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
 		assert.Nil(t, result)
@@ -108,7 +108,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 			Return("", expectedErr)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.prepareDeclarativeConfig(t.Context(), dk)
+		result, err := sg.preparePGC(t.Context(), dk)
 
 		require.Error(t, err)
 		assert.Equal(t, expectedErr, err)
@@ -125,7 +125,7 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 			Return("", nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.prepareDeclarativeConfig(t.Context(), dk)
+		result, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, result)
