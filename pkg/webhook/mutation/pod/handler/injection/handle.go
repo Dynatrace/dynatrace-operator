@@ -121,7 +121,6 @@ func (h *Handler) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 }
 
 func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) (bool, error) {
-	log := logd.FromContext(mutationRequest.Context)
 	mutationRequest.InstallContainer = h.createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
 
 	var mutated bool
@@ -150,14 +149,8 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 			return false, err
 		}
 
-		err = addPodAttributes(mutationRequest)
-		if err != nil {
-			log.Info("failed to add pod attributes to init-container")
-
-			return false, err
-		}
-
 		addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer)
+
 		events.SendPodInjectEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
 	}
 

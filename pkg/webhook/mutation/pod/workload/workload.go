@@ -26,7 +26,7 @@ func NewInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *Info {
 	}
 }
 
-func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhook.BaseRequest, log logd.Logger) (*Info, error) {
+func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhook.BaseRequest) (*Info, error) {
 	podPartialMetadata := &metav1.PartialObjectMetadata{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: request.Pod.APIVersion,
@@ -40,7 +40,7 @@ func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhoo
 		},
 	}
 
-	rootOwner, err := findRootOwner(ctx, clt, podPartialMetadata, log) // default owner of the pod is the pod itself
+	rootOwner, err := findRootOwner(ctx, clt, podPartialMetadata) // default owner of the pod is the pod itself
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,8 @@ func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhoo
 	return NewInfo(rootOwner), nil
 }
 
-func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata, log logd.Logger) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
+func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
+	log := logd.FromContext(ctx)
 	objectMetadata := childObjectMetadata.ObjectMeta
 	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller {
@@ -75,7 +76,7 @@ func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *
 				return childObjectMetadata, err
 			}
 
-			parentObjectMetadata, err = findRootOwner(ctx, clt, parentObjectMetadata, log)
+			parentObjectMetadata, err = findRootOwner(ctx, clt, parentObjectMetadata)
 			if err != nil {
 				return childObjectMetadata, err
 			}

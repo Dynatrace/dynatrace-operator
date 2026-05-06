@@ -1,4 +1,4 @@
-package metadata
+package attributes
 
 import (
 	"testing"
@@ -20,7 +20,7 @@ func Test_setDeprecatedAttributes(t *testing.T) {
 			},
 		}
 
-		setDeprecatedAttributes(&attrs)
+		SetDeprecatedAttributes(&attrs)
 
 		assertDeprecatedAttributes(t, attrs)
 	})

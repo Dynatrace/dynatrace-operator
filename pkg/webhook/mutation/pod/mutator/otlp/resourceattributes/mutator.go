@@ -3,12 +3,13 @@ package resourceattributes
 import (
 	"context"
 	"slices"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,12 +55,11 @@ func (m *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationR
 
 func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (bool, error) {
 	log := logd.FromContext(ctx)
-	mutated := false
 
-	log.Debug("injecting OTLP resource Attributes")
+	log.Debug("injecting OTLP resource PodAttributes")
 
-	// fetch workload information once per pod
-	ownerInfo, err := workload.FindRootOwnerOfPod(ctx, m.kubeClient, *request, log)
+	attrs, err := attributes.NewPodAttributes(ctx, *request, m.kubeClient)
+
 	if err != nil {
 		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
@@ -69,8 +69,12 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 	}
 
-	annotationAttributes := sanitizeMap(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, log))
+	err = attrs.PropagateMetadataAnnotations(request.Pod)
+	if err != nil {
+		log.Error(err, "failed to propagate metadata annotations", "pod", request.Pod, "namespace", request.Namespace)
+	}
 
+	mutated := false
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
 
@@ -78,13 +82,13 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 			continue
 		}
 
-		mutated = m.addResourceAttributes(request, c, ownerInfo, annotationAttributes) || mutated
+		mutated = m.addResourceAttributes(attrs, request, c) || mutated
 	}
 
 	return mutated, nil
 }
 
-func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerInfo *workload.Info, annotationAttributes Attributes) bool {
+func (m *Mutator) addResourceAttributes(podAttrs *attributes.PodAttributes, request *dtwebhook.BaseRequest, c *corev1.Container) bool {
 	// order of precedence as in metadata webhook (lowest to highest):
 	// 1. workload
 	// 2. namespace
@@ -92,8 +96,8 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 	// 4. pod
 	// 5. exsting OTEL_RESOURCE_ATTRIBUTES env var
 
-	// existing attributes have the highes precedence, they are the base
-	attributes, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
+	// existing existingResourceAttrs have the highes precedence, they are the base
+	existingResourceAttrs, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
 	if ok {
 		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
 		c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
@@ -101,51 +105,33 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		})
 	}
 
-	// add Attributes from annotations
-	mutated := attributes.Merge(annotationAttributes)
+	podAttrs.AddCustomAttributes(existingResourceAttrs)
 
-	kubernetesMetaDataAttributes := Attributes{
-		"k8s.namespace.name":           request.Pod.Namespace,
-		"k8s.cluster.uid":              request.DynaKube.Status.KubeSystemUUID,
-		"k8s.cluster.name":             request.DynaKube.Status.KubernetesClusterName,
-		"dt.entity.kubernetes_cluster": request.DynaKube.Status.KubernetesClusterMEID,
-		"k8s.container.name":           c.Name,
-		"k8s.pod.name":                 "$(K8S_PODNAME)",
-		"k8s.pod.uid":                  "$(K8S_PODUID)",
-		"k8s.node.name":                "$(K8S_NODE_NAME)",
-	}
+	containerAttrs := attributes.NewContainerAttributes(*c)
 
-	if request.DynaKube.FF().EnableAttributesDTKubernetes() {
-		kubernetesMetaDataAttributes[metadata.DeprecatedClusterIDKey] = request.DynaKube.Status.KubeSystemUUID
-	}
+	// TODO: detect mutation
 
-	kubernetesMetaDataAttributes = sanitizeMap(kubernetesMetaDataAttributes)
+	mutated := false
+	// podAttrs also contains custom attributes (annotations, rules, ..) which take precedence
+	kvPairs := podAttrs.Convert(func(k, v string) string {
+		v = sanitizeValue(v)
 
-	// add workload Attributes (only once fetched per pod, but appended per container to env var if not already present)
-	if ownerInfo != nil {
-		kubernetesMetaDataAttributes["k8s.workload.kind"] = ownerInfo.Kind
-		kubernetesMetaDataAttributes["k8s.workload.name"] = ownerInfo.Name
-	}
-
-	if ownerInfo != nil && request.DynaKube.FF().EnableAttributesDTKubernetes() {
-		kubernetesMetaDataAttributes[metadata.DeprecatedWorkloadNameKey] = ownerInfo.Name
-		kubernetesMetaDataAttributes[metadata.DeprecatedWorkloadKindKey] = ownerInfo.Kind
-	}
-
-	// add standard kubernetes metadata attributes
-	mutated = attributes.Merge(kubernetesMetaDataAttributes) || mutated
+		// resource attributes will be changed (==mutated) if new entries are added
+		if _, found := existingResourceAttrs[k]; !found {
+			mutated = true
+		}
+		return k + "=" + v
+	}, *containerAttrs)
 
 	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
-	mutated = ensureEnvVarSourcesSet(c) || mutated
-
-	finalValue := attributes.String()
+	mutated = ensureEnvVarSourcesSet(podAttrs, c) || mutated
 
 	if mutated {
-		metadata.SetWorkloadAnnotations(request.Pod, ownerInfo)
+		podAttrs.SetWorkloadMetadataAnnotations(request.Pod)
 	}
 
-	if finalValue != "" {
-		c.Env = append(c.Env, corev1.EnvVar{Name: OTELResourceAttributesEnv, Value: finalValue})
+	if len(kvPairs) != 0 {
+		c.Env = append(c.Env, corev1.EnvVar{Name: OTELResourceAttributesEnv, Value: strings.Join(kvPairs, ",")})
 	}
 
 	return mutated
@@ -159,31 +145,16 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool
 	)
 }
 
-func ensureEnvVarSourcesSet(c *corev1.Container) bool {
+func ensureEnvVarSourcesSet(attrs *attributes.PodAttributes, c *corev1.Container) bool {
 	mutated := false
 
-	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
-		Name:      "K8S_PODNAME",
-		ValueFrom: k8senv.NewSourceForField("metadata.name"),
-	}); added {
-		c.Env = envs
-		mutated = true
-	}
+	podEnvs := attrs.GetPodEnvVars()
 
-	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
-		Name:      "K8S_PODUID",
-		ValueFrom: k8senv.NewSourceForField("metadata.uid"),
-	}); added {
-		c.Env = envs
-		mutated = true
-	}
-
-	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
-		Name:      "K8S_NODE_NAME",
-		ValueFrom: k8senv.NewSourceForField("spec.nodeName"),
-	}); added {
-		c.Env = envs
-		mutated = true
+	for _, env := range podEnvs {
+		if envs, added := k8senv.Append(c.Env, env); added {
+			c.Env = envs
+			mutated = true
+		}
 	}
 
 	return mutated

@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
@@ -421,11 +422,11 @@ func TestMutate(t *testing.T) {
 				assert.Contains(t, request.InstallContainer.Args, buildArgument(nsMetaAnnotationKey, nsMetaAnnotationValue))
 
 				if tc.withDeprecatedAnnotations {
-					assert.Contains(t, request.InstallContainer.Args, buildArgument(DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
-					assert.Contains(t, request.InstallContainer.Args, buildArgument(DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
+					assert.Contains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
+					assert.Contains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
 				} else {
-					assert.NotContains(t, request.InstallContainer.Args, buildArgument(DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
-					assert.NotContains(t, request.InstallContainer.Args, buildArgument(DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
+					assert.NotContains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
+					assert.NotContains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
 				}
 
 				assert.Contains(t, request.InstallContainer.Args, buildArgument("dt.security_context", "high"))

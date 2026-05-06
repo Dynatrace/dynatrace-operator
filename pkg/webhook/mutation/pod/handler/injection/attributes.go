@@ -2,70 +2,31 @@ package injection
 
 import (
 	"fmt"
-	"strings"
 
-	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func addPodAttributes(request *dtwebhook.MutationRequest) error {
-	attrs := podattr.Attributes{
-		PodInfo: podattr.PodInfo{
-			PodName:       createEnvVarRef(K8sPodNameEnv),
-			PodUID:        createEnvVarRef(K8sPodUIDEnv),
-			NodeName:      createEnvVarRef(K8sNodeNameEnv),
-			NamespaceName: request.Pod.Namespace,
-		},
-		ClusterInfo: podattr.ClusterInfo{
-			ClusterUID:      request.DynaKube.Status.KubeSystemUUID,
-			DTClusterEntity: request.DynaKube.Status.KubernetesClusterMEID,
-			ClusterName:     request.DynaKube.Status.KubernetesClusterName,
-		},
-		UserDefined: map[string]string{},
-	}
-
-	envs := []corev1.EnvVar{
-		{Name: K8sPodNameEnv, ValueFrom: k8senv.NewSourceForField("metadata.name")},
-		{Name: K8sPodUIDEnv, ValueFrom: k8senv.NewSourceForField("metadata.uid")},
-		{Name: K8sNodeNameEnv, ValueFrom: k8senv.NewSourceForField("spec.nodeName")},
-	}
-
-	request.InstallContainer.Env = append(request.InstallContainer.Env, envs...)
-
-	args, err := podattr.ToArgs(attrs)
-	if err != nil {
-		return err
-	}
-
-	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
-
-	return nil
-}
-
-func createEnvVarRef(envName string) string {
-	return fmt.Sprintf("$(%s)", envName)
-}
-
 func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 	containers := request.NewContainers(isInjected)
 	if len(containers) > 0 {
-		attributes := make([]containerattr.Attributes, len(containers))
-		for i, c := range containers {
-			attributes[i] = containerattr.Attributes{
-				ImageInfo:     createImageInfo(c.Image),
-				ContainerName: c.Name,
+		args := make([]string, 0)
+
+		for _, c := range containers {
+
+			contInfos := *attributes.NewContainerInfos(*c)
+
+			json, err := contInfos.ToJson()
+			if err != nil {
+				return false, err
 			}
 
-			volumes.AddConfigVolumeMount(c, request.BaseRequest)
-		}
+			args = append(args, fmt.Sprintf("--%s=%s", container.Flag, json))
 
-		args, err := containerattr.ToArgs(attributes)
-		if err != nil {
-			return false, err
+			volumes.AddConfigVolumeMount(c, request.BaseRequest)
 		}
 
 		request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
@@ -87,30 +48,4 @@ func isInjected(container corev1.Container, request *dtwebhook.BaseRequest) bool
 	} else {
 		return volumes.HasCommonConfigVolumeMounts(&container)
 	}
-}
-
-func createImageInfo(imageURI string) containerattr.ImageInfo { // TODO: move to bootstrapper repo
-	// can't use the name.ParseReference() as that will fill in some defaults if certain things are defined, but we want to preserve the original string value, without any modification. Tried it with a regexp, was worse.
-	imageInfo := containerattr.ImageInfo{}
-
-	registry, repo, found := strings.Cut(imageURI, "/")
-	if found {
-		imageInfo.Registry = registry
-	} else {
-		repo = registry
-	}
-
-	repo, digest, found := strings.Cut(repo, "@")
-	if found {
-		imageInfo.ImageDigest = digest
-	}
-
-	var tag string
-
-	imageInfo.Repository, tag, found = strings.Cut(repo, ":")
-	if found {
-		imageInfo.Tag = tag
-	}
-
-	return imageInfo
 }

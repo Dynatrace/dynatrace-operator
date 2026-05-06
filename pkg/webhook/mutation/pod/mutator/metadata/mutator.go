@@ -2,16 +2,17 @@ package metadata
 
 import (
 	"context"
-	"maps"
+	"fmt"
+	"strconv"
 
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,7 +58,8 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	_, log := logd.NewFromContext(request.Context, "metadata-enrichment-pod-common")
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
-	workloadInfo, err := workload.FindRootOwnerOfPod(request.Context, mut.metaClient, *request.BaseRequest, log)
+	attrs, err := attributes.NewPodAttributes(request.Context, *request.BaseRequest, mut.metaClient)
+
 	if err != nil {
 		return dtwebhook.MutatorError{
 			Err:      errors.WithStack(err),
@@ -65,40 +67,23 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		}
 	}
 
-	attrs := podattr.Attributes{}
-	attrs.WorkloadInfo = podattr.WorkloadInfo{
-		WorkloadKind: workloadInfo.Kind,
-		WorkloadName: workloadInfo.Name,
-	}
-	attrs.ClusterInfo = podattr.ClusterInfo{
-		ClusterUID: request.DynaKube.Status.KubeSystemUUID,
-	}
-
 	withDeprecatedAttributesArg := arg.Arg{
 		Name:  bootstrapper.EnableAttributesDTKubernetesFlag,
-		Value: "false",
+		Value: strconv.FormatBool(request.DynaKube.FF().EnableAttributesDTKubernetes()),
 	}
 
-	if request.DynaKube.FF().EnableAttributesDTKubernetes() {
-		setDeprecatedAttributes(&attrs)
-
-		withDeprecatedAttributesArg.Value = "true"
-	}
+	args := attrs.Convert(func(key, value string) string {
+		return fmt.Sprintf("--%s=%s=%s", pod.Flag, key, value)
+	})
 
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{withDeprecatedAttributesArg})...)
-
-	addMetadataToInitArgs(request, &attrs)
-	setInjectedAnnotation(request.Pod)
-	SetWorkloadAnnotations(request.Pod, workloadInfo)
-
-	args, err := podattr.ToArgs(attrs)
-	if err != nil {
-		return err
-	}
-
 	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
 
 	turnOnMetadataEnrichment(request)
+
+	setInjectedAnnotation(request.Pod)
+
+	attrs.SetMetadataAnnotations(request)
 
 	return nil
 }
@@ -109,23 +94,6 @@ func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {
 
 func (mut *Mutator) Reinvoke(_ context.Context, request *dtwebhook.ReinvocationRequest) bool {
 	return false
-}
-
-func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
-	log := logd.FromContext(request.Context)
-
-	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, log)
-	if copiedMetadataAnnotations == nil {
-		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
-
-		return
-	}
-
-	if attributes.UserDefined == nil {
-		attributes.UserDefined = make(map[string]string)
-	}
-
-	maps.Copy(attributes.UserDefined, copiedMetadataAnnotations)
 }
 
 func setInjectedAnnotation(pod *corev1.Pod) {
@@ -146,13 +114,4 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 		pod.Annotations[AnnotationInjected] = "false"
 		pod.Annotations[AnnotationReason] = reason
 	}
-}
-
-func SetWorkloadAnnotations(pod *corev1.Pod, workload *workload.Info) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[AnnotationWorkloadKind] = workload.Kind
-	pod.Annotations[AnnotationWorkloadName] = workload.Name
 }
