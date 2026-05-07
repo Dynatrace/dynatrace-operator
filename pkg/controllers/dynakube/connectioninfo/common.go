@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -17,7 +18,7 @@ const (
 	TenantTokenKey            = "tenant-token"
 	CommunicationEndpointsKey = "communication-endpoints"
 
-	TokenBasePath         = "/var/lib/dynatrace/secrets/tokens"
+	TokenBasePath         = consts.DTComponentsSecretsRootDir + "/tokens"
 	TenantTokenMountPoint = TokenBasePath + "/tenant-token"
 
 	TenantSecretVolumeName = "connection-info-secret"
