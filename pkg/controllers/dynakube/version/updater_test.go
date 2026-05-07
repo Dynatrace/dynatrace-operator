@@ -147,6 +147,14 @@ func TestDetermineSource(t *testing.T) {
 		assert.Equal(t, status.TenantRegistryVersionSource, source)
 	})
 
+	t.Run("public registry enabled", func(t *testing.T) {
+		updater := newBaseUpdater(t, nil, false)
+		updater.EXPECT().CustomImage().Return("").Once()
+		updater.EXPECT().IsPublicRegistryEnabled().Return(true).Once()
+		source := determineSource(updater)
+		assert.Equal(t, status.PublicRegistryVersionSource, source)
+	})
+
 	t.Run("classicfullstack ignores public registry feature flag", func(t *testing.T) {
 		updater := newClassicFullStackUpdater(t, nil, false)
 		updater.On("CustomImage").Return("")
