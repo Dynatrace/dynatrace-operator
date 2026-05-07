@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
+func Test_SecretGenerator_preparePGC(t *testing.T) {
 	const (
 		testDynakube       = "dk"
 		testNamespace      = "ns"
