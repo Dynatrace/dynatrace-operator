@@ -6,7 +6,6 @@ import tempfile
 import urllib.request
 import urllib.error
 import yaml
-from pathlib import Path
 
 SYNC_CONFIG = "api/oapi/sync-config.yaml"
 GENERATOR_CONFIG = "api/oapi/generator-config.yaml"
@@ -134,7 +133,7 @@ def main():
 
             print(f"Generating {name}, package: {pkg}...")
             shutil.rmtree(output_dir, ignore_errors=True)
-            Path(output_dir).mkdir(parents=True, exist_ok=True)
+            os.makedirs(output_dir, exist_ok=True)
             shutil.copy(IGNORE_FILE, f"{output_dir}/.openapi-generator-ignore")
 
             cmd = [
@@ -159,7 +158,8 @@ def main():
         finally:
             os.unlink(tmp_spec)
 
-    Path("openapitools.json").unlink(missing_ok=True)
+    if os.path.exists("openapitools.json"):
+        os.unlink("openapitools.json")
 
 
 if __name__ == "__main__":
