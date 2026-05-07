@@ -107,7 +107,7 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 	}
 
 	if updater.IsPublicRegistryEnabled() {
-		return status.AutomaticRegistryVersionSource
+		return status.PublicRegistryVersionSource
 	}
 
 	if updater.CustomVersion() != "" {

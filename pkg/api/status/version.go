@@ -7,11 +7,10 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 type VersionSource string
 
 const (
-	TenantRegistryVersionSource    VersionSource = "tenant-registry"
-	CustomImageVersionSource       VersionSource = "custom-image"
-	CustomVersionVersionSource     VersionSource = "custom-version"
-	PublicRegistryVersionSource    VersionSource = "public-registry"
-	AutomaticRegistryVersionSource VersionSource = "automatic-registry"
+	TenantRegistryVersionSource VersionSource = "tenant-registry"
+	CustomImageVersionSource    VersionSource = "custom-image"
+	CustomVersionVersionSource  VersionSource = "custom-version"
+	PublicRegistryVersionSource VersionSource = "public-registry"
 
 	ImmutableImageType = "immutable"
 )
