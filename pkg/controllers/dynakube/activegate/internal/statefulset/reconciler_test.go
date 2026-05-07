@@ -194,6 +194,56 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestReconcile_GetResourceAttributesHash(t *testing.T) {
+	ctx := t.Context()
+
+	t.Run("resource attributes change the hash", func(t *testing.T) {
+		r, _, dk := createDefaultReconciler(t)
+		agCapability := capability.NewMultiCapability(dk)
+
+		hashWithout, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+		assert.NotEmpty(t, hashWithout)
+
+		dk.Spec.ResourceAttributes = map[string]string{"key": "value"}
+		hashWith, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+		assert.NotEmpty(t, hashWith)
+
+		assert.NotEqual(t, hashWithout, hashWith)
+	})
+
+	t.Run("different resource attributes produce different hashes", func(t *testing.T) {
+		r, _, dk := createDefaultReconciler(t)
+		agCapability := capability.NewMultiCapability(dk)
+
+		dk.Spec.ResourceAttributes = map[string]string{"key": "value1"}
+		hash1, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		dk.Spec.ResourceAttributes = map[string]string{"key": "value2"}
+		hash2, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, hash1, hash2)
+	})
+
+	t.Run("multiple resource attributes are included in hash", func(t *testing.T) {
+		r, _, dk := createDefaultReconciler(t)
+		agCapability := capability.NewMultiCapability(dk)
+
+		dk.Spec.ResourceAttributes = map[string]string{"k1": "v1"}
+		hash1, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		dk.Spec.ResourceAttributes = map[string]string{"k1": "v1", "k2": "v2"}
+		hash2, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, hash1, hash2)
+	})
+}
+
 func TestManageStatefulSet(t *testing.T) {
 	ctx := t.Context()
 
