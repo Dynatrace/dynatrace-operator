@@ -50,11 +50,11 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 		return nil, nil //nolint:nilnil
 	}
 
-	cachedETag, cachedData := s.readCachedPGC(ctx, dk)
+	cachedPGC := s.readCachedPGC(ctx, dk)
 
-	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, cachedETag)
+	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, cachedPGC.ETag)
 	if core.HasStatusCode(err, http.StatusNotModified) {
-		return &oneagent.ProcessGroupConfig{ETag: cachedETag, Data: cachedData}, nil
+		return cachedPGC, nil
 	}
 
 	if err != nil {
@@ -81,11 +81,14 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 	return pgc, nil
 }
 
-func (s *SecretGenerator) readCachedPGC(ctx context.Context, dk *dynakube.DynaKube) (etag string, data []byte) {
+func (s *SecretGenerator) readCachedPGC(ctx context.Context, dk *dynakube.DynaKube) (*oneagent.ProcessGroupConfig) {
 	var secret corev1.Secret
 
 	key := types.NamespacedName{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}
 	_ = s.apiReader.Get(ctx, key, &secret)
 
-	return secret.Annotations[annotationPGCETag], secret.Data[declarativeInputFileName]
+	return &oneagent.ProcessGroupConfig{
+		ETag: secret.Annotations[annotationPGCETag],
+		Data: secret.Data[declarativeInputFileName],
+	}
 }
