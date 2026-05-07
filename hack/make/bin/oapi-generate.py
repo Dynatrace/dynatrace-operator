@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Generate Go SDKs from OpenAPI specs defined in sync-config.yaml."""
-
 import sys
 import os
 import shutil
