@@ -41,16 +41,6 @@ rules:
       - deployments
     verbs:
       - get
-      - list
-      - watch
-      - create
-      - update
-  - apiGroups:
-      - apps
-    resources:
-      - deployments/finalizers
-    verbs:
-      - update
   - apiGroups:
       - ""
     resources:
