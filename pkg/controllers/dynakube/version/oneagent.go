@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -21,17 +22,20 @@ const (
 type oneAgentUpdater struct {
 	dk            *dynakube.DynaKube
 	apiReader     client.Reader
+	imagesClient  images.Client
 	versionClient version.Client
 }
 
 func newOneAgentUpdater(
 	dk *dynakube.DynaKube,
 	apiReader client.Reader,
+	imagesClient images.Client,
 	versionClient version.Client,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
 		dk:            dk,
 		apiReader:     apiReader,
+		imagesClient:  imagesClient,
 		versionClient: versionClient,
 	}
 }
@@ -136,6 +140,15 @@ func (updater *oneAgentUpdater) CheckForDowngrade(ctx context.Context, latestVer
 	}
 
 	return downgrade, err
+}
+
+func (updater *oneAgentUpdater) LatestImageInfo(ctx context.Context) (*images.ImageInfo, error) {
+	imageInfo, err := updater.imagesClient.ComponentLatestImageInfo(ctx, images.OneAgent, updater.dk.PublicRegistryOverride())
+	if err != nil {
+		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
+	}
+
+	return imageInfo, err
 }
 
 func (updater oneAgentUpdater) ValidateStatus(ctx context.Context) error {

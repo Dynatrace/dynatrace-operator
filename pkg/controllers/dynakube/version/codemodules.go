@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -19,12 +20,14 @@ const (
 
 type codeModulesUpdater struct {
 	dk            *dynakube.DynaKube
+	imagesClient  images.Client
 	versionClient version.Client
 }
 
-func newCodeModulesUpdater(dk *dynakube.DynaKube, versionClient version.Client) *codeModulesUpdater {
+func newCodeModulesUpdater(dk *dynakube.DynaKube, imagesClient images.Client, versionClient version.Client) *codeModulesUpdater {
 	return &codeModulesUpdater{
 		dk:            dk,
+		imagesClient:  imagesClient,
 		versionClient: versionClient,
 	}
 }
@@ -71,6 +74,15 @@ func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
 
 func (updater *codeModulesUpdater) CheckForDowngrade(_ context.Context, _ string) (bool, error) {
 	return false, nil
+}
+
+func (updater *codeModulesUpdater) LatestImageInfo(ctx context.Context) (*images.ImageInfo, error) {
+	imageInfo, err := updater.imagesClient.ComponentLatestImageInfo(ctx, images.CodeModules, updater.dk.PublicRegistryOverride())
+	if err != nil {
+		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
+	}
+
+	return imageInfo, err
 }
 
 func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error {

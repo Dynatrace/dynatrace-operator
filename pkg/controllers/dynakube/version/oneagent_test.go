@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/images"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,9 +30,10 @@ func TestOneAgentUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockVerionClient := versionclientmock.NewClient(t)
+		mockImageClient := imageclientmock.NewClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVerionClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, mockVersionClient)
 
 		assert.Equal(t, "oneagent", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -55,7 +57,7 @@ func TestOneAgentIsEnabled(t *testing.T) {
 		}
 		setVerifiedCondition(dk.Conditions(), oaConditionType)
 
-		updater := newOneAgentUpdater(dk, nil, nil)
+		updater := newOneAgentUpdater(dk, nil, nil, nil)
 
 		isEnabled := updater.IsEnabled()
 		require.False(t, isEnabled)
@@ -84,9 +86,10 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
+		mockImageClient := imageclientmock.NewClient(t)
 		mockVersionClient := versionclientmock.NewClient(t)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 
@@ -107,10 +110,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
+		mockImageClient := imageclientmock.NewClient(t)
 		mockVersionClient := versionclientmock.NewClient(t)
 		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 
@@ -139,11 +143,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 				},
 			},
 		}
-
+		mockImageClient := imageclientmock.NewClient(t)
 		mockVersionClient := versionclientmock.NewClient(t)
 		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 		require.NoError(t, err) // we only log the downgrade problem, not fail the reconcile
@@ -173,11 +177,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 				},
 			},
 		}
-
+		mockImageClient := imageclientmock.NewClient(t)
 		mockVersionClient := versionclientmock.NewClient(t)
 		mockLatestAgentVersion(mockVersionClient, "BOOM", 1)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 		require.Error(t, err)
@@ -252,7 +256,7 @@ func TestCheckForDowngrade(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.testName, func(t *testing.T) {
-			updater := newOneAgentUpdater(testCase.dk, fake.NewClient(), nil)
+			updater := newOneAgentUpdater(testCase.dk, fake.NewClient(), nil, nil)
 
 			isDowngrade, err := updater.CheckForDowngrade(t.Context(), testCase.newVersion)
 			require.NoError(t, err)
@@ -287,27 +291,27 @@ func TestCheckLabels(t *testing.T) {
 	t.Run("Validate immutable oneAgent image with default cloudNative", func(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), nil, nil)
 		require.NoError(t, updater.ValidateStatus(t.Context()))
 	})
 	t.Run("Validate immutable oneAgent image with classicFullStack", func(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
-		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), nil, nil)
 		require.Error(t, updater.ValidateStatus(t.Context()))
 	})
 	t.Run("Validate immutable oneAgent image when image version is not set", func(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dk.Status.OneAgent.Version = ""
-		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), nil, nil)
 		require.Error(t, updater.ValidateStatus(t.Context()))
 	})
 	t.Run("Validate mutable oneAgent image with classicFullStack", func(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
 		dk.Status.OneAgent.Type = "mutable"
-		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), nil, nil)
 		require.NoError(t, updater.ValidateStatus(t.Context()))
 	})
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -23,6 +24,7 @@ type StatusUpdater interface {
 	IsPublicRegistryEnabled() bool
 	CheckForDowngrade(ctx context.Context, latestVersion string) (bool, error)
 	ValidateStatus(ctx context.Context) error
+	LatestImageInfo(ctx context.Context) (*images.ImageInfo, error)
 
 	UseTenantRegistry(context.Context) error
 }
@@ -81,8 +83,22 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
 	log := logd.FromContext(ctx)
 	log.Info("updating version status according to public registry", "updater", updater.Name())
-	// TODO: implement in ICP-1077
-	return errors.New("public registry is not yet supported")
+
+	publicImage, err := updater.LatestImageInfo(ctx)
+	if err != nil {
+		log.Info("could not get public image", "updater", updater.Name())
+
+		return err
+	}
+
+	isDowngrade, err := updater.CheckForDowngrade(ctx, publicImage.Tag)
+	if err != nil || isDowngrade {
+		return err
+	}
+
+	setImageFromImageInfo(ctx, updater.Target(), publicImage)
+
+	return nil
 }
 
 func determineSource(updater StatusUpdater) status.VersionSource {
@@ -99,6 +115,23 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 	}
 
 	return status.TenantRegistryVersionSource
+}
+
+func setImageFromImageInfo(ctx context.Context,
+	target *status.VersionStatus,
+	imageInfo *images.ImageInfo,
+) {
+	log := logd.FromContext(ctx)
+
+	log.Info("updating image version info",
+		"image", imageInfo,
+		"oldImageID", target.ImageID)
+
+	target.Version = imageInfo.Tag
+	target.ImageID = imageInfo.URI
+
+	log.Info("updated image version info",
+		"newImageID", target.ImageID)
 }
 
 func setImageIDToCustomImage(

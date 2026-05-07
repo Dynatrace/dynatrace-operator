@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/images"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -35,8 +36,9 @@ func TestCodeModulesUpdater(t *testing.T) {
 			},
 		}
 		mockVersionClient := versionclientmock.NewClient(t)
+		mockImageClient := imageclientmock.NewClient(t)
 
-		updater := newCodeModulesUpdater(dk, mockVersionClient)
+		updater := newCodeModulesUpdater(dk, mockImageClient, mockVersionClient)
 
 		assert.Equal(t, "codemodules", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -63,9 +65,10 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
+		mockImageClient := imageclientmock.NewClient(t)
 		mockVersionClient := versionclientmock.NewClient(t)
 
-		updater := newCodeModulesUpdater(dk, mockVersionClient)
+		updater := newCodeModulesUpdater(dk, mockImageClient, mockVersionClient)
 
 		err := updater.UseTenantRegistry(ctx)
 		require.NoError(t, err)
@@ -85,10 +88,11 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
+		mockImageClient := imageclientmock.NewClient(t)
 		mockVersionClient := versionclientmock.NewClient(t)
 		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
-		updater := newCodeModulesUpdater(dk, mockVersionClient)
+		updater := newCodeModulesUpdater(dk, mockImageClient, mockVersionClient)
 
 		err := updater.UseTenantRegistry(ctx)
 		require.NoError(t, err)
@@ -108,11 +112,11 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
-
+		mockImageClient := imageclientmock.NewClient(t)
 		mockVersionClient := versionclientmock.NewClient(t)
 		mockVersionClient.EXPECT().GetLatestAgentVersion(anyCtx, installer.OSUnix, installer.TypePaaS).Return("", errors.New("BOOM")).Once()
 
-		updater := newCodeModulesUpdater(dk, mockVersionClient)
+		updater := newCodeModulesUpdater(dk, mockImageClient, mockVersionClient)
 
 		err := updater.UseTenantRegistry(ctx)
 		require.Error(t, err)
@@ -136,7 +140,7 @@ func TestCodeModulesIsEnabled(t *testing.T) {
 		}
 		setVerifiedCondition(dk.Conditions(), cmConditionType)
 
-		updater := newCodeModulesUpdater(dk, nil)
+		updater := newCodeModulesUpdater(dk, nil, nil)
 
 		isEnabled := updater.IsEnabled()
 		require.False(t, isEnabled)

@@ -20,6 +20,7 @@ const (
 )
 
 type ImageInfo struct {
+	URI      string
 	Tag      string
 	Digest   digest.Digest
 	Registry string
@@ -85,6 +86,7 @@ func parseImageInfo(imageURI string) (*ImageInfo, error) {
 	}
 
 	info := &ImageInfo{
+		URI:      imageURI,
 		Registry: ref.Context().RegistryStr(),
 	}
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -21,17 +22,20 @@ const (
 type activeGateUpdater struct {
 	dk            *dynakube.DynaKube
 	apiReader     client.Reader
+	imagesClient  images.Client
 	versionClient version.Client
 }
 
 func newActiveGateUpdater(
 	dk *dynakube.DynaKube,
 	apiReader client.Reader,
+	imagesClient images.Client,
 	versionClient version.Client,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
 		dk:            dk,
 		apiReader:     apiReader,
+		imagesClient:  imagesClient,
 		versionClient: versionClient,
 	}
 }
@@ -76,8 +80,17 @@ func (updater *activeGateUpdater) CheckForDowngrade(_ context.Context, _ string)
 	return false, nil
 }
 
+func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*images.ImageInfo, error) {
+	imageInfo, err := updater.imagesClient.ComponentLatestImageInfo(ctx, images.ActiveGate, updater.dk.PublicRegistryOverride())
+	if err != nil {
+		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
+	}
+
+	return imageInfo, err
+}
+
 func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
-	return false
+	return updater.dk.FF().IsPublicRegistry()
 }
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {

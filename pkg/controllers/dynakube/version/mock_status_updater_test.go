@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -320,6 +321,68 @@ func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) Return(b bool) *MockSt
 }
 
 func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) RunAndReturn(run func() bool) *MockStatusUpdater_IsPublicRegistryEnabled_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LatestImageInfo provides a mock function for the type MockStatusUpdater
+func (_mock *MockStatusUpdater) LatestImageInfo(ctx context.Context) (*images.ImageInfo, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LatestImageInfo")
+	}
+
+	var r0 *images.ImageInfo
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (*images.ImageInfo, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) *images.ImageInfo); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*images.ImageInfo)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStatusUpdater_LatestImageInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestImageInfo'
+type MockStatusUpdater_LatestImageInfo_Call struct {
+	*mock.Call
+}
+
+// LatestImageInfo is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockStatusUpdater_Expecter) LatestImageInfo(ctx interface{}) *MockStatusUpdater_LatestImageInfo_Call {
+	return &MockStatusUpdater_LatestImageInfo_Call{Call: _e.mock.On("LatestImageInfo", ctx)}
+}
+
+func (_c *MockStatusUpdater_LatestImageInfo_Call) Run(run func(ctx context.Context)) *MockStatusUpdater_LatestImageInfo_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStatusUpdater_LatestImageInfo_Call) Return(imageInfo *images.ImageInfo, err error) *MockStatusUpdater_LatestImageInfo_Call {
+	_c.Call.Return(imageInfo, err)
+	return _c
+}
+
+func (_c *MockStatusUpdater_LatestImageInfo_Call) RunAndReturn(run func(ctx context.Context) (*images.ImageInfo, error)) *MockStatusUpdater_LatestImageInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }
