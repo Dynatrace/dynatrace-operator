@@ -88,10 +88,6 @@ prerequisites/kustomize:
 prerequisites/mockery:
 	$(call go-install-tool,$(MOCKERY),github.com/vektra/mockery/v3,$(MOCKERY_VERSION))
 
-## Install 'yq' if it is missing
-prerequisites/yq:
-	$(call go-install-tool,$(YQ),github.com/mikefarah/yq/v4,$(YQ_VERSION))
-
 ## Install setup-envtest locally
 prerequisites/envtest:
 	$(call go-install-tool,$(SETUP_ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
