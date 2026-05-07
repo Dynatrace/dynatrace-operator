@@ -21,8 +21,8 @@ const (
 
 const (
 	declarativeInputFileName = "declarative.cbor"
-	declarativeWarnSizeBytes = 700 * KiB
-	declarativeMaxSizeBytes  = 880 * KiB
+	declarativeWarnSizeBytes = 800 * KiB
+	declarativeMaxSizeBytes  = 900 * KiB
 
 	annotationPGCETag = api.InternalFlagPrefix + "pgc-etag"
 )

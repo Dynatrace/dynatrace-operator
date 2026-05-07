@@ -62,12 +62,12 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		assert.Equal(t, "etag123", pgc.ETag)
 	})
 
-	t.Run("success - response between 700 KiB and 880 KiB triggers warning", func(t *testing.T) {
+	t.Run("success - response between 800 KiB and 900 KiB triggers warning", func(t *testing.T) {
 		dk := newDK()
 		clt := fake.NewClient(dk)
 		mockDTClient := oneagentclientmock.NewClient(t)
 
-		payload := bytes.Repeat([]byte("a"), 750*1024) // 750 KiB — above warn, below max
+		payload := bytes.Repeat([]byte("a"), 850*1024) // 850 KiB — above warn, below max
 		mockDTClient.EXPECT().
 			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
 			Return(&oneagent.ProcessGroupConfig{
@@ -83,12 +83,12 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		assert.Equal(t, payload, pgc.Data)
 	})
 
-	t.Run("response over 880 KiB returns nil without error", func(t *testing.T) {
+	t.Run("response over 900 KiB returns nil without error", func(t *testing.T) {
 		dk := newDK()
 		clt := fake.NewClient(dk)
 		mockDTClient := oneagentclientmock.NewClient(t)
 
-		payload := bytes.Repeat([]byte("a"), 890*1024) // 890 KiB — above max
+		payload := bytes.Repeat([]byte("a"), 920*1024) // 920 KiB — above max
 		mockDTClient.EXPECT().
 			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
 			Return(&oneagent.ProcessGroupConfig{
