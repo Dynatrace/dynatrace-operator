@@ -63,6 +63,10 @@ spec:
           args:
             - certgen
           env:
+            {{- if .Values.debugLogs }}
+            - name: LOG_LEVEL
+              value: "debug"
+            {{- end }}
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -85,6 +89,10 @@ spec:
           args:
             - crd-storage-migration
           env:
+            {{- if .Values.debugLogs }}
+            - name: LOG_LEVEL
+              value: "debug"
+            {{- end }}
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:

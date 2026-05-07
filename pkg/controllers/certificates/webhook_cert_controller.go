@@ -33,7 +33,7 @@ const (
 var errCertificatesSecretEmpty = errors.New("certificates secret is empty")
 
 func InitReconcile(ctx context.Context, clt client.Client, namespace string) error {
-	ctx, log := logd.NewFromContext(ctx, "webhook-certificates")
+	ctx, log := logd.NewFromContext(ctx, "init-reconcile")
 	controller := newWebhookCertificateController(clt, clt)
 	request := ctrl.Request{NamespacedName: types.NamespacedName{Name: webhook.DeploymentName, Namespace: namespace}}
 
@@ -158,6 +158,7 @@ func (controller *WebhookCertificateController) getWebhooksConfigurations(ctx co
 
 	mutatingWebhookConfiguration, err := controller.getMutatingWebhookConfiguration(ctx)
 	if err != nil {
+		log.Debug("error getting mutating webhook configuration", "error", err)
 		// Generation must not be skipped because webhook startup routine listens for the secret
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
 		log.Info("could not find mutating webhook configuration, this is normal when deployed using OLM")
@@ -165,6 +166,7 @@ func (controller *WebhookCertificateController) getWebhooksConfigurations(ctx co
 
 	validatingWebhookConfiguration, err := controller.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
+		log.Debug("error getting mutating webhook configuration", "error", err)
 		// Generation must not be skipped because webhook startup routine listens for the secret
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
 		log.Info("could not find validating webhook configuration, this is normal when deployed using OLM")
