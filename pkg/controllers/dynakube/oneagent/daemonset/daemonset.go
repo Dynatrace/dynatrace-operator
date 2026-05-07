@@ -300,13 +300,9 @@ func (b *builder) initContainerArguments() []string {
 		attributes = append(attributes, "dt.entity.kubernetes_cluster="+b.dk.Status.KubernetesClusterMEID)
 	}
 
-	if resourceAttrs := b.dk.OneAgent().GetResourceAttributes(); len(resourceAttrs) > 0 {
-		keys := slices.Collect(maps.Keys(resourceAttrs))
-		slices.Sort(keys)
-
-		for _, k := range keys {
-			attributes = append(attributes, k+"="+resourceAttrs[k])
-		}
+	resourceAttrs := b.dk.OneAgent().GetResourceAttributes()
+	for _, k := range slices.Sorted(maps.Keys(resourceAttrs)) {
+		attributes = append(attributes, k+"="+resourceAttrs[k])
 	}
 
 	return []string{
