@@ -56,11 +56,29 @@ func TestClient_ComponentLatestImageURI(t *testing.T) {
 
 func Test_parseImageInfo(t *testing.T) {
 	t.Run("tag and digest", func(t *testing.T) {
-		imageURI := "478983378254.dkr.ecr.us-east-1.amazonaws.com/dynatrace/dynatrace-oneagent:1.336.0@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
+		imageURI := "some.amazonaws.com/dynatrace/some-image:1.336.0@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
 		info, err := parseImageInfo(imageURI)
 		require.NoError(t, err)
 		assert.Equal(t, "1.336.0", info.Tag)
 		assert.Equal(t, "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80", string(info.Digest))
-		assert.Equal(t, "478983378254.dkr.ecr.us-east-1.amazonaws.com", info.Registry)
+		assert.Equal(t, "some.amazonaws.com", info.Registry)
+	})
+
+	t.Run("tag only", func(t *testing.T) {
+		imageURI := "some.amazonaws.com/dynatrace/some-image:1.336.0"
+		info, err := parseImageInfo(imageURI)
+		require.NoError(t, err)
+		assert.Equal(t, "1.336.0", info.Tag)
+		assert.Empty(t, string(info.Digest))
+		assert.Equal(t, "some.amazonaws.com", info.Registry)
+	})
+
+	t.Run("digest only", func(t *testing.T) {
+		imageURI := "some.amazonaws.com/dynatrace/some-image@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
+		info, err := parseImageInfo(imageURI)
+		require.NoError(t, err)
+		assert.Empty(t, info.Tag)
+		assert.Equal(t, "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80", string(info.Digest))
+		assert.Equal(t, "some.amazonaws.com", info.Registry)
 	})
 }

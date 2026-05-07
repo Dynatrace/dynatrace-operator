@@ -85,21 +85,20 @@ func parseImageInfo(imageURI string) (*ImageInfo, error) {
 		return nil, fmt.Errorf("parse image URI %q: %w", imageURI, err)
 	}
 
+	imagePart, digestPart, hasDigest := strings.Cut(imageURI, "@")
+
 	info := &ImageInfo{
 		URI:      imageURI,
 		Registry: ref.Context().RegistryStr(),
 	}
 
-	switch r := ref.(type) {
-	case name.Digest:
-		info.Digest = digest.Digest(r.DigestStr())
-		// tag may still be present before the "@sha256:" part
-		withoutDigest := strings.TrimSuffix(r.String(), "@"+r.DigestStr())
-		if tagRef, err := name.NewTag(withoutDigest, name.WithDefaultTag("")); err == nil {
-			info.Tag = tagRef.TagStr()
-		}
-	case name.Tag:
-		info.Tag = r.TagStr()
+	if hasDigest {
+		info.Digest = digest.Digest(digestPart)
+	}
+
+	// Parse the image part (everything before @) to extract tag
+	if tag, err := name.NewTag(imagePart, name.WithDefaultTag("")); err == nil {
+		info.Tag = tag.TagStr()
 	}
 
 	return info, nil
