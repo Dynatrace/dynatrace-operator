@@ -70,9 +70,10 @@ def resolve_models(spec, api_tag):
     return sorted(ref[len(prefix):] for ref in worklist if ref.startswith(prefix))
 
 
-def build_global_props(schema, default_global_props, models):
+def build_global_props(schema, default_global_props, spec):
     gp = (schema.get("generate") or {}).get("globalProperties") or {}
     apis = gp.get("apis") or []
+    models = sorted({m for api in apis for m in resolve_models(spec, api)})
 
     parts = []
     if models:
@@ -103,7 +104,7 @@ def main():
         pkg = (schema.get("generate") or {}).get("packageName") or name
         version = ((schema.get("generate") or {}).get("generatorVersion") or default_version).lstrip("v")
         schema_additional_props = (schema.get("generate") or {}).get("additionalProperties") or ""
-        additional_props = ",".join(filter(None, [default_additional_props, schema_additional_props]))
+        additional_props = ",".join(p for p in [default_additional_props, schema_additional_props] if p)
         output_dir = f"{default_output_dir}/{pkg}"
 
         spec_url_var = schema.get("specUrlEnvVar", "")
@@ -117,21 +118,19 @@ def main():
 
         print(f"Downloading spec for {name}...")
         try:
-            spec_data = download_spec(spec_url, auth_token or None)
+            spec_data = download_spec(spec_url, auth_token)
         except RuntimeError as e:
             print(f"ERROR: {e}", file=sys.stderr)
             sys.exit(1)
 
         spec = yaml.safe_load(spec_data)
-        apis = ((schema.get("generate") or {}).get("globalProperties") or {}).get("apis") or []
-        models = sorted({m for api in apis for m in resolve_models(spec, api)})
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
             tmp.write(spec_data)
             tmp_spec = tmp.name
 
         try:
-            global_props = build_global_props(schema, default_global_props, models)
+            global_props = build_global_props(schema, default_global_props, spec)
 
             print(f"Generating {name}, package: {pkg}...")
             shutil.rmtree(output_dir, ignore_errors=True)
@@ -149,8 +148,6 @@ def main():
                 cmd += [f"--additional-properties={additional_props}"]
             if global_props:
                 cmd += [f"--global-property={global_props}"]
-            if auth_token:
-                cmd += ["--auth", f"Authorization:Bearer%20{auth_token}"]
 
             env = {**os.environ, "OPENAPI_GENERATOR_VERSION": version}
             if subprocess.run(cmd, env=env).returncode != 0:
