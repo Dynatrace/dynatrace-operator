@@ -38,23 +38,25 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
-// ComponentLatestImageURI provides a mock function for the type Client
-func (_mock *Client) ComponentLatestImageURI(ctx context.Context, component images.ComponentType, registry string) (string, error) {
+// ComponentLatestImageInfo provides a mock function for the type Client
+func (_mock *Client) ComponentLatestImageInfo(ctx context.Context, component images.ComponentType, registry string) (*images.ImageInfo, error) {
 	ret := _mock.Called(ctx, component, registry)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ComponentLatestImageURI")
+		panic("no return value specified for ComponentLatestImageInfo")
 	}
 
-	var r0 string
+	var r0 *images.ImageInfo
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, images.ComponentType, string) (string, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, images.ComponentType, string) (*images.ImageInfo, error)); ok {
 		return returnFunc(ctx, component, registry)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, images.ComponentType, string) string); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, images.ComponentType, string) *images.ImageInfo); ok {
 		r0 = returnFunc(ctx, component, registry)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*images.ImageInfo)
+		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, images.ComponentType, string) error); ok {
 		r1 = returnFunc(ctx, component, registry)
@@ -64,20 +66,20 @@ func (_mock *Client) ComponentLatestImageURI(ctx context.Context, component imag
 	return r0, r1
 }
 
-// Client_ComponentLatestImageURI_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ComponentLatestImageURI'
-type Client_ComponentLatestImageURI_Call struct {
+// Client_ComponentLatestImageInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ComponentLatestImageInfo'
+type Client_ComponentLatestImageInfo_Call struct {
 	*mock.Call
 }
 
-// ComponentLatestImageURI is a helper method to define mock.On call
+// ComponentLatestImageInfo is a helper method to define mock.On call
 //   - ctx context.Context
 //   - component images.ComponentType
 //   - registry string
-func (_e *Client_Expecter) ComponentLatestImageURI(ctx interface{}, component interface{}, registry interface{}) *Client_ComponentLatestImageURI_Call {
-	return &Client_ComponentLatestImageURI_Call{Call: _e.mock.On("ComponentLatestImageURI", ctx, component, registry)}
+func (_e *Client_Expecter) ComponentLatestImageInfo(ctx interface{}, component interface{}, registry interface{}) *Client_ComponentLatestImageInfo_Call {
+	return &Client_ComponentLatestImageInfo_Call{Call: _e.mock.On("ComponentLatestImageInfo", ctx, component, registry)}
 }
 
-func (_c *Client_ComponentLatestImageURI_Call) Run(run func(ctx context.Context, component images.ComponentType, registry string)) *Client_ComponentLatestImageURI_Call {
+func (_c *Client_ComponentLatestImageInfo_Call) Run(run func(ctx context.Context, component images.ComponentType, registry string)) *Client_ComponentLatestImageInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -100,12 +102,12 @@ func (_c *Client_ComponentLatestImageURI_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *Client_ComponentLatestImageURI_Call) Return(s string, err error) *Client_ComponentLatestImageURI_Call {
-	_c.Call.Return(s, err)
+func (_c *Client_ComponentLatestImageInfo_Call) Return(imageInfo *images.ImageInfo, err error) *Client_ComponentLatestImageInfo_Call {
+	_c.Call.Return(imageInfo, err)
 	return _c
 }
 
-func (_c *Client_ComponentLatestImageURI_Call) RunAndReturn(run func(ctx context.Context, component images.ComponentType, registry string) (string, error)) *Client_ComponentLatestImageURI_Call {
+func (_c *Client_ComponentLatestImageInfo_Call) RunAndReturn(run func(ctx context.Context, component images.ComponentType, registry string) (*images.ImageInfo, error)) *Client_ComponentLatestImageInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

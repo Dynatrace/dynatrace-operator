@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -25,16 +26,21 @@ type ImageInfo struct {
 }
 
 const (
-	containerImagesPath = "/v2/fleetManagement/components/containerImages'"
+	containerImagesPath = "/v2/fleetManagement/components/containerImages"
 )
 
 type Client interface {
-	ComponentLatestImageURI(ctx context.Context, component ComponentType, registry string) (string, error)
+	ComponentLatestImageInfo(ctx context.Context, component ComponentType, registry string) (*ImageInfo, error)
 }
 
-type ComponentResponse struct {
+type componentResponse struct {
 	Type     ComponentType `json:"type"`
 	ImageURI string        `json:"imageUri"`
+}
+
+type containerImagesResponse struct {
+	Components []componentResponse `json:"components"`
+	Registry   string              `json:"registry"`
 }
 
 type ClientImpl struct {
@@ -47,31 +53,52 @@ func NewClient(apiClient core.Client) *ClientImpl {
 	}
 }
 
-func (c *ClientImpl) ComponentLatestImageURI(ctx context.Context, component ComponentType, registry string) (string, error) {
-	var components []ComponentResponse
+func (c *ClientImpl) ComponentLatestImageInfo(ctx context.Context, component ComponentType, registry string) (*ImageInfo, error) {
+	var resp containerImagesResponse
 
 	params := map[string]string{}
 	if registry != "" {
 		params["registry"] = registry
 	}
 
-	err := c.apiClient.GET(ctx, containerImagesPath).WithQueryParams(params).Execute(&components)
+	err := c.apiClient.GET(ctx, containerImagesPath).WithQueryParams(params).Execute(&resp)
 	if err != nil {
-		return "", fmt.Errorf("get latest %s image: %w", component, err)
+		return nil, fmt.Errorf("get latest %s image: %w", component, err)
 	}
 
-	if len(components) == 0 {
-		return "", fmt.Errorf("no %s image found", component)
+	if len(resp.Components) == 0 {
+		return nil, fmt.Errorf("no %s image found", component)
 	}
 
-	idx := slices.IndexFunc(components, func(c ComponentResponse) bool { return c.Type == component })
-	if idx != -1 {
-		imageRef, err := name.ParseReference(components[idx].ImageURI)
-		if err != nil {
-			return "", err
+	idx := slices.IndexFunc(resp.Components, func(c componentResponse) bool { return c.Type == component })
+	if idx == -1 {
+		return nil, fmt.Errorf("no %s image found", component)
+	}
+
+	return parseImageInfo(resp.Components[idx].ImageURI)
+}
+
+func parseImageInfo(imageURI string) (*ImageInfo, error) {
+	ref, err := name.ParseReference(imageURI, name.WithDefaultTag(""))
+	if err != nil {
+		return nil, fmt.Errorf("parse image URI %q: %w", imageURI, err)
+	}
+
+	info := &ImageInfo{
+		Registry: ref.Context().RegistryStr(),
+	}
+
+	switch r := ref.(type) {
+	case name.Digest:
+		info.Digest = digest.Digest(r.DigestStr())
+		// tag may still be present before the "@sha256:" part
+		withoutDigest := strings.TrimSuffix(r.String(), "@"+r.DigestStr())
+		if tagRef, err := name.NewTag(withoutDigest, name.WithDefaultTag("")); err == nil {
+			info.Tag = tagRef.TagStr()
 		}
-		return imageRef.String(), nil
+	case name.Tag:
+		info.Tag = r.TagStr()
 	}
 
-	return "", fmt.Errorf("no %s image found", component)
+	return info, nil
 }
