@@ -109,6 +109,9 @@ func TestReconciler(t *testing.T) {
 					},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
 		}
 		optionalscope.SetAvailable(dk, tokenclient.ScopeSettingsRead)
 		clt := fake.NewClientWithIndex(
@@ -386,6 +389,9 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 			},
 		},
+		Status: dynakube.DynaKubeStatus{
+			KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+		},
 	}
 
 	namespaces := []*corev1.Namespace{
@@ -449,6 +455,9 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 			OneAgent: oneagent.Spec{
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 			},
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
 		},
 	}
 

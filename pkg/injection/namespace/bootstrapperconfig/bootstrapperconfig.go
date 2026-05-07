@@ -58,7 +58,7 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 }
 
 func (s *SecretGenerator) reconcileConfig(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
-	data, err := s.generateConfig(ctx, dk)
+	data, annotations, err := s.generateConfig(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -67,7 +67,7 @@ func (s *SecretGenerator) reconcileConfig(ctx context.Context, dk *dynakube.Dyna
 		return nil
 	}
 
-	err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data)
+	err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data, annotations)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (s *SecretGenerator) reconcileCerts(ctx context.Context, dk *dynakube.DynaK
 	}
 
 	if len(certs) != 0 {
-		err = s.createSourceForWebhook(ctx, dk, GetSourceCertsSecretName(dk.Name), CertsConditionType, certs)
+		err = s.createSourceForWebhook(ctx, dk, GetSourceCertsSecretName(dk.Name), CertsConditionType, certs, nil)
 		if err != nil {
 			return err
 		}
@@ -191,13 +191,14 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 }
 
 // generate gets the necessary info the create the init secret data
-func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, map[string]string, error) {
 	data := map[string][]byte{}
+	annotations := map[string]string{}
 
 	if dk.OneAgent().IsAppInjectionNeeded() && !dk.FF().IsNodeImagePull() {
 		downloadConfigBytes, err := s.prepareDownloadConfig(ctx, dk)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 
 		data[download.InputFileName] = downloadConfigBytes
@@ -206,7 +207,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 	if dk.OneAgent().IsAppInjectionNeeded() {
 		pmcSecret, err := s.preparePMC(ctx, dk)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 
 		if len(pmcSecret) != 0 {
@@ -218,15 +219,15 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 			data[curl.InputFileName] = []byte(initialConnectRetryMs)
 		}
 
-		if err := s.addPGC(ctx, dk, data); err != nil {
-			return nil, errors.WithStack(err)
+		if err := s.addPGC(ctx, dk, data, annotations); err != nil {
+			return nil, nil, errors.WithStack(err)
 		}
 	}
 
 	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichment().IsEnabled() {
 		endpointProperties, err := s.prepareEndpoints(ctx, dk)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 
 		if len(endpointProperties) != 0 {
@@ -234,7 +235,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		}
 	}
 
-	return data, nil
+	return data, annotations, nil
 }
 
 // generateCerts gets the necessary info they create the init certs secret data

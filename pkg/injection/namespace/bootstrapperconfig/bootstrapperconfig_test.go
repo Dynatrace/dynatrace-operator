@@ -83,6 +83,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
 		}
 
 		namespace := clientInjectedNamespace(testNamespace, testDynakube)
@@ -148,6 +151,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					},
 					TLSSecretName: "test-tls-secret-name",
 				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
 			},
 		}
 
@@ -248,6 +254,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
 		}
 
 		namespace := clientInjectedNamespace(testNamespace, testDynakube)
@@ -330,6 +339,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
 		}
 
 		clt := fake.NewClientWithIndex(
@@ -376,6 +388,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					},
 					TLSSecretName: "test-tls-secret-name",
 				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
 			},
 		}
 
@@ -440,6 +455,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					},
 					TLSSecretName: "test-tls-secret-name",
 				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
 			},
 		}
 

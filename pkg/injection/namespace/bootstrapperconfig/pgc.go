@@ -2,10 +2,16 @@ package bootstrapperconfig
 
 import (
 	"context"
+	"net/http"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -17,25 +23,40 @@ const (
 	declarativeInputFileName = "declarative.cbor"
 	declarativeWarnSizeBytes = 700 * KiB
 	declarativeMaxSizeBytes  = 880 * KiB
+
+	annotationPGCETag = api.InternalFlagPrefix + "pgc-etag"
 )
 
-func (s *SecretGenerator) addPGC(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte) error {
-	config, err := s.preparePGC(ctx, dk)
+func (s *SecretGenerator) addPGC(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte, annotations map[string]string) error {
+	pgc, err := s.preparePGC(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	if len(config) != 0 {
-		data[declarativeInputFileName] = config
+	if pgc != nil && len(pgc.Data) != 0 {
+		data[declarativeInputFileName] = pgc.Data
+		annotations[annotationPGCETag] = pgc.ETag
 	}
 
 	return nil
 }
 
-func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
+func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube) (*oneagent.ProcessGroupConfig, error) {
 	log := logd.FromContext(ctx)
 
-	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, "")
+	if dk.Status.KubernetesClusterMEID == "" {
+		log.Info("kubernetesClusterMEID not available, skipping processgroupingconfig")
+
+		return nil, nil //nolint:nilnil
+	}
+
+	cachedETag, cachedData := s.readCachedPGC(ctx, dk)
+
+	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, cachedETag)
+	if core.HasStatusCode(err, http.StatusNotModified) {
+		return &oneagent.ProcessGroupConfig{ETag: cachedETag, Data: cachedData}, nil
+	}
+
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 
@@ -43,19 +64,28 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 	}
 
 	if pgc == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	size := len(pgc.Data)
 	if size > declarativeMaxSizeBytes {
-		log.Error(nil, "DPG API response exceeds maximum size, skipping declarative.cbor", "size", size, "maxSize", declarativeMaxSizeBytes)
+		log.Error(nil, "DPG API response exceeds maximum size, skipping processgroupingconfig", "size", size, "maxSize", declarativeMaxSizeBytes)
 
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	if size > declarativeWarnSizeBytes {
 		log.Info("DPG API response exceeds warning size threshold", "size", size, "warnSize", declarativeWarnSizeBytes)
 	}
 
-	return pgc.Data, nil
+	return pgc, nil
+}
+
+func (s *SecretGenerator) readCachedPGC(ctx context.Context, dk *dynakube.DynaKube) (etag string, data []byte) {
+	var secret corev1.Secret
+
+	key := types.NamespacedName{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}
+	_ = s.apiReader.Get(ctx, key, &secret)
+
+	return secret.Annotations[annotationPGCETag], secret.Data[declarativeInputFileName]
 }

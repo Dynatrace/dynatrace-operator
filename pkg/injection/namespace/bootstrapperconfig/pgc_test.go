@@ -3,15 +3,19 @@ package bootstrapperconfig
 import (
 	"bytes"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -53,10 +57,12 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
-		assert.Equal(t, payload, pgc)
+		require.NotNil(t, pgc)
+		assert.Equal(t, payload, pgc.Data)
+		assert.Equal(t, "etag123", pgc.ETag)
 	})
 
-	t.Run("success - response between 800 KiB and 980 KiB triggers warning", func(t *testing.T) {
+	t.Run("success - response between 700 KiB and 880 KiB triggers warning", func(t *testing.T) {
 		dk := newDK()
 		clt := fake.NewClient(dk)
 		mockDTClient := oneagentclientmock.NewClient(t)
@@ -73,7 +79,8 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
-		assert.Equal(t, payload, pgc)
+		require.NotNil(t, pgc)
+		assert.Equal(t, payload, pgc.Data)
 	})
 
 	t.Run("response over 880 KiB returns nil without error", func(t *testing.T) {
@@ -107,11 +114,15 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 			Return(nil, expectedErr)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.preparePGC(t.Context(), dk)
+		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.Error(t, err)
 		assert.Equal(t, expectedErr, err)
-		assert.Nil(t, result)
+		assert.Nil(t, pgc)
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
+		require.NotNil(t, c)
+		assert.Equal(t, metav1.ConditionFalse, c.Status)
 	})
 
 	t.Run("empty response returns nil without error", func(t *testing.T) {
@@ -124,9 +135,81 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 			Return(nil, nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.preparePGC(t.Context(), dk)
+		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
-		assert.Empty(t, result)
+		assert.Nil(t, pgc)
+	})
+
+	t.Run("304 not modified uses cached data", func(t *testing.T) {
+		dk := newDK()
+		cachedData := []byte("cached-pgc-data")
+		cachedETag := "etag-abc"
+
+		sourceSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      GetSourceConfigSecretName(testDynakube),
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					annotationPGCETag: cachedETag,
+				},
+			},
+			Data: map[string][]byte{
+				declarativeInputFileName: cachedData,
+			},
+		}
+
+		clt := fake.NewClient(dk, sourceSecret)
+		mockDTClient := oneagentclientmock.NewClient(t)
+
+		httpErr := &core.HTTPError{StatusCode: http.StatusNotModified}
+		mockDTClient.EXPECT().
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, cachedETag).
+			Return(&oneagent.ProcessGroupConfig{ETag: cachedETag}, httpErr)
+
+		sg := NewSecretGenerator(clt, clt, mockDTClient)
+		pgc, err := sg.preparePGC(t.Context(), dk)
+
+		require.NoError(t, err)
+		require.NotNil(t, pgc)
+		assert.Equal(t, cachedData, pgc.Data)
+		assert.Equal(t, cachedETag, pgc.ETag)
+	})
+
+	t.Run("empty MEID skips without error", func(t *testing.T) {
+		dk := newDK()
+		dk.Status.KubernetesClusterMEID = ""
+
+		clt := fake.NewClient(dk)
+		mockDTClient := oneagentclientmock.NewClient(t)
+
+		sg := NewSecretGenerator(clt, clt, mockDTClient)
+		pgc, err := sg.preparePGC(t.Context(), dk)
+
+		require.NoError(t, err)
+		assert.Nil(t, pgc)
+	})
+
+	t.Run("200 response ETag is returned", func(t *testing.T) {
+		dk := newDK()
+		clt := fake.NewClient(dk)
+		mockDTClient := oneagentclientmock.NewClient(t)
+
+		payload := []byte("pgc-data")
+		responseETag := "new-etag-xyz"
+
+		mockDTClient.EXPECT().
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			Return(&oneagent.ProcessGroupConfig{
+				ETag: responseETag,
+				Data: payload,
+			}, nil)
+
+		sg := NewSecretGenerator(clt, clt, mockDTClient)
+		pgc, err := sg.preparePGC(t.Context(), dk)
+
+		require.NoError(t, err)
+		require.NotNil(t, pgc)
+		assert.Equal(t, responseETag, pgc.ETag)
 	})
 }
