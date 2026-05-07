@@ -3,7 +3,8 @@ import os
 import shutil
 import subprocess
 import tempfile
-import requests
+import urllib.request
+import urllib.error
 import yaml
 from pathlib import Path
 
@@ -39,10 +40,14 @@ def refs_in(spec, ref):
 
 
 def download_spec(url, auth_token=None):
-    headers = {"Authorization": f"Bearer {auth_token}"} if auth_token else {}
-    resp = requests.get(url, headers=headers)
-    resp.raise_for_status()
-    return resp.content
+    req = urllib.request.Request(url)
+    if auth_token:
+        req.add_header("Authorization", f"Bearer {auth_token}")
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return resp.read()
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"failed to download spec from {url}: {e}")
 
 
 def resolve_models(spec, api_tag):
@@ -112,7 +117,11 @@ def main():
         auth_token = os.environ.get(auth_var, "") if auth_var else ""
 
         print(f"Downloading spec for {name}...")
-        spec_data = download_spec(spec_url, auth_token)
+        try:
+            spec_data = download_spec(spec_url, auth_token)
+        except RuntimeError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            sys.exit(1)
 
         spec = yaml.safe_load(spec_data)
 
