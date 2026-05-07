@@ -81,7 +81,7 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 	return pgc, nil
 }
 
-func (s *SecretGenerator) readCachedPGC(ctx context.Context, dk *dynakube.DynaKube) (*oneagent.ProcessGroupConfig) {
+func (s *SecretGenerator) readCachedPGC(ctx context.Context, dk *dynakube.DynaKube) *oneagent.ProcessGroupConfig {
 	var secret corev1.Secret
 
 	key := types.NamespacedName{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}

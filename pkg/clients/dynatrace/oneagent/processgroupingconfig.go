@@ -27,11 +27,11 @@ type ProcessGroupConfig struct {
 //   - etag: optional ETag from a previous response. When non-empty, sent as If-None-Match header.
 //     If the server responds with 304 Not Modified, the underlying HTTP error is returned.
 //     Use core.HasStatusCode(err, http.StatusNotModified) to check for this case.
-//   - writer: the io.Writer to stream the CBOR response body into.
 //
 // Returns:
-//   - The ETag value from the response header on success (HTTP 200), or the original etag on 304.
-//   - An error if the request failed. On HTTP 304, the error satisfies core.HasStatusCode(err, http.StatusNotModified).
+//   - On HTTP 200: *ProcessGroupConfig with ETag from response header and CBOR data.
+//   - On HTTP 304: *ProcessGroupConfig with the original ETag and nil Data, plus a non-nil error satisfying core.HasStatusCode(err, http.StatusNotModified).
+//   - On other errors: non-nil error.
 func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error) {
 	params := map[string]string{}
 	if kubernetesClusterID != "" {
