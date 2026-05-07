@@ -29,7 +29,7 @@ func TestPublicRegistryOverrideWithoutPublicRegistry(t *testing.T) {
 
 	t.Run("publicRegistryOverride set with use-public-registry=false returns error", func(t *testing.T) {
 		dk := newDynakube()
-		dk.ObjectMeta.Annotations = map[string]string{exp.UsePublicRegistryKey: "false"}
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "false"}
 		dk.Spec.PublicRegistryOverride = "my.custom.registry.com"
 
 		assertDenied(t, []string{fmt.Sprintf(errorPublicRegistryOverrideWithoutPublicRegistry, exp.UsePublicRegistryKey)}, dk)
@@ -37,7 +37,7 @@ func TestPublicRegistryOverrideWithoutPublicRegistry(t *testing.T) {
 
 	t.Run("publicRegistryOverride set with use-public-registry=true returns no error", func(t *testing.T) {
 		dk := newDynakube()
-		dk.ObjectMeta.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
 		dk.Spec.PublicRegistryOverride = "my.custom.registry.com"
 
 		assertAllowed(t, dk)
