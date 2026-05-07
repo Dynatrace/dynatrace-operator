@@ -166,7 +166,7 @@ func (controller *WebhookCertificateController) getWebhooksConfigurations(ctx co
 
 	validatingWebhookConfiguration, err := controller.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
-		log.Debug("error getting mutating webhook configuration", "error", err)
+		log.Debug("error getting validating webhook configuration", "error", err)
 		// Generation must not be skipped because webhook startup routine listens for the secret
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
 		log.Info("could not find validating webhook configuration, this is normal when deployed using OLM")
