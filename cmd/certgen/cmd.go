@@ -13,14 +13,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const use = "certgen"
+
 var log = logd.Get().WithName("certgen")
 
+var crdCheck bool
+
 func New() *cobra.Command {
-	return &cobra.Command{
-		Use:          "certgen",
+	cmd := &cobra.Command{
+		Use:          use,
 		RunE:         run,
 		SilenceUsage: true,
 	}
+
+	cmd.PersistentFlags().BoolVar(&crdCheck, "crd-check", true, "check expected crds")
+
+	return cmd
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -34,8 +42,12 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := checkCRDs(clt); err != nil {
-		return err
+	if crdCheck {
+		if err := checkCRDs(clt); err != nil {
+			return err
+		}
+	} else {
+		log.Info("skipping crd check")
 	}
 
 	return certificates.InitReconcile(cmd.Context(), clt, k8senv.DefaultNamespace())
