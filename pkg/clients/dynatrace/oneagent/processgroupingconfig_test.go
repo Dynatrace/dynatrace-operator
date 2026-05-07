@@ -1,7 +1,6 @@
 package oneagent
 
 import (
-	"bytes"
 	"io"
 	"net/http"
 	"testing"
@@ -68,7 +67,6 @@ func setupMockedProcessGroupingClient(
 
 func TestGetProcessGroupingConfig(t *testing.T) {
 	t.Run("success_200_with_etag", func(t *testing.T) {
-		var buf bytes.Buffer
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -79,16 +77,15 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			nil,
 		)
 
-		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", testETag, &buf)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", testETag)
 		require.NoError(t, err)
-		assert.Equal(t, testCBORData, buf.String())
+		assert.Equal(t, testCBORData, string(pgc.Data))
 		// On 200, the returned ETag comes from the response header, not the input ETag
-		assert.Equal(t, testResponseETag, returnedETag)
-		assert.NotEqual(t, testETag, returnedETag)
+		assert.Equal(t, testResponseETag, pgc.ETag)
+		assert.NotEqual(t, testETag, pgc.ETag)
 	})
 
 	t.Run("success_200_without_etag", func(t *testing.T) {
-		var buf bytes.Buffer
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -99,14 +96,13 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			nil,
 		)
 
-		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", "", &buf)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", "")
 		require.NoError(t, err)
-		assert.Equal(t, testCBORData, buf.String())
-		assert.Equal(t, testResponseETag, returnedETag)
+		assert.Equal(t, testCBORData, string(pgc.Data))
+		assert.Equal(t, testResponseETag, pgc.ETag)
 	})
 
 	t.Run("not_modified_304", func(t *testing.T) {
-		var buf bytes.Buffer
 		httpErr := &core.HTTPError{StatusCode: 304}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -117,16 +113,15 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			httpErr,
 		)
 
-		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", testETag, &buf)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", testETag)
 		require.Error(t, err)
 		require.True(t, core.HasStatusCode(err, http.StatusNotModified), "expected 304 status code error, got %v", err)
-		assert.Empty(t, buf.String())
+		assert.Empty(t, string(pgc.Data))
 		// On 304, the original ETag is returned for convenience
-		assert.Equal(t, testETag, returnedETag)
+		assert.Equal(t, testETag, pgc.ETag)
 	})
 
 	t.Run("with_kubernetes_cluster_id", func(t *testing.T) {
-		var buf bytes.Buffer
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -137,13 +132,12 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			nil,
 		)
 
-		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "", &buf)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "")
 		require.NoError(t, err)
-		assert.Equal(t, testResponseETag, returnedETag)
+		assert.Equal(t, testResponseETag, pgc.ETag)
 	})
 
 	t.Run("without_kubernetes_cluster_id", func(t *testing.T) {
-		var buf bytes.Buffer
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -154,13 +148,12 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			nil,
 		)
 
-		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", "", &buf)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", "")
 		require.NoError(t, err)
-		assert.Equal(t, testResponseETag, returnedETag)
+		assert.Equal(t, testResponseETag, pgc.ETag)
 	})
 
 	t.Run("server_error", func(t *testing.T) {
-		var buf bytes.Buffer
 		serverErr := &core.HTTPError{StatusCode: http.StatusInternalServerError, Message: "internal server error"}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -171,16 +164,15 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			serverErr,
 		)
 
-		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", "", &buf)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", "")
 		require.Error(t, err)
 		require.True(t, core.HasStatusCode(err, http.StatusInternalServerError))
-		assert.Empty(t, returnedETag)
-		assert.Empty(t, buf.String())
+		assert.Empty(t, pgc.ETag)
+		assert.Empty(t, string(pgc.Data))
 	})
 
 	t.Run("bad_request", func(t *testing.T) {
 		const badETag = "bad_etag"
-		var buf bytes.Buffer
 		serverErr := &core.HTTPError{StatusCode: http.StatusBadRequest, Message: "bad request"}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -191,10 +183,10 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			serverErr,
 		)
 
-		returnedETag, err := client.GetProcessGroupingConfig(t.Context(), "", badETag, &buf)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", badETag)
 		require.Error(t, err)
 		require.True(t, core.HasStatusCode(err, http.StatusBadRequest))
-		assert.Empty(t, returnedETag)
-		assert.Empty(t, buf.String())
+		assert.Empty(t, pgc.ETag)
+		assert.Empty(t, string(pgc.Data))
 	})
 }

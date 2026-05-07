@@ -2,13 +2,12 @@ package bootstrapperconfig
 
 import (
 	"bytes"
-	"context"
 	"errors"
-	"io"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -44,17 +43,17 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 
 		payload := bytes.Repeat([]byte("a"), 100*1024) // 100 KiB
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
-			Run(func(_ context.Context, _ string, _ string, writer io.Writer) {
-				_, _ = writer.Write(payload)
-			}).
-			Return("", nil)
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			Return(&oneagent.ProcessGroupConfig{
+				ETag: "etag123",
+				Data: payload,
+			}, nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.preparePGC(t.Context(), dk)
+		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
-		assert.Equal(t, payload, result)
+		assert.Equal(t, payload, pgc)
 	})
 
 	t.Run("success - response between 800 KiB and 980 KiB triggers warning", func(t *testing.T) {
@@ -62,39 +61,39 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 		clt := fake.NewClient(dk)
 		mockDTClient := oneagentclientmock.NewClient(t)
 
-		payload := bytes.Repeat([]byte("a"), 850*1024) // 850 KiB — above warn, below max
+		payload := bytes.Repeat([]byte("a"), 750*1024) // 750 KiB — above warn, below max
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
-			Run(func(_ context.Context, _ string, _ string, writer io.Writer) {
-				_, _ = writer.Write(payload)
-			}).
-			Return("", nil)
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			Return(&oneagent.ProcessGroupConfig{
+				ETag: "etag123",
+				Data: payload,
+			}, nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.preparePGC(t.Context(), dk)
+		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
-		assert.Equal(t, payload, result)
+		assert.Equal(t, payload, pgc)
 	})
 
-	t.Run("response over 980 KiB returns nil without error", func(t *testing.T) {
+	t.Run("response over 880 KiB returns nil without error", func(t *testing.T) {
 		dk := newDK()
 		clt := fake.NewClient(dk)
 		mockDTClient := oneagentclientmock.NewClient(t)
 
-		payload := bytes.Repeat([]byte("a"), 990*1024) // 990 KiB — above max
+		payload := bytes.Repeat([]byte("a"), 890*1024) // 890 KiB — above max
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
-			Run(func(_ context.Context, _ string, _ string, writer io.Writer) {
-				_, _ = writer.Write(payload)
-			}).
-			Return("", nil)
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			Return(&oneagent.ProcessGroupConfig{
+				ETag: "etag123",
+				Data: payload,
+			}, nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
-		result, err := sg.preparePGC(t.Context(), dk)
+		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
-		assert.Nil(t, result)
+		assert.Nil(t, pgc)
 	})
 
 	t.Run("API error is propagated and condition is set", func(t *testing.T) {
@@ -104,8 +103,8 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 
 		expectedErr := errors.New("API error")
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
-			Return("", expectedErr)
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			Return(nil, expectedErr)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
 		result, err := sg.preparePGC(t.Context(), dk)
@@ -121,8 +120,8 @@ func Test_SecretGenerator_prepareDeclarativeConfig(t *testing.T) {
 		mockDTClient := oneagentclientmock.NewClient(t)
 
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.AnythingOfType("*bytes.Buffer")).
-			Return("", nil)
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			Return(nil, nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
 		result, err := sg.preparePGC(t.Context(), dk)

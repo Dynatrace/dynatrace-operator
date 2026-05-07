@@ -49,27 +49,25 @@ func TestGetProcessGroupingConfig_Integration(t *testing.T) {
 
 	client := NewClient(apiClient, "", "")
 
-	var buf bytes.Buffer
-
-	etag, err := client.GetProcessGroupingConfig(t.Context(), clusterID, "", &buf)
+	pgc, err := client.GetProcessGroupingConfig(t.Context(), clusterID, "")
 	require.NoError(t, err)
 
-	t.Logf("Response size: %d bytes", buf.Len())
-	t.Logf("ETag: %s", etag)
+	t.Logf("Response size: %d bytes", len(pgc.Data))
+	t.Logf("ETag: %s", pgc.ETag)
 
-	require.NotZero(t, buf.Len(), "expected non-empty response body")
+	require.NotEmpty(t, pgc.Data, "expected non-empty response body")
 
-	t.Logf("Decoded response:\n%s", decodeCBOR(t, buf.Bytes()))
+	t.Logf("Decoded response:\n%s", decodeCBOR(t, pgc.Data))
 
 	// Test conditional request with ETag (should return 304)
 	// Skip for now, something seems to still be fishy with eTag handling on cluster side
-	if etag != "" {
+	if pgc.ETag != "" {
 		var buf2 bytes.Buffer
 
-		etag2, err := client.GetProcessGroupingConfig(t.Context(), clusterID, etag, &buf2)
+		etag2, err := client.GetProcessGroupingConfig(t.Context(), clusterID, pgc.ETag)
 		if err != nil {
 			require.True(t, core.HasStatusCode(err, http.StatusNotModified))
-			require.Equal(t, etag, etag2)
+			require.Equal(t, pgc, etag2)
 			require.Zero(t, buf2.Len(), "body should be empty on 304")
 
 			t.Log("Second request returned 304 Not Modified as expected")

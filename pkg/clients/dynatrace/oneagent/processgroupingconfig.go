@@ -1,8 +1,8 @@
 package oneagent
 
 import (
+	"bytes"
 	"context"
-	"io"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -14,6 +14,11 @@ const (
 	requestHeaderEtag            = "If-None-Match"
 	responseHeaderEtag           = "ETag"
 )
+
+type ProcessGroupConfig struct {
+	ETag string
+	Data []byte
+}
 
 // GetProcessGroupingConfig fetches the process grouping configuration as a binary CBOR stream.
 //
@@ -27,7 +32,7 @@ const (
 // Returns:
 //   - The ETag value from the response header on success (HTTP 200), or the original etag on 304.
 //   - An error if the request failed. On HTTP 304, the error satisfies core.HasStatusCode(err, http.StatusNotModified).
-func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error) {
+func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error) {
 	params := map[string]string{}
 	if kubernetesClusterID != "" {
 		params[parameterKubernetesClusterID] = kubernetesClusterID
@@ -41,14 +46,21 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 		req = req.WithHeader(requestHeaderEtag, etag)
 	}
 
-	headers, err := req.ExecuteWriter(writer)
+	var buf bytes.Buffer
+
+	headers, err := req.ExecuteWriter(&buf)
 	if core.HasStatusCode(err, http.StatusNotModified) {
-		return etag, err
+		return &ProcessGroupConfig{ETag: etag}, err
 	}
 
 	if err != nil {
-		return "", err
+		return &ProcessGroupConfig{}, err
 	}
 
-	return headers.Get(responseHeaderEtag), nil
+	pgc := &ProcessGroupConfig{
+		ETag: headers.Get(responseHeaderEtag),
+		Data: buf.Bytes(),
+	}
+
+	return pgc, nil
 }

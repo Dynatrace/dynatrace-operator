@@ -1,7 +1,6 @@
 package bootstrapperconfig
 
 import (
-	"bytes"
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -16,8 +15,8 @@ const (
 
 const (
 	declarativeInputFileName = "declarative.cbor"
-	declarativeWarnSizeBytes = 800 * KiB
-	declarativeMaxSizeBytes  = 980 * KiB
+	declarativeWarnSizeBytes = 700 * KiB
+	declarativeMaxSizeBytes  = 880 * KiB
 )
 
 func (s *SecretGenerator) addPGC(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte) error {
@@ -36,16 +35,18 @@ func (s *SecretGenerator) addPGC(ctx context.Context, dk *dynakube.DynaKube, dat
 func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
 	log := logd.FromContext(ctx)
 
-	var buf bytes.Buffer
-
-	_, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, "", &buf)
+	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, "")
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
 
-	size := buf.Len()
+	if pgc == nil {
+		return nil, nil
+	}
+
+	size := len(pgc.Data)
 	if size > declarativeMaxSizeBytes {
 		log.Error(nil, "DPG API response exceeds maximum size, skipping declarative.cbor", "size", size, "maxSize", declarativeMaxSizeBytes)
 
@@ -56,5 +57,5 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 		log.Info("DPG API response exceeds warning size threshold", "size", size, "warnSize", declarativeWarnSizeBytes)
 	}
 
-	return buf.Bytes(), nil
+	return pgc.Data, nil
 }
