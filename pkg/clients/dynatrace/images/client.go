@@ -39,7 +39,6 @@ type componentResponse struct {
 
 type containerImagesResponse struct {
 	Components []componentResponse `json:"components"`
-	Registry   string              `json:"registry"`
 }
 
 type ClientImpl struct {
