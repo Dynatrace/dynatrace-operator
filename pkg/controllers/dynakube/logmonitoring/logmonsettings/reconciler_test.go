@@ -2,20 +2,23 @@ package logmonsettings
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestReconcile(t *testing.T) {
@@ -171,6 +174,39 @@ func TestReconcile(t *testing.T) {
 
 		require.Equal(t, currentTS, prevTS)
 	})
+
+	t.Run("platform token cannot read settings", func(t *testing.T) {
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+			Return(settings.TotalCountSettingsResponse{}, &core.HTTPError{StatusCode: http.StatusForbidden}).
+			Once()
+
+		dk := getDK()
+		dk.Status.APIToken.Platform = ptr.To(true)
+		r := NewReconciler()
+
+		err := r.Reconcile(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
+	})
+
+	t.Run("platform token cannot write settings", func(t *testing.T) {
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+			Return(settings.TotalCountSettingsResponse{}, nil).Once()
+		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, []logmonitoring.IngestRuleMatchers{}).
+			Return("", &core.HTTPError{StatusCode: http.StatusForbidden})
+
+		dk := getDK()
+		dk.Status.APIToken.Platform = ptr.To(true)
+		r := NewReconciler()
+
+		err := r.Reconcile(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
+	})
 }
 
 func TestCheckLogMonitoringSettings(t *testing.T) {
@@ -285,12 +321,12 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 func setReadScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsRead, Status: metav1.ConditionTrue})
+	optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 }
 
 func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsWrite, Status: metav1.ConditionTrue})
+	optionalscope.SetAvailable(dk, token.ScopeSettingsWrite)
 }
 
 func verifyCondition(t *testing.T, dk *dynakube.DynaKube, expectedReason string) {

@@ -20,6 +20,24 @@ tests:
           path: rules
           value:
             - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - mutatingwebhookconfigurations
+              resourceNames:
+                - dynatrace-webhook
+              verbs:
+                - get
+                - update
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - validatingwebhookconfigurations
+              resourceNames:
+                - dynatrace-webhook
+              verbs:
+                - get
+                - update
+            - apiGroups:
                 - apiextensions.k8s.io
               resources:
                 - customresourcedefinitions
@@ -49,6 +67,24 @@ tests:
       - equal:
           path: rules
           value:
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - mutatingwebhookconfigurations
+              resourceNames:
+                - dynatrace-webhook
+              verbs:
+                - get
+                - update
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - validatingwebhookconfigurations
+              resourceNames:
+                - dynatrace-webhook
+              verbs:
+                - get
+                - update
             - apiGroups:
                 - apiextensions.k8s.io
               resources:

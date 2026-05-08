@@ -44,7 +44,7 @@ func Feature(t *testing.T) features.Feature {
 //
 // Note: When settings scopes are missing on the token, the KSPM settings reconciler should skip the creation.
 func OptionalScopes(t *testing.T) features.Feature {
-	builder := features.New("kspm-optional-scopes")
+	builder := features.New("kspm-with-optional-scopes")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	if secretConfig.APITokenNoSettings == "" {

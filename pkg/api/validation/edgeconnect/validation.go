@@ -32,6 +32,9 @@ var validatorErrorFuncs = []validatorFunc{
 	checkHostPatternsValue,
 	isInvalidServiceName,
 	automationRequiresProvisionerValidation,
+	isValidSSOServerURL,
+	checkSSOServerProtocol,
+	isAllowedSSOServer,
 }
 
 func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.Object] {

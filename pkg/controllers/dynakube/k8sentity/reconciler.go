@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/retry"
@@ -41,7 +42,7 @@ func NewReconciler() *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "automatic-api-monitoring")
 
-	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead) {
+	if !optionalscope.IsAvailable(dk, token.ScopeSettingsRead) {
 		msg := token.ScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
 		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
@@ -53,16 +54,27 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		return errMissingKubeSystemUUID
 	}
 
-	if err := r.reconcileMEID(ctx, dtClient, dk); err != nil {
-		return err
-	}
+	handleMissingScope := func(scope string, err error) error {
+		if !core.IsForbidden(err) {
+			return err
+		}
 
-	if !dk.FF().IsAutomaticK8sAPIMonitoring() ||
-		!dk.ActiveGate().IsKubernetesMonitoringEnabled() {
+		msg := scope + " optional scope not available"
+		log.Info(msg)
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
+
 		return nil
 	}
 
-	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite) {
+	if err := r.reconcileMEID(ctx, dtClient, dk); err != nil {
+		return handleMissingScope("settings:objects:read", err)
+	}
+
+	if !dk.FF().IsAutomaticK8sAPIMonitoring() || !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
+		return nil
+	}
+
+	if !optionalscope.IsAvailable(dk, token.ScopeSettingsWrite) {
 		log.Info("api token missing optional scope, skipping reconciliation", "scope", token.ScopeSettingsWrite)
 
 		return nil
@@ -70,7 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 
 	objectID, err := r.createK8sConnectionSettingIfAbsent(ctx, dtClient, dk)
 	if err != nil {
-		return err
+		return handleMissingScope("settings:objects:write", err)
 	}
 
 	if objectID != "" {
@@ -99,8 +111,6 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client
 
 	k8sEntity, err := dtClient.GetK8sClusterME(ctx, dk.Status.KubeSystemUUID)
 	if err != nil {
-		log.Info("failed to retrieve MEs")
-
 		return fmt.Errorf("get kubernetesClusterMEID: %w", err)
 	}
 

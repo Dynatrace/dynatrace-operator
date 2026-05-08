@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -125,6 +126,12 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 
 	if err = tokens.VerifyValues(); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.Tokens())
+	}
+
+	if dttoken.IsPlatform(tokens.APIToken().Value) {
+		logInfof(log, "skipping token scope lookup due to platform token")
+
+		return nil
 	}
 
 	var optionalScopes map[string]bool

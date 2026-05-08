@@ -9,12 +9,17 @@ import (
 
 func TestFormatServerError(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-		assert.Equal(t, "unknown server error", formatServerError(&ServerError{}))
+		assert.Equal(t, "unknown server error", formatServerError(&ServerError{}, 0))
 	})
 
-	t.Run("simple", func(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
 		serverErr := &ServerError{Code: 404, Message: "not found"}
-		assert.Equal(t, "dynatrace server error 404: not found", formatServerError(serverErr))
+		assert.Equal(t, "not found", formatServerError(serverErr, 404))
+	})
+
+	t.Run("different status code", func(t *testing.T) {
+		serverErr := &ServerError{Code: 404, Message: "not found"}
+		assert.Equal(t, "dynatrace server error 404: not found", formatServerError(serverErr, 299))
 	})
 
 	t.Run("single constraint", func(t *testing.T) {
@@ -31,7 +36,7 @@ func TestFormatServerError(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "dynatrace server error 422: invalid\n\t- test path: test message", formatServerError(serverErr))
+		assert.Equal(t, "invalid\n\t- test path: test message", formatServerError(serverErr, 422))
 	})
 
 	t.Run("multiple constraints", func(t *testing.T) {
@@ -43,7 +48,7 @@ func TestFormatServerError(t *testing.T) {
 				{Message: "message2", Path: "path2"},
 			},
 		}
-		assert.Equal(t, "dynatrace server error 422: invalid\n\t- path1: message1\n\t- path2: message2", formatServerError(serverErr))
+		assert.Equal(t, "invalid\n\t- path1: message1\n\t- path2: message2", formatServerError(serverErr, 422))
 	})
 }
 
@@ -63,7 +68,7 @@ func TestHTTPError(t *testing.T) {
 				{Code: 401, Message: "unauthorized"},
 			},
 		}
-		assert.EqualError(t, httpErr, "HTTP 401: dynatrace server error 401: unauthorized")
+		assert.EqualError(t, httpErr, "HTTP 401: unauthorized")
 	})
 
 	t.Run("multiple server errors", func(t *testing.T) {
@@ -74,7 +79,7 @@ func TestHTTPError(t *testing.T) {
 				{Code: 400, Message: "bad2"},
 			},
 		}
-		assert.EqualError(t, httpErr, "HTTP 400: dynatrace server error 400: bad1; dynatrace server error 400: bad2")
+		assert.EqualError(t, httpErr, "HTTP 400: bad1; bad2")
 	})
 }
 

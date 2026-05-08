@@ -2,6 +2,8 @@ package daemonset
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 )
@@ -22,6 +24,11 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 
 	if isMEConfigured(dk) {
 		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv), fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
+	}
+
+	attrs := dk.GetResourceAttributes()
+	for _, key := range slices.Sorted(maps.Keys(attrs)) {
+		baseArgs = append(baseArgs, fmt.Sprintf("-p %s=%s", key, attrs[key]))
 	}
 
 	return append(baseArgs, dk.LogMonitoring().Template().Args...)

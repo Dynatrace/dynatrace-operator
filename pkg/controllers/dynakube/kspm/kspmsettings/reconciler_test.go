@@ -14,17 +14,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
-var (
-	anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
-)
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestReconcile(t *testing.T) {
 	const meID = "meid"
@@ -340,16 +339,50 @@ func TestCheckKSPMSettings(t *testing.T) {
 		require.NoError(t, err)
 		require.Empty(t, dk.Conditions())
 	})
+
+	t.Run("forbidden error fetching kspm settings with platform token", func(t *testing.T) {
+		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+			Return(settings.KSPMSettingsResponse{}, forbiddenErr)
+
+		dk := getDK(true, meID)
+		dk.Status.APIToken.Platform = ptr.To(true)
+
+		r := NewReconciler()
+
+		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
+	})
+
+	t.Run("forbidden error creating kspm settings with platform token", func(t *testing.T) {
+		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
+			Return("", forbiddenErr)
+
+		dk := getDK(true, meID)
+		dk.Status.APIToken.Platform = ptr.To(true)
+
+		r := NewReconciler()
+
+		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
+	})
 }
 
 func setReadScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsRead, Status: metav1.ConditionTrue})
+	optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 }
 
 func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsWrite, Status: metav1.ConditionTrue})
+	optionalscope.SetAvailable(dk, token.ScopeSettingsWrite)
 }
 
 func verifyCondition(t *testing.T, dk *dynakube.DynaKube, expectedReason string) {

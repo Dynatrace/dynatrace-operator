@@ -9,8 +9,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
@@ -71,7 +73,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update if outdated", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
 
 		expectedResponse := createRules()
 		specialMessage := "TESTING" // if the special message changes == condition updated
@@ -99,7 +101,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set rules correctly", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
 
 		expectedResponse := createRules()
 
@@ -118,7 +120,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no rules if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		dk.Annotations = map[string]string{
@@ -136,7 +138,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, errors.New("BOOM"))
@@ -164,6 +166,23 @@ func TestReconcile(t *testing.T) {
 		require.NotNil(t, condition)
 		assert.Equal(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+
+	t.Run("handle missing scope in platform token", func(t *testing.T) {
+		dk := createDynaKube()
+		dk.Status.APIToken.Platform = ptr.To(true)
+
+		dtClient := settingsmock.NewClient(t)
+		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, &core.HTTPError{StatusCode: 403})
+		reconciler := NewReconciler(dtClient, &dk)
+
+		err := reconciler.Reconcile(ctx)
+
+		require.NoError(t, err)
+		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
 	})
 }
 

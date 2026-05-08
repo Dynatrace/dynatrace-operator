@@ -6,11 +6,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
@@ -49,7 +51,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	k8sconditions.SetStatusOutdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are outdated in the status")
 
-	if !k8sconditions.IsOptionalScopeAvailable(r.dk, token.ConditionTypeAPITokenSettingsRead) {
+	if !optionalscope.IsAvailable(r.dk, token.ScopeSettingsRead) {
 		log.Info("metadata-enrichment rules are not set in the status because the optional scope is not available", "scope", token.ScopeSettingsRead)
 		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are not set in the status because the optional 'settings.read' scope is not available")
 
@@ -58,7 +60,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	rules, err := r.getEnrichmentRules(ctx)
 	if err != nil {
-		return err
+		if !core.IsForbidden(err) {
+			return err
+		}
+
+		msg := "provided token cannot read metadata-enrichment rules due to missing scopes"
+		log.Info(msg)
+		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, msg)
+
+		return nil
 	}
 
 	r.dk.Status.MetadataEnrichment.Rules = rules
