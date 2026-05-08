@@ -16,7 +16,7 @@ type ContainerInfos struct {
 	ImageDigest string `json:"container_image.digest,omitempty"`
 
 	// used for metadata enrichment and OTLP exporter auto-config
-	ContainerAttributes `json:",inline,omitempty"`
+	ContainerAttributes `json:",omitempty"`
 }
 
 func NewContainerInfos(c corev1.Container) *ContainerInfos {

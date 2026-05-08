@@ -8,6 +8,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	// AnnotationWorkloadKind is added to any injected pods when the metadata-enrichment feature is enabled
+	AnnotationWorkloadKind = metadataenrichment.Prefix + K8sWorkloadKindAttr
+	// AnnotationWorkloadName is added to any injected pods when the metadata-enrichment feature is enabled
+	AnnotationWorkloadName = metadataenrichment.Prefix + K8sWorkloadNameAttr
+)
+
 func (attrs *PodAttributes) ApplyAnnotationsToPod(pod *corev1.Pod) error {
 	annotations := attrs.combineForMetadataAnnotations()
 

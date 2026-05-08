@@ -121,9 +121,7 @@ func TestApplyAnnotationsToPod(t *testing.T) {
 		err := attrs.ApplyAnnotationsToPod(pod)
 
 		require.NoError(t, err)
-		// workload info uses the attribute name directly as annotation key (no metadata prefix)
 		assert.Equal(t, "deployment", pod.Annotations[metadataenrichment.Prefix+K8sWorkloadKindAttr])
-		// namespace annotations and enrichment rules carry the metadata prefix
 		assert.Equal(t, "from-ns", pod.Annotations[metadataenrichment.Prefix+"ns-attr"])
 		assert.Equal(t, "from-rule", pod.Annotations[metadataenrichment.Prefix+"rule-attr"])
 	})

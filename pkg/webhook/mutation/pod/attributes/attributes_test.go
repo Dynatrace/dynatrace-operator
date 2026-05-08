@@ -94,16 +94,6 @@ func TestConvert_Method(t *testing.T) {
 	})
 }
 
-// ---- combineAll() precedence tests ----
-//
-// Each sub-test sets the SAME key in two adjacent precedence levels.
-// The higher-priority source must win.
-//
-// Order (lowest → highest):
-//   deprecated → workloadInfo → podInfo → clusterInfo
-//   → container → rules → rulesPropagate
-//   → namespaceAnnotations → podAnnotations → custom
-
 func TestCombine_WorkloadInfoWinsOverDeprecated(t *testing.T) {
 	attrs := newTestPodAttributes()
 	attrs.useDeprecated = true

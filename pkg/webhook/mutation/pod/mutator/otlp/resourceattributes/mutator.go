@@ -38,15 +38,16 @@ func (Mutator) IsInjected(_ context.Context, _ *dtwebhook.BaseRequest) bool {
 }
 
 func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	ctx, _ := logd.NewFromContext(request.Context, "otlp-exporter-pod-mutation")
+	ctx, _ := logd.NewFromContext(request.Context, "otlp-exporter-pod-mutation", "podName", request.PodName(), "namespace", request.Namespace.Name)
+
 	_, err := m.mutate(ctx, request.BaseRequest)
 
 	return err
 }
 
 func (m *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	ctx, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation")
-	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	ctx, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	log.Debug("reinvocation of OTLP resource attribute mutator")
 
 	mutated, _ := m.mutate(ctx, request.BaseRequest)
 
@@ -60,7 +61,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 
 	attrs, err := attributes.NewPodAttributes(ctx, *request, m.kubeClient)
 	if err != nil {
-		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
+		log.Error(err, "failed to get workload info")
 
 		return false, dtwebhook.MutatorError{
 			Err:      errors.WithStack(err),
@@ -70,7 +71,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 
 	err = attrs.ApplyAnnotationsToPod(request.Pod)
 	if err != nil {
-		log.Error(err, "failed to propagate metadata annotations", "pod", request.Pod, "namespace", request.Namespace)
+		log.Error(err, "failed to propagate metadata annotations")
 	}
 
 	mutated := false
@@ -107,7 +108,7 @@ func (m *Mutator) addResourceAttributes(podAttrs *attributes.PodAttributes, c *c
 	// podAttrs also contains custom attributes (annotations, rules, ..) which take precedence
 	kvPairs := podAttrs.Convert(func(k, v string) string {
 		// avoid having key= in the OTEL_RESOURCE_ATTRIBUTES env var
-		if v == "" {
+		if k == "" || v == "" {
 			return ""
 		}
 
