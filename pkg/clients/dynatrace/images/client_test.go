@@ -10,22 +10,26 @@ import (
 )
 
 func TestClient_ComponentLatestImageURI(t *testing.T) {
-	setupClient := func(t *testing.T, err error) *ClientImpl {
+	expectedTag := "tag"
+	expectedImageURI := "image:tag@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
+	expectedDigest := "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
+
+	setupClient := func(t *testing.T, apiErr error, params map[string]string, imageURI string) *ClientImpl {
 		req := coremock.NewRequest(t)
-		req.EXPECT().WithQueryParams(map[string]string{}).Return(req).Once()
+		req.EXPECT().WithQueryParams(params).Return(req).Once()
 		req.EXPECT().
 			Execute(new(containerImagesResponse)).
 			Run(func(model any) {
-				if err == nil {
+				if apiErr == nil {
 					resp := model.(*containerImagesResponse)
 					*resp = containerImagesResponse{
 						Components: []componentResponse{
-							{Type: OneAgent, ImageURI: "image:tag@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"},
+							{Type: OneAgent, ImageURI: imageURI},
 						},
 					}
 				}
 			}).
-			Return(err).Once()
+			Return(apiErr).Once()
 		client := coremock.NewClient(t)
 		client.EXPECT().GET(t.Context(), containerImagesPath).Return(req).Once()
 
@@ -33,52 +37,65 @@ func TestClient_ComponentLatestImageURI(t *testing.T) {
 	}
 
 	t.Run("found", func(t *testing.T) {
-		client := setupClient(t, nil)
+		client := setupClient(t, nil, map[string]string{}, expectedImageURI)
 		imageInfo, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, "")
 		require.NoError(t, err)
-		assert.Equal(t, "tag", imageInfo.Tag)
-		assert.Equal(t, "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80", string(imageInfo.Digest))
+		assert.Equal(t, expectedTag, imageInfo.Tag)
+		assert.Equal(t, expectedDigest, string(imageInfo.Digest))
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		client := setupClient(t, nil)
+		client := setupClient(t, nil, map[string]string{}, expectedImageURI)
 		_, err := client.ComponentLatestImageInfo(t.Context(), "aasddasd", "")
 		require.Error(t, err)
 	})
 
 	t.Run("api error 404", func(t *testing.T) {
-		client := setupClient(t, &core.HTTPError{StatusCode: 404, Message: "nope"})
+		client := setupClient(t, &core.HTTPError{StatusCode: 404, Message: "nope"}, map[string]string{}, expectedImageURI)
 		_, err := client.ComponentLatestImageInfo(t.Context(), ActiveGate, "")
 		require.True(t, core.IsNotFound(err))
 		assert.EqualError(t, err, "get latest activegate image: nope")
 	})
+
+	t.Run("registry override passed as query param", func(t *testing.T) {
+		const customRegistry = "my.custom.registry.com"
+		client := setupClient(t, nil, map[string]string{"registry": customRegistry}, expectedImageURI)
+		imageInfo, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, customRegistry)
+		require.NoError(t, err)
+		assert.Equal(t, expectedTag, imageInfo.Tag)
+	})
 }
 
 func Test_parseImageInfo(t *testing.T) {
+	expectedRegistry := "some.amazonaws.com"
+	expectedTag := "1.336.0"
+	expectedDigest := "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
+	baseImage := expectedRegistry + "/dynatrace/some-image"
+
 	t.Run("tag and digest", func(t *testing.T) {
-		imageURI := "some.amazonaws.com/dynatrace/some-image:1.336.0@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
+		imageURI := baseImage + ":" + expectedTag + "@" + expectedDigest
 		info, err := parseImageInfo(imageURI)
 		require.NoError(t, err)
-		assert.Equal(t, "1.336.0", info.Tag)
-		assert.Equal(t, "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80", string(info.Digest))
-		assert.Equal(t, "some.amazonaws.com", info.Registry)
+		assert.Equal(t, expectedTag, info.Tag)
+		assert.Equal(t, expectedDigest, string(info.Digest))
+		assert.Equal(t, expectedRegistry, info.Registry)
 	})
 
 	t.Run("tag only", func(t *testing.T) {
-		imageURI := "some.amazonaws.com/dynatrace/some-image:1.336.0"
+		imageURI := baseImage + ":" + expectedTag
 		info, err := parseImageInfo(imageURI)
 		require.NoError(t, err)
-		assert.Equal(t, "1.336.0", info.Tag)
+		assert.Equal(t, expectedTag, info.Tag)
 		assert.Empty(t, string(info.Digest))
-		assert.Equal(t, "some.amazonaws.com", info.Registry)
+		assert.Equal(t, expectedRegistry, info.Registry)
 	})
 
 	t.Run("digest only", func(t *testing.T) {
-		imageURI := "some.amazonaws.com/dynatrace/some-image@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
+		imageURI := baseImage + "@" + expectedDigest
 		info, err := parseImageInfo(imageURI)
 		require.NoError(t, err)
 		assert.Empty(t, info.Tag)
-		assert.Equal(t, "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80", string(info.Digest))
-		assert.Equal(t, "some.amazonaws.com", info.Registry)
+		assert.Equal(t, expectedDigest, string(info.Digest))
+		assert.Equal(t, expectedRegistry, info.Registry)
 	})
 }
