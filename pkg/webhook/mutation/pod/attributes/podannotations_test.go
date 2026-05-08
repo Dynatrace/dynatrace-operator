@@ -43,7 +43,7 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		return parsed
 	}
 
-	t.Run("namespaceAnnotations overrides rules for shared key", func(t *testing.T) {
+	t.Run("rules override namespaceAnnotations for shared key", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		attrs.namespaceAnnotations["shared.key"] = "from-ns"
 		attrs.rules["shared.key"] = "from-rules"

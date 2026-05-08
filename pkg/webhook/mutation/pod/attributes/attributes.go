@@ -75,8 +75,8 @@ func (attrs *PodAttributes) Convert(c convertFunc, containerAttrs ...ContainerAt
 // this is the one function that takes care of the order of precedence as in metadata webhook (lowest to highest):
 // 1. workload, pod and cluster infos
 // 2. container
-// 3. enrichment rules
-// 4. namespace annotations
+// 3. namespace annotations
+// 4. enrichment rules
 // 5. pod annotations
 // 6. custom attributes (OTLP env var, DynaKube resource attributes, ...)
 func (attrs *PodAttributes) combineAll(containerAttrs ...ContainerAttributes) map[string]string {
