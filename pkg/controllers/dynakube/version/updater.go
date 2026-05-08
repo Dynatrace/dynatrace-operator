@@ -86,7 +86,7 @@ func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUp
 
 	publicImage, err := updater.LatestImageInfo(ctx)
 	if err != nil {
-		log.Info("could not get public image", "updater", updater.Name())
+		log.Info("could not get public image", "updater", updater.Name(), "error", err)
 
 		return err
 	}
