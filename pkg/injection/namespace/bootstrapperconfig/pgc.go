@@ -2,11 +2,9 @@ package bootstrapperconfig
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -47,16 +45,12 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 	if dk.Status.KubernetesClusterMEID == "" {
 		log.Info("kubernetesClusterMEID not available, skipping processgroupingconfig")
 
-		return nil, nil //nolint:nilnil
+		return &oneagent.ProcessGroupConfig{}, nil
 	}
 
 	cachedPGC := s.readCachedPGC(ctx, dk)
 
 	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, cachedPGC.ETag)
-	if core.HasStatusCode(err, http.StatusNotModified) {
-		return cachedPGC, nil
-	}
-
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 
@@ -64,14 +58,18 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 	}
 
 	if pgc == nil {
-		return nil, nil //nolint:nilnil
+		return &oneagent.ProcessGroupConfig{}, nil
+	}
+
+	if pgc.ETag == cachedPGC.ETag && pgc.ETag != "" {
+		return cachedPGC, nil
 	}
 
 	size := len(pgc.Data)
 	if size > declarativeMaxSizeBytes {
 		log.Error(nil, "DPG API response exceeds maximum size, skipping processgroupingconfig", "size", size, "maxSize", declarativeMaxSizeBytes)
 
-		return nil, nil //nolint:nilnil
+		return &oneagent.ProcessGroupConfig{}, nil
 	}
 
 	if size > declarativeWarnSizeBytes {
@@ -82,10 +80,14 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 }
 
 func (s *SecretGenerator) readCachedPGC(ctx context.Context, dk *dynakube.DynaKube) *oneagent.ProcessGroupConfig {
+	log := logd.FromContext(ctx)
+
 	var secret corev1.Secret
 
 	key := types.NamespacedName{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}
-	_ = s.apiReader.Get(ctx, key, &secret)
+	if err := s.apiReader.Get(ctx, key, &secret); err != nil {
+		log.Info("failed to read cached PGC secret, using empty values", "error", err)
+	}
 
 	return &oneagent.ProcessGroupConfig{
 		ETag: secret.Annotations[annotationPGCETag],

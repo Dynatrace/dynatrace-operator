@@ -46,6 +46,7 @@ const (
 	testDataIngestToken = "test-ingest-token"
 
 	testUUID                  = "test-uuid"
+	testKubernetesMEID        = "KUBERNETES_CLUSTER-" + testUUID
 	testTenantToken           = "abcd"
 	testCommunicationEndpoint = "https://tenant.dev.dynatracelabs.com:443"
 
@@ -110,7 +111,7 @@ func TestReconciler(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+				KubernetesClusterMEID: testKubernetesMEID,
 			},
 		}
 		optionalscope.SetAvailable(dk, tokenclient.ScopeSettingsRead)
@@ -129,7 +130,7 @@ func TestReconciler(t *testing.T) {
 		versionClient := versionclientmock.NewClient(t)
 		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
-		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, testKubernetesMEID, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 		settingsClient := settingsmock.NewClient(t)
 		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient := &dynatrace.Client{
@@ -390,7 +391,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			KubernetesClusterMEID: testKubernetesMEID,
 		},
 	}
 
@@ -420,7 +421,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 
 		oneAgentClient := oneagentclientmock.NewClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
-		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, testKubernetesMEID, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 
 		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
@@ -457,7 +458,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			KubernetesClusterMEID: testKubernetesMEID,
 		},
 	}
 
@@ -492,7 +493,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 
 		oneAgentClient := oneagentclientmock.NewClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
-		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Twice()
+		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, testKubernetesMEID, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Twice()
 
 		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 

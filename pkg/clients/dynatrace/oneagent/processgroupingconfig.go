@@ -3,6 +3,7 @@ package oneagent
 import (
 	"bytes"
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -23,19 +24,21 @@ type ProcessGroupConfig struct {
 // GetProcessGroupingConfig fetches the process grouping configuration as a binary CBOR stream.
 //
 // Parameters:
-//   - kubernetesClusterId: optional Kubernetes cluster ID to scope the config. Empty string omits the parameter.
+//   - kubernetesClusterId: required Kubernetes cluster ID to scope the config. Empty string returns an error.
 //   - etag: optional ETag from a previous response. When non-empty, sent as If-None-Match header.
-//     If the server responds with 304 Not Modified, the underlying HTTP error is returned.
-//     Use core.HasStatusCode(err, http.StatusNotModified) to check for this case.
+//     If the server responds with 304 Not Modified, returns a ProcessGroupConfig with the original ETag.
 //
 // Returns:
-//   - On HTTP 200: *ProcessGroupConfig with ETag from response header and CBOR data.
-//   - On HTTP 304: *ProcessGroupConfig with the original ETag and nil Data, plus a non-nil error satisfying core.HasStatusCode(err, http.StatusNotModified).
+//   - On HTTP 200: *ProcessGroupConfig with ETag from response header and CBOR data, nil error.
+//   - On HTTP 304: *ProcessGroupConfig with the original ETag and nil Data, nil error.
 //   - On other errors: non-nil error.
 func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error) {
-	params := map[string]string{}
-	if kubernetesClusterID != "" {
-		params[parameterKubernetesClusterID] = kubernetesClusterID
+	if kubernetesClusterID == "" {
+		return nil, errors.New("kubernetesClusterID is required")
+	}
+
+	params := map[string]string{
+		parameterKubernetesClusterID: kubernetesClusterID,
 	}
 
 	req := c.apiClient.GET(ctx, processGroupingConfigPath).
@@ -50,11 +53,11 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 
 	headers, err := req.ExecuteWriter(&buf)
 	if core.HasStatusCode(err, http.StatusNotModified) {
-		return &ProcessGroupConfig{ETag: etag}, err
+		return &ProcessGroupConfig{ETag: etag}, nil
 	}
 
 	if err != nil {
-		return &ProcessGroupConfig{}, err
+		return nil, err
 	}
 
 	pgc := &ProcessGroupConfig{

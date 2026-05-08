@@ -70,14 +70,14 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
-			map[string]string{},
+			map[string]string{"kubernetesClusterId": testClusterID},
 			map[string]string{"If-None-Match": testETag},
 			respHeaders,
 			[]byte(testCBORData),
 			nil,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", testETag)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, testETag)
 		require.NoError(t, err)
 		assert.Equal(t, testCBORData, string(pgc.Data))
 		// On 200, the returned ETag comes from the response header, not the input ETag
@@ -89,14 +89,14 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
-			map[string]string{},
+			map[string]string{"kubernetesClusterId": testClusterID},
 			nil,
 			respHeaders,
 			[]byte(testCBORData),
 			nil,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", "")
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "")
 		require.NoError(t, err)
 		assert.Equal(t, testCBORData, string(pgc.Data))
 		assert.Equal(t, testResponseETag, pgc.ETag)
@@ -106,16 +106,15 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		httpErr := &core.HTTPError{StatusCode: 304}
 
 		client := setupMockedProcessGroupingClient(t,
-			map[string]string{},
+			map[string]string{"kubernetesClusterId": testClusterID},
 			map[string]string{"If-None-Match": testETag},
 			nil,
 			nil,
 			httpErr,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", testETag)
-		require.Error(t, err)
-		require.True(t, core.HasStatusCode(err, http.StatusNotModified), "expected 304 status code error, got %v", err)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, testETag)
+		require.NoError(t, err)
 		assert.Empty(t, string(pgc.Data))
 		// On 304, the original ETag is returned for convenience
 		assert.Equal(t, testETag, pgc.ETag)
@@ -137,38 +136,31 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Equal(t, testResponseETag, pgc.ETag)
 	})
 
-	t.Run("without_kubernetes_cluster_id", func(t *testing.T) {
-		respHeaders := http.Header{"Etag": []string{testResponseETag}}
-
-		client := setupMockedProcessGroupingClient(t,
-			map[string]string{},
-			nil,
-			respHeaders,
-			[]byte(testCBORData),
-			nil,
-		)
+	t.Run("empty_kubernetes_cluster_id_returns_error", func(t *testing.T) {
+		// Create a client directly without mock setup since we expect early return
+		coreClient := coremock.NewClient(t)
+		client := NewClient(coreClient, "", "")
 
 		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", "")
-		require.NoError(t, err)
-		assert.Equal(t, testResponseETag, pgc.ETag)
+		require.Error(t, err)
+		assert.Nil(t, pgc)
 	})
 
 	t.Run("server_error", func(t *testing.T) {
 		serverErr := &core.HTTPError{StatusCode: http.StatusInternalServerError, Message: "internal server error"}
 
 		client := setupMockedProcessGroupingClient(t,
-			map[string]string{},
+			map[string]string{"kubernetesClusterId": testClusterID},
 			nil,
 			nil,
 			nil,
 			serverErr,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", "")
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "")
 		require.Error(t, err)
 		require.True(t, core.HasStatusCode(err, http.StatusInternalServerError))
-		assert.Empty(t, pgc.ETag)
-		assert.Empty(t, string(pgc.Data))
+		assert.Nil(t, pgc)
 	})
 
 	t.Run("bad_request", func(t *testing.T) {
@@ -176,17 +168,16 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		serverErr := &core.HTTPError{StatusCode: http.StatusBadRequest, Message: "bad request"}
 
 		client := setupMockedProcessGroupingClient(t,
-			map[string]string{},
+			map[string]string{"kubernetesClusterId": testClusterID},
 			map[string]string{"If-None-Match": badETag},
 			nil,
 			nil,
 			serverErr,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", badETag)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, badETag)
 		require.Error(t, err)
 		require.True(t, core.HasStatusCode(err, http.StatusBadRequest))
-		assert.Empty(t, pgc.ETag)
-		assert.Empty(t, string(pgc.Data))
+		assert.Nil(t, pgc)
 	})
 }

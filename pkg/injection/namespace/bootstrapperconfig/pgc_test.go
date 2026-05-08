@@ -3,12 +3,10 @@ package bootstrapperconfig
 import (
 	"bytes"
 	"errors"
-	"net/http"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
@@ -100,7 +98,8 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
-		assert.Nil(t, pgc)
+		require.NotNil(t, pgc)
+		assert.Empty(t, pgc.Data)
 	})
 
 	t.Run("API error is propagated and condition is set", func(t *testing.T) {
@@ -138,7 +137,8 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
-		assert.Nil(t, pgc)
+		require.NotNil(t, pgc)
+		assert.Empty(t, pgc.Data)
 	})
 
 	t.Run("304 not modified uses cached data", func(t *testing.T) {
@@ -162,10 +162,9 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		clt := fake.NewClient(dk, sourceSecret)
 		mockDTClient := oneagentclientmock.NewClient(t)
 
-		httpErr := &core.HTTPError{StatusCode: http.StatusNotModified}
 		mockDTClient.EXPECT().
 			GetProcessGroupingConfig(mock.Anything, testClusterMEID, cachedETag).
-			Return(&oneagent.ProcessGroupConfig{ETag: cachedETag}, httpErr)
+			Return(&oneagent.ProcessGroupConfig{ETag: cachedETag}, nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
 		pgc, err := sg.preparePGC(t.Context(), dk)
@@ -187,7 +186,8 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		pgc, err := sg.preparePGC(t.Context(), dk)
 
 		require.NoError(t, err)
-		assert.Nil(t, pgc)
+		require.NotNil(t, pgc)
+		assert.Empty(t, pgc.Data)
 	})
 
 	t.Run("200 response ETag is returned", func(t *testing.T) {
