@@ -80,11 +80,13 @@ func (updater *codeModulesUpdater) LatestImageInfo(ctx context.Context) (*images
 	imageInfo, err := updater.imagesClient.ComponentLatestImageInfo(ctx, images.CodeModules, updater.dk.PublicRegistryOverride())
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
+
+		return nil, err
 	}
 
 	setVerifiedCondition(updater.dk.Conditions(), cmConditionType)
 
-	return imageInfo, err
+	return imageInfo, nil
 }
 
 func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error {

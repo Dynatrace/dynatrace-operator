@@ -146,11 +146,13 @@ func (updater *oneAgentUpdater) LatestImageInfo(ctx context.Context) (*images.Im
 	imageInfo, err := updater.imagesClient.ComponentLatestImageInfo(ctx, images.OneAgent, updater.dk.PublicRegistryOverride())
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
+
+		return nil, err
 	}
 
 	setVerifiedCondition(updater.dk.Conditions(), oaConditionType)
 
-	return imageInfo, err
+	return imageInfo, nil
 }
 
 func (updater oneAgentUpdater) ValidateStatus(ctx context.Context) error {

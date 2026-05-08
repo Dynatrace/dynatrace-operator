@@ -84,11 +84,13 @@ func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*images.I
 	imageInfo, err := updater.imagesClient.ComponentLatestImageInfo(ctx, images.ActiveGate, updater.dk.PublicRegistryOverride())
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
+
+		return nil, err
 	}
 
 	setVerifiedCondition(updater.dk.Conditions(), activeGateVersionConditionType)
 
-	return imageInfo, err
+	return imageInfo, nil
 }
 
 func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
