@@ -151,7 +151,7 @@ func (dk *DynaKube) APIRequestThreshold() time.Duration {
 }
 
 func (dk *DynaKube) IsCodeModulesStatusReady() bool {
-	if dk.OneAgent().GetCustomCodeModulesImage() != "" {
+	if dk.OneAgent().GetCustomCodeModulesImage() != "" || dk.FF().IsPublicRegistry() {
 		if dk.OneAgent().GetCodeModulesImage() == "" {
 			return false
 		}
