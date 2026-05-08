@@ -3,12 +3,16 @@ package version
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	imagesclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/images"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -313,5 +317,81 @@ func TestCheckLabels(t *testing.T) {
 		dk.Status.OneAgent.Type = "mutable"
 		updater := newOneAgentUpdater(dk, fake.NewClient(), nil, nil)
 		require.NoError(t, updater.ValidateStatus(t.Context()))
+	})
+}
+
+func TestOneAgentLatestImageInfo(t *testing.T) {
+	const testRegistry = "my.custom.registry.com"
+	const testTag = "1.2.3.4-5"
+	const testImageURI = testRegistry + "/dynatrace/oneagent:" + testTag
+
+	newDK := func(registry string) *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+				PublicRegistryOverride: registry,
+			},
+		}
+	}
+
+	t.Run("happy path: image info returned and verified condition set", func(t *testing.T) {
+		dk := newDK("")
+		mockImageClient := imageclientmock.NewClient(t)
+		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), imagesclient.OneAgent, "").Return(
+			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag, Registry: testRegistry}, nil,
+		).Once()
+
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, nil)
+		imageInfo, err := updater.LatestImageInfo(t.Context())
+
+		require.NoError(t, err)
+		require.NotNil(t, imageInfo)
+		assert.Equal(t, testTag, imageInfo.Tag)
+		assert.Equal(t, testImageURI, imageInfo.URI)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, verifiedReason, condition.Reason)
+	})
+
+	t.Run("registry override forwarded to images client", func(t *testing.T) {
+		dk := newDK(testRegistry)
+		mockImageClient := imageclientmock.NewClient(t)
+		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), imagesclient.OneAgent, testRegistry).Return(
+			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag, Registry: testRegistry}, nil,
+		).Once()
+
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, nil)
+		imageInfo, err := updater.LatestImageInfo(t.Context())
+
+		require.NoError(t, err)
+		assert.Equal(t, testTag, imageInfo.Tag)
+	})
+
+	t.Run("API error: error returned and DynatraceAPIError condition set", func(t *testing.T) {
+		dk := newDK("")
+		mockImageClient := imageclientmock.NewClient(t)
+		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), imagesclient.OneAgent, "").Return(
+			nil, errors.New("BOOM"),
+		).Once()
+
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, nil)
+		imageInfo, err := updater.LatestImageInfo(t.Context())
+
+		require.Error(t, err)
+		assert.Nil(t, imageInfo)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, k8sconditions.DynatraceAPIErrorReason, condition.Reason)
 	})
 }
