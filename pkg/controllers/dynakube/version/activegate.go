@@ -86,6 +86,8 @@ func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*images.I
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
 	}
 
+	setVerifiedCondition(updater.dk.Conditions(), activeGateVersionConditionType)
+
 	return imageInfo, err
 }
 

@@ -82,6 +82,8 @@ func (updater *codeModulesUpdater) LatestImageInfo(ctx context.Context) (*images
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
 	}
 
+	setVerifiedCondition(updater.dk.Conditions(), cmConditionType)
+
 	return imageInfo, err
 }
 

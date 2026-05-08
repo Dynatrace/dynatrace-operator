@@ -148,6 +148,8 @@ func (updater *oneAgentUpdater) LatestImageInfo(ctx context.Context) (*images.Im
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
 	}
 
+	setVerifiedCondition(updater.dk.Conditions(), oaConditionType)
+
 	return imageInfo, err
 }
 
