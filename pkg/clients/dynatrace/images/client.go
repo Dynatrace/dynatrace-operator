@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/opencontainers/go-digest"
 )
 
 type ComponentType string
@@ -22,7 +21,6 @@ const (
 type ImageInfo struct {
 	URI      string
 	Tag      string
-	Digest   digest.Digest
 	Registry string
 }
 
@@ -85,18 +83,15 @@ func parseImageInfo(imageURI string) (*ImageInfo, error) {
 		return nil, fmt.Errorf("parse image URI %q: %w", imageURI, err)
 	}
 
-	imagePart, digestPart, hasDigest := strings.Cut(imageURI, "@")
+	// cut the digest part <imagePart with/or without tag>@digest
+	imagePart, _, _ := strings.Cut(imageURI, "@")
 
 	info := &ImageInfo{
 		URI:      imageURI,
 		Registry: ref.Context().RegistryStr(),
 	}
 
-	if hasDigest {
-		info.Digest = digest.Digest(digestPart)
-	}
-
-	// Parse the image part (everything before @) to extract tag
+	// Parse the image part to extract tag
 	if tag, err := name.NewTag(imagePart, name.WithDefaultTag("")); err == nil {
 		info.Tag = tag.TagStr()
 	}

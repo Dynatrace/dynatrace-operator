@@ -12,7 +12,6 @@ import (
 func TestClient_ComponentLatestImageURI(t *testing.T) {
 	expectedTag := "tag"
 	expectedImageURI := "image:tag@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
-	expectedDigest := "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
 
 	setupClient := func(t *testing.T, apiErr error, params map[string]string, imageURI string) *ClientImpl {
 		req := coremock.NewRequest(t)
@@ -41,7 +40,6 @@ func TestClient_ComponentLatestImageURI(t *testing.T) {
 		imageInfo, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, "")
 		require.NoError(t, err)
 		assert.Equal(t, expectedTag, imageInfo.Tag)
-		assert.Equal(t, expectedDigest, string(imageInfo.Digest))
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -69,15 +67,14 @@ func TestClient_ComponentLatestImageURI(t *testing.T) {
 func Test_parseImageInfo(t *testing.T) {
 	expectedRegistry := "some.amazonaws.com"
 	expectedTag := "1.336.0"
-	expectedDigest := "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
+	testDigest := "sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
 	baseImage := expectedRegistry + "/dynatrace/some-image"
 
 	t.Run("tag and digest", func(t *testing.T) {
-		imageURI := baseImage + ":" + expectedTag + "@" + expectedDigest
+		imageURI := baseImage + ":" + expectedTag + "@" + testDigest
 		info, err := parseImageInfo(imageURI)
 		require.NoError(t, err)
 		assert.Equal(t, expectedTag, info.Tag)
-		assert.Equal(t, expectedDigest, string(info.Digest))
 		assert.Equal(t, expectedRegistry, info.Registry)
 	})
 
@@ -86,16 +83,14 @@ func Test_parseImageInfo(t *testing.T) {
 		info, err := parseImageInfo(imageURI)
 		require.NoError(t, err)
 		assert.Equal(t, expectedTag, info.Tag)
-		assert.Empty(t, string(info.Digest))
 		assert.Equal(t, expectedRegistry, info.Registry)
 	})
 
 	t.Run("digest only", func(t *testing.T) {
-		imageURI := baseImage + "@" + expectedDigest
+		imageURI := baseImage + "@" + testDigest
 		info, err := parseImageInfo(imageURI)
 		require.NoError(t, err)
 		assert.Empty(t, info.Tag)
-		assert.Equal(t, expectedDigest, string(info.Digest))
 		assert.Equal(t, expectedRegistry, info.Registry)
 	})
 }
