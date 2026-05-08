@@ -239,13 +239,36 @@ func TestExtractGzip(t *testing.T) {
 		// Note: escape_parent symlink (../../outside.txt) actually resolves to a path within tmpDir
 		// so it's allowed by the security check. The function checks the final resolved path.
 		escapeParent := filepath.Join(testDir, "escape_parent")
-		info, err = os.Lstat(escapeParent)
-		require.NoError(t, err)
-		require.Equal(t, os.ModeSymlink, info.Mode()&os.ModeSymlink, "escape_parent should be a symlink")
+		_, err = os.Lstat(escapeParent)
+		require.True(t, os.IsNotExist(err), "escape_parent should not exist (should be blocked)")
+	})
 
-		// Verify that the symlink target resolves within the extraction directory
-		target, err = os.Readlink(escapeParent)
+	t.Run("extract gzip with malicious tar containing a symlink and a file of the same path and filename.", func(t *testing.T) {
+		// testRawGzipWithMaliciousSymlinkAndFile is a gzip archive containing a symlink and a file of the same path and filename that attempt to escape the extraction directory
+		// testdir/ - directory
+		// testdir/escape_parent -> ../../outside.txt - symlink (should be blocked)
+		// testdir/escape_parent - regular file
+
+		const testRawGzipWithMaliciousSymlinkAndFile = `H4sICLXb/WkAA2xheWVyLnRhcgDtk00KhDAMRnuUnqBW7c9xpGgWblTaCHP8qTqrDgwMWlHMo5Cu+iV5FCFg13uWExmxWq81ktbveymNVIzrrF19mAM6H+P3vpMOdxNw819AaN0EzeQ8DHhwxurf2j/8m0pbxishinjGGUPfgcDX0Y0tkP9T/BulfvivE/+1KiXjpyzx6f6zfCqCIAji6rwBqGlw6wAMAAA=`
+
+		tmpDir := t.TempDir()
+
+		gzipFile := SetupTestArchive(t, testRawGzipWithMaliciousSymlinkAndFile)
+
+		defer func() { _ = gzipFile.Close() }()
+
+		reader, err := gzip.NewReader(gzipFile)
 		require.NoError(t, err)
-		require.Equal(t, "../../outside.txt", target)
+
+		tarReader := tar.NewReader(reader)
+
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
+		require.NoError(t, err)
+
+		// Verify safe symlink was created
+		evilFile := filepath.Join(tmpDir, "testdir/escape_parent")
+		info, err := os.Lstat(evilFile)
+		require.NoError(t, err)
+		require.True(t, info.Mode().IsRegular(), "escape_parent should be a regular file (symlink of the same name should be blocked)")
 	})
 }

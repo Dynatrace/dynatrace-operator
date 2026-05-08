@@ -139,7 +139,8 @@ func isSafeToLink(symlink, targetDir, target string) bool {
 		return false
 	}
 
-	finalPath := filepath.Join(target, symlink)
+	symlinkDir := filepath.Dir(target)
+	finalPath := filepath.Join(symlinkDir, symlink)
 	relpath, err := filepath.Rel(targetDir, finalPath)
 
 	return err == nil && !strings.HasPrefix(filepath.Clean(relpath), "..")
