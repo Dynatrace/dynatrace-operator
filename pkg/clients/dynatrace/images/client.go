@@ -74,7 +74,16 @@ func (c *ClientImpl) ComponentLatestImageInfo(ctx context.Context, component Com
 		return nil, fmt.Errorf("no %s image found", component)
 	}
 
-	return parseImageInfo(resp.Components[idx].ImageURI)
+	imageInfo, err := parseImageInfo(resp.Components[idx].ImageURI)
+	if err != nil {
+		return nil, err
+	}
+
+	if registry != "" && imageInfo != nil && imageInfo.Registry != registry {
+		return nil, fmt.Errorf("image registry %q does not match requested registry %q", imageInfo.Registry, registry)
+	}
+
+	return imageInfo, nil
 }
 
 func parseImageInfo(imageURI string) (*ImageInfo, error) {
@@ -83,13 +92,13 @@ func parseImageInfo(imageURI string) (*ImageInfo, error) {
 		return nil, fmt.Errorf("parse image URI %q: %w", imageURI, err)
 	}
 
-	// cut the digest part <imagePart with/or without tag>@digest
-	imagePart, _, _ := strings.Cut(imageURI, "@")
-
 	info := &ImageInfo{
 		URI:      imageURI,
 		Registry: ref.Context().RegistryStr(),
 	}
+
+	// cut the digest part <imagePart with/or without tag>@digest
+	imagePart, _, _ := strings.Cut(imageURI, "@")
 
 	// Parse the image part to extract tag
 	if tag, err := name.NewTag(imagePart, name.WithDefaultTag("")); err == nil {

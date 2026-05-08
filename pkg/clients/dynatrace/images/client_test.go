@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestClient_ComponentLatestImageURI(t *testing.T) {
-	expectedTag := "tag"
-	expectedImageURI := "image:tag@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
+func TestClient_ComponentLatestImageInfo(t *testing.T) {
+	const expectedTag = "tag"
+	const expectedImageURI = "image:tag@sha256:eb80829917c8bc4c531ac20a4b8ea3d9f7836a9e0ad9702da3cb06ab4205bf80"
 
 	setupClient := func(t *testing.T, apiErr error, params map[string]string, imageURI string) *ClientImpl {
 		req := coremock.NewRequest(t)
@@ -57,10 +57,20 @@ func TestClient_ComponentLatestImageURI(t *testing.T) {
 
 	t.Run("registry override passed as query param", func(t *testing.T) {
 		const customRegistry = "my.custom.registry.com"
-		client := setupClient(t, nil, map[string]string{"registry": customRegistry}, expectedImageURI)
+		const imageURI = customRegistry + "/image:tag"
+		client := setupClient(t, nil, map[string]string{"registry": customRegistry}, imageURI)
 		imageInfo, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, customRegistry)
 		require.NoError(t, err)
 		assert.Equal(t, expectedTag, imageInfo.Tag)
+	})
+
+	t.Run("registry mismatch returns error", func(t *testing.T) {
+		const requestedRegistry = "my.custom.registry.com"
+		const imageURI = "other.registry.com/dynatrace/oneagent:tag"
+		client := setupClient(t, nil, map[string]string{"registry": requestedRegistry}, imageURI)
+		_, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, requestedRegistry)
+		require.Error(t, err)
+		assert.EqualError(t, err, `image registry "other.registry.com" does not match requested registry "my.custom.registry.com"`)
 	})
 }
 
