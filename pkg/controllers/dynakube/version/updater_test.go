@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -123,6 +124,80 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 	})
+	t.Run("public registry: happy path, status updated", func(t *testing.T) {
+		target := &status.VersionStatus{}
+		versionReconciler := reconciler{
+			timeProvider: timeProvider,
+		}
+		imageInfo := &images.ImageInfo{URI: "registry.io/dynatrace/oneagent:1.2.3", Tag: "1.2.3"}
+		updater := newPublicRegistryUpdater(t, target, true)
+		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
+		updater.EXPECT().CheckForDowngrade(anyCtx, "1.2.3").Return(false, nil).Once()
+
+		err := versionReconciler.run(t.Context(), updater)
+		require.NoError(t, err)
+		assert.Equal(t, "registry.io/dynatrace/oneagent:1.2.3", target.ImageID)
+		assert.Equal(t, "1.2.3", target.Version)
+		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
+		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
+	})
+
+	t.Run("public registry: API error propagated, status not updated", func(t *testing.T) {
+		target := &status.VersionStatus{}
+		versionReconciler := reconciler{
+			timeProvider: timeProvider,
+		}
+		updater := newPublicRegistryUpdater(t, target, true)
+		updater.EXPECT().LatestImageInfo(anyCtx).Return(nil, errors.New("API error")).Once()
+
+		err := versionReconciler.run(t.Context(), updater)
+		require.Error(t, err)
+		assert.Empty(t, target.ImageID)
+		assert.Nil(t, target.LastProbeTimestamp)
+	})
+
+	t.Run("public registry: downgrade detected, image not updated", func(t *testing.T) {
+		target := &status.VersionStatus{ImageID: "registry.io/oneagent:1.3.0", Version: "1.3.0"}
+		versionReconciler := reconciler{
+			timeProvider: timeProvider,
+		}
+		imageInfo := &images.ImageInfo{URI: "registry.io/dynatrace/oneagent:1.2.0", Tag: "1.2.0"}
+		updater := newPublicRegistryUpdater(t, target, true)
+		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
+		updater.EXPECT().CheckForDowngrade(anyCtx, "1.2.0").Return(true, nil).Once()
+
+		err := versionReconciler.run(t.Context(), updater)
+		require.NoError(t, err)
+		assert.Equal(t, "registry.io/oneagent:1.3.0", target.ImageID)
+		assert.Equal(t, "1.3.0", target.Version)
+	})
+
+	t.Run("public registry: empty tag, ValidateStatus fails", func(t *testing.T) {
+		target := &status.VersionStatus{}
+		versionReconciler := reconciler{
+			timeProvider: timeProvider,
+		}
+		imageInfo := &images.ImageInfo{URI: "registry.io/dynatrace/oneagent@sha256:abc123", Tag: ""}
+
+		// Build manually so ValidateStatus is not pre-registered with Maybe().Return(nil)
+		updater := NewMockStatusUpdater(t)
+		updater.EXPECT().Name().Return("mock")
+		updater.EXPECT().Target().Return(target)
+		updater.EXPECT().IsAutoUpdateEnabled().Return(true)
+		updater.EXPECT().CustomImage().Return("").Once()
+		updater.EXPECT().IsPublicRegistryEnabled().Return(true)
+		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
+		updater.EXPECT().CheckForDowngrade(anyCtx, "").Return(false, nil).Once()
+		updater.EXPECT().ValidateStatus(anyCtx).Return(errors.New("build version not set")).Once()
+
+		err := versionReconciler.run(t.Context(), updater)
+		require.Error(t, err)
+		// The deferred probe-timestamp update fires because err (the named var) is nil when
+		// ValidateStatus is called — same behavior as the tenant-registry path.
+		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
+		assert.Equal(t, "registry.io/dynatrace/oneagent@sha256:abc123", target.ImageID)
+		assert.Empty(t, target.Version)
+	})
 }
 
 func TestDetermineSource(t *testing.T) {
@@ -240,7 +315,7 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 	updater.EXPECT().CustomImage().Maybe().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().CustomVersion().Maybe().Return(version)
-	updater.EXPECT().UseTenantRegistry(t.Context()).Maybe().Return(nil)
+	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
 
 	return updater
 }
@@ -250,7 +325,7 @@ func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUp
 	updater.EXPECT().CustomImage().Maybe().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().CustomVersion().Maybe().Return("")
-	updater.EXPECT().UseTenantRegistry(t.Context()).Maybe().Return(errors.New("BOOM"))
+	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(errors.New("BOOM"))
 
 	return updater
 }
@@ -260,7 +335,7 @@ func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bo
 	updater.EXPECT().CustomImage().Maybe().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().CustomVersion().Maybe().Return("")
-	updater.EXPECT().UseTenantRegistry(t.Context()).Maybe().Return(nil)
+	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
 
 	return updater
 }
@@ -268,6 +343,14 @@ func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bo
 func newClassicFullStackUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
+
+	return updater
+}
+
+func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
+	updater := newBaseUpdater(t, target, autoUpdate)
+	updater.EXPECT().CustomImage().Return("")
+	updater.EXPECT().IsPublicRegistryEnabled().Return(true)
 
 	return updater
 }
