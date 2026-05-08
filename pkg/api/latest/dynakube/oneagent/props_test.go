@@ -561,9 +561,7 @@ func TestOneAgent_GetResourceAttributes(t *testing.T) {
 		{
 			name: "only additional set, applicationMonitoring, no global",
 			spec: &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{
-				AppInjectionSpec: AppInjectionSpec{
-					AdditionalResourceAttributes: map[string]string{"x": "10"},
-				},
+				AdditionalResourceAttributes: map[string]string{"x": "10"},
 			}},
 			global:   nil,
 			expected: map[string]string{"x": "10"},
@@ -571,9 +569,7 @@ func TestOneAgent_GetResourceAttributes(t *testing.T) {
 		{
 			name: "both set with no overlap, applicationMonitoring",
 			spec: &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{
-				AppInjectionSpec: AppInjectionSpec{
-					AdditionalResourceAttributes: map[string]string{"b": "2"},
-				},
+				AdditionalResourceAttributes: map[string]string{"b": "2"},
 			}},
 			global:   map[string]string{"a": "1"},
 			expected: map[string]string{"a": "1", "b": "2"},
@@ -581,9 +577,7 @@ func TestOneAgent_GetResourceAttributes(t *testing.T) {
 		{
 			name: "overlapping keys: additional wins, applicationMonitoring",
 			spec: &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{
-				AppInjectionSpec: AppInjectionSpec{
-					AdditionalResourceAttributes: map[string]string{"shared": "additional"},
-				},
+				AdditionalResourceAttributes: map[string]string{"shared": "additional"},
 			}},
 			global:   map[string]string{"shared": "global"},
 			expected: map[string]string{"shared": "additional"},
@@ -597,7 +591,7 @@ func TestOneAgent_GetResourceAttributes(t *testing.T) {
 		{
 			name: "cloudNativeFullStack with additional wins",
 			spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{
-				AppInjectionSpec: AppInjectionSpec{
+				HostInjectSpec: HostInjectSpec{
 					AdditionalResourceAttributes: map[string]string{"shared": "cnf"},
 				},
 			}},
@@ -611,10 +605,42 @@ func TestOneAgent_GetResourceAttributes(t *testing.T) {
 			expected: map[string]string{"a": "1"},
 		},
 		{
+			name: "classicFullStack with additional wins",
+			spec: &Spec{ClassicFullStack: &HostInjectSpec{
+				AdditionalResourceAttributes: map[string]string{"shared": "classic"},
+			}},
+			global:   map[string]string{"shared": "global"},
+			expected: map[string]string{"shared": "classic"},
+		},
+		{
+			name: "classicFullStack merges global and additional without overlap",
+			spec: &Spec{ClassicFullStack: &HostInjectSpec{
+				AdditionalResourceAttributes: map[string]string{"b": "2"},
+			}},
+			global:   map[string]string{"a": "1"},
+			expected: map[string]string{"a": "1", "b": "2"},
+		},
+		{
 			name:     "hostMonitoring (no additional) returns global",
 			spec:     &Spec{HostMonitoring: &HostInjectSpec{}},
 			global:   map[string]string{"a": "1"},
 			expected: map[string]string{"a": "1"},
+		},
+		{
+			name: "hostMonitoring with additional wins",
+			spec: &Spec{HostMonitoring: &HostInjectSpec{
+				AdditionalResourceAttributes: map[string]string{"shared": "host"},
+			}},
+			global:   map[string]string{"shared": "global"},
+			expected: map[string]string{"shared": "host"},
+		},
+		{
+			name: "hostMonitoring merges global and additional without overlap",
+			spec: &Spec{HostMonitoring: &HostInjectSpec{
+				AdditionalResourceAttributes: map[string]string{"b": "2"},
+			}},
+			global:   map[string]string{"a": "1"},
+			expected: map[string]string{"a": "1", "b": "2"},
 		},
 		{
 			name:     "both nil/empty returns nil",
