@@ -32,10 +32,8 @@ func TestResourceAttributesValidation(t *testing.T) {
 				ResourceAttributes: makeStringMapWithPrefix("g", 6),
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							// 4 additional non-overlapping keys → merged = 10 (≤ limit)
-							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 4),
-						},
+						// 4 additional non-overlapping keys → merged = 10 (≤ limit)
+						AdditionalResourceAttributes: makeStringMapWithPrefix("a", 4),
 					},
 				},
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
@@ -82,9 +80,7 @@ func TestResourceAttributesValidation(t *testing.T) {
 				ResourceAttributes: makeStringMapWithPrefix("g", 6),
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 5),
-						},
+						AdditionalResourceAttributes: makeStringMapWithPrefix("a", 5),
 					},
 				},
 			},
@@ -105,9 +101,7 @@ func TestResourceAttributesValidation(t *testing.T) {
 				ResourceAttributes: makeStringMapWithPrefix("g", 11),
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 1),
-						},
+						AdditionalResourceAttributes: makeStringMapWithPrefix("a", 1),
 					},
 				},
 			},
@@ -127,9 +121,7 @@ func TestResourceAttributesValidation(t *testing.T) {
 				ResourceAttributes: makeStringMapWithPrefix("g", 6),
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							AdditionalResourceAttributes: makeStringMapWithPrefix("a", 5),
-						},
+						AdditionalResourceAttributes: makeStringMapWithPrefix("a", 5),
 					},
 				},
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
@@ -155,9 +147,7 @@ func TestResourceAttributesValidation(t *testing.T) {
 				ResourceAttributes: global,
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							AdditionalResourceAttributes: additional,
-						},
+						AdditionalResourceAttributes: additional,
 					},
 				},
 			},
@@ -289,9 +279,7 @@ func TestResourceAttributesSyntaxValidation(t *testing.T) {
 				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							AdditionalResourceAttributes: map[string]string{"Invalid Key": "value"},
-						},
+						AdditionalResourceAttributes: map[string]string{"Invalid Key": "value"},
 					},
 				},
 			},

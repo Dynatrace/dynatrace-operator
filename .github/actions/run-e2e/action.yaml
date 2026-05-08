@@ -139,3 +139,15 @@ runs:
       with:
         files: target/results/*.xml
       if: always()
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
+      with:
+        files: target/results/*.xml
+    - name: Upload logs
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: e2e-test-logs
+        path: target/results/*.log
+        if-no-files-found: ignore
+        retention-days: 7

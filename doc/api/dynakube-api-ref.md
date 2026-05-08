@@ -82,6 +82,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`annotations`||-|object|
 |`args`||-|array|
 |`dnsPolicy`||-|string|
@@ -134,6 +135,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`annotations`||-|object|
 |`args`||-|array|
 |`dnsPolicy`||-|string|
