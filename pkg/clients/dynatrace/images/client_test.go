@@ -55,6 +55,12 @@ func TestClient_ComponentLatestImageInfo(t *testing.T) {
 		assert.EqualError(t, err, "get latest activegate image: nope")
 	})
 
+	t.Run("invalid URI", func(t *testing.T) {
+		client := setupClient(t, nil, map[string]string{}, "invalid!!URI")
+		_, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, "")
+		require.Error(t, err)
+	})
+
 	t.Run("registry override passed as query param", func(t *testing.T) {
 		const customRegistry = "my.custom.registry.com"
 		const imageURI = customRegistry + "/image:tag"
@@ -71,6 +77,26 @@ func TestClient_ComponentLatestImageInfo(t *testing.T) {
 		_, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, requestedRegistry)
 		require.Error(t, err)
 		assert.EqualError(t, err, `image registry "other.registry.com" does not match requested registry "my.custom.registry.com"`)
+	})
+
+	t.Run("empty components list", func(t *testing.T) {
+		req := coremock.NewRequest(t)
+		req.EXPECT().WithQueryParams(map[string]string{}).Return(req).Once()
+		req.EXPECT().
+			Execute(new(containerImagesResponse)).
+			Run(func(model any) {
+				resp := model.(*containerImagesResponse)
+				*resp = containerImagesResponse{
+					Components: []componentResponse{},
+				}
+			}).
+			Return(nil).Once()
+		apiClient := coremock.NewClient(t)
+		apiClient.EXPECT().GET(t.Context(), containerImagesPath).Return(req).Once()
+		client := NewClient(apiClient)
+
+		_, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, "")
+		require.EqualError(t, err, "no oneagent image found")
 	})
 }
 
