@@ -72,6 +72,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		if key == "" || value == "" {
 			return ""
 		}
+
 		return fmt.Sprintf("--%s=%s=%s", pod.Flag, key, value)
 	})
 
