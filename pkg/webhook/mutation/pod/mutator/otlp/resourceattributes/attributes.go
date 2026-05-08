@@ -32,7 +32,17 @@ func sanitizeValue(value string) string {
 	// see https://opentelemetry.io/docs/specs/otel/resource/sdk/#specifying-resource-information-via-an-environment-variable
 	if strings.HasPrefix(value, "$(") && strings.HasSuffix(value, ")") {
 		return value
-	} else {
+	}
+
+	// Decode any existing percent-encoding before re-encoding to prevent double-encoding
+	// already-sanitized values (e.g. values from a pre-existing OTEL_RESOURCE_ATTRIBUTES env var).
+	// url.QueryUnescape decodes both %XX sequences and + as space; if the string contains
+	// an invalid percent sequence (e.g. "100%") it returns an error and we fall back to
+	// encoding the raw string directly.
+	decoded, err := url.QueryUnescape(value)
+	if err != nil {
 		return url.QueryEscape(value)
 	}
+
+	return url.QueryEscape(decoded)
 }

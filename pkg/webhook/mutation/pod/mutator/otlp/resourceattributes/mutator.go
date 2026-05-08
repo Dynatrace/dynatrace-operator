@@ -89,14 +89,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 }
 
 func (m *Mutator) addResourceAttributes(podAttrs *attributes.PodAttributes, c *corev1.Container) bool {
-	// order of precedence as in metadata webhook (lowest to highest):
-	// 1. workload
-	// 2. namespace
-	// 3. container
-	// 4. pod
-	// 5. exsting OTEL_RESOURCE_ATTRIBUTES env var
-
-	// existing existingResourceAttrs have the highes precedence, they are the base
+	// existing existingResourceAttrs have the highest precedence, they are the base
 	existingResourceAttrs, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
 	if ok {
 		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
@@ -105,15 +98,19 @@ func (m *Mutator) addResourceAttributes(podAttrs *attributes.PodAttributes, c *c
 		})
 	}
 
-	podAttrs.AddCustomAttributes(existingResourceAttrs)
+	podAttrs.SetCustomAttributes(existingResourceAttrs)
 
 	containerAttrs := attributes.NewContainerAttributes(*c)
 
-	// TODO: detect mutation
-
 	mutated := false
+
 	// podAttrs also contains custom attributes (annotations, rules, ..) which take precedence
 	kvPairs := podAttrs.Convert(func(k, v string) string {
+		// avoid having key= in the OTEL_RESOURCE_ATTRIBUTES env var
+		if v == "" {
+			return ""
+		}
+
 		v = sanitizeValue(v)
 
 		// resource attributes will be changed (==mutated) if new entries are added

@@ -52,15 +52,15 @@ func TestIsEnabled(t *testing.T) {
 			withoutCSI: false,
 		},
 		{
-			title:   "only OA enabled, without FF => enabled",
+			title:   "only OA enabled, without FF => disabled",
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 			},
-			withCSI:    true,
-			withoutCSI: true,
+			withCSI:    false,
+			withoutCSI: false,
 		},
 		{
 			title:   "meta enabled => enabled",
@@ -152,8 +152,8 @@ func TestIsEnabled(t *testing.T) {
 				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 			},
-			withCSI:    true,
-			withoutCSI: true,
+			withCSI:    false,
+			withoutCSI: false,
 		},
 		{
 			title: "OA + FF enabled + ephemeral Volume-Type => enabled",
@@ -165,8 +165,8 @@ func TestIsEnabled(t *testing.T) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 			},
-			withCSI:    true,
-			withoutCSI: true,
+			withCSI:    false,
+			withoutCSI: false,
 		},
 		{
 			title: "OA + FF enabled + csi Volume-Type => enabled",
@@ -179,8 +179,8 @@ func TestIsEnabled(t *testing.T) {
 				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 			},
-			withCSI:    true,
-			withoutCSI: true,
+			withCSI:    false,
+			withoutCSI: false,
 		},
 	}
 	for _, test := range cases {
@@ -578,7 +578,7 @@ func TestAddContainerAttributes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
 		require.NoError(t, err)
 		assert.True(t, mutated)
 
@@ -617,7 +617,7 @@ func TestAddContainerAttributes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
 
 		require.NoError(t, err)
 		assert.False(t, mutated)
@@ -656,7 +656,7 @@ func TestAddContainerAttributes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -822,7 +822,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -877,7 +877,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
 
 		require.NoError(t, err)
 		assert.False(t, mutated)
@@ -931,7 +931,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -993,7 +993,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -1047,7 +1047,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -1098,7 +1098,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)

@@ -9,12 +9,10 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -34,10 +32,6 @@ func NewMutator(metaClient client.Client) dtwebhook.Mutator {
 }
 
 func (mut *Mutator) IsEnabled(_ context.Context, request *dtwebhook.BaseRequest) bool {
-	if oneagent.IsEnabled(request) {
-		return true
-	}
-
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject,
 		request.DynaKube.FF().IsAutomaticInjection())
 	enabledOnDynakube := request.DynaKube.MetadataEnrichment().IsEnabled()
@@ -92,7 +86,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		return err
 	}
 
-	_, err = addContainerAttributes(request.BaseRequest, request.InstallContainer)
+	_, err = AddContainerAttributes(request.BaseRequest, request.InstallContainer)
 	if err != nil {
 		return err
 	}
@@ -104,24 +98,8 @@ func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{{Name: bootstrapper.MetadataEnrichmentFlag}})...)
 }
 
-func (mut *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	log := logd.FromContext(ctx)
-
-	installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
-	if installContainer == nil {
-		log.Error(nil, "could not find init container during reinvoke")
-
-		return false
-	}
-
-	mutated, err := addContainerAttributes(request.BaseRequest, installContainer)
-	if err != nil {
-		log.Error(err, "failed to update container-attributes on the init container during reinvoke")
-
-		return false
-	}
-
-	return mutated
+func (mut *Mutator) Reinvoke(_ context.Context, _ *dtwebhook.ReinvocationRequest) bool {
+	return false
 }
 
 func setInjectedAnnotation(pod *corev1.Pod) {
@@ -144,7 +122,7 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	}
 }
 
-func addContainerAttributes(request *dtwebhook.BaseRequest, installContainer *corev1.Container) (bool, error) {
+func AddContainerAttributes(request *dtwebhook.BaseRequest, installContainer *corev1.Container) (bool, error) {
 	containers := request.NewContainers(isInjected)
 	if len(containers) > 0 {
 		args := make([]string, 0)

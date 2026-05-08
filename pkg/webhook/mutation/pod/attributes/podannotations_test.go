@@ -50,7 +50,7 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		pod := &corev1.Pod{}
 
 		require.NoError(t, attrs.setPodMetadataJSONAnnotation(pod))
-		assert.Equal(t, "from-ns", parseJSON(t, pod)["shared.key"])
+		assert.Equal(t, "from-rules", parseJSON(t, pod)["shared.key"])
 	})
 
 	t.Run("rulesPropagate overrides rules for shared key", func(t *testing.T) {
@@ -153,7 +153,7 @@ func TestApplyAnnotationsToPod(t *testing.T) {
 		require.NoError(t, err)
 		var parsed map[string]string
 		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
-		assert.Equal(t, "from-ns", parsed["shared.key"])
+		assert.Equal(t, "from-rules", parsed["shared.key"])
 	})
 
 	t.Run("does not overwrite existing individual annotations on pod", func(t *testing.T) {

@@ -29,7 +29,6 @@ type MutationRequest struct {
 func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 	return &ReinvocationRequest{
 		BaseRequest: request.BaseRequest,
-		//		Context:     request.Context,
 	}
 }
 
@@ -38,7 +37,6 @@ func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 // and after passing it in to all the mutator the request will have the final state which can be used to mutate the pod.
 type ReinvocationRequest struct {
 	*BaseRequest
-	Context context.Context
 }
 
 func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) *BaseRequest {

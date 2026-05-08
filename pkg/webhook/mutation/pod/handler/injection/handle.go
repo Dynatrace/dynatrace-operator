@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/secrets"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -135,7 +136,8 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 	}
 
 	// metaMutator is automatically enabled if oaMutator is enabled, but it can also be enabled standalone
-	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
+	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) ||
+		h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
 		err := h.metaMutator.Mutate(mutationRequest)
 		if err != nil {
 			return false, err
@@ -153,10 +155,20 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 }
 
 func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
-	var updated bool
-	// if oaMuataor is enabled, metaMutator is also enabled along with it, but metaMutator can also be enabled standalone, so we need to check both
-	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
-		updated = h.metaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest())
+	log := logd.FromContext(mutationRequest.Context)
+
+	installContainer := k8scontainer.FindInitInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
+	if installContainer == nil {
+		log.Error(nil, "could not find init container during reinvoke")
+
+		return false
+	}
+
+	updated, err := metadata.AddContainerAttributes(mutationRequest.BaseRequest, installContainer)
+	if err != nil {
+		log.Error(err, "failed to update container-attributes on the init container during reinvoke")
+
+		return false
 	}
 
 	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {

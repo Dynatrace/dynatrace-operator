@@ -58,12 +58,8 @@ func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client c
 	return attrs, nil
 }
 
-func (attrs *PodAttributes) AddCustomAttribute(key, value string) {
-	attrs.custom[key] = value
-}
-
-func (attrs *PodAttributes) AddCustomAttributes(custom map[string]string) {
-	maps.Copy(attrs.custom, custom)
+func (attrs *PodAttributes) SetCustomAttributes(custom map[string]string) {
+	attrs.custom = custom
 }
 
 func (attrs *PodAttributes) GetPodEnvVars() []corev1.EnvVar {
@@ -99,10 +95,11 @@ func (attrs *PodAttributes) combineAll(containerAttrs ...ContainerAttributes) ma
 		maps.Copy(combined, cAttr.ToMap())
 	}
 
+	maps.Copy(combined, attrs.namespaceAnnotations)
+
 	maps.Copy(combined, attrs.rules)
 	maps.Copy(combined, attrs.rulesPropagate)
 
-	maps.Copy(combined, attrs.namespaceAnnotations)
 	maps.Copy(combined, attrs.podAnnotations)
 
 	maps.Copy(combined, attrs.custom)
@@ -115,8 +112,8 @@ func (attrs *PodAttributes) combineForMetadataAnnotations() map[string]string {
 
 	// make sure we use the same precedence as in combine()
 	maps.Copy(combined, attrs.workloadInfo)
-	maps.Copy(combined, attrs.rulesPropagate)
 	maps.Copy(combined, attrs.namespaceAnnotations)
+	maps.Copy(combined, attrs.rulesPropagate)
 
 	return combined
 }
@@ -125,9 +122,9 @@ func (attrs *PodAttributes) combineForJSONAnnotation() map[string]string {
 	combined := make(map[string]string)
 
 	// make sure we use the same precedence as in combineAll()
+	maps.Copy(combined, attrs.namespaceAnnotations)
 	maps.Copy(combined, attrs.rules)
 	maps.Copy(combined, attrs.rulesPropagate)
-	maps.Copy(combined, attrs.namespaceAnnotations)
 	maps.Copy(combined, attrs.podAnnotations)
 
 	return combined

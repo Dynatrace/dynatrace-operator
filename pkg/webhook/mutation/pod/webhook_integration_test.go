@@ -289,6 +289,7 @@ func TestWebhook(t *testing.T) {
 }
 
 func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotations bool) {
+	t.Helper()
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube",

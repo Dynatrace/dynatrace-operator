@@ -45,37 +45,12 @@ func toResultMap(pairs []string) map[string]string {
 // simpleConvertFunc formats each attribute as "key=value".
 func simpleConvertFunc(k, v string) string { return k + "=" + v }
 
-// ---- AddCustomAttribute / AddCustomAttributes / GetPodEnvVars / Convert ----
-
-func TestAddCustomAttribute(t *testing.T) {
-	t.Run("adds a single key-value to custom", func(t *testing.T) {
-		attrs := newTestPodAttributes()
-		attrs.AddCustomAttribute("my.key", "my-value")
-		assert.Equal(t, "my-value", attrs.custom["my.key"])
-	})
-
-	t.Run("overwrites existing custom key", func(t *testing.T) {
-		attrs := newTestPodAttributes()
-		attrs.AddCustomAttribute("my.key", "first")
-		attrs.AddCustomAttribute("my.key", "second")
-		assert.Equal(t, "second", attrs.custom["my.key"])
-	})
-}
-
-func TestAddCustomAttributes(t *testing.T) {
+func TestSetCustomAttributes(t *testing.T) {
 	t.Run("bulk copies all entries into custom", func(t *testing.T) {
 		attrs := newTestPodAttributes()
-		attrs.AddCustomAttributes(map[string]string{"a": "1", "b": "2"})
+		attrs.SetCustomAttributes(map[string]string{"a": "1", "b": "2"})
 		assert.Equal(t, "1", attrs.custom["a"])
 		assert.Equal(t, "2", attrs.custom["b"])
-	})
-
-	t.Run("does not touch unrelated existing custom keys", func(t *testing.T) {
-		attrs := newTestPodAttributes()
-		attrs.custom["existing"] = "kept"
-		attrs.AddCustomAttributes(map[string]string{"new": "val"})
-		assert.Equal(t, "kept", attrs.custom["existing"])
-		assert.Equal(t, "val", attrs.custom["new"])
 	})
 }
 
@@ -191,14 +166,14 @@ func TestCombine_RulesPropagateWinsOverRules(t *testing.T) {
 	assert.Equal(t, "from-rules-propagate", result["shared.key"])
 }
 
-func TestCombine_NamespaceAnnotationWinsOverRulesPropagate(t *testing.T) {
+func TestCombine_RulesPropagateWinsOverNamespaceAnnotation(t *testing.T) {
 	attrs := newTestPodAttributes()
 	attrs.rulesPropagate["shared.key"] = "from-rules-propagate"
 	attrs.namespaceAnnotations["shared.key"] = "from-namespace"
 
 	result := attrs.combineAll()
 
-	assert.Equal(t, "from-namespace", result["shared.key"])
+	assert.Equal(t, "from-rules-propagate", result["shared.key"])
 }
 
 func TestCombine_PodAnnotationWinsOverNamespaceAnnotation(t *testing.T) {
@@ -413,7 +388,7 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 
 		attrs, err := NewPodAttributes(t.Context(), request, fake.NewClient())
 		require.NoError(t, err)
-		attrs.AddCustomAttribute(K8sClusterUIDAttr, "uid-from-custom")
+		attrs.SetCustomAttributes(map[string]string{K8sClusterUIDAttr: "uid-from-custom"})
 
 		result := toResultMap(attrs.Convert(simpleConvertFunc))
 

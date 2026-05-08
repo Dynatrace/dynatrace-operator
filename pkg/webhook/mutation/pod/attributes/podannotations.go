@@ -11,10 +11,12 @@ import (
 func (attrs *PodAttributes) ApplyAnnotationsToPod(pod *corev1.Pod) error {
 	annotations := attrs.combineForMetadataAnnotations()
 
-	// workload info uses the OTEL attribute name directly as the annotation key (no metadata prefix)
 	for key, value := range annotations {
 		setPodAnnotationIfNotExists(pod, metadataenrichment.Prefix+key, value)
 	}
+
+	// set workload annotations no matter what
+	attrs.setWorkloadAnnotations(pod)
 
 	return attrs.setPodMetadataJSONAnnotation(pod)
 }
@@ -30,6 +32,15 @@ func (attrs *PodAttributes) setPodMetadataJSONAnnotation(pod *corev1.Pod) error 
 	setPodAnnotationIfNotExists(pod, metadataenrichment.Annotation, string(marshaledAnnotations))
 
 	return nil
+}
+
+func (attrs *PodAttributes) setWorkloadAnnotations(pod *corev1.Pod) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+
+	pod.Annotations[metadataenrichment.Prefix+K8sWorkloadNameAttr] = attrs.workloadInfo[K8sWorkloadNameAttr]
+	pod.Annotations[metadataenrichment.Prefix+K8sWorkloadKindAttr] = attrs.workloadInfo[K8sWorkloadKindAttr]
 }
 
 func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) {

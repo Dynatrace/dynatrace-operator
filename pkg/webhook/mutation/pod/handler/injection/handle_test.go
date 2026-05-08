@@ -99,6 +99,7 @@ func TestHandleImpl(t *testing.T) {
 
 		metaMutator := webhookmock.NewMutator(t)
 		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
+		metaMutator.On("Mutate", mock.Anything).Return(nil)
 
 		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
 
@@ -234,8 +235,6 @@ func TestHandleImpl(t *testing.T) {
 		oaMutator.On("Reinvoke", mock.Anything, mock.Anything).Return(true)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		metaMutator.On("Reinvoke", mock.Anything, mock.Anything).Return(true)
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
 
