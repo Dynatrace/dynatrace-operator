@@ -11,7 +11,7 @@ import (
 
 func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dk dynakube.DynaKube) *MutationRequest {
 	return &MutationRequest{
-		BaseRequest:      newBaseRequest(pod, namespace, dk),
+		BaseRequest: newBaseRequest(pod, namespace, dk),
 		Context:          ctx,
 		InstallContainer: installContainer,
 	}
@@ -29,6 +29,7 @@ type MutationRequest struct {
 func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 	return &ReinvocationRequest{
 		BaseRequest: request.BaseRequest,
+//		Context:     request.Context,
 	}
 }
 
@@ -37,6 +38,7 @@ func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 // and after passing it in to all the mutator the request will have the final state which can be used to mutate the pod.
 type ReinvocationRequest struct {
 	*BaseRequest
+	Context context.Context
 }
 
 func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) *BaseRequest {

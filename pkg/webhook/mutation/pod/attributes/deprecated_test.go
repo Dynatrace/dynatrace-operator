@@ -3,41 +3,30 @@ package attributes
 import (
 	"testing"
 
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func Test_setDeprecatedAttributes(t *testing.T) {
-	t.Run("set deprecated attribute according to current attribute", func(t *testing.T) {
-		attrs := podattr.Attributes{
-			WorkloadInfo: podattr.WorkloadInfo{
-				WorkloadKind: "kind",
-				WorkloadName: "name",
-			},
-			ClusterInfo: podattr.ClusterInfo{
-				ClusterUID: "clusterID",
-			},
-		}
+func TestApplyDeprecatedAttributes(t *testing.T) {
+	t.Run("copies workload kind, workload name, and cluster UID to deprecated keys", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		attrs.workloadInfo[K8sWorkloadKindAttr] = "deployment"
+		attrs.workloadInfo[K8sWorkloadNameAttr] = "my-deployment"
+		attrs.clusterInfo[K8sClusterUIDAttr] = "cluster-uid-123"
 
-		SetDeprecatedAttributes(&attrs)
+		attrs.applyDeprecatedAttributes()
 
-		assertDeprecatedAttributes(t, attrs)
+		assert.Equal(t, "deployment", attrs.deprecated[DeprecatedWorkloadKindKey])
+		assert.Equal(t, "my-deployment", attrs.deprecated[DeprecatedWorkloadNameKey])
+		assert.Equal(t, "cluster-uid-123", attrs.deprecated[DeprecatedClusterIDKey])
 	})
-}
 
-func assertDeprecatedAttributes(t *testing.T, attrs podattr.Attributes) {
-	t.Helper()
+	t.Run("uses empty string when workload info is not set", func(t *testing.T) {
+		attrs := newTestPodAttributes()
 
-	depWorkloadKind, ok := attrs.UserDefined[DeprecatedWorkloadKindKey]
-	require.True(t, ok)
-	assert.Equal(t, attrs.WorkloadKind, depWorkloadKind)
+		attrs.applyDeprecatedAttributes()
 
-	depWorkloadName, ok := attrs.UserDefined[DeprecatedWorkloadNameKey]
-	require.True(t, ok)
-	assert.Equal(t, attrs.WorkloadName, depWorkloadName)
-
-	depClusterID, ok := attrs.UserDefined[DeprecatedClusterIDKey]
-	require.True(t, ok)
-	assert.Equal(t, attrs.ClusterUID, depClusterID)
+		assert.Equal(t, "", attrs.deprecated[DeprecatedWorkloadKindKey])
+		assert.Equal(t, "", attrs.deprecated[DeprecatedWorkloadNameKey])
+		assert.Equal(t, "", attrs.deprecated[DeprecatedClusterIDKey])
+	})
 }

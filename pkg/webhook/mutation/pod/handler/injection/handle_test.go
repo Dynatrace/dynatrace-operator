@@ -46,7 +46,7 @@ func TestHandleImpl(t *testing.T) {
 		dk.Spec.OneAgent = oneagent.Spec{}
 		dk.Spec.MetadataEnrichment = metadataenrichment.Spec{}
 
-		request := createTestMutationRequest(dk)
+		request := createTestMutationRequest(t, dk)
 
 		err := h.Handle(request)
 		require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestHandleImpl(t *testing.T) {
 	t.Run("no init secret + no init secret source => no injection + only annotation", func(t *testing.T) {
 		h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
 
-		request := createTestMutationRequest(getTestDynakube())
+		request := createTestMutationRequest(t, getTestDynakube())
 
 		err := h.Handle(request)
 		require.NoError(t, err)
@@ -76,7 +76,7 @@ func TestHandleImpl(t *testing.T) {
 	})
 
 	t.Run("no init secret and no certs + source (both) => replicate (both) + inject", func(t *testing.T) {
-		request := createTestMutationRequest(getTestDynakubeWithAGCerts())
+		request := createTestMutationRequest(t, getTestDynakubeWithAGCerts())
 
 		source := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -124,7 +124,7 @@ func TestHandleImpl(t *testing.T) {
 	})
 
 	t.Run("no init and no certs, but don't replicate certs because we don't need it (AG is not enabled)", func(t *testing.T) {
-		request := createTestMutationRequest(getTestDynakube())
+		request := createTestMutationRequest(t, getTestDynakube())
 
 		source := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -185,7 +185,7 @@ func TestHandleImpl(t *testing.T) {
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
 
-		request := createTestMutationRequest(getTestDynakube())
+		request := createTestMutationRequest(t, getTestDynakube())
 
 		err := h.Handle(request)
 		require.NoError(t, err)
@@ -199,7 +199,6 @@ func TestHandleImpl(t *testing.T) {
 
 		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
 		require.NotNil(t, installContainer)
-		assert.NotEmpty(t, installContainer.Env, 3)
 		assert.NotEmpty(t, installContainer.Args, 15)
 	})
 
@@ -212,7 +211,7 @@ func TestHandleImpl(t *testing.T) {
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
 
-		request := createTestMutationRequest(getTestDynakube())
+		request := createTestMutationRequest(t, getTestDynakube())
 
 		err := h.Handle(request)
 		require.NoError(t, err)
@@ -235,6 +234,8 @@ func TestHandleImpl(t *testing.T) {
 		oaMutator.On("Reinvoke", mock.Anything, mock.Anything).Return(true)
 
 		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.On("IsEnabled", mock.Anything).Return(true)
+		metaMutator.On("Reinvoke", mock.Anything).Return(true)
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
 
@@ -255,7 +256,7 @@ func TestIsInjected(t *testing.T) {
 	t.Run("init-container NOT present != injected", func(t *testing.T) {
 		h := createTestHandler(nil, nil)
 
-		assert.False(t, h.isInjected(createTestMutationRequest(getTestDynakube())))
+		assert.False(t, h.isInjected(createTestMutationRequest(t, getTestDynakube())))
 	})
 }
 
@@ -353,8 +354,8 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 	})
 }
 
-func createTestMutationRequest(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
-	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dk)
+func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
+	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
 
 func getTestNamespace() *corev1.Namespace {

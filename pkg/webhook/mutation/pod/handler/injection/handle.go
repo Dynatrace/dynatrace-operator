@@ -134,6 +134,7 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 		mutated = true
 	}
 
+	// metaMutator is automatically enabled if oaMutator is enabled, but it can also be enabled standalone
 	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
 		err := h.metaMutator.Mutate(mutationRequest)
 		if err != nil {
@@ -144,13 +145,7 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 	}
 
 	if mutated {
-		_, err := addContainerAttributes(mutationRequest)
-		if err != nil {
-			return false, err
-		}
-
 		addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer)
-
 		events.SendPodInjectEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
 	}
 
@@ -158,23 +153,17 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 }
 
 func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
-	log := logd.FromContext(mutationRequest.Context)
-	mutationRequest.InstallContainer = k8scontainer.FindInitInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
-
-	// metadata enrichment does not need to be reinvoked, addContainerAttributes() does what is needed
-	hasNewContainers, err := addContainerAttributes(mutationRequest)
-	if err != nil {
-		log.Error(err, "error during reinvocation for updating the init-container, failed to update container-attributes on the init container")
-
-		return false
+	var updated bool
+	// if oaMuataor is enabled, metaMutator is also enabled along with it, but metaMutator can also be enabled standalone, so we need to check both
+	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
+		updated = h.metaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest())
 	}
 
-	var oaUpdated bool
 	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
-		oaUpdated = h.oaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest())
+		updated = h.oaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest()) || updated
 	}
 
-	return hasNewContainers || oaUpdated
+	return updated
 }
 
 func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {

@@ -8,5 +8,4 @@ const (
 	AnnotationReason   = AnnotationPrefix + ".dynatrace.com/reason"
 
 	OwnerLookupFailedReason = "OwnerLookupFailed"
-
 )

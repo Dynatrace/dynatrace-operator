@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,11 +82,21 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{withDeprecatedAttributesArg})...)
 	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
 
+	request.InstallContainer.Env = append(request.InstallContainer.Env, attrs.GetPodEnvVars()...)
+
 	turnOnMetadataEnrichment(request)
 
 	setInjectedAnnotation(request.Pod)
 
-	attrs.SetMetadataAnnotations(request)
+	err = attrs.ApplyAnnotationsToPod(request.Pod)
+	if err != nil {
+		return err
+	}
+
+	_, err = addContainerAttributes(request.BaseRequest, request.InstallContainer)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -92,8 +105,21 @@ func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{{Name: bootstrapper.MetadataEnrichmentFlag}})...)
 }
 
-func (mut *Mutator) Reinvoke(_ context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	return false
+func (mut *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
+	log := logd.FromContext(ctx)
+	installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
+	if installContainer == nil {
+		log.Error(nil, "could not find init container during reinvoke")
+		return false
+	}
+
+	mutated, err := addContainerAttributes(request.BaseRequest, installContainer)
+	if err != nil {
+		log.Error(err, "failed to update container-attributes on the init container during reinvoke")
+		return false
+	}
+
+	return mutated
 }
 
 func setInjectedAnnotation(pod *corev1.Pod) {
@@ -113,5 +139,45 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 
 		pod.Annotations[AnnotationInjected] = "false"
 		pod.Annotations[AnnotationReason] = reason
+	}
+}
+
+func addContainerAttributes(request *dtwebhook.BaseRequest, installContainer *corev1.Container) (bool, error) {
+	containers := request.NewContainers(isInjected)
+	if len(containers) > 0 {
+		args := make([]string, 0)
+
+		for _, c := range containers {
+
+			contInfos := *attributes.NewContainerInfos(*c)
+
+			json, err := contInfos.ToJson()
+			if err != nil {
+				return false, err
+			}
+
+			args = append(args, fmt.Sprintf("--%s=%s", container.Flag, json))
+
+			volumes.AddConfigVolumeMount(c, request)
+		}
+
+		installContainer.Args = append(installContainer.Args, args...)
+
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func isInjected(container corev1.Container, request *dtwebhook.BaseRequest) bool {
+	if request.IsSplitMountsEnabled() {
+		if (request.DynaKube.OneAgent().IsAppInjectionNeeded() && !volumes.HasSplitOneAgentMounts(&container)) ||
+			(request.DynaKube.MetadataEnrichment().IsEnabled() && !volumes.HasSplitEnrichmentMounts(&container)) {
+			return false
+		}
+
+		return true
+	} else {
+		return volumes.HasCommonConfigVolumeMounts(&container)
 	}
 }

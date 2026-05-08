@@ -1,10 +1,14 @@
 package metadata
 
 import (
+	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
+	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -13,11 +17,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -239,32 +242,6 @@ func Test_setNotInjectedAnnotationFunc(t *testing.T) {
 	})
 }
 
-func TestWorkloadAnnotations(t *testing.T) {
-	workloadInfoName := "workload-name"
-	workloadInfoKind := "workload-kind"
-
-	t.Run("should add annotation to nil map", func(t *testing.T) {
-		request := createTestMutationRequest(t, nil, nil)
-
-		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
-		SetWorkloadAnnotations(request.Pod, &workload.Info{Name: workloadInfoName, Kind: workloadInfoKind})
-		require.Len(t, request.Pod.Annotations, 2)
-		assert.Equal(t, workloadInfoName, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
-		assert.Equal(t, workloadInfoKind, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadKind, "not-found"))
-	})
-	t.Run("should lower case kind annotation", func(t *testing.T) {
-		request := createTestMutationRequest(t, nil, nil)
-		objectMeta := &metav1.PartialObjectMetadata{
-			ObjectMeta: metav1.ObjectMeta{Name: workloadInfoName},
-			TypeMeta:   metav1.TypeMeta{Kind: "SuperWorkload"},
-		}
-
-		SetWorkloadAnnotations(request.Pod, workload.NewInfo(objectMeta))
-		assert.Contains(t, request.Pod.Annotations, AnnotationWorkloadKind)
-		assert.Equal(t, "superworkload", request.Pod.Annotations[AnnotationWorkloadKind])
-	})
-}
-
 func TestMutate(t *testing.T) {
 	pod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -436,8 +413,8 @@ func TestMutate(t *testing.T) {
 				assert.Contains(t, request.InstallContainer.Args, "--"+bootstrapper.MetadataEnrichmentFlag)
 
 				require.Len(t, request.Pod.Annotations, 7) // workload.kind + workload.name + dt.security_context + dt.cost.costcenter + injected + propagated ns annotations
-				assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[AnnotationWorkloadKind])
-				assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[AnnotationWorkloadName])
+				assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[metadataenrichment.Prefix+attributes.K8sWorkloadKindAttr])
+				assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[metadataenrichment.Prefix+attributes.K8sWorkloadNameAttr])
 				assert.Equal(t, "true", request.Pod.Annotations[AnnotationInjected])
 				assert.Equal(t, nsMetaAnnotationValue, request.Pod.Annotations[metadataenrichment.Prefix+nsMetaAnnotationKey])
 				assert.NotEmpty(t, request.Pod.Annotations[metadataenrichment.Annotation])
@@ -448,4 +425,685 @@ func TestMutate(t *testing.T) {
 
 func buildArgument(attr string, value string) string {
 	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, attr, strings.ToLower(value))
+}
+
+func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
+	if dk == nil {
+		dk = &dynakube.DynaKube{}
+	}
+
+	return dtwebhook.NewMutationRequest(
+		t.Context(),
+		*getTestNamespace(dk),
+		&corev1.Container{
+			Name: dtwebhook.InstallContainerName,
+		},
+		getTestPod(annotations),
+		*dk,
+	)
+}
+
+func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-ns",
+			Labels: map[string]string{
+				dtwebhook.InjectionInstanceLabel: dk.Name,
+			},
+		},
+	}
+}
+
+func getTestPod(annotations map[string]string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "test-pod",
+			Namespace:   "test-ns",
+			Annotations: annotations,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "container-1",
+					Image: "alpine-1",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "volume",
+							MountPath: "/volume",
+						},
+					},
+				},
+				{
+					Name:  "container-2",
+					Image: "alpine-2",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "volume",
+							MountPath: "/volume",
+						},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:  "init-container",
+					Image: "alpine",
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
+}
+
+func TestAddContainerAttributes(t *testing.T) {
+	// request to pre-mount required volumes: OneAgent or Enrichment or both
+	vmBaseRequest := &dtwebhook.BaseRequest{
+		Pod: &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.AnnotationInjectionSplitMounts: "false",
+				},
+			},
+		},
+		DynaKube: dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: ptr.To(true),
+				},
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+			},
+		},
+	}
+
+	validateContainerAttributes := func(t *testing.T, pod corev1.Pod, args []string) {
+		t.Helper()
+
+		require.NotEmpty(t, args)
+
+		for _, arg := range args {
+			splitArg := strings.Split(arg, "=")
+			require.Len(t, splitArg, 2)
+
+			var attr containerattr.Attributes
+
+			require.NoError(t, json.Unmarshal([]byte(splitArg[1]), &attr))
+			assert.Contains(t, pod.Spec.Containers, corev1.Container{
+				Name:  attr.ContainerName,
+				Image: attr.ToURI(),
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: volumes.ConfigMountPath,
+						SubPath:   attr.ContainerName,
+					},
+				},
+			})
+		}
+	}
+
+	t.Run("add container-attributes + mount", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+			},
+			InstallContainer: &initContainer,
+		}
+
+		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+		require.NoError(t, err)
+		assert.True(t, mutated)
+
+		validateContainerAttributes(t, pod, initContainer.Args)
+	})
+
+	t.Run("no new container ==> no new arg", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest)
+
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app2Container, vmBaseRequest)
+
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+			},
+			InstallContainer: &initContainer,
+		}
+
+		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+
+		require.NoError(t, err)
+		assert.False(t, mutated)
+
+		require.Empty(t, initContainer.Args)
+	})
+
+	t.Run("partially new => only add new", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest)
+
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+			},
+			InstallContainer: &initContainer,
+		}
+
+		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+
+		require.NoError(t, err)
+		assert.True(t, mutated)
+
+		require.Len(t, initContainer.Args, 1)
+		validateContainerAttributes(t, pod, initContainer.Args)
+	})
+}
+
+func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
+	// request to pre-mount required volumes: OneAgent or Enrichment or both
+	vmBaseRequest := func(metadataEnrichment bool, oneAgent bool) *dtwebhook.BaseRequest {
+		br := &dtwebhook.BaseRequest{
+			Pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						dtwebhook.AnnotationInjectionSplitMounts: "true",
+					},
+				},
+			},
+			DynaKube: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					MetadataEnrichment: metadataenrichment.Spec{
+						Enabled: ptr.To(metadataEnrichment),
+					},
+				},
+			},
+		}
+		if oneAgent {
+			br.DynaKube.Spec.OneAgent = oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+			}
+		}
+
+		return br
+	}
+
+	validateContainerAttributes := func(t *testing.T, pod corev1.Pod, args []string) {
+		t.Helper()
+
+		require.NotEmpty(t, args)
+
+		for i := range pod.Spec.Containers {
+			slices.SortFunc(pod.Spec.Containers[i].VolumeMounts, func(a, b corev1.VolumeMount) int {
+				return strings.Compare(a.MountPath, b.MountPath)
+			})
+		}
+
+		for _, arg := range args {
+			splitArg := strings.Split(arg, "=")
+			require.Len(t, splitArg, 2)
+
+			var attr containerattr.Attributes
+
+			require.NoError(t, json.Unmarshal([]byte(splitArg[1]), &attr))
+
+			assert.Contains(t, pod.Spec.Containers, corev1.Container{
+				Name:  attr.ContainerName,
+				Image: attr.ToURI(),
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.json"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.json"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.properties"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.properties"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoint"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoint"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "oneagent"),
+						SubPath:   filepath.Join(attr.ContainerName, "oneagent"),
+					},
+				},
+			})
+		}
+	}
+
+	validateContainerAttributesforMetadataEnrichment := func(t *testing.T, pod corev1.Pod, args []string) {
+		t.Helper()
+
+		require.NotEmpty(t, args)
+
+		for _, arg := range args {
+			splitArg := strings.Split(arg, "=")
+			require.Len(t, splitArg, 2)
+
+			var attr containerattr.Attributes
+
+			require.NoError(t, json.Unmarshal([]byte(splitArg[1]), &attr))
+
+			assert.Contains(t, pod.Spec.Containers, corev1.Container{
+				Name:  attr.ContainerName,
+				Image: attr.ToURI(),
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.json"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.json"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.properties"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.properties"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoint"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoint"),
+					},
+				},
+			})
+		}
+	}
+
+	t.Run("add container-attributes + mount", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
+				},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+				DynaKube: dynakube.DynaKube{
+					Spec: dynakube.DynaKubeSpec{
+						MetadataEnrichment: metadataenrichment.Spec{
+							Enabled: ptr.To(true),
+						},
+						OneAgent: oneagent.Spec{
+							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+						},
+					},
+				},
+			},
+			InstallContainer: &initContainer,
+		}
+
+		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+
+		require.NoError(t, err)
+		assert.True(t, mutated)
+
+		validateContainerAttributes(t, pod, initContainer.Args)
+	})
+
+	t.Run("no new container ==> no new arg", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest(true, true))
+
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app2Container, vmBaseRequest(true, true))
+
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
+				},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+				DynaKube: dynakube.DynaKube{
+					Spec: dynakube.DynaKubeSpec{
+						MetadataEnrichment: metadataenrichment.Spec{
+							Enabled: ptr.To(true),
+						},
+						OneAgent: oneagent.Spec{
+							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+						},
+					},
+				},
+			},
+			InstallContainer: &initContainer,
+		}
+
+		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+
+		require.NoError(t, err)
+		assert.False(t, mutated)
+
+		require.Empty(t, initContainer.Args)
+	})
+
+	t.Run("partially new => only add new", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest(true, true))
+
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
+				},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+				DynaKube: dynakube.DynaKube{
+					Spec: dynakube.DynaKubeSpec{
+						MetadataEnrichment: metadataenrichment.Spec{
+							Enabled: ptr.To(true),
+						},
+						OneAgent: oneagent.Spec{
+							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+						},
+					},
+				},
+			},
+			InstallContainer: &initContainer,
+		}
+
+		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+
+		require.NoError(t, err)
+		assert.True(t, mutated)
+
+		require.Len(t, initContainer.Args, 1)
+		validateContainerAttributes(t, pod, initContainer.Args)
+	})
+
+	t.Run("partially new => add oneagent or enrichment", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      volumes.ConfigVolumeName,
+					MountPath: filepath.Join(volumes.ConfigMountPath, "oneagent"),
+					SubPath:   filepath.Join("app-1-name", "oneagent"),
+				},
+			},
+		}
+
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app2Container, vmBaseRequest(true, false))
+
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
+				},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+				DynaKube: dynakube.DynaKube{
+					Spec: dynakube.DynaKubeSpec{
+						MetadataEnrichment: metadataenrichment.Spec{
+							Enabled: ptr.To(true),
+						},
+						OneAgent: oneagent.Spec{
+							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+						},
+					},
+				},
+			},
+			InstallContainer: &initContainer,
+		}
+
+		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+
+		require.NoError(t, err)
+		assert.True(t, mutated)
+
+		require.Len(t, initContainer.Args, 2)
+		validateContainerAttributes(t, pod, initContainer.Args)
+	})
+
+	t.Run("partially new => add oneagent", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
+				},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+				DynaKube: dynakube.DynaKube{
+					Spec: dynakube.DynaKubeSpec{
+						MetadataEnrichment: metadataenrichment.Spec{
+							Enabled: ptr.To(false),
+						},
+						OneAgent: oneagent.Spec{
+							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+						},
+					},
+				},
+			},
+			InstallContainer: &initContainer,
+		}
+
+		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+
+		require.NoError(t, err)
+		assert.True(t, mutated)
+
+		require.Len(t, initContainer.Args, 2)
+		validateContainerAttributes(t, pod, initContainer.Args)
+	})
+
+	t.Run("partially new => add enrichment", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
+				},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+				DynaKube: dynakube.DynaKube{
+					Spec: dynakube.DynaKubeSpec{
+						MetadataEnrichment: metadataenrichment.Spec{
+							Enabled: ptr.To(true),
+						},
+					},
+				},
+			},
+			InstallContainer: &initContainer,
+		}
+
+		mutated, err := addContainerAttributes(request.BaseRequest, &initContainer)
+
+		require.NoError(t, err)
+		assert.True(t, mutated)
+
+		require.Len(t, initContainer.Args, 2)
+		validateContainerAttributesforMetadataEnrichment(t, pod, initContainer.Args)
+	})
 }

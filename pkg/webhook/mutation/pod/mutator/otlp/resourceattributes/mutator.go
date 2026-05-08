@@ -69,7 +69,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 	}
 
-	err = attrs.PropagateMetadataAnnotations(request.Pod)
+	err = attrs.ApplyAnnotationsToPod(request.Pod)
 	if err != nil {
 		log.Error(err, "failed to propagate metadata annotations", "pod", request.Pod, "namespace", request.Namespace)
 	}
@@ -125,10 +125,6 @@ func (m *Mutator) addResourceAttributes(podAttrs *attributes.PodAttributes, requ
 
 	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
 	mutated = ensureEnvVarSourcesSet(podAttrs, c) || mutated
-
-	if mutated {
-		podAttrs.SetWorkloadMetadataAnnotations(request.Pod)
-	}
 
 	if len(kvPairs) != 0 {
 		c.Env = append(c.Env, corev1.EnvVar{Name: OTELResourceAttributesEnv, Value: strings.Join(kvPairs, ",")})

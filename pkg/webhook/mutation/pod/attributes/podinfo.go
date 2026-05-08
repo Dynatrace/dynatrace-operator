@@ -23,7 +23,7 @@ const (
 	K8sDTClusterEntityAttr = "dt.entity.kubernetes_cluster"
 )
 
-func (attrs *PodAttributes) GetPodAttributes(request dtwebhook.BaseRequest) {
+func (attrs *PodAttributes) readPodAttributes(request dtwebhook.BaseRequest) {
 	attrs.podEnvVars = append(attrs.podEnvVars, []corev1.EnvVar{
 		{Name: K8sPodNameEnv, ValueFrom: k8senv.NewSourceForField("metadata.name")},
 		{Name: K8sPodUIDEnv, ValueFrom: k8senv.NewSourceForField("metadata.uid")},
