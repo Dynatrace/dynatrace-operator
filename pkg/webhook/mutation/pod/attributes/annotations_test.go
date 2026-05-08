@@ -292,6 +292,7 @@ func mergeWithDefaultAnnotations(expected map[string]string) map[string]string {
 		"k8s.workload.kind": "pod",
 		"k8s.workload.name": "test-pod",
 	})
+
 	return expected
 }
 

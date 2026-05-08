@@ -11,13 +11,13 @@ import (
 
 func TestNewContainerInfos(t *testing.T) {
 	tests := []struct {
-		name             string
-		image            string
-		containerName    string
-		wantRegistry     string
-		wantRepository   string
-		wantTag          string
-		wantImageDigest  string
+		name            string
+		image           string
+		containerName   string
+		wantRegistry    string
+		wantRepository  string
+		wantTag         string
+		wantImageDigest string
 	}{
 		{
 			name:           "full image with registry, path, and tag",
@@ -88,7 +88,7 @@ func TestContainerInfos_ToJson(t *testing.T) {
 	t.Run("produces valid JSON with all fields", func(t *testing.T) {
 		c := corev1.Container{Name: "my-container", Image: "registry.io/repo/image:tag"}
 		infos := NewContainerInfos(c)
-		jsonStr, err := infos.ToJson()
+		jsonStr, err := infos.ToJSON()
 		require.NoError(t, err)
 
 		var parsed map[string]string
@@ -103,7 +103,7 @@ func TestContainerInfos_ToJson(t *testing.T) {
 	t.Run("omits empty fields due to omitempty", func(t *testing.T) {
 		c := corev1.Container{Name: "bare-container", Image: "image"}
 		infos := NewContainerInfos(c)
-		jsonStr, err := infos.ToJson()
+		jsonStr, err := infos.ToJSON()
 		require.NoError(t, err)
 
 		var parsed map[string]string

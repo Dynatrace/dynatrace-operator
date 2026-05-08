@@ -62,7 +62,6 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
 	attrs, err := attributes.NewPodAttributes(request.Context, *request.BaseRequest, mut.metaClient)
-
 	if err != nil {
 		return dtwebhook.MutatorError{
 			Err:      errors.WithStack(err),
@@ -107,15 +106,18 @@ func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {
 
 func (mut *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
 	log := logd.FromContext(ctx)
+
 	installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
 	if installContainer == nil {
 		log.Error(nil, "could not find init container during reinvoke")
+
 		return false
 	}
 
 	mutated, err := addContainerAttributes(request.BaseRequest, installContainer)
 	if err != nil {
 		log.Error(err, "failed to update container-attributes on the init container during reinvoke")
+
 		return false
 	}
 
@@ -148,10 +150,9 @@ func addContainerAttributes(request *dtwebhook.BaseRequest, installContainer *co
 		args := make([]string, 0)
 
 		for _, c := range containers {
-
 			contInfos := *attributes.NewContainerInfos(*c)
 
-			json, err := contInfos.ToJson()
+			json, err := contInfos.ToJSON()
 			if err != nil {
 				return false, err
 			}

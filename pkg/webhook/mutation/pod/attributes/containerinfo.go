@@ -47,10 +47,11 @@ func NewContainerInfos(c corev1.Container) *ContainerInfos {
 }
 
 // Converts the whole object to a single JSON string used by the bootstrapper
-func (attrs *ContainerInfos) ToJson() (string, error) {
+func (attrs *ContainerInfos) ToJSON() (string, error) {
 	jsonAttr, err := json.Marshal(attrs)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	return string(jsonAttr), nil
 }

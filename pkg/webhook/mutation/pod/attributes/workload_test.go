@@ -28,7 +28,7 @@ func TestGetWorkloadInfoAttributes(t *testing.T) {
 			Namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
 		}
 
-		err := attrs.GetWorkloadInfoAttributes(ctx, request, fake.NewClient())
+		err := attrs.readWorkloadInfoAttributes(ctx, request, fake.NewClient())
 
 		require.NoError(t, err)
 		assert.Equal(t, "pod", attrs.workloadInfo[K8sWorkloadKindAttr])
@@ -58,7 +58,7 @@ func TestGetWorkloadInfoAttributes(t *testing.T) {
 			},
 		})
 
-		err := attrs.GetWorkloadInfoAttributes(ctx, request, failClient)
+		err := attrs.readWorkloadInfoAttributes(ctx, request, failClient)
 
 		assert.Error(t, err)
 	})

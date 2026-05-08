@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// newTestPodAttributes creates a PodAttributes with all maps initialised so tests can set
+// newTestPodAttributes creates a PodAttributes with all maps initialized so tests can set
 // individual fields without triggering nil-map panics.
 func newTestPodAttributes() *PodAttributes {
 	return &PodAttributes{
@@ -38,6 +38,7 @@ func toResultMap(pairs []string) map[string]string {
 		k, v, _ := strings.Cut(p, "=")
 		m[k] = v
 	}
+
 	return m
 }
 
@@ -118,7 +119,7 @@ func TestConvert_Method(t *testing.T) {
 	})
 }
 
-// ---- combine() precedence tests ----
+// ---- combineAll() precedence tests ----
 //
 // Each sub-test sets the SAME key in two adjacent precedence levels.
 // The higher-priority source must win.
@@ -134,7 +135,7 @@ func TestCombine_WorkloadInfoWinsOverDeprecated(t *testing.T) {
 	attrs.deprecated["shared.key"] = "from-deprecated"
 	attrs.workloadInfo["shared.key"] = "from-workload"
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	assert.Equal(t, "from-workload", result["shared.key"])
 }
@@ -144,7 +145,7 @@ func TestCombine_PodInfoWinsOverWorkloadInfo(t *testing.T) {
 	attrs.workloadInfo["shared.key"] = "from-workload"
 	attrs.podInfo["shared.key"] = "from-pod-info"
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	assert.Equal(t, "from-pod-info", result["shared.key"])
 }
@@ -154,20 +155,18 @@ func TestCombine_ClusterInfoWinsOverPodInfo(t *testing.T) {
 	attrs.podInfo["shared.key"] = "from-pod-info"
 	attrs.clusterInfo["shared.key"] = "from-cluster"
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	assert.Equal(t, "from-cluster", result["shared.key"])
 }
 
 func TestCombine_ContainerWinsOverClusterInfo(t *testing.T) {
 	attrs := newTestPodAttributes()
-	attrs.clusterInfo["shared.key"] = "from-cluster"
-	container := ContainerAttributes{ContainerName: "shared.key"} // ToMap() uses K8sContainerNameAttr
 	// use the actual container name key for an apples-to-apples comparison
 	attrs.clusterInfo[K8sContainerNameAttr] = "from-cluster"
-	container = ContainerAttributes{ContainerName: "from-container"}
+	container := ContainerAttributes{ContainerName: "from-container"}
 
-	result := attrs.combine(container)
+	result := attrs.combineAll(container)
 
 	assert.Equal(t, "from-container", result[K8sContainerNameAttr])
 }
@@ -177,7 +176,7 @@ func TestCombine_RulesWinsOverContainer(t *testing.T) {
 	attrs.rules[K8sContainerNameAttr] = "from-rules"
 	container := ContainerAttributes{ContainerName: "from-container"}
 
-	result := attrs.combine(container)
+	result := attrs.combineAll(container)
 
 	assert.Equal(t, "from-rules", result[K8sContainerNameAttr])
 }
@@ -187,7 +186,7 @@ func TestCombine_RulesPropagateWinsOverRules(t *testing.T) {
 	attrs.rules["shared.key"] = "from-rules"
 	attrs.rulesPropagate["shared.key"] = "from-rules-propagate"
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	assert.Equal(t, "from-rules-propagate", result["shared.key"])
 }
@@ -197,7 +196,7 @@ func TestCombine_NamespaceAnnotationWinsOverRulesPropagate(t *testing.T) {
 	attrs.rulesPropagate["shared.key"] = "from-rules-propagate"
 	attrs.namespaceAnnotations["shared.key"] = "from-namespace"
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	assert.Equal(t, "from-namespace", result["shared.key"])
 }
@@ -207,7 +206,7 @@ func TestCombine_PodAnnotationWinsOverNamespaceAnnotation(t *testing.T) {
 	attrs.namespaceAnnotations["shared.key"] = "from-namespace"
 	attrs.podAnnotations["shared.key"] = "from-pod"
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	assert.Equal(t, "from-pod", result["shared.key"])
 }
@@ -217,7 +216,7 @@ func TestCombine_CustomWinsOverPodAnnotation(t *testing.T) {
 	attrs.podAnnotations["shared.key"] = "from-pod"
 	attrs.custom["shared.key"] = "from-custom"
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	assert.Equal(t, "from-custom", result["shared.key"])
 }
@@ -227,7 +226,7 @@ func TestCombine_DeprecatedExcludedWhenDisabled(t *testing.T) {
 	attrs.useDeprecated = false
 	attrs.deprecated[DeprecatedWorkloadKindKey] = "some-kind"
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	assert.NotContains(t, result, DeprecatedWorkloadKindKey)
 }
@@ -238,7 +237,7 @@ func TestCombine_DeprecatedIncludedAndOverriddenWhenEnabled(t *testing.T) {
 	attrs.deprecated[DeprecatedWorkloadKindKey] = "from-deprecated"
 	attrs.workloadInfo[DeprecatedWorkloadKindKey] = "from-workload"
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	// deprecated is present but the same key in workloadInfo wins
 	assert.Equal(t, "from-workload", result[DeprecatedWorkloadKindKey])
@@ -258,7 +257,7 @@ func TestCombine_UniqueKeysFromAllSourcesMerged(t *testing.T) {
 	attrs.custom["custom.key"] = "custom-val"
 	container := ContainerAttributes{ContainerName: "my-container"}
 
-	result := attrs.combine(container)
+	result := attrs.combineAll(container)
 
 	assert.Equal(t, "dep-val", result["dep.key"])
 	assert.Equal(t, "workload-val", result["workload.key"])
@@ -277,7 +276,7 @@ func TestCombine_MultipleContainerAttrs_LaterOneWins(t *testing.T) {
 	first := ContainerAttributes{ContainerName: "first-container"}
 	second := ContainerAttributes{ContainerName: "second-container"}
 
-	result := attrs.combine(first, second)
+	result := attrs.combineAll(first, second)
 
 	assert.Equal(t, "second-container", result[K8sContainerNameAttr])
 }
@@ -285,7 +284,7 @@ func TestCombine_MultipleContainerAttrs_LaterOneWins(t *testing.T) {
 func TestCombine_EmptyAttributes(t *testing.T) {
 	attrs := newTestPodAttributes()
 
-	result := attrs.combine()
+	result := attrs.combineAll()
 
 	assert.Empty(t, result)
 }

@@ -59,7 +59,6 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 	log.Debug("injecting OTLP resource PodAttributes")
 
 	attrs, err := attributes.NewPodAttributes(ctx, *request, m.kubeClient)
-
 	if err != nil {
 		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
@@ -75,6 +74,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 	}
 
 	mutated := false
+
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
 
@@ -82,13 +82,13 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 			continue
 		}
 
-		mutated = m.addResourceAttributes(attrs, request, c) || mutated
+		mutated = m.addResourceAttributes(attrs, c) || mutated
 	}
 
 	return mutated, nil
 }
 
-func (m *Mutator) addResourceAttributes(podAttrs *attributes.PodAttributes, request *dtwebhook.BaseRequest, c *corev1.Container) bool {
+func (m *Mutator) addResourceAttributes(podAttrs *attributes.PodAttributes, c *corev1.Container) bool {
 	// order of precedence as in metadata webhook (lowest to highest):
 	// 1. workload
 	// 2. namespace
@@ -120,6 +120,7 @@ func (m *Mutator) addResourceAttributes(podAttrs *attributes.PodAttributes, requ
 		if _, found := existingResourceAttrs[k]; !found {
 			mutated = true
 		}
+
 		return k + "=" + v
 	}, *containerAttrs)
 

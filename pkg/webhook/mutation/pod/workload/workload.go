@@ -50,6 +50,7 @@ func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhoo
 
 func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
 	log := logd.FromContext(ctx)
+
 	objectMetadata := childObjectMetadata.ObjectMeta
 	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller {

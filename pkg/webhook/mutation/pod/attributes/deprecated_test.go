@@ -25,8 +25,8 @@ func TestApplyDeprecatedAttributes(t *testing.T) {
 
 		attrs.applyDeprecatedAttributes()
 
-		assert.Equal(t, "", attrs.deprecated[DeprecatedWorkloadKindKey])
-		assert.Equal(t, "", attrs.deprecated[DeprecatedWorkloadNameKey])
-		assert.Equal(t, "", attrs.deprecated[DeprecatedClusterIDKey])
+		assert.Empty(t, attrs.deprecated[DeprecatedWorkloadKindKey])
+		assert.Empty(t, attrs.deprecated[DeprecatedWorkloadNameKey])
+		assert.Empty(t, attrs.deprecated[DeprecatedClusterIDKey])
 	})
 }

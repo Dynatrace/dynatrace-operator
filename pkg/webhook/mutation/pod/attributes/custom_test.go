@@ -23,7 +23,7 @@ func TestGetNamespaceAnnotationAttributes(t *testing.T) {
 			},
 		}
 
-		attrs.getNamespaceAnnotationAttributes(ns)
+		attrs.readNamespaceAnnotationAttributes(ns)
 
 		assert.Equal(t, "value1", attrs.namespaceAnnotations["my.attr"])
 		assert.Equal(t, "value2", attrs.namespaceAnnotations["other"])
@@ -34,13 +34,13 @@ func TestGetNamespaceAnnotationAttributes(t *testing.T) {
 		ns := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					"unrelated.annotation/key": "ignored",
-					metadataenrichment.Prefix + "kept":  "kept-value",
+					"unrelated.annotation/key":         "ignored",
+					metadataenrichment.Prefix + "kept": "kept-value",
 				},
 			},
 		}
 
-		attrs.getNamespaceAnnotationAttributes(ns)
+		attrs.readNamespaceAnnotationAttributes(ns)
 
 		assert.Len(t, attrs.namespaceAnnotations, 1)
 		assert.Equal(t, "kept-value", attrs.namespaceAnnotations["kept"])
@@ -48,7 +48,7 @@ func TestGetNamespaceAnnotationAttributes(t *testing.T) {
 
 	t.Run("empty annotations map results in empty namespaceAnnotations", func(t *testing.T) {
 		attrs := newTestPodAttributes()
-		attrs.getNamespaceAnnotationAttributes(corev1.Namespace{})
+		attrs.readNamespaceAnnotationAttributes(corev1.Namespace{})
 		assert.Empty(t, attrs.namespaceAnnotations)
 	})
 }
@@ -64,7 +64,7 @@ func TestGetPodAnnotationAttributes(t *testing.T) {
 			},
 		}
 
-		attrs.getPodAnnotationAttributes(pod)
+		attrs.readPodAnnotationAttributes(pod)
 
 		assert.Equal(t, "pod-value", attrs.podAnnotations["my.attr"])
 	})
@@ -74,20 +74,20 @@ func TestGetPodAnnotationAttributes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					"unrelated/key":                      "ignored",
-					metadataenrichment.Prefix + "kept":  "kept-value",
+					"unrelated/key":                    "ignored",
+					metadataenrichment.Prefix + "kept": "kept-value",
 				},
 			},
 		}
 
-		attrs.getPodAnnotationAttributes(pod)
+		attrs.readPodAnnotationAttributes(pod)
 
 		assert.Len(t, attrs.podAnnotations, 1)
 	})
 
 	t.Run("empty annotations map results in empty podAnnotations", func(t *testing.T) {
 		attrs := newTestPodAttributes()
-		attrs.getPodAnnotationAttributes(corev1.Pod{})
+		attrs.readPodAnnotationAttributes(corev1.Pod{})
 		assert.Empty(t, attrs.podAnnotations)
 	})
 }
@@ -110,7 +110,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.getFromEnrichmentRules(ns, dk)
+		attrs.readFromEnrichmentRules(ns, dk)
 
 		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "production", attrs.rules[expectedKey])
@@ -134,7 +134,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.getFromEnrichmentRules(ns, dk)
+		attrs.readFromEnrichmentRules(ns, dk)
 
 		assert.Equal(t, "staging", attrs.rulesPropagate["custom.env"])
 		assert.Empty(t, attrs.rules)
@@ -157,7 +157,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.getFromEnrichmentRules(ns, dk)
+		attrs.readFromEnrichmentRules(ns, dk)
 
 		assert.Equal(t, "backend", attrs.rulesPropagate["team.name"])
 	})
@@ -174,7 +174,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.getFromEnrichmentRules(corev1.Namespace{}, dk)
+		attrs.readFromEnrichmentRules(corev1.Namespace{}, dk)
 
 		assert.Empty(t, attrs.rules)
 		assert.Empty(t, attrs.rulesPropagate)
@@ -201,44 +201,11 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.getFromEnrichmentRules(ns, dk)
+		attrs.readFromEnrichmentRules(ns, dk)
 
 		envKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "prod", attrs.rules[envKey])
 		assert.Equal(t, "platform", attrs.rulesPropagate["custom.team"])
-	})
-}
-
-func TestRemoveMetadataPrefix(t *testing.T) {
-	t.Run("strips metadata prefix from prefixed keys", func(t *testing.T) {
-		input := map[string]string{
-			metadataenrichment.Prefix + "my.attr":    "value1",
-			metadataenrichment.Prefix + "other.attr": "value2",
-		}
-		result := RemoveMetadataPrefix(input)
-		assert.Equal(t, map[string]string{"my.attr": "value1", "other.attr": "value2"}, result)
-	})
-
-	t.Run("passes through keys without the prefix unchanged", func(t *testing.T) {
-		input := map[string]string{
-			"no-prefix-key": "value",
-		}
-		result := RemoveMetadataPrefix(input)
-		assert.Equal(t, map[string]string{"no-prefix-key": "value"}, result)
-	})
-
-	t.Run("handles mix of prefixed and non-prefixed keys", func(t *testing.T) {
-		input := map[string]string{
-			metadataenrichment.Prefix + "attr": "prefixed",
-			"plain":                             "not-prefixed",
-		}
-		result := RemoveMetadataPrefix(input)
-		assert.Equal(t, map[string]string{"attr": "prefixed", "plain": "not-prefixed"}, result)
-	})
-
-	t.Run("empty map returns empty map", func(t *testing.T) {
-		result := RemoveMetadataPrefix(map[string]string{})
-		assert.Empty(t, result)
 	})
 }
 
@@ -266,7 +233,7 @@ func TestGetMetadataAnnotations(t *testing.T) {
 			},
 		}
 
-		attrs.GetMetadataAnnotations(dtwebhook.BaseRequest{Pod: &pod, Namespace: ns, DynaKube: dk})
+		attrs.readMetadataAnnotations(dtwebhook.BaseRequest{Pod: &pod, Namespace: ns, DynaKube: dk})
 
 		assert.Equal(t, "ns-val", attrs.namespaceAnnotations["ns-key"])
 		assert.Equal(t, "pod-val", attrs.podAnnotations["pod-key"])

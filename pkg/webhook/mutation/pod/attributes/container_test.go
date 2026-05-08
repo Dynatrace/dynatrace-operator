@@ -17,7 +17,7 @@ func TestNewContainerAttributes(t *testing.T) {
 	t.Run("empty container name", func(t *testing.T) {
 		c := corev1.Container{}
 		attrs := NewContainerAttributes(c)
-		assert.Equal(t, "", attrs.ContainerName)
+		assert.Empty(t, attrs.ContainerName)
 	})
 }
 

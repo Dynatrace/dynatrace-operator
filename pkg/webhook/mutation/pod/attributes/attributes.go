@@ -43,12 +43,12 @@ func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client c
 		useDeprecated: request.DynaKube.FF().EnableAttributesDTKubernetes(),
 	}
 
-	err := attrs.GetWorkloadInfoAttributes(ctx, request, client)
+	err := attrs.readWorkloadInfoAttributes(ctx, request, client)
 	if err != nil {
 		return nil, err
 	}
 
-	attrs.GetMetadataAnnotations(request)
+	attrs.readMetadataAnnotations(request)
 	attrs.readPodAttributes(request)
 
 	if attrs.useDeprecated {
@@ -71,7 +71,8 @@ func (attrs *PodAttributes) GetPodEnvVars() []corev1.EnvVar {
 }
 
 func (attrs *PodAttributes) Convert(c convertFunc, containerAttrs ...ContainerAttributes) []string {
-	combined := attrs.combine(containerAttrs...)
+	combined := attrs.combineAll(containerAttrs...)
+
 	return convert(combined, c)
 }
 
@@ -82,15 +83,15 @@ func (attrs *PodAttributes) Convert(c convertFunc, containerAttrs ...ContainerAt
 // 4. namespace annotations
 // 5. pod annotations
 // 6. custom attributes (OTLP env var, DynaKube resource attributes, ...)
-func (attrs *PodAttributes) combine(containerAttrs ...ContainerAttributes) map[string]string {
+func (attrs *PodAttributes) combineAll(containerAttrs ...ContainerAttributes) map[string]string {
 	combined := make(map[string]string)
 
 	// precedence from low -> high
 	if attrs.useDeprecated {
 		maps.Copy(combined, attrs.deprecated)
 	}
-	maps.Copy(combined, attrs.workloadInfo)
 
+	maps.Copy(combined, attrs.workloadInfo)
 	maps.Copy(combined, attrs.podInfo)
 	maps.Copy(combined, attrs.clusterInfo)
 
@@ -105,6 +106,29 @@ func (attrs *PodAttributes) combine(containerAttrs ...ContainerAttributes) map[s
 	maps.Copy(combined, attrs.podAnnotations)
 
 	maps.Copy(combined, attrs.custom)
+
+	return combined
+}
+
+func (attrs *PodAttributes) combineForMetadataAnnotations() map[string]string {
+	combined := make(map[string]string)
+
+	// make sure we use the same precedence as in combine()
+	maps.Copy(combined, attrs.workloadInfo)
+	maps.Copy(combined, attrs.rulesPropagate)
+	maps.Copy(combined, attrs.namespaceAnnotations)
+
+	return combined
+}
+
+func (attrs *PodAttributes) combineForJSONAnnotation() map[string]string {
+	combined := make(map[string]string)
+
+	// make sure we use the same precedence as in combineAll()
+	maps.Copy(combined, attrs.rules)
+	maps.Copy(combined, attrs.rulesPropagate)
+	maps.Copy(combined, attrs.namespaceAnnotations)
+	maps.Copy(combined, attrs.podAnnotations)
 
 	return combined
 }

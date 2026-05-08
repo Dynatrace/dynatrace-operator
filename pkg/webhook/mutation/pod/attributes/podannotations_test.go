@@ -39,6 +39,7 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		require.True(t, ok, "expected JSON annotation to be set")
 		var parsed map[string]string
 		require.NoError(t, json.Unmarshal([]byte(jsonVal), &parsed))
+
 		return parsed
 	}
 
@@ -105,7 +106,7 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		err := attrs.setPodMetadataJSONAnnotation(pod)
 
 		require.NoError(t, err)
-		assert.Equal(t, existingJSON, pod.Annotations[metadataenrichment.Annotation])
+		assert.JSONEq(t, existingJSON, pod.Annotations[metadataenrichment.Annotation])
 	})
 }
 

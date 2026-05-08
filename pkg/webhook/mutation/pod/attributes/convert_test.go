@@ -26,6 +26,7 @@ func TestConvert(t *testing.T) {
 		var gotKey, gotVal string
 		convert(attrs, func(k, v string) string {
 			gotKey, gotVal = k, v
+
 			return ""
 		})
 		assert.Equal(t, "mykey", gotKey)
