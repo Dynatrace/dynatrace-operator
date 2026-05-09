@@ -49,7 +49,7 @@ func TestGetPodFromRequest(t *testing.T) {
 		podWebhook := createTestWebhook(t, handlermock.NewHandler(t), handlermock.NewHandler(t))
 		expected := getTestPod()
 
-		pod, err := getPodFromRequest(*createTestAdmissionRequest(expected), podWebhook.decoder)
+		pod, err := getPodFromRequest(t.Context(), *createTestAdmissionRequest(expected), podWebhook.decoder)
 		require.NoError(t, err)
 		assert.Equal(t, expected, pod)
 	})

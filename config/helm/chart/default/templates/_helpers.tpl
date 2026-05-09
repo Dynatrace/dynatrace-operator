@@ -76,7 +76,7 @@ startupProbe:
 - name: modules.json
   value: |
     {
-      "csiDriver": {{ .Values.csidriver.enabled }},
+      "csiDriver": {{ and .Values.csidriver.enabled (not .Values.csidriver.migrationMode) }},
       "activeGate": {{ .Values.rbac.activeGate.create }},
       "oneAgent": {{ .Values.rbac.oneAgent.create }},
       "extensions": {{ .Values.rbac.extensions.create }},

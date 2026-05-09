@@ -10,16 +10,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/pkg/errors"
@@ -44,7 +44,7 @@ const (
 var (
 	anyCtx                       = mock.MatchedBy(func(context.Context) bool { return true })
 	anyDynakube                  = mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })
-	anyAgClient                  = mock.MatchedBy(func(apiClient agclient.APIClient) bool { return true })
+	anyAgClient                  = mock.MatchedBy(func(apiClient agclient.Client) bool { return true })
 	anyTokens                    = mock.MatchedBy(func(token.Tokens) bool { return true })
 	anyCapability                = mock.MatchedBy(func(capability.Capability) bool { return true })
 	anyCustomPropertiesOwnerName = mock.MatchedBy(func(string) bool { return true })
@@ -89,7 +89,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			versionReconciler:          mockVersionReconcileOnce(t),
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconciler,
-			configMaps:                 k8sconfigmap.Query(clt, clt, log),
+			configMaps:                 k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), buildDynakube(), createMockDTClient(t, false), nil)
@@ -114,7 +114,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			pullSecretReconciler:       mockPullSecretReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        tlsSecretReconciler,
-			configMaps:                 k8sconfigmap.Query(clt, clt, log),
+			configMaps:                 k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
@@ -140,7 +140,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
 			statefulsetReconciler:      statefulsetReconciler,
-			configMaps:                 k8sconfigmap.Query(clt, clt, log),
+			configMaps:                 k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
@@ -187,7 +187,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
-			configMaps:                 k8sconfigmap.Query(clt, clt, log),
+			configMaps:                 k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
@@ -223,7 +223,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			// statefulsetReconciler: panic if called
 			// customPropertiesReconciler: panic if called
 			tlsSecretReconciler: mockTLSReconcileOnce(t),
-			configMaps:          k8sconfigmap.Query(clt, clt, log),
+			configMaps:          k8sconfigmap.Query(clt, clt),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
@@ -309,7 +309,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
-			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
+			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient),
 		}
 		err := proxyReconciler.Reconcile(t.Context(), dkWithProxy, createMockDTClient(t, false), nil)
 		require.NoError(t, err)
@@ -325,7 +325,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
-			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
+			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient),
 		}
 
 		err = noProxyReconciler.Reconcile(t.Context(), dkNoProxy, createMockDTClient(t, false), nil)
@@ -581,7 +581,7 @@ func TestServiceCreation(t *testing.T) {
 		return activegateService
 	}
 
-	dynatraceClient := createMockDTClient(t, true)
+	dtClient := createMockDTClient(t, true)
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -626,7 +626,7 @@ func TestServiceCreation(t *testing.T) {
 				capName,
 			}
 
-			err := reconciler.Reconcile(t.Context(), dk, dynatraceClient, nil)
+			err := reconciler.Reconcile(t.Context(), dk, dtClient, nil)
 			require.NoError(t, err)
 
 			if len(expectedPorts) == 0 {
@@ -682,7 +682,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
-			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient, log),
+			configMaps:                 k8sconfigmap.Query(fakeClient, fakeClient),
 		}
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, true), nil)
@@ -693,6 +693,72 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDKey])
 		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsKey])
+	})
+}
+
+func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
+	t.Run("skips if ActiveGate is not enabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+		}
+		fakeClient := fake.NewClient()
+		r := &Reconciler{configMaps: k8sconfigmap.Query(fakeClient, fakeClient)}
+
+		err := r.createDeploymentPropertiesConfigMap(t.Context(), dk)
+		require.NoError(t, err)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+
+	t.Run("creates configmap when ActiveGate is enabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+			},
+		}
+		fakeClient := fake.NewClient()
+		r := &Reconciler{configMaps: k8sconfigmap.Query(fakeClient, fakeClient)}
+
+		err := r.createDeploymentPropertiesConfigMap(t.Context(), dk)
+		require.NoError(t, err)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
+		require.NoError(t, err)
+		assert.Contains(t, cm.Data, consts.DeploymentPropertiesFileName)
+		assert.Equal(t, deploymentproperties.BuildContent(nil), cm.Data[consts.DeploymentPropertiesFileName])
+	})
+
+	t.Run("configmap content reflects resource attributes", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate:         activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				ResourceAttributes: map[string]string{"key": "value"},
+			},
+		}
+		fakeClient := fake.NewClient()
+		r := &Reconciler{configMaps: k8sconfigmap.Query(fakeClient, fakeClient)}
+
+		err := r.createDeploymentPropertiesConfigMap(t.Context(), dk)
+		require.NoError(t, err)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
+		require.NoError(t, err)
+		assert.Equal(t, deploymentproperties.BuildContent(dk.Spec.ResourceAttributes), cm.Data[consts.DeploymentPropertiesFileName])
 	})
 }
 
@@ -762,22 +828,19 @@ func mockVersionReconcileOnce(t *testing.T) version.Reconciler {
 func createIstioReconcilerMock(t *testing.T) istioReconciler {
 	rec := newMockIstioReconciler(t)
 
-	rec.EXPECT().ReconcileActiveGate(t.Context(), anyDynakube).Return(nil).Once()
+	rec.EXPECT().ReconcileActiveGate(anyCtx, anyDynakube).Return(nil).Once()
 
 	return rec
 }
 
-func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dtclientmock.Client {
+func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dynatrace.Client {
 	t.Helper()
 
-	dtc := dtclientmock.NewClient(t)
-	agClient := agclientmock.NewAPIClient(t)
+	agClient := agclientmock.NewClient(t)
 
 	if authTokenRouteRequired {
 		agClient.EXPECT().GetAuthToken(anyCtx, testName).Return(&agclient.AuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil).Maybe()
 	}
 
-	dtc.EXPECT().AsV2().Return(&dtclient.ClientV2{ActiveGate: agClient})
-
-	return dtc
+	return &dynatrace.Client{ActiveGate: agClient}
 }

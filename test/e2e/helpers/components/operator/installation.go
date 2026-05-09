@@ -14,9 +14,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/webhook"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
@@ -111,7 +114,28 @@ func VerifyInstall(ctx context.Context, envConfig *envconf.Config, withCSI bool)
 		}
 	}
 
+	ctx, err = PrintDeploymentMetadata(ctx, envConfig)
+	if err != nil {
+		return ctx, err
+	}
+
 	return ctx, nil
+}
+
+func PrintDeploymentMetadata(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+	resource := envConfig.Client().Resources()
+
+	return ctx, k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{
+		Name:      DeploymentName,
+		Namespace: DefaultNamespace,
+	}).ForEachPod(func(pod corev1.Pod) {
+		fmt.Printf("Metadata for all containers for %s\n", DeploymentName) //nolint:forbidigo
+		for _, container := range pod.Status.ContainerStatuses {
+			fmt.Printf("\tcontainer name: %s\n", container.Name) //nolint:forbidigo
+			fmt.Printf("\timage: %s\n", container.Image)         //nolint:forbidigo
+			fmt.Printf("\timageID: %s\n", container.ImageID)     //nolint:forbidigo
+		}
+	})
 }
 
 func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {

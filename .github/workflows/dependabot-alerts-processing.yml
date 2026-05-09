@@ -19,7 +19,7 @@ jobs:
     steps:
       # Step 1: Cache last run timestamp
       - name: Cache last run timestamp
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: last-run.txt
           key: dependabot-triage-lastrun-${{ github.run_id }}
@@ -29,7 +29,7 @@ jobs:
       # Step 2: Generate App Installation Token
       - name: Generate GitHub App Token
         id: app-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
           app-id: ${{ secrets.AI_VULN_APP_ID }}
           private-key: ${{ secrets.AI_VULN_APP_PRIVATE_KEY }}

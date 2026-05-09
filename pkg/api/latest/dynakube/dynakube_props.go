@@ -9,9 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,13 +20,10 @@ const (
 	// The limit is necessary because kubernetes uses the name of some resources (ActiveGate StatefulSet) for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)
 	MaxNameLength = 40
 
-	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix = "-pull-secret"
 
 	DefaultMinRequestThresholdMinutes = 15
 )
-
-var log = logd.Get().WithName("dynakube-v1beta6")
 
 func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations)
@@ -69,14 +64,25 @@ func (dk *DynaKube) PullSecretName() string {
 		return dk.Spec.CustomPullSecret
 	}
 
+	return dk.TenantRegistryPullSecretName()
+}
+
+func (dk *DynaKube) TenantRegistryPullSecretName() string {
 	return dk.Name + PullSecretSuffix
 }
 
-// PullSecretNames returns the names of the pull secrets to be used for immutable images.
 func (dk *DynaKube) PullSecretNames() []string {
-	names := []string{
-		dk.Name + PullSecretSuffix,
-	}
+	customNames := dk.customPullSecretNames()
+	names := make([]string, 0, 1+len(customNames))
+	names = append(names, dk.TenantRegistryPullSecretName())
+	names = append(names, customNames...)
+
+	return names
+}
+
+func (dk *DynaKube) customPullSecretNames() []string {
+	var names []string
+
 	if dk.Spec.CustomPullSecret != "" {
 		names = append(names, dk.Spec.CustomPullSecret)
 	}
@@ -88,14 +94,29 @@ func (dk *DynaKube) PullSecretNames() []string {
 	return names
 }
 
-func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
-	pullSecretNames := dk.PullSecretNames()
-	imagePullSecrets := make([]corev1.LocalObjectReference, len(pullSecretNames))
-	for i, pullSecretName := range pullSecretNames {
-		imagePullSecrets[i].Name = pullSecretName
+func (dk *DynaKube) TenantRegistryPullSecretReferences() []corev1.LocalObjectReference {
+	return []corev1.LocalObjectReference{
+		{Name: dk.TenantRegistryPullSecretName()},
+	}
+}
+
+func (dk *DynaKube) CustomPullSecretReferences() []corev1.LocalObjectReference {
+	names := dk.customPullSecretNames()
+	if len(names) == 0 {
+		return nil
 	}
 
-	return imagePullSecrets
+	refs := make([]corev1.LocalObjectReference, len(names))
+
+	for i, name := range names {
+		refs[i].Name = name
+	}
+
+	return refs
+}
+
+func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
+	return append(dk.TenantRegistryPullSecretReferences(), dk.CustomPullSecretReferences()...)
 }
 
 // Tokens returns the name of the Secret to be used for tokens.
@@ -129,10 +150,6 @@ func (dk *DynaKube) APIRequestThreshold() time.Duration {
 	return time.Duration(dk.GetDynatraceAPIRequestThreshold()) * time.Minute
 }
 
-func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceAPI.LastTokenScopeRequest, dk.APIRequestThreshold())
-}
-
 func (dk *DynaKube) IsCodeModulesStatusReady() bool {
 	if dk.OneAgent().GetCustomCodeModulesImage() != "" {
 		if dk.OneAgent().GetCodeModulesImage() == "" {
@@ -143,4 +160,8 @@ func (dk *DynaKube) IsCodeModulesStatusReady() bool {
 	}
 
 	return true
+}
+
+func (dk *DynaKube) GetResourceAttributes() map[string]string {
+	return dk.Spec.ResourceAttributes
 }

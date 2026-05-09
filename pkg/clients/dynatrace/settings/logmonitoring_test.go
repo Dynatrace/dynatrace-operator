@@ -20,8 +20,8 @@ func TestGetSettingsForLogModule(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
 		request.EXPECT().Execute(new(TotalCountSettingsResponse)).Run(injectResponse(TotalCountSettingsResponse{TotalCount: 3})).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
@@ -33,7 +33,7 @@ func TestGetSettingsForLogModule(t *testing.T) {
 	})
 
 	t.Run("empty monitoredEntity", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
+		apiClient := coremock.NewClient(t)
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForLogModule(ctx, "")
 		require.NoError(t, err)
@@ -49,8 +49,8 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-123"}})).Return(nil).Once()
@@ -63,8 +63,8 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 	})
 
 	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
@@ -77,8 +77,8 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 	})
 
 	t.Run("response not exactly one entry", func(t *testing.T) {
-		apiClient := coremock.NewAPIClient(t)
-		request := coremock.NewAPIRequest(t)
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
 		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()

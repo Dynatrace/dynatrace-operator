@@ -6,18 +6,18 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 )
 
 type Client struct {
-	newInstaller url.NewFunc
+	newInstaller binary.NewFunc
 }
 
 type Option func(*Client)
 
-func WithInstaller(builder url.NewFunc) Option {
+func WithInstaller(builder binary.NewFunc) Option {
 	return func(cl *Client) {
 		cl.newInstaller = builder
 	}
@@ -25,7 +25,7 @@ func WithInstaller(builder url.NewFunc) Option {
 
 func New(options ...Option) *Client {
 	cl := &Client{
-		newInstaller: url.NewURLInstaller,
+		newInstaller: binary.NewInstaller,
 	}
 
 	for _, opt := range options {
@@ -35,14 +35,14 @@ func New(options ...Option) *Client {
 	return cl
 }
 
-func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, props url.Properties) error {
-	client, err := cl.createDTClientFromFs(inputDir)
+func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, props binary.Properties) error {
+	dtClient, err := cl.createDTClientFromFs(inputDir)
 	if err != nil {
 		return err
 	}
 
 	oneAgentInstaller := cl.newInstaller(
-		client,
+		dtClient,
 		&props,
 	)
 
@@ -51,7 +51,7 @@ func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, pro
 	return err
 }
 
-func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, error) {
+func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.Client, error) {
 	config, err := configFromFs(inputDir)
 	if err != nil {
 		return nil, err
@@ -64,16 +64,18 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.APIClient, err
 		return nil, err
 	}
 
-	options := config.toDTClientOptionsV2()
+	options := config.toDTClientOptions()
 
 	if len(certs) > 0 {
-		options = append(options, dtclient.WithCerts(certs))
+		options = append(options, dynatrace.WithCerts(certs))
 	}
 
-	client, err := dtclient.NewClientV2(config.URL, options...)
+	options = append(options, dynatrace.WithBaseURL(config.URL))
+
+	dtClient, err := dynatrace.NewClient(options...)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.OneAgent, nil
+	return dtClient.OneAgent, nil
 }

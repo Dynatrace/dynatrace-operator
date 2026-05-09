@@ -1,8 +1,11 @@
 package daemonset
 
 import (
+	"context"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -10,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -87,7 +91,7 @@ type builder struct {
 }
 
 type Builder interface {
-	BuildDaemonSet() (*appsv1.DaemonSet, error)
+	BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 }
 
 func NewHostMonitoring(dk *dynakube.DynaKube, clusterID string) Builder {
@@ -123,8 +127,8 @@ func NewClassicFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
 	}
 }
 
-func (hm *hostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
-	daemonSet, err := hm.builder.BuildDaemonSet()
+func (hm *hostMonitoring) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
+	daemonSet, err := hm.builder.BuildDaemonSet(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +142,8 @@ func (hm *hostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return daemonSet, nil
 }
 
-func (classic *classicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
-	result, err := classic.builder.BuildDaemonSet()
+func (classic *classicFullStack) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
+	result, err := classic.builder.BuildDaemonSet(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -149,10 +153,11 @@ func (classic *classicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
-func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
+func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
+	ctx, _ = logd.NewFromContext(ctx, "oneagent-daemonset")
 	dk := b.dk
 
-	podSpec, err := b.podSpec()
+	podSpec, err := b.podSpec(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +205,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
-func (b *builder) podSpec() (corev1.PodSpec, error) {
+func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 	resources := b.resources()
 	dnsPolicy := b.dnsPolicy()
 
@@ -230,7 +235,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 			ImagePullPolicy: b.dk.OneAgent().GetImagePullPolicy(),
 			Name:            containerName,
 			Resources:       resources,
-			SecurityContext: b.securityContext(),
+			SecurityContext: b.securityContext(ctx),
 			VolumeMounts:    volumeMounts,
 		}},
 		ImagePullSecrets:              imagePullSecrets,
@@ -293,6 +298,11 @@ func (b *builder) initContainerArguments() []string {
 
 	if b.dk.Status.KubernetesClusterMEID != "" {
 		attributes = append(attributes, "dt.entity.kubernetes_cluster="+b.dk.Status.KubernetesClusterMEID)
+	}
+
+	resourceAttrs := b.dk.OneAgent().GetResourceAttributes()
+	for _, k := range slices.Sorted(maps.Keys(resourceAttrs)) {
+		attributes = append(attributes, k+"="+resourceAttrs[k])
 	}
 
 	return []string{
@@ -427,14 +437,14 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 	return b.dk.ImagePullSecretReferences()
 }
 
-func (b *builder) securityContext() *corev1.SecurityContext {
+func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 	securityContext := &corev1.SecurityContext{}
 
 	if b.dk != nil && b.dk.OneAgent().IsReadOnlyFSSupported() {
 		securityContext.RunAsNonRoot = ptr.To(true)
 		securityContext.RunAsUser = ptr.To(userGroupID)
 		securityContext.RunAsGroup = ptr.To(userGroupID)
-		securityContext.ReadOnlyRootFilesystem = ptr.To(b.isRootFsReadonly())
+		securityContext.ReadOnlyRootFilesystem = ptr.To(b.isRootFsReadonly(ctx))
 	} else {
 		securityContext.ReadOnlyRootFilesystem = ptr.To(false)
 	}
@@ -529,7 +539,9 @@ func (b *builder) getReadinessProbe() *corev1.Probe {
 
 // isRootFsReadonly checks if the given version of the OneAgent supports the `ReadOnlyRootFilesystem` securityContext setting.
 // if the version is not set, ie.: unknown, we  consider the OneAgent to support `ReadOnlyRootFilesystem`.
-func (b *builder) isRootFsReadonly() bool {
+func (b *builder) isRootFsReadonly(ctx context.Context) bool {
+	log := logd.FromContext(ctx)
+
 	if b.dk != nil &&
 		b.dk.OneAgent().IsReadOnlyFSSupported() &&
 		b.dk.OneAgent().GetVersion() != "" &&

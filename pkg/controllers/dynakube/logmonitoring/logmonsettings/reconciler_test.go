@@ -2,20 +2,23 @@ package logmonsettings
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestReconcile(t *testing.T) {
@@ -39,8 +42,8 @@ func TestReconcile(t *testing.T) {
 	}
 
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
@@ -56,8 +59,8 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, mock.Anything).
 			Return("test-object-id", nil)
@@ -76,7 +79,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 
 		dk := getDK()
 		r := NewReconciler()
@@ -90,7 +93,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 
 		dk := getDK()
 
@@ -105,7 +108,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("cleanup condition if logmon is turned off", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 
 		dk := &dynakube.DynaKube{}
 
@@ -120,8 +123,8 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("update condition timestamp if outdated", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
@@ -149,7 +152,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("don't update condition timestamp if not outdated", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 
 		dk := getDK()
 
@@ -170,6 +173,39 @@ func TestReconcile(t *testing.T) {
 		currentTS := condition.LastTransitionTime.Time
 
 		require.Equal(t, currentTS, prevTS)
+	})
+
+	t.Run("platform token cannot read settings", func(t *testing.T) {
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+			Return(settings.TotalCountSettingsResponse{}, &core.HTTPError{StatusCode: http.StatusForbidden}).
+			Once()
+
+		dk := getDK()
+		dk.Status.APIToken.Platform = ptr.To(true)
+		r := NewReconciler()
+
+		err := r.Reconcile(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
+	})
+
+	t.Run("platform token cannot write settings", func(t *testing.T) {
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+			Return(settings.TotalCountSettingsResponse{}, nil).Once()
+		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, []logmonitoring.IngestRuleMatchers{}).
+			Return("", &core.HTTPError{StatusCode: http.StatusForbidden})
+
+		dk := getDK()
+		dk.Status.APIToken.Platform = ptr.To(true)
+		r := NewReconciler()
+
+		err := r.Reconcile(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
 	})
 }
 
@@ -194,7 +230,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	}
 
 	t.Run("error fetching log monitoring settings", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{}, errors.New("error when fetching settings"))
 
@@ -210,7 +246,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("KubernetesClusterMEID is missing -> skip", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		dk := getDK()
 		dk.Status.KubernetesClusterMEID = ""
 
@@ -223,7 +259,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("log monitoring settings already exist", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
@@ -238,7 +274,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("create log monitoring settings", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).
@@ -265,7 +301,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("error creating log monitoring settings", func(t *testing.T) {
-		mockClient := settingsmock.NewAPIClient(t)
+		mockClient := settingsmock.NewClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).
@@ -285,12 +321,12 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 func setReadScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsRead, Status: metav1.ConditionTrue})
+	optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 }
 
 func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsWrite, Status: metav1.ConditionTrue})
+	optionalscope.SetAvailable(dk, token.ScopeSettingsWrite)
 }
 
 func verifyCondition(t *testing.T, dk *dynakube.DynaKube, expectedReason string) {

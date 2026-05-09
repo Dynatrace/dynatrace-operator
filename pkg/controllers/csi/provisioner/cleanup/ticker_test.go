@@ -20,7 +20,7 @@ func TestTicker(t *testing.T) {
 	require.Nil(t, ticker)
 
 	// Works with nil ticker
-	resetTickerAfterDelete()
+	resetTickerAfterDelete(t.Context())
 
 	// ticker is now set
 	require.NotNil(t, ticker)
@@ -28,13 +28,13 @@ func TestTicker(t *testing.T) {
 	require.Equal(t, parsedDuration, cleanupPeriod)
 
 	// Works with not-nil ticker
-	resetTickerAfterDelete()
+	resetTickerAfterDelete(t.Context())
 
 	ticker.Stop()
 	ticker = nil
 
 	// Works with nil ticker
-	resetFunc := checkTicker()
+	resetFunc := checkTicker(t.Context())
 	require.NotNil(t, resetFunc)
 	require.Nil(t, ticker)
 
@@ -42,7 +42,7 @@ func TestTicker(t *testing.T) {
 	require.NotNil(t, ticker)
 
 	// Works with not-nil ticker
-	resetFunc = checkTicker()
+	resetFunc = checkTicker(t.Context())
 	require.Nil(t, resetFunc)
 
 	ticker.Stop()

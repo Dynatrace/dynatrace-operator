@@ -59,6 +59,10 @@ func AssertIstiodDeployment() func(ctx context.Context, envConfig *envconf.Confi
 			return ctx, nil
 		}
 
+		if version := deployment.Labels["app.kubernetes.io/version"]; version != "" {
+			t.Logf("detected istio control plane version %s", version)
+		}
+
 		return ctx, errors.WithStack(err)
 	}
 }

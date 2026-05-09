@@ -1,6 +1,7 @@
 package cleanup
 
 import (
+	"context"
 	"maps"
 	"os"
 	"slices"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"k8s.io/mount-utils"
 )
 
@@ -38,13 +40,15 @@ func (c *Cleaner) isMountPoint(file string) (bool, error) {
 	return isMountPoint, err
 }
 
-func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
-	relevantHostDirs := c.collectRelevantHostDirs(dks)
+func (c *Cleaner) removeHostMounts(ctx context.Context, dks []dynakube.DynaKube, fsState fsState) {
+	log := logd.FromContext(ctx)
+
+	relevantHostDirs := c.collectRelevantHostDirs(ctx, dks)
 
 	for _, hostDK := range fsState.hostDks {
 		possibleHostDirs := []string{
-			c.path.OsAgentDir(hostDK),
-			c.path.OldOsAgentDir(hostDK),
+			c.path.OSAgentDir(hostDK),
+			c.path.OldOSAgentDir(hostDK),
 		}
 
 		for _, hostDir := range possibleHostDirs {
@@ -70,7 +74,9 @@ func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 	}
 }
 
-func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bool {
+func (c *Cleaner) collectRelevantHostDirs(ctx context.Context, dks []dynakube.DynaKube) map[string]bool {
+	log := logd.FromContext(ctx)
+
 	hostDirs := map[string]bool{}
 
 	for _, dk := range dks {
@@ -78,11 +84,11 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 			continue
 		}
 
-		hostDir := c.path.OsAgentDir(dk.Name)
+		hostDir := c.path.OSAgentDir(dk.Name)
 
 		hostDirs[hostDir] = true
 
-		c.safeAddRelevantPath(hostDir, hostDirs)
+		c.safeAddRelevantPath(ctx, hostDir, hostDirs)
 
 		tenantUUID, err := metadata.TenantUUIDFromAPIURL(dk.APIURL())
 		if err != nil {
@@ -91,8 +97,8 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 			continue
 		}
 
-		deprecatedHostDirLink := c.path.OldOsAgentDir(tenantUUID)
-		c.safeAddRelevantPath(deprecatedHostDirLink, hostDirs)
+		deprecatedHostDirLink := c.path.OldOSAgentDir(tenantUUID)
+		c.safeAddRelevantPath(ctx, deprecatedHostDirLink, hostDirs)
 	}
 
 	if len(hostDirs) > 0 {

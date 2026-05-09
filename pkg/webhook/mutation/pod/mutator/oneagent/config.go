@@ -2,12 +2,7 @@ package oneagent
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
-)
-
-var (
-	log = logd.Get().WithName("oa-mutation")
 )
 
 const (
@@ -19,6 +14,7 @@ const (
 
 	MissingTenantUUIDReason      = "MissingTenantUUID"
 	DynaKubeStatusNotReadyReason = "DynaKubeStatusNotReady"
+	InvalidInstallPathReason     = "InvalidInstallPath"
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.

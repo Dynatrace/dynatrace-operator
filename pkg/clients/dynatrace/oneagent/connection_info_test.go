@@ -1,14 +1,18 @@
 package oneagent
 
 import (
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 const (
 	testCommunicationEndpoint = "https://tenant.dev.dynatracelabs.com:443"
@@ -32,8 +36,8 @@ func Test_GetConnectionInfo(t *testing.T) {
 		Endpoints:   testCommunicationEndpoint,
 	}
 
-	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *ConnectionInfo, err error) *Client {
-		req := coremock.NewAPIRequest(t)
+	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *ConnectionInfo, err error) *ClientImpl {
+		req := coremock.NewRequest(t)
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(params).Return(req).Once()
 		req.EXPECT().
@@ -45,15 +49,15 @@ func Test_GetConnectionInfo(t *testing.T) {
 				resp.Endpoints = response.Endpoints
 			}).
 			Return(err).Once()
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), connectionInfoPath).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().GET(anyCtx, connectionInfoPath).Return(req).Once()
 
-		return NewClient(client, "", networkZone)
+		return NewClient(coreClient, "", networkZone)
 	}
 
 	t.Run("no network zone", func(t *testing.T) {
-		client := setupMockedClient(t, map[string]string{}, "", response, nil)
-		connectionInfo, err := client.GetConnectionInfo(ctx)
+		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
+		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -65,8 +69,8 @@ func Test_GetConnectionInfo(t *testing.T) {
 			"networkZone":         testNetworkZone,
 			"defaultZoneFallback": "true",
 		}
-		client := setupMockedClient(t, params, testNetworkZone, response, nil)
-		connectionInfo, err := client.GetConnectionInfo(ctx)
+		oaClient := setupMockedClient(t, params, testNetworkZone, response, nil)
+		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -77,8 +81,8 @@ func Test_GetConnectionInfo(t *testing.T) {
 		response.Endpoints = ""
 		expectedResponse.Endpoints = ""
 
-		client := setupMockedClient(t, map[string]string{}, "", response, nil)
-		connectionInfo, err := client.GetConnectionInfo(ctx)
+		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
+		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -87,17 +91,17 @@ func Test_GetConnectionInfo(t *testing.T) {
 
 	t.Run("bad request error", func(t *testing.T) {
 		expectErr := &core.HTTPError{StatusCode: 400, Message: "bad request"}
-		client := setupMockedClient(t, map[string]string{}, "", response, expectErr)
+		oaClient := setupMockedClient(t, map[string]string{}, "", response, expectErr)
 
-		_, err := client.GetConnectionInfo(ctx)
+		_, err := oaClient.GetConnectionInfo(ctx)
 		assert.NoError(t, err)
 	})
 
 	t.Run("server error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		client := setupMockedClient(t, map[string]string{}, "", response, expectErr)
+		oaClient := setupMockedClient(t, map[string]string{}, "", response, expectErr)
 
-		_, err := client.GetConnectionInfo(ctx)
+		_, err := oaClient.GetConnectionInfo(ctx)
 		assert.ErrorIs(t, err, expectErr)
 	})
 }

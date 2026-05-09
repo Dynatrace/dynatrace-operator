@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -49,6 +50,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "otelc-service")
 	if !dk.TelemetryIngest().IsEnabled() {
 		r.removeServiceOnce(ctx, dk)
 
@@ -70,6 +72,7 @@ func (r *Reconciler) removeServiceOnce(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceName string, dk *dynakube.DynaKube) {
+	log := logd.FromContext(ctx)
 	telemetryServiceList := &corev1.ServiceList{}
 
 	listOps := []client.ListOption{
@@ -98,14 +101,16 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.DynaKube) error {
-	newService, err := r.buildService(dk)
+	log := logd.FromContext(ctx)
+
+	newService, err := r.buildService(ctx, dk)
 	if err != nil {
 		k8sconditions.SetServiceGenFailed(dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
 
-	_, err = k8sservice.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
+	_, err = k8sservice.Query(r.client, r.apiReader).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update telemetry service")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), serviceConditionType, err)
@@ -118,20 +123,20 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 	return nil
 }
 
-func (r *Reconciler) buildService(dk *dynakube.DynaKube) (*corev1.Service, error) {
+func (r *Reconciler) buildService(ctx context.Context, dk *dynakube.DynaKube) (*corev1.Service, error) {
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel)
 	appLabels := k8slabel.NewAppLabels(k8slabel.OtelCComponentLabel, dk.Name, k8slabel.OtelCComponentLabel, "")
 
 	return k8sservice.Build(dk,
 		dk.TelemetryIngest().GetServiceName(),
 		appLabels.BuildMatchLabels(),
-		buildServicePortList(dk.TelemetryIngest().GetProtocols()),
+		buildServicePortList(ctx, dk.TelemetryIngest().GetProtocols()),
 		k8sservice.SetLabels(coreLabels.BuildLabels()),
 		k8sservice.SetType(corev1.ServiceTypeClusterIP),
 	)
 }
 
-func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
+func buildServicePortList(ctx context.Context, protocols []otelcgen.Protocol) []corev1.ServicePort {
 	if len(protocols) == 0 {
 		return nil
 	}
@@ -199,6 +204,7 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 					TargetPort: intstr.FromInt32(statsdPort),
 				})
 		default:
+			log := logd.FromContext(ctx)
 			log.Info("unknown telemetry service protocol ignored", "protocol", protocol)
 		}
 	}

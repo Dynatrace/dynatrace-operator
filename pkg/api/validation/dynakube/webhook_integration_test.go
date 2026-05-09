@@ -119,7 +119,6 @@ func TestWebhook(t *testing.T) {
 	)
 
 	servedVersions := []string{
-		"v1beta4",
 		"v1beta5",
 	}
 	seenGVKs := sets.New[string]()
@@ -130,7 +129,9 @@ func TestWebhook(t *testing.T) {
 		})
 	}
 
-	unServedVersions := []string{}
+	unServedVersions := []string{
+		"v1beta4",
+	}
 	for _, version := range unServedVersions {
 		t.Run(version, func(t *testing.T) {
 			oldObj := readTestData(t, version, "default")

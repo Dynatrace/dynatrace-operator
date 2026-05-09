@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -25,8 +24,6 @@ const (
 	testNamespace      = "test-namespace"
 	annotationHash     = api.InternalFlagPrefix + "template-hash"
 )
-
-var configMapLog = logd.Get().WithName("test-configMap")
 
 func createDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
@@ -58,7 +55,7 @@ func testGetConfigMap(t *testing.T) {
 		Data: map[string]string{testKey1: testConfigMapValue},
 	}
 	fakeClient := fake.NewClient(&configMap)
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 
 	foundConfigMap, err := configMapQuery.Get(t.Context(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace})
 
@@ -68,7 +65,7 @@ func testGetConfigMap(t *testing.T) {
 
 func testCreateConfigMap(t *testing.T) {
 	fakeClient := fake.NewClient()
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testConfigMapName,
@@ -97,7 +94,7 @@ func testUpdateConfigMap(t *testing.T) {
 		Data: map[string]string{testKey1: testConfigMapValue},
 	}
 	fakeClient := fake.NewClient()
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 
 	err := configMapQuery.Update(t.Context(), configMap)
 
@@ -127,7 +124,7 @@ func testCreateOrUpdateConfigMap(t *testing.T) {
 		Data: map[string]string{testKey1: testConfigMapValue},
 	}
 	fakeClient := fake.NewClient()
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 
 	created, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
@@ -174,7 +171,7 @@ func testIdenticalConfigMapIsNotUpdated(t *testing.T) {
 		Data: data,
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 
 	updated, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
@@ -195,7 +192,7 @@ func testUpdateConfigMapWhenDataChanged(t *testing.T) {
 		Data: map[string]string{},
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 
 	updated, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
@@ -222,7 +219,7 @@ func testUpdateConfigMapWhenLabelsChanged(t *testing.T) {
 		Data: data,
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 
 	updated, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
@@ -248,7 +245,7 @@ func testCreateConfigMapInTargetNamespace(t *testing.T) {
 		Data: map[string]string{},
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 
 	updated, err := configMapQuery.CreateOrUpdate(t.Context(), configMap)
 	require.NoError(t, err)
@@ -278,7 +275,7 @@ func testDeleteConfigMap(t *testing.T) {
 		Data: data,
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 
 	err := configMapQuery.Delete(t.Context(), configMap)
 	require.NoError(t, err)
@@ -290,7 +287,7 @@ func testDeleteConfigMap(t *testing.T) {
 
 func testHashAnnotationAfterCreate(t *testing.T) {
 	fakeClient := fake.NewClient()
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMapQuery := Query(fakeClient, fakeClient)
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testConfigMapName,

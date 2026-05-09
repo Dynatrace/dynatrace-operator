@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -217,10 +218,13 @@ func TestAffinity(t *testing.T) {
 }
 
 func TestImagePullSecrets(t *testing.T) {
-	t.Run("the default image pull secret only", func(t *testing.T) {
+	t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
+	t.Run("no pull secrets when only tenant registry pull secret exists", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
-		assert.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 1)
+		// OTel Collector does not pull from the tenant registry, so the operator-generated pull secret must not be mounted
+		assert.Empty(t, statefulSet.Spec.Template.Spec.ImagePullSecrets)
 	})
 
 	t.Run("custom pull secret", func(t *testing.T) {
@@ -229,9 +233,17 @@ func TestImagePullSecrets(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		require.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 2)
-		assert.Equal(t, dk.Name+dynakube.PullSecretSuffix, statefulSet.Spec.Template.Spec.ImagePullSecrets[0].Name)
-		assert.Equal(t, dk.Spec.CustomPullSecret, statefulSet.Spec.Template.Spec.ImagePullSecrets[1].Name)
+		require.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, dk.Spec.CustomPullSecret, statefulSet.Spec.Template.Spec.ImagePullSecrets[0].Name)
+	})
+
+	t.Run("does not include tenant registry pull secret even when custom pull secret is set", func(t *testing.T) {
+		dk := getTestDynakubeWithExtensions()
+		dk.Spec.CustomPullSecret = testOtelPullSecret
+
+		statefulSet := getStatefulset(t, dk)
+
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
 	})
 }
 

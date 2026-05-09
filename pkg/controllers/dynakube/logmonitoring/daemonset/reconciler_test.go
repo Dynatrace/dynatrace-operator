@@ -173,6 +173,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 	t.Cleanup(version.DisableCacheForTest(123))
 
 	t.Run("generate daemonset", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
 		dk := createDynakube(true)
 
 		reconciler := NewReconciler(nil, fake.NewClient())
@@ -195,7 +197,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Empty(t, daemonset.Spec.Template.Spec.DNSPolicy)
 		assert.Empty(t, daemonset.Spec.Template.Spec.PriorityClassName)
 		assert.Empty(t, daemonset.Spec.Template.Spec.Tolerations)
-		assert.Len(t, daemonset.Spec.Template.Spec.ImagePullSecrets, 1)
+		// LogMonitoring does not pull from the tenant registry, so the operator-generated pull secret must not be mounted
+		assert.Empty(t, daemonset.Spec.Template.Spec.ImagePullSecrets)
 		require.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
 		assert.Equal(t, intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable) //nolint:staticcheck
 	})
@@ -347,6 +350,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.NotNil(t, daemonset)
 
 		assert.Contains(t, daemonset.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: customPullSecret})
+		// LogMonitoring must not receive the operator-generated tenant registry pull secret
+		assert.NotContains(t, daemonset.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
 	})
 
 	t.Run("respect custom tolerations", func(t *testing.T) {

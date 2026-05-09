@@ -1,18 +1,22 @@
 package hostevent
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func TestGetEntityIDForIP(t *testing.T) {
-	setupClient := func(t *testing.T, err error) *Client {
-		req := coremock.NewAPIRequest(t)
+	setupClient := func(t *testing.T, err error) *ClientImpl {
+		req := coremock.NewRequest(t)
 		req.EXPECT().
 			WithQueryParams(map[string]string{
 				"relativeTime":   "30mins",
@@ -30,36 +34,36 @@ func TestGetEntityIDForIP(t *testing.T) {
 				}
 			}).
 			Return(err).Once()
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), hostsPath).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().GET(anyCtx, hostsPath).Return(req).Once()
 
-		return NewClient(client, "")
+		return NewClient(coreClient, "")
 	}
 
 	t.Run("found", func(t *testing.T) {
-		client := setupClient(t, nil)
-		entityID, err := client.GetEntityIDForIP(t.Context(), "1.1.1.1")
+		coreClient := setupClient(t, nil)
+		entityID, err := coreClient.GetEntityIDForIP(t.Context(), "1.1.1.1")
 		require.NoError(t, err)
 		assert.Equal(t, "HOST-42", entityID)
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		client := setupClient(t, nil)
-		_, err := client.GetEntityIDForIP(t.Context(), "1.1.1.2")
+		coreClient := setupClient(t, nil)
+		_, err := coreClient.GetEntityIDForIP(t.Context(), "1.1.1.2")
 		require.ErrorAs(t, err, new(EntityNotFoundError))
 	})
 
 	t.Run("api error 404", func(t *testing.T) {
-		client := setupClient(t, &core.HTTPError{StatusCode: 404, Message: "nope"})
-		_, err := client.GetEntityIDForIP(t.Context(), "1.1.1.1")
+		coreClient := setupClient(t, &core.HTTPError{StatusCode: 404, Message: "nope"})
+		_, err := coreClient.GetEntityIDForIP(t.Context(), "1.1.1.1")
 		require.True(t, core.IsNotFound(err))
 		assert.EqualError(t, err, hostsPath+" is not available on the tenant")
 	})
 
 	t.Run("api error generic", func(t *testing.T) {
 		expectErr := &core.HTTPError{StatusCode: 418, Message: "teapot"}
-		client := setupClient(t, expectErr)
-		_, err := client.GetEntityIDForIP(t.Context(), "1.1.1.1")
+		coreClient := setupClient(t, expectErr)
+		_, err := coreClient.GetEntityIDForIP(t.Context(), "1.1.1.1")
 		require.ErrorIs(t, err, expectErr)
 	})
 }
@@ -130,19 +134,19 @@ func Test_buildHostEntityMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := buildHostEntityMap(tt.hosts, tt.networkZone)
+			got := buildHostEntityMap(t.Context(), tt.hosts, tt.networkZone)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestSendEvent(t *testing.T) {
-	setupClient := func(t *testing.T, err error) *Client {
-		req := coremock.NewAPIRequest(t)
+	setupClient := func(t *testing.T, err error) *ClientImpl {
+		req := coremock.NewRequest(t)
 		req.EXPECT().WithJSONBody(Event{EventType: "TEST"}).Return(req).Once()
 		req.EXPECT().Execute(nil).Return(err).Once()
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().POST(t.Context(), eventsPath).Return(req).Once()
+		client := coremock.NewClient(t)
+		client.EXPECT().POST(anyCtx, eventsPath).Return(req).Once()
 
 		return NewClient(client, "")
 	}

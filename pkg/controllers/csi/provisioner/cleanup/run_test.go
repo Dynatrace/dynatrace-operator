@@ -15,7 +15,7 @@ func TestGetFilesystemState(t *testing.T) {
 	t.Run("no error on empty FS", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		fsState, err := cleaner.getFilesystemState()
+		fsState, err := cleaner.getFilesystemState(t.Context())
 
 		require.NoError(t, err)
 		assert.Empty(t, fsState)
@@ -30,7 +30,7 @@ func TestGetFilesystemState(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, files, 2)
 
-		fsState, err := cleaner.getFilesystemState()
+		fsState, err := cleaner.getFilesystemState(t.Context())
 
 		require.NoError(t, err)
 		assert.Empty(t, fsState)
@@ -49,7 +49,7 @@ func TestGetFilesystemState(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, files, 2)
 
-		fsState, err := cleaner.getFilesystemState()
+		fsState, err := cleaner.getFilesystemState(t.Context())
 
 		require.NoError(t, err)
 		assert.Empty(t, fsState)
@@ -68,7 +68,7 @@ func TestGetFilesystemState(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, files, 2)
 
-		fsState, err := cleaner.getFilesystemState()
+		fsState, err := cleaner.getFilesystemState(t.Context())
 
 		require.NoError(t, err)
 		assert.Empty(t, fsState)
@@ -93,7 +93,7 @@ func TestGetFilesystemState(t *testing.T) {
 		cleaner.createHostDirs(t, dkName2)
 		cleaner.createHostDirs(t, dkName3)
 
-		fsState, err := cleaner.getFilesystemState()
+		fsState, err := cleaner.getFilesystemState(t.Context())
 		require.NoError(t, err)
 
 		assert.Len(t, fsState.deprecatedDks, 1)
@@ -115,7 +115,7 @@ func TestSafeAddRelevantPath(t *testing.T) {
 
 		relevantPaths := map[string]bool{}
 
-		cleaner.safeAddRelevantPath("something", relevantPaths)
+		cleaner.safeAddRelevantPath(t.Context(), "something", relevantPaths)
 		assert.Empty(t, relevantPaths)
 	})
 
@@ -126,7 +126,7 @@ func TestSafeAddRelevantPath(t *testing.T) {
 
 		relevantPaths := map[string]bool{}
 
-		cleaner.safeAddRelevantPath(path, relevantPaths)
+		cleaner.safeAddRelevantPath(t.Context(), path, relevantPaths)
 		assert.Contains(t, relevantPaths, path)
 	})
 
@@ -162,7 +162,7 @@ func (c *Cleaner) createBinDirs(t *testing.T, name string) {
 func (c *Cleaner) createHostDirs(t *testing.T, name string) {
 	t.Helper()
 
-	hostDir := c.path.OsAgentDir(name)
+	hostDir := c.path.OSAgentDir(name)
 	err := os.MkdirAll(hostDir, os.ModePerm)
 	require.NoError(t, err)
 }
@@ -170,7 +170,7 @@ func (c *Cleaner) createHostDirs(t *testing.T, name string) {
 func (c *Cleaner) createDeprecatedHostDirs(t *testing.T, tenantUUID string) {
 	t.Helper()
 
-	hostDir := c.path.OldOsAgentDir(tenantUUID)
+	hostDir := c.path.OldOSAgentDir(tenantUUID)
 	err := os.MkdirAll(hostDir, os.ModePerm)
 	require.NoError(t, err)
 }

@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -32,7 +33,7 @@ func newCertificateSecret(deployment *appsv1.Deployment) *certificateSecret {
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
-	secrets := k8ssecret.Query(nil, apiReader, log)
+	secrets := k8ssecret.Query(nil, apiReader)
 	secret, err := secrets.Get(ctx, types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
 
 	switch {
@@ -66,13 +67,13 @@ func (certSecret *certificateSecret) isRecent() bool {
 	}
 }
 
-func (certSecret *certificateSecret) validateCertificates(namespace string) error {
+func (certSecret *certificateSecret) validateCertificates(ctx context.Context, namespace string) error {
 	certs := Certs{
 		Domain:  getDomain(namespace),
 		SrcData: certSecret.secret.Data,
 		Now:     time.Now(),
 	}
-	if err := certs.ValidateCerts(); err != nil {
+	if err := certs.ValidateCerts(ctx); err != nil {
 		return fmt.Errorf("validate certificates: %w", err)
 	}
 
@@ -108,6 +109,8 @@ func (certSecret *certificateSecret) isBundleValid(bundle []byte) bool {
 }
 
 func (certSecret *certificateSecret) createOrUpdateIfNecessary(ctx context.Context, clt client.Client) error {
+	log := logd.FromContext(ctx)
+
 	if certSecret.isRecent() && certSecret.existsInCluster {
 		return nil
 	}

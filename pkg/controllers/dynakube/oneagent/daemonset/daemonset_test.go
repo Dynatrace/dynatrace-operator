@@ -58,7 +58,7 @@ func TestUseImmutableImage(t *testing.T) {
 			},
 		}
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -100,7 +100,7 @@ func TestLabels(t *testing.T) {
 			k8slabel.AppManagedByLabel: version.AppName,
 		}
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -133,7 +133,7 @@ func TestLabels(t *testing.T) {
 		}
 
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -160,14 +160,15 @@ func TestCustomPullSecret(t *testing.T) {
 		},
 	}
 	dsBuilder := NewClassicFullStack(&dk, testClusterID)
-	ds, err := dsBuilder.BuildDaemonSet()
+	ds, err := dsBuilder.BuildDaemonSet(t.Context())
 	require.NoError(t, err)
 
 	podSpecs := ds.Spec.Template.Spec
 	assert.NotNil(t, podSpecs)
-	assert.Len(t, podSpecs.ImagePullSecrets, 2)
-	assert.Equal(t, testDynakubeName+dynakube.PullSecretSuffix, podSpecs.ImagePullSecrets[0].Name)
-	assert.Equal(t, testName, podSpecs.ImagePullSecrets[1].Name)
+	require.Len(t, podSpecs.ImagePullSecrets, 2)
+
+	assert.Contains(t, podSpecs.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
+	assert.Contains(t, podSpecs.ImagePullSecrets, corev1.LocalObjectReference{Name: testName})
 }
 
 func TestResources(t *testing.T) {
@@ -183,7 +184,7 @@ func TestResources(t *testing.T) {
 			},
 		}
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -220,7 +221,7 @@ func TestResources(t *testing.T) {
 		}
 
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -270,7 +271,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run("returns default context if instance is nil", func(t *testing.T) {
 		dsBuilder := builder{}
-		securityContext := dsBuilder.securityContext()
+		securityContext := dsBuilder.securityContext(t.Context())
 
 		assert.Equal(t, defaultSecurityContextCapabilities(), securityContext.Capabilities)
 	})
@@ -284,7 +285,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -318,7 +319,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -347,7 +348,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -374,7 +375,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -405,7 +406,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -435,7 +436,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -470,7 +471,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -495,7 +496,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
@@ -519,7 +520,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
@@ -537,7 +538,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 		}
 		dsBuilder := NewClassicFullStack(&dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
@@ -551,7 +552,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec, _ := builder.podSpec(t.Context())
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
@@ -565,7 +566,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 				},
 			},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec, _ := builder.podSpec(t.Context())
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
@@ -580,7 +581,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		builder := builder{
 			dk: dk,
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec, _ := builder.podSpec(t.Context())
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
@@ -605,7 +606,7 @@ func TestPodSpecProbes(t *testing.T) {
 				},
 			},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec, _ := builder.podSpec(t.Context())
 
 		actualReadinessProbe := podSpec.Containers[0].ReadinessProbe
 		require.NotNil(t, actualReadinessProbe)
@@ -638,7 +639,7 @@ func TestPodSpecProbes(t *testing.T) {
 				},
 			},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec, _ := builder.podSpec(t.Context())
 
 		actualReadinessProbe := podSpec.Containers[0].ReadinessProbe
 		require.NotNil(t, actualReadinessProbe)
@@ -652,7 +653,7 @@ func TestPodSpecProbes(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec, _ := builder.podSpec(t.Context())
 
 		assert.Nil(t, podSpec.Containers[0].ReadinessProbe)
 		assert.Nil(t, podSpec.Containers[0].LivenessProbe)
@@ -672,7 +673,7 @@ func TestPodSpecProbes(t *testing.T) {
 				},
 			},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec, _ := builder.podSpec(t.Context())
 
 		assert.NotNil(t, podSpec.Containers[0].ReadinessProbe)
 		assert.Nil(t, podSpec.Containers[0].LivenessProbe)
@@ -765,7 +766,7 @@ func TestUpdateStrategy(t *testing.T) {
 			},
 		}
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
-		daemonset, err := dsBuilder.BuildDaemonSet()
+		daemonset, err := dsBuilder.BuildDaemonSet(t.Context())
 
 		expected := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
 
@@ -790,7 +791,7 @@ func TestUpdateStrategy(t *testing.T) {
 			},
 		}
 		dsBuilder := NewHostMonitoring(&dk, testClusterID)
-		daemonset, err := dsBuilder.BuildDaemonSet()
+		daemonset, err := dsBuilder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
@@ -844,7 +845,7 @@ func TestImagePullSecrets(t *testing.T) {
 		pullSecrets := dsBuilder.imagePullSecrets()
 
 		assert.Contains(t, pullSecrets, corev1.LocalObjectReference{
-			Name: testName + dynakube.PullSecretSuffix,
+			Name: dsBuilder.dk.TenantRegistryPullSecretName(),
 		})
 	})
 	t.Run("returns custom pull secret", func(t *testing.T) {
@@ -899,7 +900,7 @@ func TestAnnotations(t *testing.T) {
 	t.Run("default apparmor annotation is present in 1.30", func(t *testing.T) {
 		k8sversion.DisableCacheForTest(30)
 
-		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet()
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.Contains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 		assert.Equal(t, appArmorUnconfined, ds.Spec.Template.Annotations[appArmorAnnotation])
@@ -911,7 +912,7 @@ func TestAnnotations(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet()
+		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, corev1.DeprecatedAppArmorBetaProfileRuntimeDefault, ds.Spec.Template.Annotations[appArmorAnnotation])
 	})
@@ -919,7 +920,7 @@ func TestAnnotations(t *testing.T) {
 	t.Run("apparmor annotation is absent in 1.31", func(t *testing.T) {
 		k8sversion.DisableCacheForTest(31)
 
-		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet()
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 	})
@@ -930,7 +931,7 @@ func TestAnnotations(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet()
+		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 	})
@@ -959,7 +960,7 @@ func TestAnnotations(t *testing.T) {
 		}
 
 		builder := NewCloudNativeFullStack(&dk, testClusterID)
-		daemonset, err := builder.BuildDaemonSet()
+		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
@@ -987,7 +988,7 @@ func TestAnnotations(t *testing.T) {
 		}
 
 		builder := NewHostMonitoring(&dk, testClusterID)
-		daemonset, err := builder.BuildDaemonSet()
+		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
@@ -1015,7 +1016,7 @@ func TestAnnotations(t *testing.T) {
 		}
 
 		builder := NewClassicFullStack(&dk, testClusterID)
-		daemonset, err := builder.BuildDaemonSet()
+		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
@@ -1043,7 +1044,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 		}
 
 		builder := NewCloudNativeFullStack(&dk, testClusterID)
-		daemonset, err := builder.BuildDaemonSet()
+		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -1080,7 +1081,7 @@ func TestDefaultArguments(t *testing.T) {
 		}
 		dk.Spec.OneAgent.ClassicFullStack.Args = args
 		dsBuilder := NewClassicFullStack(dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		expectedDefaultArguments := []string{
@@ -1105,7 +1106,7 @@ func TestDefaultArguments(t *testing.T) {
 		}
 		dk.Spec.OneAgent.ClassicFullStack.Args = args
 		dsBuilder := NewClassicFullStack(dk, testClusterID)
-		ds, err := dsBuilder.BuildDaemonSet()
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
 		expectedDefaultArguments := []string{
@@ -1183,6 +1184,101 @@ func TestInitContainerArguments(t *testing.T) {
 	assert.Equal(t, "k8s.cluster.uid="+testKubernetesClusterUID, attributes[1])
 	assert.Equal(t, "k8s.node.name=$(DT_K8S_NODE_NAME)", attributes[2])
 	assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
+}
+
+func TestInitContainerArguments_ResourceAttributes(t *testing.T) {
+	baseStatus := dynakube.DynaKubeStatus{
+		KubeSystemUUID:        testKubernetesClusterUID,
+		KubernetesClusterMEID: testKubernetesClusterMEID,
+		KubernetesClusterName: testKubernetesClusterName,
+	}
+
+	t.Run("global resource attributes are sorted and appended", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"team": "platform", "env": "prod"},
+				OneAgent:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}},
+			},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+
+		assert.Equal(t, "k8s.cluster.name="+testKubernetesClusterName, attributes[0])
+		assert.Equal(t, "k8s.cluster.uid="+testKubernetesClusterUID, attributes[1])
+		assert.Equal(t, "k8s.node.name=$(DT_K8S_NODE_NAME)", attributes[2])
+		assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
+		assert.Equal(t, "env=prod", attributes[4])
+		assert.Equal(t, "team=platform", attributes[5])
+	})
+
+	t.Run("hostMonitoring additionalResourceAttributes overrides global", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"shared": "global", "only-global": "g"},
+				OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
+					AdditionalResourceAttributes: map[string]string{"shared": "host", "only-host": "h"},
+				}},
+			},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Contains(t, attributes, "shared=host")
+		assert.Contains(t, attributes, "only-global=g")
+		assert.Contains(t, attributes, "only-host=h")
+		assert.NotContains(t, attributes, "shared=global")
+	})
+
+	t.Run("classicFullStack additionalResourceAttributes overrides global", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"env": "global"},
+				OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
+					AdditionalResourceAttributes: map[string]string{"env": "classic"},
+				}},
+			},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Contains(t, attributes, "env=classic")
+		assert.NotContains(t, attributes, "env=global")
+	})
+
+	t.Run("cloudNativeFullStack additionalResourceAttributes overrides global", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"shared": "global"},
+				OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+					HostInjectSpec: oneagent.HostInjectSpec{
+						AdditionalResourceAttributes: map[string]string{"shared": "cnf", "extra": "val"},
+					},
+				}},
+			},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Contains(t, attributes, "shared=cnf")
+		assert.Contains(t, attributes, "extra=val")
+		assert.NotContains(t, attributes, "shared=global")
+	})
+
+	t.Run("no resource attributes leaves existing cluster metadata unchanged", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec:   dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}}},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Len(t, attributes, 4)
+	})
 }
 
 func TestInitContainerVolumeMounts(t *testing.T) {

@@ -1164,3 +1164,132 @@ tests:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5
+
+  - it: should have provisioner container when migrationMode is true
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.migrationMode: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 4
+      - contains:
+          path: spec.template.spec.containers
+          content:
+            name: provisioner
+          any: true
+
+  - it: should have server as default-container annotation when migrationMode is true
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.migrationMode: true
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["kubectl.kubernetes.io/default-container"]
+          value: server
+
+  - it: should have provisioner as default-container annotation when migrationMode is false
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.migrationMode: false
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["kubectl.kubernetes.io/default-container"]
+          value: provisioner
+
+  - it: should set csiDriver=false in modules.json when migrationMode is true
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.migrationMode: true
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: modules.json
+            value: |
+              {
+                "csiDriver": false,
+                "activeGate": true,
+                "oneAgent": true,
+                "extensions": true,
+                "logMonitoring": true,
+                "edgeConnect": true,
+                "supportability": true,
+                "kubernetesMonitoring": true,
+                "kspm": true
+              }
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: modules.json
+            value: |
+              {
+                "csiDriver": false,
+                "activeGate": true,
+                "oneAgent": true,
+                "extensions": true,
+                "logMonitoring": true,
+                "edgeConnect": true,
+                "supportability": true,
+                "kubernetesMonitoring": true,
+                "kspm": true
+              }
+          any: true
+
+  - it: should shift container indices when migrationMode is true
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.migrationMode: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: server
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: provisioner
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: registrar
+      - equal:
+          path: spec.template.spec.containers[3].name
+          value: liveness-probe
+
+  - it: should have apparmor annotation for provisioner when migrationMode is true and apparmor is enabled on Kubernetes < 1.31.0
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.migrationMode: true
+      csidriver.apparmor: true
+      csidriver.csiInit.securityContext:
+        runAsUser: 0
+      csidriver.server.securityContext:
+        runAsUser: 0
+      csidriver.registrar.securityContext:
+        runAsUser: 0
+      csidriver.livenessprobe.securityContext:
+        runAsUser: 0
+    capabilities:
+      majorVersion: 1
+      minorVersion: 30
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/csi-init"]
+          value: runtime/default
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/server"]
+          value: runtime/default
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/provisioner"]
+          value: runtime/default
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/registrar"]
+          value: runtime/default
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/liveness-probe"]
+          value: runtime/default

@@ -16,6 +16,8 @@ type OneAgent struct {
 	name       string
 	apiURLHost string
 
+	globalResourceAttributes map[string]string
+
 	featureOneAgentPrivileged        bool
 	featureBootstrapperInjection     bool
 	featureOneAgentSkipLivenessProbe bool
@@ -140,6 +142,11 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent installer arguments",order=21,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +listType=set
 	Args []string `json:"args,omitempty"`
+
+	// Additional resource attributes that are merged on top of the global spec.resourceAttributes.
+	// If the same key exists in both, the value from additionalResourceAttributes takes precedence.
+	// +kubebuilder:validation:Optional
+	AdditionalResourceAttributes map[string]string `json:"additionalResourceAttributes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -152,6 +159,11 @@ type ApplicationMonitoringSpec struct {
 	Version string `json:"version,omitempty"`
 
 	AppInjectionSpec `json:",inline"`
+
+	// Additional resource attributes that are merged on top of the global spec.resourceAttributes.
+	// If the same key exists in both, the value from additionalResourceAttributes takes precedence.
+	// +kubebuilder:validation:Optional
+	AdditionalResourceAttributes map[string]string `json:"additionalResourceAttributes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

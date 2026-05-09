@@ -4,18 +4,18 @@ import (
 	"context"
 	goerrors "errors"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
@@ -28,13 +28,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,6 +45,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/events"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -54,6 +57,10 @@ const (
 	defaultRequeueInterval = 15 * time.Minute
 
 	controllerName = "dynakube-controller"
+
+	conditionTypeAPITokenSettingsRead   = "ApiTokenSettingsRead"
+	conditionTypeAPITokenSettingsWrite  = "ApiTokenSettingsWrite"
+	conditionTypeAPITokenOptionalScopes = "ApiTokenOptionalScopes"
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -76,15 +83,13 @@ func NewController(mgr manager.Manager, clusterID string) *Controller {
 
 func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, eventRecorder events.EventRecorder, config *rest.Config, clusterID string) *Controller {
 	return &Controller{
-		client:                 kubeClient,
-		apiReader:              apiReader,
-		eventRecorder:          eventRecorder,
-		config:                 config,
-		operatorNamespace:      os.Getenv(k8senv.PodNamespace),
-		clusterID:              clusterID,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
-
-		injectionReconcilerBuilder: injection.NewReconciler,
+		client:            kubeClient,
+		apiReader:         apiReader,
+		eventRecorder:     eventRecorder,
+		config:            config,
+		operatorNamespace: os.Getenv(k8senv.PodNamespace),
+		clusterID:         clusterID,
+		dtClientFactory:   dynatrace.NewClientFromDynakube,
 
 		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
@@ -96,6 +101,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		logMonitoringReconciler:      logmonitoring.NewReconciler(kubeClient, apiReader),
 		oneAgentReconciler:           oneagent.NewReconciler(kubeClient, apiReader, clusterID),
 		activeGateReconciler:         activegate.NewReconciler(kubeClient, apiReader),
+		injectionReconciler:          injection.NewReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -129,28 +135,32 @@ type dynakubeReconciler interface {
 
 // dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
 type dtSettingReconciler interface {
-	Reconcile(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
 }
 
 type logMonitoringReconciler interface {
-	Reconcile(ctx context.Context, dtc dtclient.Client, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error
 }
 
 type oneAgentReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error
 }
 
 type activeGateReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error
 }
 
 type kspmReconciler interface {
-	Reconcile(ctx context.Context, dtc settings.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
+}
+
+type injectionReconciler interface {
+	Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error
 }
 
 // Controller reconciles a DynaKube object
 type Controller struct {
-	// This client, initialized using mgr.Client() above, is a split client
+	// This client, initialized using mgr.client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
 	client        client.Client
 	apiReader     client.Reader
@@ -166,26 +176,27 @@ type Controller struct {
 	logMonitoringReconciler      logMonitoringReconciler
 	oneAgentReconciler           oneAgentReconciler
 	activeGateReconciler         activeGateReconciler
+	injectionReconciler          injectionReconciler
 
-	dynatraceClientBuilder dynatraceclient.Builder
-	config                 *rest.Config
-
-	injectionReconcilerBuilder injection.ReconcilerBuilder
+	config *rest.Config
 
 	tokens            token.Tokens
 	operatorNamespace string
 	clusterID         string
 
 	requeueAfter time.Duration
+
+	dtClientFactory dynatrace.ClientFactory
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
 // and what is in the DynaKube.Spec
 // a Pod as an example
 // Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
+// The Controller will requeue the request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	ctx, log := logd.NewFromContext(ctx, "dynakube")
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
@@ -207,8 +218,8 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		k8sevent.SendCRDVersionMismatch(controller.eventRecorder, dk)
 	}
 
-	oldStatus := *dk.Status.DeepCopy()
 	controller.requeueAfter = defaultRequeueInterval
+	oldStatus := *dk.Status.DeepCopy()
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
@@ -244,10 +255,12 @@ func (controller *Controller) handleError(
 	reconcileErr error,
 	oldStatus dynakube.DynaKubeStatus,
 ) (reconcile.Result, error) {
+	log := logd.FromContext(ctx)
+
 	switch {
-	case dynatraceapi.IsUnreachable(reconcileErr):
+	case core.IsUnreachable(reconcileErr):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
-			"errorCode", dynatraceapi.StatusCode(reconcileErr), "errorMessage", dynatraceapi.Message(reconcileErr))
+			"errorMessage", reconcileErr.Error())
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastRequeueInterval}, nil
 
@@ -292,12 +305,14 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	err := controller.istioReconciler.ReconcileAPIURL(ctx, dk)
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile istio objects for API url")
 	}
 
-	dynatraceClient, err := controller.setupTokensAndClient(ctx, dk)
+	dtClient, err := controller.setupTokensAndClient(ctx, dk)
 	if err != nil {
 		return err
 	}
@@ -317,13 +332,13 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return err
 	}
 
-	return controller.reconcileComponents(ctx, dynatraceClient, dk)
+	return controller.reconcileComponents(ctx, dtClient, dk)
 }
 
-func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakube.DynaKube) (dtclient.Client, error) {
+func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
-	tokens, err := tokenReader.ReadTokens(ctx)
+	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
@@ -332,18 +347,16 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	controller.tokens = tokens
 
-	dynatraceClientBuilder := controller.dynatraceClientBuilder.
-		SetDynakube(*dk).
-		SetTokens(tokens)
-
-	dynatraceClient, err := dynatraceClientBuilder.Build(ctx)
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
 		return nil, err
 	}
 
-	err = controller.verifyTokens(ctx, dynatraceClient, dk)
+	controller.warnAboutDeprecatedTokens(ctx)
+
+	err = controller.verifyTokens(ctx, dtClient.Token, dk)
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
@@ -352,19 +365,21 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	controller.setConditionTokenReady(dk, token.CheckForDataIngestToken(tokens))
 
-	return dynatraceClient, nil
+	return dtClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	var componentErrors []error
 
-	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
 		componentErrors = append(componentErrors, err)
 	}
 
 	log.Info("start reconciling ActiveGate")
 
-	err := controller.reconcileActiveGate(ctx, dk, dynatraceClient)
+	err := controller.reconcileActiveGate(ctx, dk, dtClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
@@ -387,7 +402,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling KSPM")
 
-	if err := controller.kspmReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
+	if err := controller.kspmReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
 		log.Info("could not reconcile kspm")
 
 		componentErrors = append(componentErrors, err)
@@ -395,7 +410,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling LogMonitoring")
 
-	err = controller.logMonitoringReconciler.Reconcile(ctx, dynatraceClient, dk)
+	err = controller.logMonitoringReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
@@ -410,12 +425,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.injectionReconcilerBuilder(
-		controller.client,
-		controller.apiReader,
-		dynatraceClient,
-		dk,
-	).Reconcile(ctx)
+	err = controller.injectionReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
 			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
@@ -432,7 +442,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling OneAgent")
 
-	err = controller.oneAgentReconciler.Reconcile(ctx, dk, dynatraceClient, controller.tokens)
+	err = controller.oneAgentReconciler.Reconcile(ctx, dk, dtClient, controller.tokens)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
 			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
@@ -456,13 +466,46 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	return &dkMapper
 }
 
-func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) warnAboutDeprecatedTokens(ctx context.Context) {
+	log := logd.FromContext(ctx)
+
+	if controller.tokens.PaasToken().Value != "" {
+		if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
+			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be ignored because the '" + token.APIKey + "' field in the secret contains a platform token, which will be used for authentication.")
+		} else {
+			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be used for authentication because the '" + token.APIKey + "' field in the secret does not contain a platform token.")
+		}
+	}
+}
+
+// Verify the provided tokens for structural and functional correctness. The former checks that there aren't any unexpected characters in the token values and
+// the latter validates the token scopes using the tenant API.
+// If a platform token is provided, no API call is made and all optional scope related fields and conditions are cleared from the status.
+func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
 	err := controller.tokens.VerifyValues()
 	if err != nil {
 		return err
 	}
 
-	err = controller.verifyTokenScopes(ctx, dynatraceClient, dk)
+	if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
+		dk.Status.APIToken.Platform = ptr.To(true)
+
+		logd.FromContext(ctx).Info("skipping token scope lookup due to platform token")
+
+		// Scope related conditions are obsolete when using a platform token
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsRead)
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsWrite)
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes)
+		// Also clear the optional scopes from the status
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsRead = nil
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite = nil
+
+		return nil
+	}
+
+	dk.Status.APIToken.Platform = ptr.To(false)
+
+	err = controller.verifyTokenScopes(ctx, dtClient, dk)
 	if err != nil {
 		return err
 	}
@@ -470,44 +513,45 @@ func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient 
 	return nil
 }
 
-func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
-	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
-		log.Info(dynakube.GetCacheValidMessage(
-			"token verification",
-			dk.Status.DynatraceAPI.LastTokenScopeRequest,
-			dk.APIRequestThreshold()))
-
-		return lastErrorFromCondition(&dk.Status)
-	}
-
+func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	tokens := controller.tokens.AddFeatureScopesToTokens()
 
-	optionalScopes, err := tokens.VerifyScopes(ctx, dynatraceClient, *dk)
+	optionalScopes, err := tokens.VerifyScopes(ctx, dtClient, *dk)
 	if err != nil {
 		return err
 	}
 
 	log.Info("token verified")
-
-	dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
-
-	controller.updateOptionalScopesConditions(&dk.Status, optionalScopes)
+	controller.updateOptionalScopesConditions(dk, optionalScopes)
 
 	return nil
 }
 
-func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, optionalScopes map[string]bool) {
-	for scope, conditionType := range tokenclient.OptionalScopes {
+func (controller *Controller) updateOptionalScopesConditions(dk *dynakube.DynaKube, optionalScopes map[string]bool) {
+	unavailableScopes := []string{}
+
+	for _, scope := range tokenclient.OptionalScopes {
 		available, ok := optionalScopes[scope]
 		switch {
-		case !ok: // no enabled feature uses the `scope` -> doesn't need to be in the status
-			_ = meta.RemoveStatusCondition(&dkStatus.Conditions, conditionType)
+		case !ok:
+			optionalscope.SetMissing(dk, scope)
 		case available:
-			k8sconditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
+			optionalscope.SetAvailable(dk, scope)
 		case !available:
-			k8sconditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
+			optionalscope.SetMissing(dk, scope)
+			unavailableScopes = append(unavailableScopes, scope)
 		}
 	}
+
+	if len(unavailableScopes) > 0 {
+		k8sconditions.SetOptionalScopeMissing(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes, strings.Join(unavailableScopes, ",")+" optional scope(s) not available, some features may not work")
+	} else {
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes)
+	}
+
+	_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsRead)
+	_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsWrite)
 }
 
 func lastErrorFromCondition(dkStatus *dynakube.DynaKubeStatus) error {

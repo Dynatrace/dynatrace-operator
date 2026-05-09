@@ -1,6 +1,7 @@
 package cleanup
 
 import (
+	"context"
 	"maps"
 	"os"
 	"slices"
@@ -8,24 +9,27 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
-func (c *Cleaner) removeUnusedBinaries(dks []dynakube.DynaKube, fsState fsState) {
-	c.removeOldBinarySymlinks(dks, fsState)
+func (c *Cleaner) removeUnusedBinaries(ctx context.Context, dks []dynakube.DynaKube, fsState fsState) {
+	c.removeOldBinarySymlinks(ctx, dks, fsState)
 
-	keptBins, err := c.collectStillMountedBins()
+	keptBins, err := c.collectStillMountedBins(ctx)
 	if err != nil {
 		return
 	}
 
-	relevantLatestBins := c.collectRelevantLatestBins(dks)
+	relevantLatestBins := c.collectRelevantLatestBins(ctx, dks)
 
 	maps.Copy(keptBins, relevantLatestBins)
 
-	c.removeOldSharedBinaries(keptBins)
+	c.removeOldSharedBinaries(ctx, keptBins)
 }
 
-func (c *Cleaner) removeOldSharedBinaries(keptBins map[string]bool) {
+func (c *Cleaner) removeOldSharedBinaries(ctx context.Context, keptBins map[string]bool) {
+	log := logd.FromContext(ctx)
+
 	sharedBins, err := os.ReadDir(c.path.AgentSharedBinaryDirBase())
 	if err != nil {
 		log.Info("failed to list the shared binaries directory, skipping unused binaries cleanup")
@@ -50,7 +54,9 @@ func (c *Cleaner) removeOldSharedBinaries(keptBins map[string]bool) {
 	}
 }
 
-func (c *Cleaner) removeOldBinarySymlinks(dks []dynakube.DynaKube, fsState fsState) {
+func (c *Cleaner) removeOldBinarySymlinks(ctx context.Context, dks []dynakube.DynaKube, fsState fsState) {
+	log := logd.FromContext(ctx)
+
 	shouldBePresent := map[string]bool{}
 	for _, dk := range dks {
 		shouldBePresent[dk.Name] = true
@@ -75,7 +81,9 @@ func (c *Cleaner) removeOldBinarySymlinks(dks []dynakube.DynaKube, fsState fsSta
 	}
 }
 
-func (c *Cleaner) collectStillMountedBins() (map[string]bool, error) {
+func (c *Cleaner) collectStillMountedBins(ctx context.Context) (map[string]bool, error) {
+	log := logd.FromContext(ctx)
+
 	mountedBins := map[string]bool{}
 
 	overlays, err := metadata.GetRelevantOverlayMounts(c.mounter, c.path.RootDir)
@@ -96,7 +104,9 @@ func (c *Cleaner) collectStillMountedBins() (map[string]bool, error) {
 	return mountedBins, nil
 }
 
-func (c *Cleaner) collectRelevantLatestBins(dks []dynakube.DynaKube) map[string]bool {
+func (c *Cleaner) collectRelevantLatestBins(ctx context.Context, dks []dynakube.DynaKube) map[string]bool {
+	log := logd.FromContext(ctx)
+
 	latestBins := map[string]bool{}
 
 	for _, dk := range dks {
@@ -106,7 +116,7 @@ func (c *Cleaner) collectRelevantLatestBins(dks []dynakube.DynaKube) map[string]
 
 		latestLink := c.path.LatestAgentBinaryForDynaKube(dk.Name)
 
-		c.addRelevantPath(latestLink, latestBins)
+		c.addRelevantPath(ctx, latestLink, latestBins)
 	}
 
 	if len(latestBins) > 0 {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -22,7 +23,9 @@ const (
 	warningHostPathDatabaseVolumeDetected = `Host path database volume detected. If you're on OpenShift, mounting host path volumes will be prohibited by the SCC and cause silent failures. If you still want to do this, make sure to create and bind corresponding roles.`
 )
 
-func missingDatabaseExecutorImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func missingDatabaseExecutorImage(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsDatabasesEnabled() {
 		return ""
 	}
@@ -36,7 +39,9 @@ func missingDatabaseExecutorImage(_ context.Context, _ *Validator, dk *dynakube.
 	return ""
 }
 
-func conflictingOrInvalidDatabasesVolumeMounts(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func conflictingOrInvalidDatabasesVolumeMounts(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsDatabasesEnabled() {
 		return ""
 	}
@@ -71,7 +76,9 @@ func conflictingOrInvalidDatabasesVolumeMounts(_ context.Context, _ *Validator, 
 	return ""
 }
 
-func hostPathDatabaseVolumeFound(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func hostPathDatabaseVolumeFound(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsDatabasesEnabled() {
 		return ""
 	}
@@ -89,7 +96,9 @@ func hostPathDatabaseVolumeFound(_ context.Context, _ *Validator, dk *dynakube.D
 	return ""
 }
 
-func unusedDatabasesVolume(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func unusedDatabasesVolume(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsDatabasesEnabled() {
 		return ""
 	}

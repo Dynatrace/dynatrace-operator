@@ -34,7 +34,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.False(t, m.IsEnabled(request.BaseRequest))
+		require.False(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 	t.Run("automatic-injection=true (default), no annotations, namespace matches => inject", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -42,7 +42,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.True(t, m.IsEnabled(request.BaseRequest))
+		require.True(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("automatic-injection=true (default), no annotations, namespace does not match => no inject", func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.False(t, m.IsEnabled(request.BaseRequest))
+		require.False(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("automatic-injection=true (default), feature-specific=true => inject", func(t *testing.T) {
@@ -64,7 +64,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.True(t, m.IsEnabled(request.BaseRequest))
+		require.True(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("automatic-injection=true (default), feature-specific=false => no inject", func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.False(t, m.IsEnabled(request.BaseRequest))
+		require.False(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("automatic-injection=false, no annotations => no inject", func(t *testing.T) {
@@ -84,7 +84,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.False(t, m.IsEnabled(request.BaseRequest))
+		require.False(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("automatic-injection=false, feature-specific=true => inject (explicit opt-in)", func(t *testing.T) {
@@ -95,7 +95,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.True(t, m.IsEnabled(request.BaseRequest))
+		require.True(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("automatic-injection=false, feature-specific=false => no inject", func(t *testing.T) {
@@ -106,7 +106,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.False(t, m.IsEnabled(request.BaseRequest))
+		require.False(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("feature-specific=false => no inject", func(t *testing.T) {
@@ -116,7 +116,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.False(t, m.IsEnabled(request.BaseRequest))
+		require.False(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("OTLP auto-config feature disabled on DynaKube => no inject (regardless of annotations)", func(t *testing.T) {
@@ -127,7 +127,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.False(t, m.IsEnabled(request.BaseRequest))
+		require.False(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("namespace selector matches with feature-specific=true => inject", func(t *testing.T) {
@@ -141,7 +141,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.True(t, m.IsEnabled(request.BaseRequest))
+		require.True(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 
 	t.Run("namespace selector does not match with feature-specific=true => no inject", func(t *testing.T) {
@@ -155,7 +155,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		m := Mutator{}
 
-		require.False(t, m.IsEnabled(request.BaseRequest))
+		require.False(t, m.IsEnabled(t.Context(), request.BaseRequest))
 	})
 }
 
@@ -167,14 +167,14 @@ func TestMutator_IsInjected(t *testing.T) {
 
 		request.Pod.Annotations[mutator.AnnotationOTLPInjected] = "true"
 
-		assert.True(t, m.IsInjected(request.BaseRequest))
+		assert.True(t, m.IsInjected(t.Context(), request.BaseRequest))
 	})
 	t.Run("env vars for OTLP exporter not yet injected", func(t *testing.T) {
 		m := Mutator{}
 
 		request := createTestMutationRequest(t, getTestDynakube())
 
-		assert.False(t, m.IsInjected(request.BaseRequest))
+		assert.False(t, m.IsInjected(t.Context(), request.BaseRequest))
 	})
 }
 
@@ -792,7 +792,7 @@ func TestMutator_Reinvoke(t *testing.T) {
 
 		request := createTestMutationRequest(t, getTestDynakube())
 
-		mutated := m.Reinvoke(request.ToReinvocationRequest())
+		mutated := m.Reinvoke(t.Context(), request.ToReinvocationRequest())
 
 		require.True(t, mutated)
 	})
@@ -805,7 +805,7 @@ func TestMutator_Reinvoke(t *testing.T) {
 
 		request := createTestMutationRequest(t, dk)
 
-		mutated := m.Reinvoke(request.ToReinvocationRequest())
+		mutated := m.Reinvoke(t.Context(), request.ToReinvocationRequest())
 
 		require.False(t, mutated)
 	})

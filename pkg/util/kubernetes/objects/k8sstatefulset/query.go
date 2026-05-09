@@ -1,7 +1,6 @@
 package k8sstatefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
@@ -14,7 +13,7 @@ type QueryObject struct {
 	query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList]
 }
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) QueryObject {
+func Query(kubeClient client.Client, kubeReader client.Reader) QueryObject {
 	return QueryObject{
 		query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList]{
 			Target:     &appsv1.StatefulSet{},
@@ -32,7 +31,6 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 			KubeClient: kubeClient,
 			KubeReader: kubeReader,
-			Log:        log,
 		},
 	}
 }

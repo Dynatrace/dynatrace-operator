@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 )
 
 const (
@@ -24,28 +24,28 @@ type Config struct {
 	SkipCertCheck bool `json:"skipCertCheck"`
 }
 
-func (c Config) toDTClientOptionsV2() []dtclient.OptionV2 {
-	var options []dtclient.OptionV2
+func (c Config) toDTClientOptions() []dynatrace.Option {
+	var options []dynatrace.Option
 
 	if c.APIToken != "" {
-		options = append(options, dtclient.WithAPIToken(c.APIToken))
-		options = append(options, dtclient.WithPaasToken(c.APIToken))
+		options = append(options, dynatrace.WithAPIToken(c.APIToken))
+		options = append(options, dynatrace.WithPaasToken(c.APIToken))
 	}
 
 	if c.HostGroup != "" {
-		options = append(options, dtclient.WithHostGroup(c.HostGroup))
+		options = append(options, dynatrace.WithHostGroup(c.HostGroup))
 	}
 
 	if c.NetworkZone != "" {
-		options = append(options, dtclient.WithNetworkZone(c.NetworkZone))
+		options = append(options, dynatrace.WithNetworkZone(c.NetworkZone))
 	}
 
 	if c.Proxy != "" {
-		options = append(options, dtclient.WithProxy(c.Proxy, c.NoProxy))
+		options = append(options, dynatrace.WithProxy(c.Proxy, c.NoProxy))
 	}
 
 	if c.SkipCertCheck {
-		options = append(options, dtclient.WithSkipCertificateValidation(c.SkipCertCheck))
+		options = append(options, dynatrace.WithSkipCertificateValidation(c.SkipCertCheck))
 	}
 
 	return options

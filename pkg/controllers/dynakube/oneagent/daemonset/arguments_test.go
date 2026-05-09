@@ -65,7 +65,7 @@ func TestArguments(t *testing.T) {
 				clusterID:      testClusterID,
 			},
 		}
-		podSpecs, _ := dsBuilder.podSpec()
+		podSpecs, _ := dsBuilder.podSpec(t.Context())
 		assert.NotNil(t, podSpecs)
 		assert.NotEmpty(t, podSpecs.Containers)
 		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
@@ -343,7 +343,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 
 	dk.Annotations = map[string]string{}
-	podSpecs, _ := dsBuilder.podSpec()
+	podSpecs, _ := dsBuilder.podSpec(t.Context())
 	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
 
@@ -357,32 +357,32 @@ func TestPodSpec_Arguments(t *testing.T) {
 	t.Run("has proxy arg", func(t *testing.T) {
 		dk.Status.OneAgent.Version = "1.272.0.0-0"
 		dk.Spec.Proxy = &value.Source{Value: testValue}
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs, _ = dsBuilder.podSpec(t.Context())
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
 		dk.Spec.Proxy = nil
 		dk.Status.OneAgent.Version = ""
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs, _ = dsBuilder.podSpec(t.Context())
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	// deprecated
 	t.Run("has proxy arg but feature flag to ignore is enabled", func(t *testing.T) {
 		dk.Spec.Proxy = &value.Source{Value: testValue}
 		dk.Annotations[exp.OAProxyIgnoredKey] = "true" //nolint:staticcheck
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs, _ = dsBuilder.podSpec(t.Context())
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	t.Run("has network zone arg", func(t *testing.T) {
 		dk.Spec.NetworkZone = testValue
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs, _ = dsBuilder.podSpec(t.Context())
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 
 		dk.Spec.NetworkZone = ""
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs, _ = dsBuilder.podSpec(t.Context())
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 	})
 	t.Run("has host-id-source arg for classic fullstack", func(t *testing.T) {
-		daemonset, _ := dsBuilder.BuildDaemonSet()
+		daemonset, _ := dsBuilder.BuildDaemonSet(t.Context())
 		podSpecs = daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=auto")
 	})
@@ -406,7 +406,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 				clusterID:      testClusterID,
 			},
 		}
-		daemonset, _ := dsBuilder.BuildDaemonSet()
+		daemonset, _ := dsBuilder.BuildDaemonSet(t.Context())
 		podSpecs := daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
 	})
@@ -428,7 +428,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 				clusterID:      testClusterID,
 			},
 		}
-		daemonset, _ := dsBuilder.BuildDaemonSet()
+		daemonset, _ := dsBuilder.BuildDaemonSet(t.Context())
 		podSpecs := daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
 	})

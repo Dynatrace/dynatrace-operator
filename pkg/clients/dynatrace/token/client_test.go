@@ -10,8 +10,8 @@ import (
 )
 
 func TestGetScopes(t *testing.T) {
-	setupClient := func(t *testing.T, token string, expectErr error, expectScopes []string) *Client {
-		req := coremock.NewAPIRequest(t)
+	setupClient := func(t *testing.T, token string, expectErr error, expectScopes []string) *ClientImpl {
+		req := coremock.NewRequest(t)
 		req.EXPECT().WithJSONBody(lookupRequest{Token: token}).Return(req).Once()
 		req.EXPECT().Execute(new(scopesResponse)).Run(func(obj any) {
 			if expectErr == nil {
@@ -20,10 +20,10 @@ func TestGetScopes(t *testing.T) {
 			}
 		}).Return(expectErr).Once()
 
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().POST(t.Context(), lookupPath).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().POST(t.Context(), lookupPath).Return(req).Once()
 
-		return NewClient(client)
+		return NewClient(coreClient)
 	}
 
 	t.Run("success", func(t *testing.T) {
@@ -43,5 +43,18 @@ func TestGetScopes(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Nil(t, scopes)
+	})
+}
+
+func TestScopesResponse_IsEmpty(t *testing.T) {
+	// IsEmpty always returns false: an empty scope list is valid and cacheable.
+	// It means the token has no scopes — a config error, not a missing response.
+	// Cache invalidation happens automatically when the token is updated.
+	t.Run("returns false when scopes are set", func(t *testing.T) {
+		assert.False(t, (&scopesResponse{Scopes: []string{"DataExport"}}).IsEmpty())
+	})
+
+	t.Run("returns false when scopes are empty", func(t *testing.T) {
+		assert.False(t, (&scopesResponse{}).IsEmpty())
 	})
 }

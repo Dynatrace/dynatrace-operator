@@ -405,7 +405,6 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithCustomCAs(configMapName),
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithActiveGateTLSSecret(agSecretName),
 		dynakubeComponents.WithIstioIntegration(),
 		dynakubeComponents.WithProxy(proxySpec),
 	)

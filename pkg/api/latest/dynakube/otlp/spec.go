@@ -19,7 +19,8 @@ package otlp
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 type ExporterConfiguration struct {
-	Spec *ExporterConfigurationSpec
+	Spec                     *ExporterConfigurationSpec
+	globalResourceAttributes map[string]string
 }
 
 // +kubebuilder:object:generate=true
@@ -37,6 +38,11 @@ type ExporterConfigurationSpec struct {
 	// The namespaces where you want Dynatrace Operator to inject OTLP exporter configuration.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+
+	// Additional resource attributes that are merged on top of the global spec.resourceAttributes.
+	// If the same key exists in both, the value from additionalResourceAttributes takes precedence.
+	// +kubebuilder:validation:Optional
+	AdditionalResourceAttributes map[string]string `json:"additionalResourceAttributes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

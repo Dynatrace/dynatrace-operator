@@ -23,6 +23,9 @@ func TestServiceAccountName(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
 				APIServer: "tenant.apps.dynatrace.com",
+				OAuth: edgeconnect.OAuthSpec{
+					Endpoint: testValidOAuthEndpoint,
+				},
 			},
 		}
 		assertAllowed(t, ec)

@@ -267,8 +267,9 @@ spec:
 status:
   activeGate:
     connectionInfoStatus: {}
+  apiToken:
+    availableOptionalScopes: {}
   codeModules: {}
-  dynatraceApi: {}
   kspm: {}
   metadataEnrichment: {}
   oneAgent:

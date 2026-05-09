@@ -1,9 +1,5 @@
 package deploymentmetadata
 
-import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-)
-
 const (
 	orchestrationTech = "Operator"
 
@@ -22,8 +18,4 @@ const (
 	OneAgentMetadataKey   = "oneagent"
 	ActiveGateMetadataKey = "activegate"
 	OperatorVersionKey    = "operator"
-)
-
-var (
-	log = logd.Get().WithName("dynakube-deployment-metadata")
 )

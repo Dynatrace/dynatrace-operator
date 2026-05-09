@@ -4,6 +4,7 @@
 package helmconfig
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"sync"
@@ -61,8 +62,6 @@ var (
 			PriorityClassName: "dynatrace-high-priority",
 		},
 	}
-
-	log = logd.Get().WithName("csi-job")
 )
 
 // JobConfig holds settings specific to the CodeModule installer Job that were defined in the helm chart.
@@ -85,8 +84,10 @@ type Config struct {
 	Job                JobConfig `json:"job"`
 }
 
-func Get() Config {
+func Get(ctx context.Context) Config {
 	once.Do(func() {
+		_, log := logd.NewFromContext(ctx, "csi-job")
+
 		confJSON := os.Getenv(JSONEnv)
 		if confJSON == "" {
 			log.Info("envvar not set, using default", "envvar", JSONEnv)

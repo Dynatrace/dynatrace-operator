@@ -1,6 +1,8 @@
 package injection
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
@@ -49,11 +51,11 @@ func areErrorsSuppressed(pod *corev1.Pod, dk dynakube.DynaKube) bool {
 	return maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FF().GetInjectionFailurePolicy()) != "fail" // safer than == silent
 }
 
-func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
+func addInitContainerToPod(ctx context.Context, pod *corev1.Pod, initContainer *corev1.Container) {
 	volumes.AddInitConfigVolumeMount(initContainer)
 	volumes.AddInitInputVolumeMount(initContainer)
 	volumes.AddInputVolume(pod)
-	volumes.AddConfigVolume(pod)
+	volumes.AddConfigVolume(ctx, pod)
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
 }
 

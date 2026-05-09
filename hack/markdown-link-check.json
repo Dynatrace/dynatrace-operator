@@ -6,5 +6,10 @@
                 "User-Agent": "Mozilla/5.0 (platform; rv:gecko-version) Gecko/gecko-trail Firefox/firefox-version"
             }
         }
+    ],
+    "ignorePatterns": [
+        {
+            "pattern": "^https://app\\.slack\\.com/"
+        }
     ]
 }

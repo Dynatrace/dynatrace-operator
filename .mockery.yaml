@@ -48,6 +48,7 @@ packages:
       oneAgentReconciler:
       activeGateReconciler:
       kspmReconciler:
+      injectionReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring:
     config:
       dir: "{{.InterfaceDir}}"
@@ -90,41 +91,34 @@ packages:
   # =============================================================================
   # Shared mocks: placed in test/mocks/ (using default config)
   # =============================================================================
-  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
-    interfaces:
-      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate:
     interfaces:
-      APIClient:
+      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core:
     interfaces:
-      APIClient:
-      APIRequest:
+      Client:
+      Request:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent:
     interfaces:
-      APIClient:
+      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent:
     interfaces:
-      APIClient:
+      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings:
     interfaces:
-      APIClient:
+      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token:
     interfaces:
-      APIClient:
+      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version:
     interfaces:
-      APIClient:
-  github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect:
+      Client:
+  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect:
     interfaces:
       Client:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers:
     interfaces:
       Reconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
-    interfaces:
-      Builder:
-      BuilderV2:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:

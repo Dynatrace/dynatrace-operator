@@ -103,7 +103,7 @@ func TestUpdateNamespace(t *testing.T) {
 		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(labels))
 		namespace := createNamespace("test-namespace", labels)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -114,7 +114,7 @@ func TestUpdateNamespace(t *testing.T) {
 		dk := createDynakubeWithMetadataEnrichment("dk-test", convertToLabelSelector(labels))
 		namespace := createNamespace("test-namespace", labels)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -126,7 +126,7 @@ func TestUpdateNamespace(t *testing.T) {
 
 		namespace := createNamespace("test", labels)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -141,7 +141,7 @@ func TestUpdateNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -156,7 +156,7 @@ func TestUpdateNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*movedDK}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*movedDK}})
 		require.NoError(t, err)
 		require.True(t, updated)
 		assert.Empty(t, namespace.Labels)
@@ -171,7 +171,7 @@ func TestUpdateNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 
-		_, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*conflictingDK, *dk}})
+		_, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*conflictingDK, *dk}})
 
 		require.Error(t, err)
 	})
@@ -179,7 +179,7 @@ func TestUpdateNamespace(t *testing.T) {
 		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		namespace := createNamespace("kube-something", nil)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.False(t, updated)
@@ -190,7 +190,7 @@ func TestUpdateNamespace(t *testing.T) {
 		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		namespace := createNamespace("openshift-something", nil)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.False(t, updated)
@@ -206,7 +206,7 @@ func TestUpdateNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("openshift-something", labels)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*ignoreDK, *notIgnoreDK}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*ignoreDK, *notIgnoreDK}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -223,7 +223,7 @@ func TestUpdateNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("openshift-something", labels)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*notIgnoreDK, *ignoreDK}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*notIgnoreDK, *ignoreDK}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -238,7 +238,7 @@ func TestUpdateNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*movedDK}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*movedDK}})
 		require.NoError(t, err)
 		require.True(t, updated)
 		assert.Empty(t, namespace.Labels)
@@ -248,14 +248,14 @@ func TestUpdateNamespace(t *testing.T) {
 		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(labels))
 		namespace := createNamespace("test-namespace", labels)
 
-		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+		updated, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
 		assert.Len(t, namespace.Labels, 2)
 		require.Equal(t, namespace.Labels[dtwebhook.InjectionInstanceLabel], dk.Name)
 		dk.SetAnnotations(map[string]string{exp.InjectionIgnoredNamespacesKey: "[\"" + namespace.Name + "\"]"})
-		updated, err = updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+		updated, err = updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -268,7 +268,7 @@ func TestUpdateNamespace(t *testing.T) {
 		oaDK := createDynakubeWithAppInject("oa-dk", convertToLabelSelector(labels))
 		namespace := createNamespace("test-namespace", labels)
 
-		_, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDK, *oaDK}})
+		_, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDK, *oaDK}})
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), ErrorConflictingNamespace)
@@ -280,7 +280,7 @@ func TestUpdateNamespace(t *testing.T) {
 		meDK := createDynakubeWithMetadataEnrichment("me-dk", convertToLabelSelector(labels))
 		namespace := createNamespace("test-namespace", labels)
 
-		_, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDK, *meDK}})
+		_, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDK, *meDK}})
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), ErrorConflictingNamespace)
@@ -292,7 +292,7 @@ func TestUpdateNamespace(t *testing.T) {
 		otlpDK2 := createDynakubeWithOTLP("otlp-dk-2", convertToLabelSelector(labels))
 		namespace := createNamespace("test-namespace", labels)
 
-		_, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDK1, *otlpDK2}})
+		_, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDK1, *otlpDK2}})
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), ErrorConflictingNamespace)
@@ -305,7 +305,7 @@ func TestUpdateNamespace(t *testing.T) {
 		otlpDK2 := createDynakubeWithOTLP("otlp-dk-dev", convertToLabelSelector(labels2))
 		namespace := createNamespace("prod-namespace", labels1)
 
-		_, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDK1, *otlpDK2}})
+		_, err := updateNamespace(t.Context(), namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*otlpDK1, *otlpDK2}})
 
 		require.NoError(t, err)
 	})

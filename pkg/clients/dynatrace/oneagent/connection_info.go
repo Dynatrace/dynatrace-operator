@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
@@ -20,7 +21,9 @@ type ConnectionInfo struct {
 	// use the pre-formatted Endpoints string above. The slice is available if needed in the future.
 }
 
-func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
+func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
+	ctx, log := logd.NewFromContext(ctx, loggerName)
+
 	var resp ConnectionInfo
 
 	params := map[string]string{}
@@ -30,8 +33,8 @@ func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) 
 	}
 
 	err := c.apiClient.GET(ctx, connectionInfoPath).
-		WithQueryParams(params).
 		WithPaasToken().
+		WithQueryParams(params).
 		Execute(&resp)
 
 	if core.IsBadRequest(err) {

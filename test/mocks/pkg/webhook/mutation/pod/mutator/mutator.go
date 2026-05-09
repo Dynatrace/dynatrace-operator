@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -37,16 +39,16 @@ func (_m *Mutator) EXPECT() *Mutator_Expecter {
 }
 
 // IsEnabled provides a mock function for the type Mutator
-func (_mock *Mutator) IsEnabled(request *mutator.BaseRequest) bool {
-	ret := _mock.Called(request)
+func (_mock *Mutator) IsEnabled(ctx context.Context, request *mutator.BaseRequest) bool {
+	ret := _mock.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for IsEnabled")
 	}
 
 	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func(*mutator.BaseRequest) bool); ok {
-		r0 = returnFunc(request)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *mutator.BaseRequest) bool); ok {
+		r0 = returnFunc(ctx, request)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -59,19 +61,25 @@ type Mutator_IsEnabled_Call struct {
 }
 
 // IsEnabled is a helper method to define mock.On call
+//   - ctx context.Context
 //   - request *mutator.BaseRequest
-func (_e *Mutator_Expecter) IsEnabled(request interface{}) *Mutator_IsEnabled_Call {
-	return &Mutator_IsEnabled_Call{Call: _e.mock.On("IsEnabled", request)}
+func (_e *Mutator_Expecter) IsEnabled(ctx interface{}, request interface{}) *Mutator_IsEnabled_Call {
+	return &Mutator_IsEnabled_Call{Call: _e.mock.On("IsEnabled", ctx, request)}
 }
 
-func (_c *Mutator_IsEnabled_Call) Run(run func(request *mutator.BaseRequest)) *Mutator_IsEnabled_Call {
+func (_c *Mutator_IsEnabled_Call) Run(run func(ctx context.Context, request *mutator.BaseRequest)) *Mutator_IsEnabled_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *mutator.BaseRequest
+		var arg0 context.Context
 		if args[0] != nil {
-			arg0 = args[0].(*mutator.BaseRequest)
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *mutator.BaseRequest
+		if args[1] != nil {
+			arg1 = args[1].(*mutator.BaseRequest)
 		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
@@ -82,22 +90,22 @@ func (_c *Mutator_IsEnabled_Call) Return(b bool) *Mutator_IsEnabled_Call {
 	return _c
 }
 
-func (_c *Mutator_IsEnabled_Call) RunAndReturn(run func(request *mutator.BaseRequest) bool) *Mutator_IsEnabled_Call {
+func (_c *Mutator_IsEnabled_Call) RunAndReturn(run func(ctx context.Context, request *mutator.BaseRequest) bool) *Mutator_IsEnabled_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // IsInjected provides a mock function for the type Mutator
-func (_mock *Mutator) IsInjected(request *mutator.BaseRequest) bool {
-	ret := _mock.Called(request)
+func (_mock *Mutator) IsInjected(ctx context.Context, request *mutator.BaseRequest) bool {
+	ret := _mock.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for IsInjected")
 	}
 
 	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func(*mutator.BaseRequest) bool); ok {
-		r0 = returnFunc(request)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *mutator.BaseRequest) bool); ok {
+		r0 = returnFunc(ctx, request)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -110,19 +118,25 @@ type Mutator_IsInjected_Call struct {
 }
 
 // IsInjected is a helper method to define mock.On call
+//   - ctx context.Context
 //   - request *mutator.BaseRequest
-func (_e *Mutator_Expecter) IsInjected(request interface{}) *Mutator_IsInjected_Call {
-	return &Mutator_IsInjected_Call{Call: _e.mock.On("IsInjected", request)}
+func (_e *Mutator_Expecter) IsInjected(ctx interface{}, request interface{}) *Mutator_IsInjected_Call {
+	return &Mutator_IsInjected_Call{Call: _e.mock.On("IsInjected", ctx, request)}
 }
 
-func (_c *Mutator_IsInjected_Call) Run(run func(request *mutator.BaseRequest)) *Mutator_IsInjected_Call {
+func (_c *Mutator_IsInjected_Call) Run(run func(ctx context.Context, request *mutator.BaseRequest)) *Mutator_IsInjected_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *mutator.BaseRequest
+		var arg0 context.Context
 		if args[0] != nil {
-			arg0 = args[0].(*mutator.BaseRequest)
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *mutator.BaseRequest
+		if args[1] != nil {
+			arg1 = args[1].(*mutator.BaseRequest)
 		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
@@ -133,7 +147,7 @@ func (_c *Mutator_IsInjected_Call) Return(b bool) *Mutator_IsInjected_Call {
 	return _c
 }
 
-func (_c *Mutator_IsInjected_Call) RunAndReturn(run func(request *mutator.BaseRequest) bool) *Mutator_IsInjected_Call {
+func (_c *Mutator_IsInjected_Call) RunAndReturn(run func(ctx context.Context, request *mutator.BaseRequest) bool) *Mutator_IsInjected_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -190,16 +204,16 @@ func (_c *Mutator_Mutate_Call) RunAndReturn(run func(request *mutator.MutationRe
 }
 
 // Reinvoke provides a mock function for the type Mutator
-func (_mock *Mutator) Reinvoke(request *mutator.ReinvocationRequest) bool {
-	ret := _mock.Called(request)
+func (_mock *Mutator) Reinvoke(ctx context.Context, request *mutator.ReinvocationRequest) bool {
+	ret := _mock.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reinvoke")
 	}
 
 	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func(*mutator.ReinvocationRequest) bool); ok {
-		r0 = returnFunc(request)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *mutator.ReinvocationRequest) bool); ok {
+		r0 = returnFunc(ctx, request)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -212,19 +226,25 @@ type Mutator_Reinvoke_Call struct {
 }
 
 // Reinvoke is a helper method to define mock.On call
+//   - ctx context.Context
 //   - request *mutator.ReinvocationRequest
-func (_e *Mutator_Expecter) Reinvoke(request interface{}) *Mutator_Reinvoke_Call {
-	return &Mutator_Reinvoke_Call{Call: _e.mock.On("Reinvoke", request)}
+func (_e *Mutator_Expecter) Reinvoke(ctx interface{}, request interface{}) *Mutator_Reinvoke_Call {
+	return &Mutator_Reinvoke_Call{Call: _e.mock.On("Reinvoke", ctx, request)}
 }
 
-func (_c *Mutator_Reinvoke_Call) Run(run func(request *mutator.ReinvocationRequest)) *Mutator_Reinvoke_Call {
+func (_c *Mutator_Reinvoke_Call) Run(run func(ctx context.Context, request *mutator.ReinvocationRequest)) *Mutator_Reinvoke_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *mutator.ReinvocationRequest
+		var arg0 context.Context
 		if args[0] != nil {
-			arg0 = args[0].(*mutator.ReinvocationRequest)
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *mutator.ReinvocationRequest
+		if args[1] != nil {
+			arg1 = args[1].(*mutator.ReinvocationRequest)
 		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
@@ -235,7 +255,7 @@ func (_c *Mutator_Reinvoke_Call) Return(b bool) *Mutator_Reinvoke_Call {
 	return _c
 }
 
-func (_c *Mutator_Reinvoke_Call) RunAndReturn(run func(request *mutator.ReinvocationRequest) bool) *Mutator_Reinvoke_Call {
+func (_c *Mutator_Reinvoke_Call) RunAndReturn(run func(ctx context.Context, request *mutator.ReinvocationRequest) bool) *Mutator_Reinvoke_Call {
 	_c.Call.Return(run)
 	return _c
 }

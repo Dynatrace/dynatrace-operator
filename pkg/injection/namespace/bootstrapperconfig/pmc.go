@@ -3,6 +3,7 @@ package bootstrapperconfig
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -10,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +20,8 @@ import (
 )
 
 func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
+	log := logd.FromContext(ctx)
+
 	pmConfig, err := s.getCachedPMC(ctx, dk)
 	if err != nil {
 		return nil, err
@@ -41,7 +45,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, s.apiReader, types.NamespacedName{
 		Name:      dk.OneAgent().GetTenantSecret(),
 		Namespace: dk.Namespace,
-	}, connectioninfo.TenantTokenKey, log)
+	}, connectioninfo.TenantTokenKey)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
@@ -90,6 +94,8 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 }
 
 func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKube) (*oneagentclient.ProcessModuleConfig, error) {
+	log := logd.FromContext(ctx)
+
 	var pmConfig *oneagentclient.ProcessModuleConfig
 
 	if !k8sconditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
@@ -111,12 +117,29 @@ func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKub
 
 			return nil, err
 		} else if err == nil && source.Data[pmc.InputFileName] != nil {
-			pmConfig, err = oneagentclient.NewProcessModuleConfig(source.Data[pmc.InputFileName])
+			inputData := source.Data[pmc.InputFileName]
+
+			pmConfig, err = configFromBytes(inputData)
 			if err != nil {
-				log.Error(err, "could not unmarshal process module config from source secret, will recreate")
+				log.Error(err, "could not unmarshal process module config from source secret, will recreate", pmc.InputFileName, string(inputData))
 			}
 		}
 	}
 
 	return pmConfig, nil
+}
+
+func configFromBytes(response []byte) (*oneagentclient.ProcessModuleConfig, error) {
+	var resp oneagentclient.ProcessModuleConfig
+
+	err := json.Unmarshal(response, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Properties) == 0 {
+		return nil, errors.New("no properties available")
+	}
+
+	return &resp, nil
 }

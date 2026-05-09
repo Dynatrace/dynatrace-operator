@@ -87,7 +87,7 @@ func TestBuildJob(t *testing.T) {
 			ImageURI:     imageURI,
 			PullSecrets:  pullSecrets,
 			PathResolver: metadata.PathResolver{RootDir: "root"},
-			CSIJob:       helmconfig.Get(),
+			CSIJob:       helmconfig.Get(t.Context()),
 		}
 		inst := &Installer{
 			nodeName: nodeName,
@@ -137,7 +137,7 @@ func TestBuildJob(t *testing.T) {
 	})
 
 	t.Run("job uses priority class from csijob settings", func(t *testing.T) {
-		settings := helmconfig.Get()
+		settings := helmconfig.Get(t.Context())
 		settings.Job.PriorityClassName = "custom-priority-class"
 
 		props := &Properties{

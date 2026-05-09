@@ -1,9 +1,11 @@
 package mapper
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,7 +29,8 @@ const (
 	otlpExporterNamespacesMonitoredConditionType       conditionType = "OTLPExporterConfigurationNamespacesMonitored"
 )
 
-func setNamespacesMonitoredSelectorCondition(conditions *[]metav1.Condition, condType conditionType, configured bool, names []string) {
+func setNamespacesMonitoredSelectorCondition(ctx context.Context, conditions *[]metav1.Condition, condType conditionType, configured bool, names []string) {
+	log := logd.FromContext(ctx)
 	log.Info("namespaces monitored",
 		"condition", condType,
 		"count", len(names),

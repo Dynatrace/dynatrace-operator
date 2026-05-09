@@ -184,3 +184,68 @@ func TestSpec_IsEnabled(t *testing.T) {
 		})
 	}
 }
+
+func TestExporterConfiguration_GetResourceAttributes(t *testing.T) {
+	tests := []struct {
+		name     string
+		spec     *ExporterConfigurationSpec
+		global   map[string]string
+		expected map[string]string
+	}{
+		{
+			name:     "nil spec - no global returns nil",
+			spec:     nil,
+			global:   nil,
+			expected: nil,
+		},
+		{
+			name:     "nil spec - only global returns global",
+			spec:     nil,
+			global:   map[string]string{"g": "1"},
+			expected: map[string]string{"g": "1"},
+		},
+		{
+			name:     "only global set, no additional",
+			spec:     &ExporterConfigurationSpec{},
+			global:   map[string]string{"a": "1"},
+			expected: map[string]string{"a": "1"},
+		},
+		{
+			name: "only additional set, no global",
+			spec: &ExporterConfigurationSpec{
+				AdditionalResourceAttributes: map[string]string{"x": "10"},
+			},
+			global:   nil,
+			expected: map[string]string{"x": "10"},
+		},
+		{
+			name: "non-overlapping global and additional returns union",
+			spec: &ExporterConfigurationSpec{
+				AdditionalResourceAttributes: map[string]string{"b": "2"},
+			},
+			global:   map[string]string{"a": "1"},
+			expected: map[string]string{"a": "1", "b": "2"},
+		},
+		{
+			name: "overlapping and non-overlapping: additional wins on overlap, union otherwise",
+			spec: &ExporterConfigurationSpec{
+				AdditionalResourceAttributes: map[string]string{"b": "2", "shared": "additional"},
+			},
+			global:   map[string]string{"a": "1", "shared": "global"},
+			expected: map[string]string{"a": "1", "b": "2", "shared": "additional"},
+		},
+		{
+			name:     "both nil/empty returns nil",
+			spec:     &ExporterConfigurationSpec{},
+			global:   nil,
+			expected: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := NewExporterConfiguration(tt.spec, tt.global)
+			assert.Equal(t, tt.expected, config.GetResourceAttributes())
+		})
+	}
+}

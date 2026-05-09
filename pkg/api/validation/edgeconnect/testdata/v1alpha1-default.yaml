@@ -32,7 +32,7 @@ spec:
   serviceAccountName: default
   oauth:
     clientSecret: secret
-    endpoint: https://url
+    endpoint: https://sso.dynatrace.com/url
     resource: resource
     provisioner: true
   resources:

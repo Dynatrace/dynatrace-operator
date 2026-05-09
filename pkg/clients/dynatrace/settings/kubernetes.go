@@ -41,7 +41,7 @@ type kubernetesAppOptions struct {
 }
 
 // CreateOrUpdateKubernetesSetting returns the object ID of the created k8s settings.
-func (c *Client) CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel, kubeSystemUUID, scope string) (string, error) {
+func (c *ClientImpl) CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel, kubeSystemUUID, scope string) (string, error) {
 	if kubeSystemUUID == "" {
 		return "", errMissingKubeSystemUUID
 	}
@@ -63,7 +63,7 @@ func (c *Client) CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLab
 }
 
 // CreateOrUpdateKubernetesAppSetting returns the object ID of the created k8s app settings.
-func (c *Client) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error) {
+func (c *ClientImpl) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error) {
 	settings := newPostObjectsBody(
 		AppTransitionSchemaID, appTransitionSchemaVersion, scope,
 		kubernetesAppObjectValue{
@@ -81,7 +81,7 @@ func (c *Client) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope s
 	return objectID, nil
 }
 
-func (c *Client) performCreateOrUpdateKubernetesSetting(ctx context.Context, body any) (string, error) {
+func (c *ClientImpl) performCreateOrUpdateKubernetesSetting(ctx context.Context, body any) (string, error) {
 	var response []postObjectsResponse
 
 	err := c.apiClient.POST(ctx, ObjectsPath).

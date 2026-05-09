@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -21,10 +22,12 @@ import (
 )
 
 const (
-	testPaasToken = "test-paas-token"
-	testName      = "test-name"
-	testNamespace = "test-namespace"
-	testValue     = "test-value"
+	testPaasToken     = "test-paas-token"
+	testAPIToken      = "test-api-token"
+	testPlatformToken = dttoken.PlatformPrefix + "test-platform-token"
+	testName          = "test-name"
+	testNamespace     = "test-namespace"
+	testValue         = "test-value"
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
@@ -108,7 +111,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				CustomPullSecret: testValue,
-			}}
+			},
+		}
 		r := NewReconciler(nil, nil)
 		err := r.Reconcile(t.Context(), dk, nil)
 

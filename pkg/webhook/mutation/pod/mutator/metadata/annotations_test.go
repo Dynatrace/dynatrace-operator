@@ -1,12 +1,12 @@
 package metadata
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -15,7 +15,7 @@ import (
 
 func TestCopyMetadataFromNamespace(t *testing.T) {
 	t.Run("should copy annotations not labels with prefix from namespace to pod", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(t, nil, nil)
 		request.Namespace.Labels = map[string]string{
 			metadataenrichment.Prefix + "nocopyoflabels": "nocopyoflabels",
 			"test-label": "test-value",
@@ -25,7 +25,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test-annotation": "test-value",
 		}
 
-		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, logd.Get())
 		require.Len(t, request.Pod.Annotations, 2)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "copyofannotations", request.Pod.Annotations[metadataenrichment.Prefix+"copyofannotations"])
@@ -41,7 +41,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 	})
 
 	t.Run("should copy all labels and annotations defined without override", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(t, nil, nil)
 		request.Pod.Annotations = map[string]string{
 			metadataenrichment.Prefix + "copyofannotations": "do-not-overwrite",
 		}
@@ -77,7 +77,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 		}
 
-		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, logd.Get())
 		require.Len(t, request.Pod.Annotations, 5)
 		require.Empty(t, request.Pod.Labels)
 
@@ -101,7 +101,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 	})
 
 	t.Run("are custom rule types handled correctly", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(t, nil, nil)
 		request.Namespace.Labels = map[string]string{
 			"test":  "test-label-value",
 			"test2": "test-label-value2",
@@ -137,7 +137,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 		}
 
-		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, logd.Get())
 		require.Len(t, request.Pod.Annotations, 3)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "test-label-value", request.Pod.Annotations[metadataenrichment.Prefix+"dt.test-label"])
@@ -158,7 +158,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 	})
 
 	t.Run("should copy all annotations without rules", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(t, nil, nil)
 
 		request.Pod.Annotations = map[string]string{
 			metadataenrichment.Prefix + "someannotation": "do-not-overwrite",
@@ -170,7 +170,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test-annotation": "test-value",
 		}
 
-		annotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		annotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, logd.Get())
 
 		require.Len(t, annotations, 2)
 		require.Len(t, request.Pod.Annotations, 3)
@@ -191,13 +191,13 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 	})
 }
 
-func createTestMutationRequest(dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
+func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
 	if dk == nil {
 		dk = &dynakube.DynaKube{}
 	}
 
 	return dtwebhook.NewMutationRequest(
-		context.Background(),
+		t.Context(),
 		*getTestNamespace(dk),
 		&corev1.Container{
 			Name: dtwebhook.InstallContainerName,

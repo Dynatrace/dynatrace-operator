@@ -226,7 +226,7 @@ func createTestWebhook(t *testing.T, injectionHandler, otlpHandler handler.Handl
 
 	fakeClient := fake.NewClient(objects...)
 
-	wh, err := newWebhook(fakeClient, fakeClient, fakeClient, toolsevents.NewFakeRecorder(10), decoder, testNamespaceName, false)
+	wh, err := newWebhook(t.Context(), fakeClient, fakeClient, fakeClient, toolsevents.NewFakeRecorder(10), decoder, testNamespaceName, false)
 
 	require.NoError(t, err)
 

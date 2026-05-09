@@ -2013,7 +2013,7 @@ spec:
                 type: string
             type: object
         type: object
-    served: true
+    served: false
     storage: false
     subresources:
       status: {}
@@ -2027,6 +2027,10 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    deprecated: true
+    deprecationWarning: This dynakube API version is deprecated and will be removed
+      in a future operator version. Please visit our documentation for details and
+      timeline.
     name: v1beta5
     schema:
       openAPIV3Schema:
@@ -5820,6 +5824,10 @@ spec:
                   applicationMonitoring:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       codeModulesImage:
                         type: string
                       codeModulesImagePullPolicy:
@@ -5893,6 +5901,10 @@ spec:
                   classicFullStack:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       annotations:
                         additionalProperties:
                           type: string
@@ -6077,6 +6089,10 @@ spec:
                   cloudNativeFullStack:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       annotations:
                         additionalProperties:
                           type: string
@@ -6330,6 +6346,10 @@ spec:
                   hostMonitoring:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       annotations:
                         additionalProperties:
                           type: string
@@ -6514,6 +6534,10 @@ spec:
                 type: object
               otlpExporterConfiguration:
                 properties:
+                  additionalResourceAttributes:
+                    additionalProperties:
+                      type: string
+                    type: object
                   namespaceSelector:
                     properties:
                       matchExpressions:
@@ -6560,6 +6584,10 @@ spec:
                   valueFrom:
                     nullable: true
                     type: string
+                type: object
+              resourceAttributes:
+                additionalProperties:
+                  type: string
                 type: object
               skipCertCheck:
                 type: boolean
@@ -7399,6 +7427,18 @@ spec:
                   version:
                     type: string
                 type: object
+              apiToken:
+                properties:
+                  availableOptionalScopes:
+                    properties:
+                      settingsRead:
+                        type: boolean
+                      settingsWrite:
+                        type: boolean
+                    type: object
+                  platform:
+                    type: boolean
+                type: object
               codeModules:
                 properties:
                   imageID:
@@ -7452,12 +7492,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              dynatraceApi:
-                properties:
-                  lastTokenScopeRequest:
-                    format: date-time
-                    type: string
-                type: object
               kspm:
                 properties:
                   tokenSecretHash:

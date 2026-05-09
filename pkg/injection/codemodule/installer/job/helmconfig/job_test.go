@@ -14,7 +14,7 @@ func TestGet(t *testing.T) {
 	t.Run("empty env -> use fallback", func(t *testing.T) {
 		t.Setenv(JSONEnv, "")
 
-		m := Get()
+		m := Get(t.Context())
 		assert.Equal(t, fallback, m)
 
 		once = sync.Once{} // need to reset it
@@ -24,7 +24,7 @@ func TestGet(t *testing.T) {
 	t.Run("messy env -> use fallback", func(t *testing.T) {
 		t.Setenv(JSONEnv, "this is not json :(")
 
-		m := Get()
+		m := Get(t.Context())
 		assert.Equal(t, fallback, m)
 
 		once = sync.Once{} // need to reset it
@@ -102,7 +102,7 @@ func TestGet(t *testing.T) {
 
 		t.Setenv(JSONEnv, jsonValue)
 
-		m := Get()
+		m := Get(t.Context())
 		assert.Equal(t, expected, m)
 
 		once = sync.Once{} // need to reset it
@@ -120,12 +120,12 @@ func TestGet(t *testing.T) {
 
 		t.Setenv(JSONEnv, jsonValue)
 
-		m := Get()
+		m := Get(t.Context())
 		assert.Equal(t, fallback, m)
 
 		t.Setenv(JSONEnv, "boom")
 
-		m = Get()
+		m = Get(t.Context())
 		assert.Equal(t, fallback, m)
 
 		once = sync.Once{} // need to reset it

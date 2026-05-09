@@ -10,9 +10,6 @@ import (
 const lookupPath = "/v2/apiTokens/lookup"
 
 const (
-	ConditionTypeAPITokenSettingsRead  = "ApiTokenSettingsRead"
-	ConditionTypeAPITokenSettingsWrite = "ApiTokenSettingsWrite"
-
 	ScopeActiveGateTokenCreate    = "activeGateTokenManagement.create"
 	ScopeDataExport               = "DataExport"
 	ScopeInstallerDownload        = "InstallerDownload"
@@ -24,18 +21,20 @@ const (
 )
 
 var (
-	OptionalScopes = map[string]string{
-		ScopeSettingsRead:  ConditionTypeAPITokenSettingsRead,
-		ScopeSettingsWrite: ConditionTypeAPITokenSettingsWrite,
+	OptionalScopes = []string{
+		ScopeSettingsRead,
+		ScopeSettingsWrite,
 	}
+
+	_ core.Cacheable = &scopesResponse{}
 )
 
-type APIClient interface {
+type Client interface {
 	GetScopes(ctx context.Context, token string) ([]string, error)
 }
 
-type Client struct {
-	apiClient core.APIClient
+type ClientImpl struct {
+	apiClient core.Client
 }
 
 type lookupRequest struct {
@@ -46,13 +45,20 @@ type scopesResponse struct {
 	Scopes []string `json:"scopes"`
 }
 
-func NewClient(apiClient core.APIClient) *Client {
-	return &Client{
+// IsEmpty always returns false: an empty scope list is a valid, cacheable response.
+// It means the token has no scopes assigned, which is a configuration error in the Operator.
+// The cache is automatically invalidated when the user updates their token.
+func (s *scopesResponse) IsEmpty() bool {
+	return false
+}
+
+func NewClient(apiClient core.Client) *ClientImpl {
+	return &ClientImpl{
 		apiClient: apiClient,
 	}
 }
 
-func (c *Client) GetScopes(ctx context.Context, token string) ([]string, error) {
+func (c *ClientImpl) GetScopes(ctx context.Context, token string) ([]string, error) {
 	req := lookupRequest{Token: token}
 
 	var resp scopesResponse

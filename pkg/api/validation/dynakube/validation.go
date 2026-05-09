@@ -9,6 +9,7 @@ import (
 	v1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,8 +32,8 @@ var (
 		duplicateOneAgentArguments,
 		forbiddenHostIDSourceArgument,
 		NoAPIURL,
-		IsInvalidAPIURL,
-		IsThirdGenAPIUrl,
+		isInvalidAPIURL,
+		isThirdGenAPIURL,
 		invalidActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
 		invalidActiveGateProxyURL,
@@ -63,6 +64,9 @@ var (
 		missingDatabaseExecutorImage,
 		conflictingOrInvalidDatabasesVolumeMounts,
 		unusedDatabasesVolume,
+		invalidGlobalResourceAttributes,
+		invalidOneAgentResourceAttributes,
+		invalidOTLPResourceAttributes,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -79,6 +83,10 @@ var (
 		hostPathDatabaseVolumeFound,
 		disabledMetadataEnrichmentForInjectionModes,
 		activeGateRollingUpdateWithOldK8sVersion,
+		globalResourceAttributesExceedsLimit,
+		oneAgentResourceAttributesExceedsLimit,
+		otlpResourceAttributesExceedsLimit,
+		deprecatedPaasToken,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,
@@ -96,6 +104,8 @@ func New(apiReader client.Reader) admission.Validator[runtime.Object] {
 }
 
 func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+	ctx, _ = logd.NewFromContext(ctx, "dynakube-validation")
+
 	dk, err := getDynakube(obj)
 	if err != nil {
 		return
@@ -112,6 +122,8 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (war
 }
 
 func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
+	ctx, _ = logd.NewFromContext(ctx, "dynakube-validation")
+
 	oldDK, err := getDynakube(oldObj)
 	if err != nil {
 		return

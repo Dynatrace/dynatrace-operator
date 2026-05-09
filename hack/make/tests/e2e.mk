@@ -185,7 +185,7 @@ test/e2e/edgeconnect/normal:
 
 ## Runs Edgeconnect e2e proxy test cases
 test/e2e/edgeconnect/proxy:
-	$(GOTESTCMD) -timeout 20m  ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_proxy" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m  ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_proxy" $(SKIPCLEANUP)
 
 ## Runs EdgeConnect scaling e2e test only
 test/e2e/edgeconnect/scaling:
@@ -239,4 +239,7 @@ test/e2e/telemetryingest/scaling:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_scaling" $(SKIPCLEANUP)
 
 test/e2e/kspm:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm.*" $(SKIPCLEANUP)
+
+test/e2e/kspm/optionalscopes:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm_with_optional_scopes" $(SKIPCLEANUP)

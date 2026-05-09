@@ -48,6 +48,9 @@ func TestNameTooLong(t *testing.T) {
 				},
 				Spec: edgeconnect.EdgeConnectSpec{
 					APIServer: "id." + allowedSuffix[0],
+					OAuth: edgeconnect.OAuthSpec{
+						Endpoint: testValidOAuthEndpoint,
+					},
 				},
 			}
 			if test.allow {

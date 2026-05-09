@@ -3,14 +3,13 @@ package k8sservice
 import (
 	"reflect"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*corev1.Service, *corev1.ServiceList] {
+func Query(kubeClient client.Client, kubeReader client.Reader) query.Generic[*corev1.Service, *corev1.ServiceList] {
 	return query.Generic[*corev1.Service, *corev1.ServiceList]{
 		Target:     &corev1.Service{},
 		ListTarget: &corev1.ServiceList{},
@@ -27,7 +26,6 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 		KubeClient: kubeClient,
 		KubeReader: kubeReader,
-		Log:        log,
 	}
 }
 

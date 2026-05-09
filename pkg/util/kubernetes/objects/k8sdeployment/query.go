@@ -1,7 +1,6 @@
 package k8sdeployment
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
@@ -10,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*appsv1.Deployment, *appsv1.DeploymentList] {
+func Query(kubeClient client.Client, kubeReader client.Reader) query.Generic[*appsv1.Deployment, *appsv1.DeploymentList] {
 	return query.Generic[*appsv1.Deployment, *appsv1.DeploymentList]{
 		Target:     &appsv1.Deployment{},
 		ListTarget: &appsv1.DeploymentList{},
@@ -27,7 +26,6 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 		KubeClient: kubeClient,
 		KubeReader: kubeReader,
-		Log:        log,
 	}
 }
 

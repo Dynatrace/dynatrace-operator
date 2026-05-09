@@ -3,9 +3,7 @@ package k8sentity
 import (
 	"context"
 	"errors"
-	"strconv"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -13,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,8 +31,8 @@ func newDynaKube() *dynakube.DynaKube {
 		},
 	}
 
-	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, token.ConditionTypeAPITokenSettingsRead, "available")
-	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, token.ConditionTypeAPITokenSettingsWrite, "available")
+	optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
+	optionalscope.SetAvailable(dk, token.ScopeSettingsWrite)
 
 	return dk
 }
@@ -74,10 +73,10 @@ func TestReconcile(t *testing.T) {
 	)
 	t.Run("optional scope settings.read not available", func(t *testing.T) {
 		dk := newDynaKube()
-		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "not available")
+		optionalscope.SetMissing(dk, token.ScopeSettingsRead)
 
 		r := NewReconciler()
-		err := r.Reconcile(t.Context(), settingsmock.NewAPIClient(t), dk)
+		err := r.Reconcile(t.Context(), settingsmock.NewClient(t), dk)
 		require.NoError(t, err)
 	})
 
@@ -85,7 +84,7 @@ func TestReconcile(t *testing.T) {
 		dk := newDynaKube()
 
 		r := NewReconciler()
-		err := r.Reconcile(t.Context(), settingsmock.NewAPIClient(t), dk)
+		err := r.Reconcile(t.Context(), settingsmock.NewClient(t), dk)
 
 		require.ErrorIs(t, err, errMissingKubeSystemUUID)
 	})
@@ -97,7 +96,7 @@ func TestReconcile(t *testing.T) {
 		enableAppFF(dk)
 		setSystemUUID(dk, systemUUID)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		// 1. reconcileClusterMEID: no ME found yet (settings object not yet created)
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
@@ -131,7 +130,7 @@ func TestReconcile(t *testing.T) {
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
 		setSystemUUID(dk, systemUUID)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		// 1. reconcileClusterMEID: no ME found yet (settings object not yet created)
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
@@ -150,7 +149,7 @@ func TestReconcile(t *testing.T) {
 		enableKubeMon(dk)
 		setSystemUUID(dk, systemUUID)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		// 1. reconcileClusterMEID: no ME found yet (settings object not yet created)
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
@@ -183,7 +182,7 @@ func TestReconcileMEID(t *testing.T) {
 		dk := newDynaKube()
 		setCondition(dk)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		r := NewReconciler()
 		err := r.reconcileMEID(t.Context(), dtClient, dk)
 		require.NoError(t, err)
@@ -194,7 +193,7 @@ func TestReconcileMEID(t *testing.T) {
 		me := settings.K8sClusterME{ID: meID, Name: meName}
 		setSystemUUID(dk, systemUUID)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
 			GetK8sClusterME(anyCtx, systemUUID).
 			Return(me, nil).Once()
@@ -209,7 +208,7 @@ func TestReconcileMEID(t *testing.T) {
 	t.Run("no error if no MEs are found", func(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil).Once()
 
 		r := NewReconciler()
@@ -231,7 +230,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 		setSystemUUID(dk, systemUUID)
 		setMEInfo(dk, me)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 
 		r := NewReconciler()
 		actual, err := r.createK8sConnectionSettingIfAbsent(t.Context(), dtClient, dk)
@@ -242,7 +241,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, dk.Name, systemUUID, "").
 			Return(objectID, nil).Once()
@@ -258,7 +257,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 		setSystemUUID(dk, systemUUID)
 		setClusterNameFF(dk, specialName)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, specialName, systemUUID, "").
 			Return(objectID, nil).Once()
@@ -273,7 +272,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, dk.Name, systemUUID, "").
 			Return("", errors.New("boom")).Once()
@@ -297,7 +296,7 @@ func TestRefreshMEIDWithRetry(t *testing.T) {
 		dk := newDynaKube()
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
 		setSystemUUID(dk, systemUUID)
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(me, nil).Once()
 
 		r := NewReconciler()
@@ -311,7 +310,7 @@ func TestRefreshMEIDWithRetry(t *testing.T) {
 		dk := newDynaKube()
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
 		setSystemUUID(dk, systemUUID)
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil).Once()
 		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(me, nil).Once()
 
@@ -325,7 +324,7 @@ func TestRefreshMEIDWithRetry(t *testing.T) {
 	t.Run("error after no success for 5 tries", func(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil).Times(5)
 
 		r := NewReconciler()
@@ -336,7 +335,7 @@ func TestRefreshMEIDWithRetry(t *testing.T) {
 	t.Run("instant return on random error", func(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, errors.New("BOOM")).Once()
 
 		r := NewReconciler()
@@ -356,7 +355,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 		me := settings.K8sClusterME{ID: meID, Name: meName}
 		setMEInfo(dk, me)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 
 		r := NewReconciler()
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)
@@ -369,7 +368,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 		setMEInfo(dk, me)
 		enableAppFF(dk)
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil).Once()
@@ -387,7 +386,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 		expectErr := errors.New("could not get monitored entities")
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
 			Return(settings.TotalCountSettingsResponse{}, expectErr).Once()
@@ -405,7 +404,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 		expectErr := errors.New("could not create app setting")
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
 			Return(settings.TotalCountSettingsResponse{}, nil).Once()
@@ -426,7 +425,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 		r := NewReconciler()
 
-		dtClient := settingsmock.NewAPIClient(t)
+		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
 			Return(settings.TotalCountSettingsResponse{}, nil).Once()
@@ -436,40 +435,5 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-	})
-}
-
-func Test_logCache(t *testing.T) {
-	reset := func() {
-		logCache = make(map[string]time.Time)
-	}
-
-	t.Run("lookup", func(t *testing.T) {
-		t.Cleanup(reset)
-
-		fixedTime := time.Now()
-		timeNow = func() time.Time { return fixedTime }
-
-		assert.True(t, shouldLogMissingAppTransitionSchema("test"))
-		assert.False(t, shouldLogMissingAppTransitionSchema("test"))
-
-		// advance time to just before timeout
-		fixedTime = fixedTime.Add(logCacheTimeout)
-		assert.False(t, shouldLogMissingAppTransitionSchema("test"))
-		// advance time to after timeout
-		fixedTime = fixedTime.Add(1 * time.Second)
-		assert.True(t, shouldLogMissingAppTransitionSchema("test"))
-	})
-
-	t.Run("limit size", func(t *testing.T) {
-		t.Cleanup(reset)
-
-		for i := range 101 {
-			require.True(t, shouldLogMissingAppTransitionSchema(strconv.Itoa(i)))
-		}
-
-		require.Len(t, logCache, 100)
-		require.Contains(t, logCache, "99")
-		require.NotContains(t, logCache, "100")
 	})
 }

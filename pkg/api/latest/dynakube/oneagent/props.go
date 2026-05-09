@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	corev1 "k8s.io/api/core/v1"
@@ -14,14 +15,15 @@ import (
 const (
 	OneAgentTenantSecretSuffix            = "-oneagent-tenant-secret"
 	OneAgentConnectionInfoConfigMapSuffix = "-oneagent-connection-info"
-	PodNameOsAgent                        = "oneagent"
+	PodNameOSAgent                        = "oneagent"
 	DefaultOneAgentImageRegistrySubPath   = "/linux/oneagent"
 	StorageVolumeDefaultHostPath          = "/var/opt/dynatrace"
 )
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
 	name, apiURLHost string,
-	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool) *OneAgent {
+	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool,
+	globalResourceAttributes map[string]string) *OneAgent {
 	return &OneAgent{
 		Spec:              spec,
 		Status:            status,
@@ -29,6 +31,8 @@ func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatu
 
 		name:       name,
 		apiURLHost: apiURLHost,
+
+		globalResourceAttributes: globalResourceAttributes,
 
 		featureOneAgentPrivileged:        featureOneAgentPrivileged,
 		featureOneAgentSkipLivenessProbe: featureOneAgentSkipLivenessProbe,
@@ -66,7 +70,7 @@ func (oa *OneAgent) IsDaemonsetRequired() bool {
 }
 
 func (oa *OneAgent) GetDaemonsetName() string {
-	return fmt.Sprintf("%s-%s", oa.name, PodNameOsAgent)
+	return fmt.Sprintf("%s-%s", oa.name, PodNameOSAgent)
 }
 
 func (oa *OneAgent) IsPrivilegedNeeded() bool {
@@ -368,4 +372,31 @@ func (oa *OneAgent) GetHostPath() string {
 	}
 
 	return ""
+}
+
+func (oa *OneAgent) GetResourceAttributes() map[string]string {
+	return resourceattributes.Merge(oa.globalResourceAttributes, oa.GetAdditionalResourceAttributes())
+}
+
+func (oa *OneAgent) HasAdditionalResourceAttributes() bool {
+	return len(oa.GetAdditionalResourceAttributes()) > 0
+}
+
+func (oa *OneAgent) GetAdditionalResourceAttributes() map[string]string {
+	if oa.Spec == nil {
+		return nil
+	}
+
+	switch {
+	case oa.IsCloudNativeFullstackMode():
+		return oa.CloudNativeFullStack.AdditionalResourceAttributes
+	case oa.IsApplicationMonitoringMode():
+		return oa.ApplicationMonitoring.AdditionalResourceAttributes
+	case oa.IsHostMonitoringMode():
+		return oa.HostMonitoring.AdditionalResourceAttributes
+	case oa.IsClassicFullStackMode():
+		return oa.ClassicFullStack.AdditionalResourceAttributes
+	default:
+		return nil
+	}
 }

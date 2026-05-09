@@ -7,17 +7,18 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func CopyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) map[string]string {
+func CopyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube, log logd.Logger) map[string]string {
 	copiedCustomRuleAnnotations := copyAccordingToCustomRules(pod, namespace, dk)
 	copiedPrefixAnnotations := copyAccordingToPrefix(pod, namespace)
 
 	maps.Copy(copiedCustomRuleAnnotations, copiedPrefixAnnotations)
 
 	copiedCustomRuleAnnotations = removeMetadataPrefix(copiedCustomRuleAnnotations)
-	setPodMetadataJSONAnnotation(pod, copiedCustomRuleAnnotations)
+	setPodMetadataJSONAnnotation(pod, copiedCustomRuleAnnotations, log)
 
 	return copiedCustomRuleAnnotations
 }
@@ -70,7 +71,7 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 	return copiedAnnotations
 }
 
-func setPodMetadataJSONAnnotation(pod *corev1.Pod, annotations map[string]string) {
+func setPodMetadataJSONAnnotation(pod *corev1.Pod, annotations map[string]string, log logd.Logger) {
 	marshaledAnnotations, err := json.Marshal(annotations)
 	if err != nil {
 		log.Error(err, "failed to marshal annotations to map", "annotations", annotations)

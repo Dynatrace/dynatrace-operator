@@ -35,7 +35,7 @@ func TestActiveGateUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 
 		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient)
 
@@ -66,7 +66,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 		}
 		expectedVersion := "1.2.3.4-5"
 		expectedImage := dk.ActiveGate().GetDefaultImage(expectedVersion)
-		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
 		mockVersionClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)
 
 		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient)

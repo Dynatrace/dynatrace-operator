@@ -27,15 +27,15 @@ func TestRemoveHostMounts(t *testing.T) {
 		for _, folder := range hostFolders {
 			cleaner.createHostDirs(t, folder)
 
-			assert.DirExists(t, cleaner.path.OsAgentDir(folder))
+			assert.DirExists(t, cleaner.path.OSAgentDir(folder))
 		}
 
-		cleaner.removeHostMounts(dks, fsState{
+		cleaner.removeHostMounts(t.Context(), dks, fsState{
 			hostDks: hostFolders,
 		})
 
 		for _, folder := range hostFolders {
-			assert.NoDirExists(t, cleaner.path.OsAgentDir(folder))
+			assert.NoDirExists(t, cleaner.path.OSAgentDir(folder))
 		}
 	})
 
@@ -46,11 +46,11 @@ func TestRemoveHostMounts(t *testing.T) {
 			createCloudNativeDK(t, "cloudnative", apiURL2),
 		}
 		folders := []string{
-			cleaner.path.OldOsAgentDir(tenantUUID1),
-			cleaner.path.OsAgentDir(dks[0].Name),
-			cleaner.path.OsAgentDir(dks[1].Name),
-			cleaner.path.OldOsAgentDir("random-name1"),
-			cleaner.path.OsAgentDir("random-name2"),
+			cleaner.path.OldOSAgentDir(tenantUUID1),
+			cleaner.path.OSAgentDir(dks[0].Name),
+			cleaner.path.OSAgentDir(dks[1].Name),
+			cleaner.path.OldOSAgentDir("random-name1"),
+			cleaner.path.OSAgentDir("random-name2"),
 		}
 
 		for _, folder := range folders {
@@ -58,7 +58,7 @@ func TestRemoveHostMounts(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		cleaner.removeHostMounts(dks, fsState{
+		cleaner.removeHostMounts(t.Context(), dks, fsState{
 			hostDks: []string{dks[0].Name, dks[1].Name, tenantUUID1, "random-name1", "random-name2"},
 		})
 
@@ -81,7 +81,7 @@ func TestRemoveHostMounts(t *testing.T) {
 		for _, folder := range hostFolders {
 			cleaner.createHostDirs(t, folder)
 
-			expectedDir := cleaner.path.OsAgentDir(folder)
+			expectedDir := cleaner.path.OSAgentDir(folder)
 			assert.DirExists(t, expectedDir)
 
 			fakeMounter.MountCheckErrors[expectedDir] = nil
@@ -89,12 +89,12 @@ func TestRemoveHostMounts(t *testing.T) {
 
 		cleaner.mounter = fakeMounter
 
-		cleaner.removeHostMounts(dks, fsState{
+		cleaner.removeHostMounts(t.Context(), dks, fsState{
 			hostDks: hostFolders,
 		})
 
 		for _, folder := range hostFolders {
-			assert.DirExists(t, cleaner.path.OsAgentDir(folder))
+			assert.DirExists(t, cleaner.path.OSAgentDir(folder))
 		}
 	})
 }
@@ -110,7 +110,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 		cleaner := createCleaner(t)
 		dks := []dynakube.DynaKube{}
 
-		relevantDirs := cleaner.collectRelevantHostDirs(dks)
+		relevantDirs := cleaner.collectRelevantHostDirs(t.Context(), dks)
 
 		require.Empty(t, relevantDirs)
 	})
@@ -122,7 +122,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 			createAppMonDK(t, "appmon2", apiURL2),
 		}
 
-		relevantDirs := cleaner.collectRelevantHostDirs(dks)
+		relevantDirs := cleaner.collectRelevantHostDirs(t.Context(), dks)
 
 		require.Empty(t, relevantDirs)
 	})
@@ -134,14 +134,14 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 			createCloudNativeDK(t, "cloudnative", apiURL2),
 		}
 
-		relevantDirs := cleaner.collectRelevantHostDirs(dks)
+		relevantDirs := cleaner.collectRelevantHostDirs(t.Context(), dks)
 
 		require.NotEmpty(t, relevantDirs)
 		require.Len(t, relevantDirs, 2)
-		assert.Contains(t, relevantDirs, cleaner.path.OsAgentDir(dks[0].Name))
-		assert.Contains(t, relevantDirs, cleaner.path.OsAgentDir(dks[1].Name))
-		assert.NotContains(t, relevantDirs, cleaner.path.OsAgentDir(tenantUUID1))
-		assert.NotContains(t, relevantDirs, cleaner.path.OsAgentDir(tenantUUID2))
+		assert.Contains(t, relevantDirs, cleaner.path.OSAgentDir(dks[0].Name))
+		assert.Contains(t, relevantDirs, cleaner.path.OSAgentDir(dks[1].Name))
+		assert.NotContains(t, relevantDirs, cleaner.path.OSAgentDir(tenantUUID1))
+		assert.NotContains(t, relevantDirs, cleaner.path.OSAgentDir(tenantUUID2))
 	})
 
 	t.Run("relevant dk -> relevant dirs, deprecated(tenantUUID) location dir included if exists", func(t *testing.T) {
@@ -155,15 +155,15 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 		cleaner.createDeprecatedHostDirs(t, tenantUUID1)
 		cleaner.createHostDirs(t, dks[0].Name)
 
-		relevantDirs := cleaner.collectRelevantHostDirs(dks)
+		relevantDirs := cleaner.collectRelevantHostDirs(t.Context(), dks)
 
 		require.NotEmpty(t, relevantDirs)
 		require.Len(t, relevantDirs, 3)
-		assert.Contains(t, relevantDirs, cleaner.path.OsAgentDir(dks[0].Name))
-		assert.Contains(t, relevantDirs, cleaner.path.OsAgentDir(dks[1].Name))
-		assert.NotContains(t, relevantDirs, cleaner.path.OsAgentDir(dks[2].Name))
-		assert.Contains(t, relevantDirs, cleaner.path.OldOsAgentDir(tenantUUID1))
-		assert.NotContains(t, relevantDirs, cleaner.path.OsAgentDir(tenantUUID2))
+		assert.Contains(t, relevantDirs, cleaner.path.OSAgentDir(dks[0].Name))
+		assert.Contains(t, relevantDirs, cleaner.path.OSAgentDir(dks[1].Name))
+		assert.NotContains(t, relevantDirs, cleaner.path.OSAgentDir(dks[2].Name))
+		assert.Contains(t, relevantDirs, cleaner.path.OldOSAgentDir(tenantUUID1))
+		assert.NotContains(t, relevantDirs, cleaner.path.OSAgentDir(tenantUUID2))
 	})
 }
 

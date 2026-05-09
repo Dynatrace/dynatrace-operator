@@ -39,8 +39,8 @@ func (_m *MockStatusUpdater) EXPECT() *MockStatusUpdater_Expecter {
 }
 
 // CheckForDowngrade provides a mock function for the type MockStatusUpdater
-func (_mock *MockStatusUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
-	ret := _mock.Called(latestVersion)
+func (_mock *MockStatusUpdater) CheckForDowngrade(ctx context.Context, latestVersion string) (bool, error) {
+	ret := _mock.Called(ctx, latestVersion)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CheckForDowngrade")
@@ -48,16 +48,16 @@ func (_mock *MockStatusUpdater) CheckForDowngrade(latestVersion string) (bool, e
 
 	var r0 bool
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string) (bool, error)); ok {
-		return returnFunc(latestVersion)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return returnFunc(ctx, latestVersion)
 	}
-	if returnFunc, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = returnFunc(latestVersion)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = returnFunc(ctx, latestVersion)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
-	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
-		r1 = returnFunc(latestVersion)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, latestVersion)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -70,19 +70,25 @@ type MockStatusUpdater_CheckForDowngrade_Call struct {
 }
 
 // CheckForDowngrade is a helper method to define mock.On call
+//   - ctx context.Context
 //   - latestVersion string
-func (_e *MockStatusUpdater_Expecter) CheckForDowngrade(latestVersion interface{}) *MockStatusUpdater_CheckForDowngrade_Call {
-	return &MockStatusUpdater_CheckForDowngrade_Call{Call: _e.mock.On("CheckForDowngrade", latestVersion)}
+func (_e *MockStatusUpdater_Expecter) CheckForDowngrade(ctx interface{}, latestVersion interface{}) *MockStatusUpdater_CheckForDowngrade_Call {
+	return &MockStatusUpdater_CheckForDowngrade_Call{Call: _e.mock.On("CheckForDowngrade", ctx, latestVersion)}
 }
 
-func (_c *MockStatusUpdater_CheckForDowngrade_Call) Run(run func(latestVersion string)) *MockStatusUpdater_CheckForDowngrade_Call {
+func (_c *MockStatusUpdater_CheckForDowngrade_Call) Run(run func(ctx context.Context, latestVersion string)) *MockStatusUpdater_CheckForDowngrade_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 string
+		var arg0 context.Context
 		if args[0] != nil {
-			arg0 = args[0].(string)
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
 		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
@@ -93,7 +99,7 @@ func (_c *MockStatusUpdater_CheckForDowngrade_Call) Return(b bool, err error) *M
 	return _c
 }
 
-func (_c *MockStatusUpdater_CheckForDowngrade_Call) RunAndReturn(run func(latestVersion string) (bool, error)) *MockStatusUpdater_CheckForDowngrade_Call {
+func (_c *MockStatusUpdater_CheckForDowngrade_Call) RunAndReturn(run func(ctx context.Context, latestVersion string) (bool, error)) *MockStatusUpdater_CheckForDowngrade_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -460,16 +466,16 @@ func (_c *MockStatusUpdater_UseTenantRegistry_Call) RunAndReturn(run func(contex
 }
 
 // ValidateStatus provides a mock function for the type MockStatusUpdater
-func (_mock *MockStatusUpdater) ValidateStatus() error {
-	ret := _mock.Called()
+func (_mock *MockStatusUpdater) ValidateStatus(ctx context.Context) error {
+	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ValidateStatus")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func() error); ok {
-		r0 = returnFunc()
+	if returnFunc, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = returnFunc(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -482,13 +488,20 @@ type MockStatusUpdater_ValidateStatus_Call struct {
 }
 
 // ValidateStatus is a helper method to define mock.On call
-func (_e *MockStatusUpdater_Expecter) ValidateStatus() *MockStatusUpdater_ValidateStatus_Call {
-	return &MockStatusUpdater_ValidateStatus_Call{Call: _e.mock.On("ValidateStatus")}
+//   - ctx context.Context
+func (_e *MockStatusUpdater_Expecter) ValidateStatus(ctx interface{}) *MockStatusUpdater_ValidateStatus_Call {
+	return &MockStatusUpdater_ValidateStatus_Call{Call: _e.mock.On("ValidateStatus", ctx)}
 }
 
-func (_c *MockStatusUpdater_ValidateStatus_Call) Run(run func()) *MockStatusUpdater_ValidateStatus_Call {
+func (_c *MockStatusUpdater_ValidateStatus_Call) Run(run func(ctx context.Context)) *MockStatusUpdater_ValidateStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -498,7 +511,7 @@ func (_c *MockStatusUpdater_ValidateStatus_Call) Return(err error) *MockStatusUp
 	return _c
 }
 
-func (_c *MockStatusUpdater_ValidateStatus_Call) RunAndReturn(run func() error) *MockStatusUpdater_ValidateStatus_Call {
+func (_c *MockStatusUpdater_ValidateStatus_Call) RunAndReturn(run func(ctx context.Context) error) *MockStatusUpdater_ValidateStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

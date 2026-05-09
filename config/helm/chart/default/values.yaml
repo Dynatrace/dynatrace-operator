@@ -132,6 +132,7 @@ webhook:
 
 csidriver:
   enabled: true
+  migrationMode: false # if true, the provisioner runs in cleanup-only mode (no new agent installs). modules.json csiDriver=false causes the webhook to use ephemeral volumes for new pods, while existing CSI-mounted pods are gracefully unmounted.
   nodeSelector: {}
   kubeletPath: "/var/lib/kubelet"
   existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one

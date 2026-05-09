@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -96,7 +97,7 @@ func checkIfDynatraceAPISecretHasAPIToken(ctx context.Context, baseLog logd.Logg
 
 	tokenReader := token.NewReader(apiReader, dk)
 
-	tokens, err := tokenReader.ReadTokens(ctx)
+	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "'%s:%s' secret is missing or invalid", dk.Namespace, dk.Tokens())
 	}
@@ -116,10 +117,7 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 
 	logInfof(log, "checking if token scopes are valid")
 
-	dtc, err := dynatraceclient.NewBuilder(apiReader).
-		SetDynakube(*dk).
-		SetTokens(dynatraceAPISecretTokens).
-		Build(ctx)
+	dtClient, err := dynatrace.NewClientFromDynakube(ctx, apiReader, dk, dynatraceAPISecretTokens.APIToken().String(), dynatraceAPISecretTokens.PaasToken().String(), "troubleshoot")
 	if err != nil {
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
@@ -130,9 +128,15 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.Tokens())
 	}
 
+	if dttoken.IsPlatform(tokens.APIToken().Value) {
+		logInfof(log, "skipping token scope lookup due to platform token")
+
+		return nil
+	}
+
 	var optionalScopes map[string]bool
 
-	if optionalScopes, err = tokens.VerifyScopes(ctx, dtc, *dk); err != nil {
+	if optionalScopes, err = tokens.VerifyScopes(ctx, dtClient.Token, *dk); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.Tokens())
 	}
 
@@ -158,15 +162,12 @@ func checkAPIURLForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 
 	logInfof(log, "checking if can pull latest agent version")
 
-	dtc, err := dynatraceclient.NewBuilder(apiReader).
-		SetDynakube(*dk).
-		SetTokens(dynatraceAPISecretTokens).
-		Build(ctx)
+	dtClient, err := dynatrace.NewClientFromDynakube(ctx, apiReader, dk, dynatraceAPISecretTokens.APIToken().String(), dynatraceAPISecretTokens.PaasToken().String(), "troubleshoot")
 	if err != nil {
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
 
-	_, err = dtc.AsV2().Version.GetLatestAgentVersion(ctx, installer.OsUnix, installer.TypeDefault)
+	_, err = dtClient.Version.GetLatestAgentVersion(ctx, installer.OSUnix, installer.TypeDefault)
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to DynatraceAPI")
 	}
@@ -179,7 +180,7 @@ func checkAPIURLForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 func checkPullSecretExists(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) (corev1.Secret, error) {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	query := k8ssecret.Query(nil, apiReader, log)
+	query := k8ssecret.Query(nil, apiReader)
 
 	pullSecret, err := query.Get(ctx, types.NamespacedName{Namespace: dk.Namespace, Name: dk.PullSecretName()})
 	if err != nil {

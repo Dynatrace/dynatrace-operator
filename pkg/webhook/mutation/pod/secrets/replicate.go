@@ -23,7 +23,7 @@ func EnsureReplicated(mutationRequest *dtwebhook.MutationRequest, kubeClient cli
 
 		return k8ssecret.Replicate(
 			mutationRequest.Context,
-			k8ssecret.Query(kubeClient, apiReader, logger),
+			k8ssecret.Query(kubeClient, apiReader),
 			client.ObjectKey{
 				Name:      sourceSecretName,
 				Namespace: mutationRequest.DynaKube.Namespace,

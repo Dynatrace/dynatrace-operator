@@ -90,7 +90,7 @@ func TestCombineImagesWithDigest(t *testing.T) {
 	updater := newUpdater(fake.NewClient(), nil, fakeRegistryClient, edgeConnect)
 
 	t.Run("image and digest should be combined", func(t *testing.T) {
-		combined, err := updater.combineImageWithDigest(fakeDigest)
+		combined, err := updater.combineImageWithDigest(context.Background(), fakeDigest)
 
 		require.NoError(t, err)
 		require.Equal(t, "docker.io/dynatrace/edgeconnect:latest@"+fakeDigest, combined)
@@ -99,7 +99,7 @@ func TestCombineImagesWithDigest(t *testing.T) {
 	t.Run("malformed image should fail", func(t *testing.T) {
 		edgeConnect.Spec.ImageRef.Repository = "not a correct repo"
 
-		_, err := updater.combineImageWithDigest(fakeDigest)
+		_, err := updater.combineImageWithDigest(context.Background(), fakeDigest)
 		require.Error(t, err)
 	})
 }

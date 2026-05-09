@@ -23,26 +23,6 @@ type ConstraintViolation struct {
 	Path              string `json:"path"`
 }
 
-func (e *ServerError) Error() string {
-	if len(e.Message) == 0 && e.Code == 0 {
-		return "unknown server error"
-	}
-
-	var sb strings.Builder
-	fmt.Fprintf(&sb, "dynatrace server error %d: %s", e.Code, e.Message)
-
-	for _, v := range e.ConstraintViolations {
-		// Fprintf scales allocations linearly with the amount of items.
-		// WriteString only allocates when backing slice needs more space.
-		sb.WriteString("\n\t- ")
-		sb.WriteString(v.Path)
-		sb.WriteString(": ")
-		sb.WriteString(v.Message)
-	}
-
-	return sb.String()
-}
-
 // HTTPError represents an HTTP error that includes status code, response body, and parsed server errors
 type HTTPError struct {
 	Body         string        `json:"body"`
@@ -60,7 +40,7 @@ func (e *HTTPError) Error() string {
 				sb.WriteString("; ")
 			}
 
-			sb.WriteString(serverErr.Error())
+			sb.WriteString(formatServerError(&serverErr, e.StatusCode))
 		}
 
 		return fmt.Sprintf("HTTP %d: %s", e.StatusCode, sb.String())
@@ -74,7 +54,7 @@ func HasStatusCode(err error, statusCode int) bool {
 	return StatusCode(err) == statusCode
 }
 
-// IsBadRequest checks if the given error represents an HTTP 400 Bad Request error
+// IsBadRequest checks if the given error represents an HTTP 400 Bad request error
 func IsBadRequest(err error) bool {
 	return HasStatusCode(err, http.StatusBadRequest)
 }
@@ -87,6 +67,20 @@ func IsForbidden(err error) bool {
 // IsNotFound checks if the given error represents an HTTP 404 Not Found error
 func IsNotFound(err error) bool {
 	return HasStatusCode(err, http.StatusNotFound)
+}
+
+// IsTooManyRequests checks if the given error represents an HTTP 429 Too Many Requests error
+func IsTooManyRequests(err error) bool {
+	return HasStatusCode(err, http.StatusTooManyRequests)
+}
+
+// IsServiceUnavailable checks if the given error represents an HTTP 503 Service Unavailable error
+func IsServiceUnavailable(err error) bool {
+	return HasStatusCode(err, http.StatusServiceUnavailable)
+}
+
+func IsUnreachable(err error) bool {
+	return IsTooManyRequests(err) || IsServiceUnavailable(err)
 }
 
 // StatusCode extracts the status code from an HTTPError. Returns 0 if error type doesn't match.
@@ -103,4 +97,30 @@ func StatusCode(err error) int {
 	}
 
 	return httpErr.StatusCode
+}
+
+func formatServerError(e *ServerError, statusCode int) string {
+	if len(e.Message) == 0 && e.Code == 0 {
+		return "unknown server error"
+	}
+
+	var sb strings.Builder
+	if e.Code == statusCode {
+		// This should be the default case. In most cases the response body contains the same status code
+		// as the HTTP response, so we can omit the duplicate information.
+		sb.WriteString(e.Message)
+	} else {
+		fmt.Fprintf(&sb, "dynatrace server error %d: %s", e.Code, e.Message)
+	}
+
+	for _, v := range e.ConstraintViolations {
+		// Fprintf scales allocations linearly with the amount of items.
+		// WriteString only allocates when backing slice needs more space.
+		sb.WriteString("\n\t- ")
+		sb.WriteString(v.Path)
+		sb.WriteString(": ")
+		sb.WriteString(v.Message)
+	}
+
+	return sb.String()
 }

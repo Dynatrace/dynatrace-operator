@@ -1,7 +1,6 @@
 package dynakube
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -21,22 +20,8 @@ const (
 func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
 	msg := TokenVerificationFailedConditionMessage
 
-	var e token.VerificationError
-	if errors.As(err, &e) {
-		if len(e.Errs) > 0 {
-			missingScopes := make([]string, 0)
-
-			for _, scopeErr := range e.Errs {
-				var se token.ScopeError
-				if errors.As(scopeErr, &se) {
-					missingScopes = append(missingScopes, se.MissingScopes...)
-				}
-			}
-
-			if len(missingScopes) > 0 {
-				msg = fmt.Sprintf(TokenScopesMissingConditionMessage, strings.Join(missingScopes, ", "))
-			}
-		}
+	if missingScopes := token.GetMissingScopes(err); len(missingScopes) > 0 {
+		msg = fmt.Sprintf(TokenScopesMissingConditionMessage, strings.Join(missingScopes, ", "))
 	}
 
 	tokenErrorCondition := metav1.Condition{

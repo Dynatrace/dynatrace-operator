@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"k8s.io/mount-utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,13 +40,15 @@ func NewCorrectnessChecker(apiReader client.Reader, opts dtcsi.CSIOptions) *Corr
 // Removes not valid entries
 // "Moves" agent bins from deprecated location. (just creates a symlink)
 func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
-	checker.migrateAppMounts()
+	ctx, _ = logd.NewFromContext(ctx, "csi-metadata")
+	checker.migrateAppMounts(ctx)
 	checker.migrateHostMounts(ctx)
 
 	return nil
 }
 
-func (checker *CorrectnessChecker) migrateAppMounts() {
+func (checker *CorrectnessChecker) migrateAppMounts(ctx context.Context) {
+	log := logd.FromContext(ctx)
 	baseDir := checker.path.RootDir
 
 	appMounts, err := GetRelevantOverlayMounts(checker.mounter, baseDir)
@@ -76,7 +79,7 @@ func (checker *CorrectnessChecker) migrateAppMounts() {
 			continue
 		}
 
-		err = symlink.Create(oldPath, newPath)
+		err = symlink.Create(ctx, oldPath, newPath)
 		if err != nil {
 			log.Error(err, "failed to symlink old app mount to new location", "old-path", oldPath, "new-path", newPath)
 		} else {
@@ -86,6 +89,8 @@ func (checker *CorrectnessChecker) migrateAppMounts() {
 }
 
 func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
+	log := logd.FromContext(ctx)
+
 	dks, err := GetRelevantDynaKubes(ctx, checker.apiReader)
 	if err != nil {
 		log.Error(err, "failed to list the available dynakubes, skipping host mount migration")
@@ -103,7 +108,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 			log.Error(err, "failed to create dynakube directory")
 		}
 
-		newPath := checker.path.OsAgentDir(dk.Name)
+		newPath := checker.path.OSAgentDir(dk.Name)
 
 		stat, err := os.Stat(newPath)
 		if err == nil && stat.IsDir() {
@@ -117,7 +122,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 			continue
 		}
 
-		oldPath := checker.path.OldOsAgentDir(tenantUUID)
+		oldPath := checker.path.OldOSAgentDir(tenantUUID)
 
 		_, err = os.Stat(oldPath)
 		if err != nil {
@@ -130,7 +135,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 			continue
 		}
 
-		err = symlink.Create(oldPath, newPath)
+		err = symlink.Create(ctx, oldPath, newPath)
 		if err != nil {
 			log.Error(err, "failed to symlink old host mount to new location", "old-path", oldPath, "new-path", newPath)
 		} else {

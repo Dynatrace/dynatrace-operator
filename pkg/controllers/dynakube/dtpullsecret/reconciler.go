@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -28,11 +29,13 @@ type Reconciler struct {
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		timeprovider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader, log),
+		secrets:      k8ssecret.Query(clt, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
+	ctx, log := logd.NewFromContext(ctx, "dynakube-pullsecret")
+
 	if !dk.OneAgent().IsDaemonsetRequired() && !dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
@@ -63,6 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, token
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, dk *dynakube.DynaKube, secret *corev1.Secret) error {
+	log := logd.FromContext(ctx)
 	log.Info("deleting pull secret", "name", secret.Name)
 
 	err := r.secrets.Delete(ctx, secret)
@@ -76,6 +80,8 @@ func (r *Reconciler) deleteSecret(ctx context.Context, dk *dynakube.DynaKube, se
 }
 
 func (r *Reconciler) reconcilePullSecret(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
+	log := logd.FromContext(ctx)
+
 	pullSecretData, err := r.generateData(dk, tokens)
 	if err != nil {
 		return errors.WithMessage(err, "could not generate pull secret data")

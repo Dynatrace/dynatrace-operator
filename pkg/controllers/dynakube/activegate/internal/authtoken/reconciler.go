@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -32,11 +33,13 @@ type Reconciler struct {
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		secrets: k8ssecret.Query(clt, apiReader, log),
+		secrets: k8ssecret.Query(clt, apiReader),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.APIClient, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "dynakube-activegate-authtoken")
+
 	if !dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType) == nil {
 			return nil
@@ -58,7 +61,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.APIClient,
 	return nil
 }
 
-func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.APIClient) error {
+func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client) error {
+	log := logd.FromContext(ctx)
+
 	secret, err := r.secrets.Get(ctx, client.ObjectKey{Name: dk.ActiveGate().GetAuthTokenSecretName(), Namespace: dk.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -89,7 +94,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context, dk *dynakube.
 	return nil
 }
 
-func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.APIClient) error {
+func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client) error {
 	agSecretData, err := r.getActiveGateAuthToken(ctx, dk, agClient)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to create secret '%s'", dk.ActiveGate().GetAuthTokenSecretName())
@@ -98,7 +103,7 @@ func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context, dk *dynakube.Dyn
 	return r.createSecret(ctx, dk, agSecretData)
 }
 
-func (r *Reconciler) getActiveGateAuthToken(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.APIClient) (map[string][]byte, error) {
+func (r *Reconciler) getActiveGateAuthToken(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client) (map[string][]byte, error) {
 	authTokenInfo, err := agClient.GetAuthToken(ctx, dk.Name)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)

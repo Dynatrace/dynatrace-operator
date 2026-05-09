@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/service"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -32,6 +33,8 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler { 
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "otel-collector")
+
 	err := r.serviceReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		return err

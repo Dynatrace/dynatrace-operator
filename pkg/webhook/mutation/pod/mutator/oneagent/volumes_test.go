@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -65,7 +66,7 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 				},
 			},
 		}
-		addEmptyDirBinVolume(pod)
+		addEmptyDirBinVolume(pod, logd.Get())
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 
@@ -90,7 +91,7 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 				},
 			},
 		}
-		addEmptyDirBinVolume(pod)
+		addEmptyDirBinVolume(pod, logd.Get())
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 

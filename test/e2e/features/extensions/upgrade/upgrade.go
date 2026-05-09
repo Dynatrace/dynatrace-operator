@@ -21,7 +21,7 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithExtensionsPrometheusEnabledSpec(true),
-		componentDynakube.WithExtensionsEECImageRef(),
+		componentDynakube.WithExtensionsEECImageRef(t),
 		componentDynakube.WithActiveGate(),
 	}
 

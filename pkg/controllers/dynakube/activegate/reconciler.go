@@ -5,9 +5,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
@@ -18,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -29,7 +32,7 @@ import (
 )
 
 type authTokenReconciler interface {
-	Reconcile(ctx context.Context, agClient agclient.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error
 }
 
 type istioReconciler interface {
@@ -37,7 +40,7 @@ type istioReconciler interface {
 }
 
 type connectionReconciler interface {
-	Reconcile(ctx context.Context, agClient agclient.APIClient, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error
 }
 
 type versionReconciler interface {
@@ -84,11 +87,12 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		customPropertiesReconciler: customproperties.NewReconciler(clt, apiReader),
 		statefulsetReconciler:      statefulset.NewReconciler(clt, apiReader),
 		tlsSecretReconciler:        tls.NewReconciler(clt, apiReader),
-		configMaps:                 k8sconfigmap.Query(clt, apiReader, log),
+		configMaps:                 k8sconfigmap.Query(clt, apiReader),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient dtclient.Client, tokens token.Tokens) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error {
+	ctx, log := logd.NewFromContext(ctx, "dynakube-activegate")
 	// If AG is not used or was not cleaned up due to being previously enabled
 	// Split the `if` for better logging.
 	if !dk.ActiveGate().IsEnabled() {
@@ -103,7 +107,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		log.Info("activeGate was disabled, starting cleanup")
 	}
 
-	err := r.connectionReconciler.Reconcile(ctx, dtClient.AsV2().ActiveGate, dk)
+	err := r.connectionReconciler.Reconcile(ctx, dtClient.ActiveGate, dk)
 	if err != nil {
 		return err
 	}
@@ -113,11 +117,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return err
 	}
 
-	if r.versionReconciler == nil {
-		r.versionReconciler = version.NewReconciler(r.apiReader, dtClient, timeprovider.New().Freeze())
+	err = r.createDeploymentPropertiesConfigMap(ctx, dk)
+	if err != nil {
+		return err
 	}
 
-	err = r.versionReconciler.ReconcileActiveGate(ctx, dk)
+	versionReconciler := r.versionReconciler
+	if versionReconciler == nil {
+		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
+	}
+
+	err = versionReconciler.ReconcileActiveGate(ctx, dk)
 	if err != nil {
 		return err
 	}
@@ -132,7 +142,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return err
 	}
 
-	err = r.authTokenReconciler.Reconcile(ctx, dtClient.AsV2().ActiveGate, dk)
+	err = r.authTokenReconciler.Reconcile(ctx, dtClient.ActiveGate, dk)
 	if err != nil {
 		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 	}
@@ -152,6 +162,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 }
 
 func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	if !dk.ActiveGate().IsEnabled() {
 		// TODO: Add clean up of the config map
 		return nil
@@ -178,6 +190,29 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 	}
 
 	return nil
+}
+
+func (r *Reconciler) createDeploymentPropertiesConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
+	if !dk.ActiveGate().IsEnabled() {
+		return nil
+	}
+
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+
+	configMap, err := k8sconfigmap.Build(dk,
+		dk.ActiveGate().GetDeploymentPropertiesConfigMapName(),
+		map[string]string{
+			consts.DeploymentPropertiesFileName: deploymentproperties.BuildContent(dk.Spec.ResourceAttributes),
+		},
+		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
+	)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	_, err = r.configMaps.CreateOrUpdate(ctx, configMap)
+
+	return err
 }
 
 func extractPublicData(dk *dynakube.DynaKube) map[string]string {

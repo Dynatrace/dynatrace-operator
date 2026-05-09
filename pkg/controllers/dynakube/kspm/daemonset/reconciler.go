@@ -5,6 +5,7 @@ import (
 	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -29,11 +30,13 @@ type Reconciler struct {
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		daemonset: k8sdaemonset.Query(clt, apiReader, log),
+		daemonset: k8sdaemonset.Query(clt, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "kspm-daemonset")
+
 	if !dk.KSPM().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
@@ -92,7 +95,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 		k8sdaemonset.SetPriorityClass(dk.KSPM().PriorityClassName),
 		k8sdaemonset.SetNodeSelector(dk.KSPM().NodeSelector),
 		k8sdaemonset.SetTolerations(dk.KSPM().Tolerations),
-		k8sdaemonset.SetPullSecret(dk.ImagePullSecretReferences()...),
+		k8sdaemonset.SetPullSecret(dk.CustomPullSecretReferences()...),
 		k8sdaemonset.SetUpdateStrategy(r.getUpdateStrategy(dk)),
 		k8sdaemonset.SetVolumes(getVolumes(*dk)),
 		k8sdaemonset.SetAutomountServiceAccountToken(false),

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base32"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -11,7 +12,13 @@ const (
 	privatePortionSize = 64
 )
 
-// Token represents <prefix>.<24-character-public-portion>.<64-character-private-portion>
+// https://docs.dynatrace.com/docs/dynatrace-api/basics/dynatrace-api-authentication
+
+const PlatformPrefix = "dt0s16"
+
+// Token represents a legacy Dynatrace access token.
+//
+// The format is <prefix>.<24-character-public-portion>.<64-character-private-portion>.
 type Token struct {
 	prefix  string
 	public  string
@@ -46,4 +53,8 @@ func generateRandom(size int) (string, error) {
 	}
 
 	return base32.StdEncoding.EncodeToString(b)[:size], nil
+}
+
+func IsPlatform(token string) bool {
+	return strings.HasPrefix(token, PlatformPrefix)
 }

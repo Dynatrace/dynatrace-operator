@@ -16,6 +16,15 @@ limitations under the License.
 
 package otlp
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
+
+func NewExporterConfiguration(spec *ExporterConfigurationSpec, globalResourceAttributes map[string]string) *ExporterConfiguration {
+	return &ExporterConfiguration{
+		Spec:                     spec,
+		globalResourceAttributes: globalResourceAttributes,
+	}
+}
+
 func (e *ExporterConfiguration) IsEnabled() bool {
 	if e.Spec == nil {
 		return false
@@ -38,4 +47,24 @@ func (e *ExporterConfiguration) IsTracesEnabled() bool {
 
 func (e *ExporterConfiguration) IsLogsEnabled() bool {
 	return e.Spec != nil && e.Spec.Signals.Logs != nil
+}
+
+func (e *ExporterConfiguration) GetResourceAttributes() map[string]string {
+	if e.Spec == nil {
+		return e.globalResourceAttributes
+	}
+
+	return resourceattributes.Merge(e.globalResourceAttributes, e.Spec.AdditionalResourceAttributes)
+}
+
+func (e *ExporterConfiguration) HasAdditionalResourceAttributes() bool {
+	return e.Spec != nil && len(e.Spec.AdditionalResourceAttributes) > 0
+}
+
+func (e *ExporterConfiguration) GetAdditionalResourceAttributes() map[string]string {
+	if e.Spec == nil {
+		return nil
+	}
+
+	return e.Spec.AdditionalResourceAttributes
 }

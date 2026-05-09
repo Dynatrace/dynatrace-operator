@@ -2,7 +2,6 @@ package oneagent
 
 import (
 	"context"
-	"encoding/json"
 	"slices"
 	"strings"
 
@@ -155,7 +154,7 @@ func (pmc ProcessModuleConfig) IsEmpty() bool {
 	return len(pmc.Properties) == 0
 }
 
-func (c *Client) GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error) {
+func (c *ClientImpl) GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error) {
 	var resp ProcessModuleConfig
 
 	params := map[string]string{
@@ -176,23 +175,6 @@ func (c *Client) GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConf
 
 	if len(resp.Properties) == 0 {
 		return &ProcessModuleConfig{}, errors.New("no properties available")
-	}
-
-	return &resp, nil
-}
-
-func NewProcessModuleConfig(response []byte) (*ProcessModuleConfig, error) {
-	resp := ProcessModuleConfig{}
-
-	err := json.Unmarshal(response, &resp)
-	if err != nil {
-		log.Error(err, "error unmarshalling processmoduleconfig response", "response", string(response))
-
-		return nil, err
-	}
-
-	if len(resp.Properties) == 0 {
-		return nil, errors.New("no properties available")
 	}
 
 	return &resp, nil

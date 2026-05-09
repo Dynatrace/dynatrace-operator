@@ -10,6 +10,7 @@
 |`enableIstio`||-|boolean|
 |`networkZone`||-|string|
 |`proxy`||-|object|
+|`resourceAttributes`||-|object|
 |`skipCertCheck`||-|boolean|
 |`tokens`||-|string|
 |`trustedCAs`||-|string|
@@ -81,6 +82,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`annotations`||-|object|
 |`args`||-|array|
 |`dnsPolicy`||-|string|
@@ -133,6 +135,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`annotations`||-|object|
 |`args`||-|array|
 |`dnsPolicy`||-|string|
@@ -152,6 +155,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`namespaceSelector`||-|object|
 |`overrideEnvVars`||-|boolean|
 
@@ -159,6 +163,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`annotations`||-|object|
 |`args`||-|array|
 |`codeModulesImage`||-|string|
@@ -195,6 +200,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`codeModulesImage`||-|string|
 |`codeModulesImagePullPolicy`||-|string|
 |`initResources`||-|object|

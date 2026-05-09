@@ -16,24 +16,23 @@ const (
 
 	eventsPath = "/v1/events"
 	hostsPath  = "/v1/entity/infrastructure/hosts"
+	loggerName = "dtclient-hostevent"
 )
 
-var log = logd.Get().WithName("dtclient-hostevent")
-
-type APIClient interface {
+type Client interface {
 	// GetEntityIDForIP returns the host entity ID for a given IP address.
 	GetEntityIDForIP(ctx context.Context, ip string) (string, error)
 	// SendEvent posts an event to the Dynatrace API.
 	SendEvent(ctx context.Context, event Event) error
 }
 
-type Client struct {
-	apiClient   core.APIClient
+type ClientImpl struct {
+	apiClient   core.Client
 	networkZone string
 }
 
-func NewClient(apiClient core.APIClient, networkZone string) *Client {
-	return &Client{
+func NewClient(apiClient core.Client, networkZone string) *ClientImpl {
+	return &ClientImpl{
 		apiClient:   apiClient,
 		networkZone: networkZone,
 	}
@@ -56,10 +55,12 @@ type HostResponse struct {
 // hostEntityMap maps IPs to their respective HOST entityID according to the Dynatrace API
 type hostEntityMap map[string]string
 
-// Update adds or overwrites the IP-to-Entity mapping if the IP already existed.
+// update adds or overwrites the IP-to-Entity mapping if the IP already existed.
 // The reason we do this "overwrite check" is somewhat unknown, it used to be part of a "caching" logic, however that cache was actually never really used.
 // Kept it "as is" mainly to not introduce new behavior, it is unknown how the API we use handles repeated IP usage. But it can be just dead code.
-func (entityMap hostEntityMap) Update(info HostResponse) {
+func (entityMap hostEntityMap) update(ctx context.Context, info HostResponse) {
+	log := logd.FromContext(ctx)
+
 	for _, ip := range info.IPAddresses {
 		if oldEntityID, ok := entityMap[ip]; ok {
 			log.Info("hosts mapping: duplicate IP, replacing HOST entity to 'newer' one", "ip", ip, "new", info.EntityID, "old", oldEntityID)
@@ -70,7 +71,9 @@ func (entityMap hostEntityMap) Update(info HostResponse) {
 }
 
 // GetEntityIDForIP returns the host entity ID for a given IP address.
-func (c *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
+func (c *ClientImpl) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
+
 	if ip == "" {
 		return "", errors.New("must provide IP")
 	}
@@ -86,7 +89,7 @@ func (c *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error
 		return "", setEndpointNotAvailable(err, hostsPath)
 	}
 
-	entities := buildHostEntityMap(hosts, c.networkZone)
+	entities := buildHostEntityMap(ctx, hosts, c.networkZone)
 
 	entityID := entities[ip]
 	if entityID == "" {
@@ -96,13 +99,13 @@ func (c *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error
 	return entityID, nil
 }
 
-func buildHostEntityMap(hosts []HostResponse, networkZone string) hostEntityMap {
+func buildHostEntityMap(ctx context.Context, hosts []HostResponse, networkZone string) hostEntityMap {
 	entities := make(hostEntityMap)
 
 	for _, host := range hosts {
 		if (networkZone != "" && host.NetworkZoneID == networkZone) ||
 			(networkZone == "" && (host.NetworkZoneID == "default" || host.NetworkZoneID == "")) {
-			entities.Update(host)
+			entities.update(ctx, host)
 		}
 	}
 
@@ -139,7 +142,9 @@ func NewMarkedForTerminationEvent(entityID, source, description string, timestam
 }
 
 // SendEvent posts an event to the Dynatrace API.
-func (c *Client) SendEvent(ctx context.Context, event Event) error {
+func (c *ClientImpl) SendEvent(ctx context.Context, event Event) error {
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
+
 	if event.EventType == "" {
 		return errors.New("no key set for eventType in eventData payload")
 	}

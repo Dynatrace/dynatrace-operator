@@ -23,14 +23,14 @@ const (
 
 func TestGetLatest(t *testing.T) {
 	args := GetParams{
-		OS:            installer.OsUnix,
+		OS:            installer.OSUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        arch.FlavorMultidistro,
 		Technologies:  nil,
 		SkipMetadata:  false,
 	}
 
-	setupClient := func(t *testing.T, response []byte, rawErr error) (*Client, *os.File) {
+	setupClient := func(t *testing.T, response []byte, rawErr error) (*ClientImpl, *os.File) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 		t.Cleanup(func() { require.NoError(t, file.Close()) })
@@ -38,7 +38,8 @@ func TestGetLatest(t *testing.T) {
 		hash := sha256.New()
 		multiWriter := io.MultiWriter(file, hash)
 
-		req := coremock.NewAPIRequest(t)
+		req := coremock.NewRequest(t)
+		req.EXPECT().WithPath([]string{args.OS, args.InstallerType, "latest"}).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
@@ -46,12 +47,12 @@ func TestGetLatest(t *testing.T) {
 		req.EXPECT().ExecuteWriter(multiWriter).Run(func(writer io.Writer) {
 			_, copyErr := io.Copy(writer, bytes.NewReader(response))
 			require.NoError(t, copyErr)
-		}).Return(rawErr).Once()
+		}).Return(nil, rawErr).Once()
 
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getLatestURL(installer.OsUnix, installer.TypePaaS)).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().GET(anyCtx, agentDeploymentPath).Return(req).Once()
 
-		return NewClient(client, "", ""), file
+		return NewClient(coreClient, "", ""), file
 	}
 
 	t.Run("file download successful", func(t *testing.T) {
@@ -69,19 +70,24 @@ func TestGetLatest(t *testing.T) {
 		err := oaClient.GetLatest(t.Context(), args, file)
 		require.Error(t, err)
 	})
+
+	t.Run("missing params", func(t *testing.T) {
+		require.ErrorIs(t, (&ClientImpl{}).GetLatest(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
+		require.ErrorIs(t, (&ClientImpl{}).GetLatest(t.Context(), GetParams{OS: installer.OSUnix}, nil), errEmptyInstallerType)
+	})
 }
 
 func TestGet(t *testing.T) {
 	args := GetParams{
-		OS:            installer.OsUnix,
+		OS:            installer.OSUnix,
 		InstallerType: installer.TypePaaS,
-		Version:       "",
+		Version:       "1.2.3",
 		Flavor:        "",
 		Technologies:  nil,
 		SkipMetadata:  false,
 	}
 
-	setupClient := func(t *testing.T, response []byte, rawErr error) (*Client, *os.File) {
+	setupClient := func(t *testing.T, response []byte, rawErr error) (*ClientImpl, *os.File) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 		t.Cleanup(func() { require.NoError(t, file.Close()) })
@@ -89,7 +95,8 @@ func TestGet(t *testing.T) {
 		hash := sha256.New()
 		multiWriter := io.MultiWriter(file, hash)
 
-		req := coremock.NewAPIRequest(t)
+		req := coremock.NewRequest(t)
+		req.EXPECT().WithPath([]string{args.OS, args.InstallerType, "version", args.Version}).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
@@ -97,12 +104,12 @@ func TestGet(t *testing.T) {
 		req.EXPECT().ExecuteWriter(multiWriter).Run(func(writer io.Writer) {
 			_, copyErr := io.Copy(writer, bytes.NewReader(response))
 			require.NoError(t, copyErr)
-		}).Return(rawErr).Once()
+		}).Return(nil, rawErr).Once()
 
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getURL(installer.OsUnix, installer.TypePaaS, "")).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().GET(anyCtx, agentDeploymentPath).Return(req).Once()
 
-		return NewClient(client, "", ""), file
+		return NewClient(coreClient, "", ""), file
 	}
 
 	t.Run("handle response correctly", func(t *testing.T) {
@@ -121,20 +128,26 @@ func TestGet(t *testing.T) {
 
 		require.True(t, core.IsNotFound(err))
 	})
+
+	t.Run("missing params", func(t *testing.T) {
+		require.ErrorIs(t, (&ClientImpl{}).Get(t.Context(), GetParams{InstallerType: installer.TypePaaS}, nil), errEmptyOS)
+		require.ErrorIs(t, (&ClientImpl{}).Get(t.Context(), GetParams{OS: installer.OSUnix}, nil), errEmptyInstallerType)
+	})
 }
 
 func TestGetVersions(t *testing.T) {
 	args := GetParams{
-		OS:            installer.OsUnix,
+		OS:            installer.OSUnix,
 		InstallerType: installer.TypePaaS,
 		Flavor:        "",
 	}
-	var responseString = []string{"1.123.1", "1.123.2", "1.123.3", "1.123.4"}
+	responseString := []string{"1.123.1", "1.123.2", "1.123.3", "1.123.4"}
 
-	setupClient := func(t *testing.T, execErr error) *Client {
+	setupClient := func(t *testing.T, execErr error) *ClientImpl {
 		var resp versionsResponse
 
-		req := coremock.NewAPIRequest(t)
+		req := coremock.NewRequest(t)
+		req.EXPECT().WithPath([]string{"versions", args.OS, args.InstallerType}).Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().Execute(&resp).Run(func(model any) {
@@ -144,10 +157,10 @@ func TestGetVersions(t *testing.T) {
 			}
 		}).Return(execErr).Once()
 
-		client := coremock.NewAPIClient(t)
-		client.EXPECT().GET(t.Context(), getVersionsURL(installer.OsUnix, installer.TypePaaS)).Return(req).Once()
+		coreClient := coremock.NewClient(t)
+		coreClient.EXPECT().GET(anyCtx, agentDeploymentPath).Return(req).Once()
 
-		return NewClient(client, "", "")
+		return NewClient(coreClient, "", "")
 	}
 
 	t.Run("handle response correctly", func(t *testing.T) {
@@ -169,5 +182,12 @@ func TestGetVersions(t *testing.T) {
 		require.Empty(t, availableVersions)
 		require.Error(t, err)
 		require.True(t, core.IsBadRequest(err))
+	})
+
+	t.Run("missing params", func(t *testing.T) {
+		_, err := (&ClientImpl{}).GetVersions(t.Context(), GetParams{InstallerType: installer.TypePaaS})
+		require.ErrorIs(t, err, errEmptyOS)
+		_, err = (&ClientImpl{}).GetVersions(t.Context(), GetParams{OS: installer.OSUnix})
+		require.ErrorIs(t, err, errEmptyInstallerType)
 	})
 }

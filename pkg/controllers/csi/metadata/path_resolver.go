@@ -24,7 +24,7 @@ func (pr PathResolver) DynaKubeDir(dynakubeName string) string {
 	return filepath.Join(pr.DynaKubesBaseDir(), dynakubeName)
 }
 
-func (pr PathResolver) OsAgentDir(dynakubeName string) string {
+func (pr PathResolver) OSAgentDir(dynakubeName string) string {
 	return filepath.Join(pr.DynaKubeDir(dynakubeName), "osagent")
 }
 
@@ -134,7 +134,7 @@ func (pr PathResolver) OverlayWorkDir(dynakubeName string, volumeID string) stri
 }
 
 // Deprecated kept for future migration/cleanup
-func (pr PathResolver) OldOsAgentDir(tenantUUID string) string {
+func (pr PathResolver) OldOSAgentDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), "osagent")
 }
 

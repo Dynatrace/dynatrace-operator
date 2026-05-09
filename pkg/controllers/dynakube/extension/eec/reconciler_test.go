@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -783,21 +784,25 @@ func TestAffinity(t *testing.T) {
 }
 
 func TestImagePullSecrets(t *testing.T) {
-	t.Run("the default image pull secret only", func(t *testing.T) {
+	t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
+	t.Run("no pull secrets when only tenant registry pull secret exists", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
-		assert.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 1)
+		// EEC does not pull from the tenant registry, so the operator-generated pull secret must not be mounted
+		assert.Empty(t, statefulSet.Spec.Template.Spec.ImagePullSecrets)
 	})
 
-	t.Run("custom pull secret", func(t *testing.T) {
+	t.Run("custom pull secret, no tenant registry pull secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.CustomPullSecret = testEECPullSecret
 
 		statefulSet := getStatefulset(t, dk)
 
-		require.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 2)
-		assert.Equal(t, dk.Name+dynakube.PullSecretSuffix, statefulSet.Spec.Template.Spec.ImagePullSecrets[0].Name)
-		assert.Equal(t, dk.Spec.CustomPullSecret, statefulSet.Spec.Template.Spec.ImagePullSecrets[1].Name)
+		require.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 1)
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.Spec.CustomPullSecret})
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, dk.TenantRegistryPullSecretReferences())
 	})
 }
 

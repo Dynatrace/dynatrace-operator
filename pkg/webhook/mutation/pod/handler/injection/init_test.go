@@ -214,7 +214,7 @@ func TestAddInitContainerToPod(t *testing.T) {
 		pod := corev1.Pod{}
 		initContainer := corev1.Container{}
 
-		addInitContainerToPod(&pod, &initContainer)
+		addInitContainerToPod(t.Context(), &pod, &initContainer)
 
 		assert.Contains(t, pod.Spec.InitContainers, initContainer)
 		require.Len(t, pod.Spec.Volumes, 2)

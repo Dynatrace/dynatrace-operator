@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -14,7 +15,9 @@ const (
 	warningConflictingAPIURLForExtensions                    = `You are already using a Dynakube ('%s') that enables extensions. Having multiple Dynakubes with same '.spec.apiUrl' and '.spec.extensions' enabled can have severe side-effects on “sum” and “count” metrics and cause double-billing.`
 )
 
-func extensionControllerImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func extensionControllerImage(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsAnyEnabled() {
 		return ""
 	}
@@ -29,6 +32,8 @@ func extensionControllerImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 }
 
 func conflictingAPIURLForExtensions(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsAnyEnabled() {
 		return ""
 	}
@@ -53,7 +58,9 @@ func conflictingAPIURLForExtensions(ctx context.Context, dv *Validator, dk *dyna
 	return ""
 }
 
-func extensionControllerPVCStorageDevice(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func extensionControllerPVCStorageDevice(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsAnyEnabled() {
 		return ""
 	}

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/eventfilter"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -32,6 +33,7 @@ const (
 var errCertificatesSecretEmpty = errors.New("certificates secret is empty")
 
 func InitReconcile(ctx context.Context, clt client.Client, namespace string) error {
+	ctx, log := logd.NewFromContext(ctx, "init-reconcile")
 	controller := newWebhookCertificateController(clt, clt)
 	request := ctrl.Request{NamespacedName: types.NamespacedName{Name: webhook.DeploymentName, Namespace: namespace}}
 
@@ -67,6 +69,8 @@ type WebhookCertificateController struct {
 }
 
 func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
+	ctx, log := logd.NewFromContext(ctx, "webhook-certificates")
+
 	log.Info("reconciling webhook certificates", "namespace", request.Namespace, "name", request.Name)
 
 	webhookDeployment := &appsv1.Deployment{}
@@ -93,7 +97,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return ctrl.Result{}, err
 	}
 
-	if err := certSecret.validateCertificates(webhookDeployment.Namespace); err != nil {
+	if err := certSecret.validateCertificates(ctx, webhookDeployment.Namespace); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -150,18 +154,20 @@ func (controller *WebhookCertificateController) isUpToDate(certSecret *certifica
 }
 
 func (controller *WebhookCertificateController) getWebhooksConfigurations(ctx context.Context) (*admissionregistrationv1.MutatingWebhookConfiguration, *admissionregistrationv1.ValidatingWebhookConfiguration) {
+	log := logd.FromContext(ctx)
+
 	mutatingWebhookConfiguration, err := controller.getMutatingWebhookConfiguration(ctx)
 	if err != nil {
 		// Generation must not be skipped because webhook startup routine listens for the secret
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
-		log.Info("could not find mutating webhook configuration, this is normal when deployed using OLM")
+		log.Error(err, "could not find mutating webhook configuration, this is normal when deployed using OLM")
 	}
 
 	validatingWebhookConfiguration, err := controller.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
 		// Generation must not be skipped because webhook startup routine listens for the secret
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
-		log.Info("could not find validating webhook configuration, this is normal when deployed using OLM")
+		log.Error(err, "could not find validating webhook configuration, this is normal when deployed using OLM")
 	}
 
 	return mutatingWebhookConfiguration, validatingWebhookConfiguration
@@ -229,6 +235,8 @@ func (controller *WebhookCertificateController) updateClientConfigurations(ctx c
 }
 
 func (controller *WebhookCertificateController) updateCRDConfiguration(ctx context.Context, crdName string, bundle []byte) error {
+	log := logd.FromContext(ctx)
+
 	var crd apiextensionsv1.CustomResourceDefinition
 	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
 		return fmt.Errorf("get CRD %s: %w", crdName, err)
