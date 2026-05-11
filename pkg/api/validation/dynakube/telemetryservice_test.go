@@ -327,7 +327,7 @@ func TestImages(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:          testAPIURL,
+					APIURL: testAPIURL,
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
 							ImageRef: image.Ref{
@@ -339,7 +339,7 @@ func TestImages(t *testing.T) {
 				},
 			})
 		require.NoError(t, err)
-		assert.Equal(t, warnings[0], warningOtelCollectorIgnoredTemplate)
+		assert.Equal(t, warningOtelCollectorIgnoredTemplate, warnings[0])
 	})
 
 	t.Run("otel collector image present", func(t *testing.T) {
