@@ -24,7 +24,7 @@ type StatusUpdater interface {
 	IsPublicRegistryEnabled() bool
 	CheckForDowngrade(ctx context.Context, latestVersion string) (bool, error)
 	ValidateStatus(ctx context.Context) error
-	LatestImageInfo(ctx context.Context) (*image.ImageInfo, error)
+	LatestImageInfo(ctx context.Context) (*image.Info, error)
 
 	UseTenantRegistry(context.Context) error
 }
@@ -119,7 +119,7 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 
 func setImageFromImageInfo(ctx context.Context,
 	target *status.VersionStatus,
-	imageInfo *image.ImageInfo,
+	imageInfo *image.Info,
 ) {
 	log := logd.FromContext(ctx)
 

@@ -326,23 +326,23 @@ func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) RunAndReturn(run func(
 }
 
 // LatestImageInfo provides a mock function for the type MockStatusUpdater
-func (_mock *MockStatusUpdater) LatestImageInfo(ctx context.Context) (*image.ImageInfo, error) {
+func (_mock *MockStatusUpdater) LatestImageInfo(ctx context.Context) (*image.Info, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for LatestImageInfo")
 	}
 
-	var r0 *image.ImageInfo
+	var r0 *image.Info
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (*image.ImageInfo, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (*image.Info, error)); ok {
 		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) *image.ImageInfo); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) *image.Info); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*image.ImageInfo)
+			r0 = ret.Get(0).(*image.Info)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -377,12 +377,12 @@ func (_c *MockStatusUpdater_LatestImageInfo_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *MockStatusUpdater_LatestImageInfo_Call) Return(imageInfo *image.ImageInfo, err error) *MockStatusUpdater_LatestImageInfo_Call {
-	_c.Call.Return(imageInfo, err)
+func (_c *MockStatusUpdater_LatestImageInfo_Call) Return(info *image.Info, err error) *MockStatusUpdater_LatestImageInfo_Call {
+	_c.Call.Return(info, err)
 	return _c
 }
 
-func (_c *MockStatusUpdater_LatestImageInfo_Call) RunAndReturn(run func(ctx context.Context) (*image.ImageInfo, error)) *MockStatusUpdater_LatestImageInfo_Call {
+func (_c *MockStatusUpdater_LatestImageInfo_Call) RunAndReturn(run func(ctx context.Context) (*image.Info, error)) *MockStatusUpdater_LatestImageInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

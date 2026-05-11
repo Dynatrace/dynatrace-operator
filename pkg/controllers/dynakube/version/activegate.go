@@ -80,7 +80,7 @@ func (updater *activeGateUpdater) CheckForDowngrade(_ context.Context, _ string)
 	return false, nil
 }
 
-func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*image.ImageInfo, error) {
+func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*image.Info, error) {
 	imageInfo, err := updater.imagesClient.ComponentLatestImageInfo(ctx, image.ActiveGate, updater.dk.PublicRegistryOverride())
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)

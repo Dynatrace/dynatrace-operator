@@ -151,7 +151,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		imageInfo := &image.ImageInfo{URI: "registry.io/dynatrace/oneagent:1.2.3", Tag: "1.2.3"}
+		imageInfo := &image.Info{URI: "registry.io/dynatrace/oneagent:1.2.3", Tag: "1.2.3"}
 		updater := newPublicRegistryUpdater(t, true)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(3)
@@ -187,7 +187,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		imageInfo := &image.ImageInfo{URI: "registry.io/dynatrace/oneagent:1.2.0", Tag: "1.2.0"}
+		imageInfo := &image.Info{URI: "registry.io/dynatrace/oneagent:1.2.0", Tag: "1.2.0"}
 		updater := newPublicRegistryUpdater(t, true)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(2)
@@ -206,7 +206,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		imageInfo := &image.ImageInfo{URI: "registry.io/dynatrace/oneagent@sha256:abc123", Tag: ""}
+		imageInfo := &image.Info{URI: "registry.io/dynatrace/oneagent@sha256:abc123", Tag: ""}
 
 		updater := NewMockStatusUpdater(t)
 		updater.EXPECT().Name().Return("mock")

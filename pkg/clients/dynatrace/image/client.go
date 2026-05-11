@@ -18,7 +18,7 @@ const (
 	ActiveGate  ComponentType = "activegate"
 )
 
-type ImageInfo struct {
+type Info struct {
 	URI      string
 	Tag      string
 	Registry string
@@ -29,7 +29,7 @@ const (
 )
 
 type Client interface {
-	ComponentLatestImageInfo(ctx context.Context, component ComponentType, registry string) (*ImageInfo, error)
+	ComponentLatestImageInfo(ctx context.Context, component ComponentType, registry string) (*Info, error)
 }
 
 type componentResponse struct {
@@ -51,7 +51,7 @@ func NewClient(apiClient core.Client) *ClientImpl {
 	}
 }
 
-func (c *ClientImpl) ComponentLatestImageInfo(ctx context.Context, component ComponentType, registry string) (*ImageInfo, error) {
+func (c *ClientImpl) ComponentLatestImageInfo(ctx context.Context, component ComponentType, registry string) (*Info, error) {
 	var resp containerImagesResponse
 
 	params := map[string]string{}
@@ -85,13 +85,13 @@ func (c *ClientImpl) ComponentLatestImageInfo(ctx context.Context, component Com
 	return imageInfo, nil
 }
 
-func parseImageInfo(imageURI string) (*ImageInfo, error) {
+func parseImageInfo(imageURI string) (*Info, error) {
 	ref, err := name.ParseReference(imageURI, name.WithDefaultTag(""))
 	if err != nil {
 		return nil, fmt.Errorf("parse image URI %q: %w", imageURI, err)
 	}
 
-	info := &ImageInfo{
+	info := &Info{
 		URI:      imageURI,
 		Registry: ref.Context().RegistryStr(),
 	}

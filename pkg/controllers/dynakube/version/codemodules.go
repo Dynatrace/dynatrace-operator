@@ -76,7 +76,7 @@ func (updater *codeModulesUpdater) CheckForDowngrade(_ context.Context, _ string
 	return false, nil
 }
 
-func (updater *codeModulesUpdater) LatestImageInfo(ctx context.Context) (*image.ImageInfo, error) {
+func (updater *codeModulesUpdater) LatestImageInfo(ctx context.Context) (*image.Info, error) {
 	imageInfo, err := updater.imageClient.ComponentLatestImageInfo(ctx, image.CodeModules, updater.dk.PublicRegistryOverride())
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)

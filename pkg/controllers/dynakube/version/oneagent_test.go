@@ -8,9 +8,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	imagesclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/images"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -344,8 +344,8 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 	t.Run("happy path: image info returned and verified condition set", func(t *testing.T) {
 		dk := newDK("")
 		mockImageClient := imageclientmock.NewClient(t)
-		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), imagesclient.OneAgent, "").Return(
-			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag}, nil,
+		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), image.OneAgent, "").Return(
+			&image.Info{URI: testImageURI, Tag: testTag}, nil,
 		).Once()
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, nil)
@@ -365,8 +365,8 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 	t.Run("registry override forwarded to images client", func(t *testing.T) {
 		dk := newDK(testRegistry)
 		mockImageClient := imageclientmock.NewClient(t)
-		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), imagesclient.OneAgent, testRegistry).Return(
-			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag, Registry: testRegistry}, nil,
+		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), image.OneAgent, testRegistry).Return(
+			&image.Info{URI: testImageURI, Tag: testTag, Registry: testRegistry}, nil,
 		).Once()
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, nil)
@@ -379,7 +379,7 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 	t.Run("API error: error returned and DynatraceAPIError condition set", func(t *testing.T) {
 		dk := newDK("")
 		mockImageClient := imageclientmock.NewClient(t)
-		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), imagesclient.OneAgent, "").Return(
+		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), image.OneAgent, "").Return(
 			nil, errors.New("BOOM"),
 		).Once()
 
