@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/Dynatrace/dynatrace-bootstrapper v1.3.0
 	github.com/container-storage-interface/spec v1.12.0
-	github.com/docker/cli v29.4.0+incompatible
+	github.com/docker/cli v29.4.3+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-containerregistry v0.21.5
@@ -22,7 +22,7 @@ require (
 	go.opentelemetry.io/collector/confmap v1.55.0
 	go.opentelemetry.io/collector/pipeline v1.55.0
 	go.opentelemetry.io/collector/service v0.149.0
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	golang.org/x/mod v0.35.0
 	golang.org/x/net v0.53.0
 	golang.org/x/oauth2 v0.36.0
