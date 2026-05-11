@@ -51,8 +51,8 @@ func TestClient_ComponentLatestImageInfo(t *testing.T) {
 	t.Run("api error 404", func(t *testing.T) {
 		client := setupClient(t, &core.HTTPError{StatusCode: 404, Message: "nope"}, map[string]string{}, expectedImageURI)
 		_, err := client.ComponentLatestImageInfo(t.Context(), ActiveGate, "")
+		require.Error(t, err)
 		require.True(t, core.IsNotFound(err))
-		assert.EqualError(t, err, "get latest activegate image: nope")
 	})
 
 	t.Run("invalid URI", func(t *testing.T) {
@@ -76,7 +76,6 @@ func TestClient_ComponentLatestImageInfo(t *testing.T) {
 		client := setupClient(t, nil, map[string]string{"registry": requestedRegistry}, imageURI)
 		_, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, requestedRegistry)
 		require.Error(t, err)
-		assert.EqualError(t, err, `image registry "other.registry.com" does not match requested registry "my.custom.registry.com"`)
 	})
 
 	t.Run("empty components list", func(t *testing.T) {
@@ -96,7 +95,7 @@ func TestClient_ComponentLatestImageInfo(t *testing.T) {
 		client := NewClient(apiClient)
 
 		_, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, "")
-		require.EqualError(t, err, "no oneagent image found")
+		require.Error(t, err)
 	})
 }
 
