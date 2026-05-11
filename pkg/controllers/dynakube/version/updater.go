@@ -122,15 +122,14 @@ func setImageFromImageInfo(ctx context.Context,
 	imageInfo *image.Info,
 ) {
 	log := logd.FromContext(ctx)
-
-	log.Info("updating image version info",
-		"image", imageInfo,
-		"oldImageID", target.ImageID)
+	oldImageID := target.ImageID
 
 	target.Version = imageInfo.Tag
 	target.ImageID = imageInfo.URI
 
 	log.Info("updated image version info",
+		"image", imageInfo,
+		"oldImageID", oldImageID,
 		"newImageID", target.ImageID)
 }
 
@@ -140,14 +139,14 @@ func setImageIDToCustomImage(
 	imageURI string,
 ) {
 	log := logd.FromContext(ctx)
-	log.Info("updating image version info",
-		"image", imageURI,
-		"oldImageID", target.ImageID)
+	oldImageID := target.ImageID
 
 	target.ImageID = imageURI
 	target.Version = string(status.CustomImageVersionSource)
 
 	log.Info("updated image version info",
+		"image", imageURI,
+		"oldImageID", oldImageID,
 		"newImageID", target.ImageID)
 }
 
@@ -158,16 +157,13 @@ func updateVersionStatusForTenantRegistry(
 	latestVersion string,
 ) error {
 	log := logd.FromContext(ctx)
+	oldImageID := target.ImageID
+	oldVersion := target.Version
 
 	ref, err := name.ParseReference(imageURI)
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
-
-	log.Info("updating image version info for tenant registry image",
-		"image", imageURI,
-		"oldImageID", target.ImageID,
-		"oldVersion", target.Version)
 
 	if taggedRef, ok := ref.(name.Tag); ok {
 		target.ImageID = taggedRef.String()
@@ -175,6 +171,9 @@ func updateVersionStatusForTenantRegistry(
 	}
 
 	log.Info("updated image version info for tenant registry image",
+		"image", imageURI,
+		"oldImageID", oldImageID,
+		"oldVersion", oldVersion,
 		"newImageID", target.ImageID,
 		"newVersion", target.Version)
 
