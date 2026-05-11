@@ -69,13 +69,13 @@ def resolve_models(spec, api_tag):
 
     >>> spec = {
     ...     "paths": {
-    ...         "/foo": {"get": {"tags": ["MyApi"], "responses": {"200": {"$ref": "#/components/schemas/MyModel"}}}}
+    ...         "/foo": {"get": {"tags": ["FooApi"], "responses": {"200": {"$ref": "#/components/schemas/Foo"}}}}
     ...     },
-    ...     "components": {"schemas": {"MyModel": {}}},
+    ...     "components": {"schemas": {"Foo": {}}},
     ... }
-    >>> resolve_models(spec, "MyApi")
-    ['MyModel']
-    >>> resolve_models(spec, "OtherApi")
+    >>> resolve_models(spec, "FooApi")
+    ['Foo']
+    >>> resolve_models(spec, "BarApi")
     []
     """
     worklist = []
@@ -102,8 +102,8 @@ def build_global_props(schema, default_global_props, spec):
 
     >>> build_global_props({}, "skipFormModel=true", {})
     'skipFormModel=true,apis,models'
-    >>> build_global_props({"generate": {"globalProperties": {"apis": ["PetApi"]}}}, "", {"paths": {}, "components": {"schemas": {}}})
-    'apis=PetApi'
+    >>> build_global_props({"generate": {"globalProperties": {"apis": ["FooApi"]}}}, "", {"paths": {}, "components": {"schemas": {}}})
+    'apis=FooApi'
     """
     gp = schema.get("generate", {}).get("globalProperties", {})
     apis = gp.get("apis", [])
