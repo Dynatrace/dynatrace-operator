@@ -237,7 +237,7 @@ func TestDetermineSource(t *testing.T) {
 		assert.Equal(t, status.CustomImageVersionSource, source)
 	})
 	t.Run("custom-version", func(t *testing.T) {
-		updater := newCustomVersionUpdater(t, false)
+		updater := newBaseUpdater(t, false)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
 		updater.EXPECT().CustomVersion().Return(customVersion).Once()
@@ -246,7 +246,7 @@ func TestDetermineSource(t *testing.T) {
 	})
 
 	t.Run("default", func(t *testing.T) {
-		updater := newDefaultUpdater(t, true)
+		updater := newBaseUpdater(t, true)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
 		updater.EXPECT().CustomVersion().Return("").Once()
@@ -340,7 +340,7 @@ func TestGetTagFromImageID(t *testing.T) {
 
 func newCustomVersionUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
-	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
+	updater.EXPECT().UseTenantRegistry(anyCtx).Return(nil)
 
 	return updater
 }
@@ -351,14 +351,14 @@ func newFailingUpdater(t *testing.T) *MockStatusUpdater {
 	updater.EXPECT().CustomImage().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Return(false)
 	updater.EXPECT().CustomVersion().Return("")
-	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(errors.New("BOOM"))
+	updater.EXPECT().UseTenantRegistry(anyCtx).Return(errors.New("BOOM"))
 
 	return updater
 }
 
 func newDefaultUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
-	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
+	updater.EXPECT().UseTenantRegistry(anyCtx).Return(nil)
 
 	return updater
 }
