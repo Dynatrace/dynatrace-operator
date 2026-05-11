@@ -56,6 +56,7 @@ func TestRun(t *testing.T) {
 		updater.EXPECT().Name().Return("mock").Times(5)
 		updater.EXPECT().Target().Return(target).Times(16)
 		updater.EXPECT().CustomImage().Return("").Times(4)
+		updater.EXPECT().CustomVersion().Return("").Times(4)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
@@ -90,6 +91,7 @@ func TestRun(t *testing.T) {
 		updater.EXPECT().Name().Return("mock").Times(2)
 		updater.EXPECT().Target().Return(target).Times(4)
 		updater.EXPECT().CustomImage().Return("").Times(2)
+		updater.EXPECT().CustomVersion().Return("123").Times(2)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
@@ -234,6 +236,7 @@ func TestDetermineSource(t *testing.T) {
 	t.Run("custom-version", func(t *testing.T) {
 		updater := newCustomVersionUpdater(t, customVersion, false)
 		updater.EXPECT().CustomImage().Return("").Once()
+		updater.EXPECT().CustomVersion().Return(customVersion).Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomVersionVersionSource, source)
 	})
@@ -241,6 +244,7 @@ func TestDetermineSource(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
 		updater := newDefaultUpdater(t, true)
 		updater.EXPECT().CustomImage().Return("").Once()
+		updater.EXPECT().CustomVersion().Return("").Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.TenantRegistryVersionSource, source)
 	})
@@ -330,7 +334,6 @@ func TestGetTagFromImageID(t *testing.T) {
 func newCustomVersionUpdater(t *testing.T, version string, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
-	updater.EXPECT().CustomVersion().Maybe().Return(version)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
 
 	return updater
@@ -341,7 +344,7 @@ func newFailingUpdater(t *testing.T) *MockStatusUpdater {
 	updater.EXPECT().Name().Return("mock").Times(3)
 	updater.EXPECT().CustomImage().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
-	updater.EXPECT().CustomVersion().Maybe().Return("")
+	updater.EXPECT().CustomVersion().Return("")
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(errors.New("BOOM"))
 
 	return updater
@@ -350,7 +353,6 @@ func newFailingUpdater(t *testing.T) *MockStatusUpdater {
 func newDefaultUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
-	updater.EXPECT().CustomVersion().Maybe().Return("")
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
 
 	return updater
