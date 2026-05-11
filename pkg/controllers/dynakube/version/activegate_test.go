@@ -132,7 +132,7 @@ func TestActiveGateLatestImageInfo(t *testing.T) {
 		dk := newDK("")
 		mockImageClient := imageclientmock.NewClient(t)
 		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), imagesclient.ActiveGate, "").Return(
-			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag, Registry: "my.custom.registry.com"}, nil,
+			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag}, nil,
 		).Once()
 
 		updater := newActiveGateUpdater(dk, fake.NewClient(), mockImageClient, nil)

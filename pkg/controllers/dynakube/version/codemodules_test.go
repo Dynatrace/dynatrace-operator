@@ -192,7 +192,7 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 		dk := newDK("")
 		mockImageClient := imageclientmock.NewClient(t)
 		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), imagesclient.CodeModules, "").Return(
-			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag, Registry: testRegistry}, nil,
+			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag}, nil,
 		).Once()
 
 		updater := newCodeModulesUpdater(dk, mockImageClient, nil)

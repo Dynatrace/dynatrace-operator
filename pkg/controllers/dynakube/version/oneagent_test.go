@@ -345,7 +345,7 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 		dk := newDK("")
 		mockImageClient := imageclientmock.NewClient(t)
 		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), imagesclient.OneAgent, "").Return(
-			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag, Registry: testRegistry}, nil,
+			&imagesclient.ImageInfo{URI: testImageURI, Tag: testTag}, nil,
 		).Once()
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockImageClient, nil)
