@@ -7,13 +7,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
 
 const (
 	tokenVolumeName           = "kspm-token"
-	tokenMountPath            = "/var/lib/dynatrace/secrets/tokens/kspm/node-configuration-collector"
+	tokenMountPath            = consts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
 	tokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
 
 	nodeRootMountPath = "/node_root"
