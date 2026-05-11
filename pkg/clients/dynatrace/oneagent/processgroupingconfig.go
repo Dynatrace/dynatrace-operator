@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -31,8 +32,11 @@ type ProcessGroupConfig struct {
 // Returns:
 //   - On HTTP 200: *ProcessGroupConfig with ETag from response header and CBOR data, nil error.
 //   - On HTTP 304: *ProcessGroupConfig with the original ETag and nil Data, nil error.
+//   - On HTTP 404: *ProcessGroupConfig (empty), nil error. Endpoint not available.
 //   - On other errors: non-nil error.
 func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error) {
+	log := logd.FromContext(ctx)
+
 	if kubernetesClusterID == "" {
 		return nil, errors.New("kubernetesClusterID is required")
 	}
@@ -57,6 +61,12 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 	}
 
 	if err != nil {
+		if core.IsNotFound(err) {
+			log.Info("process grouping config not available on cluster, skipping getting process grouping config")
+
+			return &ProcessGroupConfig{}, nil
+		}
+
 		return nil, err
 	}
 
