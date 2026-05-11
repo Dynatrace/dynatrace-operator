@@ -865,3 +865,29 @@ tests:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5
+
+  - it: should set dnsPolicy if hostNetwork is enabled
+    set:
+      platform: kubernetes
+      image: image-name
+      webhook:
+        hostNetwork: true
+    asserts:
+      - equal:
+          path: spec.template.spec.hostNetwork
+          value: true
+      - equal:
+          path: spec.template.spec.dnsPolicy
+          value: ClusterFirstWithHostNet
+
+  - it: should not set dnsPolicy if hostNetwork is disabled
+    set:
+      platform: kubernetes
+      image: image-name
+      webhook:
+        hostNetwork: false
+    asserts:
+      - isNull:
+          path: spec.template.spec.hostNetwork
+      - isNull:
+          path: spec.template.spec.dnsPolicy
