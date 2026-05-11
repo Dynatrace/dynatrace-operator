@@ -373,7 +373,6 @@ func newPublicRegistryUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater 
 
 func newBaseUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := NewMockStatusUpdater(t)
-	updater.EXPECT().IsEnabled().Maybe().Return(true)
 	updater.EXPECT().IsAutoUpdateEnabled().Maybe().Return(autoUpdate)
 	updater.EXPECT().ValidateStatus(anyCtx).Maybe().Return(nil)
 
