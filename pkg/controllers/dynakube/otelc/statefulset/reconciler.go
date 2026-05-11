@@ -31,6 +31,7 @@ const (
 	serviceAccountName                                  = "dynatrace" + consts.OTELCollectorNameSuffix
 	annotationTelemetryIngestSecretHash                 = api.InternalFlagPrefix + "telemetry-ingest-secret-hash"
 	annotationTelemetryIngestConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-ingest-config-hash"
+	annotationDataIngestTokenSecretHash                 = api.InternalFlagPrefix + "data-ingest-token-hash"
 
 	runAs int64 = 10001
 )
@@ -170,6 +171,13 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 		}
 
 		templateAnnotations[annotationTelemetryIngestConfigurationConfigMapHash] = configConfigMapHash
+
+		dataIngestTokenHash, err := r.calculateDataIngestTokenHash(ctx, dk)
+		if err != nil {
+			return nil, err
+		}
+
+		templateAnnotations[annotationDataIngestTokenSecretHash] = dataIngestTokenHash
 	}
 
 	return templateAnnotations, nil
@@ -211,6 +219,17 @@ func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName s
 	}
 
 	return configConfigMaptHash, nil
+}
+
+func (r *Reconciler) calculateDataIngestTokenHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	tokenReader := token.NewReader(r.apiReader, dk)
+
+	tokens, err := tokenReader.ReadTokens(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return hasher.GenerateHash(tokens.DataIngestToken().Value)
 }
 
 func (r *Reconciler) checkDataIngestTokenExists(ctx context.Context, dk *dynakube.DynaKube) bool {
