@@ -9,6 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -318,6 +320,26 @@ func TestImages(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			})
+	})
+
+	t.Run("otel collector image was ignored", func(t *testing.T) {
+		warnings, err := assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testAPIURL,
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+						},
+					},
+				},
+			})
+		require.NoError(t, err)
+		assert.Equal(t, warnings[0], warningOtelCollectorIgnoredTemplate)
 	})
 
 	t.Run("otel collector image present", func(t *testing.T) {

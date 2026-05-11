@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -186,7 +187,11 @@ func TestConvertTo(t *testing.T) {
 	t.Run("default otelc image", func(t *testing.T) {
 		from := getOldDynakubeBase()
 
-		to := dynakubelatest.DynaKube{}
+		to := dynakubelatest.DynaKube{
+			Spec: dynakubelatest.DynaKubeSpec{
+				TelemetryIngest: &telemetryingestlatest.Spec{},
+			},
+		}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -194,6 +199,19 @@ func TestConvertTo(t *testing.T) {
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
 		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+
+		compareBase(t, from, to)
+	})
+
+	t.Run("no default otelc image when telemetry ingest is disabled", func(t *testing.T) {
+		from := getOldDynakubeBase()
+
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef)
 
 		compareBase(t, from, to)
 	})

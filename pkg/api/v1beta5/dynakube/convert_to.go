@@ -158,7 +158,7 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
-	if dst.ImageRef.IsZero() {
+	if dst.ImageRef.IsZero() && dk.Spec.TelemetryIngest != nil {
 		dst.ImageRef.Repository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 		dst.ImageRef.Tag = "latest"
 		dk.RemovedFields().DefaultOTELCImage.Set(ptr.To(true))
