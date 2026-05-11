@@ -115,7 +115,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newClassicFullStackUpdater(t, false)
+		updater := newBaseUpdater(t, false)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(4)
 		updater.EXPECT().CustomImage().Return("").Once()
@@ -135,7 +135,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newClassicFullStackUpdater(t, false)
+		updater := newBaseUpdater(t, false)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(3)
 		updater.EXPECT().CustomImage().Return(testImage).Twice()
@@ -263,7 +263,7 @@ func TestDetermineSource(t *testing.T) {
 	})
 
 	t.Run("classicfullstack ignores public registry feature flag", func(t *testing.T) {
-		updater := newClassicFullStackUpdater(t, false)
+		updater := newBaseUpdater(t, false)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
 		updater.EXPECT().CustomVersion().Return("").Once()
@@ -273,7 +273,7 @@ func TestDetermineSource(t *testing.T) {
 
 	t.Run("classicfullstack ignores public registry feature flag and sets custom image if set", func(t *testing.T) {
 		customVersion := "1.2.3.4-5"
-		updater := newClassicFullStackUpdater(t, false)
+		updater := newBaseUpdater(t, false)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
 		updater.EXPECT().CustomVersion().Return(customVersion).Once()
@@ -359,12 +359,6 @@ func newFailingUpdater(t *testing.T) *MockStatusUpdater {
 func newDefaultUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Return(nil)
-
-	return updater
-}
-
-func newClassicFullStackUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
-	updater := newBaseUpdater(t, autoUpdate)
 
 	return updater
 }
