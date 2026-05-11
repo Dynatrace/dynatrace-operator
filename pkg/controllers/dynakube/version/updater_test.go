@@ -121,6 +121,7 @@ func TestRun(t *testing.T) {
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().CustomVersion().Return("").Once()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
+		updater.EXPECT().IsAutoUpdateEnabled().Return(false).Once()
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
@@ -340,6 +341,7 @@ func TestGetTagFromImageID(t *testing.T) {
 
 func newCustomVersionUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
+	updater.EXPECT().IsAutoUpdateEnabled().Return(autoUpdate)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Return(nil)
 
 	return updater
@@ -350,6 +352,7 @@ func newFailingUpdater(t *testing.T) *MockStatusUpdater {
 	updater.EXPECT().Name().Return("mock").Times(3)
 	updater.EXPECT().CustomImage().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Return(false)
+	updater.EXPECT().IsAutoUpdateEnabled().Return(true)
 	updater.EXPECT().CustomVersion().Return("")
 	updater.EXPECT().UseTenantRegistry(anyCtx).Return(errors.New("BOOM"))
 
@@ -358,6 +361,7 @@ func newFailingUpdater(t *testing.T) *MockStatusUpdater {
 
 func newDefaultUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
+	updater.EXPECT().IsAutoUpdateEnabled().Return(autoUpdate)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Return(nil)
 
 	return updater
@@ -365,6 +369,7 @@ func newDefaultUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 
 func newPublicRegistryUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
+	updater.EXPECT().IsAutoUpdateEnabled().Return(autoUpdate)
 	updater.EXPECT().CustomImage().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Return(true)
 
@@ -373,7 +378,6 @@ func newPublicRegistryUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater 
 
 func newBaseUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := NewMockStatusUpdater(t)
-	updater.EXPECT().IsAutoUpdateEnabled().Maybe().Return(autoUpdate)
 	updater.EXPECT().ValidateStatus(anyCtx).Maybe().Return(nil)
 
 	return updater
