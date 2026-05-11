@@ -23,6 +23,7 @@ func TestRun(t *testing.T) {
 		updater := newCustomImageUpdater(t, target, testImage)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(3)
+		updater.EXPECT().CustomImage().Return(testImage).Times(2)
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -39,6 +40,7 @@ func TestRun(t *testing.T) {
 		updater := newCustomImageUpdater(t, target, "incorrect-uri")
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(3)
+		updater.EXPECT().CustomImage().Return("incorrect-uri").Times(2)
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -53,6 +55,7 @@ func TestRun(t *testing.T) {
 		updater := newDefaultUpdater(t, target, false)
 		updater.EXPECT().Name().Return("mock").Times(5)
 		updater.EXPECT().Target().Return(target).Times(16)
+		updater.EXPECT().CustomImage().Return("").Times(4)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
@@ -86,6 +89,7 @@ func TestRun(t *testing.T) {
 		updater := newCustomVersionUpdater(t, target, "123", false)
 		updater.EXPECT().Name().Return("mock").Times(2)
 		updater.EXPECT().Target().Return(target).Times(4)
+		updater.EXPECT().CustomImage().Return("").Times(2)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
@@ -223,17 +227,20 @@ func TestDetermineSource(t *testing.T) {
 
 	t.Run("custom-image", func(t *testing.T) {
 		updater := newCustomImageUpdater(t, nil, customImage)
+		updater.EXPECT().CustomImage().Return(customImage).Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomImageVersionSource, source)
 	})
 	t.Run("custom-version", func(t *testing.T) {
 		updater := newCustomVersionUpdater(t, nil, customVersion, false)
+		updater.EXPECT().CustomImage().Return("").Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomVersionVersionSource, source)
 	})
 
 	t.Run("default", func(t *testing.T) {
 		updater := newDefaultUpdater(t, nil, true)
+		updater.EXPECT().CustomImage().Return("").Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.TenantRegistryVersionSource, source)
 	})
@@ -322,14 +329,12 @@ func TestGetTagFromImageID(t *testing.T) {
 
 func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image string) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, true)
-	updater.EXPECT().CustomImage().Maybe().Return(image)
 
 	return updater
 }
 
 func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version string, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
-	updater.EXPECT().CustomImage().Maybe().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().CustomVersion().Maybe().Return(version)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
@@ -340,7 +345,7 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, true)
 	updater.EXPECT().Name().Return("mock").Times(3)
-	updater.EXPECT().CustomImage().Maybe().Return("")
+	updater.EXPECT().CustomImage().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().CustomVersion().Maybe().Return("")
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(errors.New("BOOM"))
@@ -350,7 +355,6 @@ func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUp
 
 func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
-	updater.EXPECT().CustomImage().Maybe().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().CustomVersion().Maybe().Return("")
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
