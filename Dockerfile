@@ -1,12 +1,12 @@
 # check=skip=RedundantTargetPlatform
 # setup build image
-FROM --platform=$BUILDPLATFORM golang:1.26.2@sha256:2a2b4b5791cea8ae09caecba7bad0bd9631def96e5fe362e4a5e67009fe4ae61 AS operator-build
+FROM --platform=$BUILDPLATFORM golang:1.26.3@sha256:efaccb5b497e90df3ebe5216cc25cd9f98e73874e2d638b56e38d4a3f098c41c AS operator-build
 
 WORKDIR /app
 
 ARG DEBUG_TOOLS
 # renovate depName=github.com/go-delve/delve/cmd/dlv
-RUN if [ "$DEBUG_TOOLS" = "true" ]; then GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@v1.26.1; fi
+RUN if [ "$DEBUG_TOOLS" = "true" ]; then GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@v1.26.3; fi
 
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.10.0
@@ -32,8 +32,8 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
 RUN cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.7-1773894938@sha256:2173487b3b72b1a7b11edc908e9bbf1726f9df46a4f78fd6d19a2bab0a701f38 AS base
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.7-1775624009@sha256:039095faabf1edde946ff528b3b6906efa046ee129f3e33fd933280bb6936221 AS dependency
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.7-1778461406@sha256:1ef916d40ff7f1a4882a31ad5ab37f9572baa7bd182c3519d5e0cb557ffc04f3 AS base
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.7-1778461714@sha256:2323fcffe84ab72fa11b611be567d8a1bc6f83d3ed3a80327b18399258ea9aa6 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \

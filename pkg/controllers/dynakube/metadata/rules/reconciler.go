@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -59,7 +60,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	rules, err := r.getEnrichmentRules(ctx)
 	if err != nil {
-		return err
+		if !core.IsForbidden(err) {
+			return err
+		}
+
+		msg := "provided token cannot read metadata-enrichment rules due to missing scopes"
+		log.Info(msg)
+		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, msg)
+
+		return nil
 	}
 
 	r.dk.Status.MetadataEnrichment.Rules = rules

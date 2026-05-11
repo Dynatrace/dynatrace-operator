@@ -47,7 +47,7 @@ func TestMain(m *testing.M) {
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
 			events.LogEvents(ctx, c, t)
-			logs.WriteOperatorLog(ctx, c, t)
+			logs.WriteOperatorLogToFile(ctx, c, t)
 		}
 
 		return ctx, nil

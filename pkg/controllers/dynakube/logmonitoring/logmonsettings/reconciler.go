@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -14,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/utils/ptr"
 )
 
 type Reconciler struct {
@@ -59,13 +61,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		log.Info(message)
 
 		return nil
-	} else {
-		log.Info("necessary scopes for logmonitoring settings creation is available, proceeding with reconciliation")
 	}
 
 	err := r.checkLogMonitoringSettings(ctx, dtClient, dk)
 	if err != nil {
-		return err
+		if !core.IsForbidden(err) {
+			return err
+		}
+
+		msg := "provided token cannot manage log monitoring settings due to missing scopes"
+		log.Info(msg)
+
+		if ptr.Deref(dk.Status.APIToken.Platform, false) {
+			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, msg)
+		}
 	}
 
 	return nil

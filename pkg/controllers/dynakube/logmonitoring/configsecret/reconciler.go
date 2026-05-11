@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -173,11 +174,13 @@ func (r *Reconciler) getSecretData(ctx context.Context, dk *dynakube.DynaKube) (
 		deploymentConfigContent[networkZoneKey] = dk.Spec.NetworkZone
 	}
 
+	keys := slices.Sorted(maps.Keys(deploymentConfigContent))
+
 	var content strings.Builder
-	for key, value := range deploymentConfigContent {
+	for _, key := range keys {
 		content.WriteString(key)
 		content.WriteString("=")
-		content.WriteString(value)
+		content.WriteString(deploymentConfigContent[key])
 		content.WriteString("\n")
 	}
 

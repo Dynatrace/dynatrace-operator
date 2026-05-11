@@ -69,6 +69,9 @@ type DynaKubeStatus struct { //nolint:revive
 
 type APITokenStatus struct {
 	AvailableOptionalScopes AvailableOptionalScopes `json:"availableOptionalScopes,omitempty"`
+
+	// Platform indicates whether the provided apiToken is a platform token.
+	Platform *bool `json:"platform,omitempty"`
 }
 
 type AvailableOptionalScopes struct {
