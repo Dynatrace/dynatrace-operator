@@ -2,7 +2,7 @@ package consts
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
-	sharedconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -23,7 +23,7 @@ const (
 
 	DeploymentPropertiesVolumeName = "deployment-properties"
 	DeploymentPropertiesFileName   = "deployment.properties"
-	DeploymentPropertiesBasePath   = sharedconsts.DTComponentsSecretsRootDir + "/config"
+	DeploymentPropertiesBasePath   = consts.DTComponentsSecretsRootDir + "/config"
 
 	EnvDTCapabilities    = "DT_CAPABILITIES"
 	EnvDTIDSeedNamespace = "DT_ID_SEED_NAMESPACE"

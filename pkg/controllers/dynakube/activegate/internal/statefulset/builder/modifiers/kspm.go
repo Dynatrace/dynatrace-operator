@@ -4,7 +4,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
-	sharedconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
@@ -18,7 +18,7 @@ var _ builder.Modifier = KSPMModifier{}
 
 const (
 	kspmTokenVolumeName           = "kspm-token"
-	kspmTokenMountPath            = sharedconsts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
+	kspmTokenMountPath            = operatorconsts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
 	kspmTokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
 )
 

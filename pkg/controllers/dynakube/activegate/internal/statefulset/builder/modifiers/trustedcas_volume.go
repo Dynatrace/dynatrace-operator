@@ -2,7 +2,7 @@ package modifiers
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	sharedconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
@@ -16,7 +16,7 @@ var _ builder.Modifier = TrustedCAsModifier{}
 
 const (
 	volumeName     = "trustedcas"
-	trustedCAsDir  = sharedconsts.DTComponentsSecretsRootDir + "/rootca"
+	trustedCAsDir  = operatorconsts.DTComponentsSecretsRootDir + "/rootca"
 	trustedCAsFile = "rootca.pem"
 )
 

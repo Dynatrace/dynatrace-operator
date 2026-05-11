@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	sharedconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
@@ -62,7 +62,7 @@ func (mod CertificatesModifier) getVolumeMounts() []corev1.VolumeMount {
 		{
 			ReadOnly:  true,
 			Name:      jettyCerts,
-			MountPath: filepath.Join(sharedconsts.DTComponentsSecretsRootDir, "/tls"),
+			MountPath: filepath.Join(operatorconsts.DTComponentsSecretsRootDir, "tls"),
 		},
 	}
 }
