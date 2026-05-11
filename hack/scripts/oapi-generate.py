@@ -14,6 +14,15 @@ GENERATOR_CLI = os.environ.get("OPENAPI_GENERATOR_CLI", "node_modules/.bin/opena
 
 
 def find_all_refs(obj):
+    """Recursively collect all $ref values from a nested dict/list structure.
+
+    >>> find_all_refs({"$ref": "#/components/schemas/Foo"})
+    ['#/components/schemas/Foo']
+    >>> find_all_refs({"a": {"b": [{"$ref": "#/components/schemas/Bar"}, {"c": {"$ref": "#/components/schemas/Baz"}}]}})
+    ['#/components/schemas/Bar', '#/components/schemas/Baz']
+    >>> find_all_refs([])
+    []
+    """
     refs = []
     if isinstance(obj, dict):
         if "$ref" in obj:
@@ -27,6 +36,15 @@ def find_all_refs(obj):
 
 
 def refs_in(spec, ref):
+    """Return all $ref values within the part of spec pointed to by a JSON pointer ref.
+
+    >>> refs_in({"components": {"schemas": {"Foo": {"$ref": "#/components/schemas/Bar"}}}}, "#/components/schemas/Foo")
+    ['#/components/schemas/Bar']
+    >>> refs_in({}, "external/ref")
+    []
+    >>> refs_in({}, "#/missing/path")
+    []
+    """
     if not ref.startswith("#/"):
         return []
     parts = ref[2:].split("/")
@@ -42,14 +60,24 @@ def download_spec(url, auth_token=None):
     req = urllib.request.Request(url)
     if auth_token:
         req.add_header("Authorization", f"Bearer {auth_token}")
-    try:
-        with urllib.request.urlopen(req) as resp:
-            return resp.read()
-    except urllib.error.URLError as e:
-        raise RuntimeError(f"failed to download spec from {url}: {e}")
+    with urllib.request.urlopen(req) as resp:
+        return resp.read()
 
 
 def resolve_models(spec, api_tag):
+    """Return sorted model names reachable from operations tagged with api_tag.
+
+    >>> spec = {
+    ...     "paths": {
+    ...         "/foo": {"get": {"tags": ["MyApi"], "responses": {"200": {"$ref": "#/components/schemas/MyModel"}}}}
+    ...     },
+    ...     "components": {"schemas": {"MyModel": {}}},
+    ... }
+    >>> resolve_models(spec, "MyApi")
+    ['MyModel']
+    >>> resolve_models(spec, "OtherApi")
+    []
+    """
     worklist = []
     for path_item in spec.get("paths", {}).values():
         if not isinstance(path_item, dict):
@@ -70,8 +98,15 @@ def resolve_models(spec, api_tag):
 
 
 def build_global_props(schema, default_global_props, spec):
-    gp = (schema.get("generate") or {}).get("globalProperties") or {}
-    apis = gp.get("apis") or []
+    """Build the --global-property string for the generator.
+
+    >>> build_global_props({}, "skipFormModel=true", {})
+    'skipFormModel=true,apis,models'
+    >>> build_global_props({"generate": {"globalProperties": {"apis": ["PetApi"]}}}, "", {"paths": {}, "components": {"schemas": {}}})
+    'apis=PetApi'
+    """
+    gp = schema.get("generate", {}).get("globalProperties", {})
+    apis = gp.get("apis", [])
     models = sorted({m for api in apis for m in resolve_models(spec, api)})
 
     parts = []
@@ -86,77 +121,85 @@ def build_global_props(schema, default_global_props, spec):
     return ",".join(parts)
 
 
+def generate_schema(schema, defaults):
+    name = schema.get("name")
+    if not name:
+        sys.exit("ERROR: schema entry is missing required field 'name'")
+    gen = schema.get("generate", {})
+    pkg = gen.get("packageName", name)
+    version = gen.get("generatorVersion", defaults["version"]).lstrip("v")
+    schema_additional_props = gen.get("additionalProperties", "")
+    additional_props = ",".join(p for p in [defaults["additional"], schema_additional_props] if p)
+    output_dir = f"{defaults['output_dir']}/{pkg}"
+
+    spec_url = os.environ.get(schema.get("specUrlEnvVar", ""))
+    if not spec_url:
+        print(f"WARNING: no specUrlEnvVar set for {name}, skipping.")
+        return
+
+    auth_token = os.environ.get(schema.get("authEnvVar", ""))
+
+    print(f"Downloading spec for {name}...")
+    try:
+        spec_data = download_spec(spec_url, auth_token)
+    except urllib.error.URLError as e:
+        sys.exit(f"ERROR: failed to download spec from {spec_url}: {e}")
+
+    spec = yaml.safe_load(spec_data)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+        tmp.write(spec_data)
+        tmp_spec = tmp.name
+
+    try:
+        global_props = build_global_props(schema, defaults["global"], spec)
+
+        print(f"Generating {name}, package: {pkg}...")
+        shutil.rmtree(output_dir, ignore_errors=True)
+        os.makedirs(output_dir, exist_ok=True)
+        shutil.copy(IGNORE_FILE, f"{output_dir}/.openapi-generator-ignore")
+
+        cmd = [
+            GENERATOR_CLI, "generate",
+            "-i", tmp_spec,
+            "-g", "go",
+            "-o", output_dir,
+            "--package-name", pkg,
+            "--skip-validate-spec",
+            "--minimal-update",
+        ]
+
+        if additional_props:
+            cmd += [f"--additional-properties={additional_props}"]
+        if global_props:
+            cmd += [f"--global-property={global_props}"]
+
+        env = {**os.environ, "OPENAPI_GENERATOR_VERSION": version}
+        if subprocess.run(cmd, env=env).returncode != 0:
+            sys.exit(f"ERROR: generation failed for {name}")
+
+        os.unlink(f"{output_dir}/.openapi-generator-ignore")
+        print(f"Done: {output_dir}")
+    finally:
+        os.unlink(tmp_spec)
+
+
 def main():
     with open(GENERATOR_CONFIG) as f:
         gen_cfg = yaml.safe_load(f)
 
-    default_version = gen_cfg.get("generatorVersion", "").lstrip("v")
-    default_output_dir = gen_cfg.get("outputDir", "")
-    default_additional_props = gen_cfg.get("additionalProperties", "")
-    default_global_props = gen_cfg.get("globalProperties", "")
+    defaults = {
+        "version": gen_cfg.get("generatorVersion", ""),
+        "output_dir": gen_cfg.get("outputDir", ""),
+        "additional": gen_cfg.get("additionalProperties", ""),
+        "global": gen_cfg.get("globalProperties", ""),
+    }
 
     with open(SYNC_CONFIG) as f:
         sync_cfg = yaml.safe_load(f)
 
-    for schema in sync_cfg.get("schemas") or []:
-        name = schema["name"]
-        pkg = (schema.get("generate") or {}).get("packageName") or name
-        version = ((schema.get("generate") or {}).get("generatorVersion") or default_version).lstrip("v")
-        schema_additional_props = (schema.get("generate") or {}).get("additionalProperties") or ""
-        additional_props = ",".join(p for p in [default_additional_props, schema_additional_props] if p)
-        output_dir = f"{default_output_dir}/{pkg}"
-
-        spec_url_var = schema.get("specUrlEnvVar", "")
-        spec_url = os.environ.get(spec_url_var, "") if spec_url_var else ""
-        if not spec_url:
-            print(f"WARNING: no specUrlEnvVar set for {name}, skipping.")
-            continue
-
-        auth_var = schema.get("authEnvVar", "")
-        auth_token = os.environ.get(auth_var, "") if auth_var else ""
-
-        print(f"Downloading spec for {name}...")
-        try:
-            spec_data = download_spec(spec_url, auth_token)
-        except RuntimeError as e:
-            print(f"ERROR: {e}", file=sys.stderr)
-            sys.exit(1)
-
-        spec = yaml.safe_load(spec_data)
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
-            tmp.write(spec_data)
-            tmp_spec = tmp.name
-
-        try:
-            global_props = build_global_props(schema, default_global_props, spec)
-
-            print(f"Generating {name}, package: {pkg}...")
-            shutil.rmtree(output_dir, ignore_errors=True)
-            os.makedirs(output_dir, exist_ok=True)
-            shutil.copy(IGNORE_FILE, f"{output_dir}/.openapi-generator-ignore")
-
-            cmd = [
-                GENERATOR_CLI, "generate",
-                "-i", tmp_spec, "-g", "go", "-o", output_dir,
-                "--skip-validate-spec", "--minimal-update",
-            ]
-            if pkg:
-                cmd += ["--package-name", pkg]
-            if additional_props:
-                cmd += [f"--additional-properties={additional_props}"]
-            if global_props:
-                cmd += [f"--global-property={global_props}"]
-
-            env = {**os.environ, "OPENAPI_GENERATOR_VERSION": version}
-            if subprocess.run(cmd, env=env).returncode != 0:
-                print(f"ERROR: generation failed for {name}", file=sys.stderr)
-                sys.exit(1)
-
-            os.unlink(f"{output_dir}/.openapi-generator-ignore")
-            print(f"Done: {output_dir}")
-        finally:
-            os.unlink(tmp_spec)
+    for schema in sync_cfg.get("schemas", []):
+        generate_schema(schema, defaults)
 
     if os.path.exists("openapitools.json"):
         os.unlink("openapitools.json")
