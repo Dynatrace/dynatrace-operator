@@ -128,7 +128,9 @@ func TestUpdateVersionStatuses(t *testing.T) {
 			apiReader:     fake.NewClient(),
 			timeProvider:  timeprovider.New().Freeze(),
 		}
-		err := versionReconciler.updateVersionStatuses(ctx, newFailingUpdater(t, &status.VersionStatus{}), &dynakube.DynaKube{})
+		updater := newFailingUpdater(t)
+		updater.EXPECT().Target().Return(&status.VersionStatus{}).Times(2)
+		err := versionReconciler.updateVersionStatuses(ctx, updater, &dynakube.DynaKube{})
 		require.Error(t, err)
 	})
 
@@ -138,7 +140,9 @@ func TestUpdateVersionStatuses(t *testing.T) {
 			apiReader:     fake.NewClient(),
 			timeProvider:  timeprovider.New().Freeze(),
 		}
-		err := versionReconciler.updateVersionStatuses(ctx, newFailingUpdater(t, &status.VersionStatus{Version: "1.2.3"}), &dynakube.DynaKube{})
+		updater := newFailingUpdater(t)
+		updater.EXPECT().Target().Return(&status.VersionStatus{Version: "1.2.3"}).Times(2)
+		err := versionReconciler.updateVersionStatuses(ctx, updater, &dynakube.DynaKube{})
 		require.NoError(t, err)
 	})
 
@@ -148,7 +152,9 @@ func TestUpdateVersionStatuses(t *testing.T) {
 			apiReader:     fake.NewClient(),
 			timeProvider:  timeprovider.New().Freeze(),
 		}
-		err := versionReconciler.updateVersionStatuses(ctx, newFailingUpdater(t, &status.VersionStatus{ImageID: "1.2.3"}), &dynakube.DynaKube{})
+		updater := newFailingUpdater(t)
+		updater.EXPECT().Target().Return(&status.VersionStatus{ImageID: "some-image"}).Once()
+		err := versionReconciler.updateVersionStatuses(ctx, updater, &dynakube.DynaKube{})
 		require.NoError(t, err)
 	})
 }
