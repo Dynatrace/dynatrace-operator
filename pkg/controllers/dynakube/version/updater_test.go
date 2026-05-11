@@ -21,6 +21,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newCustomImageUpdater(t, target, testImage)
+		updater.EXPECT().Name().Return("mock").Once()
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -35,6 +36,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newCustomImageUpdater(t, target, "incorrect-uri")
+		updater.EXPECT().Name().Return("mock").Once()
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -47,6 +49,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newDefaultUpdater(t, target, false)
+		updater.EXPECT().Name().Return("mock").Times(5)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
@@ -78,6 +81,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newCustomVersionUpdater(t, target, "123", false)
+		updater.EXPECT().Name().Return("mock").Times(2)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
@@ -100,6 +104,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newClassicFullStackUpdater(t, target, false)
+		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().CustomVersion().Return("").Once()
 
@@ -117,6 +122,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newClassicFullStackUpdater(t, target, false)
+		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().CustomImage().Return(testImage).Twice()
 
 		err := versionReconciler.run(t.Context(), updater)
@@ -131,6 +137,7 @@ func TestRun(t *testing.T) {
 		}
 		imageInfo := &images.ImageInfo{URI: "registry.io/dynatrace/oneagent:1.2.3", Tag: "1.2.3"}
 		updater := newPublicRegistryUpdater(t, target, true)
+		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
 		updater.EXPECT().CheckForDowngrade(anyCtx, "1.2.3").Return(false, nil).Once()
 
@@ -148,6 +155,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newPublicRegistryUpdater(t, target, true)
+		updater.EXPECT().Name().Return("mock").Times(2)
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(nil, errors.New("API error")).Once()
 
 		err := versionReconciler.run(t.Context(), updater)
@@ -163,6 +171,7 @@ func TestRun(t *testing.T) {
 		}
 		imageInfo := &images.ImageInfo{URI: "registry.io/dynatrace/oneagent:1.2.0", Tag: "1.2.0"}
 		updater := newPublicRegistryUpdater(t, target, true)
+		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
 		updater.EXPECT().CheckForDowngrade(anyCtx, "1.2.0").Return(true, nil).Once()
 
@@ -322,6 +331,7 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 
 func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, true)
+	updater.EXPECT().Name().Return("mock").Times(3)
 	updater.EXPECT().CustomImage().Maybe().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().CustomVersion().Maybe().Return("")
@@ -357,7 +367,6 @@ func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, autoUp
 
 func newBaseUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := NewMockStatusUpdater(t)
-	updater.EXPECT().Name().Maybe().Return("mock")
 	updater.EXPECT().Target().Maybe().Return(target)
 	updater.EXPECT().IsEnabled().Maybe().Return(true)
 	updater.EXPECT().IsAutoUpdateEnabled().Maybe().Return(autoUpdate)
