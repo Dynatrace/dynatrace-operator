@@ -166,7 +166,6 @@ func (dk *DynaKube) GetResourceAttributes() map[string]string {
 	return dk.Spec.ResourceAttributes
 }
 
-// PublicRegistryOverride returns the public registry override for the DynaKube.
 func (dk *DynaKube) PublicRegistryOverride() string {
 	return dk.Spec.PublicRegistryOverride
 }

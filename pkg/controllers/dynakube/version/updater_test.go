@@ -208,7 +208,6 @@ func TestRun(t *testing.T) {
 		}
 		imageInfo := &images.ImageInfo{URI: "registry.io/dynatrace/oneagent@sha256:abc123", Tag: ""}
 
-		// Build manually so ValidateStatus is not pre-registered with Maybe().Return(nil)
 		updater := NewMockStatusUpdater(t)
 		updater.EXPECT().Name().Return("mock")
 		updater.EXPECT().Target().Return(target).Times(3)
@@ -221,8 +220,6 @@ func TestRun(t *testing.T) {
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.Error(t, err)
-		// The deferred probe-timestamp update fires because err (the named var) is nil when
-		// ValidateStatus is called — same behavior as the tenant-registry path.
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, "registry.io/dynatrace/oneagent@sha256:abc123", target.ImageID)
 		assert.Empty(t, target.Version)
