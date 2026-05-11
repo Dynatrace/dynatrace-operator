@@ -143,7 +143,7 @@ func (updater *oneAgentUpdater) CheckForDowngrade(ctx context.Context, latestVer
 }
 
 func (updater *oneAgentUpdater) LatestImageInfo(ctx context.Context) (*image.Info, error) {
-	imageInfo, err := updater.imagesClient.ComponentLatestImageInfo(ctx, image.OneAgent, updater.dk.PublicRegistryOverride())
+	imageInfo, err := updater.imagesClient.GetComponentLatestInfo(ctx, image.OneAgent, updater.dk.PublicRegistryOverride())
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
 

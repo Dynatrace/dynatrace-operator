@@ -29,7 +29,7 @@ const (
 )
 
 type Client interface {
-	ComponentLatestImageInfo(ctx context.Context, component ComponentType, registry string) (*Info, error)
+	GetComponentLatestInfo(ctx context.Context, component ComponentType, registry string) (*Info, error)
 }
 
 type componentResponse struct {
@@ -51,7 +51,7 @@ func NewClient(apiClient core.Client) *ClientImpl {
 	}
 }
 
-func (c *ClientImpl) ComponentLatestImageInfo(ctx context.Context, component ComponentType, registry string) (*Info, error) {
+func (c *ClientImpl) GetComponentLatestInfo(ctx context.Context, component ComponentType, registry string) (*Info, error) {
 	var resp containerImagesResponse
 
 	params := map[string]string{}

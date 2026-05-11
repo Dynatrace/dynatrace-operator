@@ -37,27 +37,27 @@ func TestClient_ComponentLatestImageInfo(t *testing.T) {
 
 	t.Run("found", func(t *testing.T) {
 		client := setupClient(t, nil, map[string]string{}, expectedImageURI)
-		imageInfo, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, "")
+		imageInfo, err := client.GetComponentLatestInfo(t.Context(), OneAgent, "")
 		require.NoError(t, err)
 		assert.Equal(t, expectedTag, imageInfo.Tag)
 	})
 
 	t.Run("not found", func(t *testing.T) {
 		client := setupClient(t, nil, map[string]string{}, expectedImageURI)
-		_, err := client.ComponentLatestImageInfo(t.Context(), "aasddasd", "")
+		_, err := client.GetComponentLatestInfo(t.Context(), "aasddasd", "")
 		require.Error(t, err)
 	})
 
 	t.Run("api error 404", func(t *testing.T) {
 		client := setupClient(t, &core.HTTPError{StatusCode: 404, Message: "nope"}, map[string]string{}, expectedImageURI)
-		_, err := client.ComponentLatestImageInfo(t.Context(), ActiveGate, "")
+		_, err := client.GetComponentLatestInfo(t.Context(), ActiveGate, "")
 		require.Error(t, err)
 		require.True(t, core.IsNotFound(err))
 	})
 
 	t.Run("invalid URI", func(t *testing.T) {
 		client := setupClient(t, nil, map[string]string{}, "invalid!!URI")
-		_, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, "")
+		_, err := client.GetComponentLatestInfo(t.Context(), OneAgent, "")
 		require.Error(t, err)
 	})
 
@@ -65,7 +65,7 @@ func TestClient_ComponentLatestImageInfo(t *testing.T) {
 		const customRegistry = "my.custom.registry.com"
 		const imageURI = customRegistry + "/image:tag"
 		client := setupClient(t, nil, map[string]string{"registry": customRegistry}, imageURI)
-		imageInfo, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, customRegistry)
+		imageInfo, err := client.GetComponentLatestInfo(t.Context(), OneAgent, customRegistry)
 		require.NoError(t, err)
 		assert.Equal(t, expectedTag, imageInfo.Tag)
 	})
@@ -74,7 +74,7 @@ func TestClient_ComponentLatestImageInfo(t *testing.T) {
 		const requestedRegistry = "my.custom.registry.com"
 		const imageURI = "other.registry.com/dynatrace/oneagent:tag"
 		client := setupClient(t, nil, map[string]string{"registry": requestedRegistry}, imageURI)
-		_, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, requestedRegistry)
+		_, err := client.GetComponentLatestInfo(t.Context(), OneAgent, requestedRegistry)
 		require.Error(t, err)
 	})
 
@@ -94,7 +94,7 @@ func TestClient_ComponentLatestImageInfo(t *testing.T) {
 		apiClient.EXPECT().GET(t.Context(), containerImagesPath).Return(req).Once()
 		client := NewClient(apiClient)
 
-		_, err := client.ComponentLatestImageInfo(t.Context(), OneAgent, "")
+		_, err := client.GetComponentLatestInfo(t.Context(), OneAgent, "")
 		require.Error(t, err)
 	})
 }

@@ -38,12 +38,12 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
-// ComponentLatestImageInfo provides a mock function for the type Client
-func (_mock *Client) ComponentLatestImageInfo(ctx context.Context, component image.ComponentType, registry string) (*image.Info, error) {
+// GetComponentLatestInfo provides a mock function for the type Client
+func (_mock *Client) GetComponentLatestInfo(ctx context.Context, component image.ComponentType, registry string) (*image.Info, error) {
 	ret := _mock.Called(ctx, component, registry)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ComponentLatestImageInfo")
+		panic("no return value specified for GetComponentLatestInfo")
 	}
 
 	var r0 *image.Info
@@ -66,20 +66,20 @@ func (_mock *Client) ComponentLatestImageInfo(ctx context.Context, component ima
 	return r0, r1
 }
 
-// Client_ComponentLatestImageInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ComponentLatestImageInfo'
-type Client_ComponentLatestImageInfo_Call struct {
+// Client_GetComponentLatestInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetComponentLatestInfo'
+type Client_GetComponentLatestInfo_Call struct {
 	*mock.Call
 }
 
-// ComponentLatestImageInfo is a helper method to define mock.On call
+// GetComponentLatestInfo is a helper method to define mock.On call
 //   - ctx context.Context
 //   - component image.ComponentType
 //   - registry string
-func (_e *Client_Expecter) ComponentLatestImageInfo(ctx interface{}, component interface{}, registry interface{}) *Client_ComponentLatestImageInfo_Call {
-	return &Client_ComponentLatestImageInfo_Call{Call: _e.mock.On("ComponentLatestImageInfo", ctx, component, registry)}
+func (_e *Client_Expecter) GetComponentLatestInfo(ctx interface{}, component interface{}, registry interface{}) *Client_GetComponentLatestInfo_Call {
+	return &Client_GetComponentLatestInfo_Call{Call: _e.mock.On("GetComponentLatestInfo", ctx, component, registry)}
 }
 
-func (_c *Client_ComponentLatestImageInfo_Call) Run(run func(ctx context.Context, component image.ComponentType, registry string)) *Client_ComponentLatestImageInfo_Call {
+func (_c *Client_GetComponentLatestInfo_Call) Run(run func(ctx context.Context, component image.ComponentType, registry string)) *Client_GetComponentLatestInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -102,12 +102,12 @@ func (_c *Client_ComponentLatestImageInfo_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *Client_ComponentLatestImageInfo_Call) Return(info *image.Info, err error) *Client_ComponentLatestImageInfo_Call {
+func (_c *Client_GetComponentLatestInfo_Call) Return(info *image.Info, err error) *Client_GetComponentLatestInfo_Call {
 	_c.Call.Return(info, err)
 	return _c
 }
 
-func (_c *Client_ComponentLatestImageInfo_Call) RunAndReturn(run func(ctx context.Context, component image.ComponentType, registry string) (*image.Info, error)) *Client_ComponentLatestImageInfo_Call {
+func (_c *Client_GetComponentLatestInfo_Call) RunAndReturn(run func(ctx context.Context, component image.ComponentType, registry string) (*image.Info, error)) *Client_GetComponentLatestInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

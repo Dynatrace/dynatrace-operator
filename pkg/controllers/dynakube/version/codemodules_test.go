@@ -191,7 +191,7 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 	t.Run("happy path: image info returned and verified condition set", func(t *testing.T) {
 		dk := newDK("")
 		mockImageClient := imageclientmock.NewClient(t)
-		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), image.CodeModules, "").Return(
+		mockImageClient.EXPECT().GetComponentLatestInfo(t.Context(), image.CodeModules, "").Return(
 			&image.Info{URI: testImageURI, Tag: testTag}, nil,
 		).Once()
 
@@ -212,7 +212,7 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 	t.Run("registry override forwarded to images client", func(t *testing.T) {
 		dk := newDK(testRegistry)
 		mockImageClient := imageclientmock.NewClient(t)
-		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), image.CodeModules, testRegistry).Return(
+		mockImageClient.EXPECT().GetComponentLatestInfo(t.Context(), image.CodeModules, testRegistry).Return(
 			&image.Info{URI: testImageURI, Tag: testTag, Registry: testRegistry}, nil,
 		).Once()
 
@@ -226,7 +226,7 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 	t.Run("API error: error returned and DynatraceAPIError condition set", func(t *testing.T) {
 		dk := newDK("")
 		mockImageClient := imageclientmock.NewClient(t)
-		mockImageClient.EXPECT().ComponentLatestImageInfo(t.Context(), image.CodeModules, "").Return(
+		mockImageClient.EXPECT().GetComponentLatestInfo(t.Context(), image.CodeModules, "").Return(
 			nil, errors.New("BOOM"),
 		).Once()
 
