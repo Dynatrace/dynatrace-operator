@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -24,7 +24,7 @@ type StatusUpdater interface {
 	IsPublicRegistryEnabled() bool
 	CheckForDowngrade(ctx context.Context, latestVersion string) (bool, error)
 	ValidateStatus(ctx context.Context) error
-	LatestImageInfo(ctx context.Context) (*images.ImageInfo, error)
+	LatestImageInfo(ctx context.Context) (*image.ImageInfo, error)
 
 	UseTenantRegistry(context.Context) error
 }
@@ -119,7 +119,7 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 
 func setImageFromImageInfo(ctx context.Context,
 	target *status.VersionStatus,
-	imageInfo *images.ImageInfo,
+	imageInfo *image.ImageInfo,
 ) {
 	log := logd.FromContext(ctx)
 

@@ -7,7 +7,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -39,26 +39,26 @@ func (_m *Client) EXPECT() *Client_Expecter {
 }
 
 // ComponentLatestImageInfo provides a mock function for the type Client
-func (_mock *Client) ComponentLatestImageInfo(ctx context.Context, component images.ComponentType, registry string) (*images.ImageInfo, error) {
+func (_mock *Client) ComponentLatestImageInfo(ctx context.Context, component image.ComponentType, registry string) (*image.Info, error) {
 	ret := _mock.Called(ctx, component, registry)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ComponentLatestImageInfo")
 	}
 
-	var r0 *images.ImageInfo
+	var r0 *image.Info
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, images.ComponentType, string) (*images.ImageInfo, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, image.ComponentType, string) (*image.Info, error)); ok {
 		return returnFunc(ctx, component, registry)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, images.ComponentType, string) *images.ImageInfo); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, image.ComponentType, string) *image.Info); ok {
 		r0 = returnFunc(ctx, component, registry)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*images.ImageInfo)
+			r0 = ret.Get(0).(*image.Info)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, images.ComponentType, string) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, image.ComponentType, string) error); ok {
 		r1 = returnFunc(ctx, component, registry)
 	} else {
 		r1 = ret.Error(1)
@@ -73,21 +73,21 @@ type Client_ComponentLatestImageInfo_Call struct {
 
 // ComponentLatestImageInfo is a helper method to define mock.On call
 //   - ctx context.Context
-//   - component images.ComponentType
+//   - component image.ComponentType
 //   - registry string
 func (_e *Client_Expecter) ComponentLatestImageInfo(ctx interface{}, component interface{}, registry interface{}) *Client_ComponentLatestImageInfo_Call {
 	return &Client_ComponentLatestImageInfo_Call{Call: _e.mock.On("ComponentLatestImageInfo", ctx, component, registry)}
 }
 
-func (_c *Client_ComponentLatestImageInfo_Call) Run(run func(ctx context.Context, component images.ComponentType, registry string)) *Client_ComponentLatestImageInfo_Call {
+func (_c *Client_ComponentLatestImageInfo_Call) Run(run func(ctx context.Context, component image.ComponentType, registry string)) *Client_ComponentLatestImageInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 images.ComponentType
+		var arg1 image.ComponentType
 		if args[1] != nil {
-			arg1 = args[1].(images.ComponentType)
+			arg1 = args[1].(image.ComponentType)
 		}
 		var arg2 string
 		if args[2] != nil {
@@ -102,12 +102,12 @@ func (_c *Client_ComponentLatestImageInfo_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *Client_ComponentLatestImageInfo_Call) Return(imageInfo *images.ImageInfo, err error) *Client_ComponentLatestImageInfo_Call {
-	_c.Call.Return(imageInfo, err)
+func (_c *Client_ComponentLatestImageInfo_Call) Return(info *image.Info, err error) *Client_ComponentLatestImageInfo_Call {
+	_c.Call.Return(info, err)
 	return _c
 }
 
-func (_c *Client_ComponentLatestImageInfo_Call) RunAndReturn(run func(ctx context.Context, component images.ComponentType, registry string) (*images.ImageInfo, error)) *Client_ComponentLatestImageInfo_Call {
+func (_c *Client_ComponentLatestImageInfo_Call) RunAndReturn(run func(ctx context.Context, component image.ComponentType, registry string) (*image.Info, error)) *Client_ComponentLatestImageInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

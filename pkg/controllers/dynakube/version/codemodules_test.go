@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	imagesclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/images"
+	imagesclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/images"
