@@ -192,6 +192,12 @@
       ],
       groupName: "istio.io",
     },
+    {
+      matchPackageNames: [
+        "golang.org/**",
+      ],
+      groupName: "golang.org",
+    },
   ],
   platformAutomerge: true,
 }
