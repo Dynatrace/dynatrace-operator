@@ -57,6 +57,7 @@ func TestRun(t *testing.T) {
 		updater.EXPECT().Target().Return(target).Times(16)
 		updater.EXPECT().CustomImage().Return("").Times(4)
 		updater.EXPECT().CustomVersion().Return("").Times(4)
+		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Times(6)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
@@ -87,11 +88,12 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newCustomVersionUpdater(t, "123", false)
+		updater := newCustomVersionUpdater(t, false)
 		updater.EXPECT().Name().Return("mock").Times(2)
 		updater.EXPECT().Target().Return(target).Times(4)
 		updater.EXPECT().CustomImage().Return("").Times(2)
 		updater.EXPECT().CustomVersion().Return("123").Times(2)
+		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Times(4)
 
 		// 1. call => status empty => should run
 		err := versionReconciler.run(t.Context(), updater)
@@ -118,6 +120,7 @@ func TestRun(t *testing.T) {
 		updater.EXPECT().Target().Return(target).Times(4)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().CustomVersion().Return("").Once()
+		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
@@ -234,8 +237,9 @@ func TestDetermineSource(t *testing.T) {
 		assert.Equal(t, status.CustomImageVersionSource, source)
 	})
 	t.Run("custom-version", func(t *testing.T) {
-		updater := newCustomVersionUpdater(t, customVersion, false)
+		updater := newCustomVersionUpdater(t, false)
 		updater.EXPECT().CustomImage().Return("").Once()
+		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
 		updater.EXPECT().CustomVersion().Return(customVersion).Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomVersionVersionSource, source)
@@ -244,6 +248,7 @@ func TestDetermineSource(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
 		updater := newDefaultUpdater(t, true)
 		updater.EXPECT().CustomImage().Return("").Once()
+		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
 		updater.EXPECT().CustomVersion().Return("").Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.TenantRegistryVersionSource, source)
@@ -260,6 +265,7 @@ func TestDetermineSource(t *testing.T) {
 	t.Run("classicfullstack ignores public registry feature flag", func(t *testing.T) {
 		updater := newClassicFullStackUpdater(t, false)
 		updater.EXPECT().CustomImage().Return("").Once()
+		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
 		updater.EXPECT().CustomVersion().Return("").Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.TenantRegistryVersionSource, source)
@@ -269,6 +275,7 @@ func TestDetermineSource(t *testing.T) {
 		customVersion := "1.2.3.4-5"
 		updater := newClassicFullStackUpdater(t, false)
 		updater.EXPECT().CustomImage().Return("").Once()
+		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
 		updater.EXPECT().CustomVersion().Return(customVersion).Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomVersionVersionSource, source)
@@ -331,9 +338,8 @@ func TestGetTagFromImageID(t *testing.T) {
 	})
 }
 
-func newCustomVersionUpdater(t *testing.T, version string, autoUpdate bool) *MockStatusUpdater {
+func newCustomVersionUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
-	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
 
 	return updater
@@ -343,7 +349,7 @@ func newFailingUpdater(t *testing.T) *MockStatusUpdater {
 	updater := newBaseUpdater(t, true)
 	updater.EXPECT().Name().Return("mock").Times(3)
 	updater.EXPECT().CustomImage().Return("")
-	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
+	updater.EXPECT().IsPublicRegistryEnabled().Return(false)
 	updater.EXPECT().CustomVersion().Return("")
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(errors.New("BOOM"))
 
@@ -352,7 +358,6 @@ func newFailingUpdater(t *testing.T) *MockStatusUpdater {
 
 func newDefaultUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
-	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
 
 	return updater
@@ -360,7 +365,6 @@ func newDefaultUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 
 func newClassicFullStackUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
-	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 
 	return updater
 }
