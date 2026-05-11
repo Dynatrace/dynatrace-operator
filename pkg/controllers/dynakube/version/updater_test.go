@@ -20,7 +20,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newCustomImageUpdater(t, target, testImage)
+		updater := newBaseUpdater(t, true)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(3)
 		updater.EXPECT().CustomImage().Return(testImage).Times(2)
@@ -37,7 +37,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newCustomImageUpdater(t, target, "incorrect-uri")
+		updater := newBaseUpdater(t, true)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(3)
 		updater.EXPECT().CustomImage().Return("incorrect-uri").Times(2)
@@ -52,7 +52,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newDefaultUpdater(t, target, false)
+		updater := newDefaultUpdater(t, false)
 		updater.EXPECT().Name().Return("mock").Times(5)
 		updater.EXPECT().Target().Return(target).Times(16)
 		updater.EXPECT().CustomImage().Return("").Times(4)
@@ -86,7 +86,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newCustomVersionUpdater(t, target, "123", false)
+		updater := newCustomVersionUpdater(t, "123", false)
 		updater.EXPECT().Name().Return("mock").Times(2)
 		updater.EXPECT().Target().Return(target).Times(4)
 		updater.EXPECT().CustomImage().Return("").Times(2)
@@ -111,7 +111,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newClassicFullStackUpdater(t, target, false)
+		updater := newClassicFullStackUpdater(t, false)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(4)
 		updater.EXPECT().CustomImage().Return("").Once()
@@ -130,7 +130,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newClassicFullStackUpdater(t, target, false)
+		updater := newClassicFullStackUpdater(t, false)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(3)
 		updater.EXPECT().CustomImage().Return(testImage).Twice()
@@ -146,7 +146,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		imageInfo := &images.ImageInfo{URI: "registry.io/dynatrace/oneagent:1.2.3", Tag: "1.2.3"}
-		updater := newPublicRegistryUpdater(t, target, true)
+		updater := newPublicRegistryUpdater(t, true)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(3)
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
@@ -165,7 +165,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newPublicRegistryUpdater(t, target, true)
+		updater := newPublicRegistryUpdater(t, true)
 		updater.EXPECT().Name().Return("mock").Times(2)
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(nil, errors.New("API error")).Once()
 
@@ -181,7 +181,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		imageInfo := &images.ImageInfo{URI: "registry.io/dynatrace/oneagent:1.2.0", Tag: "1.2.0"}
-		updater := newPublicRegistryUpdater(t, target, true)
+		updater := newPublicRegistryUpdater(t, true)
 		updater.EXPECT().Name().Return("mock").Once()
 		updater.EXPECT().Target().Return(target).Times(2)
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
@@ -226,27 +226,27 @@ func TestDetermineSource(t *testing.T) {
 	customVersion := "3.2.1.4-5"
 
 	t.Run("custom-image", func(t *testing.T) {
-		updater := newCustomImageUpdater(t, nil, customImage)
+		updater := newBaseUpdater(t, true)
 		updater.EXPECT().CustomImage().Return(customImage).Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomImageVersionSource, source)
 	})
 	t.Run("custom-version", func(t *testing.T) {
-		updater := newCustomVersionUpdater(t, nil, customVersion, false)
+		updater := newCustomVersionUpdater(t, customVersion, false)
 		updater.EXPECT().CustomImage().Return("").Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomVersionVersionSource, source)
 	})
 
 	t.Run("default", func(t *testing.T) {
-		updater := newDefaultUpdater(t, nil, true)
+		updater := newDefaultUpdater(t, true)
 		updater.EXPECT().CustomImage().Return("").Once()
 		source := determineSource(updater)
 		assert.Equal(t, status.TenantRegistryVersionSource, source)
 	})
 
 	t.Run("public registry enabled", func(t *testing.T) {
-		updater := newBaseUpdater(t, nil, false)
+		updater := newBaseUpdater(t, false)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(true).Once()
 		source := determineSource(updater)
@@ -254,7 +254,7 @@ func TestDetermineSource(t *testing.T) {
 	})
 
 	t.Run("classicfullstack ignores public registry feature flag", func(t *testing.T) {
-		updater := newClassicFullStackUpdater(t, nil, false)
+		updater := newClassicFullStackUpdater(t, false)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().CustomVersion().Return("").Once()
 		source := determineSource(updater)
@@ -263,7 +263,7 @@ func TestDetermineSource(t *testing.T) {
 
 	t.Run("classicfullstack ignores public registry feature flag and sets custom image if set", func(t *testing.T) {
 		customVersion := "1.2.3.4-5"
-		updater := newClassicFullStackUpdater(t, nil, false)
+		updater := newClassicFullStackUpdater(t, false)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().CustomVersion().Return(customVersion).Once()
 		source := determineSource(updater)
@@ -327,14 +327,8 @@ func TestGetTagFromImageID(t *testing.T) {
 	})
 }
 
-func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image string) *MockStatusUpdater {
-	updater := newBaseUpdater(t, target, true)
-
-	return updater
-}
-
-func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version string, autoUpdate bool) *MockStatusUpdater {
-	updater := newBaseUpdater(t, target, autoUpdate)
+func newCustomVersionUpdater(t *testing.T, version string, autoUpdate bool) *MockStatusUpdater {
+	updater := newBaseUpdater(t, autoUpdate)
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().CustomVersion().Maybe().Return(version)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
@@ -342,8 +336,8 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 	return updater
 }
 
-func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUpdater {
-	updater := newBaseUpdater(t, target, true)
+func newFailingUpdater(t *testing.T) *MockStatusUpdater {
+	updater := newBaseUpdater(t, true)
 	updater.EXPECT().Name().Return("mock").Times(3)
 	updater.EXPECT().CustomImage().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
@@ -353,8 +347,8 @@ func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUp
 	return updater
 }
 
-func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
-	updater := newBaseUpdater(t, target, autoUpdate)
+func newDefaultUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
+	updater := newBaseUpdater(t, autoUpdate)
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 	updater.EXPECT().CustomVersion().Maybe().Return("")
 	updater.EXPECT().UseTenantRegistry(anyCtx).Maybe().Return(nil)
@@ -362,22 +356,22 @@ func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bo
 	return updater
 }
 
-func newClassicFullStackUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
-	updater := newBaseUpdater(t, target, autoUpdate)
+func newClassicFullStackUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
+	updater := newBaseUpdater(t, autoUpdate)
 	updater.EXPECT().IsPublicRegistryEnabled().Maybe().Return(false)
 
 	return updater
 }
 
-func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
-	updater := newBaseUpdater(t, target, autoUpdate)
+func newPublicRegistryUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
+	updater := newBaseUpdater(t, autoUpdate)
 	updater.EXPECT().CustomImage().Return("")
 	updater.EXPECT().IsPublicRegistryEnabled().Return(true)
 
 	return updater
 }
 
-func newBaseUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
+func newBaseUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := NewMockStatusUpdater(t)
 	updater.EXPECT().IsEnabled().Maybe().Return(true)
 	updater.EXPECT().IsAutoUpdateEnabled().Maybe().Return(autoUpdate)
