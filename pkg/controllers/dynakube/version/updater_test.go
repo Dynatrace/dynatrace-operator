@@ -157,6 +157,7 @@ func TestRun(t *testing.T) {
 		updater.EXPECT().Target().Return(target).Times(3)
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
 		updater.EXPECT().CheckForDowngrade(anyCtx, "1.2.3").Return(false, nil).Once()
+		updater.EXPECT().ValidateStatus(anyCtx).Return(nil).Once()
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
@@ -192,6 +193,7 @@ func TestRun(t *testing.T) {
 		updater.EXPECT().Target().Return(target).Times(2)
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
 		updater.EXPECT().CheckForDowngrade(anyCtx, "1.2.0").Return(true, nil).Once()
+		updater.EXPECT().ValidateStatus(anyCtx).Return(nil).Once()
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
@@ -343,6 +345,7 @@ func newCustomVersionUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
 	updater.EXPECT().IsAutoUpdateEnabled().Return(autoUpdate)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Return(nil)
+	updater.EXPECT().ValidateStatus(anyCtx).Return(nil)
 
 	return updater
 }
@@ -363,6 +366,7 @@ func newDefaultUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, autoUpdate)
 	updater.EXPECT().IsAutoUpdateEnabled().Return(autoUpdate)
 	updater.EXPECT().UseTenantRegistry(anyCtx).Return(nil)
+	updater.EXPECT().ValidateStatus(anyCtx).Return(nil)
 
 	return updater
 }
@@ -378,7 +382,6 @@ func newPublicRegistryUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater 
 
 func newBaseUpdater(t *testing.T, autoUpdate bool) *MockStatusUpdater {
 	updater := NewMockStatusUpdater(t)
-	updater.EXPECT().ValidateStatus(anyCtx).Maybe().Return(nil)
 
 	return updater
 }
