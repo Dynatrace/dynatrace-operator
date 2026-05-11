@@ -180,4 +180,22 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		require.True(t, core.HasStatusCode(err, http.StatusBadRequest))
 		assert.Nil(t, pgc)
 	})
+
+	t.Run("not_found_404_endpoint_unavailable", func(t *testing.T) {
+		httpErr := &core.HTTPError{StatusCode: http.StatusNotFound, Message: "endpoint not available"}
+
+		client := setupMockedProcessGroupingClient(t,
+			map[string]string{"kubernetesClusterId": testClusterID},
+			nil,
+			nil,
+			nil,
+			httpErr,
+		)
+
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "")
+		require.NoError(t, err)
+		assert.NotNil(t, pgc)
+		assert.Empty(t, pgc.Data)
+		assert.Empty(t, pgc.ETag)
+	})
 }
