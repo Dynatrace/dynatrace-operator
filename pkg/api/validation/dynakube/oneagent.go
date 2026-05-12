@@ -181,6 +181,10 @@ func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.D
 
 func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() {
+		if dk.FF().IsPublicRegistry() {
+			return ""
+		}
+
 		if dk.OneAgent().GetCustomCodeModulesImage() == "" {
 			return errorImagePullRequiresCodeModulesImage
 		}

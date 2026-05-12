@@ -10,6 +10,7 @@
 |`enableIstio`||-|boolean|
 |`networkZone`||-|string|
 |`proxy`||-|object|
+|`publicRegistryOverride`||-|string|
 |`resourceAttributes`||-|object|
 |`skipCertCheck`||-|boolean|
 |`tokens`||-|string|
