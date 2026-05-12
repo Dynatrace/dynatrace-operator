@@ -35,6 +35,7 @@ func (ff *FeatureFlags) UseEECLegacyMounts() bool {
 }
 
 func (ff *FeatureFlags) IsPublicRegistry() bool {
+	// TODO: ICP-3643 - Implement public registry selection based on gen3 platformToken; if user defines FF use-public-registry, ignore it and display warning when platformToken is used.
 	return ff.getBoolWithDefault(UsePublicRegistryKey, false)
 }
 
