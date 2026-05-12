@@ -229,7 +229,7 @@ func (r *Reconciler) calculateDataIngestTokenHash(ctx context.Context, dk *dynak
 		return "", err
 	}
 
-	return hasher.GenerateHash(tokens.DataIngestToken().Value)
+	return hasher.GenerateSecureHash(tokens.DataIngestToken().Value)
 }
 
 func (r *Reconciler) checkDataIngestTokenExists(ctx context.Context, dk *dynakube.DynaKube) bool {
