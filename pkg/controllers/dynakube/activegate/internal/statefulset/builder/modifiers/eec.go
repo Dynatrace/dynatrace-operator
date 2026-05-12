@@ -2,6 +2,7 @@ package modifiers
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	eecconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
@@ -17,7 +18,7 @@ var _ builder.Modifier = EECModifier{}
 
 const (
 	eecVolumeName = "eec-token"
-	eecMountPath  = "/var/lib/dynatrace/secrets/eec/token"
+	eecMountPath  = operatorconsts.DTComponentsSecretsRootDir + "/eec/token"
 	eecFile       = "eec.token"
 )
 
