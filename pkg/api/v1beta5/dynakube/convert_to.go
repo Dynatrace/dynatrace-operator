@@ -30,6 +30,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	src.toExtensionsSpec(dst)
 	src.toOneAgentSpec(dst)
 	src.toActiveGateSpec(dst)
+	// we need to convert TelemetryIngestSpec first since `toTemplatesSpec` relies on it
 	src.toTelemetryIngestSpec(dst)
 	src.toTemplatesSpec(dst)
 
