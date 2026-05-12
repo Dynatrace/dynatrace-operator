@@ -117,28 +117,28 @@ func (c *ClientImpl) newRequest(ctx context.Context) *RequestImpl {
 
 // GET creates a GET request builder
 func (c *ClientImpl) GET(ctx context.Context, path string) Request {
-	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodGet)
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 
 	return c.newRequest(ctx).withMethod(http.MethodGet).WithPath(path)
 }
 
 // POST creates a POST request builder
 func (c *ClientImpl) POST(ctx context.Context, path string) Request {
-	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodPost)
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 
 	return c.newRequest(ctx).withMethod(http.MethodPost).WithPath(path)
 }
 
 // PUT creates a PUT request builder
 func (c *ClientImpl) PUT(ctx context.Context, path string) Request {
-	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodPut)
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 
 	return c.newRequest(ctx).withMethod(http.MethodPut).WithPath(path)
 }
 
 // DELETE creates a DELETE request builder
 func (c *ClientImpl) DELETE(ctx context.Context, path string) Request {
-	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodDelete)
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 
 	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
 }
