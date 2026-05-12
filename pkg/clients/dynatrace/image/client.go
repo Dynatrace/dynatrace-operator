@@ -68,7 +68,7 @@ func (c *ClientImpl) GetComponentLatestInfo(ctx context.Context, component Compo
 		return nil, fmt.Errorf("get latest %s image: %w", component, err)
 	}
 
-	if len(resp.Components) == 0 {
+	if resp.IsEmpty() {
 		return nil, fmt.Errorf("no %s image found", component)
 	}
 
