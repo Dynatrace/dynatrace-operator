@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -62,6 +63,15 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 			Annotate: setNotInjectedAnnotationFunc(OwnerLookupFailedReason),
 		}
 	}
+
+	var dkAttrs map[string]string
+	if oneagent.IsEnabled(request.BaseRequest) {
+		dkAttrs = request.DynaKube.OneAgent().GetResourceAttributes()
+	} else {
+		dkAttrs = request.DynaKube.GetResourceAttributes()
+	}
+
+	attrs.SetCustomAttributes(dkAttrs)
 
 	withDeprecatedAttributesArg := arg.Arg{
 		Name:  bootstrapper.EnableAttributesDTKubernetesFlag,

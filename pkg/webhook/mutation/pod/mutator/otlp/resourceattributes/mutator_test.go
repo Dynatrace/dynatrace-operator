@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	latestdynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -483,4 +484,155 @@ func Test_Mutator_Reinvoke(t *testing.T) {
 
 	result := mut.Reinvoke(t.Context(), req)
 	assert.False(t, result, "Reinvoke should return false when mutation occurs")
+}
+
+func TestMutate_OTLPResourceAttributes(t *testing.T) {
+	const (
+		testNamespace = "ns"
+		containerName = "c1"
+		globalKey     = "global-key"
+		globalValue   = "global-value"
+		otlpKey       = "otlp-key"
+		otlpValue     = "otlp-value"
+		collisionKey  = "collision-key"
+		globalCollVal = "global-collision-value"
+		otlpCollVal   = "otlp-collision-value"
+		containerVal  = "container-value"
+	)
+
+	_ = appsv1.AddToScheme(scheme.Scheme)
+	_ = corev1.AddToScheme(scheme.Scheme)
+
+	baseNamespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
+
+	newPod := func(containerEnv ...corev1.EnvVar) *corev1.Pod {
+		return &corev1.Pod{
+			TypeMeta:   metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: testNamespace},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{Name: containerName, Env: containerEnv}},
+			},
+		}
+	}
+
+	type testCase struct {
+		name        string
+		dk          latestdynakube.DynaKube
+		pod         *corev1.Pod
+		wantAttrs   []string
+		notWantKeys []string
+	}
+
+	cases := []testCase{
+		{
+			name: "no Dynakube resource attributes, only operator semantic attrs present",
+			dk:   latestdynakube.DynaKube{},
+			pod:  newPod(),
+			wantAttrs: []string{
+				"k8s.namespace.name=ns",
+				"k8s.pod.name=$(K8S_PODNAME)",
+			},
+		},
+		{
+			name: "global resource attributes applied",
+			dk: latestdynakube.DynaKube{
+				Spec: latestdynakube.DynaKubeSpec{
+					ResourceAttributes: map[string]string{globalKey: globalValue},
+				},
+			},
+			pod:       newPod(),
+			wantAttrs: []string{globalKey + "=" + globalValue},
+		},
+		{
+			name: "OTLP additionalResourceAttributes applied",
+			dk: latestdynakube.DynaKube{
+				Spec: latestdynakube.DynaKubeSpec{
+					OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+						AdditionalResourceAttributes: map[string]string{otlpKey: otlpValue},
+					},
+				},
+			},
+			pod:       newPod(),
+			wantAttrs: []string{otlpKey + "=" + otlpValue},
+		},
+		{
+			name: "both Dynakube fields set, key collision - OTLP-additional wins",
+			dk: latestdynakube.DynaKube{
+				Spec: latestdynakube.DynaKubeSpec{
+					ResourceAttributes: map[string]string{collisionKey: globalCollVal},
+					OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+						AdditionalResourceAttributes: map[string]string{collisionKey: otlpCollVal},
+					},
+				},
+			},
+			pod:         newPod(),
+			wantAttrs:   []string{collisionKey + "=" + otlpCollVal},
+			notWantKeys: []string{collisionKey + "=" + globalCollVal},
+		},
+		{
+			name: "Dynakube field collides with operator semantic key - user wins",
+			dk: latestdynakube.DynaKube{
+				Spec: latestdynakube.DynaKubeSpec{
+					ResourceAttributes: map[string]string{"k8s.namespace.name": "user-override"},
+				},
+			},
+			pod:         newPod(),
+			wantAttrs:   []string{"k8s.namespace.name=user-override"},
+			notWantKeys: []string{"k8s.namespace.name=" + testNamespace},
+		},
+		{
+			name: "container pre-existing OTEL_RESOURCE_ATTRIBUTES wins on collision with Dynakube",
+			dk: latestdynakube.DynaKube{
+				Spec: latestdynakube.DynaKubeSpec{
+					ResourceAttributes: map[string]string{collisionKey: globalCollVal},
+				},
+			},
+			pod: newPod(corev1.EnvVar{
+				Name:  OTELResourceAttributesEnv,
+				Value: collisionKey + "=" + containerVal,
+			}),
+			wantAttrs:   []string{collisionKey + "=" + containerVal},
+			notWantKeys: []string{collisionKey + "=" + globalCollVal},
+		},
+		{
+			name: "empty key and empty value in Dynakube field are filtered out",
+			dk: latestdynakube.DynaKube{
+				Spec: latestdynakube.DynaKubeSpec{
+					ResourceAttributes: map[string]string{
+						"":          "empty-key-value",
+						"empty-val": "",
+						globalKey:   globalValue,
+					},
+				},
+			},
+			pod:       newPod(),
+			wantAttrs: []string{globalKey + "=" + globalValue},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			pod := tc.pod.DeepCopy()
+
+			client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+			mut := New(client)
+
+			req := dtwebhook.NewMutationRequest(t.Context(), baseNamespace, nil, pod, tc.dk)
+			err := mut.Mutate(req)
+			require.NoError(t, err)
+
+			container := pod.Spec.Containers[0]
+			env := k8senv.Find(container.Env, OTELResourceAttributesEnv)
+			require.NotNil(t, env, "OTEL_RESOURCE_ATTRIBUTES must be set")
+
+			attrs := slices.Sorted(strings.SplitSeq(env.Value, ","))
+
+			for _, want := range tc.wantAttrs {
+				assert.Contains(t, attrs, want, "expected attribute to be present")
+			}
+			for _, notWant := range tc.notWantKeys {
+				assert.NotContains(t, attrs, notWant, "expected attribute to NOT be present")
+			}
+		})
+	}
 }

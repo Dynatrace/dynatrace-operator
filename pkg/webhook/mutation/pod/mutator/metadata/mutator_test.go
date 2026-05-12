@@ -427,6 +427,185 @@ func buildArgument(attr string, value string) string {
 	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, attr, strings.ToLower(value))
 }
 
+func podAttrArg(key, value string) string {
+	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, key, value)
+}
+
+func TestMutate_ResourceAttributes(t *testing.T) {
+	const (
+		podNamespace    = "test-ns"
+		globalKey       = "global-key"
+		globalValue     = "global-value"
+		additionalKey   = "additional-key"
+		additionalValue = "additional-value"
+		collisionKey    = "collision-key"
+		globalCollVal   = "global-collision-value"
+		addCollVal      = "additional-collision-value"
+	)
+
+	type testCase struct {
+		name        string
+		dkSpec      dynakube.DynaKubeSpec
+		wantArgs    []string
+		notWantArgs []string
+	}
+
+	cases := []testCase{
+		{
+			name: "OA enabled, no resource attributes set",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+			},
+			notWantArgs: []string{
+				podAttrArg(globalKey, globalValue),
+				podAttrArg(additionalKey, additionalValue),
+			},
+		},
+		{
+			name: "OA enabled (ApplicationMonitoring), only global resource attributes",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				ResourceAttributes: map[string]string{globalKey: globalValue},
+			},
+			wantArgs: []string{podAttrArg(globalKey, globalValue)},
+		},
+		{
+			name: "OA enabled (ApplicationMonitoring), only additionalResourceAttributes",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
+					},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+			},
+			wantArgs: []string{podAttrArg(additionalKey, additionalValue)},
+		},
+		{
+			name: "OA enabled (CloudNativeFullStack), only additionalResourceAttributes",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
+							AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
+						},
+					},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+			},
+			wantArgs: []string{podAttrArg(additionalKey, additionalValue)},
+		},
+		{
+			name: "OA enabled, both set, key collision - additional wins",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AdditionalResourceAttributes: map[string]string{collisionKey: addCollVal},
+					},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				ResourceAttributes: map[string]string{collisionKey: globalCollVal},
+			},
+			wantArgs:    []string{podAttrArg(collisionKey, addCollVal)},
+			notWantArgs: []string{podAttrArg(collisionKey, globalCollVal)},
+		},
+		{
+			name: "OA enabled, user key collides with operator semantic key - user wins",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				ResourceAttributes: map[string]string{"k8s.namespace.name": "user-override"},
+			},
+			wantArgs:    []string{podAttrArg("k8s.namespace.name", "user-override")},
+			notWantArgs: []string{podAttrArg("k8s.namespace.name", podNamespace)},
+		},
+		{
+			name: "OA disabled, metadata enrichment only, global resource attributes applied",
+			dkSpec: dynakube.DynaKubeSpec{
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				ResourceAttributes: map[string]string{globalKey: globalValue},
+			},
+			wantArgs: []string{podAttrArg(globalKey, globalValue)},
+		},
+		{
+			name: "OA disabled (HostMonitoring), additionalResourceAttributes ignored",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{
+						AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
+					},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+			},
+			notWantArgs: []string{podAttrArg(additionalKey, additionalValue)},
+		},
+		{
+			name: "empty key and empty value are filtered out",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				ResourceAttributes: map[string]string{
+					"":          "empty-key-value",
+					"empty-val": "",
+					globalKey:   globalValue,
+				},
+			},
+			wantArgs:    []string{podAttrArg(globalKey, globalValue)},
+			notWantArgs: []string{podAttrArg("empty-val", "")},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			pod := &corev1.Pod{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-pod",
+					Namespace: podNamespace,
+				},
+			}
+			initContainer := corev1.Container{Args: []string{}}
+			dk := dynakube.DynaKube{Spec: tc.dkSpec}
+
+			request := dtwebhook.MutationRequest{
+				Context: t.Context(),
+				BaseRequest: &dtwebhook.BaseRequest{
+					Pod:      pod,
+					DynaKube: dk,
+					Namespace: corev1.Namespace{
+						ObjectMeta: metav1.ObjectMeta{Name: podNamespace},
+					},
+				},
+				InstallContainer: &initContainer,
+			}
+
+			mut := NewMutator(fake.NewClient())
+			err := mut.Mutate(&request)
+			require.NoError(t, err)
+
+			for _, want := range tc.wantArgs {
+				assert.Contains(t, request.InstallContainer.Args, want)
+			}
+			for _, notWant := range tc.notWantArgs {
+				assert.NotContains(t, request.InstallContainer.Args, notWant)
+			}
+		})
+	}
+}
+
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
 	if dk == nil {
 		dk = &dynakube.DynaKube{}

@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	sharedra "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
@@ -76,6 +77,8 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 
 	mutated := false
 
+	dkOTLPAttrs := request.DynaKube.OTLPExporterConfiguration().GetResourceAttributes()
+
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
 
@@ -83,13 +86,13 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 			continue
 		}
 
-		mutated = m.addResourceAttributes(attrs, c) || mutated
+		mutated = m.addResourceAttributes(attrs, c, dkOTLPAttrs) || mutated
 	}
 
 	return mutated, nil
 }
 
-func (m *Mutator) addResourceAttributes(podAttrs *attributes.Pod, c *corev1.Container) bool {
+func (m *Mutator) addResourceAttributes(podAttrs *attributes.Pod, c *corev1.Container, dkOTLPAttrs map[string]string) bool {
 	// existing existingResourceAttrs have the highest precedence, they are the base
 	existingResourceAttrs, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
 	if ok {
@@ -99,7 +102,9 @@ func (m *Mutator) addResourceAttributes(podAttrs *attributes.Pod, c *corev1.Cont
 		})
 	}
 
-	podAttrs.SetCustomAttributes(existingResourceAttrs)
+	// container's existing OTEL_RESOURCE_ATTRIBUTES wins on collisions with Dynakube-derived attributes
+	merged := sharedra.Merge(dkOTLPAttrs, existingResourceAttrs)
+	podAttrs.SetCustomAttributes(merged)
 
 	containerAttrs := attributes.NewContainerAttributes(*c)
 
