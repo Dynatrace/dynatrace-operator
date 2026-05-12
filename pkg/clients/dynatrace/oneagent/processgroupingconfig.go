@@ -35,7 +35,7 @@ type ProcessGroupConfig struct {
 //   - On HTTP 404: *ProcessGroupConfig (empty), nil error. Endpoint not available.
 //   - On other errors: non-nil error.
 func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error) {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, loggerName)
 
 	if kubernetesClusterID == "" {
 		return nil, errors.New("kubernetesClusterID is required")

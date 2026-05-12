@@ -59,7 +59,7 @@ func setupMockedProcessGroupingClient(
 
 	coreClient := coremock.NewClient(t)
 	coreClient.EXPECT().
-		GET(t.Context(), processGroupingConfigPath).
+		GET(anyCtx, processGroupingConfigPath).
 		Return(req).Once()
 
 	return NewClient(coreClient, "", "")
