@@ -41,6 +41,10 @@ type containerImagesResponse struct {
 	Components []componentResponse `json:"components"`
 }
 
+func (cir *containerImagesResponse) IsEmpty() bool {
+	return len(cir.Components) == 0
+}
+
 type ClientImpl struct {
 	apiClient core.Client
 }
