@@ -23,7 +23,7 @@ func GetSourceCertsSecretName(dkName string) string {
 	return fmt.Sprintf(sourceSecretCertsTemplate, dkName)
 }
 
-func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, secretName, conditionType string, data map[string][]byte) error {
+func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, secretName, conditionType string, data map[string][]byte, annotations map[string]string) error { //nolint:revive
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
@@ -32,6 +32,8 @@ func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynaku
 
 		return err
 	}
+
+	secret.Annotations = annotations
 
 	_, err = s.secrets.WithOwner(dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
