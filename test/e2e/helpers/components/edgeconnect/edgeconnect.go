@@ -5,7 +5,6 @@ package edgeconnect
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/pkg/errors"
@@ -177,8 +177,7 @@ func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenant
 		require.NoError(t, err)
 
 		err = clt.DeleteEdgeConnect(ctx, edgeConnectTenantConfig.ID)
-		// TODO: use core.IsNotFound after edgeconnect client was refactored
-		if err != nil && strings.Contains(err.Error(), "server error 404: Unknown key") {
+		if core.IsNotFound(err) {
 			err = nil
 		}
 		require.NoError(t, err)
