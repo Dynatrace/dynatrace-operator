@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	errorTelemetryIngestNotEnoughProtocols  = `DynaKube's specification enables the TelemetryIngest feature, at least one Protocol has to be specified.`
-	errorTelemetryIngestUnknownProtocols    = `DynaKube's specification enables the TelemetryIngest feature, unsupported protocols found on the Protocols list.`
-	errorTelemetryIngestNoDNS1053Label      = `DynaKube's specification enables the TelemetryIngest feature, the telemetry service name violates DNS-1035.
+	errorTelemetryIngestNotEnoughProtocols = `DynaKube's specification enables the TelemetryIngest feature, at least one Protocol has to be specified.`
+	errorTelemetryIngestUnknownProtocols   = `DynaKube's specification enables the TelemetryIngest feature, unsupported protocols found on the Protocols list.`
+	errorTelemetryIngestNoDNS1053Label     = `DynaKube's specification enables the TelemetryIngest feature, the telemetry service name violates DNS-1035.
     [The length limit for the name is %d. Additionally a DNS-1035 name must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')]
 	`
 	errorTelemetryIngestServiceNameInUse     = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is already used by other Dynakube.`
@@ -163,7 +163,7 @@ func missingOtelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 }
 
 func ignoredOtelCollectorTemplate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !(dk.TelemetryIngest().IsEnabled() || dk.Spec.Templates.OpenTelemetryCollector.ImageRef.IsZero()) {
+	if !dk.TelemetryIngest().IsEnabled() && !dk.Spec.Templates.OpenTelemetryCollector.ImageRef.IsZero() {
 		return warningOtelCollectorIgnoredTemplate
 	}
 
