@@ -163,6 +163,7 @@ func TestConvertTo(t *testing.T) {
 
 	t.Run("no default otelc image when telemetry ingest is disabled", func(t *testing.T) {
 		from := getOldDynakubeBase()
+		from.Spec.TelemetryIngest = nil
 
 		to := dynakubelatest.DynaKube{}
 

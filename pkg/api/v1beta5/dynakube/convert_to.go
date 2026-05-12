@@ -30,8 +30,8 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	src.toExtensionsSpec(dst)
 	src.toOneAgentSpec(dst)
 	src.toActiveGateSpec(dst)
-	src.toTemplatesSpec(dst)
 	src.toTelemetryIngestSpec(dst)
+	src.toTemplatesSpec(dst)
 
 	return nil
 }
