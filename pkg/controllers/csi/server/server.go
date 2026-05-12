@@ -99,7 +99,10 @@ func (srv *Server) Start(ctx context.Context) error {
 		return errors.WithMessagef(err, "failed to create '%s' directory", srv.path.AppMountsBaseDir())
 	}
 
-	_ = os.Chmod(srv.path.AppMountsBaseDir(), dtcsi.AppmountsDirPermissions)
+	err = os.Chmod(srv.path.AppMountsBaseDir(), dtcsi.AppmountsDirPermissions)
+	if err != nil {
+		log.Error(err, "failed to set permissions of the app mounts base directory")
+	}
 
 	log.Info("starting listener", "scheme", endpoint.Scheme, "address", addr)
 
