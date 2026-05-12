@@ -119,6 +119,7 @@ spec:
           {{- include "webhook.securityContext" . | nindent 12 }}
       serviceAccountName: dynatrace-webhook
       {{- if (.Values.webhook).hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       {{- end }}
       securityContext:
