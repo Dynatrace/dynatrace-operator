@@ -28,7 +28,6 @@ linters:
     - godot
     - goheader
     - gomoddirectives
-    - gomodguard
     - goprintffuncname
     - gosec
     - gosmopolitan
