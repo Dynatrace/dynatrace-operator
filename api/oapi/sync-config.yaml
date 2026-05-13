@@ -14,13 +14,3 @@
 #        apis:                        # (optional) List of API names to generate (empty/omitted = all), models are autoresolved
 #          - ApiName
 #        additional: <string>         # (optional) Additional raw global properties
-
-schemas:
-  - name: test
-    specUrlEnvVar: "TENANT_API_V2_SPEC_URL"
-    authEnvVar: "TENANT_API_V2_TOKEN"
-    generate:
-      packageName: test
-      globalProperties:
-        apis:
-          - "ActiveGates"
