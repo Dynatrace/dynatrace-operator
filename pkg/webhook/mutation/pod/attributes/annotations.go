@@ -1,59 +1,48 @@
 package attributes
 
 import (
-	"strings"
-
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (attrs *PodAttributes) readMetadataAnnotations(request mutator.BaseRequest) {
-	attrs.applyFromEnrichmentRules(request.Namespace, request.DynaKube)
-	attrs.readNamespaceAnnotationAttributes(request.Namespace)
-	attrs.readPodAnnotationAttributes(*request.Pod)
+const (
+	// AnnotationWorkloadKind is added to any injected pods when the metadata-enrichment feature is enabled
+	AnnotationWorkloadKind = metadataenrichment.Prefix + K8sWorkloadKindAttr
+	// AnnotationWorkloadName is added to any injected pods when the metadata-enrichment feature is enabled
+	AnnotationWorkloadName = metadataenrichment.Prefix + K8sWorkloadNameAttr
+)
+
+func (attrs *PodAttributes) ApplyAnnotationsToPod(pod *corev1.Pod) error {
+	annotations := attrs.combineForMetadataAnnotations()
+
+	for key, value := range annotations {
+		k8spod.SetPodAnnotationIfNotExists(pod, metadataenrichment.Prefix+key, value)
+	}
+
+	// set workload annotations no matter what
+	attrs.setWorkloadAnnotations(pod)
+
+	return attrs.setPodMetadataJSONAnnotation(pod)
 }
 
-// collect attributes from pod and namespace "metadata.dynatrace.com/" annotations
-func (attrs *PodAttributes) readNamespaceAnnotationAttributes(namespace corev1.Namespace) {
-	for key, value := range namespace.Annotations {
-		if after, ok := strings.CutPrefix(key, metadataenrichment.Prefix); ok {
-			attrs.namespaceAnnotations[after] = value
-		}
+func (attrs *PodAttributes) setPodMetadataJSONAnnotation(pod *corev1.Pod) error {
+	json, err := attrs.combineForJSONAnnotation()
+
+	if err != nil {
+		return err
 	}
+
+	k8spod.SetPodAnnotationIfNotExists(pod, metadataenrichment.Annotation, json)
+
+	return nil
 }
 
-// collect attributes from pod and namespace "metadata.dynatrace.com/" annotations
-func (attrs *PodAttributes) readPodAnnotationAttributes(pod corev1.Pod) {
-	// pod annotations take precedence over namespace annotations
-	for key, value := range pod.Annotations {
-		if after, ok := strings.CutPrefix(key, metadataenrichment.Prefix); ok {
-			attrs.podAnnotations[after] = value
-		}
+func (attrs *PodAttributes) setWorkloadAnnotations(pod *corev1.Pod) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
 	}
-}
 
-func (attrs *PodAttributes) applyFromEnrichmentRules(namespace corev1.Namespace, dk dynakube.DynaKube) {
-	for _, rule := range dk.Status.MetadataEnrichment.Rules {
-		var (
-			valueFromNamespace string
-			exists             bool
-		)
-
-		switch rule.Type {
-		case metadataenrichment.LabelRule:
-			valueFromNamespace, exists = namespace.Labels[rule.Source]
-		case metadataenrichment.AnnotationRule:
-			valueFromNamespace, exists = namespace.Annotations[rule.Source]
-		}
-
-		if exists {
-			if len(rule.Target) > 0 {
-				attrs.rulesPropagate[rule.Target] = valueFromNamespace
-			} else {
-				attrs.rules[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
-			}
-		}
-	}
+	pod.Annotations[metadataenrichment.Prefix+K8sWorkloadNameAttr] = attrs.workloadInfo[K8sWorkloadNameAttr]
+	pod.Annotations[metadataenrichment.Prefix+K8sWorkloadKindAttr] = attrs.workloadInfo[K8sWorkloadKindAttr]
 }

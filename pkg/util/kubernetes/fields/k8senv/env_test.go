@@ -228,7 +228,6 @@ func TestGetDTClientCacheCleanInterval(t *testing.T) {
 	}
 }
 
-
 func TestNewRef(t *testing.T) {
 	t.Run("wraps env name in $() syntax", func(t *testing.T) {
 		assert.Equal(t, "$(K8S_PODNAME)", NewRef("K8S_PODNAME"))
