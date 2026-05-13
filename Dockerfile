@@ -1,6 +1,6 @@
 # check=skip=RedundantTargetPlatform
 # setup build image
-FROM --platform=$BUILDPLATFORM golang:1.25.6@sha256:fc24d3881a021e7b968a4610fc024fba749f98fe5c07d4f28e6cfa14dc65a84c AS operator-build
+FROM --platform=$BUILDPLATFORM golang:1.25.10@sha256:0ef6aad4713d126a488803582b84106d6fa894277399b68baaaef628ef593d20 AS operator-build
 
 WORKDIR /app
 
