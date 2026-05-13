@@ -96,6 +96,12 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 
 func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk *dynakube.DynaKube) installer.Installer {
 	imageURI := dk.OneAgent().GetCustomCodeModulesImage()
+
+	if imageURI == "" && dk.FF().IsPublicRegistry() {
+		// Resolved by the version updater; respects PublicRegistryOverride
+		imageURI = dk.OneAgent().GetCodeModulesImage()
+	}
+
 	if imageURI == "" {
 		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
 	}

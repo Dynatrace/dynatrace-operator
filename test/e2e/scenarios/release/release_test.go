@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 	testEnv.AfterEachTest(func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
 			events.LogEvents(ctx, envConfig, t)
-			logs.WriteOperatorLog(ctx, envConfig, t)
+			logs.WriteOperatorLogToFile(ctx, envConfig, t)
 		}
 
 		// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.

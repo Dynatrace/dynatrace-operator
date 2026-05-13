@@ -64,9 +64,14 @@ func (checker *CorrectnessChecker) migrateAppMounts(ctx context.Context) {
 		}
 	}
 
-	err = os.MkdirAll(checker.path.AppMountsBaseDir(), os.ModePerm)
+	err = os.MkdirAll(checker.path.AppMountsBaseDir(), dtcsi.AppmountsDirPermissions)
 	if err != nil {
 		log.Error(err, "failed to create app mounts base directory")
+	} else {
+		err = os.Chmod(checker.path.AppMountsBaseDir(), dtcsi.AppmountsDirPermissions)
+		if err != nil {
+			log.Error(err, "failed to set permissions of the app mounts base directory")
+		}
 	}
 
 	for _, appMount := range oldAppMounts {

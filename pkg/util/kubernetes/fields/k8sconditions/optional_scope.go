@@ -7,7 +7,6 @@ import (
 
 const (
 	OptionalScopeMissingReason = "ScopeMissing"
-	OptionalScopePresentReason = "ScopePresent"
 )
 
 func SetOptionalScopeMissing(conditions *[]metav1.Condition, conditionType, msg string) {
