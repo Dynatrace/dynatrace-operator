@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"maps"
 
-	"github.com/pkg/errors"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

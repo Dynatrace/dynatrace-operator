@@ -28,7 +28,6 @@ func (attrs *PodAttributes) ApplyAnnotationsToPod(pod *corev1.Pod) error {
 
 func (attrs *PodAttributes) setPodMetadataJSONAnnotation(pod *corev1.Pod) error {
 	json, err := attrs.combineForJSONAnnotation()
-
 	if err != nil {
 		return err
 	}
