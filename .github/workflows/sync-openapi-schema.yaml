@@ -95,12 +95,18 @@ jobs:
 
           changed_packages=$(git status --porcelain -u | sed 's/^...//' | grep "^${OUTPUT_DIR}/" | sed "s|^${OUTPUT_DIR}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ' || true)
 
-          pr_body="# Description"$'\n'"This PR syncs OpenAPI schemas and (re-)generates Go clients."$'\n\n'
-          pr_body+="| | |"$'\n'"|---|---|"$'\n'
-          pr_body+="| **Schemas** | \`${schemas_summary}\` |"$'\n'
-          pr_body+="| **APIs generated** | \`${apis_summary}\` |"$'\n'
-          pr_body+="| **Packages changed** | \`${changed_packages}\` |"$'\n'
-          pr_body+="| **Workflow run** | [#${WORKFLOW_RUN_NUMBER}](${WORKFLOW_RUN_URL}) |"$'\n'
+          pr_body=$(cat <<EOF
+          # Description
+          This PR syncs OpenAPI schemas and (re-)generates Go clients.
+
+          | | |
+          |---|---|
+          | **Schemas** | \`${schemas_summary}\` |
+          | **APIs generated** | \`${apis_summary}\` |
+          | **Packages changed** | \`${changed_packages}\` |
+          | **Workflow run** | [#${WORKFLOW_RUN_NUMBER}](${WORKFLOW_RUN_URL}) |
+          EOF
+          )
 
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "schemas_summary=${schemas_summary}" >> "$GITHUB_OUTPUT"
