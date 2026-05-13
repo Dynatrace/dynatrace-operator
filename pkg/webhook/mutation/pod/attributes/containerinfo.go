@@ -8,7 +8,24 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type ContainerInfos struct {
+type ContainerAttributes struct {
+	ContainerName string `json:"k8s.container.name,omitempty"`
+}
+
+func NewContainerAttributes(c corev1.Container) *ContainerAttributes {
+	return &ContainerAttributes{
+		ContainerName: c.Name,
+	}
+}
+
+func (attrs *ContainerAttributes) ToMap() map[string]string {
+	combined := make(map[string]string)
+	combined[K8sContainerNameAttr] = attrs.ContainerName
+
+	return combined
+}
+
+type ContainerInfo struct {
 	// used for container.conf for code modules
 	Registry    string `json:"container_image.registry,omitempty"`
 	Repository  string `json:"container_image.repository,omitempty"`
@@ -19,8 +36,8 @@ type ContainerInfos struct {
 	ContainerAttributes `json:",omitempty"`
 }
 
-func NewContainerInfos(c corev1.Container) *ContainerInfos {
-	infos := &ContainerInfos{
+func NewContainerInfo(c corev1.Container) *ContainerInfo {
+	infos := &ContainerInfo{
 		ContainerAttributes: *NewContainerAttributes(c),
 	}
 
@@ -47,8 +64,8 @@ func NewContainerInfos(c corev1.Container) *ContainerInfos {
 }
 
 // Converts the whole object to a single JSON string used by the bootstrapper
-func (attrs *ContainerInfos) ToJSON() (string, error) {
-	jsonAttr, err := json.Marshal(attrs)
+func (c *ContainerInfo) ToJSON() (string, error) {
+	jsonAttr, err := json.Marshal(c)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

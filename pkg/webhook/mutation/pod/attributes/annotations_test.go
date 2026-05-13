@@ -114,7 +114,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.readFromEnrichmentRules(ns, dk)
+		attrs.applyFromEnrichmentRules(ns, dk)
 
 		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "production", attrs.rules[expectedKey])
@@ -138,7 +138,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.readFromEnrichmentRules(ns, dk)
+		attrs.applyFromEnrichmentRules(ns, dk)
 
 		assert.Equal(t, "staging", attrs.rulesPropagate["custom.env"])
 		assert.Empty(t, attrs.rules)
@@ -161,7 +161,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.readFromEnrichmentRules(ns, dk)
+		attrs.applyFromEnrichmentRules(ns, dk)
 
 		assert.Equal(t, "backend", attrs.rulesPropagate["team.name"])
 	})
@@ -178,7 +178,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.readFromEnrichmentRules(corev1.Namespace{}, dk)
+		attrs.applyFromEnrichmentRules(corev1.Namespace{}, dk)
 
 		assert.Empty(t, attrs.rules)
 		assert.Empty(t, attrs.rulesPropagate)
@@ -205,7 +205,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		attrs.readFromEnrichmentRules(ns, dk)
+		attrs.applyFromEnrichmentRules(ns, dk)
 
 		envKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "prod", attrs.rules[envKey])

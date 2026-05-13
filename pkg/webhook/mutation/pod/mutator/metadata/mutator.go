@@ -132,7 +132,7 @@ func AddContainerAttributes(request *dtwebhook.BaseRequest, installContainer *co
 		args := make([]string, 0)
 
 		for _, c := range containers {
-			contInfos := *attributes.NewContainerInfos(*c)
+			contInfos := *attributes.NewContainerInfo(*c)
 
 			json, err := contInfos.ToJSON()
 			if err != nil {

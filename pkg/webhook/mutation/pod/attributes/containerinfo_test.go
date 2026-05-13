@@ -9,6 +9,34 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+func TestNewContainerAttributes(t *testing.T) {
+	t.Run("captures container name", func(t *testing.T) {
+		c := corev1.Container{Name: "my-container"}
+		attrs := NewContainerAttributes(c)
+		assert.Equal(t, "my-container", attrs.ContainerName)
+	})
+
+	t.Run("empty container name", func(t *testing.T) {
+		c := corev1.Container{}
+		attrs := NewContainerAttributes(c)
+		assert.Empty(t, attrs.ContainerName)
+	})
+}
+
+func TestContainerAttributes_ToMap(t *testing.T) {
+	t.Run("returns map with K8sContainerNameAttr key", func(t *testing.T) {
+		attrs := &ContainerAttributes{ContainerName: "my-container"}
+		m := attrs.ToMap()
+		assert.Equal(t, map[string]string{K8sContainerNameAttr: "my-container"}, m)
+	})
+
+	t.Run("empty container name produces empty value", func(t *testing.T) {
+		attrs := &ContainerAttributes{}
+		m := attrs.ToMap()
+		assert.Equal(t, map[string]string{K8sContainerNameAttr: ""}, m)
+	})
+}
+
 func TestNewContainerInfos(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -74,7 +102,7 @@ func TestNewContainerInfos(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := corev1.Container{Name: tt.containerName, Image: tt.image}
-			infos := NewContainerInfos(c)
+			infos := NewContainerInfo(c)
 			assert.Equal(t, tt.containerName, infos.ContainerName)
 			assert.Equal(t, tt.wantRegistry, infos.Registry)
 			assert.Equal(t, tt.wantRepository, infos.Repository)
@@ -87,7 +115,7 @@ func TestNewContainerInfos(t *testing.T) {
 func TestContainerInfos_ToJson(t *testing.T) {
 	t.Run("produces valid JSON with all fields", func(t *testing.T) {
 		c := corev1.Container{Name: "my-container", Image: "registry.io/repo/image:tag"}
-		infos := NewContainerInfos(c)
+		infos := NewContainerInfo(c)
 		jsonStr, err := infos.ToJSON()
 		require.NoError(t, err)
 
@@ -102,7 +130,7 @@ func TestContainerInfos_ToJson(t *testing.T) {
 
 	t.Run("omits empty fields due to omitempty", func(t *testing.T) {
 		c := corev1.Container{Name: "bare-container", Image: "image"}
-		infos := NewContainerInfos(c)
+		infos := NewContainerInfo(c)
 		jsonStr, err := infos.ToJSON()
 		require.NoError(t, err)
 

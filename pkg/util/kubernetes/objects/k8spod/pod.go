@@ -29,3 +29,13 @@ func GetName(pod corev1.Pod) string {
 
 	return pod.GenerateName
 }
+
+func SetPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+
+	if _, ok := pod.Annotations[key]; !ok {
+		pod.Annotations[key] = value
+	}
+}

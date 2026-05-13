@@ -10,7 +10,7 @@ import (
 )
 
 func (attrs *PodAttributes) readMetadataAnnotations(request mutator.BaseRequest) {
-	attrs.readFromEnrichmentRules(request.Namespace, request.DynaKube)
+	attrs.applyFromEnrichmentRules(request.Namespace, request.DynaKube)
 	attrs.readNamespaceAnnotationAttributes(request.Namespace)
 	attrs.readPodAnnotationAttributes(*request.Pod)
 }
@@ -34,7 +34,7 @@ func (attrs *PodAttributes) readPodAnnotationAttributes(pod corev1.Pod) {
 	}
 }
 
-func (attrs *PodAttributes) readFromEnrichmentRules(namespace corev1.Namespace, dk dynakube.DynaKube) {
+func (attrs *PodAttributes) applyFromEnrichmentRules(namespace corev1.Namespace, dk dynakube.DynaKube) {
 	for _, rule := range dk.Status.MetadataEnrichment.Rules {
 		var (
 			valueFromNamespace string

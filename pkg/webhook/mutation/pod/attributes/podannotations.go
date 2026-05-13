@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -19,7 +20,7 @@ func (attrs *PodAttributes) ApplyAnnotationsToPod(pod *corev1.Pod) error {
 	annotations := attrs.combineForMetadataAnnotations()
 
 	for key, value := range annotations {
-		setPodAnnotationIfNotExists(pod, metadataenrichment.Prefix+key, value)
+		k8spod.SetPodAnnotationIfNotExists(pod, metadataenrichment.Prefix+key, value)
 	}
 
 	// set workload annotations no matter what
@@ -36,7 +37,7 @@ func (attrs *PodAttributes) setPodMetadataJSONAnnotation(pod *corev1.Pod) error 
 		return errors.WithMessage(errors.WithStack(err), "could not marshal metadata annotations to JSON")
 	}
 
-	setPodAnnotationIfNotExists(pod, metadataenrichment.Annotation, string(marshaledAnnotations))
+	k8spod.SetPodAnnotationIfNotExists(pod, metadataenrichment.Annotation, string(marshaledAnnotations))
 
 	return nil
 }
@@ -48,14 +49,4 @@ func (attrs *PodAttributes) setWorkloadAnnotations(pod *corev1.Pod) {
 
 	pod.Annotations[metadataenrichment.Prefix+K8sWorkloadNameAttr] = attrs.workloadInfo[K8sWorkloadNameAttr]
 	pod.Annotations[metadataenrichment.Prefix+K8sWorkloadKindAttr] = attrs.workloadInfo[K8sWorkloadKindAttr]
-}
-
-func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	if _, ok := pod.Annotations[key]; !ok {
-		pod.Annotations[key] = value
-	}
 }

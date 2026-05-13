@@ -12,13 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestCreateEnvVarRef(t *testing.T) {
-	t.Run("wraps env name in $() syntax", func(t *testing.T) {
-		assert.Equal(t, "$(K8S_PODNAME)", createEnvVarRef("K8S_PODNAME"))
-		assert.Equal(t, "$(MY_VAR)", createEnvVarRef("MY_VAR"))
-	})
-}
-
 func TestGetPodAttributes(t *testing.T) {
 	t.Run("appends three env vars with field-path references", func(t *testing.T) {
 		attrs := newTestPodAttributes()
