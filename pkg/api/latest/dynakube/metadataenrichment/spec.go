@@ -7,11 +7,16 @@ import (
 type RuleType string
 
 const (
-	LabelRule          RuleType = "LABEL"
-	AnnotationRule     RuleType = "ANNOTATION"
-	Annotation         string   = "metadata.dynatrace.com"
-	Prefix                      = Annotation + "/"
-	namespaceKeyPrefix string   = "k8s.namespace."
+	LabelRule      RuleType = "LABEL"
+	AnnotationRule RuleType = "ANNOTATION"
+
+	K8sLabelRule      RuleType = "K8S_NAMESPACE_LABEL"
+	K8sAnnotationRule RuleType = "K8S_NAMESPACE_ANNOTATION"
+	CustomRule        RuleType = "CUSTOM"
+
+	Annotation         = "metadata.dynatrace.com"
+	Prefix             = Annotation + "/"
+	namespaceKeyPrefix = "k8s.namespace."
 )
 
 type MetadataEnrichment struct {

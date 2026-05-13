@@ -49,7 +49,7 @@ type Client interface {
 	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (TotalCountSettingsResponse, error)
 	// GetSettingsForLogModule returns the settings response with the number of settings objects and their values.
 	GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (TotalCountSettingsResponse, error)
-	// GetRules returns metadata enrichment rules with the number of settings objects.
+	// GetRules returns metadata enrichment rules.
 	GetRules(ctx context.Context, kubeSystemUUID string, entityID string) ([]metadataenrichment.Rule, error)
 	// CreateOrUpdateKubernetesSetting returns the object ID of the created k8s settings.
 	CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel, kubeSystemUUID, scope string) (string, error)
