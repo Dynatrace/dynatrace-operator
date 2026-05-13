@@ -28,8 +28,7 @@ func missingLogMonitoringImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 		return ""
 	}
 
-	if dk.LogMonitoring().TemplateSpec == nil ||
-		dk.LogMonitoring().ImageRef.Repository == "" || dk.LogMonitoring().ImageRef.Tag == "" {
+	if dk.LogMonitoring().TemplateSpec == nil || !dk.LogMonitoring().ImageRef.HasImage() {
 		return errorLogMonitoringMissingImage
 	}
 

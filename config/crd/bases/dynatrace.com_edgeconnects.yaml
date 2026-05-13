@@ -499,6 +499,8 @@ spec:
                 type: array
               imageRef:
                 properties:
+                  digest:
+                    type: string
                   pullPolicy:
                     enum:
                     - IfNotPresent

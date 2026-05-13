@@ -1095,6 +1095,8 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -1402,6 +1404,8 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -1610,6 +1614,8 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -1692,6 +1698,8 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3085,6 +3093,8 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3392,6 +3402,8 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3600,6 +3612,8 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3682,6 +3696,8 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -6606,6 +6622,8 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -6913,6 +6931,8 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7121,6 +7141,8 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7216,6 +7238,8 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7345,6 +7369,8 @@ spec:
                     properties:
                       imageRef:
                         properties:
+                          digest:
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent

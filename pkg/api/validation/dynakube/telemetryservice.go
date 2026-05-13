@@ -155,7 +155,7 @@ func missingOtelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 		return ""
 	}
 
-	if dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository == "" || dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag == "" {
+	if !dk.Spec.Templates.OpenTelemetryCollector.ImageRef.HasImage() {
 		return errorOtelCollectorMissingImage
 	}
 
