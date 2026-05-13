@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dynatrace
+---
+# === No CSI variant ===
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dynatrace-deployer-no-csi
+  namespace: dynatrace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-deployer-no-csi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-deployer-no-csi
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-deployer-no-csi
+    namespace: dynatrace
+---
+# === With CSI variant ===
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dynatrace-deployer-with-csi
+  namespace: dynatrace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-deployer-with-csi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-deployer-with-csi
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-deployer-with-csi
+    namespace: dynatrace
+---
+# === No escalate, no CSI variant ===
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dynatrace-deployer-no-escalate-no-csi
+  namespace: dynatrace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-deployer-no-escalate-no-csi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-deployer-no-escalate-no-csi
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-deployer-no-escalate-no-csi
+    namespace: dynatrace
+---
+# === No escalate, with CSI variant ===
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dynatrace-deployer-no-escalate-with-csi
+  namespace: dynatrace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-deployer-no-escalate-with-csi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-deployer-no-escalate-with-csi
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-deployer-no-escalate-with-csi
+    namespace: dynatrace

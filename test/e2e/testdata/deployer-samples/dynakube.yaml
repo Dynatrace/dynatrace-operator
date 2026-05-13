@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dynakube
+  namespace: dynatrace
+type: Opaque
+data:
+  # dummy token values (base64 of "dt0c01.fake.token")
+  apiToken: ZHQwYzAxLmZha2UudG9rZW4=
+---
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  apiUrl: https://placeholder.live.dynatrace.com/api
+  oneAgent:
+    classicFullStack: {}
