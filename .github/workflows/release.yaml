@@ -48,25 +48,25 @@ jobs:
         with:
           persist-credentials: false
       - name: Login to GCR
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: gcr.io
           username: ${{ secrets.GCR_USERNAME }}
           password: ${{ secrets.GCR_JSON_KEY }}
       - name: Login to RHCC
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: quay.io
           username: ${{ secrets.RHCC_USERNAME }}
           password: ${{ secrets.RHCC_PASSWORD }}
       - name: Login to Docker
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
@@ -122,14 +122,14 @@ jobs:
           persist-credentials: false
       - name: Login to Registry
         if: ${{ matrix.registry != 'amazon-ecr' }}
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
           password: ${{ secrets[matrix.password] }}
       - name: Configure aws credentials
         if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
@@ -179,7 +179,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ${{ env.SCAN_REGISTRY }}
           username: ${{ secrets.RHCC_USERNAME }}
@@ -248,7 +248,7 @@ jobs:
         run: |
           helm registry login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}" "docker.io"
       - name: Login Docker to dockerhub
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -262,7 +262,7 @@ jobs:
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
           registry-url: docker.io
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1

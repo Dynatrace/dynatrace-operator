@@ -40,6 +40,8 @@ const (
 	DaemonSetName = "dynatrace-oneagent-csi-driver"
 
 	UnixUmask = 0000
+
+	AppmountsDirPermissions = 0755
 )
 
 type CSIOptions struct {

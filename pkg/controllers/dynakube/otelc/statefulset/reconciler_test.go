@@ -151,6 +151,59 @@ func TestSecretHashAnnotation(t *testing.T) {
 	})
 }
 
+func TestDataIngestTokenHashAnnotation(t *testing.T) {
+	t.Run("annotation is set when TelemetryIngest is enabled", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+
+		dk := getTestDynakubeWithTelemetryIngest()
+		clt := fake.NewClient(dk)
+
+		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &configMap))
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		assert.NotEmpty(t, sts.Spec.Template.Annotations[annotationDataIngestTokenSecretHash])
+	})
+
+	t.Run("annotation changes when data ingest token is rotated", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+
+		dk := getTestDynakubeWithTelemetryIngest()
+		clt := fake.NewClient(dk)
+
+		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &configMap))
+
+		reconciler := NewReconciler(clt, clt)
+		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
+
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+		originalHash := sts.Spec.Template.Annotations[annotationDataIngestTokenSecretHash]
+		require.NotEmpty(t, originalHash)
+
+		tokenSecret.Data[token.DataIngestKey] = []byte("rotated-token-value")
+		require.NoError(t, clt.Update(t.Context(), &tokenSecret))
+
+		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
+
+		sts = &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		assert.NotEqual(t, originalHash, sts.Spec.Template.Annotations[annotationDataIngestTokenSecretHash])
+	})
+}
+
 func TestStatefulsetBase(t *testing.T) {
 	t.Run("replicas", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
