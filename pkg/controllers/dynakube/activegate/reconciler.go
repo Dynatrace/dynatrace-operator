@@ -124,7 +124,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 
 	versionReconciler := r.versionReconciler
 	if versionReconciler == nil {
-		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
+		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Images, dtClient.Version, timeprovider.New().Freeze())
 	}
 
 	err = versionReconciler.ReconcileActiveGate(ctx, dk)

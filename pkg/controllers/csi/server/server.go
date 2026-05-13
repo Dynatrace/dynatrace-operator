@@ -95,6 +95,15 @@ func (srv *Server) Start(ctx context.Context) error {
 		hostvolumes.Mode: hostvolumes.NewPublisher(srv.mounter, srv.path),
 	}
 
+	if err := os.MkdirAll(srv.path.AppMountsBaseDir(), dtcsi.AppmountsDirPermissions); err != nil {
+		return errors.WithMessagef(err, "failed to create '%s' directory", srv.path.AppMountsBaseDir())
+	}
+
+	err = os.Chmod(srv.path.AppMountsBaseDir(), dtcsi.AppmountsDirPermissions)
+	if err != nil {
+		log.Error(err, "failed to set permissions of the app mounts base directory")
+	}
+
 	log.Info("starting listener", "scheme", endpoint.Scheme, "address", addr)
 
 	listener, err := (&net.ListenConfig{}).Listen(ctx, endpoint.Scheme, addr)

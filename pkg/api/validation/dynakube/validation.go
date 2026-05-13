@@ -67,6 +67,7 @@ var (
 		invalidGlobalResourceAttributes,
 		invalidOneAgentResourceAttributes,
 		invalidOTLPResourceAttributes,
+		publicRegistryOverrideWithoutPublicRegistry,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
