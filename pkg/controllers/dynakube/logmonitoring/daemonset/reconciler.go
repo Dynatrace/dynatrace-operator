@@ -46,7 +46,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 		err := r.daemonset.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace}})
 		if err != nil {
-			log.Error(err, "failed to clean-up LogMonitoring config-secret")
+			log.Error(err, "failed to clean-up LogMonitoring DaemonSet")
 		}
 
 		meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
