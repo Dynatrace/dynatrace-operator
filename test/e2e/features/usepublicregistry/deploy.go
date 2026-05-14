@@ -38,7 +38,7 @@ const (
 // PublicRegistryOverride returns the registry value used for publicRegistryOverride
 // in the use-public-registry tests. It can be overridden via the
 // E2E_PUBLIC_REGISTRY_OVERRIDE env var.
-//func PublicRegistryOverride() string {
+// func PublicRegistryOverride() string {
 //	if val := os.Getenv(publicRegistryOverrideEnvVar); val != "" {
 //		return val
 //	}
@@ -63,9 +63,9 @@ func OneAgent(t *testing.T) features.Feature {
 	return oneAgentFeature(t, "use-public-registry-oneagent", "use-public-registry-oa", "")
 }
 
-//// OneAgentWithOverride is like OneAgent but additionally sets
-//// spec.publicRegistryOverride.
-//func OneAgentWithOverride(t *testing.T) features.Feature {
+// OneAgentWithOverride is like OneAgent but additionally sets
+// spec.publicRegistryOverride.
+// func OneAgentWithOverride(t *testing.T) features.Feature {
 //	return oneAgentFeature(t,
 //		"use-public-registry-oneagent-with-override",
 //		"use-public-registry-oa-ovrd",
@@ -81,7 +81,7 @@ func ActiveGate(t *testing.T) features.Feature {
 
 //// ActiveGateWithOverride is like ActiveGate but additionally sets
 //// spec.publicRegistryOverride.
-//func ActiveGateWithOverride(t *testing.T) features.Feature {
+// func ActiveGateWithOverride(t *testing.T) features.Feature {
 //	return activeGateFeature(t,
 //		"use-public-registry-activegate-with-override",
 //		"use-public-registry-ag-ovrd",
@@ -103,7 +103,7 @@ func CodeModules(t *testing.T) features.Feature {
 
 //// CodeModulesWithOverride is like CodeModules but additionally sets
 //// spec.publicRegistryOverride.
-//func CodeModulesWithOverride(t *testing.T) features.Feature {
+// func CodeModulesWithOverride(t *testing.T) features.Feature {
 //	return codeModulesFeature(t,
 //		"use-public-registry-codemodules-with-override",
 //		"use-public-registry-cm-ovrd",
@@ -246,7 +246,7 @@ func copyDevRegistrySecret(targetNamespace string) features.Func {
 // given component's reported version-source is status.PublicRegistryVersionSource.
 // This is the operator's own signal that the use-public-registry FF resolution
 // path was taken, so the assertion is identical for the with-override and
-// without-override flavours.
+// without-override flavors.
 func statusSourceIsPublicRegistry(dk dynakube.DynaKube, component image.ComponentType) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var current dynakube.DynaKube

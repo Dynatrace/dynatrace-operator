@@ -145,7 +145,7 @@ func TestNoCSI_use_public_registry_codemodules(t *testing.T) {
 }
 
 func TestNoCSI_use_public_registry_codemodules_with_override(t *testing.T) {
-	//testEnv.Test(t, usepublicregistry.CodeModulesWithOverride(t))
+	// testEnv.Test(t, usepublicregistry.CodeModulesWithOverride(t))
 	t.Skip("Skipping override tests")
 }
 
