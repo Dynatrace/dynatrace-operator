@@ -171,6 +171,27 @@ test/e2e/applicationmonitoring/bootstrapper-no-csi:
 test/e2e/publicregistry:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images" $(SKIPCLEANUP)
 
+## Runs all use-public-registry e2e scenarios — OneAgent / ActiveGate / CodeModules,
+## each with and without publicRegistryOverride (OA + AG on standard, CodeModules on nocsi)
+test/e2e/usepublicregistry:
+	RC=0; \
+	make test/e2e/usepublicregistry/oneagent || RC=1; \
+	make test/e2e/usepublicregistry/activegate || RC=1; \
+	make test/e2e/usepublicregistry/codemodules || RC=1; \
+	exit $$RC
+
+## Runs only use-public-registry OneAgent scenarios (with and without publicRegistryOverride)
+test/e2e/usepublicregistry/oneagent:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_oneagent" $(SKIPCLEANUP)
+
+## Runs only use-public-registry ActiveGate scenarios (with and without publicRegistryOverride)
+test/e2e/usepublicregistry/activegate:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_activegate" $(SKIPCLEANUP)
+
+## Runs only use-public-registry CodeModules scenarios (with and without publicRegistryOverride, requires no-csi)
+test/e2e/usepublicregistry/codemodules:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_codemodules" $(SKIPCLEANUP)
+
 ## Runs SupportArchive e2e test only
 test/e2e/supportarchive:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "support_archive" $(SKIPCLEANUP)

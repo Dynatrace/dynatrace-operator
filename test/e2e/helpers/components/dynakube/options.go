@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -64,6 +65,33 @@ func WithName(name string) Option {
 func WithCustomCAs(configMapName string) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.TrustedCAs = configMapName
+	}
+}
+
+// WithCustomPullSecret sets the spec.customPullSecret used by the operator
+// when pulling Dynatrace component images from a private registry.
+func WithCustomPullSecret(name string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.CustomPullSecret = name
+	}
+}
+
+func WithUsePublicRegistryFF(enabled bool) Option {
+	return func(dk *dynakube.DynaKube) {
+		if dk.Annotations == nil {
+			dk.Annotations = map[string]string{}
+		}
+		if enabled {
+			dk.Annotations[exp.UsePublicRegistryKey] = "true"
+		} else {
+			dk.Annotations[exp.UsePublicRegistryKey] = "false"
+		}
+	}
+}
+
+func WithPublicRegistryOverride(registry string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.PublicRegistryOverride = registry
 	}
 }
 
