@@ -37,4 +37,12 @@ type OpenTelemetryCollectorSpec struct {
 	// Adds TopologySpreadConstraints for the OtelCollector pods
 	// +kubebuilder:validation:Optional
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+
+	// Periodic probe of OtelCollector container liveness. The container will be restarted if the probe fails.
+	// +kubebuilder:validation:Optional
+	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`
+
+	// Periodic probe of OtelCollector container service readiness. The container will be removed from service endpoints if the probe fails.
+	// +kubebuilder:validation:Optional
+	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty"`
 }

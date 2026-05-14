@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -402,6 +403,44 @@ func TestTolerations(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Equal(t, customTolerations, statefulSet.Spec.Template.Spec.Tolerations)
+	})
+}
+
+func TestProbes(t *testing.T) {
+	t.Run("no probes are set by default", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+
+		require.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
+		assert.Nil(t, statefulSet.Spec.Template.Spec.Containers[0].LivenessProbe)
+		assert.Nil(t, statefulSet.Spec.Template.Spec.Containers[0].ReadinessProbe)
+	})
+
+	t.Run("custom liveness and readiness probes are propagated to the container", func(t *testing.T) {
+		dk := getTestDynakubeWithExtensions()
+
+		liveness := &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.FromInt(13133)},
+			},
+			InitialDelaySeconds: 10,
+			PeriodSeconds:       30,
+		}
+		readiness := &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.FromInt(13133)},
+			},
+			InitialDelaySeconds: 5,
+			PeriodSeconds:       10,
+		}
+
+		dk.Spec.Templates.OpenTelemetryCollector.LivenessProbe = liveness
+		dk.Spec.Templates.OpenTelemetryCollector.ReadinessProbe = readiness
+
+		statefulSet := getStatefulset(t, dk)
+
+		require.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
+		assert.Equal(t, liveness, statefulSet.Spec.Template.Spec.Containers[0].LivenessProbe)
+		assert.Equal(t, readiness, statefulSet.Spec.Template.Spec.Containers[0].ReadinessProbe)
 	})
 }
 

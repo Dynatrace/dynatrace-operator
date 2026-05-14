@@ -24,6 +24,8 @@ func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
 		Args:            buildArgs(dk),
 		VolumeMounts:    buildContainerVolumeMounts(dk),
+		LivenessProbe:   dk.Spec.Templates.OpenTelemetryCollector.LivenessProbe,
+		ReadinessProbe:  dk.Spec.Templates.OpenTelemetryCollector.ReadinessProbe,
 	}
 }
 

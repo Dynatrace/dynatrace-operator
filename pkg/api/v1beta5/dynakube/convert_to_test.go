@@ -513,6 +513,20 @@ func getOldOpenTelemetryTemplateSpec() OpenTelemetryCollectorSpec {
 		TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
 			{MaxSkew: 1},
 		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.FromInt(13133)},
+			},
+			InitialDelaySeconds: 10,
+			PeriodSeconds:       30,
+		},
+		ReadinessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.FromInt(13133)},
+			},
+			InitialDelaySeconds: 5,
+			PeriodSeconds:       10,
+		},
 	}
 }
 

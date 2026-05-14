@@ -168,6 +168,8 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
 	dst.TopologySpreadConstraints = src.TopologySpreadConstraints
+	dst.LivenessProbe = src.LivenessProbe
+	dst.ReadinessProbe = src.ReadinessProbe
 
 	return dst
 }

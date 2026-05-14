@@ -414,6 +414,8 @@ func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollect
 	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
+	assert.Equal(t, oldSpec.LivenessProbe, newSpec.LivenessProbe)
+	assert.Equal(t, oldSpec.ReadinessProbe, newSpec.ReadinessProbe)
 }
 
 func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec extensions.ExecutionControllerSpec, newSpec extensionslatest.ExecutionControllerSpec) {
