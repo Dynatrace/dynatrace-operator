@@ -35,7 +35,7 @@ const (
 	publicRegistryOverrideEnvVar = "E2E_PUBLIC_REGISTRY_OVERRIDE"
 )
 
-func PublicRegistryOverride(t *testing.T) string {
+func publicRegistryOverride(t *testing.T) string {
 	t.Helper()
 	val := os.Getenv(publicRegistryOverrideEnvVar)
 	if val == "" {
@@ -62,7 +62,7 @@ func OneAgentWithOverride(t *testing.T) features.Feature {
 	return oneAgentFeature(t,
 		"use-public-registry-oneagent-with-override",
 		"use-public-registry-oa-ovrd",
-		PublicRegistryOverride(t))
+		publicRegistryOverride(t))
 }
 
 func ActiveGate(t *testing.T) features.Feature {
@@ -73,7 +73,7 @@ func ActiveGateWithOverride(t *testing.T) features.Feature {
 	return activeGateFeature(t,
 		"use-public-registry-activegate-with-override",
 		"use-public-registry-ag-ovrd",
-		PublicRegistryOverride(t))
+		publicRegistryOverride(t))
 }
 
 func CodeModules(t *testing.T) features.Feature {
@@ -89,7 +89,7 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 		"use-public-registry-codemodules-with-override",
 		"use-public-registry-cm-ovrd",
 		"use-public-registry-cm-sample-ovrd",
-		PublicRegistryOverride(t))
+		publicRegistryOverride(t))
 }
 
 func oneAgentFeature(t *testing.T, featureName, dkName, override string) features.Feature {
