@@ -94,7 +94,7 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 
 func oneAgentFeature(t *testing.T, featureName, dkName, override string) features.Feature {
 	builder := features.New(featureName)
-	builder.Setup(requireDevRegistrySecret())
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
@@ -123,7 +123,7 @@ func oneAgentFeature(t *testing.T, featureName, dkName, override string) feature
 
 func activeGateFeature(t *testing.T, featureName, dkName, override string) features.Feature {
 	builder := features.New(featureName)
-	builder.Setup(requireDevRegistrySecret())
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
@@ -153,7 +153,7 @@ func activeGateFeature(t *testing.T, featureName, dkName, override string) featu
 
 func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, override string) features.Feature {
 	builder := features.New(featureName)
-	builder.Setup(requireDevRegistrySecret())
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
