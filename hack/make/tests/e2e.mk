@@ -175,9 +175,8 @@ test/e2e/publicregistry:
 ## each with and without publicRegistryOverride (OA + AG on standard, CodeModules on nocsi)
 test/e2e/usepublicregistry:
 	RC=0; \
-	make test/e2e/usepublicregistry/oneagent || RC=1; \
-	make test/e2e/usepublicregistry/activegate || RC=1; \
-	make test/e2e/usepublicregistry/codemodules || RC=1; \
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry" $(SKIPCLEANUP) || RC=1; \
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry" $(SKIPCLEANUP) || RC=1; \
 	exit $$RC
 
 ## Runs only use-public-registry OneAgent scenarios (with and without publicRegistryOverride)
