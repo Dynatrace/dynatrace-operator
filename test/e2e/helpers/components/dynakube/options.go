@@ -76,16 +76,9 @@ func WithCustomPullSecret(name string) Option {
 	}
 }
 
-func WithUsePublicRegistryFF(enabled bool) Option {
+func WithUsePublicRegistryFF() Option {
 	return func(dk *dynakube.DynaKube) {
-		if dk.Annotations == nil {
-			dk.Annotations = map[string]string{}
-		}
-		if enabled {
-			dk.Annotations[exp.UsePublicRegistryKey] = "true"
-		} else {
-			dk.Annotations[exp.UsePublicRegistryKey] = "false"
-		}
+		dk.Annotations[exp.UsePublicRegistryKey] = "true"
 	}
 }
 

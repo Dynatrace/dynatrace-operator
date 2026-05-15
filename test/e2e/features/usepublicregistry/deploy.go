@@ -102,7 +102,7 @@ func oneAgentFeature(t *testing.T, featureName, dkName, override string) feature
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
-		dynakubeComponents.WithUsePublicRegistryFF(true),
+		dynakubeComponents.WithUsePublicRegistryFF(),
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
@@ -131,7 +131,7 @@ func activeGateFeature(t *testing.T, featureName, dkName, override string) featu
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithUsePublicRegistryFF(true),
+		dynakubeComponents.WithUsePublicRegistryFF(),
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
@@ -161,7 +161,7 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
-		dynakubeComponents.WithUsePublicRegistryFF(true),
+		dynakubeComponents.WithUsePublicRegistryFF(),
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 		dynakubeComponents.WithAnnotations(map[string]string{
 			exp.OANodeImagePullKey: "true",
