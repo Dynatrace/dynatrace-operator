@@ -32,36 +32,44 @@ jobs:
         include:
           - version: 1-30
             platform: k8s
+            token: platform
           - version: 1-31
             platform: k8s
           - version: 1-32
             platform: k8s
+            token: platform
           - version: 1-33
             platform: k8s
           - version: 1-34
             platform: k8s
+            token: platform
           - version: 1-35
             platform: k8s
           - version: 1-36
             platform: k8s
+            token: platform
           - version: 4-14
             platform: ocp
           - version: 4-15
             platform: ocp
+            token: platform
           - version: 4-16
             platform: ocp
           - version: 4-17
             platform: ocp
+            token: platform
           - version: 4-18
             platform: ocp
           - version: 4-19
             platform: ocp
+            token: platform
           - version: 4-20
             platform: ocp
           - version: 4-20-olm
             platform: ocp
           - version: 4-21
             platform: ocp
+            token: platform
     environment: E2E
     runs-on:
       - operator-e2e
@@ -84,9 +92,11 @@ jobs:
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Prepare outputs
         id: prepare_outputs

@@ -13,6 +13,7 @@ apiUrl: https://$TENANT1_NAME.dev.dynatracelabs.com/api
 apiToken: $TENANT1_APITOKEN
 apiTokenNoSettings: $TENANT1_APITOKEN_NOSETTINGS
 dataIngestToken: $TENANT1_DATAINGESTTOKEN
+platformToken: $TENANT1_PLATFORM_TOKEN
 EOF
 
   cat << EOF > multi-tenant.yaml
@@ -21,10 +22,12 @@ tenants:
     apiUrl: https://$TENANT1_NAME.dev.dynatracelabs.com/api
     apiToken: $TENANT1_APITOKEN
     dataIngestToken: $TENANT1_DATAINGESTTOKEN
+    platformToken: $TENANT1_PLATFORM_TOKEN
   - tenantUid: $TENANT2_NAME
     apiUrl: https://$TENANT2_NAME.dev.dynatracelabs.com/api
     apiToken: $TENANT2_APITOKEN
     dataIngestToken: $TENANT2_DATAINGESTTOKEN
+    platformToken: $TENANT2_PLATFORM_TOKEN
 EOF
 
   cat << EOF > edgeconnect-tenant.yaml

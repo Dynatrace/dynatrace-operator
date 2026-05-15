@@ -35,6 +35,7 @@ type Secret struct {
 	APIToken           string `yaml:"apiToken"`
 	DataIngestToken    string `yaml:"dataIngestToken"`
 	APITokenNoSettings string `yaml:"apiTokenNoSettings"`
+	PlatformToken      string `yaml:"platformToken"`
 }
 
 type EdgeConnectSecret struct {
@@ -107,8 +108,15 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	return result
 }
 
-func CreateTenantSecret(apiToken, dataIngestToken, name, namespace string) features.Func {
+// TODO check do i really need here to pass all the tokens? or i can pass platform token somewhere before
+func CreateTenantSecret(apiToken, dataIngestToken, platformToken, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		token := apiToken
+
+		if os.Getenv("PLATFORM_TOKEN") == "true" {
+			token = platformToken
+		}
+
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -118,7 +126,7 @@ func CreateTenantSecret(apiToken, dataIngestToken, name, namespace string) featu
 				},
 			},
 			Data: map[string][]byte{
-				"apiToken": []byte(apiToken),
+				"apiToken": []byte(token),
 			},
 		}
 

@@ -38,6 +38,9 @@ inputs:
   tenant1-oauth-urn:
     description: The OAuth urn of Tenant 1
     required: true
+  tenant1-platform-token:
+    description: The platform token of Tenant 1
+    required: true
   tenant2-name:
     description: The name of Tenant 2
     required: true
@@ -46,6 +49,9 @@ inputs:
     required: true
   tenant2-dataingesttoken:
     description: The data ingest token of Tenant 2
+    required: true
+  tenant2-platform-token:
+    description: The platform token of Tenant 2
     required: true
   github-token:
     description: The GitHub token
@@ -123,9 +129,11 @@ runs:
         TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
         TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
         TENANT1_OAUTH_URN: ${{ inputs.tenant1-oauth-urn }}
+        TENANT1_PLATFORM_TOKEN: ${{ inputs.tenant1-platform-token }}
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
+        TENANT2_PLATFORM_TOKEN: ${{ inputs.tenant2-platform-token }}
       if: steps.check_cluster_status.outputs.skip_tests != 'true'
     - name: Destroy cluster
       shell: bash

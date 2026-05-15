@@ -30,10 +30,10 @@ if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
   echo "run no csi tests suite using OLM"
   make test/e2e/no-csi/publish/olm
 elif [[ -n "${TARGET_IMAGE}" ]]; then
-  make IMAGE_URI="$TARGET_IMAGE" test/e2e-publish
+  make PLATFORM_TOKEN="$IS_PLATFORM" IMAGE_URI="$TARGET_IMAGE" test/e2e-publish
 else
   echo "fall back to default branch target"
-  make BRANCH="$TARGET_BRANCH" test/e2e-publish
+  make PLATFORM_TOKEN="$IS_PLATFORM" BRANCH="$TARGET_BRANCH" test/e2e-publish
 fi
 
 echo "Success!"
