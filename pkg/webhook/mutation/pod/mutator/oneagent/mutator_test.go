@@ -233,29 +233,29 @@ func TestIsSelfExtractingImage(t *testing.T) {
 		},
 
 		{
-			title:   "OA + FF enabled + no-csi => enabled",
+			title:   "OA + image set + no-csi => enabled",
 			podMods: func(p *corev1.Pod) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+				dk.Status.CodeModules.ImageID = "testImage"
 			},
 			enabled:      true,
 			isCSIPresent: false,
 		},
 
 		{
-			title:   "OA + FF enabled + csi => not enabled",
+			title:   "OA + image set + csi => not enabled",
 			podMods: func(p *corev1.Pod) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+				dk.Status.CodeModules.ImageID = "testImage"
 			},
 			enabled:      false,
 			isCSIPresent: true,
 		},
 
 		{
-			title: "OA + FF enabled + csi + pod annotation => enabled",
+			title: "OA + image set + csi + pod annotation => enabled",
 			podMods: func(p *corev1.Pod) {
 				p.Annotations = map[string]string{
 					AnnotationVolumeType: EphemeralVolumeType,
@@ -263,7 +263,7 @@ func TestIsSelfExtractingImage(t *testing.T) {
 			},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+				dk.Status.CodeModules.ImageID = "testImage"
 			},
 			enabled:      true,
 			isCSIPresent: true,

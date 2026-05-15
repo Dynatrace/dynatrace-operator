@@ -195,7 +195,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 	data := map[string][]byte{}
 	annotations := map[string]string{}
 
-	if dk.OneAgent().IsAppInjectionNeeded() && !dk.FF().IsNodeImagePull() {
+	if needsDownloadConfig(dk) {
 		downloadConfigBytes, err := s.prepareDownloadConfig(ctx, dk)
 		if err != nil {
 			return nil, nil, errors.WithStack(err)
@@ -236,6 +236,10 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 	}
 
 	return data, annotations, nil
+}
+
+func needsDownloadConfig(dk *dynakube.DynaKube) bool {
+	return dk.OneAgent().IsAppInjectionNeeded() && !dk.OneAgent().IsCSIAvailable() && dk.OneAgent().GetCodeModulesImage() == ""
 }
 
 // generateCerts gets the necessary info they create the init certs secret data
