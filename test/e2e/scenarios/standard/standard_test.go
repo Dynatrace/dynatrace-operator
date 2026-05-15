@@ -78,8 +78,7 @@ func TestStandard_use_public_registry_oneagent(t *testing.T) {
 }
 
 func TestStandard_use_public_registry_oneagent_with_override(t *testing.T) {
-	// testEnv.Test(t, usepublicregistry.OneAgentWithOverride(t))
-	t.Skip("Skipping override tests")
+	testEnv.Test(t, usepublicregistry.OneAgentWithOverride(t))
 }
 
 func TestStandard_use_public_registry_activegate(t *testing.T) {
@@ -87,8 +86,7 @@ func TestStandard_use_public_registry_activegate(t *testing.T) {
 }
 
 func TestStandard_use_public_registry_activegate_with_override(t *testing.T) {
-	// testEnv.Test(t, usepublicregistry.ActiveGateWithOverride(t))
-	t.Skip("Skipping override tests")
+	testEnv.Test(t, usepublicregistry.ActiveGateWithOverride(t))
 }
 
 func TestStandard_cloudnative_disabled_auto_inject(t *testing.T) {

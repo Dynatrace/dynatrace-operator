@@ -4,6 +4,7 @@ package usepublicregistry
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -31,20 +32,18 @@ import (
 )
 
 const (
-// defaultPublicRegistryOverride = "TODO"
-// publicRegistryOverrideEnvVar = "E2E_PUBLIC_REGISTRY_OVERRIDE"
+	publicRegistryOverrideEnvVar = "E2E_PUBLIC_REGISTRY_OVERRIDE"
 )
 
-// PublicRegistryOverride returns the registry value used for publicRegistryOverride
-// in the use-public-registry tests. It can be overridden via the
-// E2E_PUBLIC_REGISTRY_OVERRIDE env var.
-// func PublicRegistryOverride() string {
-//	if val := os.Getenv(publicRegistryOverrideEnvVar); val != "" {
-//		return val
-//	}
-//
-//	return defaultPublicRegistryOverride
-//}
+func PublicRegistryOverride(t *testing.T) string {
+	t.Helper()
+	val := os.Getenv(publicRegistryOverrideEnvVar)
+	if val == "" {
+		t.Fatalf("%s must be set", publicRegistryOverrideEnvVar)
+	}
+
+	return val
+}
 
 // requireDevRegistrySecret returns a Setup feature.Func that fails the test if
 // the devregistry pull secret is not already present in the operator namespace.
@@ -55,44 +54,28 @@ func requireDevRegistrySecret() features.Func {
 	return k8ssecret.Exists(consts.DevRegistryPullSecretName, operator.DefaultNamespace)
 }
 
-// OneAgent verifies the use-public-registry FF resolves the OneAgent image
-// through the tenant's containerImages endpoint and the resulting DaemonSet
-// becomes ready. No publicRegistryOverride is set, so the tenant's default
-// public registry is used.
 func OneAgent(t *testing.T) features.Feature {
 	return oneAgentFeature(t, "use-public-registry-oneagent", "use-public-registry-oa", "")
 }
 
-// OneAgentWithOverride is like OneAgent but additionally sets
-// spec.publicRegistryOverride.
-// func OneAgentWithOverride(t *testing.T) features.Feature {
-//	return oneAgentFeature(t,
-//		"use-public-registry-oneagent-with-override",
-//		"use-public-registry-oa-ovrd",
-//		PublicRegistryOverride())
-//}
+func OneAgentWithOverride(t *testing.T) features.Feature {
+	return oneAgentFeature(t,
+		"use-public-registry-oneagent-with-override",
+		"use-public-registry-oa-ovrd",
+		PublicRegistryOverride(t))
+}
 
-// ActiveGate verifies the use-public-registry FF resolves the ActiveGate image
-// through the tenant's containerImages endpoint and the resulting StatefulSet
-// becomes ready (no override).
 func ActiveGate(t *testing.T) features.Feature {
 	return activeGateFeature(t, "use-public-registry-activegate", "use-public-registry-ag", "")
 }
 
-//// ActiveGateWithOverride is like ActiveGate but additionally sets
-//// spec.publicRegistryOverride.
-// func ActiveGateWithOverride(t *testing.T) features.Feature {
-//	return activeGateFeature(t,
-//		"use-public-registry-activegate-with-override",
-//		"use-public-registry-ag-ovrd",
-//		PublicRegistryOverride())
-//}
+func ActiveGateWithOverride(t *testing.T) features.Feature {
+	return activeGateFeature(t,
+		"use-public-registry-activegate-with-override",
+		"use-public-registry-ag-ovrd",
+		PublicRegistryOverride(t))
+}
 
-// CodeModules verifies the code-modules injection path described in slide 5
-// of the ICP-3021 deck without setting publicRegistryOverride. The operator is
-// assumed to be installed without CSI; injection uses the node-image-pull FF
-// with the registry pull secret provided as customPullSecret on the DynaKube
-// and as imagePullSecrets on the user namespace's sample app.
 func CodeModules(t *testing.T) features.Feature {
 	return codeModulesFeature(t,
 		"use-public-registry-codemodules",
@@ -101,15 +84,13 @@ func CodeModules(t *testing.T) features.Feature {
 		"")
 }
 
-//// CodeModulesWithOverride is like CodeModules but additionally sets
-//// spec.publicRegistryOverride.
-// func CodeModulesWithOverride(t *testing.T) features.Feature {
-//	return codeModulesFeature(t,
-//		"use-public-registry-codemodules-with-override",
-//		"use-public-registry-cm-ovrd",
-//		"use-public-registry-cm-sample-ovrd",
-//		PublicRegistryOverride())
-//}
+func CodeModulesWithOverride(t *testing.T) features.Feature {
+	return codeModulesFeature(t,
+		"use-public-registry-codemodules-with-override",
+		"use-public-registry-cm-ovrd",
+		"use-public-registry-cm-sample-ovrd",
+		PublicRegistryOverride(t))
+}
 
 func oneAgentFeature(t *testing.T, featureName, dkName, override string) features.Feature {
 	builder := features.New(featureName)
