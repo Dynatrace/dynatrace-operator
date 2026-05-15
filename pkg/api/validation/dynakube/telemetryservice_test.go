@@ -342,7 +342,7 @@ func TestImages(t *testing.T) {
 		assert.Contains(t, warnings, warningOtelCollectorIgnoredTemplate)
 	})
 
-	t.Run("otel collector repo and tag are empty but pull policy not, image section was ignored", func(t *testing.T) {
+	t.Run("otel collector pull policy without a usable image does not warn", func(t *testing.T) {
 		warnings, err := assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -360,7 +360,7 @@ func TestImages(t *testing.T) {
 				},
 			})
 		require.NoError(t, err)
-		assert.Contains(t, warnings, warningOtelCollectorIgnoredTemplate)
+		assert.NotContains(t, warnings, warningOtelCollectorIgnoredTemplate)
 	})
 
 	t.Run("otel collector image present", func(t *testing.T) {

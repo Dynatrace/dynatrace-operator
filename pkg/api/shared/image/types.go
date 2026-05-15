@@ -45,12 +45,6 @@ func (ref Ref) String() string {
 	return ref.Repository + ":" + ref.Tag
 }
 
-// IsZero returns true if the image ref is empty.
-// Prefer this name over IsEmpty for compatibility with JSON omitzero.
-func (ref *Ref) IsZero() bool {
-	return ref == nil || *ref == Ref{}
-}
-
 // HasImage returns true when the ref points to a resolvable image — i.e. a repository
 // plus at least one of a tag or a digest.
 func (ref *Ref) HasImage() bool {

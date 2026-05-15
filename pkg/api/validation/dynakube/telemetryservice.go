@@ -163,7 +163,7 @@ func missingOtelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 }
 
 func ignoredOtelCollectorTemplate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.TelemetryIngest().IsEnabled() && !dk.Spec.Templates.OpenTelemetryCollector.ImageRef.IsZero() {
+	if !dk.TelemetryIngest().IsEnabled() && dk.Spec.Templates.OpenTelemetryCollector.ImageRef.HasImage() {
 		return warningOtelCollectorIgnoredTemplate
 	}
 

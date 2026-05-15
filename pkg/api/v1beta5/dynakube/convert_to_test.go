@@ -203,6 +203,67 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
+	t.Run("default otelc image applied when only pull policy is set", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Spec.Templates.OpenTelemetryCollector.ImageRef = image.Ref{PullPolicy: "Always"}
+
+		to := dynakubelatest.DynaKube{
+			Spec: dynakubelatest.DynaKubeSpec{
+				TelemetryIngest: &telemetryingestlatest.Spec{},
+			},
+		}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
+		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
+		assert.Equal(t, image.PullPolicy("Always"), to.Spec.Templates.OpenTelemetryCollector.ImageRef.PullPolicy)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+
+		compareBase(t, from, to)
+	})
+
+	t.Run("default otelc image overwrites a partial repository-only ref", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Spec.Templates.OpenTelemetryCollector.ImageRef = image.Ref{Repository: "user-supplied-repo"}
+
+		to := dynakubelatest.DynaKube{
+			Spec: dynakubelatest.DynaKubeSpec{
+				TelemetryIngest: &telemetryingestlatest.Spec{},
+			},
+		}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, "user-supplied-repo", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
+		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+
+		compareBase(t, from, to)
+	})
+
+	t.Run("user-supplied complete otelc image is preserved", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Spec.Templates.OpenTelemetryCollector.ImageRef = image.Ref{Repository: "user-supplied-repo", Tag: "user-tag"}
+
+		to := dynakubelatest.DynaKube{
+			Spec: dynakubelatest.DynaKubeSpec{
+				TelemetryIngest: &telemetryingestlatest.Spec{},
+			},
+		}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.Equal(t, "user-supplied-repo", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
+		assert.Equal(t, "user-tag", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
+		assert.NotContains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+
+		compareBase(t, from, to)
+	})
+
 	t.Run("no default otelc image when telemetry ingest is disabled", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.TelemetryIngest = nil
