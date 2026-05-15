@@ -1096,6 +1096,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -1405,6 +1406,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -1615,6 +1617,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -1699,6 +1702,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -3094,6 +3098,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -3403,6 +3408,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -3613,6 +3619,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -3697,6 +3704,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -6623,6 +6631,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -6932,6 +6941,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -7142,6 +7152,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -7239,6 +7250,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:
@@ -7370,6 +7382,7 @@ spec:
                       imageRef:
                         properties:
                           digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
                             type: string
                           pullPolicy:
                             enum:

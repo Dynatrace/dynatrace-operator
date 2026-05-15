@@ -12,8 +12,10 @@ type Ref struct {
 	// Indicates a tag of the image to use
 	Tag string `json:"tag,omitempty"`
 
-	// Digest pins the image to a specific content-addressable hash (e.g. sha256:...).
-	// When set, the tag is ignored when rendering the image reference.
+	// Digest pins the image to a specific content-addressable hash in the OCI
+	// `<algorithm>:<hex>` form (e.g. `sha256:abc...`). When set, the tag is ignored
+	// when rendering the image reference.
+	// +kubebuilder:validation:Pattern:="^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$"
 	Digest string `json:"digest,omitempty"`
 
 	// Image pull policy to use
