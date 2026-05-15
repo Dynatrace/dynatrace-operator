@@ -38,6 +38,12 @@ type Secret struct {
 	PlatformToken      string `yaml:"platformToken"`
 }
 
+type Tokens struct {
+	APIToken        string
+	DataIngestToken string
+	PlatformToken   string
+}
+
 type EdgeConnectSecret struct {
 	TenantUID         string `yaml:"tenantUid"`
 	Name              string `yaml:"name"`
@@ -45,6 +51,29 @@ type EdgeConnectSecret struct {
 	OauthClientID     string `yaml:"oAuthClientId"`
 	OauthClientSecret string `yaml:"oAuthClientSecret"`
 	Resource          string `yaml:"resource"`
+}
+
+func (s Secret) tokens(hasSettingsScope bool) Tokens {
+	t := Tokens{
+		DataIngestToken: s.DataIngestToken,
+		PlatformToken:   s.PlatformToken,
+	}
+
+	if hasSettingsScope {
+		t.APIToken = s.APIToken
+	} else {
+		t.APIToken = s.APITokenNoSettings
+	}
+
+	return t
+}
+
+func (s Secret) TokensWithSettingsScope() Tokens {
+	return s.tokens(true)
+}
+
+func (s Secret) TokensWithoutSettingsScope() Tokens {
+	return s.tokens(false)
 }
 
 func manyFromConfig(path string) ([]Secret, error) {
@@ -109,12 +138,12 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 }
 
 // TODO check do i really need here to pass all the tokens? or i can pass platform token somewhere before
-func CreateTenantSecret(apiToken, dataIngestToken, platformToken, name, namespace string) features.Func {
+func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		token := apiToken
+		token := tokens.APIToken
 
 		if os.Getenv("PLATFORM_TOKEN") == "true" {
-			token = platformToken
+			token = tokens.PlatformToken
 		}
 
 		defaultSecret := corev1.Secret{
@@ -130,8 +159,8 @@ func CreateTenantSecret(apiToken, dataIngestToken, platformToken, name, namespac
 			},
 		}
 
-		if dataIngestToken != "" {
-			defaultSecret.Data["dataIngestToken"] = []byte(dataIngestToken)
+		if tokens.DataIngestToken != "" {
+			defaultSecret.Data["dataIngestToken"] = []byte(tokens.DataIngestToken)
 		}
 
 		err := envConfig.Client().Resources().Create(ctx, &defaultSecret)

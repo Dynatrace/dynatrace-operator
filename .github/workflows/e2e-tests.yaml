@@ -1,3 +1,4 @@
+# TODO ask about merging all them together in a matrix. Should it be with this ticket or in a separate one?
 name: E2E tests
 
 on:
@@ -98,6 +99,7 @@ jobs:
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          use-platform-token: "true"
       - name: Determine cluster status
         if: failure()
         env:
@@ -182,6 +184,7 @@ jobs:
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          use-platform-token: "true"
       - name: Determine cluster status
         if: failure()
         env:
@@ -345,7 +348,7 @@ jobs:
           echo "OCP_OLM_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_JOB_ID}" >> $GITHUB_ENV
 
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
-      - name: Notify failure in Slack
+      - name: Notify in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}

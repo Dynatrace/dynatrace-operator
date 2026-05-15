@@ -30,7 +30,7 @@ const (
 // Install creates a tenant secret and waits until the DynaKube is Running.
 // It also registers the deletion of these resources in reverse order.
 func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
-	Create(builder, features.LevelAssess, secretConfig.APIToken, secretConfig.DataIngestToken, secretConfig.PlatformToken, dk)
+	Create(builder, features.LevelAssess, secretConfig.TokensWithSettingsScope(), dk)
 	VerifyStartup(builder, features.LevelAssess, dk)
 	// The secret is required for correct cleanup, so always delete it last
 	Delete(builder, features.LevelTeardown, dk)
@@ -40,7 +40,7 @@ func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk d
 // InstallWithoutSettingsScopes creates a tenant secret without settings scopes and waits until the DynaKube is Running.
 // It also registers the deletion of these resources in reverse order.
 func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
-	Create(builder, features.LevelAssess, secretConfig.APITokenNoSettings, secretConfig.DataIngestToken, secretConfig.PlatformToken, dk)
+	Create(builder, features.LevelAssess, secretConfig.TokensWithoutSettingsScope(), dk)
 	VerifyStartup(builder, features.LevelAssess, dk)
 	// The secret is required for correct cleanup, so always delete it last
 	Delete(builder, features.LevelTeardown, dk)
@@ -48,13 +48,13 @@ func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, secretConfig
 }
 
 func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDK prevDynakube.DynaKube) {
-	CreatePreviousVersion(builder, level, secretConfig.APIToken, secretConfig.DataIngestToken, secretConfig.PlatformToken, prevDK)
+	CreatePreviousVersion(builder, level, secretConfig.TokensWithSettingsScope(), prevDK)
 	VerifyStartupPreviousVersion(builder, level, prevDK)
 }
 
-func Create(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken, platformToken string, testDynakube dynakube.DynaKube) {
-	if apiToken != "" || dataIngestToken != "" {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, platformToken, testDynakube.Name, testDynakube.Namespace))
+func Create(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, testDynakube dynakube.DynaKube) {
+	if tokens.APIToken != "" || tokens.DataIngestToken != "" {
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),
@@ -66,9 +66,9 @@ func Update(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
 	builder.WithStep("dynakube updated", features.LevelAssess, update(testDynakube))
 }
 
-func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken, platformToken string, prevDK prevDynakube.DynaKube) {
-	if apiToken != "" || dataIngestToken != "" || platformToken != "" {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, platformToken, prevDK.Name, prevDK.Namespace))
+func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, prevDK prevDynakube.DynaKube) {
+	if tokens.APIToken != "" || tokens.DataIngestToken != "" || tokens.PlatformToken != "" {
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, prevDK.Name, prevDK.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", prevDK.Name),

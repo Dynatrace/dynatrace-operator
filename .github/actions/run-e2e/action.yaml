@@ -56,6 +56,9 @@ inputs:
   github-token:
     description: The GitHub token
     required: true
+  use-platform-token:
+    description: If true runs the test suite with platform token
+    required: false
 outputs:
   cluster_status:
     description: Status of the cluster creation ['skipped'|'success']
@@ -134,6 +137,7 @@ runs:
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
         TENANT2_PLATFORM_TOKEN: ${{ inputs.tenant2-platform-token }}
+        USE_PLATFORM_TOKEN: ${{ inputs.use-platform-token }}
       if: steps.check_cluster_status.outputs.skip_tests != 'true'
     - name: Destroy cluster
       shell: bash

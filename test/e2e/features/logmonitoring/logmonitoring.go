@@ -119,7 +119,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	builder.Assess("log monitoring conditions with disabled scopes", checkConditions(testDynakube.Name, testDynakube.Namespace, false))
 
-	builder.Assess("update token secret", tenant.CreateTenantSecret(secretConfig.APIToken, secretConfig.DataIngestToken, secretConfig.PlatformToken, testDynakube.Name, testDynakube.Namespace))
+	builder.Assess("update token secret", tenant.CreateTenantSecret(secretConfig.TokensWithSettingsScope(), testDynakube.Name, testDynakube.Namespace))
 
 	builder.Assess("trigger reconcile", triggerDaemonSetReconcile(testDynakube))
 

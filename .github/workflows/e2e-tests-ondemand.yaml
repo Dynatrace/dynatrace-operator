@@ -98,6 +98,7 @@ jobs:
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          use-platform-token: ${{ matrix.token == 'platform' }}
       - name: Prepare outputs
         id: prepare_outputs
         if: always()
@@ -156,7 +157,7 @@ jobs:
         env:
           TARGET_BRANCH: ${{ inputs.target || env.branch }}
           MATRIX_OUTPUTS: ${{ steps.get-matrix-outputs.outputs.result }}
-      - name: Notify failure in Slack
+      - name: Notify in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
