@@ -94,7 +94,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, 
 func (r *Reconciler) reconcileSubReconcilers(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	versionReconciler := r.versionReconciler
 	if versionReconciler == nil {
-		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
+		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Images, dtClient.Version, timeprovider.New().Freeze())
 	}
 
 	connectionInfoReconciler := r.connectionInfoReconciler

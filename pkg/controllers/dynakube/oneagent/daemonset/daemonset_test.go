@@ -1186,6 +1186,101 @@ func TestInitContainerArguments(t *testing.T) {
 	assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
 }
 
+func TestInitContainerArguments_ResourceAttributes(t *testing.T) {
+	baseStatus := dynakube.DynaKubeStatus{
+		KubeSystemUUID:        testKubernetesClusterUID,
+		KubernetesClusterMEID: testKubernetesClusterMEID,
+		KubernetesClusterName: testKubernetesClusterName,
+	}
+
+	t.Run("global resource attributes are sorted and appended", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"team": "platform", "env": "prod"},
+				OneAgent:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}},
+			},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+
+		assert.Equal(t, "k8s.cluster.name="+testKubernetesClusterName, attributes[0])
+		assert.Equal(t, "k8s.cluster.uid="+testKubernetesClusterUID, attributes[1])
+		assert.Equal(t, "k8s.node.name=$(DT_K8S_NODE_NAME)", attributes[2])
+		assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
+		assert.Equal(t, "env=prod", attributes[4])
+		assert.Equal(t, "team=platform", attributes[5])
+	})
+
+	t.Run("hostMonitoring additionalResourceAttributes overrides global", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"shared": "global", "only-global": "g"},
+				OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
+					AdditionalResourceAttributes: map[string]string{"shared": "host", "only-host": "h"},
+				}},
+			},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Contains(t, attributes, "shared=host")
+		assert.Contains(t, attributes, "only-global=g")
+		assert.Contains(t, attributes, "only-host=h")
+		assert.NotContains(t, attributes, "shared=global")
+	})
+
+	t.Run("classicFullStack additionalResourceAttributes overrides global", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"env": "global"},
+				OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
+					AdditionalResourceAttributes: map[string]string{"env": "classic"},
+				}},
+			},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Contains(t, attributes, "env=classic")
+		assert.NotContains(t, attributes, "env=global")
+	})
+
+	t.Run("cloudNativeFullStack additionalResourceAttributes overrides global", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"shared": "global"},
+				OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+					HostInjectSpec: oneagent.HostInjectSpec{
+						AdditionalResourceAttributes: map[string]string{"shared": "cnf", "extra": "val"},
+					},
+				}},
+			},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Contains(t, attributes, "shared=cnf")
+		assert.Contains(t, attributes, "extra=val")
+		assert.NotContains(t, attributes, "shared=global")
+	})
+
+	t.Run("no resource attributes leaves existing cluster metadata unchanged", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec:   dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}}},
+			Status: baseStatus,
+		}
+
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Len(t, attributes, 4)
+	})
+}
+
 func TestInitContainerVolumeMounts(t *testing.T) {
 	dsBuilder := builder{}
 

@@ -5888,6 +5888,10 @@ spec:
                   classicFullStack:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       annotations:
                         additionalProperties:
                           type: string
@@ -6329,6 +6333,10 @@ spec:
                   hostMonitoring:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       annotations:
                         additionalProperties:
                           type: string
@@ -6564,6 +6572,8 @@ spec:
                     nullable: true
                     type: string
                 type: object
+              publicRegistryOverride:
+                type: string
               resourceAttributes:
                 additionalProperties:
                   type: string
@@ -7415,6 +7425,8 @@ spec:
                       settingsWrite:
                         type: boolean
                     type: object
+                  platform:
+                    type: boolean
                 type: object
               codeModules:
                 properties:

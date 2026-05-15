@@ -9,10 +9,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,9 +40,10 @@ func TestActiveGateUpdater(t *testing.T) {
 				},
 			},
 		}
+		mockImageClient := imageclientmock.NewClient(t)
 		mockVersionClient := versionclientmock.NewClient(t)
 
-		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockImageClient, mockVersionClient)
 
 		assert.Equal(t, "activegate", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -64,12 +70,14 @@ func TestActiveGateUseDefault(t *testing.T) {
 				},
 			},
 		}
+		mockImageClient := imageclientmock.NewClient(t)
+
 		expectedVersion := "1.2.3.4-5"
 		expectedImage := dk.ActiveGate().GetDefaultImage(expectedVersion)
 		mockVersionClient := versionclientmock.NewClient(t)
 		mockVersionClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)
 
-		updater := newActiveGateUpdater(dk, fake.NewClient(), mockVersionClient)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockImageClient, mockVersionClient)
 
 		err := updater.UseTenantRegistry(context.Background())
 		require.NoError(t, err)
@@ -90,11 +98,87 @@ func TestActiveGateIsEnabled(t *testing.T) {
 			},
 		}
 
-		updater := newActiveGateUpdater(dk, nil, nil)
+		updater := newActiveGateUpdater(dk, nil, nil, nil)
 
 		isEnabled := updater.IsEnabled()
 		require.False(t, isEnabled)
 
 		assert.Empty(t, updater.Target())
+	})
+}
+
+func TestActiveGateLatestImageInfo(t *testing.T) {
+	const testRegistry = "my.custom.registry.com"
+	const testTag = "1.2.3.4-5"
+	const testImageURI = testRegistry + "/dynatrace/activegate:" + testTag
+
+	newDK := func(registry string) *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName},
+				},
+				PublicRegistryOverride: registry,
+			},
+		}
+	}
+
+	t.Run("happy path: image info returned and verified condition set", func(t *testing.T) {
+		dk := newDK("")
+		mockImageClient := imageclientmock.NewClient(t)
+		mockImageClient.EXPECT().GetComponentLatestInfo(t.Context(), image.ActiveGate, "").Return(
+			&image.Info{URI: testImageURI, Tag: testTag}, nil,
+		).Once()
+
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockImageClient, nil)
+		imageInfo, err := updater.LatestImageInfo(t.Context())
+
+		require.NoError(t, err)
+		require.NotNil(t, imageInfo)
+		assert.Equal(t, testTag, imageInfo.Tag)
+		assert.Equal(t, testImageURI, imageInfo.URI)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), activeGateVersionConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, verifiedReason, condition.Reason)
+	})
+
+	t.Run("registry override forwarded to images client", func(t *testing.T) {
+		dk := newDK(testRegistry)
+		mockImageClient := imageclientmock.NewClient(t)
+		mockImageClient.EXPECT().GetComponentLatestInfo(t.Context(), image.ActiveGate, testRegistry).Return(
+			&image.Info{URI: testImageURI, Tag: testTag, Registry: testRegistry}, nil,
+		).Once()
+
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockImageClient, nil)
+		imageInfo, err := updater.LatestImageInfo(t.Context())
+
+		require.NoError(t, err)
+		assert.Equal(t, testTag, imageInfo.Tag)
+	})
+
+	t.Run("API error: error returned and DynatraceAPIError condition set", func(t *testing.T) {
+		dk := newDK("")
+		mockImageClient := imageclientmock.NewClient(t)
+		mockImageClient.EXPECT().GetComponentLatestInfo(t.Context(), image.ActiveGate, "").Return(
+			nil, errors.New("BOOM"),
+		).Once()
+
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockImageClient, nil)
+		imageInfo, err := updater.LatestImageInfo(t.Context())
+
+		require.Error(t, err)
+		assert.Nil(t, imageInfo)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), activeGateVersionConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, k8sconditions.DynatraceAPIErrorReason, condition.Reason)
 	})
 }

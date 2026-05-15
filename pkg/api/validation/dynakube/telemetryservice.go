@@ -17,15 +17,15 @@ import (
 )
 
 const (
-	errorTelemetryIngestNotEnoughProtocols  = `DynaKube's specification enables the TelemetryIngest feature, at least one Protocol has to be specified.`
-	errorTelemetryIngestUnknownProtocols    = `DynaKube's specification enables the TelemetryIngest feature, unsupported protocols found on the Protocols list.`
-	errorTelemetryIngestDuplicatedProtocols = `DynaKube's specification enables the TelemetryIngest feature, duplicated protocols found on the Protocols list.`
-	errorTelemetryIngestNoDNS1053Label      = `DynaKube's specification enables the TelemetryIngest feature, the telemetry service name violates DNS-1035.
+	errorTelemetryIngestNotEnoughProtocols = `DynaKube's specification enables the TelemetryIngest feature, at least one Protocol has to be specified.`
+	errorTelemetryIngestUnknownProtocols   = `DynaKube's specification enables the TelemetryIngest feature, unsupported protocols found on the Protocols list.`
+	errorTelemetryIngestNoDNS1053Label     = `DynaKube's specification enables the TelemetryIngest feature, the telemetry service name violates DNS-1035.
     [The length limit for the name is %d. Additionally a DNS-1035 name must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')]
 	`
 	errorTelemetryIngestServiceNameInUse     = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is already used by other Dynakube.`
 	errorTelemetryIngestForbiddenServiceName = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is incorrect because of forbidden suffix.`
 	errorOtelCollectorMissingImage           = `The Dynakube's specification specifies the OTel Collector, but no image repository/tag is configured.`
+	warningOtelCollectorIgnoredTemplate      = "The Dynakube's `spec.templates.otelCollector` section is skipped as the `spec.telemetryIngest` section is not configured. Consider either removing `spec.templates.otelCollector.imageRef` or enabling `spec.telemetryIngest`."
 )
 
 func emptyTelemetryIngestProtocolsList(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -157,6 +157,14 @@ func missingOtelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 
 	if dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository == "" || dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag == "" {
 		return errorOtelCollectorMissingImage
+	}
+
+	return ""
+}
+
+func ignoredOtelCollectorTemplate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.TelemetryIngest().IsEnabled() && !dk.Spec.Templates.OpenTelemetryCollector.ImageRef.IsZero() {
+		return warningOtelCollectorIgnoredTemplate
 	}
 
 	return ""
