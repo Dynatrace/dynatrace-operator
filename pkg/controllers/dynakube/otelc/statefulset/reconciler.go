@@ -90,6 +90,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 	}
 
 	appLabels := buildAppLabels(dk.Name)
+
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx, dk)
 	if err != nil {
 		return err
