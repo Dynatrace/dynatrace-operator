@@ -28,7 +28,6 @@ jobs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
-
   build-gcr-deployer:
       if: startsWith(github.event.pull_request.head.ref, 'csv-') && startsWith(github.event.pull_request.base.ref, 'release-')
       name: Build GCR deployer image
