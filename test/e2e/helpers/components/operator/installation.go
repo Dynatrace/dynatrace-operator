@@ -35,7 +35,7 @@ func Install(releaseTag string, withCSI bool) env.Func {
 		if releaseTag == "" {
 			return ctx, errors.New("missing release tag")
 		}
-		err := installViaHelm(releaseTag, withCSI)
+		err := InstallViaHelm(releaseTag, withCSI)
 		if err != nil {
 			return ctx, err
 		}
@@ -59,7 +59,7 @@ func InstallLocal(withCSI bool) env.Func {
 				return ctx, err
 			}
 		} else {
-			err := installViaHelm("", withCSI)
+			err := InstallViaHelm("", withCSI)
 			if err != nil {
 				return ctx, err
 			}
@@ -158,7 +158,10 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	return err
 }
 
-func installViaHelm(releaseTag string, withCSI bool) error {
+// InstallViaHelm runs helm upgrade --install for the operator chart.
+// When releaseTag is empty it installs from the local filesystem.
+// Extra helm options (e.g. helm.WithArgs("--kube-as-user", sa)) are appended.
+func InstallViaHelm(releaseTag string, withCSI bool, extra ...helm.Option) error {
 	manager := helm.New("''")
 
 	_platform, err := platform.NewResolver().GetPlatform()
@@ -171,6 +174,8 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 		return err
 	}
 
+	opts = append(opts, extra...)
+
 	var klogLevel klog.Level
 	// Show helm command args and output
 	// Set only fails if the input does not conform to stronv.ParseInt(x, 10, 32)
@@ -181,6 +186,13 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 	}()
 
 	return manager.RunUpgrade(opts...)
+}
+
+// UninstallViaHelm runs helm uninstall for the given release.
+func UninstallViaHelm(opts ...helm.Option) error {
+	manager := helm.New("''")
+
+	return manager.RunUninstall(opts...)
 }
 
 func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
@@ -205,8 +217,7 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 	}
 
 	rootDir := project.RootDir()
-	isFIPS := os.Getenv("FIPS") == "true"
-	imageRef, err := getImageRef(rootDir, isFIPS)
+	imageRef, err := GetImageRef(rootDir)
 	if err != nil {
 		return nil, err
 	}
@@ -240,13 +251,11 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 // Cache image ref on first invocation to allow switching branches.
 var imageRef string
 
-func getImageRef(rootDir string, fips140 bool) (string, error) {
+// GetImageRef resolves the operator container image reference by running
+// `make deploy/show-image-ref`. The result is cached for the process lifetime.
+func GetImageRef(rootDir string) (string, error) {
 	if imageRef == "" {
 		cmdShowImage := "deploy/show-image-ref"
-
-		if fips140 {
-			cmdShowImage = "deploy/show-image-ref/fips"
-		}
 
 		command := exec.Command("make", "-C", rootDir, cmdShowImage)
 		command.Env = os.Environ()
