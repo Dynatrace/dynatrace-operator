@@ -19,8 +19,6 @@ func TestDeprecatedFeatureFlag(t *testing.T) {
 }
 
 func deprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
-	t.Helper()
-
 	for _, featureFlag := range deprecatedFeatureFlags {
 		t.Run(featureFlag, func(t *testing.T) {
 			dk := &dynakube.DynaKube{
@@ -40,8 +38,6 @@ func deprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
 }
 
 func deprecatedFeatureFlagWithoutDeprecatedFlags(t *testing.T) {
-	t.Helper()
-
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
@@ -56,8 +52,6 @@ func deprecatedFeatureFlagWithoutDeprecatedFlags(t *testing.T) {
 }
 
 func deprecatedFeatureFlagWithNoAnnotations(t *testing.T) {
-	t.Helper()
-
 	dk := &dynakube.DynaKube{}
 	result := deprecatedFeatureFlag(t.Context(), nil, dk)
 
@@ -65,8 +59,6 @@ func deprecatedFeatureFlagWithNoAnnotations(t *testing.T) {
 }
 
 func deprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
-	t.Helper()
-
 	annotations := map[string]string{}
 
 	for _, flag := range deprecatedFeatureFlags {
