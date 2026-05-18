@@ -18,11 +18,21 @@ const (
 )
 
 type FeatureFlags struct {
-	annotations map[string]string
+	annotations      map[string]string
+	hasPlatformToken bool
 }
 
 func NewFlags(annotations map[string]string) *FeatureFlags {
 	return &FeatureFlags{annotations: annotations}
+}
+
+// WithPlatformToken is used to distinguish between classic (apiToken) and platform token behavior.
+func (ff *FeatureFlags) WithPlatformToken() {
+	ff.hasPlatformToken = true
+}
+
+func (ff *FeatureFlags) HasPlatformToken() bool {
+	return ff.hasPlatformToken
 }
 
 // GetNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.

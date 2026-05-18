@@ -22,7 +22,25 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
+
+func TestFF_HasPlatformToken(t *testing.T) {
+	t.Run("nil platform status => not a platform token", func(t *testing.T) {
+		dk := DynaKube{}
+		assert.False(t, dk.FF().HasPlatformToken())
+	})
+
+	t.Run("platform status false => not a platform token", func(t *testing.T) {
+		dk := DynaKube{Status: DynaKubeStatus{APIToken: APITokenStatus{Platform: ptr.To(false)}}}
+		assert.False(t, dk.FF().HasPlatformToken())
+	})
+
+	t.Run("platform status true => is a platform token", func(t *testing.T) {
+		dk := DynaKube{Status: DynaKubeStatus{APIToken: APITokenStatus{Platform: ptr.To(true)}}}
+		assert.True(t, dk.FF().HasPlatformToken())
+	})
+}
 
 func TestTokens(t *testing.T) {
 	testName := "test-name"
