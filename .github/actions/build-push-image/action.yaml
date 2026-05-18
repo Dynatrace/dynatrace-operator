@@ -68,7 +68,7 @@ runs:
         build-args: |
           GO_LINKER_ARGS=${{ steps.linker-args.outputs.go_linker_args }}
           GOFIPS140=${{ inputs.fips == 'true' && 'v1.0.0' || 'off' }}
-          GODEBUG_ARG=${{ inputs.fips == 'true' && 'fips140=only,tlsmlkem=0' || '' }}
+          GODEBUG_ARG=${{ inputs.fips == 'true' && 'fips140=only' || '' }}
         context: .
         file: ${{ inputs.dockerfile }}
         provenance: false
