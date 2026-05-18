@@ -1,7 +1,6 @@
 package pod
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -31,11 +30,11 @@ func TestCreateMutationRequestBase(t *testing.T) {
 	t.Run("should create a mutation request", func(t *testing.T) {
 		dk := getTestDynakube()
 		podWebhook := createTestWebhook(t, handlermock.NewHandler(t), handlermock.NewHandler(t), getTestNamespace(), getTestPod(), dk)
-		mutationRequest, err := podWebhook.createMutationRequestBase(context.Background(), *createTestAdmissionRequest(getTestPod()))
+		mutationRequest, err := podWebhook.createMutationRequestBase(t.Context(), *createTestAdmissionRequest(getTestPod()))
 		require.NoError(t, err)
 		require.NotNil(t, mutationRequest)
 
-		expected := createTestMutationRequest(dk)
+		expected := createTestMutationRequest(t, dk)
 		assert.Equal(t, expected.Pod.ObjectMeta, mutationRequest.Pod.ObjectMeta)
 		assert.Equal(t, expected.Pod.Spec.Containers, mutationRequest.Pod.Spec.Containers)
 		assert.Equal(t, expected.Pod.Spec.InitContainers, mutationRequest.Pod.Spec.InitContainers)
@@ -60,7 +59,7 @@ func TestGetNamespaceFromRequest(t *testing.T) {
 		expected := getTestNamespace()
 		podWebhook := createTestWebhook(t, handlermock.NewHandler(t), handlermock.NewHandler(t), expected)
 
-		namespace, err := getNamespaceFromRequest(context.Background(), podWebhook.apiReader, *createTestAdmissionRequest(getTestPod()))
+		namespace, err := getNamespaceFromRequest(t.Context(), podWebhook.apiReader, *createTestAdmissionRequest(getTestPod()))
 		require.NoError(t, err)
 		assert.Equal(t, expected.ObjectMeta, namespace.ObjectMeta)
 	})
@@ -80,15 +79,15 @@ func TestGetDynakube(t *testing.T) {
 		expected := getTestDynakube()
 		podWebhook := createTestWebhook(t, handlermock.NewHandler(t), handlermock.NewHandler(t), expected)
 
-		dynakube, err := podWebhook.getDynakube(context.Background(), testDynakubeName)
+		dynakube, err := podWebhook.getDynakube(t.Context(), testDynakubeName)
 		require.NoError(t, err)
 		assert.Equal(t, expected.ObjectMeta, dynakube.ObjectMeta)
 		assert.Equal(t, expected.Spec.OneAgent.CloudNativeFullStack, dynakube.Spec.OneAgent.CloudNativeFullStack)
 	})
 }
 
-func createTestMutationRequest(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
-	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dk)
+func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
+	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
 
 func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {
