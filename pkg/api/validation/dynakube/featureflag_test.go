@@ -19,6 +19,8 @@ func TestDeprecatedFeatureFlag(t *testing.T) {
 }
 
 func deprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
+	t.Helper()
+
 	for _, featureFlag := range deprecatedFeatureFlags {
 		t.Run(featureFlag, func(t *testing.T) {
 			dk := &dynakube.DynaKube{
