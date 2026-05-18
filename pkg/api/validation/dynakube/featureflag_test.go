@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -13,13 +12,13 @@ import (
 )
 
 func TestDeprecatedFeatureFlag(t *testing.T) {
-	t.Run("Feature flag is deprecated", DeprecatedFeatureFlagWithDeprecatedFlags)
-	t.Run("Feature flag is not deprecated", DeprecatedFeatureFlagWithoutDeprecatedFlags)
-	t.Run("No annotations", DeprecatedFeatureFlagWithNoAnnotations)
-	t.Run("Multiple feature flags are deprecated", DeprecatedFeatureFlagWithMultipleDeprecatedFlags)
+	t.Run("Feature flag is deprecated", deprecatedFeatureFlagWithDeprecatedFlags)
+	t.Run("Feature flag is not deprecated", deprecatedFeatureFlagWithoutDeprecatedFlags)
+	t.Run("No annotations", deprecatedFeatureFlagWithNoAnnotations)
+	t.Run("Multiple feature flags are deprecated", deprecatedFeatureFlagWithMultipleDeprecatedFlags)
 }
 
-func DeprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
+func deprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
 	for _, featureFlag := range deprecatedFeatureFlags {
 		t.Run(featureFlag, func(t *testing.T) {
 			dk := &dynakube.DynaKube{
@@ -38,7 +37,9 @@ func DeprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
 	}
 }
 
-func DeprecatedFeatureFlagWithoutDeprecatedFlags(t *testing.T) {
+func deprecatedFeatureFlagWithoutDeprecatedFlags(t *testing.T) {
+	t.Helper()
+
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
@@ -52,14 +53,18 @@ func DeprecatedFeatureFlagWithoutDeprecatedFlags(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func DeprecatedFeatureFlagWithNoAnnotations(t *testing.T) {
+func deprecatedFeatureFlagWithNoAnnotations(t *testing.T) {
+	t.Helper()
+
 	dk := &dynakube.DynaKube{}
 	result := deprecatedFeatureFlag(t.Context(), nil, dk)
 
 	assert.Empty(t, result)
 }
 
-func DeprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
+func deprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
+	t.Helper()
+
 	annotations := map[string]string{}
 
 	for _, flag := range deprecatedFeatureFlags {
@@ -79,8 +84,6 @@ func DeprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 }
 
 func TestIsNodeImagePullWithoutCSIDisabled(t *testing.T) {
-	ctx := context.Background()
-
 	type testCase struct {
 		title           string
 		csiAvailable    bool
@@ -141,7 +144,7 @@ func TestIsNodeImagePullWithoutCSIDisabled(t *testing.T) {
 				},
 			}
 
-			errMsg := isNodeImagePullWithoutCSIDisabled(ctx, &Validator{}, dk)
+			errMsg := isNodeImagePullWithoutCSIDisabled(t.Context(), &Validator{}, dk)
 			assert.Equal(t, test.expectedMessage, errMsg)
 		})
 	}
