@@ -13,7 +13,6 @@ const (
 )
 
 type Config struct {
-	URL      string `json:"url"`
 	APIToken string `json:"apiToken"`
 
 	Proxy       string `json:"proxy"`

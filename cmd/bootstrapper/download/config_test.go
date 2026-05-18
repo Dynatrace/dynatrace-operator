@@ -108,7 +108,6 @@ func testConfig(t *testing.T) Config {
 	t.Helper()
 
 	return Config{
-		URL:           "url",
 		APIToken:      "token",
 		SkipCertCheck: true,
 		Proxy:         "proxy",
