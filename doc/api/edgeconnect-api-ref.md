@@ -42,6 +42,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|

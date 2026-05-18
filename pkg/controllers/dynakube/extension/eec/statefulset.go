@@ -173,7 +173,7 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
-		Image:           dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository + ":" + dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag,
+		Image:           dk.Spec.Templates.ExtensionExecutionController.ImageRef.String(),
 		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.GetPullPolicy(),
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
