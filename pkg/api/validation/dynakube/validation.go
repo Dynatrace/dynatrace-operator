@@ -87,6 +87,7 @@ var (
 		oneAgentResourceAttributesExceedsLimit,
 		otlpResourceAttributesExceedsLimit,
 		deprecatedPaasToken,
+		isNodeImagePullWithoutCSIDisabled,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	warningFeatureFlagDeprecated = `Using deprecated feature flags: `
+	warningFeatureFlagDeprecated   = `Using deprecated feature flags: `
+	warningNodeImagePullWithoutCSI = "the `node-image-pull` feature flag only affects the behavior of the CSI driver, other previous `node-image-pull` related behavior has been defaulted."
 )
 
 var deprecatedFeatureFlags = []string{
@@ -30,6 +31,14 @@ func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKub
 
 	if len(results) > 0 {
 		return warningFeatureFlagDeprecated + strings.Join(results, ", ")
+	}
+
+	return ""
+}
+
+func isNodeImagePullWithoutCSIDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if !dk.OneAgent().IsCSIAvailable() && dk.FF().IsNodeImagePullSet() {
+		return warningNodeImagePullWithoutCSI
 	}
 
 	return ""

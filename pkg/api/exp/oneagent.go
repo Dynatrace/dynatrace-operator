@@ -57,6 +57,12 @@ func (ff *FeatureFlags) IsNodeImagePull() bool {
 	return ff.getBoolWithDefault(OANodeImagePullKey, false)
 }
 
+func (ff *FeatureFlags) IsNodeImagePullSet() bool {
+	_, ok := ff.annotations[OANodeImagePullKey]
+
+	return ok
+}
+
 func (ff *FeatureFlags) GetNodeImagePullTechnology() string {
 	return ff.getRaw(OANodeImagePullTechnologiesKey)
 }

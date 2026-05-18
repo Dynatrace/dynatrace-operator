@@ -1,10 +1,13 @@
 package validation
 
 import (
+	"context"
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -73,4 +76,73 @@ func DeprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 	result := deprecatedFeatureFlag(t.Context(), nil, dk)
 	expected := warningFeatureFlagDeprecated + strings.Join(deprecatedFeatureFlags, ", ")
 	assert.Equal(t, expected, result)
+}
+
+func TestIsNodeImagePullWithoutCSIDisabled(t *testing.T) {
+	ctx := context.Background()
+
+	type testCase struct {
+		title           string
+		csiAvailable    bool
+		annotations     map[string]string
+		expectedMessage string
+	}
+
+	testCases := []testCase{
+		{
+			title:           "CSI available, node-image-pull not set => no warning",
+			csiAvailable:    true,
+			annotations:     nil,
+			expectedMessage: "",
+		},
+		{
+			title:           "CSI available, node-image-pull enabled => no warning",
+			csiAvailable:    true,
+			annotations:     map[string]string{exp.OANodeImagePullKey: "true"},
+			expectedMessage: "",
+		},
+		{
+			title:           "CSI not available, node-image-pull not set => no warning",
+			csiAvailable:    false,
+			annotations:     nil,
+			expectedMessage: "",
+		},
+		{
+			title:           "CSI not available, node-image-pull explicitly disabled => warning",
+			csiAvailable:    false,
+			annotations:     map[string]string{exp.OANodeImagePullKey: "false"},
+			expectedMessage: warningNodeImagePullWithoutCSI,
+		},
+		{
+			title:           "CSI not available, node-image-pull enabled => warning",
+			csiAvailable:    false,
+			annotations:     map[string]string{exp.OANodeImagePullKey: "true"},
+			expectedMessage: warningNodeImagePullWithoutCSI,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.title, func(t *testing.T) {
+			installconfig.SetModulesOverride(t, installconfig.Modules{
+				CSIDriver:            test.csiAvailable,
+				ActiveGate:           true,
+				OneAgent:             true,
+				Extensions:           true,
+				LogMonitoring:        true,
+				EdgeConnect:          true,
+				Supportability:       true,
+				KubernetesMonitoring: true,
+				KSPM:                 true,
+			})
+
+			dk := &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: test.annotations,
+				},
+			}
+
+			errMsg := isNodeImagePullWithoutCSIDisabled(ctx, &Validator{}, dk)
+			assert.Equal(t, test.expectedMessage, errMsg)
+		})
+	}
 }
