@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -17,8 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
-
-var testLogger = logd.Get()
 
 func TestFindRootOwnerOfPod(t *testing.T) {
 	ctx := context.Background()
@@ -77,7 +74,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		client := fake.NewClient(&pod, &deployment, &daemonSet, &namespace)
 
-		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 		assert.Equal(t, "daemonset", workloadInfo.Kind)
@@ -103,7 +100,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
 
 		client := fake.NewClient(&pod)
-		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 		assert.Equal(t, "pod", workloadInfo.Kind)
@@ -142,7 +139,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
 
 		client := fake.NewClient(&pod, &secret)
-		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 		assert.Equal(t, "pod", workloadInfo.Kind)
@@ -176,7 +173,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
 
 		client := fake.NewClient(&pod)
-		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, namespaceName, workloadInfo.Name)
 		assert.Equal(t, "pod", workloadInfo.Kind)
@@ -236,7 +233,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		client := fake.NewClient(&pod, &deployment, &secret, &namespace)
 
-		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 		assert.Equal(t, "deployment", workloadInfo.Kind)
@@ -267,7 +264,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		client := createFailK8sClient(t)
 
-		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 	})
@@ -297,7 +294,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
 
 		client := createFailK8sClient(t)
-		_, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
+		_, err := FindRootOwnerOfPod(ctx, client, request)
 		require.Error(t, err)
 	})
 }
