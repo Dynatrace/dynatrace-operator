@@ -29,7 +29,7 @@ CYCLONEDX_GOMOD_VERSION ?= v1.9.0
 # renovate depName=github.com/mikefarah/yq/v4
 YQ_VERSION ?= v4.49.2
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.18.3
+GO_TEST_COVERAGE_VERSION ?= v2.18.8
 
 # Enable renovate once project is migrated to newer structure
 OPERATOR_SDK_VERSION ?= v1.36.0
