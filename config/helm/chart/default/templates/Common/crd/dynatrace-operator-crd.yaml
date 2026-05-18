@@ -1108,6 +1108,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -1415,6 +1418,9 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -1623,6 +1629,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -1705,6 +1714,9 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3098,6 +3110,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3405,6 +3420,9 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3613,6 +3631,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3695,6 +3716,9 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -6619,6 +6643,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -6926,6 +6953,9 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7134,6 +7164,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7229,6 +7262,9 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7358,6 +7394,9 @@ spec:
                     properties:
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -8087,6 +8126,9 @@ spec:
                 type: array
               imageRef:
                 properties:
+                  digest:
+                    pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                    type: string
                   pullPolicy:
                     enum:
                     - IfNotPresent
