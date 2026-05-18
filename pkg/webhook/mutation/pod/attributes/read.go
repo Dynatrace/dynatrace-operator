@@ -14,14 +14,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (attrs *PodAttributes) readMetadataAnnotations(request mutator.BaseRequest) {
+func (attrs *Pod) readMetadataAnnotations(request mutator.BaseRequest) {
 	attrs.applyEnrichmentRules(request.Namespace, request.DynaKube)
 	attrs.readNamespaceAnnotationAttributes(request.Namespace)
 	attrs.readPodAnnotationAttributes(*request.Pod)
 }
 
 // collect attributes from pod and namespace "metadata.dynatrace.com/" annotations
-func (attrs *PodAttributes) readNamespaceAnnotationAttributes(namespace corev1.Namespace) {
+func (attrs *Pod) readNamespaceAnnotationAttributes(namespace corev1.Namespace) {
 	for key, value := range namespace.Annotations {
 		if after, ok := strings.CutPrefix(key, metadataenrichment.Prefix); ok {
 			attrs.namespaceAnnotations[after] = value
@@ -30,7 +30,7 @@ func (attrs *PodAttributes) readNamespaceAnnotationAttributes(namespace corev1.N
 }
 
 // collect attributes from pod and namespace "metadata.dynatrace.com/" annotations
-func (attrs *PodAttributes) readPodAnnotationAttributes(pod corev1.Pod) {
+func (attrs *Pod) readPodAnnotationAttributes(pod corev1.Pod) {
 	// pod annotations take precedence over namespace annotations
 	for key, value := range pod.Annotations {
 		if after, ok := strings.CutPrefix(key, metadataenrichment.Prefix); ok {
@@ -39,7 +39,7 @@ func (attrs *PodAttributes) readPodAnnotationAttributes(pod corev1.Pod) {
 	}
 }
 
-func (attrs *PodAttributes) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.DynaKube) {
+func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.DynaKube) {
 	for _, rule := range dk.Status.MetadataEnrichment.Rules {
 		var (
 			valueFromNamespace string
@@ -63,7 +63,7 @@ func (attrs *PodAttributes) applyEnrichmentRules(namespace corev1.Namespace, dk 
 	}
 }
 
-func (attrs *PodAttributes) readWorkloadInfoAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) error {
+func (attrs *Pod) readWorkloadInfoAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) error {
 	workloadInfo, err := workload.FindRootOwnerOfPod(ctx, client, request)
 	if err != nil {
 		return errors.WithStack(err)
@@ -75,12 +75,12 @@ func (attrs *PodAttributes) readWorkloadInfoAttributes(ctx context.Context, requ
 	return nil
 }
 
-func (attrs *PodAttributes) readPodAttributes(request mutator.BaseRequest) {
-	attrs.podEnvVars = append(attrs.podEnvVars, []corev1.EnvVar{
-		{Name: K8sPodNameEnv, ValueFrom: k8senv.NewSourceForField("metadata.name")},
-		{Name: K8sPodUIDEnv, ValueFrom: k8senv.NewSourceForField("metadata.uid")},
-		{Name: K8sNodeNameEnv, ValueFrom: k8senv.NewSourceForField("spec.nodeName")},
-	}...)
+func (attrs *Pod) readPodAttributes(request mutator.BaseRequest) {
+	attrs.podEnvVars = append(attrs.podEnvVars,
+		corev1.EnvVar{Name: K8sPodNameEnv, ValueFrom: k8senv.NewSourceForField("metadata.name")},
+		corev1.EnvVar{Name: K8sPodUIDEnv, ValueFrom: k8senv.NewSourceForField("metadata.uid")},
+		corev1.EnvVar{Name: K8sNodeNameEnv, ValueFrom: k8senv.NewSourceForField("spec.nodeName")},
+	)
 
 	attrs.podInfo[K8sPodNameAttr] = k8senv.NewRef(K8sPodNameEnv)
 	attrs.podInfo[K8sPodUIDAttr] = k8senv.NewRef(K8sPodUIDEnv)

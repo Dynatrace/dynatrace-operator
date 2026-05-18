@@ -13,11 +13,11 @@ const (
 	AnnotationWorkloadName = metadataenrichment.Prefix + K8sWorkloadNameAttr
 )
 
-func (attrs *PodAttributes) ApplyAnnotationsToPod(pod *corev1.Pod) error {
+func (attrs *Pod) ApplyAnnotationsToPod(pod *corev1.Pod) error {
 	annotations := attrs.combineForMetadataAnnotations()
 
 	for key, value := range annotations {
-		k8spod.SetPodAnnotationIfNotExists(pod, metadataenrichment.Prefix+key, value)
+		k8spod.SetAnnotationIfNotExists(pod, metadataenrichment.Prefix+key, value)
 	}
 
 	// set workload annotations no matter what
@@ -26,18 +26,18 @@ func (attrs *PodAttributes) ApplyAnnotationsToPod(pod *corev1.Pod) error {
 	return attrs.setPodMetadataJSONAnnotation(pod)
 }
 
-func (attrs *PodAttributes) setPodMetadataJSONAnnotation(pod *corev1.Pod) error {
+func (attrs *Pod) setPodMetadataJSONAnnotation(pod *corev1.Pod) error {
 	json, err := attrs.combineForJSONAnnotation()
 	if err != nil {
 		return err
 	}
 
-	k8spod.SetPodAnnotationIfNotExists(pod, metadataenrichment.Annotation, json)
+	k8spod.SetAnnotationIfNotExists(pod, metadataenrichment.Annotation, json)
 
 	return nil
 }
 
-func (attrs *PodAttributes) setWorkloadAnnotations(pod *corev1.Pod) {
+func (attrs *Pod) setWorkloadAnnotations(pod *corev1.Pod) {
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
 	}

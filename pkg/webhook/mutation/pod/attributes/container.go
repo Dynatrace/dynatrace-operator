@@ -8,17 +8,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type ContainerAttributes struct {
+type Container struct {
 	ContainerName string `json:"k8s.container.name,omitempty"`
 }
 
-func NewContainerAttributes(c corev1.Container) *ContainerAttributes {
-	return &ContainerAttributes{
+func NewContainerAttributes(c corev1.Container) *Container {
+	return &Container{
 		ContainerName: c.Name,
 	}
 }
 
-func (attrs *ContainerAttributes) ToMap() map[string]string {
+func (attrs *Container) ToMap() map[string]string {
 	combined := make(map[string]string)
 	combined[K8sContainerNameAttr] = attrs.ContainerName
 
@@ -33,12 +33,12 @@ type ContainerInfo struct {
 	ImageDigest string `json:"container_image.digest,omitempty"`
 
 	// used for metadata enrichment and OTLP exporter auto-config
-	ContainerAttributes `json:",omitempty"`
+	Container `json:",omitempty"`
 }
 
 func NewContainerInfo(c corev1.Container) *ContainerInfo {
 	infos := &ContainerInfo{
-		ContainerAttributes: *NewContainerAttributes(c),
+		Container: *NewContainerAttributes(c),
 	}
 
 	registry, repo, found := strings.Cut(c.Image, "/")

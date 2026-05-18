@@ -63,19 +63,19 @@ func TestGetName(t *testing.T) {
 func TestSetPodAnnotationIfNotExists(t *testing.T) {
 	t.Run("sets key when absent", func(t *testing.T) {
 		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{}}}
-		SetPodAnnotationIfNotExists(pod, "my-key", "my-value")
+		SetAnnotationIfNotExists(pod, "my-key", "my-value")
 		assert.Equal(t, "my-value", pod.Annotations["my-key"])
 	})
 
 	t.Run("does not overwrite existing key", func(t *testing.T) {
 		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"my-key": "existing"}}}
-		SetPodAnnotationIfNotExists(pod, "my-key", "new-value")
+		SetAnnotationIfNotExists(pod, "my-key", "new-value")
 		assert.Equal(t, "existing", pod.Annotations["my-key"])
 	})
 
 	t.Run("initializes nil annotations map before setting", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		SetPodAnnotationIfNotExists(pod, "my-key", "my-value")
+		SetAnnotationIfNotExists(pod, "my-key", "my-value")
 		require.NotNil(t, pod.Annotations)
 		assert.Equal(t, "my-value", pod.Annotations["my-key"])
 	})

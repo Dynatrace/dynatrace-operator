@@ -16,8 +16,8 @@ import (
 
 // newTestPodAttributes creates a PodAttributes with all maps initialized so tests can set
 // individual fields without triggering nil-map panics.
-func newTestPodAttributes() *PodAttributes {
-	return &PodAttributes{
+func newTestPodAttributes() *Pod {
+	return &Pod{
 		rules:                make(map[string]string),
 		rulesPropagate:       make(map[string]string),
 		namespaceAnnotations: make(map[string]string),
@@ -85,7 +85,7 @@ func TestConvert_Method(t *testing.T) {
 
 	t.Run("passes ContainerAttributes into the result", func(t *testing.T) {
 		attrs := newTestPodAttributes()
-		container := ContainerAttributes{ContainerName: "my-container"}
+		container := Container{ContainerName: "my-container"}
 
 		result := attrs.Convert(simpleConvertFunc, container)
 
@@ -129,7 +129,7 @@ func TestCombine_ContainerWinsOverClusterInfo(t *testing.T) {
 	attrs := newTestPodAttributes()
 	// use the actual container name key for an apples-to-apples comparison
 	attrs.clusterInfo[K8sContainerNameAttr] = "from-cluster"
-	container := ContainerAttributes{ContainerName: "from-container"}
+	container := Container{ContainerName: "from-container"}
 
 	result := attrs.combineAll(container)
 
@@ -139,7 +139,7 @@ func TestCombine_ContainerWinsOverClusterInfo(t *testing.T) {
 func TestCombine_RulesWinsOverContainer(t *testing.T) {
 	attrs := newTestPodAttributes()
 	attrs.rules[K8sContainerNameAttr] = "from-rules"
-	container := ContainerAttributes{ContainerName: "from-container"}
+	container := Container{ContainerName: "from-container"}
 
 	result := attrs.combineAll(container)
 
@@ -220,7 +220,7 @@ func TestCombine_UniqueKeysFromAllSourcesMerged(t *testing.T) {
 	attrs.namespaceAnnotations["ns.key"] = "ns-val"
 	attrs.podAnnotations["pod-anno.key"] = "pod-anno-val"
 	attrs.custom["custom.key"] = "custom-val"
-	container := ContainerAttributes{ContainerName: "my-container"}
+	container := Container{ContainerName: "my-container"}
 
 	result := attrs.combineAll(container)
 
@@ -238,8 +238,8 @@ func TestCombine_UniqueKeysFromAllSourcesMerged(t *testing.T) {
 
 func TestCombine_MultipleContainerAttrs_LaterOneWins(t *testing.T) {
 	attrs := newTestPodAttributes()
-	first := ContainerAttributes{ContainerName: "first-container"}
-	second := ContainerAttributes{ContainerName: "second-container"}
+	first := Container{ContainerName: "first-container"}
+	second := Container{ContainerName: "second-container"}
 
 	result := attrs.combineAll(first, second)
 

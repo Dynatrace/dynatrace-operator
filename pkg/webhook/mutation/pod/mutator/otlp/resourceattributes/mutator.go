@@ -57,7 +57,7 @@ func (m *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationR
 func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (bool, error) {
 	log := logd.FromContext(ctx)
 
-	log.Debug("injecting OTLP resource PodAttributes")
+	log.Debug("injecting OTLP resource attributes")
 
 	attrs, err := attributes.NewPodAttributes(ctx, *request, m.kubeClient)
 	if err != nil {
@@ -89,7 +89,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 	return mutated, nil
 }
 
-func (m *Mutator) addResourceAttributes(podAttrs *attributes.PodAttributes, c *corev1.Container) bool {
+func (m *Mutator) addResourceAttributes(podAttrs *attributes.Pod, c *corev1.Container) bool {
 	// existing existingResourceAttrs have the highest precedence, they are the base
 	existingResourceAttrs, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
 	if ok {
@@ -140,7 +140,7 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool
 	)
 }
 
-func ensureEnvVarSourcesSet(attrs *attributes.PodAttributes, c *corev1.Container) bool {
+func ensureEnvVarSourcesSet(attrs *attributes.Pod, c *corev1.Container) bool {
 	mutated := false
 
 	podEnvs := attrs.GetPodEnvVars()

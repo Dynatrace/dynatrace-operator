@@ -6,7 +6,7 @@ const (
 	DeprecatedClusterIDKey    = "dt.kubernetes.cluster.id"
 )
 
-func (attrs *PodAttributes) applyDeprecatedAttributes() {
+func (attrs *Pod) applyDeprecatedAttributes() {
 	attrs.deprecated[DeprecatedWorkloadKindKey] = attrs.workloadInfo[K8sWorkloadKindAttr]
 	attrs.deprecated[DeprecatedWorkloadNameKey] = attrs.workloadInfo[K8sWorkloadNameAttr]
 	attrs.deprecated[DeprecatedClusterIDKey] = attrs.clusterInfo[K8sClusterUIDAttr]

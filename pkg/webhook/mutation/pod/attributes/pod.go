@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type PodAttributes struct {
+type Pod struct {
 
 	// non-user given
 	rules                map[string]string
@@ -29,8 +29,8 @@ type PodAttributes struct {
 	useDeprecated bool
 }
 
-func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) (*PodAttributes, error) {
-	attrs := &PodAttributes{
+func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) (*Pod, error) {
+	attrs := &Pod{
 		podAnnotations:       make(map[string]string),
 		namespaceAnnotations: make(map[string]string),
 		rulesPropagate:       make(map[string]string),
@@ -60,21 +60,21 @@ func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client c
 	return attrs, nil
 }
 
-func (attrs *PodAttributes) SetCustomAttributes(custom map[string]string) {
+func (attrs *Pod) SetCustomAttributes(custom map[string]string) {
 	attrs.custom = custom
 }
 
-func (attrs *PodAttributes) GetPodEnvVars() []corev1.EnvVar {
+func (attrs *Pod) GetPodEnvVars() []corev1.EnvVar {
 	return attrs.podEnvVars
 }
 
-func (attrs *PodAttributes) Convert(c convertFunc, containerAttrs ...ContainerAttributes) []string {
+func (attrs *Pod) Convert(c convertFunc, containerAttrs ...Container) []string {
 	combined := attrs.combineAll(containerAttrs...)
 
 	return convert(combined, c)
 }
 
-func (attrs *PodAttributes) combineAll(containerAttrs ...ContainerAttributes) map[string]string {
+func (attrs *Pod) combineAll(containerAttrs ...Container) map[string]string {
 	combined := make(map[string]string)
 
 	// precedence from low -> high
@@ -102,7 +102,7 @@ func (attrs *PodAttributes) combineAll(containerAttrs ...ContainerAttributes) ma
 	return combined
 }
 
-func (attrs *PodAttributes) combineForMetadataAnnotations() map[string]string {
+func (attrs *Pod) combineForMetadataAnnotations() map[string]string {
 	combined := make(map[string]string)
 
 	// make sure we use the same precedence as in combine()
@@ -113,7 +113,7 @@ func (attrs *PodAttributes) combineForMetadataAnnotations() map[string]string {
 	return combined
 }
 
-func (attrs *PodAttributes) combineForJSONAnnotation() (string, error) {
+func (attrs *Pod) combineForJSONAnnotation() (string, error) {
 	combined := make(map[string]string)
 
 	// make sure we use the same precedence as in combineAll()
