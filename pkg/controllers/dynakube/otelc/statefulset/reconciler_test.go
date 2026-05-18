@@ -479,7 +479,7 @@ func TestReconcileReplicas(t *testing.T) {
 func TestAppArmorAnnotationHandling(t *testing.T) {
 	const appArmorAnnotationKey = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
 
-	getStatefulSet := func(t *testing.T) *appsv1.StatefulSet {
+	getStatefulSetWithExtensions := func(t *testing.T) *appsv1.StatefulSet {
 		t.Helper()
 
 		dk := getTestDynakubeWithExtensions()
@@ -496,24 +496,68 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		return sts
 	}
 
-	t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
-		t.Cleanup(version.DisableCacheForTest(30))
+	getStatefulSetWithTelemetryIngest := func(t *testing.T) *appsv1.StatefulSet {
+		t.Helper()
 
-		sts := getStatefulSet(t)
-		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
-		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
-		assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
-		assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		dk := getTestDynakubeWithTelemetryIngest()
+		dk.Spec.Templates.OpenTelemetryCollector.Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
+		clt := fake.NewClient(dk)
+
+		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &configMap))
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		return sts
+	}
+
+	t.Run("with extensions", func(t *testing.T) {
+		t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
+			t.Cleanup(version.DisableCacheForTest(30))
+
+			sts := getStatefulSetWithExtensions(t)
+			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+			assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+			assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		})
+
+		t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
+			t.Cleanup(version.DisableCacheForTest(31))
+
+			sts := getStatefulSetWithExtensions(t)
+			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+			assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+			assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		})
 	})
 
-	t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
-		t.Cleanup(version.DisableCacheForTest(31))
+	t.Run("with telemetry ingest only", func(t *testing.T) {
+		t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
+			t.Cleanup(version.DisableCacheForTest(30))
 
-		sts := getStatefulSet(t)
-		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
-		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
-		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
-		assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+			sts := getStatefulSetWithTelemetryIngest(t)
+			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+			assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+			assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		})
+
+		t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
+			t.Cleanup(version.DisableCacheForTest(31))
+
+			sts := getStatefulSetWithTelemetryIngest(t)
+			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+			assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+			assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		})
 	})
 }
 

@@ -142,11 +142,11 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	templateAnnotations := map[string]string{}
 
-	if dk.Extensions().IsPrometheusEnabled() {
-		if dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
-			templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.OpenTelemetryCollector.Annotations, containerName)
-		}
+	if dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
+		templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.OpenTelemetryCollector.Annotations, containerName)
+	}
 
+	if dk.Extensions().IsPrometheusEnabled() {
 		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.Extensions().GetTLSSecretName(), dk.Namespace)
 		if err != nil {
 			return nil, err
