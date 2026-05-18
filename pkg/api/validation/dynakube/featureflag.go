@@ -10,7 +10,7 @@ import (
 
 const (
 	warningFeatureFlagDeprecated   = `Using deprecated feature flags: `
-	warningNodeImagePullWithoutCSI = "the `node-image-pull` feature flag only affects the behavior of the CSI driver, other previous `node-image-pull` related behavior has been defaulted."
+	warningNodeImagePullWithoutCSI = "The `" + exp.OANodeImagePullKey + "` annotation is set, but the CSI driver is not available on this cluster. This feature flag only affects the behavior of the CSI driver, so it will have no effect. Other previous `node-image-pull` related behavior has been defaulted."
 )
 
 var deprecatedFeatureFlags = []string{
