@@ -103,6 +103,7 @@ func oneAgentFeature(t *testing.T, featureName, dkName, override string) feature
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 		dynakubeComponents.WithUsePublicRegistryFF(),
+		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
@@ -132,6 +133,7 @@ func activeGateFeature(t *testing.T, featureName, dkName, override string) featu
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithUsePublicRegistryFF(),
+		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
@@ -162,6 +164,7 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithUsePublicRegistryFF(),
+		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 		dynakubeComponents.WithAnnotations(map[string]string{
 			exp.OANodeImagePullKey: "true",
