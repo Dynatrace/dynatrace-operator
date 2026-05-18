@@ -25,6 +25,13 @@ func NewFlags(annotations map[string]string) *FeatureFlags {
 	return &FeatureFlags{annotations: annotations}
 }
 
+// IsSet checks if the annotation(feature-flag) is present, does not check the value in any way.
+func (ff *FeatureFlags) IsSet(flag string) bool {
+	_, ok := ff.annotations[flag]
+
+	return ok
+}
+
 // GetNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
 func (ff *FeatureFlags) GetNoProxy() string {
 	return ff.getRaw(NoProxyKey)

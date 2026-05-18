@@ -29,7 +29,6 @@ func NoCSI(t *testing.T) features.Feature {
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: bootstrapperImage}}),
 		dynakubeComponents.WithAnnotations(map[string]string{
-			exp.OANodeImagePullKey:             "true",
 			exp.OANodeImagePullTechnologiesKey: "php",
 		}),
 	)
