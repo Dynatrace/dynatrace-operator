@@ -77,7 +77,7 @@ func deprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
-func TestIsNodeImagePullWithoutCSIDisabled(t *testing.T) {
+func TestIsNodeImagePullWithoutCSI(t *testing.T) {
 	type testCase struct {
 		title           string
 		csiAvailable    bool
@@ -138,7 +138,7 @@ func TestIsNodeImagePullWithoutCSIDisabled(t *testing.T) {
 				},
 			}
 
-			errMsg := isNodeImagePullWithoutCSIDisabled(t.Context(), &Validator{}, dk)
+			errMsg := isNodeImagePullWithoutCSI(t.Context(), &Validator{}, dk)
 			assert.Equal(t, test.expectedMessage, errMsg)
 		})
 	}

@@ -40,7 +40,7 @@ func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKub
 	return ""
 }
 
-func isNodeImagePullWithoutCSIDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+func isNodeImagePullWithoutCSI(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if !dk.OneAgent().IsCSIAvailable() && dk.FF().IsSet(exp.OANodeImagePullKey) {
 		return warningNodeImagePullWithoutCSI
 	}
