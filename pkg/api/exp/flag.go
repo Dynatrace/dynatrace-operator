@@ -33,6 +33,11 @@ func (ff *FeatureFlags) WithPlatformToken() {
 
 func (ff *FeatureFlags) HasPlatformToken() bool {
 	return ff.hasPlatformToken
+// IsSet checks if the annotation(feature-flag) is present, does not check the value in any way.
+func (ff *FeatureFlags) IsSet(flag string) bool {
+	_, ok := ff.annotations[flag]
+
+	return ok
 }
 
 // GetNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.

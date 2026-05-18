@@ -13,7 +13,6 @@ func (dk *DynaKube) OneAgent() *oneagent.OneAgent {
 		dk.APIURLHost(),
 		dk.FF().IsOneAgentPrivileged(),
 		dk.FF().SkipOneAgentLivenessProbe(),
-		dk.FF().IsNodeImagePull(),
 		dk.GetResourceAttributes(),
 	)
 
