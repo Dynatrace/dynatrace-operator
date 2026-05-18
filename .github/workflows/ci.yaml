@@ -19,6 +19,7 @@ env:
   IMAGE_REGISTRY: ghcr.io
   IMAGE_NAME: dynatrace/dynatrace-operator
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+  FIPS_PLATFORMS: linux/amd64,linux/arm64
   PR_PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
@@ -339,6 +340,34 @@ jobs:
         with:
           platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
           images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+
+  build-push-fips:
+    needs: [ detect-changes ]
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.helm_changed)
+    name: Build FIPS images
+    permissions:
+      packages: write
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Login to Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        uses: ./.github/actions/build-push-image
+        with:
+          platforms: ${{github.ref_protected && env.FIPS_PLATFORMS || env.FIPS_PLATFORMS }}
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          fips: true
+          suffix: "fips"
 
   build-push-olm-bundle:
     needs: [ detect-changes ]
