@@ -82,7 +82,7 @@ ARG GODEBUG_ARG
 ENV OPERATOR=dynatrace-operator \
     USER_UID=1001 \
     USER_NAME=dynatrace-operator \
-    GODEBUG=${GODEBUG_ARG:+fips140=only,tlsmlkem=0}
+    GODEBUG=${GODEBUG_ARG:+fips140=only}
 
 RUN /usr/local/bin/user_setup
 
