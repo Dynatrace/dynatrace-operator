@@ -23,8 +23,12 @@ var deprecatedFeatureFlags = []string{
 func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	var results []string
 
+	if len(dk.Annotations) == 0 {
+		return ""
+	}
+
 	for _, flag := range deprecatedFeatureFlags {
-		if dk.Annotations != nil && dk.Annotations[flag] != "" {
+		if dk.FF().IsSet(flag) {
 			results = append(results, flag)
 		}
 	}
@@ -37,7 +41,7 @@ func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKub
 }
 
 func isNodeImagePullWithoutCSIDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if !dk.OneAgent().IsCSIAvailable() && dk.FF().IsNodeImagePullSet() {
+	if !dk.OneAgent().IsCSIAvailable() && dk.FF().IsSet(exp.OANodeImagePullKey) {
 		return warningNodeImagePullWithoutCSI
 	}
 
