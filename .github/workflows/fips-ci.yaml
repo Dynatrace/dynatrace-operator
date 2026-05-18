@@ -63,12 +63,12 @@ jobs:
             **/*.go
             go.mod
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
-      - name: Detect fips.Dockerfile changes
+      - name: Detect Dockerfile changes
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: dockerfile
         with:
           files: |
-            fips.Dockerfile
+            Dockerfile
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: List Changed Files
         run: |
