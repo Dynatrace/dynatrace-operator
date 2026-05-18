@@ -140,11 +140,11 @@ func TestNoCSI_node_image_pull_with_no_csi(t *testing.T) {
 	testEnv.Test(t, bootstrapper.NoCSI(t))
 }
 
-func TestNoCSI_use_public_registry_codemodules(t *testing.T) {
+func TestNoCSI_use_public_registry_without_override_codemodules(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.CodeModules(t))
 }
 
-func TestNoCSI_use_public_registry_codemodules_with_override(t *testing.T) {
+func TestNoCSI_use_public_registry_with_override_codemodules(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.CodeModulesWithOverride(t))
 }
 

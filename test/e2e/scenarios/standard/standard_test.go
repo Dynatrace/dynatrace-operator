@@ -73,19 +73,19 @@ func TestStandard_public_registry_images(t *testing.T) {
 	testEnv.Test(t, publicregistry.Feature(t))
 }
 
-func TestStandard_use_public_registry_oneagent(t *testing.T) {
+func TestStandard_use_public_registry_without_override_oneagent(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.OneAgent(t))
 }
 
-func TestStandard_use_public_registry_oneagent_with_override(t *testing.T) {
+func TestStandard_use_public_registry_with_override_oneagent(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.OneAgentWithOverride(t))
 }
 
-func TestStandard_use_public_registry_activegate(t *testing.T) {
+func TestStandard_use_public_registry_without_override_activegate(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.ActiveGate(t))
 }
 
-func TestStandard_use_public_registry_activegate_with_override(t *testing.T) {
+func TestStandard_use_public_registry_with_override_activegate(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.ActiveGateWithOverride(t))
 }
 
