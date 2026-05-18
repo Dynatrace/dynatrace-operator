@@ -40,6 +40,14 @@ func createDynakubeWithAppInject(name string, selector metav1.LabelSelector) *dy
 	return dk
 }
 
+func createDynakubeWithAppInjectImage(name string, selector metav1.LabelSelector) *dynakube.DynaKube {
+	dk := createBaseDynakube(name, true, false)
+	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
+	dk.Status.CodeModules.ImageID = "test-image-id"
+
+	return dk
+}
+
 func createDynakubeWithMetadataEnrichment(name string, selector metav1.LabelSelector) *dynakube.DynaKube {
 	dk := createBaseDynakube(name, false, true)
 	dk.Spec.MetadataEnrichment.NamespaceSelector = selector
@@ -68,18 +76,6 @@ func createDynakubeWithOTLP(name string, selector metav1.LabelSelector) *dynakub
 			},
 		},
 	}
-
-	return dk
-}
-
-func createDynakubeWithNodeImagePullAndNoCSI(name string, selector metav1.LabelSelector) *dynakube.DynaKube {
-	dk := createBaseDynakube(name, true, false)
-
-	dk.Annotations = make(map[string]string)
-
-	dk.Annotations[exp.OANodeImagePullKey] = "true"
-
-	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
 
 	return dk
 }

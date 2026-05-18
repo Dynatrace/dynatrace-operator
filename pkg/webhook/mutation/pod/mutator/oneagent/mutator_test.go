@@ -61,16 +61,6 @@ func TestIsEnabled(t *testing.T) {
 			enabled: true,
 		},
 		{
-			title:   "OA + FF enabled => enabled",
-			podMods: func(p *corev1.Pod) {},
-			nsMods:  func(n *corev1.Namespace) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
-			},
-			enabled: true,
-		},
-		{
 			title:   "OA enabled + auto-inject false + no pod annotation => disabled",
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},

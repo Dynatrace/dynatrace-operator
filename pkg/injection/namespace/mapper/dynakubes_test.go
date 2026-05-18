@@ -205,10 +205,10 @@ func TestUnmapFromDynaKube(t *testing.T) {
 	t.Run("Remove "+consts.BootstrapperInitSecretName, func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
-		dkNodeImagePull := createDynakubeWithNodeImagePullAndNoCSI("dk-test", convertToLabelSelector(labels))
+		dkAppmonImage := createDynakubeWithAppInjectImage("dk-test", convertToLabelSelector(labels))
 
 		labels := map[string]string{
-			dtwebhook.InjectionInstanceLabel: dkNodeImagePull.Name,
+			dtwebhook.InjectionInstanceLabel: dkAppmonImage.Name,
 		}
 
 		ns := createNamespace("ns-bootstrapper", labels)
@@ -217,7 +217,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		clt := fake.NewClient(ns, ns2)
 		ctx := t.Context()
 
-		namespaces, err := GetNamespacesForDynakube(ctx, clt, dkNodeImagePull.Name)
+		namespaces, err := GetNamespacesForDynakube(ctx, clt, dkAppmonImage.Name)
 		require.NoError(t, err)
 
 		var secretNS1 corev1.Secret
@@ -240,7 +240,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		require.NotEmpty(t, secretNS2)
 		assert.Equal(t, consts.BootstrapperInitSecretName, secretNS2.Name)
 
-		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dkNodeImagePull)
+		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dkAppmonImage)
 		err = dm.UnmapFromDynaKube(namespaces)
 		require.NoError(t, err)
 
