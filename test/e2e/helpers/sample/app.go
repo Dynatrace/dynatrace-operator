@@ -162,6 +162,18 @@ func WithContainerSecurityContext(securityContext corev1.SecurityContext) Option
 	}
 }
 
+// WithImagePullSecret adds the given secret name to the pod's
+// spec.imagePullSecrets list. Used in scenarios where the user's pod must
+// authenticate to a private registry to pull the operator-injected init
+// container image (e.g. when feature.dynatrace.com/use-public-registry is
+// enabled together with feature.dynatrace.com/node-image-pull) and without CSI driver.
+func WithImagePullSecret(secretName string) Option {
+	return func(app *App) {
+		app.base.Spec.ImagePullSecrets = append(app.base.Spec.ImagePullSecrets,
+			corev1.LocalObjectReference{Name: secretName})
+	}
+}
+
 func (app *App) Name() string {
 	return app.base.Name
 }

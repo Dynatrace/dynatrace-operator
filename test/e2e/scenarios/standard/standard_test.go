@@ -14,6 +14,7 @@ import (
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/switchmodes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/e2e/features/supportarchive"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
@@ -70,6 +71,22 @@ func TestStandard_cloudnative_codemodules_migrate_to_node_image_pull(t *testing.
 
 func TestStandard_public_registry_images(t *testing.T) {
 	testEnv.Test(t, publicregistry.Feature(t))
+}
+
+func TestStandard_use_public_registry_oneagent(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.OneAgent(t))
+}
+
+func TestStandard_use_public_registry_oneagent_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.OneAgentWithOverride(t))
+}
+
+func TestStandard_use_public_registry_activegate(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.ActiveGate(t))
+}
+
+func TestStandard_use_public_registry_activegate_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.ActiveGateWithOverride(t))
 }
 
 func TestStandard_cloudnative_disabled_auto_inject(t *testing.T) {
