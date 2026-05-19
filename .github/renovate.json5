@@ -1,7 +1,7 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
+    "config:best-practices",
   ],
   labels: [
     "dependencies",
@@ -26,6 +26,7 @@
     "gomod",
     "github-actions",
     "pip_requirements",
+    "npm",
   ],
   postUpdateOptions: [
     "gomodTidy",
@@ -37,6 +38,10 @@
   branchNameStrict: true,
   prConcurrentLimit: 20,
   hashedBranchLength: 27, // 63 character limit for label values with space for "dynatrace-operator.v0.0.0-snapshot-" prefix
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+  },
   regexManagers: [
     {
       fileMatch: [
@@ -61,6 +66,19 @@
     },
   ],
   packageRules: [
+    {
+      "matchDatasources": ["docker"],
+      "minimumReleaseAge": "3 days",
+    },
+    {
+      "matchManagers": ["github-actions", "pip_requirements", "npm"],
+      "minimumReleaseAge": "3 days",
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["direct"],
+      "minimumReleaseAge": "3 days",
+    },
     {
       matchBaseBranches: [
         "$default",
