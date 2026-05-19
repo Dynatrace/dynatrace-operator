@@ -432,7 +432,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 		podSpecs := daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
 	})
-	t.Run("has host-group for classicFullstack", func(t *testing.T) {
+	t.Run("has host-group for classicFullStack", func(t *testing.T) {
 		classicInstance := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{

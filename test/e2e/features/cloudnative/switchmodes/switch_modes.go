@@ -44,7 +44,7 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleAppCloudNative)
 
 	// switch to classic full stack
-	dynakubeClassicFullStack := *dynakubeComponents.New(append(commonOptions, dynakubeComponents.WithClassicFullstackSpec(&oneagent.HostInjectSpec{}))...)
+	dynakubeClassicFullStack := *dynakubeComponents.New(append(commonOptions, dynakubeComponents.WithClassicFullStackSpec(&oneagent.HostInjectSpec{}))...)
 	sampleAppClassicFullStack := sample.NewApp(t, &dynakubeClassicFullStack,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsClassicName),

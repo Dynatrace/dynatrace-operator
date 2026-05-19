@@ -176,7 +176,7 @@ func WithIstioIntegration() Option {
 	}
 }
 
-func WithClassicFullstackSpec(classicFullStackSpec *oneagent.HostInjectSpec) Option {
+func WithClassicFullStackSpec(classicFullStackSpec *oneagent.HostInjectSpec) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.OneAgent.ClassicFullStack = classicFullStackSpec
 	}

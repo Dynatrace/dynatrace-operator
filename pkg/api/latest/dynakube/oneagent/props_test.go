@@ -155,13 +155,13 @@ func TestCodeModulesVersion(t *testing.T) {
 }
 
 func TestGetOneAgentEnvironment(t *testing.T) {
-	t.Run("get environment from classicFullstack", func(t *testing.T) {
+	t.Run("get environment from classicFullStack", func(t *testing.T) {
 		oneAgent := OneAgent{
 			Spec: &Spec{
 				ClassicFullStack: &HostInjectSpec{
 					Env: []corev1.EnvVar{
 						{
-							Name:  "classicFullstack",
+							Name:  "classicFullStack",
 							Value: "true",
 						},
 					},
@@ -171,7 +171,7 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 		env := oneAgent.GetEnvironment()
 
 		require.Len(t, env, 1)
-		assert.Equal(t, "classicFullstack", env[0].Name)
+		assert.Equal(t, "classicFullStack", env[0].Name)
 	})
 
 	t.Run("get environment from hostMonitoring", func(t *testing.T) {
