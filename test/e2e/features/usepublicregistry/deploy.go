@@ -39,7 +39,7 @@ func publicRegistryOverride(t *testing.T) string {
 	t.Helper()
 	val := os.Getenv(publicRegistryOverrideEnvVar)
 	if val == "" {
-		t.Fatalf("%s must be set", publicRegistryOverrideEnvVar)
+		t.Skipf("%s must be set", publicRegistryOverrideEnvVar)
 	}
 
 	return val
