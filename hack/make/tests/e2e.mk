@@ -171,45 +171,25 @@ test/e2e/applicationmonitoring/bootstrapper-no-csi:
 test/e2e/publicregistry:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images" $(SKIPCLEANUP)
 
-## Runs use-public-registry e2e scenarios with feature flag enabled, without publicRegistryOverride
-## Includes OneAgent / ActiveGate / CodeModules (OA + AG on standard, CodeModules on nocsi)
+## Runs all use-public-registry e2e scenarios — OneAgent / ActiveGate / CodeModules,
+## each with and without publicRegistryOverride (OA + AG on standard, CodeModules on nocsi)
 test/e2e/usepublicregistry:
 	RC=0; \
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_without_override" $(SKIPCLEANUP) || RC=1; \
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_without_override" $(SKIPCLEANUP) || RC=1; \
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry" $(SKIPCLEANUP) || RC=1; \
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry" $(SKIPCLEANUP) || RC=1; \
 	exit $$RC
 
-## Runs use-public-registry e2e scenarios with publicRegistryOverride enabled
-## Includes OneAgent / ActiveGate / CodeModules (OA + AG on standard, CodeModules on nocsi)
-test/e2e/usepublicregistry-with-public-registry-override:
-	RC=0; \
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_with_override" $(SKIPCLEANUP) || RC=1; \
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_with_override" $(SKIPCLEANUP) || RC=1; \
-	exit $$RC
-
-## Runs only use-public-registry OneAgent scenarios without publicRegistryOverride
+## Runs only use-public-registry OneAgent scenarios (with and without publicRegistryOverride)
 test/e2e/usepublicregistry/oneagent:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_without_override_oneagent" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_oneagent" $(SKIPCLEANUP)
 
-## Runs only use-public-registry OneAgent scenarios with publicRegistryOverride
-test/e2e/usepublicregistry/oneagent-with-public-registry-override:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_with_override_oneagent" $(SKIPCLEANUP)
-
-## Runs only use-public-registry ActiveGate scenarios without publicRegistryOverride
+## Runs only use-public-registry ActiveGate scenarios (with and without publicRegistryOverride)
 test/e2e/usepublicregistry/activegate:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_without_override_activegate" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_activegate" $(SKIPCLEANUP)
 
-## Runs only use-public-registry ActiveGate scenarios with publicRegistryOverride
-test/e2e/usepublicregistry/activegate-with-public-registry-override:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_with_override_activegate" $(SKIPCLEANUP)
-
-## Runs only use-public-registry CodeModules scenarios without publicRegistryOverride (requires no-csi)
+## Runs only use-public-registry CodeModules scenarios (with and without publicRegistryOverride, requires no-csi)
 test/e2e/usepublicregistry/codemodules:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_without_override_codemodules" $(SKIPCLEANUP)
-
-## Runs only use-public-registry CodeModules scenarios with publicRegistryOverride (requires no-csi)
-test/e2e/usepublicregistry/codemodules-with-public-registry-override:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_with_override_codemodules" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_codemodules" $(SKIPCLEANUP)
 
 ## Runs SupportArchive e2e test only
 test/e2e/supportarchive:
