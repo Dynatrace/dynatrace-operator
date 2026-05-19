@@ -7,9 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBuildVariables(t *testing.T) {

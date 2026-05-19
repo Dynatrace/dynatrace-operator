@@ -6,7 +6,7 @@ package builder
 
 import (
 	mock "github.com/stretchr/testify/mock"
-	v1 "k8s.io/api/apps/v1"
+	"k8s.io/api/apps/v1"
 )
 
 // NewMockModifier creates a new instance of MockModifier. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

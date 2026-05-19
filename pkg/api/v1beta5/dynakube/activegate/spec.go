@@ -1,9 +1,8 @@
 package activegate
 
 import (
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type CapabilityDisplayName string

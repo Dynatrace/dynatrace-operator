@@ -1,9 +1,8 @@
 package extensions
 
 import (
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type Extensions struct {

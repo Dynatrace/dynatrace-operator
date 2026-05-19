@@ -7,10 +7,9 @@ package version
 import (
 	"context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	mock "github.com/stretchr/testify/mock"
 )
 
 // NewMockStatusUpdater creates a new instance of MockStatusUpdater. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

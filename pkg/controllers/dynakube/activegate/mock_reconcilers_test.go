@@ -7,13 +7,12 @@ package activegate
 import (
 	"context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	mock "github.com/stretchr/testify/mock"
 )
 
 // newMockAuthTokenReconciler creates a new instance of mockAuthTokenReconciler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

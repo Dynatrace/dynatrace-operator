@@ -1,11 +1,10 @@
 package oneagent
 
 import (
-	containerv1 "github.com/google/go-containerregistry/pkg/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +kubebuilder:object:generate=true

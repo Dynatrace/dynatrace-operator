@@ -7,12 +7,11 @@ package dynakube
 import (
 	"context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	mock "github.com/stretchr/testify/mock"
 )
 
 // newMockIstioReconciler creates a new instance of mockIstioReconciler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
