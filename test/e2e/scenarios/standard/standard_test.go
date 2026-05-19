@@ -108,3 +108,11 @@ func TestStandard_cloudnative_to_classic(t *testing.T) {
 func TestStandard_node_image_pull_with_csi(t *testing.T) {
 	testEnv.Test(t, bootstrapper.InstallWithCSI(t))
 }
+
+func TestStandard_bootstrapper_pgc_no_cache(t *testing.T) {
+	testEnv.Test(t, bootstrapper.PGCNoCache(t))
+}
+
+func TestStandard_bootstrapper_pgc_cache_hit(t *testing.T) {
+	testEnv.Test(t, bootstrapper.PGCCacheHit(t))
+}
