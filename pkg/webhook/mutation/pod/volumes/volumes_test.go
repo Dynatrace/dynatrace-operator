@@ -218,7 +218,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 		assert.True(t, HasSplitEnrichmentMounts(container))
 	})
 
-	t.Run("should add split mounts for metadataenrichment if classicfullstack is enabled", func(t *testing.T) {
+	t.Run("should add split mounts for metadataenrichment if classicFullStack is enabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
