@@ -8,7 +8,9 @@ define generate_k8s_manifest
 		--set platform="kubernetes" \
 		--set manifests=true \
 		--set olm=$(OLM) \
-		--set image=$(IMAGE_URI) > $(2)
+		--set imageRef.repository=$(IMAGE) \
+		--set imageRef.tag=$(TAG) \
+		--set imageRef.digest=$(DIGEST) > $(2)
 endef
 
 ## Generates a Kubernetes manifest including CRD and CSI driver
