@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -87,7 +86,7 @@ func getNodeVolumes(mappedHostPaths []string) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: path,
-					Type: ptr.To(corev1.HostPathDirectory),
+					Type: new(corev1.HostPathDirectory),
 				},
 			},
 		}

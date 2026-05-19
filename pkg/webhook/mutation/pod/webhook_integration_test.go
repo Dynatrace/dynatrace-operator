@@ -41,7 +41,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -838,16 +837,16 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 				Webhooks: []admissionregistrationv1.MutatingWebhook{
 					{
 						Name:               "webhook.pod.dynatrace.com",
-						ReinvocationPolicy: ptr.To(admissionregistrationv1.IfNeededReinvocationPolicy),
-						FailurePolicy:      ptr.To(admissionregistrationv1.Ignore),
-						TimeoutSeconds:     ptr.To[int32](30),
+						ReinvocationPolicy: new(admissionregistrationv1.IfNeededReinvocationPolicy),
+						FailurePolicy:      new(admissionregistrationv1.Ignore),
+						TimeoutSeconds:     new(int32(30)),
 						Rules: []admissionregistrationv1.RuleWithOperations{
 							{
 								Rule: admissionregistrationv1.Rule{
 									APIGroups:   []string{""},
 									APIVersions: []string{"v1"},
 									Resources:   []string{"pods"},
-									Scope:       ptr.To(admissionregistrationv1.NamespacedScope),
+									Scope:       new(admissionregistrationv1.NamespacedScope),
 								},
 								Operations: []admissionregistrationv1.OperationType{
 									admissionregistrationv1.Create,
@@ -869,7 +868,7 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 							},
 						},
 						AdmissionReviewVersions: []string{"v1beta1", "v1"},
-						SideEffects:             ptr.To(admissionregistrationv1.SideEffectClassNone),
+						SideEffects:             new(admissionregistrationv1.SideEffectClassNone),
 					},
 				},
 			},

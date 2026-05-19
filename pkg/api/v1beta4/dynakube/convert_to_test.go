@@ -25,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 var testTime = metav1.Now()
@@ -320,9 +319,9 @@ func getOldDynakubeBase() DynaKube {
 			},
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
-			DynatraceAPIRequestThreshold: ptr.To(uint16(42)),
+			DynatraceAPIRequestThreshold: new(uint16(42)),
 			MetadataEnrichment: MetadataEnrichment{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 			},
 			TelemetryIngest: &telemetryingest.Spec{
 				ServiceName: "telemetry-ingest-service-name",
@@ -340,7 +339,7 @@ func getOldHostInjectSpec() oneagent.HostInjectSpec {
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
 		},
-		AutoUpdate: ptr.To(false),
+		AutoUpdate: new(false),
 		DNSPolicy:  corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"host-inject-annotation-key": "host-inject-annotation-value",
@@ -435,7 +434,7 @@ func getOldActiveGateSpec() activegate.Spec {
 				"activegate-node-selector-key": "activegate-node-selector-value",
 			},
 			Image:    "activegate-image",
-			Replicas: ptr.To(int32(42)),
+			Replicas: new(int32(42)),
 			Group:    "activegate-group",
 			CustomProperties: &value.Source{
 				Value:     "activegate-cp-value",
@@ -488,7 +487,7 @@ func getOldOpenTelemetryTemplateSpec() OpenTelemetryCollectorSpec {
 			"otelc-annotation-key1": "otelc-annotation-value1",
 			"otelc-annotation-key2": "otelc-annotation-value2",
 		},
-		Replicas: ptr.To(int32(42)),
+		Replicas: new(int32(42)),
 		ImageRef: image.Ref{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",

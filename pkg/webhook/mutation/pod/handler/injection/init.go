@@ -14,7 +14,6 @@ import (
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
@@ -76,11 +75,11 @@ func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOp
 				"ALL",
 			},
 		},
-		RunAsGroup: ptr.To(oacommon.DefaultGroup),
+		RunAsGroup: new(oacommon.DefaultGroup),
 	}
 
 	if !isOpenShift {
-		initSecurityCtx.RunAsUser = ptr.To(oacommon.DefaultUser)
+		initSecurityCtx.RunAsUser = new(oacommon.DefaultUser)
 	}
 
 	addSeccompProfile(&initSecurityCtx, dk)

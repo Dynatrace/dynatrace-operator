@@ -14,7 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/yaml"
@@ -50,9 +49,9 @@ func TestWebhook(t *testing.T) {
 									},
 								},
 							},
-							MatchPolicy:             ptr.To(admissionregistrationv1.Exact),
-							SideEffects:             ptr.To(admissionregistrationv1.SideEffectClassNone),
-							TimeoutSeconds:          ptr.To[int32](10),
+							MatchPolicy:             new(admissionregistrationv1.Exact),
+							SideEffects:             new(admissionregistrationv1.SideEffectClassNone),
+							TimeoutSeconds:          new(int32(10)),
 							AdmissionReviewVersions: []string{"v1"},
 						},
 						{
@@ -75,9 +74,9 @@ func TestWebhook(t *testing.T) {
 									},
 								},
 							},
-							MatchPolicy:             ptr.To(admissionregistrationv1.Exact),
-							SideEffects:             ptr.To(admissionregistrationv1.SideEffectClassNone),
-							TimeoutSeconds:          ptr.To[int32](10),
+							MatchPolicy:             new(admissionregistrationv1.Exact),
+							SideEffects:             new(admissionregistrationv1.SideEffectClassNone),
+							TimeoutSeconds:          new(int32(10)),
 							AdmissionReviewVersions: []string{"v1"},
 						},
 					},

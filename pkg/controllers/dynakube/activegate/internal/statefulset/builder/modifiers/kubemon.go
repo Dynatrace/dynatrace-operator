@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 var _ volumeModifier = KubernetesMonitoringModifier{}
@@ -130,8 +129,8 @@ func GetSecurityContext(readOnlyRootFileSystem bool) *corev1.SecurityContext {
 		Privileged:               new(false),
 		AllowPrivilegeEscalation: new(false),
 		RunAsNonRoot:             new(true),
-		RunAsUser:                ptr.To(consts.DockerImageUser),
-		RunAsGroup:               ptr.To(consts.DockerImageGroup),
+		RunAsUser:                new(consts.DockerImageUser),
+		RunAsGroup:               new(consts.DockerImageGroup),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",

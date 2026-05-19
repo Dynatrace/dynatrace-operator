@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
@@ -183,7 +182,7 @@ func getStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
 				Path: dk.OneAgent().GetHostPath(),
-				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+				Type: new(corev1.HostPathDirectoryOrCreate),
 			},
 		},
 	}

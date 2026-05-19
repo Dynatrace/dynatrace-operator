@@ -23,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -183,7 +182,7 @@ func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityC
 		},
 	}
 
-	sc.FSGroup = ptr.To(consts.DockerImageGroup)
+	sc.FSGroup = new(consts.DockerImageGroup)
 
 	return &sc
 }

@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	toolsevents "k8s.io/client-go/tools/events"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -359,7 +358,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 					},
 				},
 				RunAsUser:    new(int64(0)),
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsGroup:   new(oacommon.DefaultGroup),
 				RunAsNonRoot: new(false),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
@@ -380,7 +379,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 						"ALL",
 					},
 				},
-				RunAsUser:    ptr.To(oacommon.DefaultGroup), // user takes precedence
+				RunAsUser:    new(oacommon.DefaultGroup), // user takes precedence
 				RunAsGroup:   new(int64(0)),
 				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
@@ -401,7 +400,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 					},
 				},
 				RunAsUser:    new(int64(10)),
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsGroup:   new(oacommon.DefaultGroup),
 				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
@@ -422,7 +421,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 						"ALL",
 					},
 				},
-				RunAsUser:    ptr.To(oacommon.DefaultGroup),
+				RunAsUser:    new(oacommon.DefaultGroup),
 				RunAsGroup:   new(int64(10)),
 				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
@@ -444,8 +443,8 @@ func Test_securityContextForInitContainer(t *testing.T) {
 						"ALL",
 					},
 				},
-				RunAsUser:    ptr.To(oacommon.DefaultGroup),
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsUser:    new(oacommon.DefaultGroup),
+				RunAsGroup:   new(oacommon.DefaultGroup),
 				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
@@ -486,7 +485,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 						"ALL",
 					},
 				},
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsGroup:   new(oacommon.DefaultGroup),
 				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
@@ -509,7 +508,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 						"ALL",
 					},
 				},
-				RunAsGroup:     ptr.To(oacommon.DefaultGroup),
+				RunAsGroup:     new(oacommon.DefaultGroup),
 				RunAsNonRoot:   new(true),
 				SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 			},
@@ -530,7 +529,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 						"ALL",
 					},
 				},
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsGroup:   new(oacommon.DefaultGroup),
 				RunAsNonRoot: new(true),
 			},
 		},
