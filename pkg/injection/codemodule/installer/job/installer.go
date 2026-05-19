@@ -17,7 +17,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -85,7 +84,7 @@ func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (
 
 		_ = os.RemoveAll(inst.props.PathResolver.AgentJobWorkDirForJob(jobName))
 
-		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationBackground)})
+		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: new(metav1.DeletePropagationBackground)})
 	}
 
 	job, err := inst.query().Get(ctx, types.NamespacedName{Name: jobName, Namespace: inst.props.Owner.GetNamespace()})

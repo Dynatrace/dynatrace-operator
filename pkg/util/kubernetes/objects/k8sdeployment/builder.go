@@ -8,7 +8,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 var SetLabels = builder.SetLabels[*appsv1.Deployment]
@@ -24,7 +23,7 @@ func Build(owner metav1.Object, name string, options ...builder.Option[*appsv1.D
 
 func SetReplicas(replicas int32) builder.Option[*appsv1.Deployment] {
 	return func(d *appsv1.Deployment) {
-		d.Spec.Replicas = ptr.To(replicas)
+		d.Spec.Replicas = new(replicas)
 	}
 }
 

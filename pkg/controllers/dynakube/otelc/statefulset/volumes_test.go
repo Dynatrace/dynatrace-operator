@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestVolumes(t *testing.T) {
@@ -52,7 +51,7 @@ func TestVolumes(t *testing.T) {
 								Path: consts.DatasourceTokenSecretKey,
 							},
 						},
-						DefaultMode: ptr.To(int32(0o640)),
+						DefaultMode: new(int32(0o640)),
 					},
 				},
 			},
@@ -67,7 +66,7 @@ func TestVolumes(t *testing.T) {
 								Path: consts.TLSCrtDataName,
 							},
 						},
-						DefaultMode: ptr.To(int32(0o640)),
+						DefaultMode: new(int32(0o640)),
 					},
 				},
 			},
@@ -98,7 +97,7 @@ func TestVolumes(t *testing.T) {
 							Path: consts.DatasourceTokenSecretKey,
 						},
 					},
-					DefaultMode: ptr.To(int32(0o640)),
+					DefaultMode: new(int32(0o640)),
 				},
 			},
 		}
@@ -133,7 +132,7 @@ func TestVolumes(t *testing.T) {
 							Path: consts.TLSKeyDataName,
 						},
 					},
-					DefaultMode: ptr.To(int32(0o640)),
+					DefaultMode: new(int32(0o640)),
 				},
 			},
 		}
@@ -367,7 +366,7 @@ func agCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 						Path: otelcconsts.ActiveGateCertFile,
 					},
 				},
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}

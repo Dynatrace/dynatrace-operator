@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -136,7 +135,7 @@ func TestGetVolumes(t *testing.T) {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: hostPathA,
-					Type: ptr.To(corev1.HostPathDirectory),
+					Type: new(corev1.HostPathDirectory),
 				},
 			},
 		})
@@ -145,7 +144,7 @@ func TestGetVolumes(t *testing.T) {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: hostPathB,
-					Type: ptr.To(corev1.HostPathDirectory),
+					Type: new(corev1.HostPathDirectory),
 				},
 			},
 		})

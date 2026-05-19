@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestAddSplitMounts(t *testing.T) {
@@ -22,7 +21,7 @@ func TestAddSplitMounts(t *testing.T) {
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}
@@ -42,7 +41,7 @@ func TestAddSplitMounts(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}
@@ -65,7 +64,7 @@ func TestAddSplitMounts(t *testing.T) {
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 			},
 		}
@@ -85,7 +84,7 @@ func TestAddSplitMounts(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 			},
 		}

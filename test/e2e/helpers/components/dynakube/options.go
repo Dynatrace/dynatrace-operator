@@ -22,7 +22,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -143,7 +142,7 @@ func WithActiveGateReplicas(replicas *int32) Option {
 
 func WithMetadataEnrichment() Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+		dk.Spec.MetadataEnrichment.Enabled = new(true)
 	}
 }
 

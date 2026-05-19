@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
@@ -353,7 +352,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 					},
 				},
 			},
@@ -372,7 +371,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 					},
 				},
 			},
@@ -390,7 +389,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 					},
 				},
 			},

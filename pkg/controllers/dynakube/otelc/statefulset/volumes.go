@@ -7,7 +7,6 @@ import (
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -24,7 +23,7 @@ const (
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	var volumes []corev1.Volume
 
-	mode := ptr.To(int32(0o640))
+	mode := new(int32(0o640))
 
 	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
 		volumes = append(

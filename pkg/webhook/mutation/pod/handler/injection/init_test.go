@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	toolsevents "k8s.io/client-go/tools/events"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -74,7 +73,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 	t.Run("take security context from user container", func(t *testing.T) {
 		dk := getTestDynakube()
 		pod := getTestPod()
-		testUser := ptr.To(int64(420))
+		testUser := new(int64(420))
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = testUser
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = testUser
 
@@ -91,7 +90,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 	})
 	t.Run("PodSecurityContext overrules defaults", func(t *testing.T) {
 		dk := getTestDynakube()
-		testUser := ptr.To(int64(420))
+		testUser := new(int64(420))
 		pod := getTestPod()
 		pod.Spec.Containers[0].SecurityContext = nil
 		pod.Spec.SecurityContext = &corev1.PodSecurityContext{}
@@ -114,8 +113,8 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Spec.Containers[0].SecurityContext = nil
 		pod.Spec.SecurityContext = &corev1.PodSecurityContext{}
-		pod.Spec.SecurityContext.RunAsUser = ptr.To(RootUser)
-		pod.Spec.SecurityContext.RunAsGroup = ptr.To(RootGroup)
+		pod.Spec.SecurityContext.RunAsUser = new(RootUser)
+		pod.Spec.SecurityContext.RunAsGroup = new(RootGroup)
 
 		initContainer := wh.createInitContainerBase(pod, *dk)
 
@@ -238,80 +237,80 @@ func Test_combineSecurityContexts(t *testing.T) {
 	cases := []testCase{
 		{
 			title:            "root pod user",
-			podSc:            corev1.PodSecurityContext{RunAsUser: ptr.To(int64(0))},
+			podSc:            corev1.PodSecurityContext{RunAsUser: new(int64(0))},
 			firstContainerSc: corev1.SecurityContext{},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsUser: ptr.To(int64(0)), RunAsNonRoot: ptr.To(false)},
+			expectedOut:      corev1.SecurityContext{RunAsUser: new(int64(0)), RunAsNonRoot: new(false)},
 		},
 		{
 			title:            "root pod group",
-			podSc:            corev1.PodSecurityContext{RunAsGroup: ptr.To(int64(0))},
+			podSc:            corev1.PodSecurityContext{RunAsGroup: new(int64(0))},
 			firstContainerSc: corev1.SecurityContext{},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsGroup: ptr.To(int64(0)), RunAsNonRoot: ptr.To(false)},
+			expectedOut:      corev1.SecurityContext{RunAsGroup: new(int64(0)), RunAsNonRoot: new(false)},
 		},
 		{
 			title:            "non-root pod user",
-			podSc:            corev1.PodSecurityContext{RunAsUser: ptr.To(int64(10))},
+			podSc:            corev1.PodSecurityContext{RunAsUser: new(int64(10))},
 			firstContainerSc: corev1.SecurityContext{},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsUser: ptr.To(int64(10)), RunAsNonRoot: ptr.To(true)},
+			expectedOut:      corev1.SecurityContext{RunAsUser: new(int64(10)), RunAsNonRoot: new(true)},
 		},
 		{
 			title:            "non-root pod group",
-			podSc:            corev1.PodSecurityContext{RunAsGroup: ptr.To(int64(10))},
+			podSc:            corev1.PodSecurityContext{RunAsGroup: new(int64(10))},
 			firstContainerSc: corev1.SecurityContext{},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsGroup: ptr.To(int64(10)), RunAsNonRoot: ptr.To(true)},
+			expectedOut:      corev1.SecurityContext{RunAsGroup: new(int64(10)), RunAsNonRoot: new(true)},
 		},
 		{
 			title:            "default",
 			podSc:            corev1.PodSecurityContext{},
 			firstContainerSc: corev1.SecurityContext{},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsNonRoot: ptr.To(true)},
+			expectedOut:      corev1.SecurityContext{RunAsNonRoot: new(true)},
 		},
 		{
 			title:            "non-root user + root group",
 			podSc:            corev1.PodSecurityContext{},
-			firstContainerSc: corev1.SecurityContext{RunAsUser: ptr.To(int64(10)), RunAsGroup: ptr.To(int64(0))},
-			initContainerSc:  corev1.SecurityContext{RunAsUser: ptr.To(int64(55)), RunAsGroup: ptr.To(int64(55))},
-			expectedOut:      corev1.SecurityContext{RunAsUser: ptr.To(int64(10)), RunAsGroup: ptr.To(int64(0)), RunAsNonRoot: ptr.To(true)}, // user takes precedence
+			firstContainerSc: corev1.SecurityContext{RunAsUser: new(int64(10)), RunAsGroup: new(int64(0))},
+			initContainerSc:  corev1.SecurityContext{RunAsUser: new(int64(55)), RunAsGroup: new(int64(55))},
+			expectedOut:      corev1.SecurityContext{RunAsUser: new(int64(10)), RunAsGroup: new(int64(0)), RunAsNonRoot: new(true)}, // user takes precedence
 		},
 		{
 			title:            "root first container user",
 			podSc:            corev1.PodSecurityContext{},
-			firstContainerSc: corev1.SecurityContext{RunAsUser: ptr.To(int64(0))},
+			firstContainerSc: corev1.SecurityContext{RunAsUser: new(int64(0))},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsUser: ptr.To(int64(0)), RunAsNonRoot: ptr.To(false)},
+			expectedOut:      corev1.SecurityContext{RunAsUser: new(int64(0)), RunAsNonRoot: new(false)},
 		},
 		{
 			title:            "root first container group",
 			podSc:            corev1.PodSecurityContext{},
-			firstContainerSc: corev1.SecurityContext{RunAsGroup: ptr.To(int64(0))},
+			firstContainerSc: corev1.SecurityContext{RunAsGroup: new(int64(0))},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsGroup: ptr.To(int64(0)), RunAsNonRoot: ptr.To(false)},
+			expectedOut:      corev1.SecurityContext{RunAsGroup: new(int64(0)), RunAsNonRoot: new(false)},
 		},
 		{
 			title:            "non-root first container user",
 			podSc:            corev1.PodSecurityContext{},
-			firstContainerSc: corev1.SecurityContext{RunAsUser: ptr.To(int64(10))},
+			firstContainerSc: corev1.SecurityContext{RunAsUser: new(int64(10))},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsUser: ptr.To(int64(10)), RunAsNonRoot: ptr.To(true)},
+			expectedOut:      corev1.SecurityContext{RunAsUser: new(int64(10)), RunAsNonRoot: new(true)},
 		},
 		{
 			title:            "non-root first container group",
 			podSc:            corev1.PodSecurityContext{},
-			firstContainerSc: corev1.SecurityContext{RunAsGroup: ptr.To(int64(10))},
+			firstContainerSc: corev1.SecurityContext{RunAsGroup: new(int64(10))},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsGroup: ptr.To(int64(10)), RunAsNonRoot: ptr.To(true)},
+			expectedOut:      corev1.SecurityContext{RunAsGroup: new(int64(10)), RunAsNonRoot: new(true)},
 		},
 		{
 			title:            "first-container overrules pod",
-			podSc:            corev1.PodSecurityContext{RunAsUser: ptr.To(int64(10))},
-			firstContainerSc: corev1.SecurityContext{RunAsUser: ptr.To(int64(0))},
+			podSc:            corev1.PodSecurityContext{RunAsUser: new(int64(10))},
+			firstContainerSc: corev1.SecurityContext{RunAsUser: new(int64(0))},
 			initContainerSc:  corev1.SecurityContext{},
-			expectedOut:      corev1.SecurityContext{RunAsUser: ptr.To(int64(0)), RunAsNonRoot: ptr.To(false)},
+			expectedOut:      corev1.SecurityContext{RunAsUser: new(int64(0)), RunAsNonRoot: new(false)},
 		},
 	}
 
@@ -348,19 +347,19 @@ func Test_securityContextForInitContainer(t *testing.T) {
 			title:       "root pod user",
 			dk:          dynakube.DynaKube{},
 			isOpenShift: false,
-			podSc:       corev1.PodSecurityContext{RunAsUser: ptr.To(int64(0))},
+			podSc:       corev1.PodSecurityContext{RunAsUser: new(int64(0))},
 			expectedOut: corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
-				Privileged:               ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Privileged:               new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
 					},
 				},
-				RunAsUser:    ptr.To(int64(0)),
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
-				RunAsNonRoot: ptr.To(false),
+				RunAsUser:    new(int64(0)),
+				RunAsGroup:   new(oacommon.DefaultGroup),
+				RunAsNonRoot: new(false),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -370,19 +369,19 @@ func Test_securityContextForInitContainer(t *testing.T) {
 			title:       "root pod group",
 			dk:          dynakube.DynaKube{},
 			isOpenShift: false,
-			podSc:       corev1.PodSecurityContext{RunAsGroup: ptr.To(int64(0))},
+			podSc:       corev1.PodSecurityContext{RunAsGroup: new(int64(0))},
 			expectedOut: corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
-				Privileged:               ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Privileged:               new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
 					},
 				},
-				RunAsUser:    ptr.To(oacommon.DefaultGroup), // user takes precedence
-				RunAsGroup:   ptr.To(int64(0)),
-				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    new(oacommon.DefaultGroup), // user takes precedence
+				RunAsGroup:   new(int64(0)),
+				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -390,19 +389,19 @@ func Test_securityContextForInitContainer(t *testing.T) {
 		},
 		{
 			title: "non-root pod user",
-			podSc: corev1.PodSecurityContext{RunAsUser: ptr.To(int64(10))},
+			podSc: corev1.PodSecurityContext{RunAsUser: new(int64(10))},
 			expectedOut: corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
-				Privileged:               ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Privileged:               new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
 					},
 				},
-				RunAsUser:    ptr.To(int64(10)),
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
-				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    new(int64(10)),
+				RunAsGroup:   new(oacommon.DefaultGroup),
+				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -412,19 +411,19 @@ func Test_securityContextForInitContainer(t *testing.T) {
 			title:       "non-root pod group",
 			dk:          dynakube.DynaKube{},
 			isOpenShift: false,
-			podSc:       corev1.PodSecurityContext{RunAsGroup: ptr.To(int64(10))},
+			podSc:       corev1.PodSecurityContext{RunAsGroup: new(int64(10))},
 			expectedOut: corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
-				Privileged:               ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Privileged:               new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
 					},
 				},
-				RunAsUser:    ptr.To(oacommon.DefaultGroup),
-				RunAsGroup:   ptr.To(int64(10)),
-				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    new(oacommon.DefaultGroup),
+				RunAsGroup:   new(int64(10)),
+				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -436,17 +435,17 @@ func Test_securityContextForInitContainer(t *testing.T) {
 			isOpenShift: false,
 			podSc:       corev1.PodSecurityContext{},
 			expectedOut: corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
-				Privileged:               ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Privileged:               new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
 					},
 				},
-				RunAsUser:    ptr.To(oacommon.DefaultGroup),
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
-				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    new(oacommon.DefaultGroup),
+				RunAsGroup:   new(oacommon.DefaultGroup),
+				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -454,19 +453,19 @@ func Test_securityContextForInitContainer(t *testing.T) {
 		},
 		{
 			title: "non-root user + root group", // does this even make sense?
-			podSc: corev1.PodSecurityContext{RunAsUser: ptr.To(int64(10)), RunAsGroup: ptr.To(int64(0))},
+			podSc: corev1.PodSecurityContext{RunAsUser: new(int64(10)), RunAsGroup: new(int64(0))},
 			expectedOut: corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
-				Privileged:               ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Privileged:               new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
 					},
 				},
-				RunAsUser:    ptr.To(int64(10)), // user takes precedence
-				RunAsGroup:   ptr.To(int64(0)),
-				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    new(int64(10)), // user takes precedence
+				RunAsGroup:   new(int64(0)),
+				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -478,16 +477,16 @@ func Test_securityContextForInitContainer(t *testing.T) {
 			isOpenShift: true,
 			podSc:       corev1.PodSecurityContext{},
 			expectedOut: corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
-				Privileged:               ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Privileged:               new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
 					},
 				},
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
-				RunAsNonRoot: ptr.To(true),
+				RunAsGroup:   new(oacommon.DefaultGroup),
+				RunAsNonRoot: new(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -501,16 +500,16 @@ func Test_securityContextForInitContainer(t *testing.T) {
 			isOpenShift: true,
 			podSc:       corev1.PodSecurityContext{},
 			expectedOut: corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
-				Privileged:               ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Privileged:               new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
 					},
 				},
-				RunAsGroup:     ptr.To(oacommon.DefaultGroup),
-				RunAsNonRoot:   ptr.To(true),
+				RunAsGroup:     new(oacommon.DefaultGroup),
+				RunAsNonRoot:   new(true),
 				SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 			},
 		},
@@ -522,16 +521,16 @@ func Test_securityContextForInitContainer(t *testing.T) {
 			isOpenShift: true,
 			podSc:       corev1.PodSecurityContext{},
 			expectedOut: corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
-				Privileged:               ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
+				Privileged:               new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{
 						"ALL",
 					},
 				},
-				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
-				RunAsNonRoot: ptr.To(true),
+				RunAsGroup:   new(oacommon.DefaultGroup),
+				RunAsNonRoot: new(true),
 			},
 		},
 	}
@@ -552,35 +551,35 @@ func Test_securityContextForInitContainer(t *testing.T) {
 func Test_isNonRoot(t *testing.T) {
 	t.Run("root user", func(t *testing.T) {
 		sc := &corev1.SecurityContext{
-			RunAsUser:  ptr.To(int64(0)),
-			RunAsGroup: ptr.To(int64(0)),
+			RunAsUser:  new(int64(0)),
+			RunAsGroup: new(int64(0)),
 		}
 		assert.False(t, isNonRoot(sc))
 	})
 	t.Run("non-root user", func(t *testing.T) {
 		sc := &corev1.SecurityContext{
-			RunAsUser:  ptr.To(int64(1000)),
-			RunAsGroup: ptr.To(int64(1000)),
+			RunAsUser:  new(int64(1000)),
+			RunAsGroup: new(int64(1000)),
 		}
 		assert.True(t, isNonRoot(sc))
 	})
 	t.Run("root user and nil group (OCP case)", func(t *testing.T) {
 		sc := &corev1.SecurityContext{
-			RunAsUser:  ptr.To(int64(0)),
+			RunAsUser:  new(int64(0)),
 			RunAsGroup: nil,
 		}
 		assert.False(t, isNonRoot(sc))
 	})
 	t.Run("root user and non-root group", func(t *testing.T) {
 		sc := &corev1.SecurityContext{
-			RunAsUser:  ptr.To(int64(0)),
-			RunAsGroup: ptr.To(int64(1000)),
+			RunAsUser:  new(int64(0)),
+			RunAsGroup: new(int64(1000)),
 		}
 		assert.False(t, isNonRoot(sc))
 	})
 	t.Run("non-root user and nil group (OCP case)", func(t *testing.T) {
 		sc := &corev1.SecurityContext{
-			RunAsUser:  ptr.To(int64(1000)),
+			RunAsUser:  new(int64(1000)),
 			RunAsGroup: nil,
 		}
 		assert.True(t, isNonRoot(sc))
@@ -588,14 +587,14 @@ func Test_isNonRoot(t *testing.T) {
 	t.Run("nil user and root group (edge case)", func(t *testing.T) {
 		sc := &corev1.SecurityContext{
 			RunAsUser:  nil,
-			RunAsGroup: ptr.To(int64(0)),
+			RunAsGroup: new(int64(0)),
 		}
 		assert.False(t, isNonRoot(sc))
 	})
 	t.Run("nil user and non-root group (edge case)", func(t *testing.T) {
 		sc := &corev1.SecurityContext{
 			RunAsUser:  nil,
-			RunAsGroup: ptr.To(int64(1000)),
+			RunAsGroup: new(int64(1000)),
 		}
 		assert.True(t, isNonRoot(sc))
 	})
@@ -662,7 +661,7 @@ func getTestPod() *corev1.Pod {
 
 func getTestSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		RunAsUser:  ptr.To(testUser),
-		RunAsGroup: ptr.To(testUser),
+		RunAsUser:  new(testUser),
+		RunAsGroup: new(testUser),
 	}
 }

@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestIsEnabled(t *testing.T) {
@@ -56,7 +55,7 @@ func TestIsEnabled(t *testing.T) {
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Spec.MetadataEnrichment.Enabled = new(true)
 			},
 			withCSI:    true,
 			withoutCSI: true,
@@ -66,7 +65,7 @@ func TestIsEnabled(t *testing.T) {
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Spec.MetadataEnrichment.Enabled = new(true)
 				dk.Annotations = map[string]string{
 					exp.InjectionAutomaticKey: "false",
 				}
@@ -79,7 +78,7 @@ func TestIsEnabled(t *testing.T) {
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Spec.MetadataEnrichment.Enabled = new(true)
 				dk.Annotations = map[string]string{
 					exp.InjectionAutomaticKey: "false",
 				}
@@ -96,7 +95,7 @@ func TestIsEnabled(t *testing.T) {
 			},
 			nsMods: func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Spec.MetadataEnrichment.Enabled = new(true)
 				dk.Annotations = map[string]string{
 					exp.InjectionAutomaticKey: "false",
 				}
@@ -109,7 +108,7 @@ func TestIsEnabled(t *testing.T) {
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Spec.MetadataEnrichment.Enabled = new(true)
 				dk.Spec.MetadataEnrichment.NamespaceSelector = metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				}
@@ -124,7 +123,7 @@ func TestIsEnabled(t *testing.T) {
 				n.Labels = matchLabels
 			},
 			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Spec.MetadataEnrichment.Enabled = new(true)
 				dk.Spec.MetadataEnrichment.NamespaceSelector = metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				}
@@ -138,7 +137,7 @@ func TestIsEnabled(t *testing.T) {
 			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+				dk.Spec.MetadataEnrichment.Enabled = new(false)
 			},
 			withCSI:    false,
 			withoutCSI: false,
@@ -163,7 +162,7 @@ func TestIsEnabled(t *testing.T) {
 			nsMods: func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+				dk.Spec.MetadataEnrichment.Enabled = new(false)
 			},
 			withCSI:    false,
 			withoutCSI: false,
@@ -237,7 +236,7 @@ func TestMutate(t *testing.T) {
 					Name:       "owner",
 					APIVersion: "v1",
 					Kind:       "ReplicationController",
-					Controller: ptr.To(true),
+					Controller: new(true),
 				},
 			},
 		},
@@ -251,7 +250,7 @@ func TestMutate(t *testing.T) {
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 					},
 				},
@@ -324,7 +323,7 @@ func TestMutate(t *testing.T) {
 							},
 							Spec: dynakube.DynaKubeSpec{
 								MetadataEnrichment: metadataenrichment.Spec{
-									Enabled: ptr.To(true),
+									Enabled: new(true),
 								},
 							},
 							Status: dynakube.DynaKubeStatus{
@@ -501,7 +500,7 @@ func TestAddContainerAttributes(t *testing.T) {
 		DynaKube: dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -666,7 +665,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			DynaKube: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(metadataEnrichment),
+						Enabled: new(metadataEnrichment),
 					},
 				},
 			},
@@ -797,7 +796,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 						OneAgent: oneagent.Spec{
 							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -852,7 +851,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 						OneAgent: oneagent.Spec{
 							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -906,7 +905,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 						OneAgent: oneagent.Spec{
 							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -968,7 +967,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 						OneAgent: oneagent.Spec{
 							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -1022,7 +1021,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
-							Enabled: ptr.To(false),
+							Enabled: new(false),
 						},
 						OneAgent: oneagent.Spec{
 							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -1076,7 +1075,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
-							Enabled: ptr.To(true),
+							Enabled: new(true),
 						},
 					},
 				},

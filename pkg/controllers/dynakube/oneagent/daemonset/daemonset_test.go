@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -293,9 +292,9 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
 
 		assert.NotNil(t, securityContext)
-		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsUser)
-		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsGroup)
-		assert.Equal(t, ptr.To(true), securityContext.RunAsNonRoot)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsUser)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsGroup)
+		assert.Equal(t, new(true), securityContext.RunAsNonRoot)
 		assert.NotEmpty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
 		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
@@ -383,10 +382,10 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
 
 		assert.NotNil(t, securityContext)
-		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsUser)
-		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsGroup)
-		assert.Equal(t, ptr.To(true), securityContext.RunAsNonRoot)
-		assert.Equal(t, ptr.To(true), securityContext.Privileged)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsUser)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsGroup)
+		assert.Equal(t, new(true), securityContext.RunAsNonRoot)
+		assert.Equal(t, new(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
 	})
@@ -417,7 +416,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.RunAsUser)
 		assert.Nil(t, securityContext.RunAsGroup)
 		assert.Nil(t, securityContext.RunAsNonRoot)
-		assert.Equal(t, ptr.To(true), securityContext.Privileged)
+		assert.Equal(t, new(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
 	})
@@ -482,7 +481,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.RunAsUser)
 		assert.Nil(t, securityContext.RunAsGroup)
 		assert.Nil(t, securityContext.RunAsNonRoot)
-		assert.Equal(t, ptr.To(true), securityContext.Privileged)
+		assert.Equal(t, new(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
 	})

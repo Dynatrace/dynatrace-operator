@@ -26,17 +26,17 @@ func IsAvailable(dk *dynakube.DynaKube, scope string) bool {
 func SetMissing(dk *dynakube.DynaKube, scope string) {
 	switch scope {
 	case token.ScopeSettingsRead:
-		dk.Status.APIToken.AvailableOptionalScopes.SettingsRead = ptr.To(false)
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsRead = new(false)
 	case token.ScopeSettingsWrite:
-		dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite = ptr.To(false)
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite = new(false)
 	}
 }
 
 func SetAvailable(dk *dynakube.DynaKube, scope string) {
 	switch scope {
 	case token.ScopeSettingsRead:
-		dk.Status.APIToken.AvailableOptionalScopes.SettingsRead = ptr.To(true)
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsRead = new(true)
 	case token.ScopeSettingsWrite:
-		dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite = ptr.To(true)
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite = new(true)
 	}
 }

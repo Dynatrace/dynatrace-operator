@@ -14,7 +14,6 @@ import (
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
@@ -68,19 +67,19 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 
 func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		Privileged:               ptr.To(false),
+		ReadOnlyRootFilesystem:   new(true),
+		AllowPrivilegeEscalation: new(false),
+		Privileged:               new(false),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
 			},
 		},
-		RunAsGroup: ptr.To(oacommon.DefaultGroup),
+		RunAsGroup: new(oacommon.DefaultGroup),
 	}
 
 	if !isOpenShift {
-		initSecurityCtx.RunAsUser = ptr.To(oacommon.DefaultUser)
+		initSecurityCtx.RunAsUser = new(oacommon.DefaultUser)
 	}
 
 	addSeccompProfile(&initSecurityCtx, dk)
@@ -111,7 +110,7 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	baseSecurityCtx.RunAsNonRoot = ptr.To(isNonRoot(&baseSecurityCtx))
+	baseSecurityCtx.RunAsNonRoot = new(isNonRoot(&baseSecurityCtx))
 
 	return &baseSecurityCtx
 }

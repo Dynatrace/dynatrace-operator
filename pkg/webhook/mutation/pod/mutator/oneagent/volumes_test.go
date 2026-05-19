@@ -11,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestAddVolumeMounts(t *testing.T) {
@@ -99,7 +98,7 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 			Name: BinVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: ptr.To(resource.MustParse("500Mi")),
+					SizeLimit: new(resource.MustParse("500Mi")),
 				},
 			},
 		}, pod.Spec.Volumes[0])

@@ -33,7 +33,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -712,14 +711,14 @@ func TestReconcileReplicas(t *testing.T) {
 	}{
 		{
 			name:             "uses explicit spec replicas over existing deployment",
-			specReplicas:     ptr.To(int32(2)),
-			existingReplicas: ptr.To(int32(3)),
+			specReplicas:     new(int32(2)),
+			existingReplicas: new(int32(3)),
 			expectedReplicas: int32(2),
 		},
 		{
 			name:             "uses existing deployment replicas when spec replicas are nil",
 			specReplicas:     nil,
-			existingReplicas: ptr.To(int32(2)),
+			existingReplicas: new(int32(2)),
 			expectedReplicas: int32(2),
 		},
 		{

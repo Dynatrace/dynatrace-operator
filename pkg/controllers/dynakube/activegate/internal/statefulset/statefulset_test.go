@@ -27,7 +27,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -53,7 +52,7 @@ func getTestDynakube() dynakube.DynaKube {
 					activegate.RoutingCapability.DisplayName,
 				},
 				CapabilityProperties: activegate.CapabilityProperties{
-					Replicas: ptr.To(testReplicas),
+					Replicas: new(testReplicas),
 				},
 			},
 		},
@@ -535,7 +534,7 @@ func TestUpdateStrategy(t *testing.T) {
 
 func TestTempVolume(t *testing.T) {
 	myPVCSpec := corev1.PersistentVolumeClaimSpec{
-		StorageClassName: ptr.To("test"),
+		StorageClassName: new("test"),
 		VolumeName:       "foo-pv",
 	}
 
@@ -693,15 +692,15 @@ func TestTerminationGracePeriodSeconds(t *testing.T) {
 	}{
 		{
 			name:               "gracePeriodSeconds is zero",
-			gracePeriodSeconds: ptr.To(int64(0)),
+			gracePeriodSeconds: new(int64(0)),
 		},
 		{
 			name:               "gracePeriodSeconds is positive",
-			gracePeriodSeconds: ptr.To(int64(1)),
+			gracePeriodSeconds: new(int64(1)),
 		},
 		{
 			name:               "gracePeriodSeconds is negative",
-			gracePeriodSeconds: ptr.To(int64(-1)),
+			gracePeriodSeconds: new(int64(-1)),
 		},
 	}
 
