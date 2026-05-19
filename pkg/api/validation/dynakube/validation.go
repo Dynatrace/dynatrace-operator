@@ -87,6 +87,7 @@ var (
 		oneAgentResourceAttributesExceedsLimit,
 		otlpResourceAttributesExceedsLimit,
 		deprecatedPaasToken,
+		publicRegistryFlagIgnoredForPlatformToken,
 		isNodeImagePullWithoutCSI,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
