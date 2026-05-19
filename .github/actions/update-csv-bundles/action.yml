@@ -93,7 +93,7 @@ runs:
         VERSION: ${{ inputs.version }}
         PLATFORM: openshift
         IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator
-        OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
+        TAG: v${{ inputs.version }}
       run: |
         make bundle
     - name: Generate OLM bundles (kubernetes)
@@ -103,7 +103,7 @@ runs:
         VERSION: ${{ inputs.version }}
         PLATFORM: kubernetes
         IMAGE: docker.io/dynatrace/dynatrace-operator
-        OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
+        TAG: v${{ inputs.version }}
       run: |
         make bundle
     - name: Create GitHub app token
