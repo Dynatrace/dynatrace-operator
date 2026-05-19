@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -166,9 +165,6 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 		dynakubeComponents.WithUsePublicRegistryFF(),
 		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
-		dynakubeComponents.WithAnnotations(map[string]string{
-			exp.OANodeImagePullKey: "true",
-		}),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
