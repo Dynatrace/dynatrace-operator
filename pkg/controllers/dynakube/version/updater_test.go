@@ -108,7 +108,7 @@ func TestRun(t *testing.T) {
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
 	})
-	t.Run("classicfullstack enabled, public registry is ignored", func(t *testing.T) {
+	t.Run("classicFullStack enabled, public registry is ignored", func(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
@@ -129,7 +129,7 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 		assert.Empty(t, target.Version)
 	})
-	t.Run("classicfullstack enabled, public registry is ignored, custom image is set", func(t *testing.T) {
+	t.Run("classicFullStack enabled, public registry is ignored, custom image is set", func(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
@@ -262,7 +262,7 @@ func TestDetermineSource(t *testing.T) {
 		assert.Equal(t, status.PublicRegistryVersionSource, source)
 	})
 
-	t.Run("classicfullstack ignores public registry feature flag", func(t *testing.T) {
+	t.Run("classicFullStack ignores public registry feature flag", func(t *testing.T) {
 		updater := NewMockStatusUpdater(t)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
@@ -271,7 +271,7 @@ func TestDetermineSource(t *testing.T) {
 		assert.Equal(t, status.TenantRegistryVersionSource, source)
 	})
 
-	t.Run("classicfullstack ignores public registry feature flag and sets custom image if set", func(t *testing.T) {
+	t.Run("classicFullStack ignores public registry feature flag and sets custom image if set", func(t *testing.T) {
 		customVersion := "1.2.3.4-5"
 		updater := NewMockStatusUpdater(t)
 		updater.EXPECT().CustomImage().Return("").Once()
