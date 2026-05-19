@@ -126,6 +126,7 @@ runs:
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
+        E2E_PUBLIC_REGISTRY_OVERRIDE: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       if: steps.check_cluster_status.outputs.skip_tests != 'true'
     - name: Destroy cluster
       shell: bash
