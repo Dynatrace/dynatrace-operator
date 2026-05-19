@@ -64,14 +64,11 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		}
 	}
 
-	var dkAttrs map[string]string
 	if oneagent.IsEnabled(request.BaseRequest) {
-		dkAttrs = request.DynaKube.OneAgent().GetResourceAttributes()
+		attrs.SetDynakubeAttributes(request.DynaKube.OneAgent().GetResourceAttributes())
 	} else {
-		dkAttrs = request.DynaKube.GetResourceAttributes()
+		attrs.SetDynakubeAttributes(request.DynaKube.GetResourceAttributes())
 	}
-
-	attrs.SetCustomAttributes(dkAttrs)
 
 	withDeprecatedAttributesArg := arg.Arg{
 		Name:  bootstrapper.EnableAttributesDTKubernetesFlag,

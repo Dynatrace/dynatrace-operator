@@ -18,6 +18,7 @@ type Pod struct {
 	rulesPropagate       map[string]string
 	namespaceAnnotations map[string]string
 	podAnnotations       map[string]string
+	dynakube             map[string]string
 	custom               map[string]string
 
 	workloadInfo map[string]string
@@ -64,6 +65,10 @@ func (attrs *Pod) SetCustomAttributes(custom map[string]string) {
 	attrs.custom = custom
 }
 
+func (attrs *Pod) SetDynakubeAttributes(dkAttrs map[string]string) {
+	attrs.dynakube = dkAttrs
+}
+
 func (attrs *Pod) GetPodEnvVars() []corev1.EnvVar {
 	return attrs.podEnvVars
 }
@@ -90,6 +95,8 @@ func (attrs *Pod) combineAll(containerAttrs ...Container) map[string]string {
 		maps.Copy(combined, cAttr.ToMap())
 	}
 
+	maps.Copy(combined, attrs.dynakube)
+
 	maps.Copy(combined, attrs.namespaceAnnotations)
 
 	maps.Copy(combined, attrs.rules)
@@ -107,6 +114,7 @@ func (attrs *Pod) combineForMetadataAnnotations() map[string]string {
 
 	// make sure we use the same precedence as in combine()
 	maps.Copy(combined, attrs.workloadInfo)
+	maps.Copy(combined, attrs.dynakube)
 	maps.Copy(combined, attrs.namespaceAnnotations)
 	maps.Copy(combined, attrs.rulesPropagate)
 
@@ -117,6 +125,7 @@ func (attrs *Pod) combineForJSONAnnotation() (string, error) {
 	combined := make(map[string]string)
 
 	// make sure we use the same precedence as in combineAll()
+	maps.Copy(combined, attrs.dynakube)
 	maps.Copy(combined, attrs.namespaceAnnotations)
 	maps.Copy(combined, attrs.rules)
 	maps.Copy(combined, attrs.rulesPropagate)
