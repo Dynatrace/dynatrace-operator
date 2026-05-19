@@ -3,8 +3,9 @@ package edgeconnect
 import (
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 )
 
 // ConvertFrom converts v1alpha2 to v1alpha1.

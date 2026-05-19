@@ -7,9 +7,10 @@ package logmonitoring
 import (
 	"context"
 
+	mock "github.com/stretchr/testify/mock"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
-	mock "github.com/stretchr/testify/mock"
 )
 
 // newMockSubReconciler creates a new instance of mockSubReconciler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

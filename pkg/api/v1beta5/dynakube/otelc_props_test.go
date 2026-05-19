@@ -3,8 +3,9 @@ package dynakube
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
 )
 
 func TestIsAGCertificateNeeded(t *testing.T) {

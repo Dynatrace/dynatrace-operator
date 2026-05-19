@@ -23,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -253,12 +252,12 @@ func getReplicas(dk *dynakube.DynaKube) int32 {
 
 func buildSecurityContext(dk *dynakube.DynaKube) *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		AllowPrivilegeEscalation: ptr.To(false),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		RunAsNonRoot:             ptr.To(true),
-		RunAsUser:                ptr.To(runAs),
-		RunAsGroup:               ptr.To(runAs),
+		Privileged:               new(false),
+		AllowPrivilegeEscalation: new(false),
+		ReadOnlyRootFilesystem:   new(true),
+		RunAsNonRoot:             new(true),
+		RunAsUser:                new(runAs),
+		RunAsGroup:               new(runAs),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -273,7 +272,7 @@ func buildSecurityContext(dk *dynakube.DynaKube) *corev1.SecurityContext {
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
-		FSGroup: ptr.To(runAs),
+		FSGroup: new(runAs),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},

@@ -201,7 +201,7 @@ func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 						Path: "custom.pem",
 					},
 				},
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}
@@ -213,7 +213,7 @@ func buildHTTPProxyVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  proxy.BuildSecretName(dk.Name),
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}
@@ -225,7 +225,7 @@ func getOneAgentSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  dk.OneAgent().GetTenantSecret(),
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}

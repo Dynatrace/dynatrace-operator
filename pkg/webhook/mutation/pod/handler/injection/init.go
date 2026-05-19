@@ -68,9 +68,9 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 
 func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		Privileged:               ptr.To(false),
+		ReadOnlyRootFilesystem:   new(true),
+		AllowPrivilegeEscalation: new(false),
+		Privileged:               new(false),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -111,7 +111,7 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	baseSecurityCtx.RunAsNonRoot = ptr.To(isNonRoot(&baseSecurityCtx))
+	baseSecurityCtx.RunAsNonRoot = new(isNonRoot(&baseSecurityCtx))
 
 	return &baseSecurityCtx
 }

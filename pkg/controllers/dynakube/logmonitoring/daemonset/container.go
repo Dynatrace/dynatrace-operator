@@ -4,7 +4,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -74,12 +73,12 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container 
 
 func getBaseSecurityContext(dk dynakube.DynaKube) *corev1.SecurityContext {
 	securityContext := &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		RunAsUser:                ptr.To(runAs),
-		RunAsGroup:               ptr.To(runAs),
-		RunAsNonRoot:             ptr.To(true),
+		Privileged:               new(false),
+		ReadOnlyRootFilesystem:   new(true),
+		AllowPrivilegeEscalation: new(false),
+		RunAsUser:                new(runAs),
+		RunAsGroup:               new(runAs),
+		RunAsNonRoot:             new(true),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{"ALL"},
 		},
@@ -91,8 +90,8 @@ func getBaseSecurityContext(dk dynakube.DynaKube) *corev1.SecurityContext {
 	}
 
 	if dk.OneAgent().IsPrivilegedNeeded() {
-		securityContext.Privileged = ptr.To(true)
-		securityContext.AllowPrivilegeEscalation = ptr.To(true)
+		securityContext.Privileged = new(true)
+		securityContext.AllowPrivilegeEscalation = new(true)
 	}
 
 	return securityContext

@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server"
+	csiserver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"

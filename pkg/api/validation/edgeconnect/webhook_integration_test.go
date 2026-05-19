@@ -34,7 +34,7 @@ func TestWebhook(t *testing.T) {
 							Name: "v1alpha1.edgeconnect.webhook.dynatrace.com",
 							ClientConfig: admissionregistrationv1.WebhookClientConfig{
 								Service: &admissionregistrationv1.ServiceReference{
-									Path: ptr.To("/validate-dynatrace-com-v1alpha1-edgeconnect"),
+									Path: new("/validate-dynatrace-com-v1alpha1-edgeconnect"),
 								},
 							},
 							Rules: []admissionregistrationv1.RuleWithOperations{
@@ -59,7 +59,7 @@ func TestWebhook(t *testing.T) {
 							Name: "v1alpha2.edgeconnect.webhook.dynatrace.com",
 							ClientConfig: admissionregistrationv1.WebhookClientConfig{
 								Service: &admissionregistrationv1.ServiceReference{
-									Path: ptr.To("/validate-dynatrace-com-v1alpha2-edgeconnect"),
+									Path: new("/validate-dynatrace-com-v1alpha2-edgeconnect"),
 								},
 							},
 							Rules: []admissionregistrationv1.RuleWithOperations{

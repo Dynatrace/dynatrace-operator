@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -83,7 +82,7 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) {
 	volumeSource := corev1.VolumeSource{
 		CSI: &corev1.CSIVolumeSource{
 			Driver:   dtcsi.DriverName,
-			ReadOnly: ptr.To(true),
+			ReadOnly: new(true),
 			VolumeAttributes: map[string]string{
 				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
 				csivolumes.CSIVolumeAttributeDynakubeField: dkName,

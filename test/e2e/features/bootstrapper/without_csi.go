@@ -61,8 +61,8 @@ func NoCSI(t *testing.T) features.Feature {
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
-				AllowPrivilegeEscalation: ptr.To(false),
-				RunAsNonRoot:             ptr.To(true),
+				AllowPrivilegeEscalation: new(false),
+				RunAsNonRoot:             new(true),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{"ALL"},
 				},
@@ -85,8 +85,8 @@ func NoCSI(t *testing.T) features.Feature {
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
-				AllowPrivilegeEscalation: ptr.To(false),
-				RunAsNonRoot:             ptr.To(true),
+				AllowPrivilegeEscalation: new(false),
+				RunAsNonRoot:             new(true),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{"ALL"},
 				},
@@ -135,7 +135,7 @@ func checkInjection(deployment *sample.App) features.Func {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: consts.BootstrapperInitSecretName,
 									},
-									Optional: ptr.To(false),
+									Optional: new(false),
 								},
 							},
 							{
@@ -143,7 +143,7 @@ func checkInjection(deployment *sample.App) features.Func {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: consts.BootstrapperInitCertsSecretName,
 									},
-									Optional: ptr.To(true),
+									Optional: new(true),
 								},
 							},
 						},

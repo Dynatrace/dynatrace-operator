@@ -150,7 +150,7 @@ func TestWebhook(t *testing.T) {
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
@@ -265,7 +265,7 @@ func TestWebhook(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}
@@ -279,7 +279,7 @@ func TestWebhook(t *testing.T) {
 					Kind:       "Deployment",
 					Name:       "missing",
 					UID:        types.UID(uuid.NewString()),
-					Controller: ptr.To(true),
+					Controller: new(true),
 				},
 			}
 		})
@@ -303,7 +303,7 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 			MetadataEnrichment: metadataenrichment.Spec{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
@@ -865,7 +865,7 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 						ClientConfig: admissionregistrationv1.WebhookClientConfig{
 							Service: &admissionregistrationv1.ServiceReference{
 								Name: "dynatrace-webhook",
-								Path: ptr.To("/inject"),
+								Path: new("/inject"),
 							},
 						},
 						AdmissionReviewVersions: []string{"v1beta1", "v1"},
@@ -1110,7 +1110,7 @@ func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
 			Name:       deploy.Name,
 			APIVersion: deploy.APIVersion,
 			Kind:       deploy.Kind,
-			Controller: ptr.To(true),
+			Controller: new(true),
 			UID:        types.UID(uuid.NewString()),
 		},
 	}

@@ -4,10 +4,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 )
 
 const (
@@ -19,7 +20,6 @@ const (
 
 	DefaultMinRequestThresholdMinutes = 15
 )
-
 
 func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations)

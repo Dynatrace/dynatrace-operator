@@ -40,7 +40,7 @@ func TestWebhook(t *testing.T) {
 							Name: "v1beta4.dynakube.webhook.dynatrace.com",
 							ClientConfig: admissionregistrationv1.WebhookClientConfig{
 								Service: &admissionregistrationv1.ServiceReference{
-									Path: ptr.To("/validate-dynatrace-com-v1beta4-dynakube"),
+									Path: new("/validate-dynatrace-com-v1beta4-dynakube"),
 								},
 							},
 							Rules: []admissionregistrationv1.RuleWithOperations{
@@ -65,7 +65,7 @@ func TestWebhook(t *testing.T) {
 							Name: "v1beta5.dynakube.webhook.dynatrace.com",
 							ClientConfig: admissionregistrationv1.WebhookClientConfig{
 								Service: &admissionregistrationv1.ServiceReference{
-									Path: ptr.To("/validate-dynatrace-com-v1beta5-dynakube"),
+									Path: new("/validate-dynatrace-com-v1beta5-dynakube"),
 								},
 							},
 							Rules: []admissionregistrationv1.RuleWithOperations{
@@ -90,7 +90,7 @@ func TestWebhook(t *testing.T) {
 							Name: "v1beta6.dynakube.webhook.dynatrace.com",
 							ClientConfig: admissionregistrationv1.WebhookClientConfig{
 								Service: &admissionregistrationv1.ServiceReference{
-									Path: ptr.To("/validate-dynatrace-com-v1beta6-dynakube"),
+									Path: new("/validate-dynatrace-com-v1beta6-dynakube"),
 								},
 							},
 							Rules: []admissionregistrationv1.RuleWithOperations{

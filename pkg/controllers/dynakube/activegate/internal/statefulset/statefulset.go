@@ -139,7 +139,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		TerminationGracePeriodSeconds: statefulSetBuilder.dynakube.ActiveGate().GetTerminationGracePeriodSeconds(),
 		TopologySpreadConstraints:     statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
 		Volumes:                       statefulSetBuilder.buildVolumes(),
-		AutomountServiceAccountToken:  ptr.To(false),
+		AutomountServiceAccountToken:  new(false),
 	}
 	sts.Spec.Template.Spec = podSpec
 }
@@ -268,7 +268,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 					Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
 				},
 				Key:      deploymentmetadata.ActiveGateMetadataKey,
-				Optional: ptr.To(false),
+				Optional: new(false),
 			},
 		}},
 		{Name: consts.EnvDTHTTPPort, Value: strconv.Itoa(consts.HTTPContainerPort)},

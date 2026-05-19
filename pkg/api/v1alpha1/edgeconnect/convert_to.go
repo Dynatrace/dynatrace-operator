@@ -3,9 +3,10 @@ package edgeconnect
 import (
 	"strings"
 
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 // ConvertTo converts v1alpha1 to v1alpha2.

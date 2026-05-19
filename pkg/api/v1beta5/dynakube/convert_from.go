@@ -1,6 +1,8 @@
 package dynakube
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
+
 	dkconversion "github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -12,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 // ConvertFrom converts from the Hub version (latest) to this version (v1beta5).

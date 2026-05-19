@@ -29,7 +29,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -176,7 +175,7 @@ func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
 		expireLastTransitionTime(&dk, logmonsettings.ConditionType)
 		require.NoError(t, resources.UpdateStatus(ctx, &dk))
 
-		dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
+		dk.Spec.DynatraceAPIRequestThreshold = new(uint16(0))
 		require.NoError(t, resources.Update(ctx, &dk))
 
 		// Verify that the operator picked up the update

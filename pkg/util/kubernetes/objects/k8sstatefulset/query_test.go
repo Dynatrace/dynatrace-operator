@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,10 +48,10 @@ func TestCreateOrUpdateStatefulSet(t *testing.T) {
 	t.Run("update when exists and changed replicas", func(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
 		oldStatefulSet := createTestStatefulSetWithMatchLabels(statefulSetName, namespaceName, oldAnnotations, nil)
-		oldStatefulSet.Spec.Replicas = ptr.To(int32(3))
+		oldStatefulSet.Spec.Replicas = new(int32(3))
 		newAnnotations := map[string]string{hasher.AnnotationHash: "old"}
 		newStatefulSet := createTestStatefulSetWithMatchLabels(statefulSetName, namespaceName, newAnnotations, nil)
-		newStatefulSet.Spec.Replicas = ptr.To(int32(2))
+		newStatefulSet.Spec.Replicas = new(int32(2))
 		fakeClient := fake.NewClient(&oldStatefulSet)
 
 		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &newStatefulSet)

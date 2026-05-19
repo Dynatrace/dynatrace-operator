@@ -1,8 +1,9 @@
 package logmonitoring
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 )
 
 type dependencies struct {

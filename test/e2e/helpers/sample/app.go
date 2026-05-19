@@ -26,7 +26,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -343,7 +342,7 @@ func (app *App) asDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: app.base.ObjectMeta,
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(int32(2)),
+			Replicas: new(int32(2)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					selectorKey: selectorValue,

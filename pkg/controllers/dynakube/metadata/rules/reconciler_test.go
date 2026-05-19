@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
@@ -30,7 +29,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no error if not enabled", func(t *testing.T) {
 		dk := createDynaKube()
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
 		reconciler := NewReconciler(nil, &dk)
 
@@ -41,7 +40,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("clean-up if previously enabled", func(t *testing.T) {
 		dk := createDynaKube()
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		dk.Spec.MetadataEnrichment.Enabled = new(false)
 		dk.Status.MetadataEnrichment.Rules = createRules()
 		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, "TESTING")
 
@@ -121,7 +120,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("no rules if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
 		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
 		dk.Annotations = map[string]string{
 			exp.OANodeImagePullKey: "true",
@@ -170,7 +169,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("handle missing scope in platform token", func(t *testing.T) {
 		dk := createDynaKube()
-		dk.Status.APIToken.Platform = ptr.To(true)
+		dk.Status.APIToken.Platform = new(true)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, &core.HTTPError{StatusCode: 403})
@@ -193,7 +192,7 @@ func createDynaKube() dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			MetadataEnrichment: metadataenrichment.Spec{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 			},
 		},
 		Status: dynakube.DynaKubeStatus{

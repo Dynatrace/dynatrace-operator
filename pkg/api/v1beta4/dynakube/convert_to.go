@@ -1,6 +1,9 @@
 package dynakube
 
 import (
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
+
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -12,8 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
-	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 // Convertto converts this version (src=v1beta4) to the Hub version.

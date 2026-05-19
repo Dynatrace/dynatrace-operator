@@ -13,7 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -21,8 +20,8 @@ const testUser int64 = 420
 
 func getTestSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		RunAsUser:  ptr.To(testUser),
-		RunAsGroup: ptr.To(testUser),
+		RunAsUser:  new(testUser),
+		RunAsGroup: new(testUser),
 	}
 }
 
