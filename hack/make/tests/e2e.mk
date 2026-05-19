@@ -13,6 +13,10 @@ test/e2e/%/debug:
 test/e2e/%/olm:
 	@make OLM=true $(@D)
 
+## Start a test but using FIPS image
+test/e2e/%/fips:
+	@make FIPS=true $(@D)
+
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \

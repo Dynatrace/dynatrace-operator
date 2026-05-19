@@ -105,7 +105,7 @@ func TestImagePullable(t *testing.T) {
 			proxyWarning: false,
 		},
 		{
-			name:         "Default ClassicFullstack OneAgent image",
+			name:         "Default classicFullStack OneAgent image",
 			dk:           dynakubeBuilder(dockerServer.URL).withClassicFullStack().build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
@@ -125,7 +125,7 @@ func TestImagePullable(t *testing.T) {
 			proxyWarning: false,
 		},
 		{
-			name:         "Custom ClassicFullstack OneAgent image",
+			name:         "Custom classicFullStack OneAgent image",
 			dk:           dynakubeBuilder(dockerServer.URL).withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
 			component:    componentOneAgent,
 			proxyWarning: false,

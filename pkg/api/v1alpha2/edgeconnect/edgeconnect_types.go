@@ -8,7 +8,6 @@ package edgeconnect
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -135,7 +134,3 @@ const (
 	KubernetesDefaultDNS     = "kubernetes.default.svc.cluster.local"
 	kubernetesHostnameSuffix = "kubernetes-automation"
 )
-
-func init() {
-	v1alpha2.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
-}
