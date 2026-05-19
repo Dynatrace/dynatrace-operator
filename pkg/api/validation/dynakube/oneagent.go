@@ -18,10 +18,6 @@ import (
 const (
 	errorConflictingOneagentMode = `The DynaKube specification attempts to use multiple OneAgent modes simultaneously, which is not supported.`
 
-	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring/CloudNativeFullstack mode and retrieve the respective codeModules image, but the CSI driver and/or node image pull is not enabled.`
-
-	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but the code modules image is not set.`
-
 	errorNodeSelectorConflict = `The Dynakube specification conflicts with another Dynakube's OneAgent or Standalone-LogMonitoring. Only one Agent per node is supported.
 Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
@@ -160,34 +156,6 @@ func conflictingMaxUnavailableAnnotationWithRollingUpdate(_ context.Context, _ *
 
 	if dk.LogMonitoring().Template().RollingUpdate != nil {
 		return warningDeprecatedMaxUnavailableAnnotationWithRollingUpdate
-	}
-
-	return ""
-}
-
-func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if !v.modules.CSIDriver && !dk.FF().IsNodeImagePull() {
-		if dk.OneAgent().IsApplicationMonitoringMode() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
-			return errorImageFieldSetWithoutCSIFlag
-		}
-
-		if dk.OneAgent().IsCloudNativeFullstackMode() && len(dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage) > 0 {
-			return errorImageFieldSetWithoutCSIFlag
-		}
-	}
-
-	return ""
-}
-
-func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() {
-		if dk.FF().IsPublicRegistry() {
-			return ""
-		}
-
-		if dk.OneAgent().GetCustomCodeModulesImage() == "" {
-			return errorImagePullRequiresCodeModulesImage
-		}
 	}
 
 	return ""
