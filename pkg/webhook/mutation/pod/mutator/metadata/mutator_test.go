@@ -2,14 +2,12 @@ package metadata
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -394,22 +392,22 @@ func TestMutate(t *testing.T) {
 				require.NotEqual(t, *expectedPod, *request.Pod)
 				require.NotEmpty(t, request.Pod.OwnerReferences)
 
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.workload.kind", request.Pod.OwnerReferences[0].Kind))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.workload.name", request.Pod.OwnerReferences[0].Name))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument(nsMetaAnnotationKey, nsMetaAnnotationValue))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("k8s.workload.kind", strings.ToLower(request.Pod.OwnerReferences[0].Kind)))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("k8s.workload.name", request.Pod.OwnerReferences[0].Name))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg(nsMetaAnnotationKey, nsMetaAnnotationValue))
 
 				if tc.withDeprecatedAnnotations {
-					assert.Contains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
-					assert.Contains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
+					assert.Contains(t, request.InstallContainer.Args, attributes.ToArg(attributes.DeprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind)))
+					assert.Contains(t, request.InstallContainer.Args, attributes.ToArg(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
 				} else {
-					assert.NotContains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
-					assert.NotContains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
+					assert.NotContains(t, request.InstallContainer.Args, attributes.ToArg(attributes.DeprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind)))
+					assert.NotContains(t, request.InstallContainer.Args, attributes.ToArg(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
 				}
 
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("dt.security_context", "high"))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("dt.cost.costcenter", "cost-center"))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.namespace.label."+testCustomMetadataLabel, "custom-meta-label"))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-meta-annotation"))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("dt.security_context", "high"))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("dt.cost.costcenter", "cost-center"))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("k8s.namespace.label."+testCustomMetadataLabel, "custom-meta-label"))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-meta-annotation"))
 				assert.Contains(t, request.InstallContainer.Args, "--"+bootstrapper.MetadataEnrichmentFlag)
 
 				require.Len(t, request.Pod.Annotations, 7) // workload.kind + workload.name + dt.security_context + dt.cost.costcenter + injected + propagated ns annotations
@@ -421,14 +419,6 @@ func TestMutate(t *testing.T) {
 			})
 		}
 	})
-}
-
-func buildArgument(attr string, value string) string {
-	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, attr, strings.ToLower(value))
-}
-
-func podAttrArg(key, value string) string {
-	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, key, value)
 }
 
 func TestMutate_ResourceAttributes(t *testing.T) {
@@ -460,8 +450,8 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
 			},
 			notWantArgs: []string{
-				podAttrArg(globalKey, globalValue),
-				podAttrArg(additionalKey, additionalValue),
+				attributes.ToArg(globalKey, globalValue),
+				attributes.ToArg(additionalKey, additionalValue),
 			},
 		},
 		{
@@ -473,7 +463,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
 				ResourceAttributes: map[string]string{globalKey: globalValue},
 			},
-			wantArgs: []string{podAttrArg(globalKey, globalValue)},
+			wantArgs: []string{attributes.ToArg(globalKey, globalValue)},
 		},
 		{
 			name: "OA enabled (ApplicationMonitoring), only additionalResourceAttributes",
@@ -485,7 +475,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				},
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
 			},
-			wantArgs: []string{podAttrArg(additionalKey, additionalValue)},
+			wantArgs: []string{attributes.ToArg(additionalKey, additionalValue)},
 		},
 		{
 			name: "OA enabled (CloudNativeFullStack), only additionalResourceAttributes",
@@ -499,7 +489,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				},
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
 			},
-			wantArgs: []string{podAttrArg(additionalKey, additionalValue)},
+			wantArgs: []string{attributes.ToArg(additionalKey, additionalValue)},
 		},
 		{
 			name: "OA enabled, both set, key collision - additional wins",
@@ -512,8 +502,8 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
 				ResourceAttributes: map[string]string{collisionKey: globalCollVal},
 			},
-			wantArgs:    []string{podAttrArg(collisionKey, addCollVal)},
-			notWantArgs: []string{podAttrArg(collisionKey, globalCollVal)},
+			wantArgs:    []string{attributes.ToArg(collisionKey, addCollVal)},
+			notWantArgs: []string{attributes.ToArg(collisionKey, globalCollVal)},
 		},
 		{
 			name: "OA enabled, user key collides with operator semantic key - user wins",
@@ -524,8 +514,8 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
 				ResourceAttributes: map[string]string{"k8s.namespace.name": "user-override"},
 			},
-			wantArgs:    []string{podAttrArg("k8s.namespace.name", "user-override")},
-			notWantArgs: []string{podAttrArg("k8s.namespace.name", podNamespace)},
+			wantArgs:    []string{attributes.ToArg("k8s.namespace.name", "user-override")},
+			notWantArgs: []string{attributes.ToArg("k8s.namespace.name", podNamespace)},
 		},
 		{
 			name: "OA disabled, metadata enrichment only, global resource attributes applied",
@@ -533,7 +523,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
 				ResourceAttributes: map[string]string{globalKey: globalValue},
 			},
-			wantArgs: []string{podAttrArg(globalKey, globalValue)},
+			wantArgs: []string{attributes.ToArg(globalKey, globalValue)},
 		},
 		{
 			name: "OA disabled (HostMonitoring), additionalResourceAttributes ignored",
@@ -545,7 +535,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				},
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
 			},
-			notWantArgs: []string{podAttrArg(additionalKey, additionalValue)},
+			notWantArgs: []string{attributes.ToArg(additionalKey, additionalValue)},
 		},
 		{
 			name: "empty key and empty value are filtered out",
@@ -560,8 +550,8 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 					globalKey:   globalValue,
 				},
 			},
-			wantArgs:    []string{podAttrArg(globalKey, globalValue)},
-			notWantArgs: []string{podAttrArg("empty-val", "")},
+			wantArgs:    []string{attributes.ToArg(globalKey, globalValue)},
+			notWantArgs: []string{attributes.ToArg("empty-val", "")},
 		},
 	}
 

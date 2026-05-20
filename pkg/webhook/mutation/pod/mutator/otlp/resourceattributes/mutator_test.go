@@ -500,14 +500,10 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 		containerVal  = "container-value"
 	)
 
-	_ = appsv1.AddToScheme(scheme.Scheme)
-	_ = corev1.AddToScheme(scheme.Scheme)
-
 	baseNamespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
 
 	newPod := func(containerEnv ...corev1.EnvVar) *corev1.Pod {
 		return &corev1.Pod{
-			TypeMeta:   metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: testNamespace},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{Name: containerName, Env: containerEnv}},

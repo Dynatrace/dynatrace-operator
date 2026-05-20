@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -80,7 +79,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 			return ""
 		}
 
-		return fmt.Sprintf("--%s=%s=%s", pod.Flag, key, value)
+		return attributes.ToArg(key, value)
 	})
 
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{withDeprecatedAttributesArg})...)

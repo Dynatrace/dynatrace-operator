@@ -3,8 +3,10 @@ package attributes
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"maps"
 
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -13,21 +15,39 @@ import (
 
 type Pod struct {
 
-	// non-user given
+	// built from customer defined metadata enrichment rules
 	rules                map[string]string
 	rulesPropagate       map[string]string
+
+	// read from metadata.dynatrace.com annotations on the namespace
 	namespaceAnnotations map[string]string
+	// read from metadata.dynatrace.com annotations on the namespace
 	podAnnotations       map[string]string
+
+	// .spec.resourceAttributes + .spec.(oneagent.*|otlpExporterConfiguration).addtionalResourceAttributes
 	dynakube             map[string]string
+
+	// custom attributes, e.g. OTEL_RESOURCE_ATTRIBUTES env var
 	custom               map[string]string
 
+	// read from the workload that owns the injected pod
 	workloadInfo map[string]string
+
+	// read from K8s cluster
 	clusterInfo  map[string]string
+
+	// read from the injected pod manifest
 	podInfo      map[string]string
+
+	// dt.kubernetes.* attributes that are deprecated and will be removed
 	deprecated   map[string]string
+
+	// include deprecated attributes in combined results
+	useDeprecated bool
+
+	// env vars that are referenced by attributes
 	podEnvVars   []corev1.EnvVar
 
-	useDeprecated bool
 }
 
 func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) (*Pod, error) {
@@ -79,6 +99,10 @@ func (attrs *Pod) Convert(c convertFunc, containerAttrs ...Container) []string {
 	return convert(combined, c)
 }
 
+func ToArg(key, value string) string {
+	return fmt.Sprintf("--%s=%s=%s", pod.Flag, key, value)
+}
+
 func (attrs *Pod) combineAll(containerAttrs ...Container) map[string]string {
 	combined := make(map[string]string)
 
@@ -112,7 +136,7 @@ func (attrs *Pod) combineAll(containerAttrs ...Container) map[string]string {
 func (attrs *Pod) combineForMetadataAnnotations() map[string]string {
 	combined := make(map[string]string)
 
-	// make sure we use the same precedence as in combine()
+	// make sure we use the same precedence as in combineAll()
 	maps.Copy(combined, attrs.workloadInfo)
 	maps.Copy(combined, attrs.dynakube)
 	maps.Copy(combined, attrs.namespaceAnnotations)
