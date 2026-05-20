@@ -20,9 +20,8 @@ const (
 	DefaultMinRequestThresholdMinutes = 15
 )
 
-
 func (dk *DynaKube) FF() *exp.FeatureFlags {
-	return exp.NewFlags(dk.Annotations)
+	return exp.NewFlags(dk.Annotations, false)
 }
 
 // APIURL is a getter for dk.Spec.APIURL.

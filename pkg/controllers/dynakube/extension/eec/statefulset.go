@@ -79,7 +79,7 @@ const (
 )
 
 func useLegacyMounts(dk *dynakube.DynaKube) bool {
-	return exp.NewFlags(dk.Annotations).UseEECLegacyMounts()
+	return exp.NewFlags(dk.Annotations, false).UseEECLegacyMounts()
 }
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
