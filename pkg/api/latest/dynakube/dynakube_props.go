@@ -27,7 +27,7 @@ const (
 )
 
 func (dk *DynaKube) FF() *exp.FeatureFlags {
-	return exp.NewFlagsWithPlatformToken(dk.Annotations, ptr.Deref(dk.Status.APIToken.Platform, false))
+	return exp.NewFlags(dk.Annotations, ptr.Deref(dk.Status.APIToken.Platform, false))
 }
 
 func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {

@@ -22,11 +22,7 @@ type FeatureFlags struct {
 	hasPlatformToken bool
 }
 
-func NewFlags(annotations map[string]string) *FeatureFlags {
-	return &FeatureFlags{annotations: annotations}
-}
-
-func NewFlagsWithPlatformToken(annotations map[string]string, hasPlatformToken bool) *FeatureFlags {
+func NewFlags(annotations map[string]string, hasPlatformToken bool) *FeatureFlags {
 	return &FeatureFlags{annotations: annotations, hasPlatformToken: hasPlatformToken}
 }
 
