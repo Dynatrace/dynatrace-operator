@@ -956,3 +956,25 @@ tests:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5
+
+  - it: DT_OPERATOR_IMAGE uses the digest when imageRef.digest is set
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+        tag: tag-name
+        digest: sha256:f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo@sha256:f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_OPERATOR_IMAGE
+            value: "some-repo@sha256:f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2"
+          count: 1
+          any: true
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: 1.0.1
