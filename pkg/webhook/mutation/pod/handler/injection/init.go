@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
@@ -26,6 +27,13 @@ func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube)
 			Name:  configure.InputFolderFlag,
 			Value: volumes.InitInputMountPath,
 		},
+	}
+
+	if bootstrapperconfig.NeedsDownloadConfig(&dk) {
+		args = append(args, arg.Arg{
+			Name:  bootstrapper.BaseURL,
+			Value: dk.Spec.APIURL,
+		})
 	}
 
 	if areErrorsSuppressed(pod, dk) {

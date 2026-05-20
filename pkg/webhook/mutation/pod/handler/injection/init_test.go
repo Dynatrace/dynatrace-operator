@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -189,6 +190,60 @@ func TestCreateInitContainerBase(t *testing.T) {
 		initContainer = wh.createInitContainerBase(pod, *dk)
 
 		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
+	})
+
+	t.Run("should set url arg in CNFS and AM modes", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+
+		dk := getTestDynakube()
+		initContainer := wh.createInitContainerBase(pod, *dk)
+		assert.Contains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
+
+		dk.Spec.OneAgent = getApplicationMonitoringSpec()
+		initContainer = wh.createInitContainerBase(pod, *dk)
+		assert.Contains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
+	})
+
+	t.Run("shouldn't set url arg in CFS and HM modes", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+		dk := getTestDynakube()
+
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+
+		dk.Spec.OneAgent = getHostMonitoringSpec()
+		initContainer := wh.createInitContainerBase(pod, *dk)
+		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
+
+		dk.Spec.OneAgent = getClassicFullStackSpec()
+		initContainer = wh.createInitContainerBase(pod, *dk)
+		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
+	})
+
+	t.Run("shouldn't set url arg if CSI driver enabled", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+		dk := getTestDynakube()
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+
+		initContainer := wh.createInitContainerBase(pod, *dk)
+
+		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
+	})
+
+	t.Run("shouldn't set url arg if codemodules image is set", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+		dk := getTestDynakube()
+		dk.Status.CodeModules.ImageID = "image"
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+
+		initContainer := wh.createInitContainerBase(pod, *dk)
+
+		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 	})
 }
 
@@ -624,6 +679,26 @@ func getCloudNativeSpec() oneagent.Spec {
 		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 			AppInjectionSpec: oneagent.AppInjectionSpec{},
 		},
+	}
+}
+
+func getApplicationMonitoringSpec() oneagent.Spec {
+	return oneagent.Spec{
+		ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+			AppInjectionSpec: oneagent.AppInjectionSpec{},
+		},
+	}
+}
+
+func getHostMonitoringSpec() oneagent.Spec {
+	return oneagent.Spec{
+		HostMonitoring: &oneagent.HostInjectSpec{},
+	}
+}
+
+func getClassicFullStackSpec() oneagent.Spec {
+	return oneagent.Spec{
+		ClassicFullStack: &oneagent.HostInjectSpec{},
 	}
 }
 
