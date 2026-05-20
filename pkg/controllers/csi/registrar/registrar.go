@@ -123,6 +123,8 @@ func (s Server) NotifyRegistrationStatus(ctx context.Context, status *registerap
 
 	if !status.GetPluginRegistered() {
 		log.Error(errors.New("plugin registration failed"), "plugin registration failed", "error", status.GetError())
+
+		os.Exit(1) //nolint:revive
 	}
 
 	return &registerapi.RegistrationStatusResponse{}, nil
