@@ -81,13 +81,11 @@ func TestPublicRegistryFlagIgnoredForPlatformToken(t *testing.T) {
 
 	t.Run("FF set with regular token returns no warning", func(t *testing.T) {
 		dk := newDynakube(map[string]string{exp.UsePublicRegistryKey: "true"})
-		warnings, _ := assertAllowed(t, dk, regularTokenSecret())
-		assert.Empty(t, warnings)
+		assertAllowedWithoutWarnings(t, dk, regularTokenSecret())
 	})
 
 	t.Run("FF not set with platform token returns no warning", func(t *testing.T) {
 		dk := newDynakube(nil)
-		warnings, _ := assertAllowed(t, dk, platformTokenSecret())
-		assert.Empty(t, warnings)
+		assertAllowedWithoutWarnings(t, dk, platformTokenSecret())
 	})
 }
