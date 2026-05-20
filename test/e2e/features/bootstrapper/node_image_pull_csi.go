@@ -57,6 +57,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 	builder.Assess("check if jobs got cleaned up", k8sjob.WaitForDeletionWithOwner(appMonDynakube.Name, appMonDynakube.Namespace))
 
 	builder.Assess("install sample app", sampleApp.Install())
+	builder.Assess("check bootstrapper secret has PMC and PGC data", checkBootstrapperSecret(sampleApp))
 
 	builder.Assess("codemodules have been downloaded", codemodules.ImageHasBeenDownloaded(appMonDynakube))
 	builder.Assess("volumes are mounted correctly", codemodules.VolumesAreMountedCorrectly(*sampleApp))
