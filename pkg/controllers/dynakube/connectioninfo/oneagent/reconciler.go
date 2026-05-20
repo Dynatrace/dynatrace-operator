@@ -40,7 +40,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtClient oneagent
 	}
 }
 
-var NoOneAgentCommunicationEndpointsError = errors.New("no communication endpoints for OneAgent are available")
+var (
+	NoOneAgentCommunicationEndpointsError = errors.New("no communication endpoints for OneAgent are available")
+	StaleRestrictedNetworkZoneError       = errors.New("OneAgent endpoints in a restricted network-zone do not match the local ActiveGate Service IP, waiting for the ActiveGate to re-register")
+)
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	ctx, log := logd.NewFromContext(ctx, "oneagent-connectioninfo")
@@ -109,7 +112,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to get OneAgent connection info")
 	}
 
-	r.setDynakubeStatus(connectionInfo)
+	r.dk.Status.OneAgent.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
 
 	log.Info("OneAgent connection info updated")
 
@@ -119,6 +122,18 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 		return NoOneAgentCommunicationEndpointsError
 	}
+
+	if hasStaleRestrictedNetworkZoneEndpoints(r.dk, connectionInfo.Endpoints) {
+		log.Info("OneAgent endpoints in restricted network-zone do not match the local ActiveGate Service IP yet, postponing OneAgent deployment",
+			"tenant", connectionInfo.TenantUUID,
+			"endpoints", connectionInfo.Endpoints,
+			"serviceIPs", r.dk.Status.ActiveGate.ServiceIPs)
+		setStaleRestrictedNetworkZoneCondition(r.dk.Conditions())
+
+		return StaleRestrictedNetworkZoneError
+	}
+
+	r.dk.Status.OneAgent.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 
 	err = r.createTenantTokenSecret(ctx, r.dk.OneAgent().GetTenantSecret(), connectionInfo)
 	if err != nil {
@@ -133,11 +148,6 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	log.Info("received OneAgent connection info", "communication endpoints", connectionInfo.Endpoints, "tenant", connectionInfo.TenantUUID)
 
 	return nil
-}
-
-func (r *reconciler) setDynakubeStatus(connectionInfo oneagent.ConnectionInfo) {
-	r.dk.Status.OneAgent.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
-	r.dk.Status.OneAgent.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 }
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo oneagent.ConnectionInfo) error {

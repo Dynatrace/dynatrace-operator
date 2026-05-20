@@ -111,6 +111,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		}
 	}
 
+	if errors.Is(err, oaconnectioninfo.StaleRestrictedNetworkZoneError) { // This only informational
+		log.Info("OneAgent endpoints in a restricted network-zone do not yet match the local ActiveGate Service IP, postponing OneAgent deployment until the ActiveGate has re-registered", "dynakube", dk.Name)
+	}
+
 	if err != nil {
 		return err
 	}
