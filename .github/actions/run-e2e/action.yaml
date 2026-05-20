@@ -130,7 +130,7 @@ runs:
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
       if: always()
     - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@v2
+      uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2
       with:
         files: target/results/*.xml
       if: always()
