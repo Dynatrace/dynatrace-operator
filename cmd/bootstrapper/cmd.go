@@ -116,7 +116,7 @@ func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 			}
 		}
 
-		err := runConfigure(fs)
+		err := runConfigure()
 		if err != nil {
 			if areErrorsSuppressed {
 				log.Error(err, "error during configuration, the error was suppressed")
@@ -131,9 +131,9 @@ func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 	}
 }
 
-func runConfigure(fs afero.Afero) error {
+func runConfigure() error {
 	if targetFolder != "" {
-		err := configure.SetupOneAgent(log.Logger, fs, targetFolder)
+		err := configure.SetupOneAgent(log.Logger, targetFolder)
 		if err != nil {
 			log.Info("error during oneagent configuration")
 
@@ -142,7 +142,7 @@ func runConfigure(fs afero.Afero) error {
 	}
 
 	if needsMetadataEnrichment {
-		err := configure.EnrichWithMetadata(log.Logger, fs)
+		err := configure.EnrichWithMetadata(log.Logger)
 		if err != nil {
 			log.Info("error during metadata enrichment")
 
