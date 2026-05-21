@@ -168,17 +168,17 @@ func TestNewMultiCapabilityWithDebugging(t *testing.T) {
 	})
 }
 
-func TestBuildServiceDomainNameForDNSEntryPoint(t *testing.T) {
-	actual := buildServiceDomainName("test-name", "test-namespace")
+func TestBuildServiceHostnameWithPort(t *testing.T) {
+	dk := dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "test-name", Namespace: "test-namespace"}}
+	actual := buildServiceHostnameWithPort(dk)
 	assert.NotEmpty(t, actual)
 
 	expected := "test-name-activegate.test-namespace:443"
 	assert.Equal(t, expected, actual)
 
-	testStringName := "this---dynakube_string"
-	testNamespace := "this_is---namespace_string"
+	dk = dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "this---dynakube_string", Namespace: "this_is---namespace_string"}}
 	expected = "this---dynakube_string-activegate.this_is---namespace_string:443"
-	actual = buildServiceDomainName(testStringName, testNamespace)
+	actual = buildServiceHostnameWithPort(dk)
 	assert.Equal(t, expected, actual)
 }
 
