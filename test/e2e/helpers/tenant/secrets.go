@@ -137,12 +137,18 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	return result
 }
 
-// TODO check do i really need here to pass all the tokens? or i can pass platform token somewhere before
+// IsPlatformToken reports whether the test run is configured to use a platform token
+// instead of a classic API token (controlled by the PLATFORM_TOKEN=true env var).
+func IsPlatformToken() bool {
+	return os.Getenv("PLATFORM_TOKEN") == "true"
+}
+
 func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		token := tokens.APIToken
 
-		if os.Getenv("PLATFORM_TOKEN") == "true" {
+		if IsPlatformToken() {
+			t.Log("platform token mode: using platform token for tenant secret")
 			token = tokens.PlatformToken
 		}
 

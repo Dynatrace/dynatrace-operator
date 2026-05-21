@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	e2econst "github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -53,7 +54,10 @@ func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Lev
 }
 
 func Create(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, testDynakube dynakube.DynaKube) {
-	if tokens.APIToken != "" || tokens.DataIngestToken != "" {
+	if tenant.IsPlatformToken() && testDynakube.Spec.CustomPullSecret == "" {
+		testDynakube.Spec.CustomPullSecret = e2econst.DevRegistryPullSecretName
+	}
+	if tokens.APIToken != "" || tokens.DataIngestToken != "" || tokens.PlatformToken != "" {
 		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace))
 	}
 	builder.WithStep(
