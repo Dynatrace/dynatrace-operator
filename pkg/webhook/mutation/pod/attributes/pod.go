@@ -18,7 +18,7 @@ type Pod struct {
 
 	// read from metadata.dynatrace.com annotations on the namespace
 	namespaceAnnotations map[string]string
-	// read from metadata.dynatrace.com annotations on the namespace
+	// read from metadata.dynatrace.com annotations on the pod
 	podAnnotations map[string]string
 
 	// .spec.resourceAttributes + .spec.(oneagent.*|otlpExporterConfiguration).addtionalResourceAttributes
