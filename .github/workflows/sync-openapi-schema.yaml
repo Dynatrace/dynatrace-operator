@@ -100,7 +100,13 @@ jobs:
 
           changed_packages=$(git status --porcelain -u | sed 's/^...//' | grep "^${OUTPUT_DIR}/" | sed "s|^${OUTPUT_DIR}/||" | cut -d'/' -f1 | sort -u | tr '\n' ' ' || true)
 
-          pr_body=$(cat <<EOF
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "schemas_summary=${schemas_summary}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo 'pr_body<<EOF'
+            cat <<EOF
           # Description
           This PR syncs OpenAPI schemas and (re-)generates Go clients.
 
@@ -111,14 +117,7 @@ jobs:
           | **Packages changed** | \`${changed_packages}\` |
           | **Workflow run** | [#${WORKFLOW_RUN_NUMBER}](${WORKFLOW_RUN_URL}) |
           EOF
-          )
-
-          {
-            echo "changed=true"
-            echo "schemas_summary=${schemas_summary}"
-            echo "pr_body<<EOF"
-            echo "${pr_body}"
-            echo "EOF"
+            echo EOF
           } >> "$GITHUB_OUTPUT"
 
       - name: Create pull request
