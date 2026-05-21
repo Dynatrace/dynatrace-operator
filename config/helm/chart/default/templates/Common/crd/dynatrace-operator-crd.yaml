@@ -1733,6 +1733,10 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -3732,6 +3736,10 @@ spec:
                             type: string
                         type: object
                       labels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      nodeSelector:
                         additionalProperties:
                           type: string
                         type: object
@@ -7284,6 +7292,10 @@ spec:
                             type: string
                         type: object
                       labels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      nodeSelector:
                         additionalProperties:
                           type: string
                         type: object
