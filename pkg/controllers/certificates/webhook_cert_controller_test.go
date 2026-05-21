@@ -288,7 +288,7 @@ func prepareController(clt client.Client) (*WebhookCertificateController, reconc
 func verifyCertificates(t *testing.T, secret *corev1.Secret, clt client.Client, isUpdate bool) {
 	t.Helper()
 	cert := Certs{
-		Domain:  getDomain(testNamespace),
+		Domain:  webhook.DeploymentName + "." + testNamespace,
 		Data:    secret.Data,
 		SrcData: secret.Data,
 		Now:     time.Now(),

@@ -155,6 +155,8 @@ func (cs *Certs) generateRootCerts(ctx context.Context, domain string, now time.
 		},
 		IsCA: true,
 
+		DNSNames: buildSANs(domain),
+
 		NotBefore: now,
 		NotAfter:  now.Add(365 * 24 * time.Hour),
 
@@ -209,7 +211,7 @@ func (cs *Certs) generateServerCerts(ctx context.Context, domain string, now tim
 			CommonName:         domain,
 		},
 
-		DNSNames: []string{domain},
+		DNSNames: buildSANs(domain),
 
 		NotBefore: now,
 		NotAfter:  now.Add(7 * 24 * time.Hour),
