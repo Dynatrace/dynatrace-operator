@@ -112,8 +112,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to get OneAgent connection info")
 	}
 
-	r.dk.Status.OneAgent.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
-
+	r.setDynakubeStatus(connectionInfo)
 	log.Info("OneAgent connection info updated")
 
 	if len(connectionInfo.Endpoints) == 0 {
@@ -132,8 +131,6 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 		return StaleNetworkZoneEndpointsError
 	}
-
-	r.dk.Status.OneAgent.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 
 	err = r.createTenantTokenSecret(ctx, r.dk.OneAgent().GetTenantSecret(), connectionInfo)
 	if err != nil {
@@ -169,4 +166,9 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	k8sconditions.SetSecretCreated(r.dk.Conditions(), oaConnectionInfoConditionType, secret.Name)
 
 	return nil
+}
+
+func (r *reconciler) setDynakubeStatus(connectionInfo oneagent.ConnectionInfo) {
+	r.dk.Status.OneAgent.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
+	r.dk.Status.OneAgent.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 }
