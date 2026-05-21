@@ -1,8 +1,14 @@
 package cleanup
 
-import "os"
+import (
+	"context"
+	"os"
 
-func (c *Cleaner) removeDeprecatedMounts(fsState fsState) {
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+)
+
+func (c *Cleaner) removeDeprecatedMounts(ctx context.Context, fsState fsState) {
+	log := logd.FromContext(ctx)
 	stillMountedCounter := 0
 
 	for _, depDir := range fsState.deprecatedDks {

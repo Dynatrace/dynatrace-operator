@@ -6,6 +6,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestIsPublicRegistry(t *testing.T) {
+	t.Run("no FF, no platform token => false", func(t *testing.T) {
+		ff := NewFlags(nil, false)
+		assert.False(t, ff.IsPublicRegistry())
+	})
+
+	t.Run("FF=true, no platform token => true", func(t *testing.T) {
+		ff := NewFlags(map[string]string{UsePublicRegistryKey: "true"}, false)
+		assert.True(t, ff.IsPublicRegistry())
+	})
+
+	t.Run("no FF, platform token => true", func(t *testing.T) {
+		ff := NewFlags(nil, true)
+		assert.True(t, ff.IsPublicRegistry())
+	})
+
+	t.Run("FF=false, platform token => true (FF ignored)", func(t *testing.T) {
+		ff := NewFlags(map[string]string{UsePublicRegistryKey: "false"}, true)
+		assert.True(t, ff.IsPublicRegistry())
+	})
+}
+
 func TestGetNoProxy(t *testing.T) {
 	type testCase struct {
 		title string

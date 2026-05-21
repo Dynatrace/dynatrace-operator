@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -18,6 +19,8 @@ Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceS
 )
 
 func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.OneAgent().IsAppInjectionNeeded() &&
 		!dk.MetadataEnrichment().IsEnabled() &&
 		!dk.OTLPExporterConfiguration().IsEnabled() {

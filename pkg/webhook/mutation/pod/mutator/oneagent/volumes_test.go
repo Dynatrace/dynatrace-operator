@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestAddVolumeMounts(t *testing.T) {
@@ -65,7 +65,7 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 				},
 			},
 		}
-		addEmptyDirBinVolume(pod)
+		addEmptyDirBinVolume(pod, logd.Get())
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 
@@ -90,7 +90,7 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 				},
 			},
 		}
-		addEmptyDirBinVolume(pod)
+		addEmptyDirBinVolume(pod, logd.Get())
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 
@@ -98,7 +98,7 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 			Name: BinVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: ptr.To(resource.MustParse("500Mi")),
+					SizeLimit: new(resource.MustParse("500Mi")),
 				},
 			},
 		}, pod.Spec.Volumes[0])

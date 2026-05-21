@@ -27,13 +27,9 @@ jobs:
     strategy:
       # we don't want to cancel all in-progress jobs if any matrix job fails.
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 10
       matrix:
         include:
-          - version: 1-28
-            platform: k8s
-          - version: 1-29
-            platform: k8s
           - version: 1-30
             platform: k8s
           - version: 1-31
@@ -45,6 +41,8 @@ jobs:
           - version: 1-34
             platform: k8s
           - version: 1-35
+            platform: k8s
+          - version: 1-36
             platform: k8s
           - version: 4-14
             platform: ocp
@@ -61,6 +59,8 @@ jobs:
           - version: 4-20
             platform: ocp
           - version: 4-20-olm
+            platform: ocp
+          - version: 4-21
             platform: ocp
     environment: E2E
     runs-on:
@@ -88,6 +88,7 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Prepare outputs
         id: prepare_outputs
         if: always()
@@ -117,7 +118,7 @@ jobs:
           if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
-      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@f5847cb398fe65d53794e6aba98ebdfa0801f691 # 0.32.0
+      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@4c9d51717dc04d823dac2dc9ac2857e7b3069454 # 0.35.0
         if: always()
         with:
           value: ${{ steps.prepare_outputs.outputs.matrix }}
@@ -133,7 +134,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@f5847cb398fe65d53794e6aba98ebdfa0801f691 # 0.32.0
+      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@4c9d51717dc04d823dac2dc9ac2857e7b3069454 # 0.35.0
         id: get-matrix-outputs
         with:
           artifact-name: run-matrix-artifact
@@ -147,7 +148,7 @@ jobs:
           TARGET_BRANCH: ${{ inputs.target || env.branch }}
           MATRIX_OUTPUTS: ${{ steps.get-matrix-outputs.outputs.result }}
       - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook

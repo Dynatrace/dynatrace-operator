@@ -328,7 +328,7 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 						ActiveGate: agSpec,
 					},
 				}
-				assertAllowedWithoutWarnings(t, setExtensions(dk1), setExtensions(dk2))
+				assertAllowedWithWarnings(t, 1, setExtensions(dk1), setExtensions(dk2))
 			},
 		},
 
@@ -355,10 +355,10 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 				}
 				warnings, err := assertAllowed(t, setExtensions(dk1), setExtensions(dk2))
 				require.NoError(t, err)
-				require.Len(t, warnings, 1)
+				require.Len(t, warnings, 2)
 
 				expected := fmt.Sprintf(warningConflictingAPIURLForExtensions, dk2.Name)
-				assert.Equal(t, expected, warnings[0])
+				assert.Contains(t, warnings, expected)
 			},
 		},
 
@@ -384,7 +384,7 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 						ActiveGate: agSpec,
 					},
 				}
-				assertAllowedWithoutWarnings(t, setExtensions(dk1), dk2)
+				assertAllowedWithWarnings(t, 1, setExtensions(dk1), dk2)
 			},
 		},
 	)

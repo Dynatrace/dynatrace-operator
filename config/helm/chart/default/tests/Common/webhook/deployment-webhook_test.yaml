@@ -705,6 +705,29 @@ tests:
           path: spec.template.spec.containers[0].image
           value: "some-repo:v1.0.1"
 
+  - it: digest in imageref wins over tag and omits the tag
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+        tag: tag-name
+        digest: sha256:f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo@sha256:f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2"
+
+  - it: digest in imageref is used when tag is omitted
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+        digest: sha256:f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo@sha256:f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2"
+
   - it: debug flag disables high availability and security context
     set:
       platform: kubernetes
@@ -865,3 +888,29 @@ tests:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5
+
+  - it: should set dnsPolicy if hostNetwork is enabled
+    set:
+      platform: kubernetes
+      image: image-name
+      webhook:
+        hostNetwork: true
+    asserts:
+      - equal:
+          path: spec.template.spec.hostNetwork
+          value: true
+      - equal:
+          path: spec.template.spec.dnsPolicy
+          value: ClusterFirstWithHostNet
+
+  - it: should not set dnsPolicy if hostNetwork is disabled
+    set:
+      platform: kubernetes
+      image: image-name
+      webhook:
+        hostNetwork: false
+    asserts:
+      - isNull:
+          path: spec.template.spec.hostNetwork
+      - isNull:
+          path: spec.template.spec.dnsPolicy

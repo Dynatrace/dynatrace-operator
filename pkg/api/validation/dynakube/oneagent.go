@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"k8s.io/apimachinery/pkg/labels"
@@ -16,10 +17,6 @@ import (
 
 const (
 	errorConflictingOneagentMode = `The DynaKube specification attempts to use multiple OneAgent modes simultaneously, which is not supported.`
-
-	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring/CloudNativeFullstack mode and retrieve the respective codeModules image, but the CSI driver and/or node image pull is not enabled.`
-
-	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but the code modules image is not set.`
 
 	errorNodeSelectorConflict = `The Dynakube specification conflicts with another Dynakube's OneAgent or Standalone-LogMonitoring. Only one Agent per node is supported.
 Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
@@ -47,7 +44,9 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	warningDeprecatedVersion = `version field is deprecated. Please use "%s" field instead to set a version.`
 )
 
-func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	counter := 0
 	if dk.OneAgent().IsApplicationMonitoringMode() {
 		counter += 1
@@ -75,6 +74,8 @@ func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynak
 }
 
 func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.OneAgent().IsDaemonsetRequired() && !dk.LogMonitoring().IsStandalone() {
 		return ""
 	}
@@ -155,30 +156,6 @@ func conflictingMaxUnavailableAnnotationWithRollingUpdate(_ context.Context, _ *
 
 	if dk.LogMonitoring().Template().RollingUpdate != nil {
 		return warningDeprecatedMaxUnavailableAnnotationWithRollingUpdate
-	}
-
-	return ""
-}
-
-func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if !v.modules.CSIDriver && !dk.FF().IsNodeImagePull() {
-		if dk.OneAgent().IsApplicationMonitoringMode() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
-			return errorImageFieldSetWithoutCSIFlag
-		}
-
-		if dk.OneAgent().IsCloudNativeFullstackMode() && len(dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage) > 0 {
-			return errorImageFieldSetWithoutCSIFlag
-		}
-	}
-
-	return ""
-}
-
-func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() {
-		if dk.OneAgent().GetCustomCodeModulesImage() == "" {
-			return errorImagePullRequiresCodeModulesImage
-		}
 	}
 
 	return ""

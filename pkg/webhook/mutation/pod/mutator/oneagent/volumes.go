@@ -6,11 +6,11 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/app"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -44,7 +44,7 @@ func addInitBinMount(initContainer *corev1.Container, readonly bool) {
 	)
 }
 
-func addEmptyDirBinVolume(pod *corev1.Pod) {
+func addEmptyDirBinVolume(pod *corev1.Pod, log logd.Logger) {
 	if k8svolume.Contains(pod.Spec.Volumes, BinVolumeName) {
 		return
 	}
@@ -82,7 +82,7 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) {
 	volumeSource := corev1.VolumeSource{
 		CSI: &corev1.CSIVolumeSource{
 			Driver:   dtcsi.DriverName,
-			ReadOnly: ptr.To(true),
+			ReadOnly: new(true),
 			VolumeAttributes: map[string]string{
 				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
 				csivolumes.CSIVolumeAttributeDynakubeField: dkName,

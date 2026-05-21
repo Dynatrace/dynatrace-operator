@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -21,6 +22,8 @@ import (
 const DeprecatedOtelcTokenSecretKey = "otelc.token"
 
 func (r *Reconciler) reconcileSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsAnyEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), secretConditionType) == nil {
 			return nil
@@ -110,6 +113,8 @@ func (r *Reconciler) getSecretName(dk *dynakube.DynaKube) string {
 }
 
 func (r *Reconciler) removeDeprecatedSecretAndConditionIfNeeded(ctx context.Context, existingSecret *corev1.Secret, dk *dynakube.DynaKube) bool {
+	log := logd.FromContext(ctx)
+
 	if existingSecret == nil {
 		return false
 	}

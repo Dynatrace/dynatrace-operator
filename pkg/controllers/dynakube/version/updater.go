@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -19,14 +21,16 @@ type StatusUpdater interface {
 	CustomImage() string
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
-	IsAutoRegistryEnabled() bool
-	CheckForDowngrade(latestVersion string) (bool, error)
-	ValidateStatus() error
+	IsPublicRegistryEnabled() bool
+	CheckForDowngrade(ctx context.Context, latestVersion string) (bool, error)
+	ValidateStatus(ctx context.Context) error
+	LatestImageInfo(ctx context.Context) (*image.Info, error)
 
 	UseTenantRegistry(context.Context) error
 }
 
 func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
+	log := logd.FromContext(ctx)
 	currentSource := determineSource(updater)
 
 	var err error
@@ -40,7 +44,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 
 	if currentSource == status.CustomImageVersionSource {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		setImageIDToCustomImage(updater.Target(), updater.CustomImage())
+		setImageIDToCustomImage(ctx, updater.Target(), updater.CustomImage())
 
 		return nil
 	}
@@ -57,13 +61,13 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		}
 	}
 
-	if updater.IsAutoRegistryEnabled() {
-		err = r.processAutoRegistry(ctx, updater)
+	if updater.IsPublicRegistryEnabled() {
+		err = r.processPublicRegistry(ctx, updater)
 		if err != nil {
 			return err
 		}
 
-		return updater.ValidateStatus()
+		return updater.ValidateStatus(ctx)
 	}
 
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
@@ -73,13 +77,28 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		return err
 	}
 
-	return updater.ValidateStatus()
+	return updater.ValidateStatus(ctx)
 }
 
-func (r *reconciler) processAutoRegistry(_ context.Context, updater StatusUpdater) error {
+func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
+	log := logd.FromContext(ctx)
 	log.Info("updating version status according to public registry", "updater", updater.Name())
-	// TODO: implement in ICP-1077
-	return errors.New("auto registry is not yet supported")
+
+	publicImage, err := updater.LatestImageInfo(ctx)
+	if err != nil {
+		log.Info("could not get public image", "updater", updater.Name(), "error", err)
+
+		return err
+	}
+
+	isDowngrade, err := updater.CheckForDowngrade(ctx, publicImage.Tag)
+	if err != nil || isDowngrade {
+		return err
+	}
+
+	setImageFromImageInfo(ctx, updater.Target(), publicImage)
+
+	return nil
 }
 
 func determineSource(updater StatusUpdater) status.VersionSource {
@@ -87,8 +106,8 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 		return status.CustomImageVersionSource
 	}
 
-	if updater.IsAutoRegistryEnabled() {
-		return status.AutomaticRegistryVersionSource
+	if updater.IsPublicRegistryEnabled() {
+		return status.PublicRegistryVersionSource
 	}
 
 	if updater.CustomVersion() != "" {
@@ -98,35 +117,53 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 	return status.TenantRegistryVersionSource
 }
 
+func setImageFromImageInfo(ctx context.Context,
+	target *status.VersionStatus,
+	imageInfo *image.Info,
+) {
+	log := logd.FromContext(ctx)
+	oldImageID := target.ImageID
+
+	target.Version = imageInfo.Tag
+	target.ImageID = imageInfo.URI
+
+	log.Info("updated image version info",
+		"image", imageInfo,
+		"oldImageID", oldImageID,
+		"newImageID", target.ImageID)
+}
+
 func setImageIDToCustomImage(
+	ctx context.Context,
 	target *status.VersionStatus,
 	imageURI string,
 ) {
-	log.Info("updating image version info",
-		"image", imageURI,
-		"oldImageID", target.ImageID)
+	log := logd.FromContext(ctx)
+	oldImageID := target.ImageID
 
 	target.ImageID = imageURI
 	target.Version = string(status.CustomImageVersionSource)
 
 	log.Info("updated image version info",
+		"image", imageURI,
+		"oldImageID", oldImageID,
 		"newImageID", target.ImageID)
 }
 
 func updateVersionStatusForTenantRegistry(
+	ctx context.Context,
 	target *status.VersionStatus,
 	imageURI string,
 	latestVersion string,
 ) error {
+	log := logd.FromContext(ctx)
+	oldImageID := target.ImageID
+	oldVersion := target.Version
+
 	ref, err := name.ParseReference(imageURI)
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
-
-	log.Info("updating image version info for tenant registry image",
-		"image", imageURI,
-		"oldImageID", target.ImageID,
-		"oldVersion", target.Version)
 
 	if taggedRef, ok := ref.(name.Tag); ok {
 		target.ImageID = taggedRef.String()
@@ -134,6 +171,9 @@ func updateVersionStatusForTenantRegistry(
 	}
 
 	log.Info("updated image version info for tenant registry image",
+		"image", imageURI,
+		"oldImageID", oldImageID,
+		"oldVersion", oldVersion,
 		"newImageID", target.ImageID,
 		"newVersion", target.Version)
 
@@ -164,11 +204,12 @@ func getTagFromImageID(imageID string) (string, error) {
 	return taggedRef.TagStr(), nil
 }
 
-func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, error) {
+func isDowngrade(ctx context.Context, updaterName, previousVersion, latestVersion string) (bool, error) {
 	if previousVersion != "" {
 		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
 			return false, err
 		} else if downgrade {
+			log := logd.FromContext(ctx)
 			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updaterName, "from", previousVersion, "to", latestVersion)
 
 			return true, err

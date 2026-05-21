@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/helmconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sjob"
 	"github.com/pkg/errors"
@@ -16,7 +17,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,6 +44,7 @@ type Installer struct {
 }
 
 func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
+	ctx, log := logd.NewFromContext(ctx, "oneagent-job")
 	log.Info("installing agent via Job", "image", inst.props.ImageURI, "target dir", targetDir)
 
 	err := os.MkdirAll(inst.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
@@ -64,7 +65,7 @@ func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool
 		return false, nil
 	}
 
-	if err := symlink.CreateForCurrentVersionIfNotExists(targetDir); err != nil {
+	if err := symlink.CreateForCurrentVersionIfNotExists(ctx, targetDir); err != nil {
 		_ = os.RemoveAll(targetDir)
 
 		log.Info("failed to create symlink for agent installation", "err", err)
@@ -76,12 +77,14 @@ func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool
 }
 
 func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (bool, error) {
+	log := logd.FromContext(ctx)
+
 	if inst.isAlreadyPresent(targetDir) {
 		log.Info("agent already installed", "image", inst.props.ImageURI, "target dir", targetDir)
 
 		_ = os.RemoveAll(inst.props.PathResolver.AgentJobWorkDirForJob(jobName))
 
-		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationBackground)})
+		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: new(metav1.DeletePropagationBackground)})
 	}
 
 	job, err := inst.query().Get(ctx, types.NamespacedName{Name: jobName, Namespace: inst.props.Owner.GetNamespace()})
@@ -116,5 +119,5 @@ func (inst *Installer) isAlreadyPresent(targetDir string) bool {
 }
 
 func (inst *Installer) query() k8sjob.QueryObject {
-	return k8sjob.Query(inst.props.Client, inst.props.APIReader, log)
+	return k8sjob.Query(inst.props.Client, inst.props.APIReader)
 }

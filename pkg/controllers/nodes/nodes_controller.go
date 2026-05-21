@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
@@ -19,7 +20,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -69,6 +69,8 @@ func NewControllerFromClient(clt client.Client) *Controller {
 }
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
+	ctx, log := logd.NewFromContext(ctx, "nodes")
+
 	nodeName := request.Name
 
 	dk, err := controller.determineDynakubeForNode(ctx, nodeName)
@@ -180,6 +182,7 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCac
 }
 
 func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNode *cache.Entry) error {
+	log := logd.FromContext(ctx)
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
 	tokens, err := tokenReader.ReadAndVerifyTokens(ctx)
@@ -191,7 +194,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	// `GetEntityIDForIP` fetches ALL host entities for the entire tenant, not just those belonging to this Kubernetes cluster.
 	// Which means a single call can pull in data from every cluster and environment reporting to the same tenant.
 	// Mark-for-termination events are rare, caching this possibly large dataset would waste memory with no meaningful benefit.
-	dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
+	dk.Spec.DynatraceAPIRequestThreshold = new(uint16(0))
 
 	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
 	if err != nil {
@@ -231,6 +234,8 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 }
 
 func (controller *Controller) markForTermination(ctx context.Context, dk *dynakube.DynaKube, cacheEntry *cache.Entry) error {
+	log := logd.FromContext(ctx)
+
 	if !cacheEntry.IsMarkableForTermination(controller.timeProvider.Now().UTC()) {
 		return nil
 	}
@@ -273,6 +278,8 @@ func (controller *Controller) getCache(ctx context.Context) (*cache.Cache, error
 }
 
 func (controller *Controller) pruneCache(ctx context.Context, nodeCache *cache.Cache) error {
+	log := logd.FromContext(ctx)
+
 	missingCachedNodes, err := nodeCache.Prune(ctx, controller.client, controller.timeProvider.Now().UTC())
 	if err != nil {
 		return err

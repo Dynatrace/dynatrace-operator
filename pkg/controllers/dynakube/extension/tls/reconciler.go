@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -34,11 +35,13 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 	return &reconciler{
 		dk:           dk,
 		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader, log),
+		secrets:      k8ssecret.Query(clt, apiReader),
 	}
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	ctx, _ = logd.NewFromContext(ctx, "extension-tls")
+
 	if ext := r.dk.Extensions(); ext.IsAnyEnabled() && ext.NeedsSelfSignedTLS() {
 		return r.reconcileSelfSignedTLSSecret(ctx)
 	}

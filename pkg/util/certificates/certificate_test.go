@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/require"
 )
@@ -22,16 +21,14 @@ var randomTestData = []byte{
 	45, 45, 45, 45,
 }
 
-var validateCertificateLog = logd.Get().WithName("test-certiciate-validation")
-
 func TestValidateCertificateExpiration(t *testing.T) {
 	t.Run("random data with resulting false validation", func(t *testing.T) {
-		validate, err := ValidateCertificateExpiration(randomTestData, time.Minute, time.Now(), validateCertificateLog)
+		validate, err := ValidateCertificateExpiration(t.Context(), randomTestData, time.Minute, time.Now())
 		require.NoError(t, err)
 		require.False(t, validate)
 	})
 	t.Run("no data", func(t *testing.T) {
-		validate, err := ValidateCertificateExpiration([]byte{}, time.Minute, time.Now(), validateCertificateLog)
+		validate, err := ValidateCertificateExpiration(t.Context(), []byte{}, time.Minute, time.Now())
 		require.NoError(t, err)
 		require.False(t, validate)
 	})

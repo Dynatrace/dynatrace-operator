@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,7 +17,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -185,7 +185,7 @@ func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []
 }
 
 func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.Volume {
-	mode := ptr.To(int32(0o640))
+	mode := new(int32(0o640))
 
 	volumes := []corev1.Volume{
 		{
@@ -270,18 +270,18 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
-		FSGroup: ptr.To(userGroupID),
+		FSGroup: new(userGroupID),
 	}
 }
 
 func buildContainerSecurityContext(annotations map[string]string) *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		AllowPrivilegeEscalation: ptr.To(false),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		RunAsNonRoot:             ptr.To(true),
-		RunAsGroup:               ptr.To(userGroupID),
-		RunAsUser:                ptr.To(userGroupID),
+		Privileged:               new(false),
+		AllowPrivilegeEscalation: new(false),
+		ReadOnlyRootFilesystem:   new(true),
+		RunAsNonRoot:             new(true),
+		RunAsGroup:               new(userGroupID),
+		RunAsUser:                new(userGroupID),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -292,6 +292,8 @@ func buildContainerSecurityContext(annotations map[string]string) *corev1.Securi
 }
 
 func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.DynaKube, keep []string) error {
+	log := logd.FromContext(ctx)
+
 	deployments, err := ListDeployments(ctx, clt, dk)
 	if err != nil {
 		return err

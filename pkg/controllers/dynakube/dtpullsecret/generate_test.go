@@ -48,29 +48,58 @@ func TestReconciler_GenerateData(t *testing.T) {
 	}
 	r := &Reconciler{}
 
-	data, err := r.generateData(dk, token.Tokens{
-		token.PaaSKey: &token.Token{Value: testPaasToken},
-	})
-
-	require.NoError(t, err)
-	assert.NotNil(t, data)
-	assert.NotEmpty(t, data)
-
-	auth := fmt.Sprintf("%s:%s", testTenant, testPaasToken)
-	expected := dockerConfig{
-		Auths: map[string]dockerAuthentication{
-			testAPIURLHost: {
-				Username: testTenant,
-				Password: testPaasToken,
-				Auth:     b64.StdEncoding.EncodeToString([]byte(auth)),
+	tests := []struct {
+		name        string
+		tokens      token.Tokens
+		expectToken string
+	}{
+		{
+			"use paas token",
+			token.Tokens{
+				token.PaaSKey: &token.Token{Value: testPaasToken},
 			},
+			testPaasToken,
+		},
+		{
+			"use api token",
+			token.Tokens{
+				token.APIKey: &token.Token{Value: testAPIToken},
+			},
+			testAPIToken,
+		},
+		{
+			"prefer platform token",
+			token.Tokens{
+				token.PaaSKey: &token.Token{Value: testPaasToken},
+				token.APIKey:  &token.Token{Value: testPlatformToken},
+			},
+			testPlatformToken,
 		},
 	}
 
-	var actual dockerConfig
-	err = json.Unmarshal(data[DockerConfigJSON], &actual)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			data, err := r.generateData(dk, test.tokens)
 
-	require.NoError(t, err)
-	assert.NotNil(t, actual)
-	assert.Equal(t, expected, actual)
+			require.NoError(t, err)
+			assert.NotEmpty(t, data)
+
+			auth := fmt.Sprintf("%s:%s", testTenant, test.expectToken)
+			expected := dockerConfig{
+				Auths: map[string]dockerAuthentication{
+					testAPIURLHost: {
+						Username: testTenant,
+						Password: test.expectToken,
+						Auth:     b64.StdEncoding.EncodeToString([]byte(auth)),
+					},
+				},
+			}
+
+			var actual dockerConfig
+			err = json.Unmarshal(data[DockerConfigJSON], &actual)
+
+			require.NoError(t, err)
+			assert.Equal(t, expected, actual)
+		})
+	}
 }

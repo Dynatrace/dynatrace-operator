@@ -16,6 +16,7 @@ import (
 	lmdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/logmonsettings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
@@ -43,7 +44,7 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithLogMonitoring(),
-		componentDynakube.WithLogMonitoringImageRef(),
+		componentDynakube.WithLogMonitoringImageRef(t),
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
@@ -95,7 +96,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithLogMonitoring(),
-		componentDynakube.WithLogMonitoringImageRef(),
+		componentDynakube.WithLogMonitoringImageRef(t),
 		componentDynakube.WithActiveGate(),
 	}
 
@@ -150,9 +151,9 @@ func checkConditions(name string, namespace string, scopesEnabled bool) features
 			assert.True(t, meta.IsStatusConditionFalse(dk.Status.Conditions, logmonsettings.ConditionType))
 		}
 
-		for _, conditionType := range token.OptionalScopes {
-			hasScope := k8sconditions.IsOptionalScopeAvailable(dk, conditionType)
-			assert.Equalf(t, scopesEnabled, hasScope, "expected %s condition to be %t", conditionType, scopesEnabled)
+		for _, scope := range token.OptionalScopes {
+			hasScope := optionalscope.IsAvailable(dk, scope)
+			assert.Equalf(t, scopesEnabled, hasScope, "expected %s condition to be %t", scope, scopesEnabled)
 		}
 
 		return ctx
@@ -170,10 +171,12 @@ func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
 
 		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, &dk))
 		// Force reconciliation by simulating the passage of time
-		dk.Status.DynatraceAPI.LastTokenScopeRequest.Time = dk.Status.DynatraceAPI.LastTokenScopeRequest.Add(-2 * dk.APIRequestThreshold())
 		expireLastTransitionTime(&dk, "MonitoredEntity")
 		expireLastTransitionTime(&dk, logmonsettings.ConditionType)
 		require.NoError(t, resources.UpdateStatus(ctx, &dk))
+
+		dk.Spec.DynatraceAPIRequestThreshold = new(uint16(0))
+		require.NoError(t, resources.Update(ctx, &dk))
 
 		// Verify that the operator picked up the update
 		err = wait.For(func(ctx context.Context) (bool, error) {

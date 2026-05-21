@@ -9,7 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/retry"
@@ -38,7 +40,9 @@ func NewReconciler() *Reconciler {
 // On first run the MEID may not yet exist; after creating the settings object the MEID is immediately
 // refreshed so that subsequent reconcilers do not need to wait for the next cycle.
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
-	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead) {
+	ctx, log := logd.NewFromContext(ctx, "automatic-api-monitoring")
+
+	if !optionalscope.IsAvailable(dk, token.ScopeSettingsRead) {
 		msg := token.ScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
 		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
@@ -50,16 +54,27 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		return errMissingKubeSystemUUID
 	}
 
-	if err := r.reconcileMEID(ctx, dtClient, dk); err != nil {
-		return err
-	}
+	handleMissingScope := func(scope string, err error) error {
+		if !core.IsForbidden(err) {
+			return err
+		}
 
-	if !dk.FF().IsAutomaticK8sAPIMonitoring() ||
-		!dk.ActiveGate().IsKubernetesMonitoringEnabled() {
+		msg := scope + " optional scope not available"
+		log.Info(msg)
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
+
 		return nil
 	}
 
-	if !k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite) {
+	if err := r.reconcileMEID(ctx, dtClient, dk); err != nil {
+		return handleMissingScope("settings:objects:read", err)
+	}
+
+	if !dk.FF().IsAutomaticK8sAPIMonitoring() || !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
+		return nil
+	}
+
+	if !optionalscope.IsAvailable(dk, token.ScopeSettingsWrite) {
 		log.Info("api token missing optional scope, skipping reconciliation", "scope", token.ScopeSettingsWrite)
 
 		return nil
@@ -67,7 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 
 	objectID, err := r.createK8sConnectionSettingIfAbsent(ctx, dtClient, dk)
 	if err != nil {
-		return err
+		return handleMissingScope("settings:objects:write", err)
 	}
 
 	if objectID != "" {
@@ -85,6 +100,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 // It uses time-based caching via the meIDConditionType condition; if the condition is still up to date,
 // the API call is skipped.
 func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	if !k8sconditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
 		log.Info("kubernetesClusterMEID not outdated, skipping reconciliation")
 
@@ -95,8 +111,6 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client
 
 	k8sEntity, err := dtClient.GetK8sClusterME(ctx, dk.Status.KubeSystemUUID)
 	if err != nil {
-		log.Info("failed to retrieve MEs")
-
 		return fmt.Errorf("get kubernetesClusterMEID: %w", err)
 	}
 
@@ -122,6 +136,8 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client
 // Retries up to maxRefreshRetries times with retryInterval between attempts, because the ME
 // may not be available immediately after the settings object is created.
 func (r *Reconciler) refreshMEIDWithRetry(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	return retry.OnError(retry.DefaultRetry, func(err error) bool { return errors.Is(err, errNotAvailableME) }, func() error {
 		log.Info("refreshing kubernetesClusterMEID")
 
@@ -147,6 +163,7 @@ func (r *Reconciler) refreshMEIDWithRetry(ctx context.Context, dtClient settings
 }
 
 func (r *Reconciler) createK8sConnectionSettingIfAbsent(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) (string, error) {
+	log := logd.FromContext(ctx)
 	if dk.Status.KubernetesClusterMEID != "" {
 		log.Info("kubernetes cluster setting already exists", "kubernetesClusterMEID", dk.Status.KubernetesClusterMEID, "kubernetesClusterName", dk.Status.KubernetesClusterName, "kubeSystemUUID", dk.Status.KubeSystemUUID)
 
@@ -169,6 +186,8 @@ func (r *Reconciler) createK8sConnectionSettingIfAbsent(ctx context.Context, dtC
 }
 
 func (r *Reconciler) createK8sAppSettingIfAbsent(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	k8sEntity := settings.K8sClusterME{ID: dk.Status.KubernetesClusterMEID, Name: dk.Status.KubernetesClusterName}
 	if dk.FF().IsK8sAppEnabled() {
 		appSettings, err := dtClient.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.AppTransitionSchemaID)

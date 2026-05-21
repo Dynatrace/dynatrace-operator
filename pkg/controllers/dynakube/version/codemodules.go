@@ -6,8 +6,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
@@ -18,12 +20,14 @@ const (
 
 type codeModulesUpdater struct {
 	dk            *dynakube.DynaKube
+	imageClient   image.Client
 	versionClient version.Client
 }
 
-func newCodeModulesUpdater(dk *dynakube.DynaKube, versionClient version.Client) *codeModulesUpdater {
+func newCodeModulesUpdater(dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) *codeModulesUpdater {
 	return &codeModulesUpdater{
 		dk:            dk,
+		imageClient:   imageClient,
 		versionClient: versionClient,
 	}
 }
@@ -64,15 +68,30 @@ func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
 	return true
 }
 
-func (updater codeModulesUpdater) IsAutoRegistryEnabled() bool {
-	return false
+func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
+	return updater.dk.FF().IsPublicRegistry()
 }
 
-func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
+func (updater *codeModulesUpdater) CheckForDowngrade(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
+func (updater *codeModulesUpdater) LatestImageInfo(ctx context.Context) (*image.Info, error) {
+	imageInfo, err := updater.imageClient.GetComponentLatestInfo(ctx, image.CodeModules, updater.dk.PublicRegistryOverride())
+	if err != nil {
+		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
+
+		return nil, err
+	}
+
+	setVerifiedCondition(updater.dk.Conditions(), cmConditionType)
+
+	return imageInfo, nil
+}
+
 func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
 		updater.dk.Status.CodeModules = oneagent.CodeModulesStatus{
@@ -104,6 +123,6 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 	return nil
 }
 
-func (updater codeModulesUpdater) ValidateStatus() error {
+func (updater codeModulesUpdater) ValidateStatus(_ context.Context) error {
 	return nil
 }

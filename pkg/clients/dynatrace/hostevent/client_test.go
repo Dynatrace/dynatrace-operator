@@ -1,14 +1,18 @@
 package hostevent
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestGetEntityIDForIP(t *testing.T) {
 	setupClient := func(t *testing.T, err error) *ClientImpl {
@@ -31,7 +35,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 			}).
 			Return(err).Once()
 		coreClient := coremock.NewClient(t)
-		coreClient.EXPECT().GET(t.Context(), hostsPath).Return(req).Once()
+		coreClient.EXPECT().GET(anyCtx, hostsPath).Return(req).Once()
 
 		return NewClient(coreClient, "")
 	}
@@ -130,7 +134,7 @@ func Test_buildHostEntityMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := buildHostEntityMap(tt.hosts, tt.networkZone)
+			got := buildHostEntityMap(t.Context(), tt.hosts, tt.networkZone)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -142,7 +146,7 @@ func TestSendEvent(t *testing.T) {
 		req.EXPECT().WithJSONBody(Event{EventType: "TEST"}).Return(req).Once()
 		req.EXPECT().Execute(nil).Return(err).Once()
 		client := coremock.NewClient(t)
-		client.EXPECT().POST(t.Context(), eventsPath).Return(req).Once()
+		client.EXPECT().POST(anyCtx, eventsPath).Return(req).Once()
 
 		return NewClient(client, "")
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,6 +24,8 @@ func NewNamespaceMapper(clt client.Client, apiReader client.Reader, operatorNs s
 
 // MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube
 func (nm NamespaceMapper) MapFromNamespace(ctx context.Context) (bool, error) {
+	ctx, _ = logd.NewFromContext(ctx, "namespace-mapper")
+
 	updatedNamespace, err := nm.updateNamespace(ctx)
 	if err != nil {
 		return false, err
@@ -39,5 +42,5 @@ func (nm NamespaceMapper) updateNamespace(ctx context.Context) (bool, error) {
 		return false, errors.Cause(err)
 	}
 
-	return updateNamespace(nm.targetNs, deployedDynakubes)
+	return updateNamespace(ctx, nm.targetNs, deployedDynakubes)
 }

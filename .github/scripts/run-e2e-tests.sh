@@ -29,6 +29,9 @@ echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
   echo "run no csi tests suite using OLM"
   make test/e2e/no-csi/publish/olm
+elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
+  echo "run fips e2e test suites"
+  make test/e2e-publish/fips
 elif [[ -n "${TARGET_IMAGE}" ]]; then
   make IMAGE_URI="$TARGET_IMAGE" test/e2e-publish
 else

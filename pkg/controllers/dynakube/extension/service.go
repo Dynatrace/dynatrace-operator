@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
@@ -14,6 +15,8 @@ import (
 )
 
 func (r *Reconciler) reconcileService(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	if !dk.Extensions().IsAnyEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), serviceConditionType) == nil {
 			return nil
@@ -27,7 +30,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, dk *dynakube.DynaKube
 			return err
 		}
 
-		err = k8sservice.Query(r.client, r.apiReader, log).Delete(ctx, svc)
+		err = k8sservice.Query(r.client, r.apiReader).Delete(ctx, svc)
 		if err != nil {
 			log.Error(err, "failed to clean up extension service")
 		}
@@ -39,6 +42,8 @@ func (r *Reconciler) reconcileService(ctx context.Context, dk *dynakube.DynaKube
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	newService, err := r.buildService(dk)
 	if err != nil {
 		k8sconditions.SetServiceGenFailed(dk.Conditions(), serviceConditionType, err)
@@ -46,7 +51,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 		return err
 	}
 
-	_, err = k8sservice.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
+	_, err = k8sservice.Query(r.client, r.apiReader).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update extension service")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), serviceConditionType, err)

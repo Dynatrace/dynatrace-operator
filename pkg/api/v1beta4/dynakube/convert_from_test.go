@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 func TestConvertFrom(t *testing.T) {
@@ -186,7 +185,7 @@ func TestConvertFrom(t *testing.T) {
 	t.Run("clear default otelc image", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
-		from.RemovedFields().DefaultOTELCImage.Set(ptr.To(true))
+		from.RemovedFields().DefaultOTELCImage.Set(new(true))
 
 		to := DynaKube{}
 
@@ -357,7 +356,6 @@ func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec active
 func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubelatest.DynaKubeStatus) {
 	// Base
 	assert.Equal(t, oldStatus.Conditions, newStatus.Conditions)
-	assert.Equal(t, oldStatus.DynatraceAPI.LastTokenScopeRequest, newStatus.DynatraceAPI.LastTokenScopeRequest)
 	assert.Equal(t, oldStatus.KubeSystemUUID, newStatus.KubeSystemUUID)
 	assert.Equal(t, oldStatus.Phase, newStatus.Phase)
 	assert.Equal(t, oldStatus.UpdatedTimestamp, newStatus.UpdatedTimestamp)
@@ -491,7 +489,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
 			},
-			DynatraceAPIRequestThreshold: ptr.To(uint16(42)),
+			DynatraceAPIRequestThreshold: new(uint16(42)),
 			APIURL:                       "api-url",
 			Tokens:                       "token",
 			TrustedCAs:                   "trusted-ca",
@@ -500,7 +498,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			SkipCertCheck:                true,
 			EnableIstio:                  true,
 			MetadataEnrichment: metadataenrichmentlatest.Spec{
-				Enabled:           ptr.To(true),
+				Enabled:           new(true),
 				NamespaceSelector: getTestNamespaceSelector(),
 			},
 		},
@@ -608,7 +606,7 @@ func getNewActiveGateSpec() activegatelatest.Spec {
 				"activegate-node-selector-key": "activegate-node-selector-value",
 			},
 			Image:    "activegate-image",
-			Replicas: ptr.To(int32(42)),
+			Replicas: new(int32(42)),
 			Group:    "activegate-group",
 			CustomProperties: &value.Source{
 				Value:     "activegate-cp-value",
@@ -668,7 +666,7 @@ func getNewOpenTelemetryTemplateSpec() dynakubelatest.OpenTelemetryCollectorSpec
 			"otelc-annotation-key1": "otelc-annotation-value1",
 			"otelc-annotation-key2": "otelc-annotation-value2",
 		},
-		Replicas: ptr.To(int32(42)),
+		Replicas: new(int32(42)),
 		ImageRef: image.Ref{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
@@ -760,9 +758,9 @@ func getPersistentVolumeClaimSpec() *corev1.PersistentVolumeClaimSpec {
 			},
 		},
 		VolumeName:                "volume-name",
-		StorageClassName:          ptr.To("localstorage"),
-		VolumeMode:                ptr.To(corev1.PersistentVolumeFilesystem),
-		VolumeAttributesClassName: ptr.To("volume-attributes-class-name"),
+		StorageClassName:          new("localstorage"),
+		VolumeMode:                new(corev1.PersistentVolumeFilesystem),
+		VolumeAttributesClassName: new("volume-attributes-class-name"),
 	}
 }
 
@@ -939,9 +937,6 @@ func getNewStatus() dynakubelatest.DynaKubeStatus {
 				Source:             status.TenantRegistryVersionSource,
 				LastProbeTimestamp: &testTime,
 			},
-		},
-		DynatraceAPI: dynakubelatest.DynatraceAPIStatus{
-			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{
 			{

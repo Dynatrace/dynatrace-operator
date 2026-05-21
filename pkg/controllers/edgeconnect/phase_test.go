@@ -1,6 +1,7 @@
 package edgeconnect
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -26,7 +27,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(ec)
+		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
 		assert.Equal(t, status.Deploying, phase)
 	})
 
@@ -36,7 +37,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(ec)
+		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
 		assert.Equal(t, status.Error, phase)
 	})
 
@@ -52,7 +53,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(ec)
+		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
 		assert.Equal(t, status.Deploying, phase)
 	})
 
@@ -68,7 +69,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(ec)
+		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
 		assert.Equal(t, status.Running, phase)
 	})
 }

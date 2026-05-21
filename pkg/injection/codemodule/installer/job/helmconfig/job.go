@@ -4,6 +4,7 @@
 package helmconfig
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"sync"
@@ -11,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -40,11 +40,11 @@ var (
 		},
 		Job: JobConfig{
 			SecurityContext: corev1.SecurityContext{
-				AllowPrivilegeEscalation: ptr.To(true),
-				Privileged:               ptr.To(true),
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				RunAsNonRoot:             ptr.To(false),
-				RunAsUser:                ptr.To(int64(0)),
+				AllowPrivilegeEscalation: new(true),
+				Privileged:               new(true),
+				ReadOnlyRootFilesystem:   new(true),
+				RunAsNonRoot:             new(false),
+				RunAsUser:                new(int64(0)),
 				SELinuxOptions: &corev1.SELinuxOptions{
 					Level: "s0",
 				},
@@ -61,8 +61,6 @@ var (
 			PriorityClassName: "dynatrace-high-priority",
 		},
 	}
-
-	log = logd.Get().WithName("csi-job")
 )
 
 // JobConfig holds settings specific to the CodeModule installer Job that were defined in the helm chart.
@@ -85,8 +83,10 @@ type Config struct {
 	Job                JobConfig `json:"job"`
 }
 
-func Get() Config {
+func Get(ctx context.Context) Config {
 	once.Do(func() {
+		_, log := logd.NewFromContext(ctx, "csi-job")
+
 		confJSON := os.Getenv(JSONEnv)
 		if confJSON == "" {
 			log.Info("envvar not set, using default", "envvar", JSONEnv)

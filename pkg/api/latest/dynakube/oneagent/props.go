@@ -22,7 +22,7 @@ const (
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
 	name, apiURLHost string,
-	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool,
+	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe bool,
 	globalResourceAttributes map[string]string) *OneAgent {
 	return &OneAgent{
 		Spec:              spec,
@@ -36,7 +36,6 @@ func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatu
 
 		featureOneAgentPrivileged:        featureOneAgentPrivileged,
 		featureOneAgentSkipLivenessProbe: featureOneAgentSkipLivenessProbe,
-		featureBootstrapperInjection:     featureBootstrapperInjection,
 	}
 }
 
@@ -302,7 +301,7 @@ func (oa *OneAgent) GetEndpoints() string {
 func (oa *OneAgent) GetCustomCodeModulesImage() string {
 	if oa.IsCloudNativeFullstackMode() {
 		return oa.CloudNativeFullStack.CodeModulesImage
-	} else if oa.IsApplicationMonitoringMode() && (oa.IsCSIAvailable() || oa.featureBootstrapperInjection) {
+	} else if oa.IsApplicationMonitoringMode() {
 		return oa.ApplicationMonitoring.CodeModulesImage
 	}
 
@@ -313,7 +312,7 @@ func (oa *OneAgent) GetCustomCodeModulesImage() string {
 func (oa *OneAgent) GetCodeModulesImagePullPolicy() corev1.PullPolicy {
 	if oa.IsCloudNativeFullstackMode() {
 		return corev1.PullPolicy(oa.CloudNativeFullStack.CodeModulesImagePullPolicy)
-	} else if oa.IsApplicationMonitoringMode() && (oa.IsCSIAvailable() || oa.featureBootstrapperInjection) {
+	} else if oa.IsApplicationMonitoringMode() {
 		return corev1.PullPolicy(oa.ApplicationMonitoring.CodeModulesImagePullPolicy)
 	}
 
@@ -375,33 +374,11 @@ func (oa *OneAgent) GetHostPath() string {
 }
 
 func (oa *OneAgent) GetResourceAttributes() map[string]string {
-	if oa.Spec == nil {
-		return oa.globalResourceAttributes
-	}
-
-	switch {
-	case oa.IsCloudNativeFullstackMode():
-		return resourceattributes.Merge(oa.globalResourceAttributes, oa.CloudNativeFullStack.AdditionalResourceAttributes)
-	case oa.IsApplicationMonitoringMode():
-		return resourceattributes.Merge(oa.globalResourceAttributes, oa.ApplicationMonitoring.AdditionalResourceAttributes)
-	default:
-		return oa.globalResourceAttributes
-	}
+	return resourceattributes.Merge(oa.globalResourceAttributes, oa.GetAdditionalResourceAttributes())
 }
 
 func (oa *OneAgent) HasAdditionalResourceAttributes() bool {
-	if oa.Spec == nil {
-		return false
-	}
-
-	switch {
-	case oa.IsCloudNativeFullstackMode():
-		return len(oa.CloudNativeFullStack.AdditionalResourceAttributes) > 0
-	case oa.IsApplicationMonitoringMode():
-		return len(oa.ApplicationMonitoring.AdditionalResourceAttributes) > 0
-	default:
-		return false
-	}
+	return len(oa.GetAdditionalResourceAttributes()) > 0
 }
 
 func (oa *OneAgent) GetAdditionalResourceAttributes() map[string]string {
@@ -414,6 +391,10 @@ func (oa *OneAgent) GetAdditionalResourceAttributes() map[string]string {
 		return oa.CloudNativeFullStack.AdditionalResourceAttributes
 	case oa.IsApplicationMonitoringMode():
 		return oa.ApplicationMonitoring.AdditionalResourceAttributes
+	case oa.IsHostMonitoringMode():
+		return oa.HostMonitoring.AdditionalResourceAttributes
+	case oa.IsClassicFullStackMode():
+		return oa.ClassicFullStack.AdditionalResourceAttributes
 	default:
 		return nil
 	}

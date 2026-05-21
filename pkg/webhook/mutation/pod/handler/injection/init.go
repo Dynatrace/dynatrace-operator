@@ -1,10 +1,13 @@
 package injection
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
@@ -12,7 +15,6 @@ import (
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
@@ -25,6 +27,13 @@ func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube)
 			Name:  configure.InputFolderFlag,
 			Value: volumes.InitInputMountPath,
 		},
+	}
+
+	if bootstrapperconfig.NeedsDownloadConfig(&dk) {
+		args = append(args, arg.Arg{
+			Name:  bootstrapper.BaseURL,
+			Value: dk.Spec.APIURL,
+		})
 	}
 
 	if areErrorsSuppressed(pod, dk) {
@@ -49,11 +58,11 @@ func areErrorsSuppressed(pod *corev1.Pod, dk dynakube.DynaKube) bool {
 	return maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FF().GetInjectionFailurePolicy()) != "fail" // safer than == silent
 }
 
-func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
+func addInitContainerToPod(ctx context.Context, pod *corev1.Pod, initContainer *corev1.Container) {
 	volumes.AddInitConfigVolumeMount(initContainer)
 	volumes.AddInitInputVolumeMount(initContainer)
 	volumes.AddInputVolume(pod)
-	volumes.AddConfigVolume(pod)
+	volumes.AddConfigVolume(ctx, pod)
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
 }
 
@@ -66,19 +75,19 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 
 func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		Privileged:               ptr.To(false),
+		ReadOnlyRootFilesystem:   new(true),
+		AllowPrivilegeEscalation: new(false),
+		Privileged:               new(false),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
 			},
 		},
-		RunAsGroup: ptr.To(oacommon.DefaultGroup),
+		RunAsGroup: new(oacommon.DefaultGroup),
 	}
 
 	if !isOpenShift {
-		initSecurityCtx.RunAsUser = ptr.To(oacommon.DefaultUser)
+		initSecurityCtx.RunAsUser = new(oacommon.DefaultUser)
 	}
 
 	addSeccompProfile(&initSecurityCtx, dk)
@@ -109,7 +118,7 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	baseSecurityCtx.RunAsNonRoot = ptr.To(isNonRoot(&baseSecurityCtx))
+	baseSecurityCtx.RunAsNonRoot = new(isNonRoot(&baseSecurityCtx))
 
 	return &baseSecurityCtx
 }

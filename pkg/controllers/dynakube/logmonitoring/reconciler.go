@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/logmonsettings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,6 +45,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "dynakube-logmonitoring")
+
 	oaConnectionInfoReconciler := r.oneAgentConnectionInfoReconciler
 	if oaConnectionInfoReconciler == nil {
 		oaConnectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient.OneAgent, dk)

@@ -6,6 +6,7 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"k8s.io/mount-utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,7 +37,9 @@ func New(apiReader client.Reader, path metadata.PathResolver, mounter mount.Inte
 
 // Run will only execute the cleanup logic if enough time has passed from the previous run, to not overload the IO of the node
 func (c *Cleaner) Run(ctx context.Context) error {
-	tickerResetFunc := checkTicker()
+	ctx, _ = logd.NewFromContext(ctx, "csi-cleanup")
+
+	tickerResetFunc := checkTicker(ctx)
 	if tickerResetFunc == nil {
 		return nil
 	}
@@ -47,18 +50,22 @@ func (c *Cleaner) Run(ctx context.Context) error {
 
 // InstantRun will always execute the cleanup logic ignoring the time passed from previous run
 func (c *Cleaner) InstantRun(ctx context.Context) error {
-	defer resetTickerAfterDelete()
+	ctx, _ = logd.NewFromContext(ctx, "csi-cleanup")
+
+	defer resetTickerAfterDelete(ctx)
 
 	return c.run(ctx)
 }
 
 func (c *Cleaner) run(ctx context.Context) error {
-	fsState, err := c.getFilesystemState()
+	log := logd.FromContext(ctx)
+
+	fsState, err := c.getFilesystemState(ctx)
 	if err != nil {
 		return err
 	}
 
-	c.removeDeprecatedMounts(fsState)
+	c.removeDeprecatedMounts(ctx, fsState)
 
 	dks, err := metadata.GetRelevantDynaKubes(ctx, c.apiReader)
 	if err != nil {
@@ -67,13 +74,15 @@ func (c *Cleaner) run(ctx context.Context) error {
 		return err
 	}
 
-	c.removeHostMounts(dks, fsState)
-	c.removeUnusedBinaries(dks, fsState)
+	c.removeHostMounts(ctx, dks, fsState)
+	c.removeUnusedBinaries(ctx, dks, fsState)
 
 	return nil
 }
 
-func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:revive
+func (c *Cleaner) getFilesystemState(ctx context.Context) (fsState fsState, err error) { //nolint:revive
+	log := logd.FromContext(ctx)
+
 	rootSubDirs, err := os.ReadDir(c.path.RootDir)
 	if err != nil {
 		log.Info("failed to list the contents of the root directory of the csi-provisioner", "rootDir", c.path.RootDir)
@@ -162,7 +171,9 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 // It checks for the existence of the path and verifies if it is a symlink.
 // Trying to follow a path that is not a symlink will case an error.
 // Should be used for paths that are "maybe" symlinks, more expensive then its addRelevantPath.
-func (c *Cleaner) safeAddRelevantPath(path string, relevantPaths map[string]bool) {
+func (c *Cleaner) safeAddRelevantPath(ctx context.Context, path string, relevantPaths map[string]bool) {
+	log := logd.FromContext(ctx)
+
 	fInfo, err := os.Stat(path)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -178,13 +189,15 @@ func (c *Cleaner) safeAddRelevantPath(path string, relevantPaths map[string]bool
 		return
 	}
 
-	c.addRelevantPath(path, relevantPaths)
+	c.addRelevantPath(ctx, path, relevantPaths)
 }
 
 // addRelevantPath follows the symlink that is provided in the `path` param and adds the actual path to the provided map
 // does no checking for the existence of the path and does not verify if it is a symlink.
 // Should be used for paths that are 100% to be symlinks to save on IO.
-func (c *Cleaner) addRelevantPath(path string, relevantPaths map[string]bool) {
+func (c *Cleaner) addRelevantPath(ctx context.Context, path string, relevantPaths map[string]bool) {
+	log := logd.FromContext(ctx)
+
 	actualPath, err := os.Readlink(path)
 	if err != nil {
 		log.Error(err, "failed to follow symlink", "path", path)

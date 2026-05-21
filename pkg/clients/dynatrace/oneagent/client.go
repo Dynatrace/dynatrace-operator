@@ -5,10 +5,7 @@ import (
 	"io"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
-
-var log = logd.Get().WithName("dtclient-oneagent")
 
 type Client interface {
 	GetConnectionInfo(ctx context.Context) (ConnectionInfo, error)
@@ -18,7 +15,7 @@ type Client interface {
 	GetVersions(ctx context.Context, args GetParams) ([]string, error)
 
 	GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error)
-	GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, writer io.Writer) (string, error)
+	GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error)
 }
 
 type ClientImpl struct {

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admission/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,11 +46,7 @@ func TestInjection(t *testing.T) {
 		},
 	}
 	clt := fake.NewClient(dk)
-	inj := &webhook{
-		client:    clt,
-		apiReader: clt,
-		namespace: "dynatrace",
-	}
+	inj := newNamespaceMutator(clt, clt, "dynatrace").(*webhook)
 
 	t.Run("Don't inject into operator ns", func(t *testing.T) {
 		baseNs := &corev1.Namespace{
@@ -214,5 +211,27 @@ func TestInjection(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, dk.Name, dkName)
 		assert.Len(t, updNs.Labels, 2)
+	})
+
+	t.Run("skip operator", func(t *testing.T) {
+		baseNsBytes, err := json.Marshal(&baseNs)
+		require.NoError(t, err)
+
+		req := admission.Request{
+			AdmissionRequest: admissionv1.AdmissionRequest{
+				Object:    runtime.RawExtension{Raw: baseNsBytes},
+				Name:      baseNs.Name,
+				Namespace: baseNs.Name,
+				Operation: admissionv1.Create,
+				UserInfo: authenticationv1.UserInfo{
+					Username: inj.serviceAccount,
+				},
+			},
+		}
+
+		resp := inj.Handle(context.Background(), req)
+		require.NoError(t, resp.Complete(req))
+		assert.True(t, resp.Allowed)
+		assert.Empty(t, resp.Patch)
 	})
 }

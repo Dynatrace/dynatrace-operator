@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -24,7 +25,9 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 	minK8sMinorVersionForRollingUpdate = 35
 )
 
-func invalidActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func invalidActiveGateCapabilities(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if dk.ActiveGate().IsEnabled() {
 		capabilities := dk.Spec.ActiveGate.Capabilities
 		for _, capability := range capabilities {
@@ -56,7 +59,9 @@ func activeGateMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
 	return dk.Spec.ActiveGate.UseEphemeralVolume && dk.Spec.ActiveGate.VolumeClaimTemplate != nil
 }
 
-func mutuallyExclusiveActiveGatePVsettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func mutuallyExclusiveActiveGatePVsettings(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if activeGateMutuallyExclusivePVCSettings(dk) {
 		log.Info("requested dynakube specifies mutually exclusive VolumeClaimTemplate settings for ActiveGate.", "name", dk.Name, "namespace", dk.Namespace)
 

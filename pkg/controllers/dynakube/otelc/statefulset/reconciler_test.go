@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -148,6 +147,59 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		// original hash and resulting hash should be different, value got updated on reconcile
 		assert.NotEqual(t, originalSecretHash, resultingSecretHash)
+	})
+}
+
+func TestDataIngestTokenHashAnnotation(t *testing.T) {
+	t.Run("annotation is set when TelemetryIngest is enabled", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+
+		dk := getTestDynakubeWithTelemetryIngest()
+		clt := fake.NewClient(dk)
+
+		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &configMap))
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		assert.NotEmpty(t, sts.Spec.Template.Annotations[annotationDataIngestTokenSecretHash])
+	})
+
+	t.Run("annotation changes when data ingest token is rotated", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+
+		dk := getTestDynakubeWithTelemetryIngest()
+		clt := fake.NewClient(dk)
+
+		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &configMap))
+
+		reconciler := NewReconciler(clt, clt)
+		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
+
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+		originalHash := sts.Spec.Template.Annotations[annotationDataIngestTokenSecretHash]
+		require.NotEmpty(t, originalHash)
+
+		tokenSecret.Data[token.DataIngestKey] = []byte("rotated-token-value")
+		require.NoError(t, clt.Update(t.Context(), &tokenSecret))
+
+		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
+
+		sts = &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		assert.NotEqual(t, originalHash, sts.Spec.Template.Annotations[annotationDataIngestTokenSecretHash])
 	})
 }
 
@@ -379,14 +431,14 @@ func TestReconcileReplicas(t *testing.T) {
 	}{
 		{
 			name:             "uses explicit spec replicas over existing statefulset",
-			specReplicas:     ptr.To(int32(2)),
-			existingReplicas: ptr.To(int32(3)),
+			specReplicas:     new(int32(2)),
+			existingReplicas: new(int32(3)),
 			expectedReplicas: int32(2),
 		},
 		{
 			name:             "uses existing statefulset replicas when spec replicas are nil",
 			specReplicas:     nil,
-			existingReplicas: ptr.To(int32(2)),
+			existingReplicas: new(int32(2)),
 			expectedReplicas: int32(2),
 		},
 		{
@@ -426,7 +478,7 @@ func TestReconcileReplicas(t *testing.T) {
 func TestAppArmorAnnotationHandling(t *testing.T) {
 	const appArmorAnnotationKey = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
 
-	getStatefulSet := func(t *testing.T) *appsv1.StatefulSet {
+	getStatefulSetWithExtensions := func(t *testing.T) *appsv1.StatefulSet {
 		t.Helper()
 
 		dk := getTestDynakubeWithExtensions()
@@ -443,24 +495,68 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		return sts
 	}
 
-	t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
-		t.Cleanup(version.DisableCacheForTest(30))
+	getStatefulSetWithTelemetryIngest := func(t *testing.T) *appsv1.StatefulSet {
+		t.Helper()
 
-		sts := getStatefulSet(t)
-		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
-		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
-		assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
-		assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		dk := getTestDynakubeWithTelemetryIngest()
+		dk.Spec.Templates.OpenTelemetryCollector.Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
+		clt := fake.NewClient(dk)
+
+		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &configMap))
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		return sts
+	}
+
+	t.Run("with extensions", func(t *testing.T) {
+		t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
+			t.Cleanup(version.DisableCacheForTest(30))
+
+			sts := getStatefulSetWithExtensions(t)
+			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+			assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+			assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		})
+
+		t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
+			t.Cleanup(version.DisableCacheForTest(31))
+
+			sts := getStatefulSetWithExtensions(t)
+			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+			assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+			assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		})
 	})
 
-	t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
-		t.Cleanup(version.DisableCacheForTest(31))
+	t.Run("with telemetry ingest only", func(t *testing.T) {
+		t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
+			t.Cleanup(version.DisableCacheForTest(30))
 
-		sts := getStatefulSet(t)
-		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
-		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
-		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
-		assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+			sts := getStatefulSetWithTelemetryIngest(t)
+			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+			assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+			assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		})
+
+		t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
+			t.Cleanup(version.DisableCacheForTest(31))
+
+			sts := getStatefulSetWithTelemetryIngest(t)
+			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+			assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+			assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+		})
 	})
 }
 

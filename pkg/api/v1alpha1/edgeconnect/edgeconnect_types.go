@@ -7,7 +7,6 @@ package edgeconnect
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -182,8 +181,4 @@ type EdgeConnectList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []EdgeConnect `json:"items"`
-}
-
-func init() {
-	v1alpha1.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
 }

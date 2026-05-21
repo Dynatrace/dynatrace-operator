@@ -9,8 +9,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +20,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
@@ -28,7 +29,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no error if not enabled", func(t *testing.T) {
 		dk := createDynaKube()
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
 		reconciler := NewReconciler(nil, &dk)
 
@@ -39,7 +40,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("clean-up if previously enabled", func(t *testing.T) {
 		dk := createDynaKube()
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		dk.Spec.MetadataEnrichment.Enabled = new(false)
 		dk.Status.MetadataEnrichment.Rules = createRules()
 		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, "TESTING")
 
@@ -71,7 +72,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update if outdated", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
 
 		expectedResponse := createRules()
 		specialMessage := "TESTING" // if the special message changes == condition updated
@@ -99,7 +100,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set rules correctly", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
 
 		expectedResponse := createRules()
 
@@ -118,8 +119,8 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no rules if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
+		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
 		dk.Annotations = map[string]string{
 			exp.OANodeImagePullKey: "true",
@@ -136,7 +137,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), token.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, errors.New("BOOM"))
@@ -165,6 +166,23 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
+
+	t.Run("handle missing scope in platform token", func(t *testing.T) {
+		dk := createDynaKube()
+		dk.Status.APIToken.Platform = new(true)
+
+		dtClient := settingsmock.NewClient(t)
+		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, &core.HTTPError{StatusCode: 403})
+		reconciler := NewReconciler(dtClient, &dk)
+
+		err := reconciler.Reconcile(ctx)
+
+		require.NoError(t, err)
+		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
+	})
 }
 
 func createDynaKube() dynakube.DynaKube {
@@ -174,7 +192,7 @@ func createDynaKube() dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			MetadataEnrichment: metadataenrichment.Spec{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 			},
 		},
 		Status: dynakube.DynaKubeStatus{

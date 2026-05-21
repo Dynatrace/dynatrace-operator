@@ -10,6 +10,7 @@
 |`enableIstio`||-|boolean|
 |`networkZone`||-|string|
 |`proxy`||-|object|
+|`publicRegistryOverride`||-|string|
 |`resourceAttributes`||-|object|
 |`skipCertCheck`||-|boolean|
 |`tokens`||-|string|
@@ -82,6 +83,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`annotations`||-|object|
 |`args`||-|array|
 |`dnsPolicy`||-|string|
@@ -134,6 +136,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`annotations`||-|object|
 |`args`||-|array|
 |`dnsPolicy`||-|string|
@@ -215,6 +218,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
@@ -223,6 +227,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
@@ -274,6 +279,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
@@ -311,6 +317,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
@@ -319,6 +326,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|

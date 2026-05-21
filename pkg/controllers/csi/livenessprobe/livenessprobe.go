@@ -11,10 +11,6 @@ import (
 	"github.com/kubernetes-csi/csi-lib-utils/rpc"
 )
 
-var (
-	log = logd.Get().WithName("csi-livenessprobe")
-)
-
 type Server struct {
 	csiAddress   string
 	healthPort   string
@@ -32,6 +28,7 @@ func NewServer(driverName string, csiAddress string, healthPort string, probeTim
 }
 
 func (s *Server) Start(ctx context.Context) error {
+	ctx, log := logd.NewFromContext(ctx, "csi-livenessprobe")
 	log.Info("starting livenessprobe")
 
 	if err := s.isDriverRunning(ctx); err != nil {
@@ -68,14 +65,15 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
+	ctx, log := logd.NewFromContext(r.Context(), "csi-livenessprobe")
 	log.Debug("probeRequest")
 
-	ctx, cancelFunc := context.WithTimeout(r.Context(), s.probeTimeout)
+	ctx, cancelFunc := context.WithTimeout(ctx, s.probeTimeout)
 	defer cancelFunc()
 
 	conn, err := connection.Connect(ctx, s.csiAddress, nil, connection.WithTimeout(s.probeTimeout))
 	if err != nil {
-		writeResponse(w, http.StatusInternalServerError, err.Error())
+		writeResponse(ctx, w, http.StatusInternalServerError, err.Error())
 		log.Error(err, "failed to establish connection to CSI driver")
 
 		return
@@ -86,25 +84,27 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 
 	ready, err := rpc.Probe(ctx, conn)
 	if err != nil {
-		writeResponse(w, http.StatusInternalServerError, err.Error())
+		writeResponse(ctx, w, http.StatusInternalServerError, err.Error())
 		log.Error(err, "health check failed")
 
 		return
 	}
 
 	if !ready {
-		writeResponse(w, http.StatusInternalServerError, "driver is not ready")
+		writeResponse(ctx, w, http.StatusInternalServerError, "driver is not ready")
 		log.Error(nil, "driver is not ready")
 
 		return
 	}
 
-	writeResponse(w, http.StatusOK, "ok")
+	writeResponse(ctx, w, http.StatusOK, "ok")
 
 	log.Debug("health check succeeded")
 }
 
-func writeResponse(w http.ResponseWriter, statusCode int, message string) {
+func writeResponse(ctx context.Context, w http.ResponseWriter, statusCode int, message string) {
+	log := logd.FromContext(ctx)
+
 	w.WriteHeader(statusCode)
 
 	_, err := w.Write([]byte(message))
@@ -114,6 +114,8 @@ func writeResponse(w http.ResponseWriter, statusCode int, message string) {
 }
 
 func (s *Server) isDriverRunning(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	conn, err := connection.Connect(ctx, s.csiAddress, nil, connection.WithTimeout(0))
 	if err != nil {
 		log.Error(err, "failed to establish connection to CSI driver")

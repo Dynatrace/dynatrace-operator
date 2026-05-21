@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
@@ -14,7 +15,7 @@ import (
 )
 
 func (wh *webhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
-	pod, err := getPodFromRequest(request, wh.decoder)
+	pod, err := getPodFromRequest(ctx, request, wh.decoder)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +46,8 @@ func (wh *webhook) createMutationRequestBase(ctx context.Context, request admiss
 	return mutationRequest, nil
 }
 
-func getPodFromRequest(req admission.Request, decoder admission.Decoder) (*corev1.Pod, error) {
+func getPodFromRequest(ctx context.Context, req admission.Request, decoder admission.Decoder) (*corev1.Pod, error) {
+	log := logd.FromContext(ctx)
 	pod := &corev1.Pod{}
 
 	err := decoder.Decode(req, pod)
@@ -59,6 +61,8 @@ func getPodFromRequest(req admission.Request, decoder admission.Decoder) (*corev
 }
 
 func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req admission.Request) (*corev1.Namespace, error) {
+	log := logd.FromContext(ctx)
+
 	var namespace corev1.Namespace
 
 	if err := apiReader.Get(ctx, client.ObjectKey{Name: req.Namespace}, &namespace); err != nil {

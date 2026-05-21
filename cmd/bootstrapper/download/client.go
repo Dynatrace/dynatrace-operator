@@ -13,6 +13,7 @@ import (
 
 type Client struct {
 	newInstaller binary.NewFunc
+	baseURL      string
 }
 
 type Option func(*Client)
@@ -20,6 +21,12 @@ type Option func(*Client)
 func WithInstaller(builder binary.NewFunc) Option {
 	return func(cl *Client) {
 		cl.newInstaller = builder
+	}
+}
+
+func WithBaseURL(url string) Option {
+	return func(cl *Client) {
+		cl.baseURL = url
 	}
 }
 
@@ -70,7 +77,7 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.Client, error)
 		options = append(options, dynatrace.WithCerts(certs))
 	}
 
-	options = append(options, dynatrace.WithBaseURL(config.URL))
+	options = append(options, dynatrace.WithBaseURL(cl.baseURL))
 
 	dtClient, err := dynatrace.NewClient(options...)
 	if err != nil {

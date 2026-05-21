@@ -26,6 +26,7 @@ const (
 	FlavorFlag                       = "flavor"
 	MetadataEnrichmentFlag           = "metadata-enrichment"
 	EnableAttributesDTKubernetesFlag = "enable-attributes-dt-kubernetes"
+	BaseURL                          = "url"
 )
 
 var (
@@ -34,6 +35,7 @@ var (
 	areErrorsSuppressed bool
 	technologies        []string
 	flavor              string
+	url                 string
 
 	needsMetadataEnrichment      bool
 	enableAttributesDTKubernetes bool
@@ -69,6 +71,8 @@ func AddFlags(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().BoolVar(&enableAttributesDTKubernetes, EnableAttributesDTKubernetesFlag, true, "(Optional) Should the deprecated attributes dt.kubernetes be added to the metadata enrichment.")
 
+	cmd.PersistentFlags().StringVar(&url, BaseURL, "", "URL of the server used to download the code modules image from.")
+
 	configure.AddFlags(cmd)
 }
 
@@ -89,7 +93,7 @@ func run(cmd *cobra.Command, _ []string) error {
 			PathResolver:  metadata.PathResolver{RootDir: targetFolder},
 		}
 
-		client := download.New()
+		client := download.New(download.WithBaseURL(url))
 
 		signalHandler := ctrl.SetupSignalHandler()
 

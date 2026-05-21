@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -14,10 +13,6 @@ import (
 )
 
 const testSourceSecretName = "source-secret"
-
-var (
-	testLog = logd.Get().WithName("secret-test")
-)
 
 func TestReplicate(t *testing.T) {
 	sourceNs := &corev1.Namespace{
@@ -50,7 +45,7 @@ func TestReplicate(t *testing.T) {
 		sourceKey := client.ObjectKey{Name: testSourceSecretName, Namespace: sourceNs.Name}
 		targetKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}
 
-		err := Replicate(t.Context(), Query(clt, clt, testLog), sourceKey, targetKey)
+		err := Replicate(t.Context(), Query(clt, clt), sourceKey, targetKey)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
@@ -72,7 +67,7 @@ func TestReplicate(t *testing.T) {
 		sourceKey := client.ObjectKey{Name: testSourceSecretName, Namespace: sourceNs.Name}
 		targetKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}
 
-		err := Replicate(t.Context(), Query(clt, clt, testLog), sourceKey, targetKey)
+		err := Replicate(t.Context(), Query(clt, clt), sourceKey, targetKey)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret

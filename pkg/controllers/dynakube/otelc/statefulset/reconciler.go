@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -22,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,6 +30,7 @@ const (
 	serviceAccountName                                  = "dynatrace" + consts.OTELCollectorNameSuffix
 	annotationTelemetryIngestSecretHash                 = api.InternalFlagPrefix + "telemetry-ingest-secret-hash"
 	annotationTelemetryIngestConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-ingest-config-hash"
+	annotationDataIngestTokenSecretHash                 = api.InternalFlagPrefix + "data-ingest-token-hash"
 
 	runAs int64 = 10001
 )
@@ -47,6 +48,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "otelc-statefulset")
 	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
 		return r.createOrUpdateStatefulset(ctx, dk)
 	} else { // do cleanup or
@@ -62,7 +64,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 			return err
 		}
 
-		err = k8sstatefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
+		err = k8sstatefulset.Query(r.client, r.apiReader).Delete(ctx, sts)
 		if err != nil {
 			log.Error(err, "failed to clean up "+dk.OtelCollectorStatefulsetName()+" statufulset")
 
@@ -74,6 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	if dk.TelemetryIngest().IsEnabled() {
 		if !r.checkDataIngestTokenExists(ctx, dk) {
 			msg := "data ingest token is missing, but it's required for telemetery ingest"
@@ -122,7 +125,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		return err
 	}
 
-	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(dk).CreateOrUpdate(ctx, sts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
 		log.Info("failed to create/update " + dk.OtelCollectorStatefulsetName() + " statefulset")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
@@ -138,11 +141,11 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	templateAnnotations := map[string]string{}
 
-	if dk.Extensions().IsPrometheusEnabled() {
-		if dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
-			templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.OpenTelemetryCollector.Annotations, containerName)
-		}
+	if dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
+		templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.OpenTelemetryCollector.Annotations, containerName)
+	}
 
+	if dk.Extensions().IsPrometheusEnabled() {
 		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.Extensions().GetTLSSecretName(), dk.Namespace)
 		if err != nil {
 			return nil, err
@@ -167,13 +170,20 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 		}
 
 		templateAnnotations[annotationTelemetryIngestConfigurationConfigMapHash] = configConfigMapHash
+
+		dataIngestTokenHash, err := r.calculateDataIngestTokenHash(ctx, dk)
+		if err != nil {
+			return nil, err
+		}
+
+		templateAnnotations[annotationDataIngestTokenSecretHash] = dataIngestTokenHash
 	}
 
 	return templateAnnotations, nil
 }
 
 func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string, namespace string) (string, error) {
-	secrets := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      secretName,
@@ -192,7 +202,7 @@ func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string,
 }
 
 func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName string, namespace string) (string, error) {
-	query := k8sconfigmap.Query(r.client, r.client, log)
+	query := k8sconfigmap.Query(r.client, r.client)
 
 	configConfigMap, err := query.Get(ctx, types.NamespacedName{
 		Name:      configMapName,
@@ -208,6 +218,17 @@ func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName s
 	}
 
 	return configConfigMaptHash, nil
+}
+
+func (r *Reconciler) calculateDataIngestTokenHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	tokenReader := token.NewReader(r.apiReader, dk)
+
+	tokens, err := tokenReader.ReadTokens(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return hasher.GenerateSecureHash(tokens.DataIngestToken().Value)
 }
 
 func (r *Reconciler) checkDataIngestTokenExists(ctx context.Context, dk *dynakube.DynaKube) bool {
@@ -231,12 +252,12 @@ func getReplicas(dk *dynakube.DynaKube) int32 {
 
 func buildSecurityContext(dk *dynakube.DynaKube) *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		AllowPrivilegeEscalation: ptr.To(false),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		RunAsNonRoot:             ptr.To(true),
-		RunAsUser:                ptr.To(runAs),
-		RunAsGroup:               ptr.To(runAs),
+		Privileged:               new(false),
+		AllowPrivilegeEscalation: new(false),
+		ReadOnlyRootFilesystem:   new(true),
+		RunAsNonRoot:             new(true),
+		RunAsUser:                new(runAs),
+		RunAsGroup:               new(runAs),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -251,7 +272,7 @@ func buildSecurityContext(dk *dynakube.DynaKube) *corev1.SecurityContext {
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
-		FSGroup: ptr.To(runAs),
+		FSGroup: new(runAs),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},

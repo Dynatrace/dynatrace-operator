@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -11,6 +12,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/pkg/errors"
 )
@@ -43,7 +45,7 @@ type Certs struct {
 
 // ValidateCerts checks for certificates and keys on cs.SrcData and renews them if needed. The existing (or new)
 // certificates will be stored on cs.Data.
-func (cs *Certs) ValidateCerts() error {
+func (cs *Certs) ValidateCerts(ctx context.Context) error {
 	cs.Data = map[string][]byte{}
 	maps.Copy(cs.Data, cs.SrcData)
 
@@ -52,21 +54,23 @@ func (cs *Certs) ValidateCerts() error {
 		now = cs.Now
 	}
 
-	renewRootCerts := cs.validateRootCerts(now)
+	renewRootCerts := cs.validateRootCerts(ctx, now)
 	if renewRootCerts {
-		if err := cs.generateRootCerts(cs.Domain, now); err != nil {
+		if err := cs.generateRootCerts(ctx, cs.Domain, now); err != nil {
 			return err
 		}
 	}
 
-	if renewRootCerts || cs.validateServerCerts(now) {
-		return cs.generateServerCerts(cs.Domain, now)
+	if renewRootCerts || cs.validateServerCerts(ctx, now) {
+		return cs.generateServerCerts(ctx, cs.Domain, now)
 	}
 
 	return nil
 }
 
-func (cs *Certs) validateRootCerts(now time.Time) bool {
+func (cs *Certs) validateRootCerts(ctx context.Context, now time.Time) bool {
+	log := logd.FromContext(ctx)
+
 	if cs.Data[RootKey] == nil || cs.Data[RootCert] == nil {
 		log.Info("no root certificates found, creating")
 
@@ -101,14 +105,16 @@ func (cs *Certs) validateRootCerts(now time.Time) bool {
 	return false
 }
 
-func (cs *Certs) validateServerCerts(now time.Time) bool {
+func (cs *Certs) validateServerCerts(ctx context.Context, now time.Time) bool {
+	log := logd.FromContext(ctx)
+
 	if cs.Data[ServerKey] == nil || cs.Data[ServerCert] == nil {
 		log.Info("no server certificates found, creating")
 
 		return true
 	}
 
-	isValid, err := certificates.ValidateCertificateExpiration(cs.Data[ServerCert], renewalThreshold, now, log)
+	isValid, err := certificates.ValidateCertificateExpiration(ctx, cs.Data[ServerCert], renewalThreshold, now)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
 
@@ -118,7 +124,9 @@ func (cs *Certs) validateServerCerts(now time.Time) bool {
 	return false
 }
 
-func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
+func (cs *Certs) generateRootCerts(ctx context.Context, domain string, now time.Time) error {
+	log := logd.FromContext(ctx)
+
 	// Generate CA root keys
 	log.Info("generating root certificate")
 
@@ -173,7 +181,9 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 	return nil
 }
 
-func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
+func (cs *Certs) generateServerCerts(ctx context.Context, domain string, now time.Time) error {
+	log := logd.FromContext(ctx)
+
 	// Generate server keys
 	log.Info("generating server certificate")
 

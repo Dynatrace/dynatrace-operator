@@ -9,12 +9,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -27,10 +26,8 @@ const (
 	DefaultMinRequestThresholdMinutes = 15
 )
 
-var log = logd.Get().WithName("dynakube-v1beta6")
-
 func (dk *DynaKube) FF() *exp.FeatureFlags {
-	return exp.NewFlags(dk.Annotations)
+	return exp.NewFlags(dk.Annotations, ptr.Deref(dk.Status.APIToken.Platform, false))
 }
 
 func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {
@@ -154,12 +151,8 @@ func (dk *DynaKube) APIRequestThreshold() time.Duration {
 	return time.Duration(dk.GetDynatraceAPIRequestThreshold()) * time.Minute
 }
 
-func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceAPI.LastTokenScopeRequest, dk.APIRequestThreshold())
-}
-
 func (dk *DynaKube) IsCodeModulesStatusReady() bool {
-	if dk.OneAgent().GetCustomCodeModulesImage() != "" {
+	if dk.OneAgent().GetCustomCodeModulesImage() != "" || dk.FF().IsPublicRegistry() {
 		if dk.OneAgent().GetCodeModulesImage() == "" {
 			return false
 		}
@@ -172,4 +165,8 @@ func (dk *DynaKube) IsCodeModulesStatusReady() bool {
 
 func (dk *DynaKube) GetResourceAttributes() map[string]string {
 	return dk.Spec.ResourceAttributes
+}
+
+func (dk *DynaKube) PublicRegistryOverride() string {
+	return dk.Spec.PublicRegistryOverride
 }

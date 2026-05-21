@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -131,8 +132,7 @@ func TestMigrateAppMounts(t *testing.T) {
 		},
 	})
 
-	setupLogForTest(t)
-	checker.migrateAppMounts()
+	checker.migrateAppMounts(setupLogForTest(t))
 
 	assert.DirExists(t, checker.path.AppMountsBaseDir())
 	assert.FileExists(t, checker.path.AppMountForID(volID))
@@ -158,8 +158,7 @@ func TestMigrateHostMounts(t *testing.T) {
 		checker := NewCorrectnessChecker(apiReader, dtcsi.CSIOptions{RootDir: tempDir})
 		require.NoError(t, os.MkdirAll(checker.path.OSAgentDir("test"), os.ModePerm))
 
-		setupLogForTest(t)
-		checker.migrateHostMounts(t.Context())
+		checker.migrateHostMounts(setupLogForTest(t))
 	})
 
 	t.Run("create symlink", func(t *testing.T) {
@@ -167,8 +166,7 @@ func TestMigrateHostMounts(t *testing.T) {
 		checker := NewCorrectnessChecker(apiReader, dtcsi.CSIOptions{RootDir: tempDir})
 		require.NoError(t, os.MkdirAll(checker.path.OldOSAgentDir("tenant"), os.ModePerm))
 
-		setupLogForTest(t)
-		checker.migrateHostMounts(t.Context())
+		checker.migrateHostMounts(setupLogForTest(t))
 
 		assert.FileExists(t, checker.path.OSAgentDir("test")) // file because symlink
 	})
@@ -177,8 +175,7 @@ func TestMigrateHostMounts(t *testing.T) {
 		tempDir := t.TempDir()
 		checker := NewCorrectnessChecker(apiReader, dtcsi.CSIOptions{RootDir: tempDir})
 
-		setupLogForTest(t)
-		checker.migrateHostMounts(t.Context())
+		checker.migrateHostMounts(setupLogForTest(t))
 
 		assert.NoFileExists(t, checker.path.OSAgentDir("test"))
 		assert.NoDirExists(t, checker.path.OSAgentDir("test"))
@@ -200,10 +197,12 @@ func buildReader(t *testing.T, dks ...dynakube.DynaKube) client.Reader {
 		Build()
 }
 
-func setupLogForTest(t *testing.T) {
-	oldLog := log
-	log = logd.Logger{Logger: log.WithSink(testFailingLogSink{LogSink: log.GetSink(), t: t})}
-	t.Cleanup(func() { log = oldLog })
+func setupLogForTest(t *testing.T) context.Context {
+	t.Helper()
+	base := logd.Get()
+	instrumented := logd.Logger{Logger: logd.Get().WithSink(testFailingLogSink{LogSink: base.GetSink(), t: t})}
+
+	return logd.IntoContext(t.Context(), instrumented)
 }
 
 type testFailingLogSink struct {

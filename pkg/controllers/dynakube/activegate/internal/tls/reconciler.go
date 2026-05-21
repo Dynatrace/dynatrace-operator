@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -35,11 +36,13 @@ type Reconciler struct {
 func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(client, apiReader, log),
+		secrets:      k8ssecret.Query(client, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "dynakube-activegate-tls-secret")
+
 	if dk.ActiveGate().IsEnabled() && dk.ActiveGate().IsAutomaticTLSSecretEnabled() && dk.ActiveGate().TLSSecretName == "" {
 		return r.reconcileSelfSignedTLSSecret(ctx, dk)
 	}

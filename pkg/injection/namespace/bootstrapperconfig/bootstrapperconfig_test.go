@@ -21,12 +21,12 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -82,6 +82,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
 		}
 
 		namespace := clientInjectedNamespace(testNamespace, testDynakube)
@@ -99,7 +102,8 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
@@ -135,7 +139,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				APIURL:     testAPIurl,
 				TrustedCAs: "test-trusted-ca",
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -146,6 +150,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					},
 					TLSSecretName: "test-tls-secret-name",
 				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
 			},
 		}
 
@@ -176,7 +183,8 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
@@ -234,7 +242,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -244,6 +252,9 @@ func TestGenerateForDynakube(t *testing.T) {
 						activegate.KubeMonCapability.DisplayName,
 					},
 				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
 			},
 		}
 
@@ -275,7 +286,8 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
@@ -326,6 +338,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
 		}
 
 		clt := fake.NewClientWithIndex(
@@ -338,7 +353,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
@@ -361,7 +376,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				APIURL:     testAPIurl,
 				TrustedCAs: "test-trusted-ca",
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -372,6 +387,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					},
 					TLSSecretName: "test-tls-secret-name",
 				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
 			},
 		}
 
@@ -401,7 +419,8 @@ func TestGenerateForDynakube(t *testing.T) {
 		)
 
 		mockDTClient := oneagentclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
@@ -424,7 +443,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				APIURL:     testAPIurl,
 				TrustedCAs: "test-trusted-ca",
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -435,6 +454,9 @@ func TestGenerateForDynakube(t *testing.T) {
 					},
 					TLSSecretName: "test-tls-secret-name",
 				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
 			},
 		}
 
@@ -463,7 +485,8 @@ func TestGenerateForDynakube(t *testing.T) {
 			})
 
 		mockDTClient := oneagentclientmock.NewClient(t)
-		mockDTClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})

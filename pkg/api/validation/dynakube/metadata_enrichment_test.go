@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"k8s.io/utils/ptr"
 )
 
 func TestDisabledMetadataEnrichmentForInjectionModes(t *testing.T) {
@@ -19,7 +18,7 @@ func TestDisabledMetadataEnrichmentForInjectionModes(t *testing.T) {
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 			},
 		}
@@ -35,7 +34,7 @@ func TestDisabledMetadataEnrichmentForInjectionModes(t *testing.T) {
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 			},
 		}
@@ -51,7 +50,7 @@ func TestDisabledMetadataEnrichmentForInjectionModes(t *testing.T) {
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}
@@ -80,7 +79,7 @@ func TestDisabledMetadataEnrichmentForInjectionModes(t *testing.T) {
 					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 			},
 		}
@@ -95,7 +94,7 @@ func TestDisabledMetadataEnrichmentForInjectionModes(t *testing.T) {
 					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 			},
 		}

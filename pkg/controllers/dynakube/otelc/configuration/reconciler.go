@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -30,12 +31,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "otelc-config")
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		query := k8sconfigmap.Query(r.client, r.apiReader, log)
+		query := k8sconfigmap.Query(r.client, r.apiReader)
 
 		err := query.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}})
 		if err != nil {
@@ -51,7 +54,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKube) error {
-	query := k8sconfigmap.Query(r.client, r.apiReader, log)
+	query := k8sconfigmap.Query(r.client, r.apiReader)
 
 	newConfigMap, err := r.prepareConfigMap(dk)
 	if err != nil {

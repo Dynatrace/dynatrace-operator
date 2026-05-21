@@ -50,7 +50,7 @@ func TestGetLatest(t *testing.T) {
 		}).Return(nil, rawErr).Once()
 
 		coreClient := coremock.NewClient(t)
-		coreClient.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
+		coreClient.EXPECT().GET(anyCtx, agentDeploymentPath).Return(req).Once()
 
 		return NewClient(coreClient, "", ""), file
 	}
@@ -107,7 +107,7 @@ func TestGet(t *testing.T) {
 		}).Return(nil, rawErr).Once()
 
 		coreClient := coremock.NewClient(t)
-		coreClient.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
+		coreClient.EXPECT().GET(anyCtx, agentDeploymentPath).Return(req).Once()
 
 		return NewClient(coreClient, "", ""), file
 	}
@@ -158,7 +158,7 @@ func TestGetVersions(t *testing.T) {
 		}).Return(execErr).Once()
 
 		coreClient := coremock.NewClient(t)
-		coreClient.EXPECT().GET(t.Context(), agentDeploymentPath).Return(req).Once()
+		coreClient.EXPECT().GET(anyCtx, agentDeploymentPath).Return(req).Once()
 
 		return NewClient(coreClient, "", "")
 	}

@@ -18,7 +18,7 @@ func TestFindVersionFromFileSystem(t *testing.T) {
 		err := os.MkdirAll(versionSubDir, 0755)
 		require.NoError(t, err)
 
-		version, err := findVersionFromFileSystem(testPath)
+		version, err := findVersionFromFileSystem(t.Context(), testPath)
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, version)
 	})
@@ -29,7 +29,7 @@ func TestFindVersionFromFileSystem(t *testing.T) {
 		_, err = os.Create(filepath.Join(testPath, testVersion))
 		require.NoError(t, err)
 
-		version, err := findVersionFromFileSystem(testPath)
+		version, err := findVersionFromFileSystem(t.Context(), testPath)
 		require.NoError(t, err)
 		assert.Empty(t, version)
 	})
@@ -43,7 +43,7 @@ func TestRemove(t *testing.T) {
 		err := os.MkdirAll(testPath, 0755)
 		require.NoError(t, err)
 
-		err = Remove(testPath)
+		err = Remove(t.Context(), testPath)
 		require.NoError(t, err)
 
 		entries, err := os.ReadDir(filepath.Dir(testPath))
@@ -53,7 +53,7 @@ func TestRemove(t *testing.T) {
 	t.Run("silence error if not present", func(t *testing.T) {
 		testPath := filepath.Join(t.TempDir(), "path", testVersion)
 
-		err := Remove(testPath)
+		err := Remove(t.Context(), testPath)
 		require.NoError(t, err)
 	})
 
@@ -75,7 +75,7 @@ func TestRemove(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, entries, 1) // check that only the link is there
 
-		err = Remove(danglingLink)
+		err = Remove(t.Context(), danglingLink)
 		require.NoError(t, err)
 
 		entries, err = os.ReadDir(base)

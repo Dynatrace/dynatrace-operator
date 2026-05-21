@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
@@ -90,7 +89,7 @@ func TestCombineImagesWithDigest(t *testing.T) {
 	updater := newUpdater(fake.NewClient(), nil, fakeRegistryClient, edgeConnect)
 
 	t.Run("image and digest should be combined", func(t *testing.T) {
-		combined, err := updater.combineImageWithDigest(fakeDigest)
+		combined, err := updater.combineImageWithDigest(context.Background(), fakeDigest)
 
 		require.NoError(t, err)
 		require.Equal(t, "docker.io/dynatrace/edgeconnect:latest@"+fakeDigest, combined)
@@ -99,7 +98,7 @@ func TestCombineImagesWithDigest(t *testing.T) {
 	t.Run("malformed image should fail", func(t *testing.T) {
 		edgeConnect.Spec.ImageRef.Repository = "not a correct repo"
 
-		_, err := updater.combineImageWithDigest(fakeDigest)
+		_, err := updater.combineImageWithDigest(context.Background(), fakeDigest)
 		require.Error(t, err)
 	})
 }
@@ -121,7 +120,7 @@ func TestReconcileRequired(t *testing.T) {
 
 		edgeConnectTime := metav1.Now()
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
-		edgeConnect.Spec.AutoUpdate = ptr.To(true)
+		edgeConnect.Spec.AutoUpdate = new(true)
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
 
 		assert.False(t, updater.RequiresReconcile())
@@ -133,7 +132,7 @@ func TestReconcileRequired(t *testing.T) {
 
 		edgeConnectTime := metav1.NewTime(currentTime.Now().Add(-time.Hour))
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
-		edgeConnect.Spec.AutoUpdate = ptr.To(true)
+		edgeConnect.Spec.AutoUpdate = new(true)
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
 
 		assert.True(t, updater.RequiresReconcile())

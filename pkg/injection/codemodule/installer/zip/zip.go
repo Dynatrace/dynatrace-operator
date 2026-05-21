@@ -1,6 +1,7 @@
 package zip
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -8,11 +9,14 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/klauspost/compress/zip"
 	"github.com/pkg/errors"
 )
 
-func (extractor OneAgentExtractor) ExtractZip(sourceFile *os.File, targetDir string) error {
+func (extractor OneAgentExtractor) ExtractZip(ctx context.Context, sourceFile *os.File, targetDir string) error {
+	ctx, log := logd.NewFromContext(ctx, "oneagent-zip")
+
 	extractor.cleanTempZipDir()
 
 	if sourceFile == nil {
@@ -46,7 +50,7 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile *os.File, targetDir str
 	}
 
 	if extractDest != targetDir {
-		err := extractor.moveToTargetDir(targetDir)
+		err := extractor.moveToTargetDir(ctx, targetDir)
 		if err != nil {
 			log.Info("failed to move file to final destination", "err", err)
 

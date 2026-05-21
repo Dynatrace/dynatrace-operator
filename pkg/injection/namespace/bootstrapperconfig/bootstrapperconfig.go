@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -40,13 +41,14 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 		dtClient:     dtClient,
 		apiReader:    apiReader,
 		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(client, apiReader, log),
+		secrets:      k8ssecret.Query(client, apiReader),
 	}
 }
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
+	ctx, log := logd.NewFromContext(ctx, "bootstrapper-config")
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
 
 	configErr := s.reconcileConfig(ctx, dk, namespaces)
@@ -56,7 +58,7 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 }
 
 func (s *SecretGenerator) reconcileConfig(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
-	data, err := s.generateConfig(ctx, dk)
+	data, annotations, err := s.generateConfig(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -65,7 +67,7 @@ func (s *SecretGenerator) reconcileConfig(ctx context.Context, dk *dynakube.Dyna
 		return nil
 	}
 
-	err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data)
+	err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data, annotations)
 	if err != nil {
 		return err
 	}
@@ -80,7 +82,7 @@ func (s *SecretGenerator) reconcileCerts(ctx context.Context, dk *dynakube.DynaK
 	}
 
 	if len(certs) != 0 {
-		err = s.createSourceForWebhook(ctx, dk, GetSourceCertsSecretName(dk.Name), CertsConditionType, certs)
+		err = s.createSourceForWebhook(ctx, dk, GetSourceCertsSecretName(dk.Name), CertsConditionType, certs, nil)
 		if err != nil {
 			return err
 		}
@@ -104,6 +106,8 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 	dk *dynakube.DynaKube,
 	data map[string][]byte,
 ) error {
+	log := logd.FromContext(ctx)
+
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
@@ -127,6 +131,8 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 }
 
 func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "bootstrapper-config")
+
 	err := cleanupConfig(ctx, client, apiReader, namespaces, dk)
 	if err != nil {
 		log.Error(err, "failed to cleanup bootstrapper config secrets")
@@ -145,6 +151,8 @@ func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader,
 }
 
 func cleanupConfig(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	defer meta.RemoveStatusCondition(dk.Conditions(), ConfigConditionType)
 
 	nsList := make([]string, 0, len(namespaces))
@@ -152,7 +160,7 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 		nsList = append(nsList, ns.Name)
 	}
 
-	secrets := k8ssecret.Query(client, apiReader, log)
+	secrets := k8ssecret.Query(client, apiReader)
 
 	err := secrets.DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	if err != nil {
@@ -163,6 +171,8 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 }
 
 func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	defer meta.RemoveStatusCondition(dk.Conditions(), CertsConditionType)
 
 	nsList := make([]string, 0, len(namespaces))
@@ -170,7 +180,7 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 		nsList = append(nsList, ns.Name)
 	}
 
-	secrets := k8ssecret.Query(client, apiReader, log)
+	secrets := k8ssecret.Query(client, apiReader)
 
 	err := secrets.DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
 	if err != nil {
@@ -181,13 +191,14 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 }
 
 // generate gets the necessary info the create the init secret data
-func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, map[string]string, error) {
 	data := map[string][]byte{}
+	annotations := map[string]string{}
 
-	if dk.OneAgent().IsAppInjectionNeeded() && !dk.FF().IsNodeImagePull() {
+	if NeedsDownloadConfig(dk) {
 		downloadConfigBytes, err := s.prepareDownloadConfig(ctx, dk)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 
 		data[download.InputFileName] = downloadConfigBytes
@@ -196,7 +207,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 	if dk.OneAgent().IsAppInjectionNeeded() {
 		pmcSecret, err := s.preparePMC(ctx, dk)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 
 		if len(pmcSecret) != 0 {
@@ -207,12 +218,16 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 			initialConnectRetryMs := strconv.Itoa(dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio))
 			data[curl.InputFileName] = []byte(initialConnectRetryMs)
 		}
+
+		if err := s.addPGC(ctx, dk, data, annotations); err != nil {
+			return nil, nil, errors.WithStack(err)
+		}
 	}
 
 	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichment().IsEnabled() {
 		endpointProperties, err := s.prepareEndpoints(ctx, dk)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 
 		if len(endpointProperties) != 0 {
@@ -220,7 +235,11 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		}
 	}
 
-	return data, nil
+	return data, annotations, nil
+}
+
+func NeedsDownloadConfig(dk *dynakube.DynaKube) bool {
+	return dk.OneAgent().IsAppInjectionNeeded() && !dk.OneAgent().IsCSIAvailable() && dk.OneAgent().GetCodeModulesImage() == ""
 }
 
 // generateCerts gets the necessary info they create the init certs secret data
@@ -256,7 +275,6 @@ func (s *SecretGenerator) prepareDownloadConfig(ctx context.Context, dk *dynakub
 	}
 
 	downloadConfigJSON := download.Config{
-		URL:           dk.Spec.APIURL,
 		APIToken:      string(tokens.Data[token.APIKey]),
 		NoProxy:       dk.FF().GetNoProxy(),
 		NetworkZone:   dk.Spec.NetworkZone,

@@ -1,6 +1,7 @@
 package token
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -10,13 +11,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func getAllScopesForAPIToken() []string {
 	return []string{
@@ -83,7 +85,7 @@ func TestTokens(t *testing.T) {
 		}
 
 		for _, tokenScope := range tokenScopes {
-			mockedTokenClient.EXPECT().GetScopes(t.Context(), tokenScope.token).Return(tokenScope.scopes, nil).Maybe()
+			mockedTokenClient.EXPECT().GetScopes(anyCtx, tokenScope.token).Return(tokenScope.scopes, nil).Maybe()
 		}
 
 		return mockedTokenClient
@@ -350,7 +352,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 					},
 				},
 			},
@@ -369,7 +371,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 					},
 				},
 			},
@@ -387,7 +389,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 					},
 				},
 			},
@@ -442,7 +444,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		t.Run(c.title, func(t *testing.T) {
 			tokenValue := "test-token"
 			mockedTokenClient := tokenclientmock.NewClient(t)
-			mockedTokenClient.EXPECT().GetScopes(t.Context(), tokenValue).Return(c.availableScopes, nil).Once()
+			mockedTokenClient.EXPECT().GetScopes(anyCtx, tokenValue).Return(c.availableScopes, nil).Once()
 
 			apiToken := newToken(APIKey, tokenValue)
 			tokens := Tokens{
@@ -496,13 +498,6 @@ func TestCheckForDataIngestToken(t *testing.T) {
 
 		assert.False(t, CheckForDataIngestToken(tokens))
 	})
-}
-
-func TestDisableLookupForPlatformToken(t *testing.T) {
-	tokens := Tokens{APIKey: &Token{Value: dttoken.PlatformPrefix + "test", Features: []Feature{{Name: "ignoreme"}}}}
-	scopes, err := tokens.VerifyScopes(t.Context(), nil, dynakube.DynaKube{})
-	require.NoError(t, err)
-	assert.Empty(t, scopes)
 }
 
 func TestGetMissingScopes(t *testing.T) {

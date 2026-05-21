@@ -20,9 +20,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
@@ -36,7 +36,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -47,6 +46,7 @@ const (
 	testDataIngestToken = "test-ingest-token"
 
 	testUUID                  = "test-uuid"
+	testKubernetesMEID        = "KUBERNETES_CLUSTER-" + testUUID
 	testTenantToken           = "abcd"
 	testCommunicationEndpoint = "https://tenant.dev.dynatracelabs.com:443"
 
@@ -92,7 +92,7 @@ func TestReconciler(t *testing.T) {
 					},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							testNamespaceSelectorLabel: testDynakube,
@@ -110,8 +110,11 @@ func TestReconciler(t *testing.T) {
 					},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: testKubernetesMEID,
+			},
 		}
-		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), tokenclient.ConditionTypeAPITokenSettingsRead, "available")
+		optionalscope.SetAvailable(dk, tokenclient.ScopeSettingsRead)
 		clt := fake.NewClientWithIndex(
 			clientNotInjectedNamespace(testNamespace, testDynakube),
 			clientNotInjectedNamespace(testNamespace2, testDynakube2),
@@ -123,12 +126,13 @@ func TestReconciler(t *testing.T) {
 			dk,
 		)
 		oneAgentClient := oneagentclientmock.NewClient(t)
-		oneAgentClient.EXPECT().GetConnectionInfo(t.Context()).Return(expectedOneAgentConnectionInfo, nil).Once()
+		oneAgentClient.EXPECT().GetConnectionInfo(anyCtx).Return(expectedOneAgentConnectionInfo, nil).Once()
 		versionClient := versionclientmock.NewClient(t)
-		versionClient.EXPECT().GetLatestAgentVersion(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
-		oneAgentClient.EXPECT().GetProcessModuleConfig(t.Context()).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
+		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, testKubernetesMEID, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 		settingsClient := settingsmock.NewClient(t)
-		settingsClient.EXPECT().GetRules(t.Context(), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
+		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient,
@@ -199,6 +203,7 @@ func TestReconciler(t *testing.T) {
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType))
 	})
 	t.Run("failure is logged in condition", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -270,8 +275,6 @@ func TestRemoveAppInjection(t *testing.T) {
 	err = clt.Get(t.Context(), client.ObjectKey{Name: testNamespace, Namespace: ""}, &namespace)
 	require.NoError(t, err)
 	assert.Nil(t, namespace.Labels)
-	require.NotNil(t, namespace.Annotations)
-	assert.Equal(t, "true", namespace.Annotations[mapper.UpdatedViaDynakubeAnnotation])
 
 	err = clt.Get(t.Context(), client.ObjectKey{Name: testNamespace2, Namespace: ""}, &namespace)
 	require.NoError(t, err)
@@ -352,7 +355,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		dk := createDynaKube(testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
 		enrichmentRulesReconciler := createReconcilerMock(t)
 
@@ -366,7 +369,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		dk := createDynaKube(testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+		dk.Spec.MetadataEnrichment.Enabled = new(true)
 
 		enrichmentRulesReconciler := createReconcilerMock(t)
 
@@ -387,6 +390,9 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			OneAgent: oneagent.Spec{
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 			},
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubernetesClusterMEID: testKubernetesMEID,
 		},
 	}
 
@@ -416,6 +422,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 
 		oneAgentClient := oneagentclientmock.NewClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, testKubernetesMEID, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 
 		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
@@ -451,6 +458,9 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 			},
 		},
+		Status: dynakube.DynaKubeStatus{
+			KubernetesClusterMEID: testKubernetesMEID,
+		},
 	}
 
 	namespaces := []*corev1.Namespace{
@@ -484,6 +494,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 
 		oneAgentClient := oneagentclientmock.NewClient(t)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, testKubernetesMEID, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Twice()
 
 		dtClient := &dynatrace.Client{OneAgent: oneAgentClient}
 
@@ -810,7 +821,7 @@ func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 func createIstioReconcilerMock(t *testing.T, dk *dynakube.DynaKube) istioReconciler {
 	rec := newMockIstioReconciler(t)
 
-	rec.EXPECT().ReconcileCodeModules(t.Context(), dk).Return(nil).Once()
+	rec.EXPECT().ReconcileCodeModules(anyCtx, dk).Return(nil).Once()
 
 	return rec
 }

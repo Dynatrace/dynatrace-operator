@@ -14,7 +14,7 @@ const (
 	`
 
 	errorMissingAllowedSuffixAPIServer = `The EdgeConnect's specification has an invalid apiServer value set.
-	Example valid values: 
+	Example valid values:
 	-  For prod: "<tenantID>.apps.dynatrace.com"
 	-  For dev: "<tenantID>.dev.apps.dynatracelabs.com"
 	-  For sprint: "<tenantID>.sprint.apps.dynatracelabs.com"
@@ -37,22 +37,8 @@ var (
 
 func isAllowedSuffixAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
 	for _, suffix := range allowedSuffix {
-		if strings.HasSuffix(ec.Spec.APIServer, suffix) {
-			hostnameWithDomains := strings.FieldsFunc(suffix,
-				func(r rune) bool { return r == '.' },
-			)
-
-			hostnameWithTenant := strings.FieldsFunc(ec.Spec.APIServer,
-				func(r rune) bool { return r == '.' },
-			)
-
-			if len(hostnameWithTenant) > len(hostnameWithDomains) {
-				return ""
-			}
-
-			log.Info("apiServer is not a valid hostname", "apiServer", ec.Spec.APIServer)
-
-			break
+		if strings.HasSuffix(ec.Spec.APIServer, suffix) && len(ec.Spec.APIServer) > len(suffix) {
+			return ""
 		}
 	}
 
@@ -62,8 +48,6 @@ func isAllowedSuffixAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.E
 func checkAPIServerProtocolNotSet(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
 	parsedURL, err := url.Parse(ec.Spec.APIServer)
 	if err != nil {
-		log.Info("API Server URL is not a valid URL", "err", err.Error())
-
 		return errorInvalidAPIServer
 	}
 

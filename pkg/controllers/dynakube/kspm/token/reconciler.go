@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -24,11 +25,13 @@ type Reconciler struct {
 
 func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		secrets: k8ssecret.Query(client, apiReader, log),
+		secrets: k8ssecret.Query(client, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "kspm-token-secret")
+
 	if dk.KSPM().IsEnabled() {
 		return r.ensureKSPMSecret(ctx, dk)
 	}
@@ -37,6 +40,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 func (r *Reconciler) ensureKSPMSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	_, err := r.secrets.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace})
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new token for kspm")
@@ -75,6 +80,8 @@ func (r *Reconciler) ensureKSPMSecret(ctx context.Context, dk *dynakube.DynaKube
 }
 
 func (r *Reconciler) removeKSPMSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	if meta.FindStatusCondition(*dk.Conditions(), kspmConditionType) == nil {
 		return nil // no condition == nothing is there to clean up
 	}

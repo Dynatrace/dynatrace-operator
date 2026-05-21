@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -28,11 +29,13 @@ type Reconciler struct {
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader, log),
+		secrets:      k8ssecret.Query(clt, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "activegate-connectioninfo")
+
 	if !dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), activeGateConnectionInfoConditionType) == nil {
 			return nil
@@ -59,10 +62,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 }
 
 func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client) error {
+	log := logd.FromContext(ctx)
 	secretNamespacedName := types.NamespacedName{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace}
 
 	if !k8sconditions.IsOutdated(r.timeProvider, dk, activeGateConnectionInfoConditionType) {
-		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName, log)
+		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName)
 		if err != nil {
 			return err
 		}
@@ -114,6 +118,8 @@ func (r *Reconciler) setDynakubeStatus(dk *dynakube.DynaKube, connectionInfo agc
 }
 
 func (r *Reconciler) createTenantTokenSecret(ctx context.Context, dk *dynakube.DynaKube, secretName string, connectionInfo agclient.ConnectionInfo) error {
+	log := logd.FromContext(ctx)
+
 	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.ActiveGateComponentLabel, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -14,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,13 +29,15 @@ type Reconciler struct {
 func NewReconciler(clt client.Client,
 	apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		daemonset: k8sdaemonset.Query(clt, apiReader, log),
+		daemonset: k8sdaemonset.Query(clt, apiReader),
 	}
 }
 
 var KubernetesSettingsNotAvailableError = errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment until it is ready")
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "logmonitoring-daemonset")
+
 	if !dk.LogMonitoring().IsStandalone() {
 		if meta.FindStatusCondition(*dk.Conditions(), ConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
@@ -128,6 +130,6 @@ func isMEConfigured(dk dynakube.DynaKube) bool {
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
-		FSGroup: ptr.To(runAs),
+		FSGroup: new(runAs),
 	}
 }

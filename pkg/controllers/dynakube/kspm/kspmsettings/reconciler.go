@@ -10,13 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-)
-
-var (
-	log = logd.Get().WithName("kspm-settings")
+	"k8s.io/utils/ptr"
 )
 
 type Reconciler struct {
@@ -30,6 +28,7 @@ func NewReconciler() *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "kspm-settings")
 	// Kubernetes Monitoring is REQUIRED for KSPM, so it is ok to just check for this.
 	if !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
 		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
@@ -43,8 +42,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, 
 
 	_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType) // needed so the timestamp updates, will never actually show up in the status
 
-	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsRead)
-	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, token.ConditionTypeAPITokenSettingsWrite)
+	hasReadScope := optionalscope.IsAvailable(dk, token.ScopeSettingsRead)
+	hasWriteScope := optionalscope.IsAvailable(dk, token.ScopeSettingsWrite)
 
 	var missingScopes []string
 	if !hasReadScope {
@@ -61,8 +60,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, 
 		log.Info(message)
 
 		return nil
-	} else {
-		log.Info("necessary scopes for kspm settings creation is available, proceeding with reconciliation")
 	}
 
 	err := r.checkKSPMSettings(ctx, dtClient, dk)
@@ -74,6 +71,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, 
 }
 
 func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
 	log.Info("start reconciling kspm settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {
@@ -85,17 +83,26 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 		return nil
 	}
 
-	kspmSettings, err := dtClient.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
-	if err != nil {
-		if core.IsForbidden(err) {
-			log.Info("tenant requires additional scopes for getting KSPM settings. Skipping reconciliation")
+	handleMissingScope := func(err error) error {
+		if !core.IsForbidden(err) {
+			setErrorCondition(dk.Conditions())
 
-			return nil
+			return err
 		}
 
-		setErrorCondition(dk.Conditions())
+		msg := "cannot manage KSPM settings due to missing token scopes or tenant configuration"
+		logd.FromContext(ctx).Info(msg)
 
-		return errors.WithMessage(err, "error trying to check if setting exists")
+		if ptr.Deref(dk.Status.APIToken.Platform, false) {
+			k8sconditions.SetOptionalScopeMissing(dk.Conditions(), conditionType, msg)
+		}
+
+		return nil
+	}
+
+	kspmSettings, err := dtClient.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
+	if err != nil {
+		return handleMissingScope(errors.WithMessage(err, "error trying to check if setting exists"))
 	}
 
 	if kspmSettings.TotalCount > 0 {
@@ -110,15 +117,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 
 	objectID, err := dtClient.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, datasetPipelineEnabled)
 	if err != nil {
-		if core.IsForbidden(err) {
-			log.Info("tenant requires additional scopes for creating KSPM settings. Skipping reconciliation")
-
-			return nil
-		}
-
-		setErrorCondition(dk.Conditions())
-
-		return err
+		return handleMissingScope(err)
 	}
 
 	setExistsCondition(dk.Conditions())

@@ -2,7 +2,6 @@ package validation
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -10,7 +9,8 @@ import (
 )
 
 const (
-	warningFeatureFlagDeprecated = `Feature flag %s is deprecated.`
+	warningFeatureFlagDeprecated   = `Using deprecated feature flags: `
+	warningNodeImagePullWithoutCSI = "The `" + exp.OANodeImagePullKey + "` annotation is set, but the CSI driver is not available on this cluster. This feature flag only affects the behavior of the CSI driver, so it will have no effect. Other previous `node-image-pull` related behavior has been defaulted."
 )
 
 var deprecatedFeatureFlags = []string{
@@ -21,13 +21,29 @@ var deprecatedFeatureFlags = []string{
 }
 
 func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	var results strings.Builder
+	var results []string
+
+	if len(dk.Annotations) == 0 {
+		return ""
+	}
 
 	for _, flag := range deprecatedFeatureFlags {
-		if dk.Annotations != nil && dk.Annotations[flag] != "" {
-			fmt.Fprintf(&results, warningFeatureFlagDeprecated, flag)
+		if dk.FF().IsSet(flag) {
+			results = append(results, flag)
 		}
 	}
 
-	return results.String()
+	if len(results) > 0 {
+		return warningFeatureFlagDeprecated + strings.Join(results, ", ")
+	}
+
+	return ""
+}
+
+func isNodeImagePullWithoutCSI(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if !dk.OneAgent().IsCSIAvailable() && dk.FF().IsSet(exp.OANodeImagePullKey) {
+		return warningNodeImagePullWithoutCSI
+	}
+
+	return ""
 }

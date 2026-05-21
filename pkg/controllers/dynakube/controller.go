@@ -4,6 +4,7 @@ import (
 	"context"
 	goerrors "errors"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -27,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -34,7 +36,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -54,6 +56,10 @@ const (
 	defaultRequeueInterval = 15 * time.Minute
 
 	controllerName = "dynakube-controller"
+
+	conditionTypeAPITokenSettingsRead   = "ApiTokenSettingsRead"
+	conditionTypeAPITokenSettingsWrite  = "ApiTokenSettingsWrite"
+	conditionTypeAPITokenOptionalScopes = "ApiTokenOptionalScopes"
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -189,6 +195,7 @@ type Controller struct {
 // The Controller will requeue the request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	ctx, log := logd.NewFromContext(ctx, "dynakube")
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
@@ -210,8 +217,8 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		k8sevent.SendCRDVersionMismatch(controller.eventRecorder, dk)
 	}
 
-	oldStatus := *dk.Status.DeepCopy()
 	controller.requeueAfter = defaultRequeueInterval
+	oldStatus := *dk.Status.DeepCopy()
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
@@ -247,6 +254,8 @@ func (controller *Controller) handleError(
 	reconcileErr error,
 	oldStatus dynakube.DynaKubeStatus,
 ) (reconcile.Result, error) {
+	log := logd.FromContext(ctx)
+
 	switch {
 	case core.IsUnreachable(reconcileErr):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
@@ -295,6 +304,8 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	err := controller.istioReconciler.ReconcileAPIURL(ctx, dk)
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile istio objects for API url")
@@ -342,7 +353,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 		return nil, err
 	}
 
-	controller.warnAboutDeprecatedTokens()
+	controller.warnAboutDeprecatedTokens(ctx)
 
 	err = controller.verifyTokens(ctx, dtClient.Token, dk)
 	if err != nil {
@@ -357,6 +368,8 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	var componentErrors []error
 
 	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
@@ -452,7 +465,9 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	return &dkMapper
 }
 
-func (controller *Controller) warnAboutDeprecatedTokens() {
+func (controller *Controller) warnAboutDeprecatedTokens(ctx context.Context) {
+	log := logd.FromContext(ctx)
+
 	if controller.tokens.PaasToken().Value != "" {
 		if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
 			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be ignored because the '" + token.APIKey + "' field in the secret contains a platform token, which will be used for authentication.")
@@ -462,11 +477,32 @@ func (controller *Controller) warnAboutDeprecatedTokens() {
 	}
 }
 
+// Verify the provided tokens for structural and functional correctness. The former checks that there aren't any unexpected characters in the token values and
+// the latter validates the token scopes using the tenant API.
+// If a platform token is provided, no API call is made and all optional scope related fields and conditions are cleared from the status.
 func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
 	err := controller.tokens.VerifyValues()
 	if err != nil {
 		return err
 	}
+
+	if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
+		dk.Status.APIToken.Platform = new(true)
+
+		logd.FromContext(ctx).Info("skipping token scope lookup due to platform token")
+
+		// Scope related conditions are obsolete when using a platform token
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsRead)
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsWrite)
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes)
+		// Also clear the optional scopes from the status
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsRead = nil
+		dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite = nil
+
+		return nil
+	}
+
+	dk.Status.APIToken.Platform = new(false)
 
 	err = controller.verifyTokenScopes(ctx, dtClient, dk)
 	if err != nil {
@@ -477,15 +513,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 }
 
 func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
-	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
-		log.Info(dynakube.GetCacheValidMessage(
-			"token verification",
-			dk.Status.DynatraceAPI.LastTokenScopeRequest,
-			dk.APIRequestThreshold()))
-
-		return lastErrorFromCondition(&dk.Status)
-	}
-
+	log := logd.FromContext(ctx)
 	tokens := controller.tokens.AddFeatureScopesToTokens()
 
 	optionalScopes, err := tokens.VerifyScopes(ctx, dtClient, *dk)
@@ -494,26 +522,35 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient to
 	}
 
 	log.Info("token verified")
-
-	dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
-
-	controller.updateOptionalScopesConditions(&dk.Status, optionalScopes)
+	controller.updateOptionalScopesConditions(dk, optionalScopes)
 
 	return nil
 }
 
-func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, optionalScopes map[string]bool) {
-	for scope, conditionType := range tokenclient.OptionalScopes {
+func (controller *Controller) updateOptionalScopesConditions(dk *dynakube.DynaKube, optionalScopes map[string]bool) {
+	unavailableScopes := []string{}
+
+	for _, scope := range tokenclient.OptionalScopes {
 		available, ok := optionalScopes[scope]
 		switch {
-		case !ok: // no enabled feature uses the `scope` -> doesn't need to be in the status
-			_ = meta.RemoveStatusCondition(&dkStatus.Conditions, conditionType)
+		case !ok:
+			optionalscope.SetMissing(dk, scope)
 		case available:
-			k8sconditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
+			optionalscope.SetAvailable(dk, scope)
 		case !available:
-			k8sconditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
+			optionalscope.SetMissing(dk, scope)
+			unavailableScopes = append(unavailableScopes, scope)
 		}
 	}
+
+	if len(unavailableScopes) > 0 {
+		k8sconditions.SetOptionalScopeMissing(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes, strings.Join(unavailableScopes, ",")+" optional scope(s) not available, some features may not work")
+	} else {
+		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenOptionalScopes)
+	}
+
+	_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsRead)
+	_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsWrite)
 }
 
 func lastErrorFromCondition(dkStatus *dynakube.DynaKubeStatus) error {

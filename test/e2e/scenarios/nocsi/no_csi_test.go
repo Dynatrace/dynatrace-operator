@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kspm"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
@@ -47,7 +48,7 @@ func TestMain(m *testing.M) {
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
 			events.LogEvents(ctx, c, t)
-			logs.WriteOperatorLog(ctx, c, t)
+			logs.WriteOperatorLogToFile(ctx, c, t)
 		}
 
 		return ctx, nil
@@ -139,6 +140,14 @@ func TestNoCSI_node_image_pull_with_no_csi(t *testing.T) {
 	testEnv.Test(t, bootstrapper.NoCSI(t))
 }
 
+func TestNoCSI_use_public_registry_codemodules(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.CodeModules(t))
+}
+
+func TestNoCSI_use_public_registry_codemodules_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.CodeModulesWithOverride(t))
+}
+
 func TestNoCSI_logmonitoring(t *testing.T) {
 	testEnv.Test(t, logmonitoring.Feature(t))
 }
@@ -188,7 +197,7 @@ func TestNoCSI_kspm(t *testing.T) {
 	testEnv.Test(t, kspm.Feature(t))
 }
 
-func TestNoCSI_kspm_optional_scopes(t *testing.T) {
+func TestNoCSI_kspm_with_optional_scopes(t *testing.T) {
 	testEnv.Test(t, kspm.OptionalScopes(t))
 }
 

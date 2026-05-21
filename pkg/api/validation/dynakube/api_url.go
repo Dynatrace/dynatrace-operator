@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -27,7 +28,8 @@ const (
 	errorMutatedAPIURL = `The DynaKube's specification mutated the tenant in the API URL although it is immutable. Please delete the CR and then apply a new one`
 )
 
-func NoAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func NoAPIURL(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
 	apiURL := dk.Spec.APIURL
 
 	if apiURL == ExampleAPIURL {
@@ -45,7 +47,8 @@ func NoAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	return ""
 }
 
-func isInvalidAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func isInvalidAPIURL(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
 	apiURL := dk.Spec.APIURL
 
 	parsedURL, err := url.Parse(apiURL)

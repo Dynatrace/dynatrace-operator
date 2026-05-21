@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestConflictingNamespaceSelector(t *testing.T) {
@@ -246,7 +245,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 						NamespaceSelector: metav1.LabelSelector{
 							MatchLabels: dummyLabels,
 						},
@@ -279,7 +278,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 						NamespaceSelector: metav1.LabelSelector{
 							MatchLabels: dummyLabels,
 						},

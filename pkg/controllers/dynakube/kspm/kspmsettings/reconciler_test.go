@@ -1,6 +1,7 @@
 package kspmsettings
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"testing"
@@ -13,12 +14,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestReconcile(t *testing.T) {
 	const meID = "meid"
@@ -40,7 +44,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK(true)
@@ -57,10 +61,10 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
 
-		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, true).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
 			Return("test-object-id", nil)
 
 		dk := getDK(true)
@@ -106,10 +110,10 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("create setting without KSPM", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
 
-		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, false).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, false).
 			Return("test-object-id", nil)
 
 		dk := getDK(false)
@@ -211,7 +215,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("error fetching kspm settings", func(t *testing.T) {
 		testErr := errors.New("error when fetching")
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{}, testErr)
 
 		dk := getDK(true, meID)
@@ -238,7 +242,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 
 	t.Run("kspm settings already exist", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK(false, meID)
@@ -253,9 +257,9 @@ func TestCheckKSPMSettings(t *testing.T) {
 
 	t.Run("create kspm settings", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, true).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
 			Return("test-object-id", nil)
 
 		dk := getDK(true, meID)
@@ -270,9 +274,9 @@ func TestCheckKSPMSettings(t *testing.T) {
 
 	t.Run("create kubemon-only settings", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, false).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, false).
 			Return("test-object-id", nil)
 
 		dk := getDK(false, meID)
@@ -288,9 +292,9 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("error creating kspm settings", func(t *testing.T) {
 		testErr := errors.New("error when creating")
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, true).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
 			Return("", testErr)
 
 		dk := getDK(true, meID)
@@ -306,7 +310,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("forbidden error fetching kspm settings -> silently skip", func(t *testing.T) {
 		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{}, forbiddenErr)
 
 		dk := getDK(true, meID)
@@ -321,9 +325,9 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("forbidden error creating kspm settings -> silently skip", func(t *testing.T) {
 		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, true).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
 			Return("", forbiddenErr)
 
 		dk := getDK(true, meID)
@@ -334,16 +338,50 @@ func TestCheckKSPMSettings(t *testing.T) {
 		require.NoError(t, err)
 		require.Empty(t, dk.Conditions())
 	})
+
+	t.Run("forbidden error fetching kspm settings with platform token", func(t *testing.T) {
+		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+			Return(settings.KSPMSettingsResponse{}, forbiddenErr)
+
+		dk := getDK(true, meID)
+		dk.Status.APIToken.Platform = new(true)
+
+		r := NewReconciler()
+
+		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
+	})
+
+	t.Run("forbidden error creating kspm settings with platform token", func(t *testing.T) {
+		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
+		mockClient := settingsmock.NewClient(t)
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
+			Return("", forbiddenErr)
+
+		dk := getDK(true, meID)
+		dk.Status.APIToken.Platform = new(true)
+
+		r := NewReconciler()
+
+		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
+	})
 }
 
 func setReadScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsRead, Status: metav1.ConditionTrue})
+	optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 }
 
 func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: token.ConditionTypeAPITokenSettingsWrite, Status: metav1.ConditionTrue})
+	optionalscope.SetAvailable(dk, token.ScopeSettingsWrite)
 }
 
 func verifyCondition(t *testing.T, dk *dynakube.DynaKube, expectedReason string) {

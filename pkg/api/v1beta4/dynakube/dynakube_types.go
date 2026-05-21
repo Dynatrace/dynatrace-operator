@@ -6,7 +6,6 @@ package dynakube
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
@@ -43,6 +42,7 @@ const (
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:deprecatedversion:warning="This dynakube API version is deprecated and will be removed in a future operator version. Please visit our documentation for details and timeline."
+// +kubebuilder:unservedversion
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace,shortName={dk,dks}
 // +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
@@ -175,8 +175,4 @@ type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DynaKube `json:"items"`
-}
-
-func init() {
-	v1beta4.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }

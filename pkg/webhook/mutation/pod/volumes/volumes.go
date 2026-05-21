@@ -1,6 +1,8 @@
 package volumes
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
@@ -8,11 +10,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
-)
-
-var (
-	log = logd.Get().WithName("volumes-mutation")
 )
 
 const (
@@ -30,7 +27,7 @@ const (
 	AnnotationConfigVolumeNameResource = AnnotationResourcePrefix + ConfigVolumeName
 )
 
-func AddConfigVolume(pod *corev1.Pod) {
+func AddConfigVolume(ctx context.Context, pod *corev1.Pod) {
 	if k8svolume.Contains(pod.Spec.Volumes, ConfigVolumeName) {
 		return
 	}
@@ -40,6 +37,7 @@ func AddConfigVolume(pod *corev1.Pod) {
 	if r, ok := pod.Annotations[AnnotationConfigVolumeNameResource]; ok && r != "" {
 		sizeLimit, err := resource.ParseQuantity(r)
 		if err != nil {
+			_, log := logd.NewFromContext(ctx, "volumes-mutation")
 			log.Error(err, "failed to parse quantity from annotation "+AnnotationConfigVolumeNameResource, "value", r)
 		} else {
 			emptyDirVS = corev1.EmptyDirVolumeSource{
@@ -108,7 +106,7 @@ func AddInputVolume(pod *corev1.Pod) {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: consts.BootstrapperInitSecretName,
 								},
-								Optional: ptr.To(false),
+								Optional: new(false),
 							},
 						},
 						{
@@ -116,7 +114,7 @@ func AddInputVolume(pod *corev1.Pod) {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: consts.BootstrapperInitCertsSecretName,
 								},
-								Optional: ptr.To(true),
+								Optional: new(true),
 							},
 						},
 					},

@@ -262,12 +262,16 @@ The images of components that are deployed by the operator can be configured usi
 - `E2E_OTELC_IMAGE`
 - `E2E_DB_EXECUTOR_IMAGE`
 - `E2E_CODEMODULES_IMAGE`
+- `E2E_AG_IMAGE`
+- `E2E_OA_IMAGE`
+- `E2E_ECR_CODEMODULES_IMAGE`
 
-If an image value is overwritten, `devregistry` will be used as image pull secret. Make sure it contains the proper authentication.
+If an image value is set to a different repository than the default, `devregistry` will be used as the image pull secret. Make sure it contains the proper authentication.
 
 The following environment variables can be used to control which tests are executed:
 
 - `E2E_SKIP_SCALING` — set to `true` to skip all scaling-related tests (those covering HPA and enforce-replicas behaviour).
+- `E2E_PUBLIC_REGISTRY_OVERRIDE` — sets the registry value used for spec.publicRegistryOverride in use-public-registry e2e tests. This allows tests to validate scenarios where image references are overridden to use other, specific public registry.
 
 ### Triggering E2E Tests on Kind in CI
 

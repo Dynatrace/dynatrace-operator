@@ -21,14 +21,21 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
-Check if default image or imageref is used
+Check if default image or imageref is used.
+When imageRef.digest is set, it wins over imageRef.tag. The rendered image
+reference uses <repository>@<digest> and the tag is omitted to avoid the
+confusing case where the tag and digest disagree.
 */}}
 {{- define "dynatrace-operator.image" -}}
 {{- if .Values.image -}}
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
     {{- if (.Values.imageRef).repository -}}
-        {{- .Values.imageRef.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" .Values.imageRef.repository -}}
+        {{- if .Values.imageRef.digest -}}
+            {{- printf "%s@%s" .Values.imageRef.repository .Values.imageRef.digest -}}
+        {{- else -}}
+            {{- .Values.imageRef.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" .Values.imageRef.repository -}}
+        {{- end -}}
     {{- else if hasPrefix "0.0.0-nightly-" .Chart.AppVersion -}}
         {{- printf "%s:%s" "ghcr.io/dynatrace/dynatrace-operator" (.Chart.AppVersion | replace "0.0.0-" "") }}
     {{- else if eq (include "dynatrace-operator.platform" .) "openshift" -}}

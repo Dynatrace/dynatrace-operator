@@ -15,7 +15,7 @@ func ResolveAndSetReplicas(ctx context.Context, r client.Reader, ss *appsv1.Stat
 		return err
 	}
 
-	ss.Spec.Replicas = ptr.To(replicas)
+	ss.Spec.Replicas = new(replicas)
 
 	return nil
 }

@@ -8,26 +8,30 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	errorTelemetryIngestNotEnoughProtocols  = `DynaKube's specification enables the TelemetryIngest feature, at least one Protocol has to be specified.`
-	errorTelemetryIngestUnknownProtocols    = `DynaKube's specification enables the TelemetryIngest feature, unsupported protocols found on the Protocols list.`
-	errorTelemetryIngestDuplicatedProtocols = `DynaKube's specification enables the TelemetryIngest feature, duplicated protocols found on the Protocols list.`
-	errorTelemetryIngestNoDNS1053Label      = `DynaKube's specification enables the TelemetryIngest feature, the telemetry service name violates DNS-1035.
+	errorTelemetryIngestNotEnoughProtocols = `DynaKube's specification enables the TelemetryIngest feature, at least one Protocol has to be specified.`
+	errorTelemetryIngestUnknownProtocols   = `DynaKube's specification enables the TelemetryIngest feature, unsupported protocols found on the Protocols list.`
+	errorTelemetryIngestNoDNS1053Label     = `DynaKube's specification enables the TelemetryIngest feature, the telemetry service name violates DNS-1035.
     [The length limit for the name is %d. Additionally a DNS-1035 name must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')]
 	`
 	errorTelemetryIngestServiceNameInUse     = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is already used by other Dynakube.`
 	errorTelemetryIngestForbiddenServiceName = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is incorrect because of forbidden suffix.`
 	errorOtelCollectorMissingImage           = `The Dynakube's specification specifies the OTel Collector, but no image repository/tag is configured.`
+	warningOtelCollectorIgnoredTemplate      = "The Dynakube's `spec.templates.otelCollector` section is skipped as the `spec.telemetryIngest` section is not configured. Consider either removing `spec.templates.otelCollector.imageRef` or enabling `spec.telemetryIngest`."
 )
 
-func emptyTelemetryIngestProtocolsList(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func emptyTelemetryIngestProtocolsList(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -41,7 +45,9 @@ func emptyTelemetryIngestProtocolsList(_ context.Context, _ *Validator, dk *dyna
 	return ""
 }
 
-func unknownTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func unknownTelemetryIngestProtocols(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -86,6 +92,8 @@ func invalidTelemetryIngestNameErrorMessage() string {
 }
 
 func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -120,7 +128,9 @@ func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, 
 	return ""
 }
 
-func forbiddenTelemetryIngestServiceNameSuffix(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func forbiddenTelemetryIngestServiceNameSuffix(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -146,8 +156,16 @@ func missingOtelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 		return ""
 	}
 
-	if dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository == "" || dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag == "" {
+	if !dk.Spec.Templates.OpenTelemetryCollector.ImageRef.HasImage() {
 		return errorOtelCollectorMissingImage
+	}
+
+	return ""
+}
+
+func ignoredOtelCollectorTemplate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.TelemetryIngest().IsEnabled() && dk.Spec.Templates.OpenTelemetryCollector.ImageRef != (image.Ref{}) {
+		return warningOtelCollectorIgnoredTemplate
 	}
 
 	return ""

@@ -5,8 +5,10 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -20,17 +22,20 @@ const (
 type activeGateUpdater struct {
 	dk            *dynakube.DynaKube
 	apiReader     client.Reader
+	imagesClient  image.Client
 	versionClient version.Client
 }
 
 func newActiveGateUpdater(
 	dk *dynakube.DynaKube,
 	apiReader client.Reader,
+	imagesClient image.Client,
 	versionClient version.Client,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
 		dk:            dk,
 		apiReader:     apiReader,
+		imagesClient:  imagesClient,
 		versionClient: versionClient,
 	}
 }
@@ -71,15 +76,30 @@ func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
 	return !updater.dk.FF().IsActiveGateUpdatesDisabled()
 }
 
-func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
+func (updater *activeGateUpdater) CheckForDowngrade(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
-func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
-	return false
+func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*image.Info, error) {
+	imageInfo, err := updater.imagesClient.GetComponentLatestInfo(ctx, image.ActiveGate, updater.dk.PublicRegistryOverride())
+	if err != nil {
+		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
+
+		return nil, err
+	}
+
+	setVerifiedCondition(updater.dk.Conditions(), activeGateVersionConditionType)
+
+	return imageInfo, nil
+}
+
+func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
+	return updater.dk.FF().IsPublicRegistry()
 }
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	latestVersion, err := updater.versionClient.GetLatestActiveGateVersion(ctx, installer.OSUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
@@ -90,7 +110,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 
 	defaultImage := updater.dk.ActiveGate().GetDefaultImage(latestVersion)
 
-	err = updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
+	err = updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, latestVersion)
 	if err != nil {
 		return err
 	}
@@ -100,7 +120,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	return nil
 }
 
-func (updater activeGateUpdater) ValidateStatus() error {
+func (updater activeGateUpdater) ValidateStatus(_ context.Context) error {
 	imageVersion := updater.Target().Version
 	if imageVersion == "" {
 		return errors.New("build version of ActiveGate image is not set")

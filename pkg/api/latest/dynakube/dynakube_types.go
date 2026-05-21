@@ -5,7 +5,6 @@
 package dynakube
 
 import (
-	v1beta6 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
@@ -166,6 +165,11 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableIstio bool `json:"enableIstio,omitempty"`
+
+	// Overrides the default registry from which Dynatrace images are pulled.
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Public Registry Override",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	PublicRegistryOverride string `json:"publicRegistryOverride,omitempty"`
 }
 
 type TemplatesSpec struct {
@@ -190,8 +194,4 @@ type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DynaKube `json:"items"`
-}
-
-func init() {
-	v1beta6.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }

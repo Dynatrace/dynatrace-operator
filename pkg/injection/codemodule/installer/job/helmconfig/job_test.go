@@ -7,14 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 )
 
 func TestGet(t *testing.T) {
 	t.Run("empty env -> use fallback", func(t *testing.T) {
 		t.Setenv(JSONEnv, "")
 
-		m := Get()
+		m := Get(t.Context())
 		assert.Equal(t, fallback, m)
 
 		once = sync.Once{} // need to reset it
@@ -24,7 +23,7 @@ func TestGet(t *testing.T) {
 	t.Run("messy env -> use fallback", func(t *testing.T) {
 		t.Setenv(JSONEnv, "this is not json :(")
 
-		m := Get()
+		m := Get(t.Context())
 		assert.Equal(t, fallback, m)
 
 		once = sync.Once{} // need to reset it
@@ -68,11 +67,11 @@ func TestGet(t *testing.T) {
 			},
 			Job: JobConfig{
 				SecurityContext: corev1.SecurityContext{
-					AllowPrivilegeEscalation: ptr.To(false),
-					Privileged:               ptr.To(false),
-					ReadOnlyRootFilesystem:   ptr.To(false),
-					RunAsNonRoot:             ptr.To(false),
-					RunAsUser:                ptr.To(int64(0)),
+					AllowPrivilegeEscalation: new(false),
+					Privileged:               new(false),
+					ReadOnlyRootFilesystem:   new(false),
+					RunAsNonRoot:             new(false),
+					RunAsUser:                new(int64(0)),
 					SELinuxOptions: &corev1.SELinuxOptions{
 						Level: "s1",
 					},
@@ -102,7 +101,7 @@ func TestGet(t *testing.T) {
 
 		t.Setenv(JSONEnv, jsonValue)
 
-		m := Get()
+		m := Get(t.Context())
 		assert.Equal(t, expected, m)
 
 		once = sync.Once{} // need to reset it
@@ -120,12 +119,12 @@ func TestGet(t *testing.T) {
 
 		t.Setenv(JSONEnv, jsonValue)
 
-		m := Get()
+		m := Get(t.Context())
 		assert.Equal(t, fallback, m)
 
 		t.Setenv(JSONEnv, "boom")
 
-		m = Get()
+		m = Get(t.Context())
 		assert.Equal(t, fallback, m)
 
 		once = sync.Once{} // need to reset it

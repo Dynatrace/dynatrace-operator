@@ -1,6 +1,7 @@
 package version
 
 import (
+	"crypto/fips140"
 	"fmt"
 	"runtime"
 	"runtime/debug"
@@ -23,23 +24,25 @@ var (
 
 	// BuildDate is the date when the binary was build. Assigned externally.
 	BuildDate = ""
-
-	log = logd.Get().WithName("version")
 )
 
 // LogVersion logs metadata about the Operator.
 func LogVersion() {
-	LogVersionToLogger(log)
+	LogVersionToLogger(logd.Get().WithName("version"))
 }
 
 func LogVersionToLogger(log logd.Logger) {
-	log.Info(AppName,
-		"version", Version,
+	keysAndValues := []any{"version", Version,
 		"gitCommit", Commit,
 		"buildDate", BuildDate,
 		"goVersion", runtime.Version(),
-		"platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-	)
+		"platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)}
+
+	if fips140.Enabled() {
+		keysAndValues = append(keysAndValues, "fips140", "FIPS 140-3 Mode Enabled with version: "+fips140.Version())
+	}
+
+	log.Info(AppName, keysAndValues...)
 
 	// SetMemoryLimit returns the previously set memory limit. A negative input does not adjust the limit, and allows for retrieval of the currently set memory limit.
 	log.Debug("GOMEMLIMIT", "valueInBytes", debug.SetMemoryLimit(-1))

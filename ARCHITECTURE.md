@@ -54,7 +54,7 @@ The Dynatrace Operator supports two main Custom Resource Definitions (CRDs):
 
 ### DynaKube
 
-The primary CRD for deploying and managing Dynatrace observability components. The latest API version is stored in `pkg/api/latest/dynakube/`, with versioned APIs maintained for [backward compatibility](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube#deprecation) (at the time of writing: v1beta4, v1beta5, v1beta6).
+The primary CRD for deploying and managing Dynatrace observability components. The latest API version is stored in `pkg/api/latest/dynakube/`, with versioned APIs maintained for [backward compatibility](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube#deprecation) (at the time of writing: v1beta5, v1beta6).
 
 **Key Features:**
 

@@ -1,9 +1,12 @@
 package cleanup
 
 import (
+	"context"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -17,8 +20,10 @@ var (
 )
 
 // checkTicker will initialize (if needed) and check the a ticker if enough time has passed since the last cleanup
-func checkTicker() func() {
-	setupCleanUpPeriod()
+func checkTicker(ctx context.Context) func() {
+	log := logd.FromContext(ctx)
+
+	setupCleanUpPeriod(log)
 
 	if ticker == nil {
 		log.Info("initial run of CSI filesystem cleanup")
@@ -42,7 +47,7 @@ func checkTicker() func() {
 	}
 }
 
-func setupCleanUpPeriod() {
+func setupCleanUpPeriod(log logd.Logger) {
 	sync.OnceFunc(func() {
 		rawDuration := os.Getenv(cleanupEnv)
 
@@ -62,8 +67,10 @@ func setupCleanUpPeriod() {
 // resetTickerAfterDelete is for the specific scenario of dynakube deletion
 // its purpose is to reset the ticker safely, but not check it, so the cleanup will always run after a DynaKube deletion
 // meant to be called via defer
-func resetTickerAfterDelete() {
-	setupCleanUpPeriod()
+func resetTickerAfterDelete(ctx context.Context) {
+	log := logd.FromContext(ctx)
+
+	setupCleanUpPeriod(log)
 
 	if ticker == nil {
 		log.Info("initial run of CSI filesystem cleanup")

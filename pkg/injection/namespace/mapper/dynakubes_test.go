@@ -34,7 +34,6 @@ func TestMapFromDynakube(t *testing.T) {
 		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Len(t, ns.Labels, 2)
-		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Overwrite stale entry in labels", func(t *testing.T) {
 		nsLabels := map[string]string{
@@ -53,7 +52,6 @@ func TestMapFromDynakube(t *testing.T) {
 		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Len(t, ns.Labels, 2)
-		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
 		movedDK := createDynakubeWithAppInject("moved-dk", convertToLabelSelector(labels))
@@ -72,7 +70,6 @@ func TestMapFromDynakube(t *testing.T) {
 		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
-		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
 		conflictingDK := createDynakubeWithAppInject("conflicting-dk", convertToLabelSelector(labels))
@@ -102,7 +99,6 @@ func TestMapFromDynakube(t *testing.T) {
 		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
-		assert.Empty(t, ns.Annotations)
 	})
 
 	t.Run("Ignore openshift namespaces", func(t *testing.T) {
@@ -119,7 +115,6 @@ func TestMapFromDynakube(t *testing.T) {
 		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
-		assert.Empty(t, ns.Annotations)
 	})
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
 		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
@@ -138,7 +133,6 @@ func TestMapFromDynakube(t *testing.T) {
 		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Len(t, ns.Labels, 1)
-		assert.Len(t, ns.Annotations, 1)
 	})
 }
 
@@ -179,11 +173,9 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
-		assert.Len(t, ns.Annotations, 1)
 		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace2.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
-		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Remove "+consts.BootstrapperInitSecretName+", "+consts.BootstrapperInitCertsSecretName+" and "+consts.OTLPExporterSecretName+" secrets"+" and "+consts.OTLPExporterCertsSecretName+" secrets", func(t *testing.T) {
 		clt := fake.NewClient(namespace, namespace2)
@@ -213,10 +205,10 @@ func TestUnmapFromDynaKube(t *testing.T) {
 	t.Run("Remove "+consts.BootstrapperInitSecretName, func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
-		dkNodeImagePull := createDynakubeWithNodeImagePullAndNoCSI("dk-test", convertToLabelSelector(labels))
+		dkAppmonImage := createDynakubeWithAppInjectImage("dk-test", convertToLabelSelector(labels))
 
 		labels := map[string]string{
-			dtwebhook.InjectionInstanceLabel: dkNodeImagePull.Name,
+			dtwebhook.InjectionInstanceLabel: dkAppmonImage.Name,
 		}
 
 		ns := createNamespace("ns-bootstrapper", labels)
@@ -225,7 +217,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		clt := fake.NewClient(ns, ns2)
 		ctx := t.Context()
 
-		namespaces, err := GetNamespacesForDynakube(ctx, clt, dkNodeImagePull.Name)
+		namespaces, err := GetNamespacesForDynakube(ctx, clt, dkAppmonImage.Name)
 		require.NoError(t, err)
 
 		var secretNS1 corev1.Secret
@@ -248,7 +240,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		require.NotEmpty(t, secretNS2)
 		assert.Equal(t, consts.BootstrapperInitSecretName, secretNS2.Name)
 
-		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dkNodeImagePull)
+		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dkAppmonImage)
 		err = dm.UnmapFromDynaKube(namespaces)
 		require.NoError(t, err)
 

@@ -15,8 +15,6 @@ import (
 	"github.com/go-logr/logr"
 )
 
-var log = logd.Get().WithName("dtclient-settings")
-
 const (
 	validateOnlyQueryParam = "validateOnly"
 	pageSizeQueryParam     = "pageSize"
@@ -27,8 +25,7 @@ const (
 	fieldsQueryParam               = "fields"
 	kubernetesSettingsNeededFields = "value,scope"
 
-	schemaIDsQueryParam        = "schemaIds"
-	kubernetesSettingsSchemaID = "builtin:cloud.kubernetes"
+	schemaIDsQueryParam = "schemaIds"
 
 	ObjectsPath = "/v2/settings/objects"
 )
@@ -158,6 +155,8 @@ func NewClient(apiClient core.Client) Client {
 //
 // In case 0 settings are found, so no Kubernetes Cluster Monitored Entity exists, we return an empty object, without an error.
 func (c *ClientImpl) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error) {
+	ctx, log := logd.NewFromContext(ctx, "dtclient-settings")
+
 	if kubeSystemUUID == "" {
 		return K8sClusterME{}, errMissingKubeSystemUUID
 	}
@@ -168,7 +167,7 @@ func (c *ClientImpl) GetK8sClusterME(ctx context.Context, kubeSystemUUID string)
 		WithQueryParams(map[string]string{
 			validateOnlyQueryParam: "true",
 			pageSizeQueryParam:     entitiesPageSize,
-			schemaIDsQueryParam:    kubernetesSettingsSchemaID,
+			schemaIDsQueryParam:    KubernetesSettingsSchemaID,
 			fieldsQueryParam:       kubernetesSettingsNeededFields,
 			filterQueryParam:       fmt.Sprintf("value.clusterId='%s'", kubeSystemUUID),
 		}).

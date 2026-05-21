@@ -1,6 +1,7 @@
 package exporter
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -23,17 +24,14 @@ const (
 	exporterCertsMountPath          = "/etc/dynatrace/ssl"
 )
 
-var (
-	log = logd.Get().WithName("otlp-exporter-pod-mutation")
-)
-
 type Mutator struct{}
 
 func New() dtwebhook.Mutator {
 	return &Mutator{}
 }
 
-func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
+func (m Mutator) IsEnabled(ctx context.Context, request *dtwebhook.BaseRequest) bool {
+	_, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation")
 	otlpExporterConfiguration := request.DynaKube.OTLPExporterConfiguration()
 
 	if !otlpExporterConfiguration.IsEnabled() {
@@ -59,22 +57,25 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 	return enabledOnPod && enabledOnNamespace
 }
 
-func (m Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
+func (m Mutator) IsInjected(ctx context.Context, request *dtwebhook.BaseRequest) bool {
+	_, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation")
 	log.Debug("checking if OTLP env vars have already been injected")
 
 	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjected, false)
 }
 
 func (m Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_, err := m.mutate(request.BaseRequest)
+	_, log := logd.NewFromContext(request.Context, "otlp-exporter-pod-mutation")
+	_, err := m.mutate(request.BaseRequest, log)
 
 	return err
 }
 
-func (m Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+func (m Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
+	_, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation")
 	log.Info("reinvocation of OTLP env vars mutator")
 
-	mutated, err := m.mutate(request.BaseRequest)
+	mutated, err := m.mutate(request.BaseRequest, log)
 	if err != nil {
 		log.Error(err, "error during reinvocation of OTLP env vars mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 	}
@@ -82,7 +83,7 @@ func (m Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 	return mutated
 }
 
-func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
+func (m Mutator) mutate(request *dtwebhook.BaseRequest, log logd.Logger) (bool, error) {
 	otlpExporterConfig := request.DynaKube.OTLPExporterConfiguration()
 
 	if !otlpExporterConfig.IsEnabled() {

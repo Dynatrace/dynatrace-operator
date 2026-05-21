@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/ptr"
 )
 
 func TestSpec_IsOverrideEnabled(t *testing.T) {
@@ -37,14 +36,14 @@ func TestSpec_IsOverrideEnabled(t *testing.T) {
 		{
 			name: "overrideEnvVars disabled",
 			config: ExporterConfiguration{Spec: &ExporterConfigurationSpec{
-				OverrideEnvVars: ptr.To(false),
+				OverrideEnvVars: new(false),
 			}},
 			expected: false,
 		},
 		{
 			name: "overrideEnvVars enabled",
 			config: ExporterConfiguration{Spec: &ExporterConfigurationSpec{
-				OverrideEnvVars: ptr.To(true),
+				OverrideEnvVars: new(true),
 			}},
 			expected: true,
 		},

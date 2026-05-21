@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -25,7 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -79,10 +79,12 @@ const (
 )
 
 func useLegacyMounts(dk *dynakube.DynaKube) bool {
-	return exp.NewFlags(dk.Annotations).UseEECLegacyMounts()
+	return exp.NewFlags(dk.Annotations, false).UseEECLegacyMounts()
 }
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	appLabels := buildAppLabels(r.dk)
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
@@ -116,7 +118,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
 		k8sconditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
@@ -130,7 +132,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 }
 
 func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
-	secrets := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      r.dk.Extensions().GetTLSSecretName(),
@@ -170,7 +172,7 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
-		Image:           dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository + ":" + dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag,
+		Image:           dk.Spec.Templates.ExtensionExecutionController.ImageRef.String(),
 		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.GetPullPolicy(),
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -206,12 +208,12 @@ func buildSecurityContext(dk *dynakube.DynaKube) *corev1.SecurityContext {
 				"ALL",
 			},
 		},
-		Privileged:               ptr.To(false),
-		RunAsUser:                ptr.To(userGroupID),
-		RunAsGroup:               ptr.To(userGroupID),
-		RunAsNonRoot:             ptr.To(true),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               new(false),
+		RunAsUser:                new(userGroupID),
+		RunAsGroup:               new(userGroupID),
+		RunAsNonRoot:             new(true),
+		ReadOnlyRootFilesystem:   new(true),
+		AllowPrivilegeEscalation: new(false),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
@@ -226,7 +228,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 		},
 	}
 
-	podSecurityContext.FSGroup = ptr.To(userGroupID)
+	podSecurityContext.FSGroup = new(userGroupID)
 
 	return podSecurityContext
 }

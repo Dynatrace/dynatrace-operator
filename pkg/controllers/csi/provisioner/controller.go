@@ -33,6 +33,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
@@ -90,6 +91,7 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 }
 
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	ctx, log := logd.NewFromContext(ctx, "csi-provisioner")
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
 	var dk dynakube.DynaKube

@@ -1,5 +1,7 @@
 package proxy
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/consts"
+
 const (
 	hostField     = "host"
 	portField     = "port"
@@ -7,6 +9,6 @@ const (
 	passwordField = "password"
 	schemeField   = "scheme"
 
-	SecretMountPath  = "/var/lib/dynatrace/secrets/internal-proxy"
+	SecretMountPath  = consts.DTComponentsSecretsRootDir + "/internal-proxy"
 	SecretVolumeName = "internal-proxy-secret-volume"
 )

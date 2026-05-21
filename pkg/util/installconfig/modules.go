@@ -37,8 +37,6 @@ var (
 		KSPM:                 true,
 		KubernetesMonitoring: true,
 	}
-
-	log = logd.Get().WithName("install-config")
 )
 
 type Modules struct {
@@ -64,7 +62,7 @@ func GetModules() Modules {
 }
 
 func ReadModules() {
-	ReadModulesToLogger(log)
+	ReadModulesToLogger(logd.Get().WithName("install-config"))
 }
 
 func ReadModulesToLogger(log logd.Logger) {

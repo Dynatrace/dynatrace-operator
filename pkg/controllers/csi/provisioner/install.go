@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/helmconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -24,6 +25,8 @@ const (
 var errNotReady = errors.New("download job is not ready yet")
 
 func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	agentInstaller, err := provisioner.getInstaller(ctx, dk)
 	if err != nil {
 		log.Info("failed to create CodeModule installer", "dk", dk.GetName())
@@ -42,7 +45,7 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk *dy
 		return errNotReady
 	}
 
-	err = provisioner.createLatestVersionSymlink(dk, targetDir)
+	err = provisioner.createLatestVersionSymlink(ctx, dk, targetDir)
 	if err != nil {
 		return err
 	}
@@ -93,6 +96,12 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 
 func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk *dynakube.DynaKube) installer.Installer {
 	imageURI := dk.OneAgent().GetCustomCodeModulesImage()
+
+	if imageURI == "" && dk.FF().IsPublicRegistry() {
+		// Resolved by the version updater; respects PublicRegistryOverride
+		imageURI = dk.OneAgent().GetCodeModulesImage()
+	}
+
 	if imageURI == "" {
 		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
 	}
@@ -105,7 +114,7 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 		APIReader:       provisioner.apiReader,
 		Client:          provisioner.kubeClient,
 		PathResolver:    provisioner.path,
-		CSIJob:          helmconfig.Get(),
+		CSIJob:          helmconfig.Get(ctx),
 	}
 
 	return provisioner.jobInstallerBuilder(ctx, props)
@@ -125,13 +134,13 @@ func (provisioner *OneAgentProvisioner) getTargetDir(dk *dynakube.DynaKube) stri
 	return provisioner.path.AgentSharedBinaryDirForAgent(dirName)
 }
 
-func (provisioner *OneAgentProvisioner) createLatestVersionSymlink(dk *dynakube.DynaKube, targetDir string) error {
+func (provisioner *OneAgentProvisioner) createLatestVersionSymlink(ctx context.Context, dk *dynakube.DynaKube, targetDir string) error {
 	symlinkPath := provisioner.path.LatestAgentBinaryForDynaKube(dk.GetName())
-	if err := symlink.Remove(symlinkPath); err != nil {
+	if err := symlink.Remove(ctx, symlinkPath); err != nil {
 		return err
 	}
 
-	err := symlink.Create(targetDir, symlinkPath)
+	err := symlink.Create(ctx, targetDir, symlinkPath)
 	if err != nil {
 		return err
 	}
