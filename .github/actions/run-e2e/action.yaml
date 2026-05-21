@@ -50,6 +50,9 @@ inputs:
   github-token:
     description: The GitHub token
     required: true
+  e2e-public-registry-override:
+    description: Override for the public registry used in E2E tests
+    required: false
 outputs:
   cluster_status:
     description: Status of the cluster creation ['skipped'|'success']
@@ -84,7 +87,7 @@ runs:
       uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
       with:
         # renovate datasource=github-releases depName=helm/helm
-        version: v4.1.4
+        version: v4.2.0
         token: ${{ inputs.github-token }}
     - name: Install gotestsum
       shell: bash
@@ -126,6 +129,7 @@ runs:
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
+        E2E_PUBLIC_REGISTRY_OVERRIDE: ${{ inputs.e2e-public-registry-override }}
       if: steps.check_cluster_status.outputs.skip_tests != 'true'
     - name: Destroy cluster
       shell: bash

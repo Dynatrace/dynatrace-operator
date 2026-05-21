@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -244,7 +243,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 	})
 
 	t.Run("sets cacheTTL when cache TTL is set", func(t *testing.T) {
-		expCacheTTL := ptr.To(uint16(5))
+		expCacheTTL := new(uint16(5))
 		expAPIRequestThreshold := time.Duration(*expCacheTTL) * time.Minute
 		dk := getDynakube()
 		dk.Spec.DynatraceAPIRequestThreshold = expCacheTTL

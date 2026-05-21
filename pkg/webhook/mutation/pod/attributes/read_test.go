@@ -568,7 +568,7 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 				Name:      "my-pod",
 				Namespace: "my-ns",
 				OwnerReferences: []metav1.OwnerReference{
-					{APIVersion: "apps/v1", Kind: "Deployment", Name: "my-deploy", Controller: boolPtr(true)},
+					{APIVersion: "apps/v1", Kind: "Deployment", Name: "my-deploy", Controller: new(true)},
 				},
 			},
 		}
@@ -587,8 +587,6 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
-
-func boolPtr(b bool) *bool { return &b }
 
 func TestReadPodAttributes(t *testing.T) {
 	t.Run("appends three env vars with field-path references", func(t *testing.T) {

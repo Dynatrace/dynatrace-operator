@@ -41,8 +41,6 @@ var (
 		conflictingOneAgentNodeSelector,
 		conflictingNamespaceSelector,
 		isIstioNotInstalled,
-		imageFieldSetWithoutCSIFlag,
-		missingCodeModulesImage,
 		conflictingOneAgentVolumeStorageSettings,
 		nameInvalid,
 		namespaceSelectorViolateLabelSpec,
@@ -89,6 +87,8 @@ var (
 		oneAgentResourceAttributesExceedsLimit,
 		otlpResourceAttributesExceedsLimit,
 		deprecatedPaasToken,
+		publicRegistryFlagIgnoredForPlatformToken,
+		isNodeImagePullWithoutCSI,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

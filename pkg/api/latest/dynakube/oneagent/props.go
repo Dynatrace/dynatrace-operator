@@ -22,7 +22,7 @@ const (
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
 	name, apiURLHost string,
-	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool,
+	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe bool,
 	globalResourceAttributes map[string]string) *OneAgent {
 	return &OneAgent{
 		Spec:              spec,
@@ -36,7 +36,6 @@ func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatu
 
 		featureOneAgentPrivileged:        featureOneAgentPrivileged,
 		featureOneAgentSkipLivenessProbe: featureOneAgentSkipLivenessProbe,
-		featureBootstrapperInjection:     featureBootstrapperInjection,
 	}
 }
 
@@ -302,7 +301,7 @@ func (oa *OneAgent) GetEndpoints() string {
 func (oa *OneAgent) GetCustomCodeModulesImage() string {
 	if oa.IsCloudNativeFullstackMode() {
 		return oa.CloudNativeFullStack.CodeModulesImage
-	} else if oa.IsApplicationMonitoringMode() && (oa.IsCSIAvailable() || oa.featureBootstrapperInjection) {
+	} else if oa.IsApplicationMonitoringMode() {
 		return oa.ApplicationMonitoring.CodeModulesImage
 	}
 
@@ -313,7 +312,7 @@ func (oa *OneAgent) GetCustomCodeModulesImage() string {
 func (oa *OneAgent) GetCodeModulesImagePullPolicy() corev1.PullPolicy {
 	if oa.IsCloudNativeFullstackMode() {
 		return corev1.PullPolicy(oa.CloudNativeFullStack.CodeModulesImagePullPolicy)
-	} else if oa.IsApplicationMonitoringMode() && (oa.IsCSIAvailable() || oa.featureBootstrapperInjection) {
+	} else if oa.IsApplicationMonitoringMode() {
 		return corev1.PullPolicy(oa.ApplicationMonitoring.CodeModulesImagePullPolicy)
 	}
 

@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -26,7 +27,7 @@ const (
 )
 
 func (dk *DynaKube) FF() *exp.FeatureFlags {
-	return exp.NewFlags(dk.Annotations)
+	return exp.NewFlags(dk.Annotations, ptr.Deref(dk.Status.APIToken.Platform, false))
 }
 
 func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {

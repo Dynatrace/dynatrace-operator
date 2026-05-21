@@ -12,7 +12,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -30,7 +29,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						APIVersion: "apps/v1",
 						Kind:       "Deployment",
 						Name:       "test",
-						Controller: ptr.To(true),
+						Controller: new(true),
 					},
 				},
 				Name:      resourceName,
@@ -45,7 +44,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						APIVersion: "apps/v1",
 						Kind:       "DaemonSet",
 						Name:       "test",
-						Controller: ptr.To(true),
+						Controller: new(true),
 					},
 				},
 				Name:      resourceName,
@@ -117,7 +116,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						APIVersion: "v1",
 						Kind:       "Secret",
 						Name:       "test",
-						Controller: ptr.To(true),
+						Controller: new(true),
 					},
 				},
 				Name: resourceName,
@@ -156,8 +155,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						APIVersion:         "some.unknown.kind.com/v1alpha1",
 						Kind:               "SomeUnknownKind",
 						Name:               "some-owner",
-						Controller:         ptr.To(false),
-						BlockOwnerDeletion: ptr.To(false),
+						Controller:         new(false),
+						BlockOwnerDeletion: new(false),
 					},
 				},
 				Name: resourceName,
@@ -186,7 +185,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						APIVersion: "apps/v1",
 						Kind:       "Deployment",
 						Name:       "test",
-						Controller: ptr.To(true),
+						Controller: new(true),
 					},
 				},
 				Name:      resourceName,
@@ -205,7 +204,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						APIVersion: "v1",
 						Kind:       "Secret",
 						Name:       "test",
-						Controller: ptr.To(true),
+						Controller: new(true),
 					},
 				},
 				Name:      resourceName,
@@ -246,7 +245,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						APIVersion: "some.unknown.kind.com/v1alpha1",
 						Kind:       "SomeUnknownKind",
 						Name:       "some-owner",
-						Controller: ptr.To(true),
+						Controller: new(true),
 					},
 				},
 				Name:      resourceName,
@@ -277,7 +276,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						APIVersion: "apps/v1",
 						Kind:       "Deployment",
 						Name:       "test",
-						Controller: ptr.To(true),
+						Controller: new(true),
 					},
 				},
 				Name:      resourceName,

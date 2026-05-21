@@ -21,6 +21,7 @@ import (
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
@@ -35,7 +36,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -92,7 +92,7 @@ func TestReconciler(t *testing.T) {
 					},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							testNamespaceSelectorLabel: testDynakube,
@@ -203,6 +203,7 @@ func TestReconciler(t *testing.T) {
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType))
 	})
 	t.Run("failure is logged in condition", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -354,7 +355,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		dk := createDynaKube(testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
 		enrichmentRulesReconciler := createReconcilerMock(t)
 
@@ -368,7 +369,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		dk := createDynaKube(testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+		dk.Spec.MetadataEnrichment.Enabled = new(true)
 
 		enrichmentRulesReconciler := createReconcilerMock(t)
 

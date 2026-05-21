@@ -6,7 +6,6 @@ package dynakube
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
@@ -176,8 +175,4 @@ type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DynaKube `json:"items"`
-}
-
-func init() {
-	v1beta5.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }

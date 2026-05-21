@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/utils/ptr"
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
@@ -347,7 +346,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 			Return(settings.KSPMSettingsResponse{}, forbiddenErr)
 
 		dk := getDK(true, meID)
-		dk.Status.APIToken.Platform = ptr.To(true)
+		dk.Status.APIToken.Platform = new(true)
 
 		r := NewReconciler()
 
@@ -365,7 +364,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 			Return("", forbiddenErr)
 
 		dk := getDK(true, meID)
-		dk.Status.APIToken.Platform = ptr.To(true)
+		dk.Status.APIToken.Platform = new(true)
 
 		r := NewReconciler()
 

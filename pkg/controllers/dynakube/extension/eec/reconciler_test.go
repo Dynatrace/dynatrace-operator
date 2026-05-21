@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -1754,7 +1753,7 @@ func TestVolumes(t *testing.T) {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  "custom-tls",
-					DefaultMode: ptr.To(int32(0o640)),
+					DefaultMode: new(int32(0o640)),
 				},
 			},
 		}
@@ -1776,7 +1775,7 @@ func TestVolumes(t *testing.T) {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  "custom-certs",
-					DefaultMode: ptr.To(int32(0o640)),
+					DefaultMode: new(int32(0o640)),
 				},
 			},
 		}

@@ -3,7 +3,6 @@ package daemonset
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -18,7 +17,7 @@ func getCertVolume(dk dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  dk.ActiveGate().GetTLSSecretName(),
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}

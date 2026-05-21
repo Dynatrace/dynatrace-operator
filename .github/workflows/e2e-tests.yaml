@@ -52,6 +52,7 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -92,6 +93,7 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -132,6 +134,7 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -172,6 +175,7 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
         env:

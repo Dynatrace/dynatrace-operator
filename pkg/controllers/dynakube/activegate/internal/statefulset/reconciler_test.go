@@ -22,7 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -354,14 +353,14 @@ func TestReconcileReplicas(t *testing.T) {
 	}{
 		{
 			name:             "uses explicit spec replicas over existing statefulset",
-			specReplicas:     ptr.To(int32(2)),
-			existingReplicas: ptr.To(int32(3)),
+			specReplicas:     new(int32(2)),
+			existingReplicas: new(int32(3)),
 			expectedReplicas: int32(2),
 		},
 		{
 			name:             "uses existing statefulset replicas when spec replicas are nil",
 			specReplicas:     nil,
-			existingReplicas: ptr.To(int32(2)),
+			existingReplicas: new(int32(2)),
 			expectedReplicas: int32(2),
 		},
 		{

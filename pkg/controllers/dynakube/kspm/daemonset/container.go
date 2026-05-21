@@ -5,7 +5,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -35,12 +34,12 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 
 func getSecurityContext() corev1.SecurityContext {
 	securityContext := corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		AllowPrivilegeEscalation: ptr.To(false),
-		RunAsUser:                ptr.To(runAs),
-		RunAsGroup:               ptr.To(runAs),
-		RunAsNonRoot:             ptr.To(true),
-		ReadOnlyRootFilesystem:   ptr.To(true),
+		Privileged:               new(false),
+		AllowPrivilegeEscalation: new(false),
+		RunAsUser:                new(runAs),
+		RunAsGroup:               new(runAs),
+		RunAsNonRoot:             new(true),
+		ReadOnlyRootFilesystem:   new(true),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},

@@ -5,17 +5,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 )
 
 func TestRemovedFields(t *testing.T) {
 	rf := NewRemovedFields(map[string]string{})
 
-	rf.AutoUpdate.Set(ptr.To(true))
+	rf.AutoUpdate.Set(new(true))
 	require.NotNil(t, rf.AutoUpdate.Get())
 	assert.True(t, *rf.AutoUpdate.Get())
 
-	rf.AutoUpdate.Set(ptr.To(false))
+	rf.AutoUpdate.Set(new(false))
 	require.NotNil(t, rf.AutoUpdate.Get())
 	assert.False(t, *rf.AutoUpdate.Get())
 
@@ -61,7 +60,7 @@ func TestRemovedFieldsMutability(t *testing.T) {
 	require.NotNil(t, rf.AutoUpdate.Get())
 	assert.True(t, *rf.AutoUpdate.Get())
 
-	rf.AutoUpdate.Set(ptr.To(false))
+	rf.AutoUpdate.Set(new(false))
 	require.NotNil(t, rf.AutoUpdate.Get())
 	assert.False(t, *rf.AutoUpdate.Get())
 

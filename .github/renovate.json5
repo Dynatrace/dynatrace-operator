@@ -1,7 +1,7 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
+    "config:best-practices",
   ],
   labels: [
     "dependencies",
@@ -26,21 +26,25 @@
     "gomod",
     "github-actions",
     "pip_requirements",
+    "npm",
   ],
   postUpdateOptions: [
     "gomodTidy",
     "gomodTidy1.17",
   ],
-  separateMinorPatch: true,
+  separateMinorPatch: false,
   automergeType: "pr",
   automerge: true,
   branchNameStrict: true,
-  prConcurrentLimit: 20,
+  prConcurrentLimit: 10,
   hashedBranchLength: 27, // 63 character limit for label values with space for "dynatrace-operator.v0.0.0-snapshot-" prefix
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+  },
   regexManagers: [
     {
       fileMatch: [
-        "(^|/|\\.)fips.Dockerfile$",
         "(^|/|\\.)Dockerfile$",
         "(^|/|\\.)prerequisites.mk$",
         "(^|/|\\.)third-party-licenses.sh$",
@@ -62,6 +66,19 @@
     },
   ],
   packageRules: [
+    {
+      "matchDatasources": ["docker"],
+      "minimumReleaseAge": "3 days",
+    },
+    {
+      "matchManagers": ["github-actions", "pip_requirements", "npm"],
+      "minimumReleaseAge": "3 days",
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["direct"],
+      "minimumReleaseAge": "3 days",
+    },
     {
       matchBaseBranches: [
         "$default",
@@ -135,15 +152,6 @@
     },
     {
       matchPackageNames: [
-        "k8s.io/client-go",
-      ],
-      matchBaseBranches: [
-        "$default",
-      ],
-      automerge: true,
-    },
-    {
-      matchPackageNames: [
         "markdownlint-cli",
       ],
       pinVersions: true,
@@ -197,6 +205,34 @@
         "golang.org/**",
       ],
       groupName: "golang.org",
+    },
+    {
+      matchPackageNames: ["k8s.io/**", "sigs.k8s.io/**"],
+      groupName: "Kubernetes ecosystem",
+    },
+    {
+      matchManagers: ["github-actions"],
+      groupName: "GitHub Actions",
+    },
+    {
+      matchPackageNames: ["google.golang.org/**"],
+      groupName: "google.golang.org",
+    },
+    {
+      matchPackageNames: ["github.com/prometheus/**"],
+      groupName: "Prometheus",
+    },
+    {
+      matchPackageNames: ["go.uber.org/**"],
+      groupName: "go.uber.org",
+    },
+    {
+      matchManagers: ["dockerfile"],
+      groupName: "Dockerfile base images",
+    },
+    {
+      matchManagers: ["pip_requirements", "npm", "regex"],
+      groupName: "Dev tooling",
     },
   ],
   platformAutomerge: true,

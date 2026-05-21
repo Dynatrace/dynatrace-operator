@@ -16,7 +16,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -522,7 +521,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
-			DynatraceAPIRequestThreshold: ptr.To(uint16(15)),
+			DynatraceAPIRequestThreshold: new(uint16(15)),
 			EnableIstio:                  true,
 		},
 		Status: dynakube.DynaKubeStatus{

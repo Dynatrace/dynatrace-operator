@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
@@ -183,7 +182,7 @@ func getStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
 				Path: dk.OneAgent().GetHostPath(),
-				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+				Type: new(corev1.HostPathDirectoryOrCreate),
 			},
 		},
 	}
@@ -201,7 +200,7 @@ func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 						Path: "custom.pem",
 					},
 				},
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}
@@ -213,7 +212,7 @@ func buildHTTPProxyVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  proxy.BuildSecretName(dk.Name),
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}
@@ -225,7 +224,7 @@ func getOneAgentSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  dk.OneAgent().GetTenantSecret(),
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -32,13 +31,13 @@ func TestResolveReplicas(t *testing.T) {
 	}{
 		{
 			name:            "returns provided default replicas",
-			reader:          fake.NewClient(&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}, Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(7))}}),
-			defaultReplicas: ptr.To(int32(3)),
+			reader:          fake.NewClient(&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}, Spec: appsv1.StatefulSetSpec{Replicas: new(int32(7))}}),
+			defaultReplicas: new(int32(3)),
 			expected:        int32(3),
 		},
 		{
 			name:     "returns statefulset replicas when found",
-			reader:   fake.NewClient(&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}, Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(5))}}),
+			reader:   fake.NewClient(&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}, Spec: appsv1.StatefulSetSpec{Replicas: new(int32(5))}}),
 			expected: int32(5),
 		},
 		{
@@ -95,15 +94,15 @@ func TestResolveAndSetReplicas(t *testing.T) {
 			name: "sets replicas from resolved statefulset",
 			reader: fake.NewClient(&appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns},
-				Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(6))},
+				Spec:       appsv1.StatefulSetSpec{Replicas: new(int32(6))},
 			}),
-			expected: ptr.To(int32(6)),
+			expected: new(int32(6)),
 		},
 		{
 			name:            "sets replicas from provided default",
 			reader:          fake.NewClient(),
-			defaultReplicas: ptr.To(int32(4)),
-			expected:        ptr.To(int32(4)),
+			defaultReplicas: new(int32(4)),
+			expected:        new(int32(4)),
 		},
 		{
 			name: "returns error and does not set replicas when reader fails",

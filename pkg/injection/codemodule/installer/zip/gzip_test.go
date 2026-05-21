@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/klauspost/compress/gzip"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -239,13 +240,313 @@ func TestExtractGzip(t *testing.T) {
 		// Note: escape_parent symlink (../../outside.txt) actually resolves to a path within tmpDir
 		// so it's allowed by the security check. The function checks the final resolved path.
 		escapeParent := filepath.Join(testDir, "escape_parent")
-		info, err = os.Lstat(escapeParent)
-		require.NoError(t, err)
-		require.Equal(t, os.ModeSymlink, info.Mode()&os.ModeSymlink, "escape_parent should be a symlink")
-
-		// Verify that the symlink target resolves within the extraction directory
-		target, err = os.Readlink(escapeParent)
-		require.NoError(t, err)
-		require.Equal(t, "../../outside.txt", target)
+		_, err = os.Lstat(escapeParent)
+		require.True(t, os.IsNotExist(err), "escape_parent should not exist (should be blocked)")
 	})
+
+	t.Run("extract gzip with malicious tar containing a symlink and a file of the same path and filename.", func(t *testing.T) {
+		// testRawGzipWithMaliciousSymlinkAndFile is a gzip archive containing a symlink and a file of the same path and filename that attempt to escape the extraction directory
+		// testdir/ - directory
+		// testdir/escape_parent -> ../../outside.txt - symlink (should be blocked)
+		// testdir/escape_parent - regular file
+
+		const testRawGzipWithMaliciousSymlinkAndFile = `H4sICLXb/WkAA2xheWVyLnRhcgDtk00KhDAMRnuUnqBW7c9xpGgWblTaCHP8qTqrDgwMWlHMo5Cu+iV5FCFg13uWExmxWq81ktbveymNVIzrrF19mAM6H+P3vpMOdxNw819AaN0EzeQ8DHhwxurf2j/8m0pbxishinjGGUPfgcDX0Y0tkP9T/BulfvivE/+1KiXjpyzx6f6zfCqCIAji6rwBqGlw6wAMAAA=`
+
+		tmpDir := t.TempDir()
+
+		gzipFile := SetupTestArchive(t, testRawGzipWithMaliciousSymlinkAndFile)
+
+		defer func() { _ = gzipFile.Close() }()
+
+		reader, err := gzip.NewReader(gzipFile)
+		require.NoError(t, err)
+
+		tarReader := tar.NewReader(reader)
+
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
+		require.NoError(t, err)
+
+		// Verify safe symlink was created
+		evilFile := filepath.Join(tmpDir, "testdir/escape_parent")
+		info, err := os.Lstat(evilFile)
+		require.NoError(t, err)
+		require.True(t, info.Mode().IsRegular(), "escape_parent should be a regular file (symlink of the same name should be blocked)")
+	})
+
+	t.Run("extract gzip with malicious tar containing a hardlink and a file of the same path and filename.", func(t *testing.T) {
+		// testRawGzipWithMaliciousSymlinkAndFile is a gzip archive containing a symlink and a file of the same path and filename that attempt to escape the extraction directory
+		// testdir/ - directory
+		// testdir/escape_parent -> ../../outside.txt - hardlink (should be blocked)
+		// testdir/escape_parent - regular file
+
+		const testRawGzipWithMaliciousSymlinkAndFile = `H4sIAAAAAAAAA+2TSwrDIBCGPYonMNr4OE6RZhbZNEEnkOPXPFYGAqUxNGQ+hHHlPzMfIkRs2sBKIhPOmLkm8rq9K2mlZtwU7WpliOhDiv/1nXy4i4CL/wriy/fw7H2ANx6cMft37gv/9mEs40qIKp1uwNg2IHA8urEJ8n+Kf6v1jv86819rJRk/ZYl391/kUxEEQRD/zgdS0LVvAAwAAA==`
+
+		tmpDir := t.TempDir()
+
+		// create a file that is dst file of the hardlink that is part ot the layer.tar
+		// to avoid "No such file" error if hardlink is created
+		err := os.WriteFile(filepath.Join(tmpDir, "outside.txt"), []byte("outside"), 0600)
+		require.NoError(t, err)
+
+		layerTmpDir := filepath.Join(tmpDir, "deeper-tmp")
+		err = os.MkdirAll(layerTmpDir, 0755)
+		require.NoError(t, err)
+
+		gzipFile := SetupTestArchive(t, testRawGzipWithMaliciousSymlinkAndFile)
+
+		defer func() { _ = gzipFile.Close() }()
+
+		reader, err := gzip.NewReader(gzipFile)
+		require.NoError(t, err)
+
+		tarReader := tar.NewReader(reader)
+
+		err = extractFilesFromGzip(t.Context(), layerTmpDir, tarReader)
+		require.NoError(t, err)
+
+		// Verify safe symlink was created
+		evilFile := filepath.Join(layerTmpDir, "testdir/escape_parent")
+		info, err := os.Lstat(evilFile)
+		require.NoError(t, err)
+		require.True(t, info.Mode().IsRegular(), "escape_parent should be a regular file (symlink of the same name should be blocked)")
+	})
+}
+
+func TestIsSymlinkSafe(t *testing.T) {
+	tests := []struct {
+		description string
+		targetDir   string
+		name        string
+		symlink     string
+		safe        bool
+	}{
+		{
+			"dir/symlink -> dir/file",
+			"/tmpDir",
+			"dir/symlink",
+			"file",
+			true,
+		},
+		{
+			"dir/symlink -> ../file",
+			"/tmpDir",
+			"dir/symlink",
+			"../file",
+			true,
+		},
+		{
+			"symlink -> ../file",
+			"/tmpDir",
+			"symlink",
+			"../file",
+			false,
+		},
+		{
+			"dir/symlink -> ../../file",
+			"/tmpDir",
+			"dir/symlink",
+			"../../file",
+			false,
+		},
+		{
+			"symlink -> /file",
+			"/tmpDir",
+			"symlink",
+			"/file",
+			false,
+		},
+		{
+			"symlink -> ..",
+			"/tmpDir",
+			"symlink",
+			"..",
+			false,
+		},
+		{
+			"dir/symlink -> ..",
+			"/tmpDir",
+			"dir/symlink",
+			"..",
+			true,
+		},
+		{
+			"dir/symlink -> .",
+			"/tmpDir",
+			"symlink",
+			".",
+			true,
+		},
+		{
+			"dir/symlink -> subdir/../../file",
+			"/tmpDir",
+			"dir/symlink",
+			"subdir/../../file",
+			true,
+		},
+		{
+			"dir/symlink -> subdir/../../../file",
+			"/tmpDir",
+			"dir/symlink",
+			"subdir/../../../file",
+			false,
+		},
+		{
+			"dir/symlink -> ''",
+			"/tmpDir",
+			"symlink",
+			"",
+			false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			safe := isSymlinkSafeToLink(test.symlink, test.targetDir, evaluateTargetPath(test.targetDir, test.name))
+			assert.Equal(t, test.safe, safe)
+		})
+	}
+}
+
+func TestIsHardlinkSafe(t *testing.T) {
+	tests := []struct {
+		description string
+		targetDir   string
+		hardlink    string
+		safe        bool
+	}{
+		{
+			"hardlink -> file",
+			"/tmpDir",
+			"file",
+			true,
+		},
+		{
+			"hardlink -> dir/file",
+			"/tmpDir",
+			"dir/file",
+			true,
+		},
+		{
+			"hardlink -> ../file",
+			"/tmpDir",
+			"../file",
+			false,
+		},
+		{
+			"hardlink -> ../../file",
+			"/tmpDir",
+			"../../file",
+			false,
+		},
+		{
+			"hardlink -> /file",
+			"/tmpDir",
+			"/file",
+			false,
+		},
+		{
+			"hardlink -> dir/../file",
+			"/tmpDir",
+			"dir/../b",
+			true,
+		},
+		{
+			"hardlink -> dir/../../file",
+			"/tmpDir",
+			"dir/../../b",
+			false,
+		},
+		{
+			"hardlink -> dir/.././../file",
+			"/tmpDir",
+			"dir/.././../b",
+			false,
+		},
+		{
+			"hardlink -> ''",
+			"/tmpDir",
+			"",
+			false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			safe := isHardlinkSafeToLink(test.hardlink, test.targetDir)
+			assert.Equal(t, test.safe, safe)
+		})
+	}
+}
+
+func TestIsTargetSafe(t *testing.T) {
+	tests := []struct {
+		description string
+		targetDir   string
+		name        string
+		safe        bool
+	}{
+		{
+			"file",
+			"/tmpDir",
+			"file",
+			true,
+		},
+		{
+			"/file",
+			"/tmpDir",
+			"/file",
+			true, // always relative to targetDir because target := evaluateTargetPath(targetDir, header.Name)
+		},
+		{
+			"../file",
+			"/tmpDir",
+			"../file",
+			false,
+		},
+		{
+			"/../file",
+			"/tmpDir",
+			"/../file",
+			false,
+		},
+		{
+			"../../file",
+			"/tmpDir",
+			"../../file",
+			false,
+		},
+		{
+			"./file",
+			"/tmpDir",
+			"./file",
+			true,
+		},
+		{
+			"./../file",
+			"/tmpDir",
+			"./../file",
+			false,
+		},
+		{
+			"dir/../../file",
+			"/tmpDir",
+			"dir/../../file",
+			false,
+		},
+		{
+			"empty filename",
+			"/tmpDir",
+			"",
+			false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			err := isTargetSafeToCreate(test.targetDir, test.name, evaluateTargetPath(test.targetDir, test.name))
+			if test.safe {
+				assert.NoError(t, err, test.description)
+			} else {
+				assert.Error(t, err, test.description)
+			}
+		})
+	}
 }

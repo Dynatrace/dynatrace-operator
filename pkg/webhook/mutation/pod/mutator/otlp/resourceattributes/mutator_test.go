@@ -22,7 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -70,7 +69,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 	}
 
 	deployment := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "ns"}}
-	deploymentOwner := metav1.OwnerReference{APIVersion: "apps/v1", Kind: "Deployment", Name: "web", Controller: ptr.To(true)}
+	deploymentOwner := metav1.OwnerReference{APIVersion: "apps/v1", Kind: "Deployment", Name: "web", Controller: new(true)}
 	replicaSetOwned := &appsv1.ReplicaSet{ObjectMeta: metav1.ObjectMeta{
 		Name:            "web-1234567890",
 		Namespace:       "ns",
@@ -106,7 +105,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 							APIVersion: "apps/v1",
 							Kind:       "ReplicaSet",
 							Name:       replicaSetOwned.Name,
-							Controller: ptr.To(true),
+							Controller: new(true),
 						},
 					},
 				},
@@ -154,7 +153,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 							APIVersion: "apps/v1",
 							Kind:       "StatefulSet",
 							Name:       "db",
-							Controller: ptr.To(true),
+							Controller: new(true),
 						},
 					},
 				},
@@ -227,7 +226,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 							APIVersion: "batch/v1",
 							Kind:       "Job",
 							Name:       "jobx",
-							Controller: ptr.To(true),
+							Controller: new(true),
 						},
 					},
 				},
@@ -426,7 +425,7 @@ func Test_Mutator_MutateNoOwner(t *testing.T) {
 					APIVersion: "apps/v1",
 					Kind:       "ReplicaSet",
 					Name:       "ghost-rs",
-					Controller: ptr.To(true),
+					Controller: new(true),
 				},
 			},
 		},
@@ -463,7 +462,7 @@ func Test_Mutator_Reinvoke(t *testing.T) {
 					APIVersion: "apps/v1",
 					Kind:       "StatefulSet",
 					Name:       "db",
-					Controller: ptr.To(true),
+					Controller: new(true),
 				},
 			},
 		},

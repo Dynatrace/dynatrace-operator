@@ -14,7 +14,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestConvertFrom(t *testing.T) {
@@ -92,7 +91,7 @@ func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 		},
 		CustomPullSecret:   "m",
 		CaCertsRef:         "n",
-		ServiceAccountName: ptr.To("o"),
+		ServiceAccountName: new("o"),
 		OAuth: edgeconnect.OAuthSpec{
 			ClientSecret: "p",
 			Endpoint:     "q",
@@ -138,7 +137,7 @@ func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 		HostPatterns: []string{
 			"y",
 		},
-		AutoUpdate: ptr.To(true),
+		AutoUpdate: new(true),
 	}
 }
 

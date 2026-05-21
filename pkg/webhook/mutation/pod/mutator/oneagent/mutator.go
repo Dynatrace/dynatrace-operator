@@ -38,9 +38,9 @@ func NewMutator() dtwebhook.Mutator {
 }
 
 func IsSelfExtractingImage(mutationRequest *dtwebhook.BaseRequest) bool {
-	ffEnabled := mutationRequest.DynaKube.FF().IsNodeImagePull()
+	hasImage := mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != ""
 
-	return ffEnabled && !isCSIVolume(mutationRequest)
+	return hasImage && !isCSIVolume(mutationRequest)
 }
 
 func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
@@ -49,7 +49,7 @@ func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
 		defaultVolumeType = CSIVolumeType
 	}
 
-	if mutationRequest.DynaKube.FF().IsNodeImagePull() {
+	if mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != "" {
 		return maputils.GetField(mutationRequest.Pod.Annotations, AnnotationVolumeType, defaultVolumeType) == CSIVolumeType
 	}
 

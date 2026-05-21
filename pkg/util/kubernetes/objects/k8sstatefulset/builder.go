@@ -9,7 +9,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 var (
@@ -33,7 +32,7 @@ func Build(owner metav1.Object, name string, container corev1.Container, options
 
 func SetReplicas(replicas int32) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.Spec.Replicas = ptr.To(replicas)
+		s.Spec.Replicas = new(replicas)
 	}
 }
 
@@ -112,7 +111,7 @@ func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
-				Partition: ptr.To(int32(0)),
+				Partition: new(int32(0)),
 			},
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
 		}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -21,7 +22,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -64,6 +64,26 @@ func WithName(name string) Option {
 func WithCustomCAs(configMapName string) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.TrustedCAs = configMapName
+	}
+}
+
+// WithCustomPullSecret sets the spec.customPullSecret used by the operator
+// when pulling Dynatrace component images from a private registry.
+func WithCustomPullSecret(name string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.CustomPullSecret = name
+	}
+}
+
+func WithUsePublicRegistryFF() Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Annotations[exp.UsePublicRegistryKey] = "true"
+	}
+}
+
+func WithPublicRegistryOverride(registry string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.PublicRegistryOverride = registry
 	}
 }
 
@@ -122,7 +142,7 @@ func WithActiveGateReplicas(replicas *int32) Option {
 
 func WithMetadataEnrichment() Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+		dk.Spec.MetadataEnrichment.Enabled = new(true)
 	}
 }
 
@@ -176,7 +196,7 @@ func WithIstioIntegration() Option {
 	}
 }
 
-func WithClassicFullstackSpec(classicFullStackSpec *oneagent.HostInjectSpec) Option {
+func WithClassicFullStackSpec(classicFullStackSpec *oneagent.HostInjectSpec) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.OneAgent.ClassicFullStack = classicFullStackSpec
 	}
