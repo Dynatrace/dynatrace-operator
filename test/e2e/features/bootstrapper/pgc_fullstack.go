@@ -58,11 +58,7 @@ func PGCWithCloudNativeFullStack(t *testing.T) features.Feature {
 
 func verifyBootstrapperFilesMounted(app *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resource := envConfig.Client().Resources()
-		samplePods := app.ListPods(ctx, t, resource)
-		require.NotEmpty(t, samplePods.Items, "sample app pods should exist")
-
-		pod := samplePods.Items[0]
+		pod := app.GetPod(ctx, t, envConfig.Client().Resources())
 
 		// Check init container has input files
 		lsInitCommand := []string{"ls", "-la", "/mnt/input/"}
