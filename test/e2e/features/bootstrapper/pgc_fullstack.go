@@ -87,7 +87,7 @@ func checkBootstrapperSecret(app *sample.App) features.Func {
 		samplePods := app.ListPods(ctx, t, resource)
 		require.NotEmpty(t, samplePods.Items, "sample app pods should exist")
 
-		namespace := samplePods.Items[0].Namespace
+		namespace := app.Namespace()
 
 		var secret corev1.Secret
 		require.NoError(t, resource.Get(ctx, consts.BootstrapperInitSecretName, namespace, &secret))
