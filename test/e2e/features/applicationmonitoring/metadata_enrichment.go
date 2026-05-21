@@ -42,6 +42,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
+		dynakubeComponents.WithAnnotations(map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "true"}),
 	)
 
 	type testCase struct {
@@ -126,7 +127,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		{
 			name: "metadata enrichment have deprecated attributes - pod",
 			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("pod-no-dt-attributes"),
+				sample.WithName("pod-with-dt-attributes"),
 				sample.WithNamespaceLabels(injectEverythingLabels),
 			),
 			assess: assessMetadataEnrichmentHasDeprecatedAttributes,
