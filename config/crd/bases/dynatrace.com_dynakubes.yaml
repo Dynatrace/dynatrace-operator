@@ -5838,6 +5838,7 @@ spec:
                       additionalResourceAttributes:
                         additionalProperties:
                           type: string
+                        maxProperties: 10
                         type: object
                       codeModulesImage:
                         type: string
@@ -5915,6 +5916,7 @@ spec:
                       additionalResourceAttributes:
                         additionalProperties:
                           type: string
+                        maxProperties: 10
                         type: object
                       annotations:
                         additionalProperties:
@@ -6103,6 +6105,7 @@ spec:
                       additionalResourceAttributes:
                         additionalProperties:
                           type: string
+                        maxProperties: 10
                         type: object
                       annotations:
                         additionalProperties:
@@ -6360,6 +6363,7 @@ spec:
                       additionalResourceAttributes:
                         additionalProperties:
                           type: string
+                        maxProperties: 10
                         type: object
                       annotations:
                         additionalProperties:
@@ -6548,6 +6552,7 @@ spec:
                   additionalResourceAttributes:
                     additionalProperties:
                       type: string
+                    maxProperties: 10
                     type: object
                   namespaceSelector:
                     properties:
@@ -6601,6 +6606,7 @@ spec:
               resourceAttributes:
                 additionalProperties:
                   type: string
+                maxProperties: 10
                 type: object
               skipCertCheck:
                 type: boolean
