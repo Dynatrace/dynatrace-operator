@@ -432,7 +432,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 			},
 			notWantArgs: []string{
 				attributes.ToArg(globalKey, globalValue),
@@ -445,7 +445,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 				ResourceAttributes: map[string]string{globalKey: globalValue},
 			},
 			wantArgs: []string{attributes.ToArg(globalKey, globalValue)},
@@ -458,7 +458,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 						AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
 					},
 				},
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 			},
 			wantArgs: []string{attributes.ToArg(additionalKey, additionalValue)},
 		},
@@ -472,7 +472,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 						},
 					},
 				},
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 			},
 			wantArgs: []string{attributes.ToArg(additionalKey, additionalValue)},
 		},
@@ -484,7 +484,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 						AdditionalResourceAttributes: map[string]string{collisionKey: addCollVal},
 					},
 				},
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 				ResourceAttributes: map[string]string{collisionKey: globalCollVal},
 			},
 			wantArgs:    []string{attributes.ToArg(collisionKey, addCollVal)},
@@ -496,7 +496,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 				ResourceAttributes: map[string]string{"k8s.namespace.name": "user-override"},
 			},
 			wantArgs:    []string{attributes.ToArg("k8s.namespace.name", "user-override")},
@@ -505,7 +505,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 		{
 			name: "OA disabled, metadata enrichment only, global resource attributes applied",
 			dkSpec: dynakube.DynaKubeSpec{
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 				ResourceAttributes: map[string]string{globalKey: globalValue},
 			},
 			wantArgs: []string{attributes.ToArg(globalKey, globalValue)},
@@ -518,7 +518,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 						AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
 					},
 				},
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 			},
 			notWantArgs: []string{attributes.ToArg(additionalKey, additionalValue)},
 		},
@@ -528,7 +528,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: ptr.To(true)},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 				ResourceAttributes: map[string]string{
 					"":          "empty-key-value",
 					"empty-val": "",

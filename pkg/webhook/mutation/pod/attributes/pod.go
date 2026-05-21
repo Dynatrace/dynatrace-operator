@@ -21,7 +21,7 @@ type Pod struct {
 	// read from metadata.dynatrace.com annotations on the pod
 	podAnnotations map[string]string
 
-	// .spec.resourceAttributes + .spec.(oneagent.*|otlpExporterConfiguration).addtionalResourceAttributes
+	// .spec.resourceAttributes + .spec.(oneagent.*|otlpExporterConfiguration).additionalResourceAttributes
 	dynakube map[string]string
 
 	// custom attributes, e.g. OTEL_RESOURCE_ATTRIBUTES env var
@@ -81,8 +81,8 @@ func (attrs *Pod) SetCustomAttributes(custom map[string]string) {
 	attrs.custom = custom
 }
 
-func (attrs *Pod) SetDynakubeAttributes(dkAttrs map[string]string) {
-	attrs.dynakube = dkAttrs
+func (attrs *Pod) SetDynakubeAttributes(ctx context.Context, dkAttrs map[string]string) {
+	attrs.dynakube = sanitizeKeys(ctx, dkAttrs)
 }
 
 func (attrs *Pod) GetPodEnvVars() []corev1.EnvVar {

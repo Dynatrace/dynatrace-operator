@@ -71,7 +71,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 
 	mutated := false
 
-	attrs.SetDynakubeAttributes(request.DynaKube.OTLPExporterConfiguration().GetResourceAttributes())
+	attrs.SetDynakubeAttributes(ctx, request.DynaKube.OTLPExporterConfiguration().GetResourceAttributes())
 
 	err = attrs.ApplyAnnotationsToPod(request.Pod)
 	if err != nil {

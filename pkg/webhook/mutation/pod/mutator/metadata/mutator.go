@@ -64,9 +64,9 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	}
 
 	if oneagent.IsEnabled(request.BaseRequest) {
-		attrs.SetDynakubeAttributes(request.DynaKube.OneAgent().GetResourceAttributes())
+		attrs.SetDynakubeAttributes(request.Context, request.DynaKube.OneAgent().GetResourceAttributes())
 	} else {
-		attrs.SetDynakubeAttributes(request.DynaKube.GetResourceAttributes())
+		attrs.SetDynakubeAttributes(request.Context, request.DynaKube.GetResourceAttributes())
 	}
 
 	withDeprecatedAttributesArg := arg.Arg{
