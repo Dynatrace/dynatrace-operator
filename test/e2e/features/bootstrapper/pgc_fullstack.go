@@ -62,7 +62,7 @@ func verifyBootstrapperFilesMounted(app *sample.App) features.Func {
 
 		// Check init container has input files
 		lsInitCommand := []string{"ls", "-la", "/mnt/input/"}
-		initResult, err := k8spod.Exec(ctx, resource, pod, "install", lsInitCommand...)
+		initResult, err := k8spod.Exec(ctx, resource, pod, dtwebhook.InstallContainerName, lsInitCommand...)
 		require.NoError(t, err)
 
 		initOutput := initResult.StdOut.String()
