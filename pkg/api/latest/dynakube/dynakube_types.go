@@ -104,6 +104,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Global default resource attributes applied to every component that supports resource attributes.
 	// Per-component additionalResourceAttributes take precedence over these values when the same key is present in both.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxProperties=10
 	ResourceAttributes map[string]string `json:"resourceAttributes,omitempty"`
 
 	// Configuration for OTLP Exporter Configuration
