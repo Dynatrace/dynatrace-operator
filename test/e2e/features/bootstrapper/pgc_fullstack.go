@@ -76,12 +76,9 @@ func verifyBootstrapperFilesMounted(app *sample.App) features.Func {
 func checkBootstrapperSecret(app *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		app.GetPod(ctx, t, resource)
-
-		namespace := app.Namespace()
 
 		var secret corev1.Secret
-		require.NoError(t, resource.Get(ctx, consts.BootstrapperInitSecretName, namespace, &secret))
+		require.NoError(t, resource.Get(ctx, consts.BootstrapperInitSecretName, app.Namespace(), &secret))
 
 		if pgcData, exists := secret.Data[bootstrapperconfig.DeclarativeInputFileName]; exists {
 			require.NotEmpty(t, pgcData, "PGC data should not be empty if present")
