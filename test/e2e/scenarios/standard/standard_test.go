@@ -110,5 +110,5 @@ func TestStandard_node_image_pull_with_csi(t *testing.T) {
 }
 
 func TestStandard_pgc_with_fullstack(t *testing.T) {
-	testEnv.Test(t, bootstrapper.PGCWithFullStack(t))
+	testEnv.Test(t, bootstrapper.PGCWithCloudNativeFullStack(t))
 }

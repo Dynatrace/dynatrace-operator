@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
@@ -14,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -58,24 +58,16 @@ func PGCWithCloudNativeFullStack(t *testing.T) features.Feature {
 
 func verifyBootstrapperFilesMounted(app *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		pod := app.GetPod(ctx, t, envConfig.Client().Resources())
+		resource := envConfig.Client().Resources()
+		pod := app.GetPod(ctx, t, resource)
 
-		// Check init container has input files
-		lsInitCommand := []string{"ls", "-la", "/mnt/input/"}
-		initResult, err := k8spod.Exec(ctx, resource, pod, dtwebhook.InstallContainerName, lsInitCommand...)
-		require.NoError(t, err)
-
-		initOutput := initResult.StdOut.String()
-		require.Contains(t, initOutput, pmc.InputFileName, "PMC file should be available in init container")
-		require.Contains(t, initOutput, bootstrapperconfig.DeclarativeInputFileName, "PGC file should be available in init container")
-
-		// Check app container has bootstrapper files after init container ran
-		lsAppCommand := []string{"ls", "-la", "/opt/dynatrace/oneagent/"}
-		appResult, err := k8spod.Exec(ctx, resource, pod, app.ContainerName(), lsAppCommand...)
+		listCommand := shell.ListDirectory("/var/lib/dynatrace/oneagent/agent/config")
+		appResult, err := k8spod.Exec(ctx, resource, pod, app.ContainerName(), listCommand...)
 		require.NoError(t, err)
 
 		appOutput := appResult.StdOut.String()
-		require.NotEmpty(t, appOutput, "app container should have oneagent files after init container ran")
+		require.NotEmpty(t, appOutput, "app container should have config files after init container ran")
+		require.Contains(t, appOutput, bootstrapperconfig.DeclarativeInputFileName, "PGC file should be present in config directory")
 
 		return ctx
 	}
@@ -84,8 +76,7 @@ func verifyBootstrapperFilesMounted(app *sample.App) features.Func {
 func checkBootstrapperSecret(app *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		samplePods := app.ListPods(ctx, t, resource)
-		require.NotEmpty(t, samplePods.Items, "sample app pods should exist")
+		app.GetPod(ctx, t, resource)
 
 		namespace := app.Namespace()
 
