@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func PGCWithFullStack(t *testing.T) features.Feature {
+func PGCWithCloudNativeFullStack(t *testing.T) features.Feature {
 	builder := features.New("pgc-with-fullstack")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
