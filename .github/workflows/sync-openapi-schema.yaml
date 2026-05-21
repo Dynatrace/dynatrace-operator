@@ -81,6 +81,11 @@ jobs:
 
       - name: Check for changes
         id: sync
+        env:
+          SCHEMAS_JSON: ${{ needs.prepare.outputs.schemas_json }}
+          OUTPUT_DIR: ${{ needs.prepare.outputs.output_dir }}
+          WORKFLOW_RUN_NUMBER: ${{ github.run_number }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
 
@@ -108,18 +113,13 @@ jobs:
           EOF
           )
 
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "schemas_summary=${schemas_summary}" >> "$GITHUB_OUTPUT"
-
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "pr_body<<${EOF}" >> "$GITHUB_OUTPUT"
-          echo "${pr_body}" >> "$GITHUB_OUTPUT"
-          echo "${EOF}" >> "$GITHUB_OUTPUT"
-        env:
-          SCHEMAS_JSON: ${{ needs.prepare.outputs.schemas_json }}
-          OUTPUT_DIR: ${{ needs.prepare.outputs.output_dir }}
-          WORKFLOW_RUN_NUMBER: ${{ github.run_number }}
-          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          {
+            echo "changed=true"
+            echo "schemas_summary=${schemas_summary}"
+            echo "pr_body<<EOF"
+            echo "${pr_body}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create pull request
         if: steps.sync.outputs.changed == 'true'
