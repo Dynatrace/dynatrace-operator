@@ -42,7 +42,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtClient oneagent
 
 var (
 	NoOneAgentCommunicationEndpointsError = errors.New("no communication endpoints for OneAgent are available")
-	StaleRestrictedNetworkZoneError       = errors.New("OneAgent endpoints in a restricted network-zone do not match the local ActiveGate Service IP, waiting for the ActiveGate to re-register")
+	StaleNetworkZoneEndpointsError        = errors.New("OneAgent endpoints do not contain the local ActiveGate Service IP, waiting for the ActiveGate to register itself")
 )
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
@@ -123,14 +123,14 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return NoOneAgentCommunicationEndpointsError
 	}
 
-	if hasStaleRestrictedNetworkZoneEndpoints(r.dk, connectionInfo.Endpoints) {
-		log.Info("OneAgent endpoints in restricted network-zone do not match the local ActiveGate Service IP yet, postponing OneAgent deployment",
+	if hasStaleNetworkZoneEndpoints(r.dk, connectionInfo.Endpoints) {
+		log.Info("OneAgent endpoints do not contain the local ActiveGate Service IP yet, postponing OneAgent deployment",
 			"tenant", connectionInfo.TenantUUID,
 			"endpoints", connectionInfo.Endpoints,
 			"serviceIPs", r.dk.Status.ActiveGate.ServiceIPs)
-		setStaleRestrictedNetworkZoneCondition(r.dk.Conditions())
+		setStaleNetworkZoneEndpointsCondition(r.dk.Conditions())
 
-		return StaleRestrictedNetworkZoneError
+		return StaleNetworkZoneEndpointsError
 	}
 
 	r.dk.Status.OneAgent.ConnectionInfo.Endpoints = connectionInfo.Endpoints

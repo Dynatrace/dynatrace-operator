@@ -8,8 +8,8 @@ import (
 const (
 	oaConnectionInfoConditionType = "OneAgentConnectionInfo"
 
-	EmptyCommunicationHostsReason    = "EmptyCommunicationHosts"
-	StaleRestrictedNetworkZoneReason = "StaleRestrictedNetworkZoneEndpoints"
+	EmptyCommunicationHostsReason   = "EmptyCommunicationHosts"
+	StaleNetworkZoneEndpointsReason = "StaleNetworkZoneEndpoints"
 )
 
 func setEmptyCommunicationHostsCondition(conditions *[]metav1.Condition) {
@@ -22,12 +22,12 @@ func setEmptyCommunicationHostsCondition(conditions *[]metav1.Condition) {
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setStaleRestrictedNetworkZoneCondition(conditions *[]metav1.Condition) {
+func setStaleNetworkZoneEndpointsCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    oaConnectionInfoConditionType,
 		Status:  metav1.ConditionFalse,
-		Reason:  StaleRestrictedNetworkZoneReason,
-		Message: "ActiveGate Service IP does not match the OneAgent endpoints returned by the cluster; postponing OneAgent deployment until the ActiveGate has re-registered",
+		Reason:  StaleNetworkZoneEndpointsReason,
+		Message: "OneAgent endpoints do not advertise every local ActiveGate Service IP; postponing OneAgent deployment until the ActiveGate has re-registered",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

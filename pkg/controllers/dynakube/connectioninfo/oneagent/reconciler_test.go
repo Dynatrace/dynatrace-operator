@@ -260,7 +260,7 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func TestReconcile_StaleRestrictedNetworkZone(t *testing.T) {
+func TestReconcile_StaleNetworkZoneEndpoints(t *testing.T) {
 	ctx := t.Context()
 
 	// The cluster keeps returning the old IP (10.0.0.1) until the AG re-registers,
@@ -293,7 +293,7 @@ func TestReconcile_StaleRestrictedNetworkZone(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
 		err := r.Reconcile(ctx)
-		require.ErrorIs(t, err, StaleRestrictedNetworkZoneError)
+		require.ErrorIs(t, err, StaleNetworkZoneEndpointsError)
 
 		// Endpoints in status are left untouched so downstream consumers do not
 		// propagate the stale IP to the OneAgent ConfigMap / DaemonSet.
@@ -302,7 +302,7 @@ func TestReconcile_StaleRestrictedNetworkZone(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
 		require.NotNil(t, condition)
-		assert.Equal(t, StaleRestrictedNetworkZoneReason, condition.Reason)
+		assert.Equal(t, StaleNetworkZoneEndpointsReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }

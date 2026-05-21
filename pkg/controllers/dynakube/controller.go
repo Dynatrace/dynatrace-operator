@@ -465,7 +465,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 // fast requeue instead of surfacing them as reconcile failures.
 func isPostponedConnectionInfoError(err error) bool {
 	return errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) ||
-		errors.Is(err, oaconnectioninfo.StaleRestrictedNetworkZoneError)
+		errors.Is(err, oaconnectioninfo.StaleNetworkZoneEndpointsError)
 }
 
 func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dynakube.DynaKube) *mapper.DynakubeMapper {
