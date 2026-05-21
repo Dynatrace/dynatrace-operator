@@ -30,6 +30,9 @@ if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
   echo "run no csi tests suite using OLM"
   # What to do with olm tests? I guess do not run
   make test/e2e/no-csi/publish/olm
+elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
+  echo "run fips e2e test suites"
+  make test/e2e-publish/fips
 elif [[ -n "${TARGET_IMAGE}" ]]; then
   make PLATFORM_TOKEN="$USE_PLATFORM_TOKEN" IMAGE_URI="$TARGET_IMAGE" test/e2e-publish
 else

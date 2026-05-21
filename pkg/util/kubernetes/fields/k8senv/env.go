@@ -1,6 +1,7 @@
 package k8senv
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -123,4 +124,8 @@ func GetDTClientCacheCleanInterval(log logd.Logger) time.Duration {
 	}
 
 	return parsedDuration
+}
+
+func NewRef(envName string) string {
+	return fmt.Sprintf("$(%s)", envName)
 }

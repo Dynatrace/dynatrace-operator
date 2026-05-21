@@ -26,7 +26,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -159,6 +158,18 @@ func WithPodSecurityContext(securityContext corev1.PodSecurityContext) Option {
 func WithContainerSecurityContext(securityContext corev1.SecurityContext) Option {
 	return func(app *App) {
 		app.base.Spec.Containers[0].SecurityContext = &securityContext
+	}
+}
+
+// WithImagePullSecret adds the given secret name to the pod's
+// spec.imagePullSecrets list. Used in scenarios where the user's pod must
+// authenticate to a private registry to pull the operator-injected init
+// container image (e.g. when feature.dynatrace.com/use-public-registry is
+// enabled together with feature.dynatrace.com/node-image-pull) and without CSI driver.
+func WithImagePullSecret(secretName string) Option {
+	return func(app *App) {
+		app.base.Spec.ImagePullSecrets = append(app.base.Spec.ImagePullSecrets,
+			corev1.LocalObjectReference{Name: secretName})
 	}
 }
 
@@ -343,7 +354,7 @@ func (app *App) asDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: app.base.ObjectMeta,
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(int32(2)),
+			Replicas: new(int32(2)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					selectorKey: selectorValue,

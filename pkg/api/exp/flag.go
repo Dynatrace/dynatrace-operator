@@ -18,11 +18,19 @@ const (
 )
 
 type FeatureFlags struct {
-	annotations map[string]string
+	annotations      map[string]string
+	hasPlatformToken bool
 }
 
-func NewFlags(annotations map[string]string) *FeatureFlags {
-	return &FeatureFlags{annotations: annotations}
+func NewFlags(annotations map[string]string, hasPlatformToken bool) *FeatureFlags {
+	return &FeatureFlags{annotations: annotations, hasPlatformToken: hasPlatformToken}
+}
+
+// IsSet checks if the annotation(feature-flag) is present, does not check the value in any way.
+func (ff *FeatureFlags) IsSet(flag string) bool {
+	_, ok := ff.annotations[flag]
+
+	return ok
 }
 
 // GetNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
@@ -35,8 +43,7 @@ func (ff *FeatureFlags) UseEECLegacyMounts() bool {
 }
 
 func (ff *FeatureFlags) IsPublicRegistry() bool {
-	// TODO: ICP-3643 - Implement public registry selection based on gen3 platformToken; if user defines FF use-public-registry, ignore it and display warning when platformToken is used.
-	return ff.getBoolWithDefault(UsePublicRegistryKey, false)
+	return ff.hasPlatformToken || ff.getBoolWithDefault(UsePublicRegistryKey, false)
 }
 
 // Deprecated: Do not use "disable" feature flags.

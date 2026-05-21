@@ -944,7 +944,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 
 	t.Run("migrate away from platform token", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
-		dk.Status.APIToken.Platform = ptr.To(true)
+		dk.Status.APIToken.Platform = new(true)
 
 		controller := createFakeControllerAndClients(t, []string{
 			tokenclient.ScopeDataExport,

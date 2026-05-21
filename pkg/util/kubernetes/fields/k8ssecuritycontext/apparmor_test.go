@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const containerName = "test"
@@ -60,7 +59,7 @@ func TestGetAppArmorProfile(t *testing.T) {
 			},
 			want: &corev1.AppArmorProfile{
 				Type:             corev1.AppArmorProfileTypeLocalhost,
-				LocalhostProfile: ptr.To("foo"),
+				LocalhostProfile: new("foo"),
 			},
 		},
 	}

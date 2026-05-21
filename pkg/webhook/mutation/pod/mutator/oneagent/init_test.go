@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/move"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -247,9 +246,6 @@ func TestMutateInitContainer(t *testing.T) {
 		image := "myimage.io:latest"
 		dk := dynakube.DynaKube{}
 		dk.Name = "node-image-pull-scenario"
-		dk.Annotations = map[string]string{
-			exp.OANodeImagePullKey: "true",
-		}
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
 		dk.Status.CodeModules.ImageID = image
@@ -318,9 +314,6 @@ func TestMutateInitContainer(t *testing.T) {
 		image := "myimage.io:latest"
 		dk := dynakube.DynaKube{}
 		dk.Name = "node-image-pull-scenario"
-		dk.Annotations = map[string]string{
-			exp.OANodeImagePullKey: "true",
-		}
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
 			Requests: k8sresource.NewResourceList("40m", "40Mi"),

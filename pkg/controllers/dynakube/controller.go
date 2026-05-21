@@ -45,7 +45,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -488,7 +487,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 	}
 
 	if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
-		dk.Status.APIToken.Platform = ptr.To(true)
+		dk.Status.APIToken.Platform = new(true)
 
 		logd.FromContext(ctx).Info("skipping token scope lookup due to platform token")
 
@@ -503,7 +502,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 		return nil
 	}
 
-	dk.Status.APIToken.Platform = ptr.To(false)
+	dk.Status.APIToken.Platform = new(false)
 
 	err = controller.verifyTokenScopes(ctx, dtClient, dk)
 	if err != nil {

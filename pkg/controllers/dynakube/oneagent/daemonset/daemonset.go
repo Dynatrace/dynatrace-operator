@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -250,7 +249,7 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
-		TerminationGracePeriodSeconds: ptr.To(defaultTerminationGracePeriod),
+		TerminationGracePeriodSeconds: new(defaultTerminationGracePeriod),
 	}
 
 	if b.dk.OneAgent().IsReadinessProbeNeeded() {
@@ -326,11 +325,11 @@ func (b *builder) initContainerVolumeMounts() []corev1.VolumeMount {
 
 func (b *builder) initContainerSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		AllowPrivilegeEscalation: ptr.To(false),
-		RunAsNonRoot:             ptr.To(true),
-		RunAsUser:                ptr.To(userGroupID),
-		RunAsGroup:               ptr.To(userGroupID),
+		Privileged:               new(false),
+		AllowPrivilegeEscalation: new(false),
+		RunAsNonRoot:             new(true),
+		RunAsUser:                new(userGroupID),
+		RunAsGroup:               new(userGroupID),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -339,7 +338,7 @@ func (b *builder) initContainerSecurityContext() *corev1.SecurityContext {
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
-		ReadOnlyRootFilesystem: ptr.To(true),
+		ReadOnlyRootFilesystem: new(true),
 	}
 }
 
@@ -441,16 +440,16 @@ func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 	securityContext := &corev1.SecurityContext{}
 
 	if b.dk != nil && b.dk.OneAgent().IsReadOnlyFSSupported() {
-		securityContext.RunAsNonRoot = ptr.To(true)
-		securityContext.RunAsUser = ptr.To(userGroupID)
-		securityContext.RunAsGroup = ptr.To(userGroupID)
-		securityContext.ReadOnlyRootFilesystem = ptr.To(b.isRootFsReadonly(ctx))
+		securityContext.RunAsNonRoot = new(true)
+		securityContext.RunAsUser = new(userGroupID)
+		securityContext.RunAsGroup = new(userGroupID)
+		securityContext.ReadOnlyRootFilesystem = new(b.isRootFsReadonly(ctx))
 	} else {
-		securityContext.ReadOnlyRootFilesystem = ptr.To(false)
+		securityContext.ReadOnlyRootFilesystem = new(false)
 	}
 
 	if b.dk != nil && b.dk.OneAgent().IsPrivilegedNeeded() {
-		securityContext.Privileged = ptr.To(true)
+		securityContext.Privileged = new(true)
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
 
@@ -561,6 +560,6 @@ func (b *builder) isRootFsReadonly(ctx context.Context) bool {
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
-		FSGroup: ptr.To(userGroupID),
+		FSGroup: new(userGroupID),
 	}
 }

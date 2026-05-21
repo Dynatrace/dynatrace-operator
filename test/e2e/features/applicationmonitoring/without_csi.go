@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -43,8 +42,8 @@ func WithoutCSI(t *testing.T) features.Feature {
 		sample.WithName("random-user"),
 		sample.AsDeployment(),
 		sample.WithPodSecurityContext(corev1.PodSecurityContext{
-			RunAsUser:  ptr.To[int64](1234),
-			RunAsGroup: ptr.To[int64](1234),
+			RunAsUser:  new(int64(1234)),
+			RunAsGroup: new(int64(1234)),
 		}),
 	)
 	builder.Assess("install sample app with random users set", randomUserSample.Install())

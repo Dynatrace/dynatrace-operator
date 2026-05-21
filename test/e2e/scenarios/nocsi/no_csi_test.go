@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kspm"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
@@ -137,6 +138,14 @@ func TestNoCSI_classic(t *testing.T) {
 
 func TestNoCSI_node_image_pull_with_no_csi(t *testing.T) {
 	testEnv.Test(t, bootstrapper.NoCSI(t))
+}
+
+func TestNoCSI_use_public_registry_codemodules(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.CodeModules(t))
+}
+
+func TestNoCSI_use_public_registry_codemodules_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.CodeModulesWithOverride(t))
 }
 
 func TestNoCSI_logmonitoring(t *testing.T) {

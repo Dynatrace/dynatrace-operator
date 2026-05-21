@@ -12,11 +12,19 @@ type Ref struct {
 	// Indicates a tag of the image to use
 	Tag string `json:"tag,omitempty"`
 
+	// Digest pins the image to a specific content-addressable hash in the OCI
+	// `<algorithm>:<hex>` form (e.g. `sha256:abc...`). When set, the tag is ignored
+	// when rendering the image reference.
+	// +kubebuilder:validation:Pattern:="^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$"
+	Digest string `json:"digest,omitempty"`
+
 	// Image pull policy to use
 	PullPolicy PullPolicy `json:"pullPolicy,omitempty"`
 }
 
 // StringWithDefaults will use the provided default values for fields that were not already set.
+// If a digest is present (either on the ref or via the default), the tag is omitted from the
+// rendered image reference.
 func (ref Ref) StringWithDefaults(repo, tag string) string {
 	if ref.Repository == "" {
 		ref.Repository = repo
@@ -29,14 +37,24 @@ func (ref Ref) StringWithDefaults(repo, tag string) string {
 	return ref.String()
 }
 
+// String renders the image reference. If a digest is set, the tag is omitted to avoid the
+// confusing case where the tag and digest disagree — the digest always wins.
 func (ref Ref) String() string {
+	if ref.Digest != "" {
+		return ref.Repository + "@" + ref.Digest
+	}
+
 	return ref.Repository + ":" + ref.Tag
 }
 
-// IsZero returns true if the image ref is empty.
-// Prefer this name over IsEmpty for compatibility with JSON omitzero.
-func (ref *Ref) IsZero() bool {
-	return ref == nil || *ref == Ref{}
+// HasImage returns true when the ref points to a resolvable image — i.e. a repository
+// plus at least one of a tag or a digest.
+func (ref *Ref) HasImage() bool {
+	if ref == nil {
+		return false
+	}
+
+	return ref.Repository != "" && (ref.Tag != "" || ref.Digest != "")
 }
 
 // GetPolicy returns the image pull policy.

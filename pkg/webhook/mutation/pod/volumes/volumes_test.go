@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestAddInputVolume(t *testing.T) {
@@ -33,7 +32,7 @@ func TestAddInputVolume(t *testing.T) {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: consts.BootstrapperInitSecretName,
 								},
-								Optional: ptr.To(false),
+								Optional: new(false),
 							},
 						},
 						{
@@ -41,7 +40,7 @@ func TestAddInputVolume(t *testing.T) {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: consts.BootstrapperInitCertsSecretName,
 								},
-								Optional: ptr.To(true),
+								Optional: new(true),
 							},
 						},
 					},
@@ -108,7 +107,7 @@ func TestAddConfigVolume(t *testing.T) {
 		assert.Equal(t, corev1.Volume{
 			Name: "dynatrace-config",
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{
-				SizeLimit: ptr.To(resource.MustParse("300Mi")),
+				SizeLimit: new(resource.MustParse("300Mi")),
 			}},
 		}, pod.Spec.Volumes[0])
 	})
@@ -166,7 +165,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}
@@ -195,7 +194,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}
@@ -218,7 +217,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 		assert.True(t, HasSplitEnrichmentMounts(container))
 	})
 
-	t.Run("should add split mounts for metadataenrichment if classicfullstack is enabled", func(t *testing.T) {
+	t.Run("should add split mounts for metadataenrichment if classicFullStack is enabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -226,7 +225,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}

@@ -19,7 +19,6 @@ type OneAgent struct {
 	globalResourceAttributes map[string]string
 
 	featureOneAgentPrivileged        bool
-	featureBootstrapperInjection     bool
 	featureOneAgentSkipLivenessProbe bool
 }
 

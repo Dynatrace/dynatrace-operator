@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -158,14 +157,14 @@ func buildServicePortList(ctx context.Context, protocols []otelcgen.Protocol) []
 					Name:        otlpGRPCPortName,
 					Port:        otlpGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptr.To(appProtocolGRPC),
+					AppProtocol: new(appProtocolGRPC),
 					TargetPort:  intstr.FromInt32(otlpGRPCPort),
 				},
 				corev1.ServicePort{
 					Name:        otlpHTTPPortName,
 					Port:        otlpHTTPPort,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptr.To(appProtocolHTTP),
+					AppProtocol: new(appProtocolHTTP),
 					TargetPort:  intstr.FromInt32(otlpHTTPPort),
 				})
 		case otelcgen.JaegerProtocol:
@@ -174,7 +173,7 @@ func buildServicePortList(ctx context.Context, protocols []otelcgen.Protocol) []
 					Name:        jaegerGRPCPortName,
 					Port:        jaegerGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptr.To(appProtocolGRPC),
+					AppProtocol: new(appProtocolGRPC),
 					TargetPort:  intstr.FromInt32(jaegerGRPCPort),
 				},
 				corev1.ServicePort{

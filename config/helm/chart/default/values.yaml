@@ -19,10 +19,11 @@ platform: ""
 # supply either image or imageref; if both supplied, imageref will be disregarded
 image: ""
 #image description using tags
-#resulting image will be named <repository>:v<tag>
+#resulting image will be named <repository>:v<tag>, or <repository>@<digest> if a digest is provided
 imageRef:
   repository: "" #path to repo
   tag: "" #defaults to chart version
+  digest: "" #optional image digest (e.g. sha256:...), when set, the tag is ignored when rendering the image reference
   pullPolicy: ""
 
 customPullSecret: ""

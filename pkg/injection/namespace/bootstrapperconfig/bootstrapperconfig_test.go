@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -140,7 +139,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				APIURL:     testAPIurl,
 				TrustedCAs: "test-trusted-ca",
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -243,7 +242,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -377,7 +376,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				APIURL:     testAPIurl,
 				TrustedCAs: "test-trusted-ca",
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -444,7 +443,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				APIURL:     testAPIurl,
 				TrustedCAs: "test-trusted-ca",
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},

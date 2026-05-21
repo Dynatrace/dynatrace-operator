@@ -271,6 +271,7 @@ If an image value is set to a different repository than the default, `devregistr
 The following environment variables can be used to control which tests are executed:
 
 - `E2E_SKIP_SCALING` — set to `true` to skip all scaling-related tests (those covering HPA and enforce-replicas behaviour).
+- `E2E_PUBLIC_REGISTRY_OVERRIDE` — sets the registry value used for spec.publicRegistryOverride in use-public-registry e2e tests. This allows tests to validate scenarios where image references are overridden to use other, specific public registry.
 
 ### Triggering E2E Tests on Kind in CI
 

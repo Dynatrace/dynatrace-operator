@@ -25,6 +25,7 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	podmutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/otlp"
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	metadatamutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
@@ -40,7 +41,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -149,7 +149,7 @@ func TestWebhook(t *testing.T) {
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
@@ -264,7 +264,7 @@ func TestWebhook(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}
@@ -278,7 +278,7 @@ func TestWebhook(t *testing.T) {
 					Kind:       "Deployment",
 					Name:       "missing",
 					UID:        types.UID(uuid.NewString()),
-					Controller: ptr.To(true),
+					Controller: new(true),
 				},
 			}
 		})
@@ -302,7 +302,7 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 			MetadataEnrichment: metadataenrichment.Spec{
-				Enabled: ptr.To(true),
+				Enabled: new(true),
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
@@ -360,13 +360,13 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.entity.kubernetes_cluster", testMEID))
 
 	if withoutDeprecatedAnnotations {
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedClusterIDKey, testClusterUUID))
+		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
+		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
+		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedClusterIDKey, testClusterUUID))
 	} else {
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedClusterIDKey, testClusterUUID))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedClusterIDKey, testClusterUUID))
 	}
 
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
@@ -543,9 +543,9 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes["dt.entity.kubernetes_cluster"])
 
 				if tc.withDeprecatedAttributes {
-					assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes[metadatamutator.DeprecatedClusterIDKey])
-					assert.Equal(t, pod.OwnerReferences[0].Name, gotResourceAttributes[metadatamutator.DeprecatedWorkloadNameKey])
-					assert.Equal(t, strings.ToLower(pod.OwnerReferences[0].Kind), gotResourceAttributes[metadatamutator.DeprecatedWorkloadKindKey])
+					assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes[attributes.DeprecatedClusterIDKey])
+					assert.Equal(t, pod.OwnerReferences[0].Name, gotResourceAttributes[attributes.DeprecatedWorkloadNameKey])
+					assert.Equal(t, strings.ToLower(pod.OwnerReferences[0].Kind), gotResourceAttributes[attributes.DeprecatedWorkloadKindKey])
 				}
 
 				assert.Equal(t, url.QueryEscape(nsMetadataAnnotations["metadata.dynatrace.com/custom.ns-meta"]), gotResourceAttributes["custom.ns-meta"])
@@ -837,16 +837,16 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 				Webhooks: []admissionregistrationv1.MutatingWebhook{
 					{
 						Name:               "webhook.pod.dynatrace.com",
-						ReinvocationPolicy: ptr.To(admissionregistrationv1.IfNeededReinvocationPolicy),
-						FailurePolicy:      ptr.To(admissionregistrationv1.Ignore),
-						TimeoutSeconds:     ptr.To[int32](30),
+						ReinvocationPolicy: new(admissionregistrationv1.IfNeededReinvocationPolicy),
+						FailurePolicy:      new(admissionregistrationv1.Ignore),
+						TimeoutSeconds:     new(int32(30)),
 						Rules: []admissionregistrationv1.RuleWithOperations{
 							{
 								Rule: admissionregistrationv1.Rule{
 									APIGroups:   []string{""},
 									APIVersions: []string{"v1"},
 									Resources:   []string{"pods"},
-									Scope:       ptr.To(admissionregistrationv1.NamespacedScope),
+									Scope:       new(admissionregistrationv1.NamespacedScope),
 								},
 								Operations: []admissionregistrationv1.OperationType{
 									admissionregistrationv1.Create,
@@ -864,11 +864,11 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 						ClientConfig: admissionregistrationv1.WebhookClientConfig{
 							Service: &admissionregistrationv1.ServiceReference{
 								Name: "dynatrace-webhook",
-								Path: ptr.To("/inject"),
+								Path: new("/inject"),
 							},
 						},
 						AdmissionReviewVersions: []string{"v1beta1", "v1"},
-						SideEffects:             ptr.To(admissionregistrationv1.SideEffectClassNone),
+						SideEffects:             new(admissionregistrationv1.SideEffectClassNone),
 					},
 				},
 			},
@@ -1044,7 +1044,8 @@ func createPod(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *cor
 
 func createObject(t *testing.T, clt client.Client, obj client.Object) {
 	t.Helper()
-	require.NoError(t, clt.Create(t.Context(), obj))
+	err := clt.Create(t.Context(), obj)
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		// t.Context is no longer valid during cleanup
 		assert.NoError(t, clt.Delete(context.Background(), obj))
@@ -1108,7 +1109,7 @@ func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
 			Name:       deploy.Name,
 			APIVersion: deploy.APIVersion,
 			Kind:       deploy.Kind,
-			Controller: ptr.To(true),
+			Controller: new(true),
 			UID:        types.UID(uuid.NewString()),
 		},
 	}

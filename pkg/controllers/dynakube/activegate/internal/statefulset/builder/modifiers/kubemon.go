@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 var _ volumeModifier = KubernetesMonitoringModifier{}
@@ -52,7 +51,7 @@ func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
 	sts.Spec.Template.Spec.InitContainers = append(sts.Spec.Template.Spec.InitContainers, mod.getInitContainers()...)
-	sts.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(true)
+	sts.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 
 	return nil
 }
@@ -127,11 +126,11 @@ func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumeMounts() []corev1.V
 
 func GetSecurityContext(readOnlyRootFileSystem bool) *corev1.SecurityContext {
 	securityContext := corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		AllowPrivilegeEscalation: ptr.To(false),
-		RunAsNonRoot:             ptr.To(true),
-		RunAsUser:                ptr.To(consts.DockerImageUser),
-		RunAsGroup:               ptr.To(consts.DockerImageGroup),
+		Privileged:               new(false),
+		AllowPrivilegeEscalation: new(false),
+		RunAsNonRoot:             new(true),
+		RunAsUser:                new(consts.DockerImageUser),
+		RunAsGroup:               new(consts.DockerImageGroup),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -140,7 +139,7 @@ func GetSecurityContext(readOnlyRootFileSystem bool) *corev1.SecurityContext {
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
-		ReadOnlyRootFilesystem: ptr.To(readOnlyRootFileSystem),
+		ReadOnlyRootFilesystem: new(readOnlyRootFileSystem),
 	}
 
 	return &securityContext

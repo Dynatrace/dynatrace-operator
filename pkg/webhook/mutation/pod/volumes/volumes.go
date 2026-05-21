@@ -10,7 +10,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -107,7 +106,7 @@ func AddInputVolume(pod *corev1.Pod) {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: consts.BootstrapperInitSecretName,
 								},
-								Optional: ptr.To(false),
+								Optional: new(false),
 							},
 						},
 						{
@@ -115,7 +114,7 @@ func AddInputVolume(pod *corev1.Pod) {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: consts.BootstrapperInitCertsSecretName,
 								},
-								Optional: ptr.To(true),
+								Optional: new(true),
 							},
 						},
 					},
