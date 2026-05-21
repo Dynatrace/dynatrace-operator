@@ -4,8 +4,35 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func TestProbes(t *testing.T) {
+	expectedHTTPGet := &corev1.HTTPGetAction{
+		Path: "/",
+		Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
+	}
+
+	t.Run("liveness probe", func(t *testing.T) {
+		probe := buildLivenessProbe()
+		require.NotNil(t, probe)
+		assert.Equal(t, expectedHTTPGet, probe.HTTPGet)
+		assert.EqualValues(t, 10, probe.InitialDelaySeconds)
+		assert.EqualValues(t, 30, probe.PeriodSeconds)
+	})
+
+	t.Run("readiness probe", func(t *testing.T) {
+		probe := buildReadinessProbe()
+		require.NotNil(t, probe)
+		assert.Equal(t, expectedHTTPGet, probe.HTTPGet)
+		assert.EqualValues(t, 5, probe.InitialDelaySeconds)
+		assert.EqualValues(t, 10, probe.PeriodSeconds)
+	})
+}
 
 func TestContainer(t *testing.T) {
 	t.Run("only TelemetryIngest enabled", func(t *testing.T) {

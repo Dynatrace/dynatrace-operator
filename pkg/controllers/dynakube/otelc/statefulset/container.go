@@ -5,7 +5,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -24,6 +26,34 @@ func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
 		Args:            buildArgs(dk),
 		VolumeMounts:    buildContainerVolumeMounts(dk),
+		LivenessProbe:   buildLivenessProbe(),
+		ReadinessProbe:  buildReadinessProbe(),
+	}
+}
+
+func buildLivenessProbe() *corev1.Probe {
+	return &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/",
+				Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
+			},
+		},
+		InitialDelaySeconds: 10,
+		PeriodSeconds:       30,
+	}
+}
+
+func buildReadinessProbe() *corev1.Probe {
+	return &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/",
+				Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
+			},
+		},
+		InitialDelaySeconds: 5,
+		PeriodSeconds:       10,
 	}
 }
 
