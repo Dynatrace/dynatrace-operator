@@ -24,9 +24,9 @@ require (
 	go.opentelemetry.io/collector/service v0.152.1
 	go.uber.org/zap v1.28.0
 	golang.org/x/mod v0.36.0
-	golang.org/x/net v0.54.0
+	golang.org/x/net v0.55.0
 	golang.org/x/oauth2 v0.36.0
-	golang.org/x/sys v0.44.0
+	golang.org/x/sys v0.45.0
 	google.golang.org/grpc v1.81.1
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.30.0
