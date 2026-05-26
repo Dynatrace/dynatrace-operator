@@ -89,6 +89,12 @@ func BuildServiceName(dynakubeName string) string {
 	return dynakubeName + "-" + consts.MultiActiveGateName
 }
 
+// BuildServiceHostname returns the in-cluster DNS hostname of the ActiveGate Service:
+// "<dk-name>-activegate.<namespace>".
+func BuildServiceHostname(dk dynakube.DynaKube) string {
+	return fmt.Sprintf("%s.%s", BuildServiceName(dk.Name), dk.Namespace)
+}
+
 // BuildDNSEntryPoint will create a string listing of the full DNS entry points for the Service of the ActiveGate in the provided DynaKube.
 // Example: https://34.118.233.238:443,https://dynakube-activegate.dynatrace:443
 func BuildDNSEntryPoint(dk dynakube.DynaKube) string {
@@ -99,12 +105,12 @@ func BuildDNSEntryPoint(dk dynakube.DynaKube) string {
 			ip = "[" + ip + "]"
 		}
 
-		serviceHostEntry := buildDNSEntry(buildServiceHostName(ip))
+		serviceHostEntry := buildDNSEntry(withHTTPSPort(ip))
 		entries = append(entries, serviceHostEntry)
 	}
 
 	if dk.ActiveGate().IsRoutingEnabled() {
-		serviceDomain := buildServiceDomainName(dk.Name, dk.Namespace)
+		serviceDomain := buildServiceHostnameWithPort(dk)
 		serviceDomainEntry := buildDNSEntry(serviceDomain)
 		entries = append(entries, serviceDomainEntry)
 	}
@@ -127,18 +133,22 @@ func BuildHostEntries(dk dynakube.DynaKube) string {
 	}
 
 	if dk.ActiveGate().IsRoutingEnabled() {
-		entries = append(entries, fmt.Sprintf("%s.%s", BuildServiceName(dk.Name), dk.Namespace))
+		entries = append(entries, BuildServiceHostname(dk))
 	}
 
 	return strings.Join(entries, ",")
 }
 
-func buildServiceHostName(host string) string {
+// withHTTPSPort appends the HTTPS service port to an arbitrary host (IP or DNS name).
+// IPv6 addresses must already be bracketed by the caller.
+func withHTTPSPort(host string) string {
 	return fmt.Sprintf("%s:%d", host, consts.HTTPSServicePort)
 }
 
-func buildServiceDomainName(dynakubeName string, namespaceName string) string {
-	return fmt.Sprintf("%s.%s:%d", BuildServiceName(dynakubeName), namespaceName, consts.HTTPSServicePort)
+// buildServiceHostnameWithPort returns BuildServiceHostname(dk) suffixed with the HTTPS
+// service port: "<dk-name>-activegate.<namespace>:443".
+func buildServiceHostnameWithPort(dk dynakube.DynaKube) string {
+	return withHTTPSPort(BuildServiceHostname(dk))
 }
 
 func buildDNSEntry(host string) string {

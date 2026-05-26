@@ -5,5 +5,7 @@ const (
 )
 
 func (ff *FeatureFlags) EnableAttributesDTKubernetes() bool {
-	return ff.getBoolWithDefault(EnrichmentEnableAttributesDTKubernetes, true)
+	defaultVal := !ff.hasPlatformToken
+
+	return ff.getBoolWithDefault(EnrichmentEnableAttributesDTKubernetes, defaultVal)
 }
