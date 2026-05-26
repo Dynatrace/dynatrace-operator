@@ -94,11 +94,7 @@ func checkResourceAttributeSanitization(attrs map[string]string) (warns, errs st
 }
 
 func invalidGlobalResourceAttributes(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if errs := validateResourceAttributeMap(dk.Spec.ResourceAttributes); errs != "" {
-		return fmt.Sprintf(errorResourceAttributesInvalidGlobal, errs)
-	}
-
-	return ""
+	return formatIfNonEmpty(validateResourceAttributeMap(dk.Spec.ResourceAttributes), errorResourceAttributesInvalidGlobal)
 }
 
 func invalidOneAgentResourceAttributes(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -107,11 +103,7 @@ func invalidOneAgentResourceAttributes(_ context.Context, _ *Validator, dk *dyna
 		return ""
 	}
 
-	if errs := validateResourceAttributeMap(oa.GetAdditionalResourceAttributes()); errs != "" {
-		return fmt.Sprintf(errorResourceAttributesInvalidOneAgent, errs)
-	}
-
-	return ""
+	return formatIfNonEmpty(validateResourceAttributeMap(oa.GetAdditionalResourceAttributes()), errorResourceAttributesInvalidOneAgent)
 }
 
 func invalidOTLPResourceAttributes(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -120,11 +112,7 @@ func invalidOTLPResourceAttributes(_ context.Context, _ *Validator, dk *dynakube
 		return ""
 	}
 
-	if errs := validateResourceAttributeMap(otlpConfig.GetAdditionalResourceAttributes()); errs != "" {
-		return fmt.Sprintf(errorResourceAttributesInvalidOTLP, errs)
-	}
-
-	return ""
+	return formatIfNonEmpty(validateResourceAttributeMap(otlpConfig.GetAdditionalResourceAttributes()), errorResourceAttributesInvalidOTLP)
 }
 
 func globalResourceAttributesExceedsLimit(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -166,20 +154,14 @@ func otlpResourceAttributesExceedsLimit(_ context.Context, _ *Validator, dk *dyn
 
 func warnGlobalResourceAttributesSanitization(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	warns, _ := checkResourceAttributeSanitization(dk.Spec.ResourceAttributes)
-	if warns != "" {
-		return fmt.Sprintf(warnResourceAttributesSanitizationGlobal, warns)
-	}
 
-	return ""
+	return formatIfNonEmpty(warns, warnResourceAttributesSanitizationGlobal)
 }
 
 func invalidGlobalResourceAttributesSanitization(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	_, errs := checkResourceAttributeSanitization(dk.Spec.ResourceAttributes)
-	if errs != "" {
-		return fmt.Sprintf(errorResourceAttributesSanitizationGlobal, errs)
-	}
 
-	return ""
+	return formatIfNonEmpty(errs, errorResourceAttributesSanitizationGlobal)
 }
 
 func warnOneAgentResourceAttributesSanitization(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -189,11 +171,8 @@ func warnOneAgentResourceAttributesSanitization(_ context.Context, _ *Validator,
 	}
 
 	warns, _ := checkResourceAttributeSanitization(oa.GetAdditionalResourceAttributes())
-	if warns != "" {
-		return fmt.Sprintf(warnResourceAttributesSanitizationOneAgent, warns)
-	}
 
-	return ""
+	return formatIfNonEmpty(warns, warnResourceAttributesSanitizationOneAgent)
 }
 
 func invalidOneAgentResourceAttributesSanitization(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -203,11 +182,8 @@ func invalidOneAgentResourceAttributesSanitization(_ context.Context, _ *Validat
 	}
 
 	_, errs := checkResourceAttributeSanitization(oa.GetAdditionalResourceAttributes())
-	if errs != "" {
-		return fmt.Sprintf(errorResourceAttributesSanitizationOneAgent, errs)
-	}
 
-	return ""
+	return formatIfNonEmpty(errs, errorResourceAttributesSanitizationOneAgent)
 }
 
 func warnOTLPResourceAttributesSanitization(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -217,11 +193,8 @@ func warnOTLPResourceAttributesSanitization(_ context.Context, _ *Validator, dk 
 	}
 
 	warns, _ := checkResourceAttributeSanitization(otlpConfig.GetAdditionalResourceAttributes())
-	if warns != "" {
-		return fmt.Sprintf(warnResourceAttributesSanitizationOTLP, warns)
-	}
 
-	return ""
+	return formatIfNonEmpty(warns, warnResourceAttributesSanitizationOTLP)
 }
 
 func invalidOTLPResourceAttributesSanitization(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -231,9 +204,14 @@ func invalidOTLPResourceAttributesSanitization(_ context.Context, _ *Validator, 
 	}
 
 	_, errs := checkResourceAttributeSanitization(otlpConfig.GetAdditionalResourceAttributes())
-	if errs != "" {
-		return fmt.Sprintf(errorResourceAttributesSanitizationOTLP, errs)
+
+	return formatIfNonEmpty(errs, errorResourceAttributesSanitizationOTLP)
+}
+
+func formatIfNonEmpty(msg, fmtStr string) string {
+	if msg == "" {
+		return ""
 	}
 
-	return ""
+	return fmt.Sprintf(fmtStr, msg)
 }

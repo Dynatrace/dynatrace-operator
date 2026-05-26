@@ -4,7 +4,7 @@ import "regexp"
 
 var (
 	invalidKeyCharsRe      = regexp.MustCompile(`[^a-zA-Z0-9\-_.]`)
-	invalidKeyBoundariesRe = regexp.MustCompile(`^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$`)
+	invalidKeyBoundariesRe = regexp.MustCompile(`(?:^[^a-zA-Z0-9]+)|(?:[^a-zA-Z0-9]+$)`)
 )
 
 // SanitizeKey returns a sanitized copy of key that is valid as a Kubernetes annotation name segment.

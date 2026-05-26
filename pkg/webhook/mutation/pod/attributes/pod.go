@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,16 +31,13 @@ type Pod struct {
 
 	// read from the workload that owns the injected pod
 	workloadInfo map[string]string
-
 	// read from K8s cluster
-	clusterInfo map[string]string
-
+	clusterInfo  map[string]string
 	// read from the injected pod manifest
-	podInfo map[string]string
+	podInfo      map[string]string
 
 	// dt.kubernetes.* attributes that are deprecated and will be removed
-	deprecated map[string]string
-
+	deprecated    map[string]string
 	// include deprecated attributes in combined results
 	useDeprecated bool
 
@@ -83,6 +82,24 @@ func (attrs *Pod) SetCustomAttributes(custom map[string]string) {
 
 func (attrs *Pod) SetDynakubeAttributes(ctx context.Context, dkAttrs map[string]string) {
 	attrs.dynakube = sanitizeKeys(ctx, dkAttrs)
+}
+
+func sanitizeKeys(ctx context.Context, attrs map[string]string) map[string]string {
+	log := logd.FromContext(ctx)
+	sanitized := make(map[string]string, len(attrs))
+
+	for key, value := range attrs {
+		sanitizedKey := resourceattributes.SanitizeKey(key)
+		if sanitizedKey == "" {
+			log.Info("dropping resource attribute: key is empty after sanitization", "originalKey", key)
+
+			continue
+		}
+
+		sanitized[sanitizedKey] = value
+	}
+
+	return sanitized
 }
 
 func (attrs *Pod) GetPodEnvVars() []corev1.EnvVar {

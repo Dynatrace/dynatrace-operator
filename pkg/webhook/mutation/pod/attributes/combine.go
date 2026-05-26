@@ -24,6 +24,7 @@ const (
 )
 
 const (
+	// withDeprecated is not included; combineAll adds it conditionally.
 	caseAll = withWorkloadInfo | withPodInfo | withClusterInfo |
 		withContainerAttrs | withDynakube | withNamespaceAnnotations |
 		withRules | withRulesPropagate | withPodAnnotations | withCustom
@@ -36,7 +37,6 @@ const (
 )
 
 // combine copies maps into a single result in fixed precedence order (low → high).
-// Only maps whose bit is set in c are included.
 func (attrs *Pod) combine(c combinationCase, containerAttrs map[string]string) map[string]string {
 	type layer struct {
 		flag combinationCase
@@ -95,7 +95,7 @@ func (attrs *Pod) combineForJSONAnnotation() (string, error) {
 
 	marshaledAnnotations, err := json.Marshal(combined)
 	if err != nil {
-		return "", errors.WithMessage(errors.WithStack(err), "could not marshal metadata annotations to JSON")
+		return "", errors.Wrapf(err, "could not marshal metadata annotations to JSON")
 	}
 
 	return string(marshaledAnnotations), nil
