@@ -163,7 +163,7 @@ jobs:
           flc-namespace: dto
           flc-environment: dto-ocp-fips
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
-          target-image: ${{ format('{0}-fips', github.event.inputs.target || 'main') }}
+          target-branch: ${{ format('{0}-fips', github.event.inputs.target || 'main') }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
