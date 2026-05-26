@@ -411,7 +411,6 @@ func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollect
 	assert.Equal(t, oldSpec.ImageRef, newSpec.ImageRef)
 	assert.Equal(t, oldSpec.TLSRefName, newSpec.TLSRefName)
 	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
-	assert.Equal(t, oldSpec.NodeSelector, newSpec.NodeSelector)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 }
@@ -685,9 +684,6 @@ func getNewOpenTelemetryTemplateSpec() dynakubelatest.OpenTelemetryCollectorSpec
 				Name:    "claim-name",
 				Request: "claim-request",
 			}},
-		},
-		NodeSelector: map[string]string{
-			"otelc-node-selector-key": "otelc-node-selector-value",
 		},
 		Tolerations: []corev1.Toleration{
 			{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},

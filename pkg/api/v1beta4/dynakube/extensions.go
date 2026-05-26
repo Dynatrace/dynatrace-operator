@@ -79,10 +79,6 @@ type OpenTelemetryCollectorSpec struct {
 	// +kubebuilder:validation:Optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Node selector to control the selection of nodes for the OtelCollector pods
-	// +kubebuilder:validation:Optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
 	// Set tolerations for the OtelCollector pods
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`

@@ -567,9 +567,6 @@ func getOldOpenTelemetryTemplateSpec() OpenTelemetryCollectorSpec {
 				Request: "claim-request",
 			}},
 		},
-		NodeSelector: map[string]string{
-			"otelc-node-selector-key": "otelc-node-selector-value",
-		},
 		Tolerations: []corev1.Toleration{
 			{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
 		},

@@ -161,7 +161,6 @@ func fromOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src dynakub
 	}
 	dst.TLSRefName = src.TLSRefName
 	dst.Resources = src.Resources
-	dst.NodeSelector = src.NodeSelector
 	dst.Tolerations = src.Tolerations
 	dst.TopologySpreadConstraints = src.TopologySpreadConstraints
 
