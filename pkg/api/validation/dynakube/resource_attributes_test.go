@@ -474,7 +474,7 @@ func TestResourceAttributesSanitizationValidation(t *testing.T) {
 	t.Run("qualified label key that exceeds 63 chars after sanitization is an error", func(t *testing.T) {
 		// "some.prefix.example.com/name" is a valid label key; after sanitization "/" becomes "_"
 		// producing a single 63+-char name segment that is too long for an annotation.
-		prefix := strings.Repeat("a", 55) // 55-char prefix + "/" + "name" = 60 chars (valid label key)
+		prefix := strings.Repeat("a", 55)            // 55-char prefix + "/" + "name" = 60 chars (valid label key)
 		key := prefix + "/" + strings.Repeat("b", 9) // 55 + 1 + 9 = 65 chars total; sanitized = 64 chars > 63
 		dk := &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
