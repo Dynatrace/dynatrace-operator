@@ -18,3 +18,9 @@ const (
 	K8sWorkloadKindAttr = "k8s.workload.kind"
 	K8sWorkloadNameAttr = "k8s.workload.name"
 )
+
+var SafeEnvRefs = []string{
+	K8sPodNameEnv,
+	K8sPodUIDEnv,
+	K8sNodeNameEnv,
+}
