@@ -54,6 +54,14 @@ func TestCombine_ContainerWinsOverClusterInfo(t *testing.T) {
 	assert.Equal(t, "from-container", result[K8sContainerNameAttr])
 }
 
+func TestCombine_DynakubeWinsOverContainer(t *testing.T) {
+	attrs := newTestPodAttributes()
+	container := Container{ContainerName: "from-container"}
+	attrs.dynakube[K8sContainerNameAttr] = "from-dynakube"
+	result := attrs.combineAll(container)
+	assert.Equal(t, "from-dynakube", result[K8sContainerNameAttr])
+}
+
 func TestCombine_RulesWinsOverContainer(t *testing.T) {
 	attrs := newTestPodAttributes()
 	attrs.rules[K8sContainerNameAttr] = "from-rules"

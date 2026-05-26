@@ -32,12 +32,12 @@ type Pod struct {
 	// read from the workload that owns the injected pod
 	workloadInfo map[string]string
 	// read from K8s cluster
-	clusterInfo  map[string]string
+	clusterInfo map[string]string
 	// read from the injected pod manifest
-	podInfo      map[string]string
+	podInfo map[string]string
 
 	// dt.kubernetes.* attributes that are deprecated and will be removed
-	deprecated    map[string]string
+	deprecated map[string]string
 	// include deprecated attributes in combined results
 	useDeprecated bool
 
