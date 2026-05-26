@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kspm"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
@@ -82,6 +83,26 @@ func TestNoCSI_metadata_enrichment_without_deprecated_attributes(t *testing.T) {
 
 func TestNoCSI_otlp_exporter_configuration(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.OTLPExporterConfiguration(t))
+}
+
+func TestNoCSI_resource_attributes_logmon_only(t *testing.T) {
+	testEnv.Test(t, resourceattributes.LogmonOnly(t))
+}
+
+func TestNoCSI_resource_attributes_metadata_only(t *testing.T) {
+	testEnv.Test(t, resourceattributes.MetadataOnly(t))
+}
+
+func TestNoCSI_resource_attributes_oneagent(t *testing.T) {
+	testEnv.Test(t, resourceattributes.OneAgent(t))
+}
+
+func TestNoCSI_resource_attributes_otel(t *testing.T) {
+	testEnv.Test(t, resourceattributes.OtelAutoconfig(t))
+}
+
+func TestNoCSI_resource_attributes_combined(t *testing.T) {
+	testEnv.Test(t, resourceattributes.Combined(t))
 }
 
 func TestNoCSI_labelversion(t *testing.T) {
