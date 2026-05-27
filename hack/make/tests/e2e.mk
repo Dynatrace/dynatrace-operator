@@ -17,7 +17,7 @@ test/e2e/%/olm:
 test/e2e/%/fips:
 	@make FIPS=true $(@D)
 
-## Run any e2e test with platform token authentication
+## Run any e2e test with platform token
 test/e2e/%/platform-token:
 	@make PLATFORM_TOKEN=true $(@D)
 

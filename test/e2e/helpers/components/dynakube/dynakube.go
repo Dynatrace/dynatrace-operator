@@ -54,11 +54,11 @@ func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Lev
 }
 
 func Create(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, testDynakube dynakube.DynaKube) {
-	if tenant.IsPlatformToken() && testDynakube.Spec.CustomPullSecret == "" {
+	if tenant.WithPlatformToken() && testDynakube.Spec.CustomPullSecret == "" {
 		testDynakube.Spec.CustomPullSecret = e2econst.DevRegistryPullSecretName
 	}
-	if tokens.APIToken != "" || tokens.DataIngestToken != "" || tokens.PlatformToken != "" {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace, tenant.IsPlatformToken()))
+	if !tokens.IsEmpty() {
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),
@@ -71,8 +71,8 @@ func Update(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
 }
 
 func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, prevDK prevDynakube.DynaKube) {
-	if tokens.APIToken != "" || tokens.DataIngestToken != "" || tokens.PlatformToken != "" {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, prevDK.Name, prevDK.Namespace, tenant.IsPlatformToken()))
+	if !tokens.IsEmpty() {
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, prevDK.Name, prevDK.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", prevDK.Name),

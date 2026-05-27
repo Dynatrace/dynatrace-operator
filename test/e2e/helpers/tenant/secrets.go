@@ -41,7 +41,6 @@ type Secret struct {
 type Tokens struct {
 	APIToken        string
 	DataIngestToken string
-	PlatformToken   string
 }
 
 type EdgeConnectSecret struct {
@@ -62,18 +61,28 @@ func (s Secret) TokensWithoutSettingsScope() Tokens {
 }
 
 func (s Secret) tokens(hasSettingsScope bool) Tokens {
-	t := Tokens{
-		DataIngestToken: s.DataIngestToken,
-		PlatformToken:   s.PlatformToken,
+	if WithPlatformToken() {
+		return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestToken}
 	}
 
-	if hasSettingsScope {
-		t.APIToken = s.APIToken
-	} else {
-		t.APIToken = s.APITokenNoSettings
+	t := s.APIToken
+	if !hasSettingsScope {
+		t = s.APITokenNoSettings
 	}
 
-	return t
+	return Tokens{APIToken: t, DataIngestToken: s.DataIngestToken}
+}
+
+func (s Secret) PlatformTokens() Tokens {
+	return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestToken}
+}
+
+func (s Secret) ClassicTokens() Tokens {
+	return Tokens{APIToken: s.APIToken, DataIngestToken: s.DataIngestToken}
+}
+
+func (t Tokens) IsEmpty() bool {
+	return t.APIToken == "" && t.DataIngestToken == ""
 }
 
 func manyFromConfig(path string) ([]Secret, error) {
@@ -137,21 +146,14 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	return result
 }
 
-// IsPlatformToken reports whether the test run is configured to use a platform token
+// WithPlatformToken reports whether the test run is configured to use a platform token
 // instead of a classic API token (controlled by the PLATFORM_TOKEN=true env var).
-func IsPlatformToken() bool {
+func WithPlatformToken() bool {
 	return os.Getenv("PLATFORM_TOKEN") == "true"
 }
 
-func CreateTenantSecret(tokens Tokens, name, namespace string, usePlatformToken bool) features.Func {
+func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		token := tokens.APIToken
-
-		if usePlatformToken {
-			t.Log("using platform token for tenant secret")
-			token = tokens.PlatformToken
-		}
-
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -161,7 +163,7 @@ func CreateTenantSecret(tokens Tokens, name, namespace string, usePlatformToken 
 				},
 			},
 			Data: map[string][]byte{
-				"apiToken": []byte(token),
+				"apiToken": []byte(tokens.APIToken),
 			},
 		}
 

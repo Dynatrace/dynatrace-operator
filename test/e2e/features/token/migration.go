@@ -13,7 +13,7 @@ import (
 )
 
 func FromPlatformToAPIToken(t *testing.T) features.Feature {
-	if !tenant.IsPlatformToken() {
+	if !tenant.WithPlatformToken() {
 		t.Skip("skip test from platform to api token if default is api token")
 	}
 	builder := features.New("migrate-from-platform-to-api-token")
@@ -28,7 +28,7 @@ func FromPlatformToAPIToken(t *testing.T) features.Feature {
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("update tenant secret to api token",
-		tenant.CreateTenantSecret(secretConfig.TokensWithSettingsScope(), testDynakube.Name, testDynakube.Namespace, false))
+		tenant.CreateTenantSecret(secretConfig.ClassicTokens(), testDynakube.Name, testDynakube.Namespace))
 	componentDynakube.TriggerReconciliation(builder, testDynakube)
 	componentDynakube.VerifyStartup(builder, features.LevelAssess, testDynakube)
 
@@ -36,7 +36,7 @@ func FromPlatformToAPIToken(t *testing.T) features.Feature {
 }
 
 func FromAPIToPlatformToken(t *testing.T) features.Feature {
-	if tenant.IsPlatformToken() {
+	if tenant.WithPlatformToken() {
 		t.Skip("skip test from api to platform token if default is platform token")
 	}
 
@@ -53,7 +53,7 @@ func FromAPIToPlatformToken(t *testing.T) features.Feature {
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("update tenant secret to platform token",
-		tenant.CreateTenantSecret(secretConfig.TokensWithSettingsScope(), testDynakube.Name, testDynakube.Namespace, true))
+		tenant.CreateTenantSecret(secretConfig.PlatformTokens(), testDynakube.Name, testDynakube.Namespace))
 	componentDynakube.TriggerReconciliation(builder, testDynakube)
 	componentDynakube.VerifyStartup(builder, features.LevelAssess, testDynakube)
 
