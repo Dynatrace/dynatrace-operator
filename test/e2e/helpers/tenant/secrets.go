@@ -53,6 +53,14 @@ type EdgeConnectSecret struct {
 	Resource          string `yaml:"resource"`
 }
 
+func (s Secret) TokensWithSettingsScope() Tokens {
+	return s.tokens(true)
+}
+
+func (s Secret) TokensWithoutSettingsScope() Tokens {
+	return s.tokens(false)
+}
+
 func (s Secret) tokens(hasSettingsScope bool) Tokens {
 	t := Tokens{
 		DataIngestToken: s.DataIngestToken,
@@ -66,14 +74,6 @@ func (s Secret) tokens(hasSettingsScope bool) Tokens {
 	}
 
 	return t
-}
-
-func (s Secret) TokensWithSettingsScope() Tokens {
-	return s.tokens(true)
-}
-
-func (s Secret) TokensWithoutSettingsScope() Tokens {
-	return s.tokens(false)
 }
 
 func manyFromConfig(path string) ([]Secret, error) {
@@ -143,12 +143,12 @@ func IsPlatformToken() bool {
 	return os.Getenv("PLATFORM_TOKEN") == "true"
 }
 
-func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
+func CreateTenantSecret(tokens Tokens, name, namespace string, usePlatformToken bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		token := tokens.APIToken
 
-		if IsPlatformToken() {
-			t.Log("platform token mode: using platform token for tenant secret")
+		if usePlatformToken {
+			t.Log("using platform token for tenant secret")
 			token = tokens.PlatformToken
 		}
 

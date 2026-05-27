@@ -43,7 +43,7 @@ func CheckKSPMSettingsExistOnTenant(secretConfig tenant.Secret, dk *dynakube.Dyn
 
 		require.NotEmpty(t, dk.Status.KubernetesClusterMEID, "KubernetesClusterMEID must be populated in DynaKube status")
 
-		settingsClient, err := BuildSettingsClient(secretConfig, false)
+		settingsClient, err := BuildSettingsClient(secretConfig, tenant.IsPlatformToken())
 		require.NoError(t, err)
 
 		kspmSettings, err := settingsClient.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
@@ -65,7 +65,7 @@ func DeleteKSPMSettingsFromTenant(secretConfig tenant.Secret) features.Func {
 		kubeSystemUUID := string(kubeSystemNS.UID)
 		t.Logf("kube-system UUID: %s", kubeSystemUUID)
 
-		settingsClient, err := BuildSettingsClient(secretConfig, false)
+		settingsClient, err := BuildSettingsClient(secretConfig, tenant.IsPlatformToken())
 		require.NoError(t, err, "Could not build settings client")
 
 		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)

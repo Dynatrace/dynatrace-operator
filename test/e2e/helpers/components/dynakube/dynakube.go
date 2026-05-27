@@ -58,7 +58,7 @@ func Create(builder *features.FeatureBuilder, level features.Level, tokens tenan
 		testDynakube.Spec.CustomPullSecret = e2econst.DevRegistryPullSecretName
 	}
 	if tokens.APIToken != "" || tokens.DataIngestToken != "" || tokens.PlatformToken != "" {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace))
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace, tenant.IsPlatformToken()))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),
@@ -72,7 +72,7 @@ func Update(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
 
 func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, prevDK prevDynakube.DynaKube) {
 	if tokens.APIToken != "" || tokens.DataIngestToken != "" || tokens.PlatformToken != "" {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, prevDK.Name, prevDK.Namespace))
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, prevDK.Name, prevDK.Namespace, tenant.IsPlatformToken()))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", prevDK.Name),
@@ -166,6 +166,40 @@ func update(dk dynakube.DynaKube) features.Func {
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &oldDK))
 		dk.ResourceVersion = oldDK.ResourceVersion
 		require.NoError(t, envConfig.Client().Resources().Update(ctx, &dk))
+
+		return ctx
+	}
+}
+
+// TriggerReconciliation forces an immediate reconcile by adding a timestamp annotation to the DynaKube,
+// then waits until UpdatedTimestamp advances to confirm the reconcile completed.
+// Needed when an external resource (e.g. the tenant secret) is updated but lacks an owner reference,
+// so the controller would not otherwise be notified of the change.
+func TriggerReconciliation(builder *features.FeatureBuilder, dk dynakube.DynaKube) {
+	builder.WithStep("triggered dynakube reconciliation", features.LevelAssess, triggerReconciliation(dk))
+}
+
+func triggerReconciliation(dk dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		var current dynakube.DynaKube
+		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, &current))
+
+		beforeTime := current.Status.UpdatedTimestamp.Time
+
+		if current.Annotations == nil {
+			current.Annotations = map[string]string{}
+		}
+		current.Annotations["test.dynatrace.com/reconcile-trigger"] = time.Now().Format(time.RFC3339Nano)
+		require.NoError(t, resources.Update(ctx, &current))
+
+		err := wait.For(conditions.New(resources).ResourceMatch(&current, func(object k8s.Object) bool {
+			updated, ok := object.(*dynakube.DynaKube)
+
+			return ok && updated.Status.UpdatedTimestamp.After(beforeTime)
+		}), wait.WithTimeout(2*time.Minute))
+		require.NoError(t, err)
 
 		return ctx
 	}

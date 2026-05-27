@@ -187,6 +187,7 @@ jobs:
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           use-platform-token: "true"
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -286,7 +287,7 @@ jobs:
   notify-slack:
     name: Notify test results in Slack
     environment: E2E
-    needs: [ "run-in-k8s", "run-in-k8s-platform-token", "run-in-ocp", "run-in-k8s-platform-token", "run-in-ocp-fips", "run-in-ocp-olm"]
+    needs: [ "run-in-k8s", "run-in-k8s-platform-token", "run-in-ocp", "run-in-ocp-platform-token", "run-in-ocp-fips", "run-in-ocp-olm"]
     runs-on: ubuntu-24.04
     if: ${{ always() }}
     steps:
@@ -302,7 +303,7 @@ jobs:
           K8S_JOB_ID: ${{ needs.run-in-k8s.outputs.job_id }}
           K8S_RESULT: ${{ needs.run-in-k8s.result }}
           K8S_PLATFORM_TOKEN_CLUSTER_STATUS: ${{ needs.run-in-k8s-platform-token.outputs.cluster_status }}
-          K8S_PLATFORM_TOKEN_JOB_ID: ${{ needs.run-in-k8s-platfrom-token.outputs.job_id }}
+          K8S_PLATFORM_TOKEN_JOB_ID: ${{ needs.run-in-k8s-platform-token.outputs.job_id }}
           K8S_PLATFORM_TOKEN_RESULT: ${{ needs.run-in-k8s-platform-token.result }}
           OCP_CLUSTER_STATUS: ${{ needs.run-in-ocp.outputs.cluster_status }}
           OCP_JOB_ID: ${{ needs.run-in-ocp.outputs.job_id }}

@@ -28,7 +28,7 @@ echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
 if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
   echo "run no csi tests suite using OLM"
-  # What to do with olm tests? I guess do not run
+  # TODO What to do with olm tests? I guess do not run
   make test/e2e/no-csi/publish/olm
 elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
   echo "run fips e2e test suites"
