@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -x
+set -eu -o pipefail
 
 echo "Destroying environment '$FLC_ENVIRONMENT' in namespace '$FLC_NAMESPACE'"
 
