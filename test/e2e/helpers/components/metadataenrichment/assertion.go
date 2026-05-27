@@ -5,6 +5,7 @@ package metadataenrichment
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
@@ -16,7 +17,8 @@ import (
 )
 
 const (
-	MetadataFile = "/var/lib/dynatrace/enrichment/dt_metadata.json"
+	MetadataFile   = "/var/lib/dynatrace/enrichment/dt_metadata.json"
+	PropertiesFile = "/var/lib/dynatrace/enrichment/dt_node_metadata.properties"
 )
 
 type Metadata struct {
@@ -28,10 +30,26 @@ type Metadata struct {
 	DTWorkloadName string `json:"dt.kubernetes.workload.name,omitempty"`
 }
 
-func GetMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) Metadata {
+func GetMetadataJSONFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) Metadata {
+	content := readMetadataFile(ctx, t, resource, enrichedPod, MetadataFile)
+
+	var enrichmentMetadata Metadata
+	err := json.Unmarshal(content, &enrichmentMetadata)
+	require.NoError(t, err)
+
+	return enrichmentMetadata
+}
+
+func GetMetadataPropertiesFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {
+	properties := readMetadataFile(ctx, t, resource, enrichedPod, PropertiesFile)
+
+	return parseProperties(string(properties))
+}
+
+func readMetadataFile(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod, path string) []byte {
 	require.NotEmpty(t, enrichedPod.Spec.Containers)
 	enrichedContainer := enrichedPod.Spec.Containers[0].Name
-	readMetadataCommand := shell.ReadFile(MetadataFile)
+	readMetadataCommand := shell.ReadFile(path)
 	result, err := k8spod.Exec(ctx, resource, enrichedPod, enrichedContainer, readMetadataCommand...)
 
 	require.NoError(t, err)
@@ -39,10 +57,25 @@ func GetMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.R
 	assert.Zero(t, result.StdErr.Len())
 	assert.NotEmpty(t, result.StdOut)
 
-	var enrichmentMetadata Metadata
-	err = json.Unmarshal(result.StdOut.Bytes(), &enrichmentMetadata)
+	return result.StdOut.Bytes()
+}
 
-	require.NoError(t, err)
+func parseProperties(text string) map[string]string {
+	m := make(map[string]string)
 
-	return enrichmentMetadata
+	for line := range strings.Lines(text) {
+		l := strings.TrimSpace(line)
+		if l == "" {
+			continue
+		}
+
+		key, value, found := strings.Cut(l, "=")
+		if !found {
+			continue
+		}
+
+		m[key] = value
+	}
+
+	return m
 }
