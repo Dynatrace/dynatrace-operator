@@ -20,7 +20,7 @@ rules:
     verbs: ["create", "get", "update", "patch", "delete", "list"]
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["clusterrolebindings", "clusterroles", "rolebindings", "roles"]
-    verbs: ["create", "get", "update", "delete", "list", "bind", "escalate"]
+    verbs: ["create", "get", "update", "patch", "delete", "list", "bind", "escalate"]
   - apiGroups: ["scheduling.k8s.io"]
     resources: ["priorityclasses"]
     verbs: ["create", "get", "update", "patch", "delete", "list"]

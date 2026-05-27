@@ -3,6 +3,7 @@
 package deployersamples
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
 const (
@@ -131,7 +130,7 @@ func Feature(t *testing.T, v variant) features.Feature {
 		t.Helper()
 
 		// Always attempt uninstall (may already be cleaned up on failure path)
-		helmUninstall(t)
+		helmUninstall(t, v)
 
 		_, err := manifests.UninstallFromFile(v.clusterRole)(ctx, c)
 		assert.NoError(t, err)
@@ -178,21 +177,63 @@ func assessInstallFails(ctx context.Context, t *testing.T, v variant) context.Co
 	return ctx
 }
 
-func helmInstall(v variant) error {
-	return operator.InstallViaHelm("", v.csiEnabled,
-		helm.WithArgs("--kube-as-user", v.serviceAccount),
-	)
+func resolveOperatorImage() (string, error) {
+	cmd := exec.Command("make", "-C", project.RootDir(), "deploy/show-image-ref")
+	cmd.Env = os.Environ()
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve operator image: %w", err)
+	}
+
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		if !strings.HasPrefix(line, "make") {
+			return strings.TrimSpace(line), nil
+		}
+	}
+
+	return "", fmt.Errorf("could not parse operator image from make output")
 }
 
-func helmUninstall(t *testing.T) {
+func helmInstall(v variant) error {
+	imageRef, err := resolveOperatorImage()
+	if err != nil {
+		return err
+	}
+
+	chartPath := filepath.Join(project.RootDir(), "config", "helm", "chart", "default")
+
+	args := []string{
+		"upgrade", "--install", releaseName, chartPath,
+		"--namespace", targetNamespace,
+		"--create-namespace",
+		"--set", "installCRD=true",
+		"--set", fmt.Sprintf("csidriver.enabled=%t", v.csiEnabled),
+		"--set", "platform=kubernetes",
+		"--set", "manifests=true",
+		"--set", "image=" + imageRef,
+		"--set", "imageRef.pullPolicy=Always",
+		"--kube-as-user", v.serviceAccount,
+	}
+
+	cmd := exec.Command("helm", args...)
+	stderr := new(bytes.Buffer)
+	cmd.Stderr = stderr
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("%s: %w", strings.TrimSpace(stderr.String()), err)
+	}
+
+	return nil
+}
+
+func helmUninstall(t *testing.T, _ variant) {
 	t.Helper()
 
-	err := operator.UninstallViaHelm(
-		helm.WithReleaseName(releaseName),
-		helm.WithNamespace(targetNamespace),
-	)
-	if err != nil {
-		t.Logf("helm uninstall warning (may not have been installed): %v", err)
+	cmd := exec.Command("helm", "uninstall", releaseName, "--namespace", targetNamespace)
+
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Logf("helm uninstall warning (may not have been installed): %s", strings.TrimSpace(string(out)))
 	}
 }
 
