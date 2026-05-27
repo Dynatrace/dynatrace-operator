@@ -217,7 +217,7 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 
 	// if target branch is set and not main, it means that we are running tests on a feature branch, so we want to
 	// install the operator using local helm chart and target branch
-	if targetBranch := os.Getenv("TARGET_BRANCH"); targetBranch != "main" {
+	if targetBranch, ok := os.LookupEnv("TARGET_BRANCH"); ok && targetBranch != "main" {
 		return append(opts,
 			helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
 			helm.WithArgs("--set", "imageRef.pullPolicy=Always"),
