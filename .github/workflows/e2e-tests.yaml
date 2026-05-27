@@ -16,12 +16,33 @@ on:
         options:
          - oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart
          - ""
+      run-e2e-in-k8s:
+        description: 'Run E2E tests in Kubernetes cluster'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-ocp:
+        description: 'Run E2E tests in OpenShift cluster'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-ocp-olm:
+        description: 'Run OLM E2E tests in OpenShift cluster'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-ocp-fips:
+        description: 'Run E2E tests in using FIPS OpenShift cluster'
+        default: true
+        required: false
+        type: boolean
 
 permissions:
   checks: write
 
 jobs:
   run-in-k8s:
+    if: ${{ github.event.inputs.run-e2e-in-k8s != 'false' }}
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
@@ -63,6 +84,7 @@ jobs:
             exit 1
           fi
   run-in-ocp:
+    if: ${{ github.event.inputs.run-e2e-in-ocp != 'false' }}
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
@@ -104,6 +126,7 @@ jobs:
             exit 1
           fi
   run-in-ocp-olm:
+    if: ${{ github.event.inputs.run-e2e-in-ocp-olm != 'false' }}
     name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
@@ -145,6 +168,7 @@ jobs:
             exit 1
           fi
   run-in-ocp-fips:
+    if: ${{ github.event.inputs.run-e2e-in-ocp-fips != 'false' }}
     name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
