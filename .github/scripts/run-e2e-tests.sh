@@ -32,8 +32,6 @@ if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
 elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
   echo "run fips e2e test suites"
   make BRANCH="$TARGET_BRANCH" FIPS=true test/e2e-publish
-elif [[ -n "${TARGET_IMAGE}" ]]; then
-  make IMAGE_URI="$TARGET_IMAGE" test/e2e-publish
 else
   echo "fall back to default branch target"
   make BRANCH="$TARGET_BRANCH" test/e2e-publish
