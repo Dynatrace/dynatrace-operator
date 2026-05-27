@@ -27,7 +27,7 @@ HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
 GO_TEST_COVERAGE_VERSION ?= v2.18.8
 # renovate depName=github.com/openapitools/openapi-generator-cli
-OPENAPI_GENERATOR_CLI_VERSION ?= 2.32.0
+OPENAPI_GENERATOR_CLI_VERSION ?= v2.34.0+incompatible
 
 # Enable renovate once project is migrated to newer structure
 OPERATOR_SDK_VERSION ?= v1.36.0
