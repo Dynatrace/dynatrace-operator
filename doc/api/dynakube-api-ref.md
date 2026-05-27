@@ -119,6 +119,7 @@
 |:-|:-|:-|:-|
 |`annotations`||-|object|
 |`labels`||-|object|
+|`nodeSelector`||-|object|
 |`replicas`||-|integer|
 |`resources`||-|object|
 |`tlsRefName`||-|string|

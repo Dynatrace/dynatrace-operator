@@ -404,6 +404,29 @@ func TestTolerations(t *testing.T) {
 	})
 }
 
+func TestNodeSelector(t *testing.T) {
+	t.Run("the default nodeSelector is empty", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+
+		assert.Empty(t, statefulSet.Spec.Template.Spec.NodeSelector)
+	})
+
+	t.Run("custom nodeSelector is propagated to the pod spec", func(t *testing.T) {
+		dk := getTestDynakubeWithExtensions()
+
+		customNodeSelector := map[string]string{
+			"foo":                     "bar",
+			"kubernetes.io/os":        "linux",
+			"cloud.google.com/gke-os": "ubuntu",
+		}
+		dk.Spec.Templates.OpenTelemetryCollector.NodeSelector = customNodeSelector
+
+		statefulSet := getStatefulset(t, dk)
+
+		assert.Equal(t, customNodeSelector, statefulSet.Spec.Template.Spec.NodeSelector)
+	})
+}
+
 func TestSecurityContext(t *testing.T) {
 	t.Run("the default securityContext is set", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
