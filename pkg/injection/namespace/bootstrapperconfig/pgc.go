@@ -18,7 +18,7 @@ const (
 )
 
 const (
-	declarativeInputFileName = "declarative.cbor"
+	DeclarativeInputFileName = "declarative.cbor"
 	declarativeWarnSizeBytes = 800 * KiB
 	declarativeMaxSizeBytes  = 900 * KiB
 
@@ -32,7 +32,7 @@ func (s *SecretGenerator) addPGC(ctx context.Context, dk *dynakube.DynaKube, dat
 	}
 
 	if pgc != nil && len(pgc.Data) != 0 {
-		data[declarativeInputFileName] = pgc.Data
+		data[DeclarativeInputFileName] = pgc.Data
 		annotations[annotationPGCETag] = pgc.ETag
 	}
 
@@ -91,6 +91,6 @@ func (s *SecretGenerator) readCachedPGC(ctx context.Context, dk *dynakube.DynaKu
 
 	return &oneagent.ProcessGroupConfig{
 		ETag: secret.Annotations[annotationPGCETag],
-		Data: secret.Data[declarativeInputFileName],
+		Data: secret.Data[DeclarativeInputFileName],
 	}
 }

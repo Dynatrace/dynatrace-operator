@@ -145,6 +145,7 @@ type HostInjectSpec struct {
 	// Additional resource attributes that are merged on top of the global spec.resourceAttributes.
 	// If the same key exists in both, the value from additionalResourceAttributes takes precedence.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxProperties=10
 	AdditionalResourceAttributes map[string]string `json:"additionalResourceAttributes,omitempty"`
 }
 
@@ -162,6 +163,7 @@ type ApplicationMonitoringSpec struct {
 	// Additional resource attributes that are merged on top of the global spec.resourceAttributes.
 	// If the same key exists in both, the value from additionalResourceAttributes takes precedence.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxProperties=10
 	AdditionalResourceAttributes map[string]string `json:"additionalResourceAttributes,omitempty"`
 }
 

@@ -204,14 +204,8 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 		), nil
 	}
 
-	// Install nightly
-	if chartURI := os.Getenv("HELM_CHART"); strings.HasSuffix(chartURI, ":0.0.0-nightly-chart") {
-		return append(opts, helm.WithArgs(chartURI)), nil
-	}
-
-	// Install from filesystem
-	isFIPS := os.Getenv("FIPS") == "true"
 	rootDir := project.RootDir()
+	isFIPS := os.Getenv("FIPS") == "true"
 	imageRef, err := getImageRef(rootDir, isFIPS)
 	if err != nil {
 		return nil, err
@@ -219,6 +213,21 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 
 	if imageRef == "" {
 		return nil, errors.New("could not determine operator image")
+	}
+
+	// if target branch is set and not main, it means that we are running tests on a feature branch, so we want to
+	// install the operator using local helm chart and target branch
+	if targetBranch := os.Getenv("TARGET_BRANCH"); targetBranch != "main" {
+		return append(opts,
+			helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
+			helm.WithArgs("--set", "imageRef.pullPolicy=Always"),
+			helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
+		), nil
+	}
+
+	// Install nightly
+	if chartURI := os.Getenv("HELM_CHART"); strings.HasSuffix(chartURI, ":0.0.0-nightly-chart") {
+		return append(opts, helm.WithArgs(chartURI)), nil
 	}
 
 	return append(opts,
