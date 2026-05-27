@@ -8,44 +8,59 @@ import (
 
 func TestEnableAttributesDtKubernetes(t *testing.T) {
 	type testCase struct {
-		title string
-		in    string
-		out   bool
+		title            string
+		hasPlatformToken bool
+		in               string
+		out              bool
 	}
 
 	cases := []testCase{
+		// Classic token (apiToken) — opt-out: enabled by default, user must explicitly disable.
 		{
-			title: "default",
-			in:    "",
-			out:   true,
+			title:            "classic token: default (no annotation) => true",
+			hasPlatformToken: false,
+			in:               "",
+			out:              true,
 		},
 		{
-			title: "overrule to true",
-			in:    "true",
-			out:   true,
+			title:            "classic token: overrule to true",
+			hasPlatformToken: false,
+			in:               "true",
+			out:              true,
 		},
 		{
-			title: "overrule to false",
-			in:    "false",
-			out:   false,
+			title:            "classic token: overrule to false",
+			hasPlatformToken: false,
+			in:               "false",
+			out:              false,
+		},
+		// Platform token — opt-in: disabled by default, user must explicitly enable.
+		{
+			title:            "platform token: default (no annotation) => false",
+			hasPlatformToken: true,
+			in:               "",
+			out:              false,
 		},
 		{
-			title: "uppercase TRUE",
-			in:    "TRUE",
-			out:   true,
+			title:            "platform token: overrule to true",
+			hasPlatformToken: true,
+			in:               "true",
+			out:              true,
 		},
 		{
-			title: "uppercase FALSE",
-			in:    "FALSE",
-			out:   false,
+			title:            "platform token: overrule to false",
+			hasPlatformToken: true,
+			in:               "false",
+			out:              false,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				EnrichmentEnableAttributesDTKubernetes: c.in,
-			}}
+			ff := FeatureFlags{
+				annotations:      map[string]string{EnrichmentEnableAttributesDTKubernetes: c.in},
+				hasPlatformToken: c.hasPlatformToken,
+			}
 
 			out := ff.EnableAttributesDTKubernetes()
 

@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ import (
 
 func TestSplitCommunicationHost(t *testing.T) {
 	t.Run("empty => no fail", func(t *testing.T) {
-		ipHosts, fqdnHosts := splitCommunicationHost([]CommunicationHost{})
+		ipHosts, fqdnHosts := splitCommunicationHost([]connectioninfo.CommunicationHost{})
 		require.Nil(t, ipHosts)
 		require.Nil(t, fqdnHosts)
 	})
@@ -32,7 +33,7 @@ func TestSplitCommunicationHost(t *testing.T) {
 		require.Nil(t, fqdnHosts)
 	})
 	t.Run("success", func(t *testing.T) {
-		comHosts := []CommunicationHost{
+		comHosts := []connectioninfo.CommunicationHost{
 			createTestIPCommunicationHost(),
 			createTestFQDNCommunicationHost(),
 			createTestIPCommunicationHost(),
@@ -74,7 +75,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		dk := createTestDynaKube()
 		fakeClient := fake.NewClientWithIndex()
 		reconciler := NewReconciler(fakeClient, fakeClient)
-		commHosts := []CommunicationHost{
+		commHosts := []connectioninfo.CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
@@ -98,7 +99,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		fakeClient := createFailK8sClient()
 
 		reconciler := NewReconciler(fakeClient, fakeClient)
-		commHosts := []CommunicationHost{
+		commHosts := []connectioninfo.CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
@@ -140,7 +141,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		owner := createTestDynaKube()
 		fakeClient := fake.NewClientWithIndex()
 		reconciler := NewReconciler(fakeClient, fakeClient)
-		commHosts := []CommunicationHost{
+		commHosts := []connectioninfo.CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
 
@@ -174,7 +175,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		fakeClient := createFailK8sClient()
 
 		reconciler := NewReconciler(fakeClient, fakeClient)
-		commHosts := []CommunicationHost{
+		commHosts := []connectioninfo.CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
 
@@ -482,16 +483,16 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 	})
 }
 
-func createTestIPCommunicationHost() CommunicationHost {
-	return CommunicationHost{
+func createTestIPCommunicationHost() connectioninfo.CommunicationHost {
+	return connectioninfo.CommunicationHost{
 		Protocol: "http",
 		Host:     "42.42.42.42",
 		Port:     620,
 	}
 }
 
-func createTestFQDNCommunicationHost() CommunicationHost {
-	return CommunicationHost{
+func createTestFQDNCommunicationHost() connectioninfo.CommunicationHost {
+	return connectioninfo.CommunicationHost{
 		Protocol: "http",
 		Host:     "something.test.io",
 		Port:     620,

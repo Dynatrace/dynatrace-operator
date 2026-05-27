@@ -7,14 +7,15 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: 'Target branch to run E2E tests over'
+        description: 'Target branch to run E2E tests over (take precedence over nightly helm chart/image)'
         required: true
         default: 'main'
       helm-chart:
         description: 'Helm chart used for installation'
-        required: true
-        default: 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart'
-        type: string
+        type: choice
+        options:
+         - oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart
+         - ""
 
 permissions:
   checks: write
@@ -163,7 +164,7 @@ jobs:
           flc-namespace: dto
           flc-environment: dto-ocp-fips
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
-          target-image: ${{ format('{0}-fips', github.event.inputs.target || 'main') }}
+          target-branch: ${{ format('{0}-fips', github.event.inputs.target || 'main') }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}

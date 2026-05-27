@@ -36,8 +36,18 @@ var (
 )
 
 func isAllowedSuffixAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
+	parsed, err := url.Parse("https://" + ec.Spec.APIServer)
+	if err != nil {
+		return errorMissingAllowedSuffixAPIServer
+	}
+
+	if parsed.Host != ec.Spec.APIServer || parsed.User != nil {
+		return errorMissingAllowedSuffixAPIServer
+	}
+
+	host := parsed.Hostname()
 	for _, suffix := range allowedSuffix {
-		if strings.HasSuffix(ec.Spec.APIServer, suffix) && len(ec.Spec.APIServer) > len(suffix) {
+		if strings.HasSuffix(host, suffix) && len(host) > len(suffix) {
 			return ""
 		}
 	}

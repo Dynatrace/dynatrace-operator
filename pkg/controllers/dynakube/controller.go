@@ -411,7 +411,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	err = controller.logMonitoringReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
-		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
+		if isPostponedConnectionInfoError(err) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 
 			return goerrors.Join(componentErrors...)
@@ -426,9 +426,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	err = controller.injectionReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
-		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
-			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
-			// this situation will clear itself after AG has been started
+		if isPostponedConnectionInfoError(err) {
+			// missing or stale communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
+			// this situation will clear itself after AG has been started or re-registered
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 
 			return goerrors.Join(componentErrors...)
@@ -443,9 +443,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	err = controller.oneAgentReconciler.Reconcile(ctx, dk, dtClient, controller.tokens)
 	if err != nil {
-		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
-			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
-			// this situation will clear itself after AG has been started
+		if isPostponedConnectionInfoError(err) {
+			// missing or stale communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
+			// this situation will clear itself after AG has been started or re-registered
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 
 			return goerrors.Join(componentErrors...)
@@ -457,6 +457,15 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 	}
 
 	return goerrors.Join(componentErrors...)
+}
+
+// isPostponedConnectionInfoError reports whether the error indicates a transient
+// OneAgent connection-info state that resolves itself once the local ActiveGate is
+// ready or has re-registered. Callers treat these as "not yet ready" and trigger a
+// fast requeue instead of surfacing them as reconcile failures.
+func isPostponedConnectionInfoError(err error) bool {
+	return errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) ||
+		errors.Is(err, oaconnectioninfo.StaleNetworkZoneEndpointsError)
 }
 
 func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dynakube.DynaKube) *mapper.DynakubeMapper {

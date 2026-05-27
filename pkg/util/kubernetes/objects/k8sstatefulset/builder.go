@@ -54,6 +54,12 @@ func SetTolerations(tolerations []corev1.Toleration) builder.Option[*appsv1.Stat
 	}
 }
 
+func SetNodeSelector(nodeSelector map[string]string) builder.Option[*appsv1.StatefulSet] {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.NodeSelector = nodeSelector
+	}
+}
+
 func SetTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologySpreadConstraint) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.TopologySpreadConstraints = topologySpreadConstraints

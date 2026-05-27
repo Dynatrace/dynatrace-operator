@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
@@ -256,6 +257,53 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
 		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason)
+	})
+}
+
+func TestReconcile_StaleNetworkZoneEndpoints(t *testing.T) {
+	ctx := t.Context()
+
+	// The cluster keeps returning the old IP (10.0.0.1) until the AG re-registers,
+	// while the current AG Service ClusterIP is already 10.0.0.2.
+	const (
+		staleClusterEndpoints = "https://10.0.0.1:443/communication,https://" + testName + "-activegate." + testNamespace + ":443/communication"
+		currentServiceIP      = "10.0.0.2"
+	)
+
+	t.Run("blocks deployment and does not overwrite endpoints when cluster returns stale endpoints", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.NetworkZone = "restricted-zone"
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
+		}
+		dk.Status.ActiveGate.ServiceIPs = []string{currentServiceIP}
+		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+			TenantUUID: testTenantUUID,
+			Endpoints:  staleClusterEndpoints,
+		}
+
+		dtClient := oneagentclientmock.NewClient(t)
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(
+			oneagentclient.ConnectionInfo{
+				TenantUUID:  testTenantUUID,
+				TenantToken: testTenantToken,
+				Endpoints:   staleClusterEndpoints,
+			}, nil).Once()
+		fakeClient := fake.NewClient(dk)
+
+		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
+		err := r.Reconcile(ctx)
+		require.ErrorIs(t, err, StaleNetworkZoneEndpointsError)
+
+		// Endpoints in status are left untouched so downstream consumers do not
+		// propagate the stale IP to the OneAgent ConfigMap / DaemonSet.
+		assert.Equal(t, staleClusterEndpoints, dk.Status.OneAgent.ConnectionInfo.Endpoints)
+		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, StaleNetworkZoneEndpointsReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
 

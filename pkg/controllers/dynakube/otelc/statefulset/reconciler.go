@@ -112,6 +112,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		k8sstatefulset.SetAllAnnotations(nil, templateAnnotations),
 		k8sstatefulset.SetAffinity(buildAffinity()),
 		k8sstatefulset.SetServiceAccount(serviceAccountName),
+		k8sstatefulset.SetNodeSelector(dk.Spec.Templates.OpenTelemetryCollector.NodeSelector),
 		k8sstatefulset.SetTolerations(dk.Spec.Templates.OpenTelemetryCollector.Tolerations),
 		k8sstatefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
 		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
