@@ -21,6 +21,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	configMapConditionType = "OtelpApiEndpointConfigMap"
+)
+
 type Reconciler struct {
 	configMaps k8sconfigmap.QueryObject
 }

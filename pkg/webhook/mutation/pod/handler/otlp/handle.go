@@ -16,6 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	NoOTLPExporterConfigSecretReason         = "NoOTLPExporterConfigSecret"
+	NoOTLPExporterActiveGateCertSecretReason = "NoOTLPExporterActiveGateCertSecret"
+)
+
 type Handler struct {
 	kubeClient client.Client
 	apiReader  client.Reader

@@ -3,6 +3,7 @@
 - [Coding style guide](#coding-style-guide)
   - [General](#general)
   - [Visibility](#visibility)
+  - [File organisation](#file-organisation)
   - [Function Parameter and Return-Value Order](#function-parameter-and-return-value-order)
   - [Cuddling of statements](#cuddling-of-statements)
   - [Go struct field alignment](#go-struct-field-alignment)
@@ -67,6 +68,10 @@ func buildStatefulSet(dk *dynakube.DynaKube) *appsv1.StatefulSet { ... }
 // ✗ exported with no external caller
 func BuildStatefulSet(dk *dynakube.DynaKube) *appsv1.StatefulSet { ... }
 ```
+
+## File organisation
+
+- Do not create a new file just to hold a few variables, constants, or other declarations. Place them in the file where they are used.
 
 ## Function Parameter and Return-Value Order
 
