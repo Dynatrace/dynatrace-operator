@@ -21,6 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const activeGateConnectionInfoConditionType string = "ActiveGateConnectionInfo"
+
 type Reconciler struct {
 	timeProvider *timeprovider.Provider
 	secrets      k8ssecret.QueryObject

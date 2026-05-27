@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const extensionControllerStatefulSetConditionType string = "ExtensionControllerStatefulSet"
+
 type reconciler struct {
 	client    client.Client
 	apiReader client.Reader

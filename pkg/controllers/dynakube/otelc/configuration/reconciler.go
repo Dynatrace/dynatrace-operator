@@ -18,6 +18,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const conditionType string = "OTELCConfigurationConfigMap"
+
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader

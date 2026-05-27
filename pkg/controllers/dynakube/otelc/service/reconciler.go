@@ -34,6 +34,8 @@ const (
 	statsdPort                  = 8125
 	appProtocolHTTP             = "http"
 	appProtocolGRPC             = "grpc"
+
+	serviceConditionType = "OTELCService"
 )
 
 type Reconciler struct {

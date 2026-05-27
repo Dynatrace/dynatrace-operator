@@ -21,6 +21,8 @@ import (
 
 const (
 	serviceAccountName = "dynatrace-node-config-collector"
+
+	conditionType = "NodeConfigCollectorDaemonSet"
 )
 
 type Reconciler struct {
