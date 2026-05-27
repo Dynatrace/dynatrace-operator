@@ -171,6 +171,14 @@ test/e2e/applicationmonitoring/bootstrapper-csi:
 test/e2e/applicationmonitoring/bootstrapper-no-csi:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "node_image_pull_with_no_csi" $(SKIPCLEANUP)
 
+## Runs PGC bootstrapper with CloudNativeFullStack (with CSI) e2e test only
+test/e2e/bootstrapper/pgc-fullstack-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "pgc_with_fullstack" $(SKIPCLEANUP)
+
+## Runs PGC bootstrapper with CloudNativeFullStack (without CSI) e2e test only
+test/e2e/bootstrapper/pgc-fullstack-no-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "pgc_with_fullstack" $(SKIPCLEANUP)
+
 ## Runs public registry images e2e test only
 test/e2e/publicregistry:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images" $(SKIPCLEANUP)

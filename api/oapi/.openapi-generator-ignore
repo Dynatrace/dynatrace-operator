@@ -13,6 +13,10 @@ test/*
 
 # Documentation
 docs/*.md
+README.md
 
-# Then explicitly reverse the ignore rule for a single file:
-# !docs/README.md
+# Yaml API spec
+api/*
+
+# Generated from JAVA specific generated files which are incompatible with go
+model_immutable_*

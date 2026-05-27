@@ -155,7 +155,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 				},
 			},
 			Data: map[string][]byte{
-				declarativeInputFileName: cachedData,
+				DeclarativeInputFileName: cachedData,
 			},
 		}
 
