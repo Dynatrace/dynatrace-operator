@@ -99,6 +99,17 @@ func StatusCode(err error) int {
 	return httpErr.StatusCode
 }
 
+// ResponseTooLargeError is returned when the Content-Length of a response exceeds the configured limit,
+// before the body is read into memory.
+type ResponseTooLargeError struct {
+	ContentLength int64
+	MaxBodySize   int64
+}
+
+func (e *ResponseTooLargeError) Error() string {
+	return fmt.Sprintf("response body size %d exceeds maximum allowed size of %d", e.ContentLength, e.MaxBodySize)
+}
+
 func formatServerError(e *ServerError, statusCode int) string {
 	if len(e.Message) == 0 && e.Code == 0 {
 		return "unknown server error"

@@ -51,6 +51,11 @@ type Request interface {
 	WithoutToken() Request
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) Request
+	// WithMaxBodySize sets a limit on the response body size for ExecuteWriter.
+	// If the server provides a Content-Length header exceeding size, ExecuteWriter returns a *ResponseTooLargeError
+	// before reading the body. Responses without a Content-Length header are not rejected.
+	// A size of 0 disables the check.
+	WithMaxBodySize(size int64) Request
 	// Execute executes the request and unmarshals the response into the provided model
 	// If the provided model implements the Cacheable interface, then the ClientImpl will cache the response.
 	Execute(model any) error
@@ -80,14 +85,15 @@ func NewClient(cfg Config) *ClientImpl {
 type RequestImpl struct {
 	client *ClientImpl
 
-	ctx       context.Context
-	query     url.Values
-	headers   http.Header
-	method    string
-	path      string
-	body      []byte
-	tokenType TokenType
-	err       error
+	ctx         context.Context
+	query       url.Values
+	headers     http.Header
+	method      string
+	path        string
+	body        []byte
+	tokenType   TokenType
+	err         error
+	maxBodySize int64
 }
 
 // TokenType represents the type of authentication token to use
@@ -213,6 +219,12 @@ func (r *RequestImpl) WithHeader(key, value string) Request {
 	return r
 }
 
+func (r *RequestImpl) WithMaxBodySize(size int64) Request {
+	r.maxBodySize = size
+
+	return r
+}
+
 // Execute executes the request and unmarshals the response into the provided model
 func (r *RequestImpl) Execute(model any) error {
 	cacheableModel, isCacheable := model.(Cacheable)
@@ -331,6 +343,10 @@ func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.He
 	}
 
 	log.Debug("API request", loggerArgs(resp, nil)...)
+
+	if r.maxBodySize > 0 && resp.ContentLength > r.maxBodySize {
+		return nil, &ResponseTooLargeError{ContentLength: resp.ContentLength, MaxBodySize: r.maxBodySize}
+	}
 
 	if _, err = io.Copy(writer, resp.Body); err != nil {
 		return nil, fmt.Errorf("stream response body: %w", err)

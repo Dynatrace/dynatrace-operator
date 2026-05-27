@@ -226,8 +226,8 @@ func (_c *Client_GetLatest_Call) RunAndReturn(run func(ctx context.Context, args
 }
 
 // GetProcessGroupingConfig provides a mock function for the type Client
-func (_mock *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*oneagent.ProcessGroupConfig, error) {
-	ret := _mock.Called(ctx, kubernetesClusterID, etag)
+func (_mock *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, maxBodySize int64) (*oneagent.ProcessGroupConfig, error) {
+	ret := _mock.Called(ctx, kubernetesClusterID, etag, maxBodySize)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetProcessGroupingConfig")
@@ -235,18 +235,18 @@ func (_mock *Client) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 
 	var r0 *oneagent.ProcessGroupConfig
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (*oneagent.ProcessGroupConfig, error)); ok {
-		return returnFunc(ctx, kubernetesClusterID, etag)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, int64) (*oneagent.ProcessGroupConfig, error)); ok {
+		return returnFunc(ctx, kubernetesClusterID, etag, maxBodySize)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) *oneagent.ProcessGroupConfig); ok {
-		r0 = returnFunc(ctx, kubernetesClusterID, etag)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, int64) *oneagent.ProcessGroupConfig); ok {
+		r0 = returnFunc(ctx, kubernetesClusterID, etag, maxBodySize)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*oneagent.ProcessGroupConfig)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = returnFunc(ctx, kubernetesClusterID, etag)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, int64) error); ok {
+		r1 = returnFunc(ctx, kubernetesClusterID, etag, maxBodySize)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -262,11 +262,12 @@ type Client_GetProcessGroupingConfig_Call struct {
 //   - ctx context.Context
 //   - kubernetesClusterID string
 //   - etag string
-func (_e *Client_Expecter) GetProcessGroupingConfig(ctx interface{}, kubernetesClusterID interface{}, etag interface{}) *Client_GetProcessGroupingConfig_Call {
-	return &Client_GetProcessGroupingConfig_Call{Call: _e.mock.On("GetProcessGroupingConfig", ctx, kubernetesClusterID, etag)}
+//   - maxBodySize int64
+func (_e *Client_Expecter) GetProcessGroupingConfig(ctx interface{}, kubernetesClusterID interface{}, etag interface{}, maxBodySize interface{}) *Client_GetProcessGroupingConfig_Call {
+	return &Client_GetProcessGroupingConfig_Call{Call: _e.mock.On("GetProcessGroupingConfig", ctx, kubernetesClusterID, etag, maxBodySize)}
 }
 
-func (_c *Client_GetProcessGroupingConfig_Call) Run(run func(ctx context.Context, kubernetesClusterID string, etag string)) *Client_GetProcessGroupingConfig_Call {
+func (_c *Client_GetProcessGroupingConfig_Call) Run(run func(ctx context.Context, kubernetesClusterID string, etag string, maxBodySize int64)) *Client_GetProcessGroupingConfig_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -280,10 +281,15 @@ func (_c *Client_GetProcessGroupingConfig_Call) Run(run func(ctx context.Context
 		if args[2] != nil {
 			arg2 = args[2].(string)
 		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -294,7 +300,7 @@ func (_c *Client_GetProcessGroupingConfig_Call) Return(processGroupConfig *oneag
 	return _c
 }
 
-func (_c *Client_GetProcessGroupingConfig_Call) RunAndReturn(run func(ctx context.Context, kubernetesClusterID string, etag string) (*oneagent.ProcessGroupConfig, error)) *Client_GetProcessGroupingConfig_Call {
+func (_c *Client_GetProcessGroupingConfig_Call) RunAndReturn(run func(ctx context.Context, kubernetesClusterID string, etag string, maxBodySize int64) (*oneagent.ProcessGroupConfig, error)) *Client_GetProcessGroupingConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }

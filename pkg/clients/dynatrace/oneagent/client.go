@@ -15,7 +15,7 @@ type Client interface {
 	GetVersions(ctx context.Context, args GetParams) ([]string, error)
 
 	GetProcessModuleConfig(ctx context.Context) (*ProcessModuleConfig, error)
-	GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error)
+	GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, maxBodySize int64) (*ProcessGroupConfig, error)
 }
 
 type ClientImpl struct {

@@ -34,7 +34,7 @@ type ProcessGroupConfig struct {
 //   - On HTTP 304: *ProcessGroupConfig with the original ETag and nil Data, nil error.
 //   - On HTTP 404: *ProcessGroupConfig (empty), nil error. Endpoint not available.
 //   - On other errors: non-nil error.
-func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error) {
+func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string, maxBodySize int64) (*ProcessGroupConfig, error) {
 	ctx, log := logd.NewFromContext(ctx, loggerName)
 
 	if kubernetesClusterID == "" {
@@ -47,7 +47,8 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 
 	req := c.apiClient.GET(ctx, processGroupingConfigPath).
 		WithQueryParams(params).
-		WithHeader("Accept", "application/cbor")
+		WithHeader("Accept", "application/cbor").
+		WithMaxBodySize(maxBodySize)
 
 	if etag != "" {
 		req = req.WithHeader(requestHeaderEtag, etag)

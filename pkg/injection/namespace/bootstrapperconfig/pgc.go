@@ -2,9 +2,11 @@ package bootstrapperconfig
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -50,7 +52,15 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 
 	cachedPGC := s.readCachedPGC(ctx, dk)
 
-	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, cachedPGC.ETag)
+	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, cachedPGC.ETag, declarativeMaxSizeBytes)
+
+	var tooLarge *core.ResponseTooLargeError
+	if errors.As(err, &tooLarge) {
+		log.Error(nil, "DPG API response Content-Length exceeds maximum size, skipping processgroupingconfig", "contentLength", tooLarge.ContentLength, "maxSize", tooLarge.MaxBodySize)
+
+		return &oneagent.ProcessGroupConfig{}, nil
+	}
+
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 

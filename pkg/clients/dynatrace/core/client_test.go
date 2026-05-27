@@ -247,6 +247,42 @@ func TestClient_ExecuteWriter(t *testing.T) {
 	})
 }
 
+func TestClient_WithMaxBodySize(t *testing.T) {
+	const responseBody = "hello-world" // 11 bytes; Go sets Content-Length: 11 automatically
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(responseBody))
+	}))
+	defer s.Close()
+
+	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+
+	t.Run("rejects response when Content-Length exceeds limit", func(t *testing.T) {
+		var buf bytes.Buffer
+		_, err := c.GET(t.Context(), "/test").WithMaxBodySize(5).ExecuteWriter(&buf)
+		require.Error(t, err)
+		var tooLarge *ResponseTooLargeError
+		require.ErrorAs(t, err, &tooLarge)
+		assert.Equal(t, int64(11), tooLarge.ContentLength)
+		assert.Equal(t, int64(5), tooLarge.MaxBodySize)
+		assert.Empty(t, buf.String())
+	})
+
+	t.Run("allows response within limit", func(t *testing.T) {
+		var buf bytes.Buffer
+		_, err := c.GET(t.Context(), "/test").WithMaxBodySize(100).ExecuteWriter(&buf)
+		require.NoError(t, err)
+		assert.Equal(t, responseBody, buf.String())
+	})
+
+	t.Run("size=0 disables the check", func(t *testing.T) {
+		var buf bytes.Buffer
+		_, err := c.GET(t.Context(), "/test").WithMaxBodySize(0).ExecuteWriter(&buf)
+		require.NoError(t, err)
+		assert.Equal(t, responseBody, buf.String())
+	})
+}
+
 type brokenWriter struct{}
 
 func (brokenWriter) Write(_ []byte) (int, error) {

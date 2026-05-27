@@ -45,7 +45,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 
 		payload := bytes.Repeat([]byte("a"), 100*1024) // 100 KiB
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.Anything).
 			Return(&oneagent.ProcessGroupConfig{
 				ETag: "etag123",
 				Data: payload,
@@ -67,7 +67,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 
 		payload := bytes.Repeat([]byte("a"), 850*1024) // 850 KiB — above warn, below max
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.Anything).
 			Return(&oneagent.ProcessGroupConfig{
 				ETag: "etag123",
 				Data: payload,
@@ -88,7 +88,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 
 		payload := bytes.Repeat([]byte("a"), 920*1024) // 920 KiB — above max
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.Anything).
 			Return(&oneagent.ProcessGroupConfig{
 				ETag: "etag123",
 				Data: payload,
@@ -109,7 +109,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 
 		expectedErr := errors.New("API error")
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.Anything).
 			Return(nil, expectedErr)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
@@ -130,7 +130,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		mockDTClient := oneagentclientmock.NewClient(t)
 
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.Anything).
 			Return(nil, nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
@@ -163,7 +163,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		mockDTClient := oneagentclientmock.NewClient(t)
 
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, cachedETag).
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, cachedETag, mock.Anything).
 			Return(&oneagent.ProcessGroupConfig{ETag: cachedETag}, nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
@@ -199,7 +199,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		responseETag := "new-etag-xyz"
 
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "", mock.Anything).
 			Return(&oneagent.ProcessGroupConfig{
 				ETag: responseETag,
 				Data: payload,

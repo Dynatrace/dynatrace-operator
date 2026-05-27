@@ -57,6 +57,8 @@ func setupMockedProcessGroupingClient(
 		}).
 		Return(responseHeaders, execErr).Once()
 
+	req.EXPECT().WithMaxBodySize(mock.Anything).Return(req).Once()
+
 	coreClient := coremock.NewClient(t)
 	coreClient.EXPECT().
 		GET(anyCtx, processGroupingConfigPath).
@@ -77,7 +79,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			nil,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, testETag)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, testETag, 0)
 		require.NoError(t, err)
 		assert.Equal(t, testCBORData, string(pgc.Data))
 		// On 200, the returned ETag comes from the response header, not the input ETag
@@ -96,7 +98,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			nil,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "")
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "", 0)
 		require.NoError(t, err)
 		assert.Equal(t, testCBORData, string(pgc.Data))
 		assert.Equal(t, testResponseETag, pgc.ETag)
@@ -113,7 +115,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			httpErr,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, testETag)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, testETag, 0)
 		require.NoError(t, err)
 		assert.Empty(t, string(pgc.Data))
 		// On 304, the original ETag is returned for convenience
@@ -131,7 +133,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			nil,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "")
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "", 0)
 		require.NoError(t, err)
 		assert.Equal(t, testResponseETag, pgc.ETag)
 	})
@@ -141,7 +143,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		coreClient := coremock.NewClient(t)
 		client := NewClient(coreClient, "", "")
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", "")
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), "", "", 0)
 		require.Error(t, err)
 		assert.Nil(t, pgc)
 	})
@@ -157,7 +159,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			serverErr,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "")
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "", 0)
 		require.Error(t, err)
 		require.True(t, core.HasStatusCode(err, http.StatusInternalServerError))
 		assert.Nil(t, pgc)
@@ -175,7 +177,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			serverErr,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, badETag)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, badETag, 0)
 		require.Error(t, err)
 		require.True(t, core.HasStatusCode(err, http.StatusBadRequest))
 		assert.Nil(t, pgc)
@@ -192,7 +194,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 			httpErr,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "")
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "", 0)
 		require.NoError(t, err)
 		assert.NotNil(t, pgc)
 		assert.Empty(t, pgc.Data)

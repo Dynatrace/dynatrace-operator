@@ -265,6 +265,59 @@ func (_c *Request_WithJSONBody_Call) RunAndReturn(run func(body any) core.Reques
 	return _c
 }
 
+// WithMaxBodySize provides a mock function for the type Request
+func (_mock *Request) WithMaxBodySize(size int64) core.Request {
+	ret := _mock.Called(size)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithMaxBodySize")
+	}
+
+	var r0 core.Request
+	if returnFunc, ok := ret.Get(0).(func(int64) core.Request); ok {
+		r0 = returnFunc(size)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(core.Request)
+		}
+	}
+	return r0
+}
+
+// Request_WithMaxBodySize_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithMaxBodySize'
+type Request_WithMaxBodySize_Call struct {
+	*mock.Call
+}
+
+// WithMaxBodySize is a helper method to define mock.On call
+//   - size int64
+func (_e *Request_Expecter) WithMaxBodySize(size interface{}) *Request_WithMaxBodySize_Call {
+	return &Request_WithMaxBodySize_Call{Call: _e.mock.On("WithMaxBodySize", size)}
+}
+
+func (_c *Request_WithMaxBodySize_Call) Run(run func(size int64)) *Request_WithMaxBodySize_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 int64
+		if args[0] != nil {
+			arg0 = args[0].(int64)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Request_WithMaxBodySize_Call) Return(request core.Request) *Request_WithMaxBodySize_Call {
+	_c.Call.Return(request)
+	return _c
+}
+
+func (_c *Request_WithMaxBodySize_Call) RunAndReturn(run func(size int64) core.Request) *Request_WithMaxBodySize_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithPaasToken provides a mock function for the type Request
 func (_mock *Request) WithPaasToken() core.Request {
 	ret := _mock.Called()
