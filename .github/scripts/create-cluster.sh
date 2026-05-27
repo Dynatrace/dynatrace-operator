@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -x
+set -eu -o pipefail
 
 kubectl version
 
