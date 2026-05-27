@@ -91,10 +91,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 
 	setInjectedAnnotation(request.Pod)
 
-	err = attrs.ApplyAnnotationsToPod(request.Pod)
-	if err != nil {
-		return err
-	}
+	request.AnnotationWriter = attrs
 
 	_, err = AddContainerAttributes(request.BaseRequest, request.InstallContainer)
 	if err != nil {

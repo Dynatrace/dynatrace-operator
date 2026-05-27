@@ -1,6 +1,7 @@
 package resourceattributes
 
 import (
+	"encoding/json"
 	"maps"
 	"net/url"
 	"slices"
@@ -616,6 +617,8 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 			err := mut.Mutate(req)
 			require.NoError(t, err)
 
+			require.NotNil(t, req.AnnotationWriter, "AnnotationWriter must be set for deferred annotation writing")
+
 			container := pod.Spec.Containers[0]
 			env := k8senv.Find(container.Env, OTELResourceAttributesEnv)
 			require.NotNil(t, env, "OTEL_RESOURCE_ATTRIBUTES must be set")
@@ -630,4 +633,89 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestMutate_AnnotationWriter verifies that annotation writing is deferred via AnnotationWriter
+// and that OTLP additionalResourceAttributes win in the JSON annotation even when the pod already
+// carries metadata.dynatrace.com/ annotations (as the metadata mutator would have written them
+// before this mutator runs in the old, unfixed flow).
+func TestMutate_AnnotationWriter(t *testing.T) {
+	const (
+		testNamespace = "ns"
+		collisionKey  = "collision-key"
+		globalCollVal = "global-collision-value"
+		otlpCollVal   = "otlp-collision-value"
+	)
+
+	_ = appsv1.AddToScheme(scheme.Scheme)
+
+	dk := latestdynakube.DynaKube{
+		Spec: latestdynakube.DynaKubeSpec{
+			ResourceAttributes: map[string]string{collisionKey: globalCollVal},
+			OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+				AdditionalResourceAttributes: map[string]string{collisionKey: otlpCollVal},
+			},
+		},
+	}
+	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
+
+	t.Run("AnnotationWriter is set after Mutate", func(t *testing.T) {
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: testNamespace},
+			Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+		}
+
+		client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		req := dtwebhook.NewMutationRequest(t.Context(), namespace, nil, pod, dk)
+
+		require.NoError(t, New(client).Mutate(req))
+		require.NotNil(t, req.AnnotationWriter)
+	})
+
+	t.Run("OTLP additionalResourceAttributes win in JSON annotation (clean pod)", func(t *testing.T) {
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: testNamespace},
+			Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+		}
+
+		client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		req := dtwebhook.NewMutationRequest(t.Context(), namespace, nil, pod, dk)
+
+		require.NoError(t, New(client).Mutate(req))
+		require.NotNil(t, req.AnnotationWriter)
+		require.NoError(t, req.AnnotationWriter.ApplyAnnotationsToPod(pod))
+
+		jsonAnnotation := pod.Annotations[metadataenrichment.Annotation]
+		require.NotEmpty(t, jsonAnnotation)
+
+		var annotationAttrs map[string]string
+		require.NoError(t, json.Unmarshal([]byte(jsonAnnotation), &annotationAttrs))
+
+		assert.Equal(t, otlpCollVal, annotationAttrs[collisionKey], "OTLP additionalResourceAttributes must win in JSON annotation")
+		assert.NotEqual(t, globalCollVal, annotationAttrs[collisionKey])
+	})
+
+	t.Run("user-set metadata.dynatrace.com/ annotation still wins over dynakube attrs", func(t *testing.T) {
+		const userValue = "user-set-value"
+
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "pod1",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					metadataenrichment.Prefix + collisionKey: userValue,
+				},
+			},
+			Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+		}
+
+		client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		req := dtwebhook.NewMutationRequest(t.Context(), namespace, nil, pod, dk)
+
+		require.NoError(t, New(client).Mutate(req))
+
+		env := k8senv.Find(pod.Spec.Containers[0].Env, OTELResourceAttributesEnv)
+		require.NotNil(t, env)
+		assert.Contains(t, env.Value, collisionKey+"="+userValue, "user pod annotation must win over dynakube attrs")
+	})
 }

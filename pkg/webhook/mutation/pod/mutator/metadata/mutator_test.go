@@ -395,6 +395,10 @@ func TestMutate(t *testing.T) {
 				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-meta-annotation"))
 				assert.Contains(t, request.InstallContainer.Args, "--"+bootstrapper.MetadataEnrichmentFlag)
 
+				// annotations are written by the post-step in webhook.Handle, not by Mutate directly
+				require.NotNil(t, request.AnnotationWriter)
+				require.NoError(t, request.AnnotationWriter.ApplyAnnotationsToPod(request.Pod))
+
 				require.Len(t, request.Pod.Annotations, 7) // workload.kind + workload.name + dt.security_context + dt.cost.costcenter + injected + propagated ns annotations
 				assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[metadataenrichment.Prefix+attributes.K8sWorkloadKindAttr])
 				assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[metadataenrichment.Prefix+attributes.K8sWorkloadNameAttr])
