@@ -28,9 +28,9 @@ const (
 	errorResourceAttributesInvalidOneAgent = "spec.oneAgent.*.additionalResourceAttributes contains invalid entries: %s"
 	errorResourceAttributesInvalidOTLP     = "spec.otlpExporterConfiguration.additionalResourceAttributes contains invalid entries: %s"
 
-	warnResourceAttributesSanitizationGlobal   = "spec.resourceAttributes contains invalid keys that will be automatically renamed:%s\tConsider updating these keys in your DynaKube spec to avoid confusion."
-	warnResourceAttributesSanitizationOneAgent = "spec.oneAgent.*.additionalResourceAttributes contains invalid keys that will be automatically renamed:%s\tConsider updating these keys in your DynaKube spec to avoid confusion."
-	warnResourceAttributesSanitizationOTLP     = "spec.otlpExporterConfiguration.additionalResourceAttributes contains invalid keys that will be automatically renamed:%s\tConsider updating these keys in your DynaKube spec to avoid confusion."
+	warnResourceAttributesSanitizationGlobal   = "spec.resourceAttributes contains invalid keys that will be automatically renamed:%s. Consider updating these keys in your DynaKube spec to avoid confusion."
+	warnResourceAttributesSanitizationOneAgent = "spec.oneAgent.*.additionalResourceAttributes contains invalid keys that will be automatically renamed:%s. Consider updating these keys in your DynaKube spec to avoid confusion."
+	warnResourceAttributesSanitizationOTLP     = "spec.otlpExporterConfiguration.additionalResourceAttributes contains invalid keys that will be automatically renamed:%s. Consider updating these keys in your DynaKube spec to avoid confusion."
 
 	errorResourceAttributesSanitizationGlobal   = "spec.resourceAttributes contains invalid keys:%s"
 	errorResourceAttributesSanitizationOneAgent = "spec.oneAgent.*.additionalResourceAttributes contains invalid keys:%s"
