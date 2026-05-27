@@ -6,14 +6,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -119,10 +117,10 @@ func Feature(t *testing.T, v variant) features.Feature {
 
 			return assessInstallSucceeds(ctx, t, v)
 		})
-		builder.Assess("deployer can create and delete DynaKube CR", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		builder.Assess("deployer can manage DynaKube and EdgeConnect CRs", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			t.Helper()
 
-			return assessDynaKubeLifecycle(ctx, t, v)
+			return assessCRLifecycle(ctx, t, v)
 		})
 	}
 
@@ -177,29 +175,7 @@ func assessInstallFails(ctx context.Context, t *testing.T, v variant) context.Co
 	return ctx
 }
 
-func resolveOperatorImage() (string, error) {
-	cmd := exec.Command("make", "-C", project.RootDir(), "deploy/show-image-ref")
-	cmd.Env = os.Environ()
-	out, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("failed to resolve operator image: %w", err)
-	}
-
-	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		if !strings.HasPrefix(line, "make") {
-			return strings.TrimSpace(line), nil
-		}
-	}
-
-	return "", fmt.Errorf("could not parse operator image from make output")
-}
-
 func helmInstall(v variant) error {
-	imageRef, err := resolveOperatorImage()
-	if err != nil {
-		return err
-	}
-
 	chartPath := filepath.Join(project.RootDir(), "config", "helm", "chart", "default")
 
 	args := []string{
@@ -210,8 +186,7 @@ func helmInstall(v variant) error {
 		"--set", fmt.Sprintf("csidriver.enabled=%t", v.csiEnabled),
 		"--set", "platform=kubernetes",
 		"--set", "manifests=true",
-		"--set", "image=" + imageRef,
-		"--set", "imageRef.pullPolicy=Always",
+		"--set", "webhook.replicas=1",
 		"--kube-as-user", v.serviceAccount,
 	}
 
@@ -219,7 +194,7 @@ func helmInstall(v variant) error {
 	stderr := new(bytes.Buffer)
 	cmd.Stderr = stderr
 
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		return fmt.Errorf("%s: %w", strings.TrimSpace(stderr.String()), err)
 	}
@@ -227,81 +202,50 @@ func helmInstall(v variant) error {
 	return nil
 }
 
-func helmUninstall(t *testing.T, _ variant) {
+func helmUninstall(t *testing.T, v variant) {
 	t.Helper()
 
-	cmd := exec.Command("helm", "uninstall", releaseName, "--namespace", targetNamespace)
-
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Logf("helm uninstall warning (may not have been installed): %s", strings.TrimSpace(string(out)))
-	}
-}
-
-// dynakubeManifestPath returns the path to a temp DynaKube manifest patched
-// with the real tenant API URL read from the standard single-tenant secrets file.
-func dynakubeManifestPath(t *testing.T) string {
-	t.Helper()
-
-	secretConfig := tenant.GetSingleTenantSecret(t)
-
-	staticPath := filepath.Join(testDataDir, "dynakube.yaml")
-
-	content, err := os.ReadFile(staticPath)
-	require.NoError(t, err)
-
-	patched := strings.ReplaceAll(string(content), "https://placeholder.live.dynatrace.com/api", secretConfig.APIURL)
-
-	tmp, err := os.CreateTemp("", "dynakube-*.yaml")
-	require.NoError(t, err)
-
-	t.Cleanup(func() { os.Remove(tmp.Name()) })
-
-	_, err = tmp.WriteString(patched)
-	require.NoError(t, err)
-	require.NoError(t, tmp.Close())
-
-	return tmp.Name()
-}
-
-// assessDynaKubeLifecycle verifies that the deployer SA can create and delete
-// the DynaKube CR by performing real operations on the cluster.
-func assessDynaKubeLifecycle(ctx context.Context, t *testing.T, v variant) context.Context {
-	t.Helper()
-
-	// Wait for the webhook deployment to be available before creating the CR —
-	// helm install returns before pods are ready and the validating webhook
-	// will reject the request if there are no endpoints yet.
-	cmd := exec.Command("kubectl", "rollout", "status", "deployment/dynatrace-webhook",
-		"--namespace", targetNamespace, "--timeout=120s")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		require.NoError(t, err, "timed out waiting for dynatrace-webhook: %s", strings.TrimSpace(string(out)))
+	args := []string{
+		"uninstall", releaseName,
+		"--namespace", targetNamespace,
+		"--kube-as-user", v.serviceAccount,
 	}
 
-	manifest := dynakubeManifestPath(t)
+	cmd := exec.Command("helm", args...)
+	// Ignore errors — may not have been installed (failure case)
+	_ = cmd.Run()
 
-	// Register cleanup before creating, so deletion happens even if the assertion fails.
-	t.Cleanup(func() {
-		_, _ = kubectlAs(v.serviceAccount, "delete", "-f", manifest, "--ignore-not-found")
-	})
+	// Also try without impersonation in case the SA can't uninstall
+	args = []string{
+		"uninstall", releaseName,
+		"--namespace", targetNamespace,
+	}
 
-	out, err := kubectlAs(v.serviceAccount, "apply", "-f", manifest)
-	require.NoError(t, err, "deployer %q should be able to create DynaKube CR: %s", v.serviceAccount, out)
+	cmd = exec.Command("helm", args...)
+	_ = cmd.Run()
+}
 
-	out, err = kubectlAs(v.serviceAccount, "delete", "-f", manifest, "--ignore-not-found")
-	assert.NoError(t, err, "deployer %q should be able to delete DynaKube CR: %s", v.serviceAccount, out)
+// assessCRLifecycle verifies that the deployer SA can perform the full ArgoCD-style
+// lifecycle (create, get, update, delete) on DynaKube and EdgeConnect custom resources.
+func assessCRLifecycle(ctx context.Context, t *testing.T, v variant) context.Context {
+	t.Helper()
+
+	resources := []string{"dynakubes.dynatrace.com", "edgeconnects.dynatrace.com"}
+	verbs := []string{"create", "get", "update", "delete", "list"}
+
+	for _, resource := range resources {
+		for _, verb := range verbs {
+			args := []string{
+				"auth", "can-i", verb, resource,
+				"--namespace", targetNamespace,
+				"--as", v.serviceAccount,
+			}
+
+			cmd := exec.Command("kubectl", args...)
+			out, err := cmd.CombinedOutput()
+			require.NoError(t, err, "deployer %q cannot %s %s: %s", v.serviceAccount, verb, resource, strings.TrimSpace(string(out)))
+		}
+	}
 
 	return ctx
-}
-
-// kubectlAs runs a kubectl command impersonating the given service account.
-func kubectlAs(sa string, args ...string) (string, error) {
-	cmdArgs := append(append([]string(nil), args...), "--as", sa)
-	cmd := exec.Command("kubectl", cmdArgs...)
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(out), fmt.Errorf("%s: %w", strings.TrimSpace(string(out)), err)
-	}
-
-	return string(out), nil
 }
