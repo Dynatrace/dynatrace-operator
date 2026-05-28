@@ -19,7 +19,7 @@ test/e2e/%/fips:
 
 ## Run any e2e test with platform token
 test/e2e/%/platform-token:
-	@make PLATFORM_TOKEN=true $(@D)
+	@make USE_PLATFORM_TOKEN=true $(@D)
 
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
