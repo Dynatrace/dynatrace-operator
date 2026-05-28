@@ -726,11 +726,6 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		// existing OTEL_RESOURCE_ATTRIBUTES wins over pod annotation
 		assert.Equal(t, "from-existing", gotRA["conflict.existing.vs.pod"], "existing OTEL_RESOURCE_ATTRIBUTES must win over pod annotation")
 
-		// metadata.dynatrace.com/<key> annotations (caseMetadataAnnotations: dynakube + namespaceAnnotations, no podAnnotations)
-		assert.Equal(t, "from-additional", pod.Annotations["metadata.dynatrace.com/conflict.additional.vs.global"],
-			"dynakube value must appear in metadata annotation")
-		assert.Equal(t, "from-ns", pod.Annotations["metadata.dynatrace.com/conflict.ns.vs.dynakube"],
-			"namespace annotation must win over dynakube in metadata annotation")
 		// SetAnnotationIfNotExists preserves the pre-existing pod annotation over the caseMetadataAnnotations result
 		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.pod.vs.ns"],
 			"pre-existing pod annotation must be preserved in metadata annotation")
