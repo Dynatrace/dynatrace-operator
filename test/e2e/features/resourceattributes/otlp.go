@@ -11,8 +11,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func OtelAutoconfig(t *testing.T) features.Feature {
-	builder := features.New("resource-attributes-otel-autoconfig")
+func OTLPExporterConfig(t *testing.T) features.Feature {
+	builder := features.New("resource-attributes-otlp")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	ns := "resource-attributes-otlp"
 

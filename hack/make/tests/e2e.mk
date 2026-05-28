@@ -216,8 +216,8 @@ test/e2e/resourceattributes/metadataonly:
 test/e2e/resourceattributes/oneagent:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_oneagent" $(SKIPCLEANUP)
 
-test/e2e/resourceattributes/otel:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_otel" $(SKIPCLEANUP)
+test/e2e/resourceattributes/otlp:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_otlp" $(SKIPCLEANUP)
 
 test/e2e/resourceattributes/combined:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_combined" $(SKIPCLEANUP)
