@@ -22,6 +22,7 @@ test/e2e/%/platform-token:
 	@make USE_PLATFORM_TOKEN=true $(@D)
 
 ## Run standard, no-csi, istio and release e2e tests
+.PHONY: test/e2e
 test/e2e:
 	RC=0; \
 	make test/e2e/standard  || RC=1; \
