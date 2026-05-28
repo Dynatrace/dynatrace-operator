@@ -1,0 +1,203 @@
+package resourceattributes
+
+import (
+	"context"
+	"encoding/json"
+	"net/url"
+	"testing"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dkmetadata "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
+)
+
+var (
+	globalAttrs = map[string]string{
+		"deployment.environment": "global-env",
+		"service.namespace":      "global-ns",
+		"global.only.key":        "global-only-value",
+	}
+	oneAgentAdditional = map[string]string{
+		"deployment.environment": "oneagent-env", // overrides global
+		"oa.only.key":            "oa-only-value",
+	}
+	otlpAdditional = map[string]string{
+		"deployment.environment": "otlp-env", // overrides global
+		"otlp.only.key":          "otlp-only-value",
+	}
+
+	expectedOneAgent = map[string]string{
+		"deployment.environment": "oneagent-env",
+		"service.namespace":      "global-ns",
+		"global.only.key":        "global-only-value",
+		"oa.only.key":            "oa-only-value",
+	}
+	expectedOTLP = map[string]string{
+		"deployment.environment": "otlp-env",
+		"service.namespace":      "global-ns",
+		"global.only.key":        "global-only-value",
+		"otlp.only.key":          "otlp-only-value",
+	}
+)
+
+const sampleAppName = "static-ra-app"
+
+func newSampleApp(t *testing.T, dk *dynakube.DynaKube, ns string, labels map[string]string) *sample.App {
+	t.Helper()
+
+	return sample.NewApp(t, dk,
+		sample.WithName(sampleAppName),
+		sample.WithNamespace(*k8snamespace.New(ns)),
+		sample.AsDeployment(),
+		sample.WithNamespaceLabels(labels),
+		sample.WithImagePullSecret(consts.DevRegistryPullSecretName), // to be removed before merge
+	)
+}
+
+func installSampleApp(b *features.FeatureBuilder, app *sample.App) {
+	b.Assess("create sample namespace", app.InstallNamespace())
+	// to be removed before merge
+	b.Assess("create registry pull secret in sample namespace",
+		usepublicregistry.CopyDevRegistrySecret(app.Namespace()))
+	b.Assess("installing sample app", app.Install())
+}
+
+func uninstallSampleApp(b *features.FeatureBuilder, app *sample.App) {
+	b.WithTeardown("uninstalling sample app", app.Uninstall())
+	b.WithTeardown("deleting sample app namespace", k8snamespace.Delete(app.Namespace()))
+}
+
+func assessInitContainerArgs(app *sample.App, expected map[string]string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		initContainer := app.GetInitContainer(ctx, t, resource, sample.InitContainerName)
+
+		for k, v := range expected {
+			assert.Containsf(t, initContainer.Args, attributes.ToArg(k, v),
+				"init container %q args missing %s=%s", sample.InitContainerName, k, v)
+		}
+
+		return ctx
+	}
+}
+
+func assessDTMetadataFiles(app *sample.App, expected map[string]string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		pod := app.GetPod(ctx, t, resource)
+
+		properties := metadataenrichment.GetMetadataPropertiesFromPod(ctx, t, resource, pod)
+		rawMetadata := metadataenrichment.GetRawMetadataFromPod(ctx, t, resource, pod)
+		metadata := map[string]string{}
+		require.NoError(t, json.Unmarshal(rawMetadata, &metadata))
+
+		for k, v := range expected {
+			assert.Equalf(t, v, properties[k], "dt_metadata.properties key %q in pod %s", k, pod.Name)
+			assert.Equalf(t, v, metadata[k], "dt_metadata.json key %q in pod %s", k, pod.Name)
+		}
+
+		return ctx
+	}
+}
+
+func assessDTNodeMetadataProperties(dk dynakube.DynaKube, expected map[string]string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		r := envConfig.Client().Resources()
+		q := k8sdaemonset.NewQuery(ctx, r, client.ObjectKey{
+			Name:      dk.OneAgent().GetDaemonsetName(),
+			Namespace: dk.Namespace,
+		})
+
+		err := q.ForEachPod(func(pod corev1.Pod) {
+			properties := metadataenrichment.GetNodeMetadataPropertiesFromPod(ctx, t, r, pod)
+			for k, v := range expected {
+				assert.Equalf(t, v, properties[k], "dt_metadata.properties key %q in pod %s", k, pod.Name)
+			}
+		})
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func assessOTLPInjectionAttributes(app *sample.App, expected map[string]string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		query := k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
+
+		err := query.ForEachPod(func(p corev1.Pod) {
+			require.NotEmptyf(t, p.Spec.Containers, "pod %s has no containers", p.Name)
+			gotAttrs, ok := resourceattributes.NewAttributesFromEnv(p.Spec.Containers[0].Env, resourceattributes.OTELResourceAttributesEnv)
+			require.Truef(t, ok, "OTEL_RESOURCE_ATTRIBUTES missing on pod %s", p.Name)
+
+			for k, v := range expected {
+				assert.Equalf(t, url.QueryEscape(v), gotAttrs[k], "OTEL_RESOURCE_ATTRIBUTES key %q in pod %s", k, p.Name)
+			}
+		})
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+// assessPodMetadataJSONAnnotation checks that the pod's metadata.dynatrace.com JSON annotation
+// contains all expected key-value pairs.
+// This annotation is written by ApplyAnnotationsToPod (combineForJSONAnnotation case) and uses
+// dynakube + namespaceAnnotations + rules + rulesPropagate + podAnnotations sources.
+// When both OA and OTLP mutators are active the annotation is written once (SetAnnotationIfNotExists),
+// so the first mutator's attributes win.
+func assessPodMetadataJSONAnnotation(app *sample.App, expected map[string]string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		pod := app.GetPod(ctx, t, resource)
+
+		jsonVal, ok := pod.Annotations[dkmetadata.Annotation]
+		require.Truef(t, ok, "pod %s missing annotation %q", pod.Name, dkmetadata.Annotation)
+
+		var parsed map[string]string
+		require.NoError(t, json.Unmarshal([]byte(jsonVal), &parsed))
+
+		for k, v := range expected {
+			assert.Equalf(t, v, parsed[k], "JSON annotation key %q in pod %s", k, pod.Name)
+		}
+
+		return ctx
+	}
+}
+
+// assessPodIndividualAnnotations checks that the pod's individual metadata.dynatrace.com/<key>
+// annotations contain all expected key-value pairs.
+// These annotations are written by ApplyAnnotationsToPod (combineForMetadataAnnotations case) and
+// use workloadInfo + dynakube + namespaceAnnotations + rulesPropagate sources.
+// SetAnnotationIfNotExists means pre-existing values are never overwritten.
+func assessPodIndividualAnnotations(app *sample.App, expected map[string]string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		pod := app.GetPod(ctx, t, resource)
+
+		for k, v := range expected {
+			annotationKey := dkmetadata.Prefix + k
+			got, ok := pod.Annotations[annotationKey]
+			if assert.Truef(t, ok, "pod %s missing annotation %q", pod.Name, annotationKey) {
+				assert.Equalf(t, v, got, "annotation %q in pod %s", annotationKey, pod.Name)
+			}
+		}
+
+		return ctx
+	}
+}
