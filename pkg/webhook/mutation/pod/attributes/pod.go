@@ -2,31 +2,47 @@ package attributes
 
 import (
 	"context"
-	"encoding/json"
-	"maps"
+	"fmt"
 
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Pod struct {
 
-	// non-user given
-	rules                map[string]string
-	rulesPropagate       map[string]string
+	// built from customer defined metadata enrichment rules
+	rules          map[string]string
+	rulesPropagate map[string]string
+
+	// read from metadata.dynatrace.com annotations on the namespace
 	namespaceAnnotations map[string]string
-	podAnnotations       map[string]string
-	custom               map[string]string
+	// read from metadata.dynatrace.com annotations on the pod
+	podAnnotations map[string]string
 
+	// .spec.resourceAttributes + .spec.(oneagent.*|otlpExporterConfiguration).additionalResourceAttributes
+	dynakube map[string]string
+
+	// custom attributes, e.g. OTEL_RESOURCE_ATTRIBUTES env var
+	custom map[string]string
+
+	// read from the workload that owns the injected pod
 	workloadInfo map[string]string
-	clusterInfo  map[string]string
-	podInfo      map[string]string
-	deprecated   map[string]string
-	podEnvVars   []corev1.EnvVar
+	// read from K8s cluster
+	clusterInfo map[string]string
+	// read from the injected pod manifest
+	podInfo map[string]string
 
+	// dt.kubernetes.* attributes that are deprecated and will be removed
+	deprecated map[string]string
+	// include deprecated attributes in combined results
 	useDeprecated bool
+
+	// env vars that are referenced by attributes
+	podEnvVars []corev1.EnvVar
 }
 
 func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) (*Pod, error) {
@@ -64,6 +80,28 @@ func (attrs *Pod) SetCustomAttributes(custom map[string]string) {
 	attrs.custom = custom
 }
 
+func (attrs *Pod) SetDynakubeAttributes(ctx context.Context, dkAttrs map[string]string) {
+	attrs.dynakube = sanitizeKeys(ctx, dkAttrs)
+}
+
+func sanitizeKeys(ctx context.Context, attrs map[string]string) map[string]string {
+	log := logd.FromContext(ctx)
+	sanitized := make(map[string]string, len(attrs))
+
+	for key, value := range attrs {
+		sanitizedKey := resourceattributes.SanitizeKey(key)
+		if sanitizedKey == "" {
+			log.Info("dropping resource attribute: key is empty after sanitization", "originalKey", key)
+
+			continue
+		}
+
+		sanitized[sanitizedKey] = value
+	}
+
+	return sanitized
+}
+
 func (attrs *Pod) GetPodEnvVars() []corev1.EnvVar {
 	return attrs.podEnvVars
 }
@@ -74,60 +112,8 @@ func (attrs *Pod) Convert(c convertFunc, containerAttrs ...Container) []string {
 	return convert(combined, c)
 }
 
-func (attrs *Pod) combineAll(containerAttrs ...Container) map[string]string {
-	combined := make(map[string]string)
-
-	// precedence from low -> high
-	if attrs.useDeprecated {
-		maps.Copy(combined, attrs.deprecated)
-	}
-
-	maps.Copy(combined, attrs.workloadInfo)
-	maps.Copy(combined, attrs.podInfo)
-	maps.Copy(combined, attrs.clusterInfo)
-
-	for _, cAttr := range containerAttrs {
-		maps.Copy(combined, cAttr.ToMap())
-	}
-
-	maps.Copy(combined, attrs.namespaceAnnotations)
-
-	maps.Copy(combined, attrs.rules)
-	maps.Copy(combined, attrs.rulesPropagate)
-
-	maps.Copy(combined, attrs.podAnnotations)
-
-	maps.Copy(combined, attrs.custom)
-
-	return combined
-}
-
-func (attrs *Pod) combineForMetadataAnnotations() map[string]string {
-	combined := make(map[string]string)
-
-	// make sure we use the same precedence as in combine()
-	maps.Copy(combined, attrs.workloadInfo)
-	maps.Copy(combined, attrs.namespaceAnnotations)
-	maps.Copy(combined, attrs.rulesPropagate)
-
-	return combined
-}
-
-func (attrs *Pod) combineForJSONAnnotation() (string, error) {
-	combined := make(map[string]string)
-
-	// make sure we use the same precedence as in combineAll()
-	maps.Copy(combined, attrs.namespaceAnnotations)
-	maps.Copy(combined, attrs.rules)
-	maps.Copy(combined, attrs.rulesPropagate)
-	maps.Copy(combined, attrs.podAnnotations)
-
-	marshaledAnnotations, err := json.Marshal(combined)
-	if err != nil {
-		return "", errors.WithMessage(errors.WithStack(err), "could not marshal metadata annotations to JSON")
-	}
-
-	return string(marshaledAnnotations), nil
+func ToArg(key, value string) string {
+	return fmt.Sprintf("--%s=%s=%s", pod.Flag, key, value)
 }
 
 type convertFunc func(string, string) string

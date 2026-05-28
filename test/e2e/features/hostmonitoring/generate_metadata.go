@@ -4,16 +4,14 @@ package hostmonitoring
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,10 +20,6 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-)
-
-const (
-	generateMetadataFile = "/var/lib/dynatrace/enrichment/dt_node_metadata.properties"
 )
 
 var expectedMetadataFields = []string{
@@ -75,45 +69,11 @@ func oneAgentHaveGeneratedMetadata(dk dynakube.DynaKube) features.Func {
 
 func assertGeneratedMetadataFields(ctx context.Context, t *testing.T, resource *resources.Resources) k8sdaemonset.PodConsumer {
 	return func(pod corev1.Pod) {
-		generatedMetadata := getGeneratedMetadataFromPod(ctx, t, resource, pod)
+		generatedMetadata := metadataenrichment.GetMetadataPropertiesFromPod(ctx, t, resource, pod)
 		assert.NotEmpty(t, generatedMetadata, "generated metadata should not be empty")
 		for _, attribute := range expectedMetadataFields {
 			assert.Containsf(t, generatedMetadata, attribute, "generated metadata should contain %s attribute", attribute)
 			assert.NotEmptyf(t, generatedMetadata[attribute], "generated metadata %s attribute should not be empty", attribute)
 		}
 	}
-}
-
-func getGeneratedMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, oaPod corev1.Pod) map[string]string {
-	readGeneratedMetadataCmd := shell.ReadFile(generateMetadataFile)
-	require.NotEmpty(t, oaPod.Spec.Containers, "OneAgent pod should have at least one container")
-	container := oaPod.Spec.Containers[0].Name
-	result, err := k8spod.Exec(ctx, resource, oaPod, container, readGeneratedMetadataCmd...)
-
-	require.NoError(t, err)
-
-	assert.Zero(t, result.StdErr.Len())
-	assert.NotEmpty(t, result.StdOut)
-
-	return parseGeneratedMetadata(result.StdOut.String())
-}
-
-func parseGeneratedMetadata(text string) map[string]string {
-	m := make(map[string]string)
-
-	for line := range strings.Lines(text) {
-		l := strings.TrimSpace(line)
-		if l == "" {
-			continue
-		}
-
-		key, value, found := strings.Cut(l, "=")
-		if !found {
-			continue
-		}
-
-		m[key] = value
-	}
-
-	return m
 }

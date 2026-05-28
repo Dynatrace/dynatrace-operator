@@ -2,6 +2,7 @@ package pod_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"maps"
 	"net/url"
@@ -633,6 +634,125 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		assert.Equal(t, "override-pod-name", gotResourceAttributes["k8s.pod.name"])
 		assert.Equal(t, "override-cluster-name", gotResourceAttributes["k8s.cluster.name"])
 		assert.Equal(t, "pod-meid", gotResourceAttributes["dt.entity.kubernetes_cluster"])
+	})
+
+	t.Run("resource attribute full precedence chain", func(t *testing.T) {
+		// Precedence order low→high for OTEL_RESOURCE_ATTRIBUTES:
+		//   dynakube (resourceAttributes, with additionalResourceAttributes winning on collision)
+		//   < namespace metadata.dynatrace.com/ annotations
+		//   < pod metadata.dynatrace.com/ annotations
+		//   < existing OTEL_RESOURCE_ATTRIBUTES
+		//
+		// For metadata.dynatrace.com/<key> pod annotations (caseMetadataAnnotations):
+		//   dynakube < namespaceAnnotations (pod annotations not in this set)
+		//
+		// For the JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation):
+		//   dynakube < namespaceAnnotations < podAnnotations (existing OTEL_RA not included)
+		const raPrecedenceNs = "ra-precedence-ns"
+
+		raNS := getNamespace(raPrecedenceNs)
+		raNS.Annotations = map[string]string{
+			// wins over dynakube in all combine cases
+			"metadata.dynatrace.com/conflict.ns.vs.dynakube": "from-ns",
+			// will be overridden by pod annotation in OTEL_RA and JSON, but preserved via SetAnnotationIfNotExists
+			"metadata.dynatrace.com/conflict.pod.vs.ns": "from-ns",
+		}
+		createObject(t, clt, raNS)
+		createObject(t, clt, getOTLPExporterSecret(raPrecedenceNs))
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: "https://example.live.dynatrace.com",
+				ResourceAttributes: map[string]string{
+					// overridden by additionalResourceAttributes within the dynakube layer
+					"conflict.additional.vs.global": "from-global",
+					// overridden by namespace annotation in every combine case
+					"conflict.ns.vs.dynakube": "from-dynakube",
+				},
+				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
+					NamespaceSelector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
+						},
+					},
+					Signals: otlpspec.SignalConfiguration{
+						Metrics: &otlpspec.MetricsSignal{},
+					},
+					AdditionalResourceAttributes: map[string]string{
+						// wins over the same key in resourceAttributes
+						"conflict.additional.vs.global": "from-additional",
+					},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: testMEID,
+				KubernetesClusterName: testClusterName,
+			},
+		}
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Namespace = raPrecedenceNs
+			pod.Annotations = map[string]string{
+				// wins over ns annotation in OTEL_RA and JSON annotation
+				"metadata.dynatrace.com/conflict.pod.vs.ns": "from-pod",
+				// wins over this same-keyed existing OTEL_RA value in JSON and metadata annotations,
+				// but the existing OTEL_RA wins in the OTEL_RESOURCE_ATTRIBUTES env var
+				"metadata.dynatrace.com/conflict.existing.vs.pod": "from-pod",
+			}
+			pod.Spec.Containers[0].Env = []corev1.EnvVar{
+				// existing OTEL_RESOURCE_ATTRIBUTES has highest precedence in the env var
+				{Name: resourceattributes.OTELResourceAttributesEnv, Value: "conflict.existing.vs.pod=from-existing"},
+			}
+		})
+
+		appContainer := pod.Spec.Containers[0]
+		gotRA, found := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+		require.True(t, found, "OTEL_RESOURCE_ATTRIBUTES missing")
+
+		// additionalResourceAttributes wins over resourceAttributes (both merged into dynakube layer)
+		assert.Equal(t, "from-additional", gotRA["conflict.additional.vs.global"], "additionalResourceAttributes must win over resourceAttributes")
+		// namespace metadata.dynatrace.com/ annotation wins over dynakube layer
+		assert.Equal(t, "from-ns", gotRA["conflict.ns.vs.dynakube"], "namespace annotation must win over dynakube layer")
+		// pod metadata.dynatrace.com/ annotation wins over namespace annotation
+		assert.Equal(t, "from-pod", gotRA["conflict.pod.vs.ns"], "pod annotation must win over namespace annotation")
+		// existing OTEL_RESOURCE_ATTRIBUTES wins over pod annotation
+		assert.Equal(t, "from-existing", gotRA["conflict.existing.vs.pod"], "existing OTEL_RESOURCE_ATTRIBUTES must win over pod annotation")
+
+		// metadata.dynatrace.com/<key> annotations (caseMetadataAnnotations: dynakube + namespaceAnnotations, no podAnnotations)
+		assert.Equal(t, "from-additional", pod.Annotations["metadata.dynatrace.com/conflict.additional.vs.global"],
+			"dynakube value must appear in metadata annotation")
+		assert.Equal(t, "from-ns", pod.Annotations["metadata.dynatrace.com/conflict.ns.vs.dynakube"],
+			"namespace annotation must win over dynakube in metadata annotation")
+		// SetAnnotationIfNotExists preserves the pre-existing pod annotation over the caseMetadataAnnotations result
+		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.pod.vs.ns"],
+			"pre-existing pod annotation must be preserved in metadata annotation")
+		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.existing.vs.pod"],
+			"pre-existing pod annotation must be preserved in metadata annotation")
+
+		// JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation: dynakube + namespaceAnnotations + podAnnotations, no custom/existing OTEL_RA)
+		jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
+		require.NotEmpty(t, jsonAnnotation, "JSON metadata annotation missing")
+
+		var jsonAttrs map[string]string
+		require.NoError(t, json.Unmarshal([]byte(jsonAnnotation), &jsonAttrs))
+
+		assert.Equal(t, "from-additional", jsonAttrs["conflict.additional.vs.global"],
+			"dynakube value must appear in JSON annotation")
+		assert.Equal(t, "from-ns", jsonAttrs["conflict.ns.vs.dynakube"],
+			"namespace annotation must win over dynakube in JSON annotation")
+		assert.Equal(t, "from-pod", jsonAttrs["conflict.pod.vs.ns"],
+			"pod annotation must win over namespace annotation in JSON annotation")
+		// existing OTEL_RESOURCE_ATTRIBUTES (custom layer) is NOT included in the JSON annotation
+		assert.Equal(t, "from-pod", jsonAttrs["conflict.existing.vs.pod"],
+			"JSON annotation must reflect pod annotation, not the existing OTEL_RESOURCE_ATTRIBUTES value")
 	})
 
 	t.Run("data ingest token secret missing", func(t *testing.T) {

@@ -65,6 +65,9 @@ var (
 		invalidGlobalResourceAttributes,
 		invalidOneAgentResourceAttributes,
 		invalidOTLPResourceAttributes,
+		invalidGlobalResourceAttributesSanitization,
+		invalidOneAgentResourceAttributesSanitization,
+		invalidOTLPResourceAttributesSanitization,
 		publicRegistryOverrideWithoutPublicRegistry,
 	}
 	validatorWarningFuncs = []validatorFunc{
@@ -89,6 +92,9 @@ var (
 		deprecatedPaasToken,
 		publicRegistryFlagIgnoredForPlatformToken,
 		isNodeImagePullWithoutCSI,
+		warnGlobalResourceAttributesSanitization,
+		warnOneAgentResourceAttributesSanitization,
+		warnOTLPResourceAttributesSanitization,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

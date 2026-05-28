@@ -32,9 +32,7 @@ if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
   make test/e2e/no-csi/publish/olm
 elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
   echo "run fips e2e test suites"
-  make test/e2e-publish/fips
-elif [[ -n "${TARGET_IMAGE}" ]]; then
-  make PLATFORM_TOKEN="$USE_PLATFORM_TOKEN" IMAGE_URI="$TARGET_IMAGE" test/e2e-publish
+  make BRANCH="$TARGET_BRANCH" FIPS=true test/e2e-publish
 else
   echo "fall back to default branch target"
   make PLATFORM_TOKEN="$USE_PLATFORM_TOKEN" BRANCH="$TARGET_BRANCH" test/e2e-publish
