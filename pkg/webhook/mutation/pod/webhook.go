@@ -88,6 +88,10 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 		mutationRequest.Pod = originalPod // prevent partial modifications
 		mutErr.SetAnnotations(mutationRequest.Pod)
+	} else if mutationRequest.AnnotationWriter != nil {
+		if err := mutationRequest.AnnotationWriter.ApplyAnnotationsToPod(mutationRequest.Pod); err != nil {
+			log.Error(err, "failed to write pod annotations", "podName", podName)
+		}
 	}
 
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
