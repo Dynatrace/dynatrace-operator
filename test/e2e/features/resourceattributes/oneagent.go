@@ -7,7 +7,6 @@ import (
 
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -27,9 +26,7 @@ func OneAgent(t *testing.T) features.Feature {
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
 		dynakubeComponents.WithOneAgentAdditionalResourceAttributes(oneAgentAdditional),
-		// to be removed before merge
-		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/use-public-registry": "true"}),
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
+		devRegistryOptions(),
 	)
 
 	injectEverythingLabels := maputil.MergeMap(

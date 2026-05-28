@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -31,9 +30,7 @@ func LogmonOnly(t *testing.T) features.Feature {
 		dynakubeComponents.WithLogMonitoring(),
 		dynakubeComponents.WithLogMonitoringImageRef(t),
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
-		// to be removed before merge
-		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/use-public-registry": "true"}),
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
+		devRegistryOptions(),
 	)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)

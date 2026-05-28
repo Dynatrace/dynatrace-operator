@@ -1,3 +1,5 @@
+//go:build e2e
+
 package resourceattributes
 
 import (
@@ -12,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
@@ -79,6 +82,14 @@ func installSampleApp(b *features.FeatureBuilder, app *sample.App) {
 func uninstallSampleApp(b *features.FeatureBuilder, app *sample.App) {
 	b.WithTeardown("uninstalling sample app", app.Uninstall())
 	b.WithTeardown("deleting sample app namespace", k8snamespace.Delete(app.Namespace()))
+}
+
+// to be removed before merge
+func devRegistryOptions() dynakubeComponents.Option {
+	return func(dk *dynakube.DynaKube) {
+		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/use-public-registry": "true"})(dk)
+		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName)(dk)
+	}
 }
 
 func assessInitContainerArgs(app *sample.App, expected map[string]string) features.Func {

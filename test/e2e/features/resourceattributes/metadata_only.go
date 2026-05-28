@@ -5,7 +5,6 @@ package resourceattributes
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -21,8 +20,7 @@ func MetadataOnly(t *testing.T) features.Feature {
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
-		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/use-public-registry": "true"}),
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
+		devRegistryOptions(),
 	)
 
 	sampleApp := newSampleApp(t, &testDynakube, ns, testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels)

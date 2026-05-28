@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -27,9 +26,7 @@ func OtelAutoconfig(t *testing.T) features.Feature {
 		}),
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
 		dynakubeComponents.WithOTLPAdditionalResourceAttributes(otlpAdditional),
-		// to be removed before merge
-		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/use-public-registry": "true"}),
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
+		devRegistryOptions(),
 	)
 
 	sampleApp := newSampleApp(t, &testDynakube, ns, testDynakube.Spec.OTLPExporterConfiguration.NamespaceSelector.MatchLabels)

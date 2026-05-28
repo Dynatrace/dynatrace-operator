@@ -11,7 +11,6 @@ import (
 	activegateconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
@@ -61,9 +60,7 @@ func Combined(t *testing.T) features.Feature {
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
 		dynakubeComponents.WithOneAgentAdditionalResourceAttributes(oneAgentAdditional),
 		dynakubeComponents.WithOTLPAdditionalResourceAttributes(otlpAdditional),
-		// to be removed before merge
-		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/use-public-registry": "true"}),
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
+		devRegistryOptions(),
 	)
 
 	injectEverythingLabels := maputil.MergeMap(
