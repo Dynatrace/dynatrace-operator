@@ -283,7 +283,7 @@ jobs:
           fi
   run-in-ocp-olm-platform-token:
     if: ${{ always() && github.event.inputs.run-e2e-in-ocp-olm-platform-token != 'false' }}
-    needs: run-in-ocp
+    needs: run-in-ocp-olm
     name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
@@ -405,6 +405,9 @@ jobs:
           OCP_OLM_CLUSTER_STATUS: ${{ needs.run-in-ocp-olm.outputs.cluster_status }}
           OCP_OLM_JOB_ID: ${{ needs.run-in-ocp-olm.outputs.job_id }}
           OCP_OLM_RESULT: ${{ needs.run-in-ocp-olm.result }}
+          OCP_OLM_PLATFORM_TOKEN_CLUSTER_STATUS: ${{ needs.run-in-ocp-olm-platform-token.outputs.cluster_status }}
+          OCP_OLM_PLATFORM_TOKEN_JOB_ID: ${{ needs.run-in-ocp-olm-platform-token.outputs.job_id }}
+          OCP_OLM_PLATFORM_TOKEN_RESULT: ${{ needs.run-in-ocp-olm-platform-token.result }}
         run: |
           get_emoji() {
             if [ "$1" = "skipped" ]; then
@@ -421,6 +424,7 @@ jobs:
           OCP_PLATFORM_TOKEN_STATUS=$(get_emoji "${OCP_PLATFORM_TOKEN_CLUSTER_STATUS}" "${OCP_PLATFORM_TOKEN_RESULT}")
           OCP_FIPS_STATUS=$(get_emoji "${OCP_FIPS_CLUSTER_STATUS}" "${OCP_FIPS_RESULT}")
           OCP_OLM_STATUS=$(get_emoji "${OCP_OLM_CLUSTER_STATUS}" "${OCP_OLM_RESULT}")
+          OCP_OLM_PLATFORM_TOKEN_STATUS=$(get_emoji "${OCP_OLM_PLATFORM_TOKEN_CLUSTER_STATUS}" "${OCP_OLM_PLATFORM_TOKEN_RESULT}")
 
           echo "K8S_STATUS=$K8S_STATUS" >> $GITHUB_ENV
           echo "K8S_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${K8S_JOB_ID}" >> $GITHUB_ENV
@@ -439,6 +443,9 @@ jobs:
 
           echo "OCP_OLM_STATUS=$OCP_OLM_STATUS" >> $GITHUB_ENV
           echo "OCP_OLM_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_JOB_ID}" >> $GITHUB_ENV
+
+          echo "OCP_OLM_PLATFORM_TOKEN_STATUS=$OCP_OLM_PLATFORM_TOKEN_STATUS" >> $GITHUB_ENV
+          echo "OCP_OLM_PLATFORM_TOKEN_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_PLATFORM_TOKEN_JOB_ID}" >> $GITHUB_ENV
 
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
       - name: Notify in Slack
