@@ -146,8 +146,6 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	return result
 }
 
-// WithPlatformToken reports whether the test run is configured to use a platform token
-// instead of a classic API token (controlled by the PLATFORM_TOKEN=true env var).
 func WithPlatformToken() bool {
 	return os.Getenv("PLATFORM_TOKEN") == "true"
 }

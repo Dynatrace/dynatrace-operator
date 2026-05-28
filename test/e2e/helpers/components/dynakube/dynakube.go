@@ -169,10 +169,7 @@ func update(dk dynakube.DynaKube) features.Func {
 	}
 }
 
-// TriggerReconciliation forces an immediate reconcile by adding a timestamp annotation to the DynaKube,
-// then waits until UpdatedTimestamp advances to confirm the reconcile completed.
-// Needed when an external resource (e.g. the tenant secret) is updated but lacks an owner reference,
-// so the controller would not otherwise be notified of the change.
+// TriggerReconciliation forces an immediate reconcile
 func TriggerReconciliation(builder *features.FeatureBuilder, dk dynakube.DynaKube) {
 	builder.WithStep("triggered dynakube reconciliation", features.LevelAssess, triggerReconciliation(dk))
 }

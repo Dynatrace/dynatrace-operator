@@ -29,6 +29,7 @@ func FromPlatformToAPIToken(t *testing.T) features.Feature {
 
 	builder.Assess("update tenant secret to api token",
 		tenant.CreateTenantSecret(secretConfig.ClassicTokens(), testDynakube.Name, testDynakube.Namespace))
+	// trigger manually to not wait 15 minutes until next reconcile
 	componentDynakube.TriggerReconciliation(builder, testDynakube)
 	componentDynakube.VerifyStartup(builder, features.LevelAssess, testDynakube)
 
