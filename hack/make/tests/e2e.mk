@@ -213,9 +213,6 @@ test/e2e/resourceattributes/logmononly:
 test/e2e/resourceattributes/metadataonly:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_metadata_only" $(SKIPCLEANUP)
 
-test/e2e/resourceattributes/oneagent:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_oneagent" $(SKIPCLEANUP)
-
 test/e2e/resourceattributes/otlp:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_otlp" $(SKIPCLEANUP)
 
