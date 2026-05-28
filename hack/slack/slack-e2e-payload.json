@@ -87,7 +87,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s-latest-platform-token"
+                    "text": "k8s-latest (platform token)"
                   }
                 ]
               }
@@ -157,7 +157,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp-latest-platform-token"
+                    "text": "ocp-latest (platform token)"
                   }
                 ]
               }
@@ -262,7 +262,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp-olm-platform-token"
+                    "text": "ocp-olm (platform token)"
                   }
                 ]
               }
