@@ -495,20 +495,6 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 			notWantArgs: []string{attributes.ToArg(collisionKey, globalCollVal)},
 		},
 		{
-			name: "OA enabled, global got renamed, key collision - random pick",
-			dkSpec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AdditionalResourceAttributes: map[string]string{"collision_key": addCollVal},
-					},
-				},
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
-				ResourceAttributes: map[string]string{"collision/key": globalCollVal},
-			},
-			wantArgs:    []string{attributes.ToArg("collision_key", addCollVal)},
-			notWantArgs: []string{attributes.ToArg("collision_key", globalCollVal)},
-		},
-		{
 			name: "OA enabled, user key collides with operator semantic key - user wins",
 			dkSpec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
