@@ -68,6 +68,8 @@ jobs:
   # TODO check if it is neede to disable concurrency, vecause we might not have the env
   run-in-k8s-platform-token:
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (platform-token)
+    needs: run-in-k8s
+    if: always()
     environment: E2E
     runs-on:
       - operator-e2e
@@ -155,6 +157,8 @@ jobs:
           fi
   run-in-ocp-platform-token:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform-token)
+    needs: run-in-ocp
+    if: always()
     environment: E2E
     runs-on:
       - operator-e2e
