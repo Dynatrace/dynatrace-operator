@@ -28,8 +28,7 @@ echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
 if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
   echo "run no csi tests suite using OLM"
-  # TODO What to do with olm tests? I guess do not run
-  make test/e2e/no-csi/publish/olm
+  make PLATFORM_TOKEN="$USE_PLATFORM_TOKEN" test/e2e/no-csi/publish/olm
 elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
   echo "run fips e2e test suites"
   make BRANCH="$TARGET_BRANCH" FIPS=true test/e2e-publish

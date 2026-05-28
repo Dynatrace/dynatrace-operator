@@ -1,4 +1,3 @@
-# TODO ask about merging all them together in a matrix. Should it be with this ticket or in a separate one?
 name: E2E tests
 
 on:
@@ -22,13 +21,28 @@ on:
         default: true
         required: false
         type: boolean
+      run-e2e-in-k8s-platform-token:
+        description: 'Run E2E tests in Kubernetes cluster with platform token'
+        default: true
+        required: false
+        type: boolean
       run-e2e-in-ocp:
         description: 'Run E2E tests in OpenShift cluster'
         default: true
         required: false
         type: boolean
+      run-e2e-in-ocp-platform-token:
+        description: 'Run E2E tests in OpenShift cluster with platform token'
+        default: true
+        required: false
+        type: boolean
       run-e2e-in-ocp-olm:
         description: 'Run OLM E2E tests in OpenShift cluster'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-ocp-olm-platform-token:
+        description: 'Run OLM E2E tests in OpenShift cluster platform token'
         default: true
         required: false
         type: boolean
@@ -77,6 +91,7 @@ jobs:
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -86,11 +101,10 @@ jobs:
             exit 1
           fi
 
-  # TODO check if it is neede to disable concurrency, vecause we might not have the env
   run-in-k8s-platform-token:
-    name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (platform-token)
+    if: ${{ always() && github.event.inputs.run-e2e-in-k8s-platform-token != 'false' }}
     needs: run-in-k8s
-    if: always()
+    name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (platform-token)
     environment: E2E
     runs-on:
       - operator-e2e
@@ -123,8 +137,8 @@ jobs:
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           use-platform-token: "true"
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -178,9 +192,9 @@ jobs:
             exit 1
           fi
   run-in-ocp-platform-token:
-    name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform-token)
+    if: ${{ always() && github.event.inputs.run-e2e-in-ocp-platform-token != 'false' }}
     needs: run-in-ocp
-    if: always()
+    name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform-token)
     environment: E2E
     runs-on:
       - operator-e2e
@@ -267,6 +281,52 @@ jobs:
           if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
+  run-in-ocp-olm-platform-token:
+    if: ${{ always() && github.event.inputs.run-e2e-in-ocp-olm-platform-token != 'false' }}
+    needs: run-in-ocp
+    name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }})
+    environment: E2E
+    runs-on:
+      - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ job.check_run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Run e2e test
+        id: run_e2e_test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto
+          flc-environment: dto-ocp-olm-flc
+          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          use-platform-token: "true"
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
+      - name: Determine cluster status
+        if: failure()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
+        run: |
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
+            exit 1
+          fi
   run-in-ocp-fips:
     if: ${{ github.event.inputs.run-e2e-in-ocp-fips != 'false' }}
     name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
@@ -315,7 +375,7 @@ jobs:
   notify-slack:
     name: Notify test results in Slack
     environment: E2E
-    needs: [ "run-in-k8s", "run-in-k8s-platform-token", "run-in-ocp", "run-in-ocp-platform-token", "run-in-ocp-fips", "run-in-ocp-olm"]
+    needs: [ "run-in-k8s", "run-in-k8s-platform-token", "run-in-ocp", "run-in-ocp-platform-token", "run-in-ocp-fips", "run-in-ocp-olm", "run-in-ocp-olm-platform-token"]
     runs-on: ubuntu-24.04
     if: ${{ always() }}
     steps:
