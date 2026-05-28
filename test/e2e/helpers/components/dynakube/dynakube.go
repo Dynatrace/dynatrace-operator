@@ -28,24 +28,22 @@ const (
 	defaultName = "dynakube"
 )
 
-// Install creates a tenant secret and waits until the DynaKube is Running.
+// install creates a tenant secret and waits until the DynaKube is Running.
 // It also registers the deletion of these resources in reverse order.
-func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
-	Create(builder, features.LevelAssess, secretConfig.TokensWithSettingsScope(), dk)
+func install(builder *features.FeatureBuilder, t tenant.Tokens, dk dynakube.DynaKube) {
+	Create(builder, features.LevelAssess, t, dk)
 	VerifyStartup(builder, features.LevelAssess, dk)
 	// The secret is required for correct cleanup, so always delete it last
 	Delete(builder, features.LevelTeardown, dk)
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(dk.Name, dk.Namespace))
 }
 
-// InstallWithoutSettingsScopes creates a tenant secret without settings scopes and waits until the DynaKube is Running.
-// It also registers the deletion of these resources in reverse order.
+func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
+	install(builder, secretConfig.TokensWithSettingsScope(), dk)
+}
+
 func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
-	Create(builder, features.LevelAssess, secretConfig.TokensWithoutSettingsScope(), dk)
-	VerifyStartup(builder, features.LevelAssess, dk)
-	// The secret is required for correct cleanup, so always delete it last
-	Delete(builder, features.LevelTeardown, dk)
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(dk.Name, dk.Namespace))
+	install(builder, secretConfig.TokensWithoutSettingsScope(), dk)
 }
 
 func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDK prevDynakube.DynaKube) {
