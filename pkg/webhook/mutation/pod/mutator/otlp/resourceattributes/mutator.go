@@ -69,12 +69,11 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 	}
 
-	err = attrs.ApplyAnnotationsToPod(request.Pod)
-	if err != nil {
-		log.Error(err, "failed to propagate metadata annotations")
-	}
-
 	mutated := false
+
+	attrs.SetDynakubeAttributes(ctx, request.DynaKube.OTLPExporterConfiguration().GetResourceAttributes())
+
+	request.AnnotationWriter = attrs
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]

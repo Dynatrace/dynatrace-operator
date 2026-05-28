@@ -314,3 +314,186 @@ func TestResourceAttributesSyntaxValidation(t *testing.T) {
 		assert.NotContains(t, err.Error(), "spec.otlpExporterConfiguration")
 	})
 }
+
+func TestResourceAttributesSanitizationValidation(t *testing.T) {
+	t.Run("valid keys produce no warning and no error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:             testAPIURL,
+				ResourceAttributes: map[string]string{"k8s.pod.name": "val", "dt.security_context": "high"},
+			},
+		}
+		assertAllowedWithoutWarnings(t, dk)
+	})
+
+	t.Run("global key with slash produces warning", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:             testAPIURL,
+				ResourceAttributes: map[string]string{"foo/bar": "val"},
+			},
+		}
+		warnings, err := assertAllowed(t, dk)
+		require.NoError(t, err)
+		assert.Len(t, warnings, 1)
+		assert.Contains(t, warnings[0], `"foo/bar" will be renamed to "foo_bar"`)
+		assert.Contains(t, warnings[0], "spec.resourceAttributes")
+	})
+
+	t.Run("global key that sanitizes to empty string is an error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:             testAPIURL,
+				ResourceAttributes: map[string]string{"///": "val"},
+			},
+		}
+		assertDenied(t, []string{`"///" will be dropped`, "spec.resourceAttributes"}, dk)
+	})
+
+	t.Run("global keys that collide after sanitization is an error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:             testAPIURL,
+				ResourceAttributes: map[string]string{"foo/bar": "v1", "foo_bar": "v2"},
+			},
+		}
+		assertDenied(t, []string{`"foo/bar"`, `"foo_bar"`, "both sanitize to", "spec.resourceAttributes"}, dk)
+	})
+
+	t.Run("oneAgent key with slash produces warning", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AdditionalResourceAttributes: map[string]string{"foo/bar": "val"},
+					},
+				},
+			},
+		}
+		warnings, err := assertAllowed(t, dk)
+		require.NoError(t, err)
+		assert.Len(t, warnings, 1)
+		assert.Contains(t, warnings[0], `"foo/bar" will be renamed to "foo_bar"`)
+		assert.Contains(t, warnings[0], "spec.oneAgent.*.additionalResourceAttributes")
+	})
+
+	t.Run("oneAgent key that sanitizes to empty string is an error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AdditionalResourceAttributes: map[string]string{"///": "val"},
+					},
+				},
+			},
+		}
+		assertDenied(t, []string{`"///" will be dropped`, "spec.oneAgent.*.additionalResourceAttributes"}, dk)
+	})
+
+	t.Run("OTLP key with slash produces warning", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					AdditionalResourceAttributes: map[string]string{"foo/bar": "val"},
+				},
+			},
+		}
+		warnings, err := assertAllowed(t, dk)
+		require.NoError(t, err)
+		assert.Len(t, warnings, 1)
+		assert.Contains(t, warnings[0], `"foo/bar" will be renamed to "foo_bar"`)
+		assert.Contains(t, warnings[0], "spec.otlpExporterConfiguration.additionalResourceAttributes")
+	})
+
+	t.Run("OTLP keys that collide after sanitization is an error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					AdditionalResourceAttributes: map[string]string{"foo/bar": "v1", "foo_bar": "v2"},
+				},
+			},
+		}
+		assertDenied(t, []string{`"foo/bar"`, `"foo_bar"`, "both sanitize to", "spec.otlpExporterConfiguration.additionalResourceAttributes"}, dk)
+	})
+
+	t.Run("global key and OTLP key that collide after sanitization is an error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:             testAPIURL,
+				ResourceAttributes: map[string]string{"foo/bar": "v1"},
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					AdditionalResourceAttributes: map[string]string{"foo_bar": "v2"},
+				},
+			},
+		}
+		assertDenied(t, []string{`"foo/bar"`, `"foo_bar"`, "both sanitize to", "spec.otlpExporterConfiguration.additionalResourceAttributes"}, dk)
+	})
+
+	t.Run("global key and oneAgent key that collide after sanitization is an error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:             testAPIURL,
+				ResourceAttributes: map[string]string{"foo/bar": "v1"},
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AdditionalResourceAttributes: map[string]string{"foo_bar": "v2"},
+					},
+				},
+			},
+		}
+		assertDenied(t, []string{`"foo/bar"`, `"foo_bar"`, "both sanitize to", "spec.oneAgent.*.additionalResourceAttributes"}, dk)
+	})
+
+	t.Run("key that exceeds 63 chars after sanitization is an error", func(t *testing.T) {
+		// 64-char key: valid as a label name before sanitization but too long as an annotation name segment
+		longKey := strings.Repeat("a", 64)
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:             testAPIURL,
+				ResourceAttributes: map[string]string{longKey: "val"},
+			},
+		}
+		assertDenied(t, []string{longKey, "exceeds the 63-character annotation name-segment limit", "spec.resourceAttributes"}, dk)
+	})
+
+	t.Run("qualified label key that exceeds 63 chars after sanitization is an error", func(t *testing.T) {
+		// "some.prefix.example.com/name" is a valid label key; after sanitization "/" becomes "_"
+		// producing a single 63+-char name segment that is too long for an annotation.
+		prefix := strings.Repeat("a", 55)            // 55-char prefix + "/" + "name" = 60 chars (valid label key)
+		key := prefix + "/" + strings.Repeat("b", 9) // 55 + 1 + 9 = 65 chars total; sanitized = 64 chars > 63
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:             testAPIURL,
+				ResourceAttributes: map[string]string{key: "val"},
+			},
+		}
+		assertDenied(t, []string{"exceeds the 63-character annotation name-segment limit", "spec.resourceAttributes"}, dk)
+	})
+
+	t.Run("no oneAgent additionalResourceAttributes — sanitization validators do not fire", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:             testAPIURL,
+				ResourceAttributes: map[string]string{"k8s.pod.name": "val"},
+			},
+		}
+		assertAllowedWithoutWarnings(t, dk)
+	})
+}

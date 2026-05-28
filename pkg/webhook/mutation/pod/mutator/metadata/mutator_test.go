@@ -2,14 +2,12 @@ package metadata
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -379,23 +377,27 @@ func TestMutate(t *testing.T) {
 				require.NotEqual(t, *expectedPod, *request.Pod)
 				require.NotEmpty(t, request.Pod.OwnerReferences)
 
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.workload.kind", request.Pod.OwnerReferences[0].Kind))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.workload.name", request.Pod.OwnerReferences[0].Name))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument(nsMetaAnnotationKey, nsMetaAnnotationValue))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("k8s.workload.kind", strings.ToLower(request.Pod.OwnerReferences[0].Kind)))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("k8s.workload.name", request.Pod.OwnerReferences[0].Name))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg(nsMetaAnnotationKey, nsMetaAnnotationValue))
 
 				if tc.withDeprecatedAnnotations {
-					assert.Contains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
-					assert.Contains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
+					assert.Contains(t, request.InstallContainer.Args, attributes.ToArg(attributes.DeprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind)))
+					assert.Contains(t, request.InstallContainer.Args, attributes.ToArg(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
 				} else {
-					assert.NotContains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
-					assert.NotContains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
+					assert.NotContains(t, request.InstallContainer.Args, attributes.ToArg(attributes.DeprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind)))
+					assert.NotContains(t, request.InstallContainer.Args, attributes.ToArg(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
 				}
 
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("dt.security_context", "high"))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("dt.cost.costcenter", "cost-center"))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.namespace.label."+testCustomMetadataLabel, "custom-meta-label"))
-				assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-meta-annotation"))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("dt.security_context", "high"))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("dt.cost.costcenter", "cost-center"))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("k8s.namespace.label."+testCustomMetadataLabel, "custom-meta-label"))
+				assert.Contains(t, request.InstallContainer.Args, attributes.ToArg("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-meta-annotation"))
 				assert.Contains(t, request.InstallContainer.Args, "--"+bootstrapper.MetadataEnrichmentFlag)
+
+				// annotations are written by the post-step in webhook.Handle, not by Mutate directly
+				require.NotNil(t, request.AnnotationWriter)
+				require.NoError(t, request.AnnotationWriter.ApplyAnnotationsToPod(request.Pod))
 
 				require.Len(t, request.Pod.Annotations, 7) // workload.kind + workload.name + dt.security_context + dt.cost.costcenter + injected + propagated ns annotations
 				assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[metadataenrichment.Prefix+attributes.K8sWorkloadKindAttr])
@@ -408,8 +410,179 @@ func TestMutate(t *testing.T) {
 	})
 }
 
-func buildArgument(attr string, value string) string {
-	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, attr, strings.ToLower(value))
+func TestMutate_ResourceAttributes(t *testing.T) {
+	const (
+		podNamespace    = "test-ns"
+		globalKey       = "global-key"
+		globalValue     = "global-value"
+		additionalKey   = "additional-key"
+		additionalValue = "additional-value"
+		collisionKey    = "collision-key"
+		globalCollVal   = "global-collision-value"
+		addCollVal      = "additional-collision-value"
+	)
+
+	type testCase struct {
+		name        string
+		dkSpec      dynakube.DynaKubeSpec
+		wantArgs    []string
+		notWantArgs []string
+	}
+
+	cases := []testCase{
+		{
+			name: "OA enabled, no resource attributes set",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+			},
+			notWantArgs: []string{
+				attributes.ToArg(globalKey, globalValue),
+				attributes.ToArg(additionalKey, additionalValue),
+			},
+		},
+		{
+			name: "OA enabled (ApplicationMonitoring), only global resource attributes",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+				ResourceAttributes: map[string]string{globalKey: globalValue},
+			},
+			wantArgs: []string{attributes.ToArg(globalKey, globalValue)},
+		},
+		{
+			name: "OA enabled (ApplicationMonitoring), only additionalResourceAttributes",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
+					},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+			},
+			wantArgs: []string{attributes.ToArg(additionalKey, additionalValue)},
+		},
+		{
+			name: "OA enabled (CloudNativeFullStack), only additionalResourceAttributes",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
+							AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
+						},
+					},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+			},
+			wantArgs: []string{attributes.ToArg(additionalKey, additionalValue)},
+		},
+		{
+			name: "OA enabled, both set, key collision - additional wins",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AdditionalResourceAttributes: map[string]string{collisionKey: addCollVal},
+					},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+				ResourceAttributes: map[string]string{collisionKey: globalCollVal},
+			},
+			wantArgs:    []string{attributes.ToArg(collisionKey, addCollVal)},
+			notWantArgs: []string{attributes.ToArg(collisionKey, globalCollVal)},
+		},
+		{
+			name: "OA enabled, user key collides with operator semantic key - user wins",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+				ResourceAttributes: map[string]string{"k8s.namespace.name": "user-override"},
+			},
+			wantArgs:    []string{attributes.ToArg("k8s.namespace.name", "user-override")},
+			notWantArgs: []string{attributes.ToArg("k8s.namespace.name", podNamespace)},
+		},
+		{
+			name: "OA disabled, metadata enrichment only, global resource attributes applied",
+			dkSpec: dynakube.DynaKubeSpec{
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+				ResourceAttributes: map[string]string{globalKey: globalValue},
+			},
+			wantArgs: []string{attributes.ToArg(globalKey, globalValue)},
+		},
+		{
+			name: "OA disabled (HostMonitoring), additionalResourceAttributes ignored",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{
+						AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
+					},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+			},
+			notWantArgs: []string{attributes.ToArg(additionalKey, additionalValue)},
+		},
+		{
+			name: "empty key and empty value are filtered out",
+			dkSpec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+				ResourceAttributes: map[string]string{
+					"":          "empty-key-value",
+					"empty-val": "",
+					globalKey:   globalValue,
+				},
+			},
+			wantArgs:    []string{attributes.ToArg(globalKey, globalValue)},
+			notWantArgs: []string{attributes.ToArg("empty-val", "")},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			pod := &corev1.Pod{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-pod",
+					Namespace: podNamespace,
+				},
+			}
+			initContainer := corev1.Container{Args: []string{}}
+			dk := dynakube.DynaKube{Spec: tc.dkSpec}
+
+			request := dtwebhook.MutationRequest{
+				Context: t.Context(),
+				BaseRequest: &dtwebhook.BaseRequest{
+					Pod:      pod,
+					DynaKube: dk,
+					Namespace: corev1.Namespace{
+						ObjectMeta: metav1.ObjectMeta{Name: podNamespace},
+					},
+				},
+				InstallContainer: &initContainer,
+			}
+
+			mut := NewMutator(fake.NewClient())
+			err := mut.Mutate(&request)
+			require.NoError(t, err)
+
+			for _, want := range tc.wantArgs {
+				assert.Contains(t, request.InstallContainer.Args, want)
+			}
+			for _, notWant := range tc.notWantArgs {
+				assert.NotContains(t, request.InstallContainer.Args, notWant)
+			}
+		})
+	}
 }
 
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {

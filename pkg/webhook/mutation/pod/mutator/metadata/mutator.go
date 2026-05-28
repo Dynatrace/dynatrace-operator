@@ -6,13 +6,13 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -63,6 +63,12 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		}
 	}
 
+	if oneagent.IsEnabled(request.BaseRequest) {
+		attrs.SetDynakubeAttributes(request.Context, request.DynaKube.OneAgent().GetResourceAttributes())
+	} else {
+		attrs.SetDynakubeAttributes(request.Context, request.DynaKube.GetResourceAttributes())
+	}
+
 	withDeprecatedAttributesArg := arg.Arg{
 		Name:  bootstrapper.EnableAttributesDTKubernetesFlag,
 		Value: strconv.FormatBool(request.DynaKube.FF().EnableAttributesDTKubernetes()),
@@ -73,7 +79,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 			return ""
 		}
 
-		return fmt.Sprintf("--%s=%s=%s", pod.Flag, key, value)
+		return attributes.ToArg(key, value)
 	})
 
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{withDeprecatedAttributesArg})...)
@@ -85,10 +91,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 
 	setInjectedAnnotation(request.Pod)
 
-	err = attrs.ApplyAnnotationsToPod(request.Pod)
-	if err != nil {
-		return err
-	}
+	request.AnnotationWriter = attrs
 
 	_, err = AddContainerAttributes(request.BaseRequest, request.InstallContainer)
 	if err != nil {
