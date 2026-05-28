@@ -147,7 +147,7 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 }
 
 func WithPlatformToken() bool {
-	return os.Getenv("PLATFORM_TOKEN") == "true"
+	return os.Getenv("USE_PLATFORM_TOKEN") == "true"
 }
 
 func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {

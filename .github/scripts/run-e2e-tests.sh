@@ -28,13 +28,13 @@ echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
 if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
   echo "run no csi tests suite using OLM"
-  make PLATFORM_TOKEN="$USE_PLATFORM_TOKEN" test/e2e/no-csi/publish/olm
+  make test/e2e/no-csi/publish/olm
 elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
   echo "run fips e2e test suites"
   make BRANCH="$TARGET_BRANCH" FIPS=true test/e2e-publish
 else
   echo "fall back to default branch target"
-  make PLATFORM_TOKEN="$USE_PLATFORM_TOKEN" BRANCH="$TARGET_BRANCH" test/e2e-publish
+  make BRANCH="$TARGET_BRANCH" test/e2e-publish
 fi
 
 echo "Success!"
