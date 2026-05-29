@@ -978,3 +978,23 @@ tests:
       - equal:
           path: metadata.labels["app.kubernetes.io/version"]
           value: 1.0.1
+
+  - it: should have DT_DEFAULT_REQUEUE_AFTER if operator.requeueAfter is set
+    set:
+      operator.requeueAfter: "30m"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_DEFAULT_REQUEUE_AFTER
+            value: "30m"
+          count: 1
+          any: true
+
+  - it: should not have DT_DEFAULT_REQUEUE_AFTER if operator.requeueAfter is not set
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_DEFAULT_REQUEUE_AFTER
+          any: true

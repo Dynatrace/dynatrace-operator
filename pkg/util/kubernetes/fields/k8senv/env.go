@@ -113,13 +113,12 @@ func GetDefaultRequeueAfter(ctx context.Context) time.Duration {
 
 	rawDuration := os.Getenv(DefaultRequeueAfter)
 	if rawDuration == "" {
-
 		return defaultRequeueInterval
 	}
 
 	duration, err := time.ParseDuration(rawDuration)
 	if err != nil {
-		log.Info("couldn't parse requeueAfter from env, using default", "env", DefaultRequeueAfter, "value", rawDuration, "err", err, "default", defaultRequeueInterval)
+		log.Error(err, "failed to parse default requeue interval", "duration", rawDuration)
 
 		return defaultRequeueInterval
 	}
