@@ -102,8 +102,7 @@ jobs:
           fi
 
   run-in-k8s-platform-token:
-    if: ${{ always() && github.event.inputs.run-e2e-in-k8s-platform-token != 'false' }}
-    needs: run-in-k8s
+    if: ${{ github.event.inputs.run-e2e-in-k8s-platform-token != 'false' }}
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (platform token)
     environment: E2E
     runs-on:
@@ -121,7 +120,7 @@ jobs:
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto
-          flc-environment: dto-k8s-latest-flc
+          flc-environment: dto-k8s-latest-pt-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
@@ -192,8 +191,7 @@ jobs:
             exit 1
           fi
   run-in-ocp-platform-token:
-    if: ${{ always() && github.event.inputs.run-e2e-in-ocp-platform-token != 'false' }}
-    needs: run-in-ocp
+    if: ${{ github.event.inputs.run-e2e-in-ocp-platform-token != 'false' }}
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform token)
     environment: E2E
     runs-on:
@@ -211,7 +209,7 @@ jobs:
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto
-          flc-environment: dto-ocp-latest-flc
+          flc-environment: dto-ocp-latest-pt-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
@@ -282,8 +280,7 @@ jobs:
             exit 1
           fi
   run-in-ocp-olm-platform-token:
-    if: ${{ always() && github.event.inputs.run-e2e-in-ocp-olm-platform-token != 'false' }}
-    needs: run-in-ocp-olm
+    if: ${{ github.event.inputs.run-e2e-in-ocp-olm-platform-token != 'false' }}
     name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform token)
     environment: E2E
     runs-on:
@@ -301,7 +298,7 @@ jobs:
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto
-          flc-environment: dto-ocp-olm-flc
+          flc-environment: dto-ocp-olm-pt-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
