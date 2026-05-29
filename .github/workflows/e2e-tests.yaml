@@ -104,7 +104,7 @@ jobs:
   run-in-k8s-platform-token:
     if: ${{ always() && github.event.inputs.run-e2e-in-k8s-platform-token != 'false' }}
     needs: run-in-k8s
-    name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (platform-token)
+    name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (platform token)
     environment: E2E
     runs-on:
       - operator-e2e
@@ -194,7 +194,7 @@ jobs:
   run-in-ocp-platform-token:
     if: ${{ always() && github.event.inputs.run-e2e-in-ocp-platform-token != 'false' }}
     needs: run-in-ocp
-    name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform-token)
+    name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform token)
     environment: E2E
     runs-on:
       - operator-e2e
@@ -284,7 +284,7 @@ jobs:
   run-in-ocp-olm-platform-token:
     if: ${{ always() && github.event.inputs.run-e2e-in-ocp-olm-platform-token != 'false' }}
     needs: run-in-ocp-olm
-    name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }})
+    name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform token)
     environment: E2E
     runs-on:
       - operator-e2e
