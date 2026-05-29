@@ -5,6 +5,7 @@ package resourceattributes
 import (
 	"context"
 	"encoding/json"
+	"maps"
 	"net/url"
 	"testing"
 
@@ -54,6 +55,15 @@ var (
 		"global.only.key":        "global-only-value",
 		"otlp.only.key":          "otlp-only-value",
 	}
+	// exclusiveAttrs are resource attributes that are configured for exactly one
+	// injection path. They must only ever show up on that path and must never
+	// leak into the other one (e.g. an OTLP-only attribute appearing in the
+	// OneAgent dt_metadata, or a OneAgent-only attribute appearing in
+	// OTEL_RESOURCE_ATTRIBUTES).
+	exclusiveAttrs = map[string]string{
+		"oa.only.key":   "oa-only-value",
+		"otlp.only.key": "otlp-only-value",
+	}
 )
 
 const sampleAppName = "static-ra-app"
@@ -101,6 +111,11 @@ func assessInitContainerArgs(app *sample.App, expected map[string]string) featur
 				"init container %q args missing %s=%s", sample.InitContainerName, k, v)
 		}
 
+		for k, v := range forbiddenAttrs(expected) {
+			assert.NotContainsf(t, initContainer.Args, attributes.ToArg(k, v),
+				"init container %q args leaked %s=%s", sample.InitContainerName, k, v)
+		}
+
 		return ctx
 	}
 }
@@ -126,6 +141,11 @@ func assessDTMetadataFiles(dk dynakube.DynaKube, app *sample.App, expected map[s
 			assert.Equalf(t, v, metadata[k], "dt_metadata.json key %q in pod %s", k, pod.Name)
 		}
 
+		for k := range forbiddenAttrs(expected) {
+			assert.NotContainsf(t, properties, k, "dt_metadata.properties leaked key %q in pod %s", k, pod.Name)
+			assert.NotContainsf(t, metadata, k, "dt_metadata.json leaked key %q in pod %s", k, pod.Name)
+		}
+
 		return ctx
 	}
 }
@@ -139,6 +159,7 @@ func assessDTNodeMetadataProperties(dk dynakube.DynaKube, app *sample.App, expec
 		})
 
 		expectedDefaults := buildExpectedMetadataEnrichmentDefaults(ctx, t, envConfig, dk, app)
+		forbidden := forbiddenAttrs(expected)
 		err := q.ForEachPod(func(pod corev1.Pod) {
 			properties := metadataenrichment.GetNodeMetadataPropertiesFromPod(ctx, t, r, pod)
 			for k, v := range expected {
@@ -146,6 +167,9 @@ func assessDTNodeMetadataProperties(dk dynakube.DynaKube, app *sample.App, expec
 			}
 			for k, v := range expectedDefaults {
 				assert.Equalf(t, v, properties[k], "dt_metadata.properties key %q in pod %s", k, pod.Name)
+			}
+			for k := range forbidden {
+				assert.NotContainsf(t, properties, k, "dt_metadata.properties leaked key %q in pod %s", k, pod.Name)
 			}
 		})
 		require.NoError(t, err)
@@ -168,9 +192,13 @@ func assessOTLPInjectionAttributes(dk dynakube.DynaKube, app *sample.App, expect
 				assert.Equalf(t, url.QueryEscape(v), gotAttrs[k], "OTEL_RESOURCE_ATTRIBUTES key %q in pod %s", k, p.Name)
 			}
 
-			expectedDefaults := buildExpectedOtlpDefaults(ctx, t, envConfig, dk, app)
+			expectedDefaults := buildExpectedOTLPDefaults(ctx, t, envConfig, dk, app)
 			for k, v := range expectedDefaults {
 				assert.Equalf(t, v, gotAttrs[k], "OTEL_RESOURCE_ATTRIBUTES key %q in pod %s", k, p.Name)
+			}
+
+			for k := range forbiddenAttrs(expected) {
+				assert.NotContainsf(t, gotAttrs, k, "OTEL_RESOURCE_ATTRIBUTES leaked key %q in pod %s", k, p.Name)
 			}
 		})
 
@@ -201,6 +229,10 @@ func assessPodMetadataJSONAnnotation(app *sample.App, expected map[string]string
 			assert.Equalf(t, v, parsed[k], "JSON annotation key %q in pod %s", k, pod.Name)
 		}
 
+		for k := range forbiddenAttrs(expected) {
+			assert.NotContainsf(t, parsed, k, "JSON annotation leaked key %q in pod %s", k, pod.Name)
+		}
+
 		return ctx
 	}
 }
@@ -223,27 +255,48 @@ func assessPodIndividualAnnotations(app *sample.App, expected map[string]string)
 			}
 		}
 
+		for k := range forbiddenAttrs(expected) {
+			annotationKey := dkmetadata.Prefix + k
+			assert.NotContainsf(t, pod.Annotations, annotationKey, "annotation %q leaked in pod %s", annotationKey, pod.Name)
+		}
+
 		return ctx
 	}
 }
 
-func buildExpectedOtlpDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App) map[string]string {
+// forbiddenAttrs returns the exclusive resource attributes that must not be
+// present given the expected attributes: every exclusive attribute that is not
+// part of expected would be a leak from the other injection path.
+func forbiddenAttrs(expected map[string]string) map[string]string {
+	forbidden := map[string]string{}
+	for k, v := range exclusiveAttrs {
+		if _, ok := expected[k]; !ok {
+			forbidden[k] = v
+		}
+	}
+
+	return forbidden
+}
+
+func buildExpectedOTLPDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App) map[string]string {
 	expectedDefaults := make(map[string]string)
-	addExpectedDefaults(ctx, t, envConfig, dk, app, expectedDefaults)
-	addExpectedPodDefaultsOtlp(expectedDefaults)
+	maps.Copy(expectedDefaults, buildExpectedDefaults(ctx, t, envConfig, dk, app))
+	maps.Copy(expectedDefaults, buildExpectedPodDefaultsOTLP())
 
 	return expectedDefaults
 }
 
 func buildExpectedMetadataEnrichmentDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App) map[string]string {
 	expectedDefaults := make(map[string]string)
-	addExpectedDefaults(ctx, t, envConfig, dk, app, expectedDefaults)
-	addExpectedPodDefaultsMetadataEnrichment(ctx, t, envConfig, app, expectedDefaults)
+	maps.Copy(expectedDefaults, buildExpectedDefaults(ctx, t, envConfig, dk, app))
+	maps.Copy(expectedDefaults, buildExpectedPodDefaultsMetadataEnrichment(ctx, t, envConfig, app))
 
 	return expectedDefaults
 }
 
-func addExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App, expectedDefaults map[string]string) {
+func buildExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App) map[string]string {
+	expectedDefaults := make(map[string]string)
+
 	err := envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &dk)
 	require.NoError(t, err)
 
@@ -254,18 +307,26 @@ func addExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf.C
 	expectedDefaults["k8s.cluster.name"] = dk.Status.KubernetesClusterName
 	expectedDefaults["dt.entity.kubernetes_cluster"] = dk.Status.KubernetesClusterMEID
 	expectedDefaults["k8s.container.name"] = app.ContainerName()
+
+	return expectedDefaults
 }
 
-func addExpectedPodDefaultsOtlp(expectedDefaults map[string]string) {
+func buildExpectedPodDefaultsOTLP() map[string]string {
+	expectedDefaults := make(map[string]string)
 	expectedDefaults["k8s.pod.name"] = "$(K8S_PODNAME)"
 	expectedDefaults["k8s.pod.uid"] = "$(K8S_PODUID)"
 	expectedDefaults["k8s.node.name"] = "$(K8S_NODE_NAME)"
+
+	return expectedDefaults
 }
 
-func addExpectedPodDefaultsMetadataEnrichment(ctx context.Context, t *testing.T, envConfig *envconf.Config, app *sample.App, expectedDefaults map[string]string) {
+func buildExpectedPodDefaultsMetadataEnrichment(ctx context.Context, t *testing.T, envConfig *envconf.Config, app *sample.App) map[string]string {
 	pod := app.GetPod(ctx, t, envConfig.Client().Resources())
 
+	expectedDefaults := make(map[string]string)
 	expectedDefaults["k8s.pod.name"] = pod.Name
 	expectedDefaults["k8s.pod.uid"] = string(pod.UID)
 	expectedDefaults["k8s.node.name"] = pod.Spec.NodeName
+
+	return expectedDefaults
 }
