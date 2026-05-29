@@ -29,7 +29,7 @@ func MetadataOnly(t *testing.T) features.Feature {
 	installSampleApp(builder, sampleApp)
 
 	builder.Assess("initcontainer contains args with additionalAttributes", assessInitContainerArgs(sampleApp, globalAttrs))
-	builder.Assess("dt_metadata.json and dt_metadata.properties contains merged global resource attributes", assessDTMetadataFiles(sampleApp, globalAttrs))
+	builder.Assess("dt_metadata.json and dt_metadata.properties contains merged global resource attributes", assessDTMetadataFiles(testDynakube, sampleApp, globalAttrs))
 	builder.Assess("metadata.dynatrace.com JSON annotation contains global resource attributes", assessPodMetadataJSONAnnotation(sampleApp, globalAttrs))
 	builder.Assess("metadata.dynatrace.com/* individual annotations contain global resource attributes", assessPodIndividualAnnotations(sampleApp, globalAttrs))
 

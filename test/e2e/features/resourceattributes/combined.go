@@ -29,14 +29,8 @@ func Combined(t *testing.T) features.Feature {
 
 	// expectedOTLPInAll is the effective OTEL_RESOURCE_ATTRIBUTES content
 	// when OA and OTLP are both injected into the same pod.
-	//
-	// The metadata mutator runs first and writes individual metadata.dynatrace.com/<key>
-	// annotations to the pod on a set-if-not-present basis. When the OTLP resource-attributes
-	// mutator then calls NewPodAttributes, readPodAnnotationAttributes picks those up as
-	// podAnnotations, which have higher combine-precedence than the OTLP dynakube attrs.
-	// For keys present in both OA and OTLP additional attrs, OA therefore wins.
 	expectedOTLPInAll := map[string]string{
-		"deployment.environment": "oneagent-env", // OA annotation wins over OTLP dynakube attr
+		"deployment.environment": "otlp-env", // OTLP annotation wins over OA dynakube attr
 		"service.namespace":      "global-ns",
 		"global.only.key":        "global-only-value",
 		"otlp.only.key":          "otlp-only-value",
@@ -75,14 +69,14 @@ func Combined(t *testing.T) features.Feature {
 	builder.Assess("OneAgent DaemonSet is ready", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 	builder.Assess("ActiveGate is running", activegate.CheckContainer(&testDynakube))
 
-	builder.Assess("OneAgent dt_node_metadata.properties contains merged OneAgent resource attributes", assessDTNodeMetadataProperties(testDynakube, expectedOneAgent))
+	builder.Assess("OneAgent dt_node_metadata.properties contains merged OneAgent resource attributes", assessDTNodeMetadataProperties(testDynakube, sampleApp, expectedOneAgent))
 	builder.Assess("ActiveGate deployment.properties ConfigMap contains global resource attributes", assessActiveGateDeploymentProperties(testDynakube, globalAttrs))
 
 	installSampleApp(builder, sampleApp)
 
 	builder.Assess("initcontainer contains args with additionalAttributes", assessInitContainerArgs(sampleApp, expectedOneAgent))
-	builder.Assess("dt_metadata.json and dt_metadata.properties contains merged OneAgent resource attributes", assessDTMetadataFiles(sampleApp, expectedOneAgent))
-	builder.Assess("OTEL_RESOURCE_ATTRIBUTES contains merged OTLP resource attributes (OA wins shared keys)", assessOTLPInjectionAttributes(sampleApp, expectedOTLPInAll))
+	builder.Assess("dt_metadata.json and dt_metadata.properties contains merged OneAgent resource attributes", assessDTMetadataFiles(testDynakube, sampleApp, expectedOneAgent))
+	builder.Assess("OTEL_RESOURCE_ATTRIBUTES contains merged OTLP resource attributes (OA wins shared keys)", assessOTLPInjectionAttributes(testDynakube, sampleApp, expectedOTLPInAll))
 	builder.Assess("metadata.dynatrace.com JSON annotation contains merged OneAgent resource attributes", assessPodMetadataJSONAnnotation(sampleApp, expectedOneAgent))
 	builder.Assess("metadata.dynatrace.com/* individual annotations contain merged OneAgent resource attributes", assessPodIndividualAnnotations(sampleApp, expectedOneAgent))
 

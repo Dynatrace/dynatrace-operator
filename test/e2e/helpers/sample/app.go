@@ -181,6 +181,14 @@ func (app *App) Name() string {
 	return app.base.Name
 }
 
+func (app *App) Kind() string {
+	if app.isDeployment {
+		return "deployment"
+	}
+
+	return "pod"
+}
+
 func (app *App) ContainerName() string {
 	return app.base.Spec.Containers[0].Name
 }

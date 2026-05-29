@@ -42,7 +42,6 @@ var (
 		"deployment.environment": "otlp-env", // overrides global
 		"otlp.only.key":          "otlp-only-value",
 	}
-
 	expectedOneAgent = map[string]string{
 		"deployment.environment": "oneagent-env",
 		"service.namespace":      "global-ns",
@@ -106,7 +105,7 @@ func assessInitContainerArgs(app *sample.App, expected map[string]string) featur
 	}
 }
 
-func assessDTMetadataFiles(app *sample.App, expected map[string]string) features.Func {
+func assessDTMetadataFiles(dk dynakube.DynaKube, app *sample.App, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		pod := app.GetPod(ctx, t, resource)
@@ -121,11 +120,17 @@ func assessDTMetadataFiles(app *sample.App, expected map[string]string) features
 			assert.Equalf(t, v, metadata[k], "dt_metadata.json key %q in pod %s", k, pod.Name)
 		}
 
+		expectedDefaults := buildExpectedMetadataEnrichmentDefaults(ctx, t, envConfig, dk, app)
+		for k, v := range expectedDefaults {
+			assert.Equalf(t, v, properties[k], "dt_metadata.properties key %q in pod %s", k, pod.Name)
+			assert.Equalf(t, v, metadata[k], "dt_metadata.json key %q in pod %s", k, pod.Name)
+		}
+
 		return ctx
 	}
 }
 
-func assessDTNodeMetadataProperties(dk dynakube.DynaKube, expected map[string]string) features.Func {
+func assessDTNodeMetadataProperties(dk dynakube.DynaKube, app *sample.App, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		r := envConfig.Client().Resources()
 		q := k8sdaemonset.NewQuery(ctx, r, client.ObjectKey{
@@ -133,9 +138,13 @@ func assessDTNodeMetadataProperties(dk dynakube.DynaKube, expected map[string]st
 			Namespace: dk.Namespace,
 		})
 
+		expectedDefaults := buildExpectedMetadataEnrichmentDefaults(ctx, t, envConfig, dk, app)
 		err := q.ForEachPod(func(pod corev1.Pod) {
 			properties := metadataenrichment.GetNodeMetadataPropertiesFromPod(ctx, t, r, pod)
 			for k, v := range expected {
+				assert.Equalf(t, v, properties[k], "dt_metadata.properties key %q in pod %s", k, pod.Name)
+			}
+			for k, v := range expectedDefaults {
 				assert.Equalf(t, v, properties[k], "dt_metadata.properties key %q in pod %s", k, pod.Name)
 			}
 		})
@@ -145,7 +154,7 @@ func assessDTNodeMetadataProperties(dk dynakube.DynaKube, expected map[string]st
 	}
 }
 
-func assessOTLPInjectionAttributes(app *sample.App, expected map[string]string) features.Func {
+func assessOTLPInjectionAttributes(dk dynakube.DynaKube, app *sample.App, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		query := k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
@@ -157,6 +166,11 @@ func assessOTLPInjectionAttributes(app *sample.App, expected map[string]string) 
 
 			for k, v := range expected {
 				assert.Equalf(t, url.QueryEscape(v), gotAttrs[k], "OTEL_RESOURCE_ATTRIBUTES key %q in pod %s", k, p.Name)
+			}
+
+			expectedDefaults := buildExpectedOtlpDefaults(ctx, t, envConfig, dk, app)
+			for k, v := range expectedDefaults {
+				assert.Equalf(t, v, gotAttrs[k], "OTEL_RESOURCE_ATTRIBUTES key %q in pod %s", k, p.Name)
 			}
 		})
 
@@ -211,4 +225,47 @@ func assessPodIndividualAnnotations(app *sample.App, expected map[string]string)
 
 		return ctx
 	}
+}
+
+func buildExpectedOtlpDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App) map[string]string {
+	expectedDefaults := make(map[string]string)
+	addExpectedDefaults(ctx, t, envConfig, dk, app, expectedDefaults)
+	addExpectedPodDefaultsOtlp(expectedDefaults)
+
+	return expectedDefaults
+}
+
+func buildExpectedMetadataEnrichmentDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App) map[string]string {
+	expectedDefaults := make(map[string]string)
+	addExpectedDefaults(ctx, t, envConfig, dk, app, expectedDefaults)
+	addExpectedPodDefaultsMetadataEnrichment(ctx, t, envConfig, app, expectedDefaults)
+
+	return expectedDefaults
+}
+
+func addExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App, expectedDefaults map[string]string) {
+	err := envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &dk)
+	require.NoError(t, err)
+
+	expectedDefaults["k8s.workload.kind"] = app.Kind()
+	expectedDefaults["k8s.workload.name"] = app.Name()
+	expectedDefaults["k8s.namespace.name"] = app.Namespace()
+	expectedDefaults["k8s.cluster.uid"] = dk.Status.KubeSystemUUID
+	expectedDefaults["k8s.cluster.name"] = dk.Status.KubernetesClusterName
+	expectedDefaults["dt.entity.kubernetes_cluster"] = dk.Status.KubernetesClusterMEID
+	expectedDefaults["k8s.container.name"] = app.ContainerName()
+}
+
+func addExpectedPodDefaultsOtlp(expectedDefaults map[string]string) {
+	expectedDefaults["k8s.pod.name"] = "$(K8S_PODNAME)"
+	expectedDefaults["k8s.pod.uid"] = "$(K8S_PODUID)"
+	expectedDefaults["k8s.node.name"] = "$(K8S_NODE_NAME)"
+}
+
+func addExpectedPodDefaultsMetadataEnrichment(ctx context.Context, t *testing.T, envConfig *envconf.Config, app *sample.App, expectedDefaults map[string]string) {
+	pod := app.GetPod(ctx, t, envConfig.Client().Resources())
+
+	expectedDefaults["k8s.pod.name"] = pod.Name
+	expectedDefaults["k8s.pod.uid"] = string(pod.UID)
+	expectedDefaults["k8s.node.name"] = pod.Spec.NodeName
 }
