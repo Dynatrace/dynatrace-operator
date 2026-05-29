@@ -60,10 +60,9 @@ func runInPod(ctx context.Context, kubeCfg *rest.Config) error {
 		return err
 	}
 
-	signalHandler := ctrl.SetupSignalHandler()
-	go middleware.RunPeriodicCacheCleanup(signalHandler, k8senv.GetDTClientCacheCleanInterval(ctx))
+	go middleware.RunPeriodicCacheCleanup(ctx, k8senv.GetDTClientCacheCleanInterval(ctx))
 
-	return errors.WithStack(operatorManager.Start(signalHandler))
+	return errors.WithStack(operatorManager.Start(ctx))
 }
 
 func runLocally(ctx context.Context, kubeCfg *rest.Config) error {
