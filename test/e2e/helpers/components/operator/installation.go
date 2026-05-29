@@ -158,7 +158,7 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	return err
 }
 
-func installViaHelm(releaseTag string, withCSI bool, extra ...helm.Option) error {
+func installViaHelm(releaseTag string, withCSI bool) error {
 	manager := helm.New("''")
 
 	_platform, err := platform.NewResolver().GetPlatform()
@@ -170,8 +170,6 @@ func installViaHelm(releaseTag string, withCSI bool, extra ...helm.Option) error
 	if err != nil {
 		return err
 	}
-
-	opts = append(opts, extra...)
 
 	var klogLevel klog.Level
 	// Show helm command args and output
