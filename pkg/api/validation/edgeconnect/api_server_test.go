@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	testName      = "test-name"
-	testNamespace = "test-namespace"
+	testName               = "test-name"
+	testNamespace          = "test-namespace"
+	testServiceAccountName = "test"
 )
 
 func TestApiServer(t *testing.T) {

@@ -17,6 +17,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	// ActiveGateCertDataName is the key used to store ActiveGate certificate data in the secret containing the ActiveGate Certificate for the OTLP exporter.
+	ActiveGateCertDataName = "activegate-tls.crt"
+
+	ConfigConditionType = "OTLPExporterConfigSecret"
+	CertsConditionType  = "OTLPExporterCertsConfig"
+)
+
 // SecretGenerator manages the OTLP exporter secret generation for the user namespaces.
 type SecretGenerator struct {
 	client       client.Client

@@ -23,6 +23,9 @@ import (
 )
 
 const (
+	LmcConditionType         = "LogMonitoringConfig"
+	DeploymentConfigFilename = "deployment.conf"
+
 	logMonitoringSecretSuffix = "-logmonitoring-config"
 
 	TokenHashAnnotationKey   = api.InternalFlagPrefix + "tenant-token-hash"

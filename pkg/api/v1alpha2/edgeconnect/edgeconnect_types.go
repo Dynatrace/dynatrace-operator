@@ -6,6 +6,8 @@
 package edgeconnect
 
 import (
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	corev1 "k8s.io/api/core/v1"
@@ -131,6 +133,10 @@ type EdgeConnectList struct { //nolint:revive
 }
 
 const (
-	KubernetesDefaultDNS     = "kubernetes.default.svc.cluster.local"
-	kubernetesHostnameSuffix = "kubernetes-automation"
+	KubernetesDefaultDNS       = "kubernetes.default.svc.cluster.local"
+	kubernetesHostnameSuffix   = "kubernetes-automation"
+	DefaultMinRequestThreshold = 15 * time.Minute
 )
+
+// Hub tags this version as the 'source' of the conversion for controller runtime.
+func (*EdgeConnect) Hub() {}

@@ -26,6 +26,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	ConfigConditionType = "BootstrapperConfig"
+	CertsConditionType  = "BootstrapperCertsConfig"
+)
+
 // SecretGenerator manages the bootstrapper init secret generation for the user namespaces.
 type SecretGenerator struct {
 	client       client.Client

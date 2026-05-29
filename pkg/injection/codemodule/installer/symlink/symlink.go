@@ -10,6 +10,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	// example match: 1.239.14.20220325-164521
+	versionRegexp = `^(\d+)\.(\d+)\.(\d+)\.(\d+)-(\d+)$`
+	binDir        = "/agent/bin"
+)
+
 func CreateForCurrentVersionIfNotExists(ctx context.Context, targetDir string) error {
 	ctx, log := logd.NewFromContext(ctx, "oneagent-symlink")
 

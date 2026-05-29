@@ -42,6 +42,12 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
 
 	warningDeprecatedVersion = `version field is deprecated. Please use "%s" field instead to set a version.`
+
+	oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
+
+	oneagentInstallerScriptURLEnvVarName = "ONEAGENT_INSTALLER_SCRIPT_URL"
+
+	oneagentInstallerTokenEnvVarName = "ONEAGENT_INSTALLER_TOKEN"
 )
 
 func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
