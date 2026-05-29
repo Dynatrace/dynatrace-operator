@@ -134,7 +134,9 @@ func GetDefaultRequeueAfter(ctx context.Context) time.Duration {
 	return duration
 }
 
-func GetDTClientCacheCleanInterval(log logd.Logger) time.Duration {
+func GetDTClientCacheCleanInterval(ctx context.Context) time.Duration {
+	_, log := logd.NewFromContext(ctx, "k8senv")
+
 	rawDuration := os.Getenv(DTClientCacheCleanInterval)
 	if rawDuration == "" {
 		log.Debug("no custom env set, using default", "env", DTClientCacheCleanInterval, "default", defaultDTClientCacheCleanInterval)

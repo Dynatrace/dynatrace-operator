@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -223,7 +222,7 @@ func TestGetDTClientCacheCleanInterval(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv(DTClientCacheCleanInterval, tt.envValue)
-			assert.Equal(t, tt.want, GetDTClientCacheCleanInterval(logd.Logger{}))
+			assert.Equal(t, tt.want, GetDTClientCacheCleanInterval(t.Context()))
 		})
 	}
 }
