@@ -207,7 +207,8 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 	}
 
 	rootDir := project.RootDir()
-	imageRef, err := getImageRef(rootDir)
+	isFIPS := os.Getenv("FIPS") == "true"
+	imageRef, err := getImageRef(rootDir, isFIPS)
 	if err != nil {
 		return nil, err
 	}
@@ -241,9 +242,13 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 // Cache image ref on first invocation to allow switching branches.
 var imageRef string
 
-func getImageRef(rootDir string) (string, error) {
+func getImageRef(rootDir string, fips140 bool) (string, error) {
 	if imageRef == "" {
 		cmdShowImage := "deploy/show-image-ref"
+
+		if fips140 {
+			cmdShowImage = "deploy/show-image-ref/fips"
+		}
 
 		command := exec.Command("make", "-C", rootDir, cmdShowImage)
 		command.Env = os.Environ()
