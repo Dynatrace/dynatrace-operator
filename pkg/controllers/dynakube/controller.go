@@ -52,8 +52,7 @@ import (
 )
 
 const (
-	fastRequeueInterval    = 1 * time.Minute
-	defaultRequeueInterval = 15 * time.Minute
+	fastRequeueInterval = 1 * time.Minute
 
 	controllerName = "dynakube-controller"
 
@@ -217,7 +216,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		k8sevent.SendCRDVersionMismatch(controller.eventRecorder, dk)
 	}
 
-	controller.requeueAfter = defaultRequeueInterval
+	controller.requeueAfter = k8senv.GetDefaultRequeueAfter(ctx)
 	oldStatus := *dk.Status.DeepCopy()
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
