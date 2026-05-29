@@ -33,25 +33,14 @@ const (
 	delayFlagName                  = "delay"
 	defaultSupportArchiveTargetDir = "/tmp/dynatrace-operator"
 	defaultOperatorAppName         = "dynatrace-operator"
-	loadsimFileSizeFlagName        = "loadsim-file-size"
-	loadsimFilesFlagName           = "loadsim-files"
 	collectManagedLogsFlagName     = "managed-logs"
 	numEventsFlagName              = "num-events"
-	defaultSimFileSize             = 10
 	DefaultNumEvents               = 300
-)
-
-const (
-	_ = 1 << (10 * iota) //nolint:mnd
-	Kibi
-	Mebi
 )
 
 var (
 	namespaceFlagValue          string
 	archiveToStdoutFlagValue    bool
-	loadsimFilesFlagValue       int
-	loadsimFileSizeFlagValue    int
 	collectManagedLogsFlagValue bool
 	delayFlagValue              int
 	NumEventsFlagValue          int
@@ -83,8 +72,6 @@ func New() *cobra.Command {
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, k8senv.DefaultNamespace(), "Specify a different Namespace.")
 	cmd.PersistentFlags().BoolVar(&archiveToStdoutFlagValue, archiveToStdoutFlagName, false, "Write tarball to stdout.")
-	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, defaultSimFileSize, "Simulated log files, size in MiB (default 10)")
-	cmd.PersistentFlags().IntVar(&loadsimFilesFlagValue, loadsimFilesFlagName, 0, "Number of simulated log files (default 0)")
 	cmd.PersistentFlags().BoolVar(&collectManagedLogsFlagValue, collectManagedLogsFlagName, true, "Add logs from rolled out pods to the support archive.")
 	cmd.PersistentFlags().IntVar(&delayFlagValue, delayFlagName, 0, "Delay start of support-archive collection. Useful for standalone execution with 'kubectl run'")
 	cmd.PersistentFlags().IntVar(&NumEventsFlagValue, numEventsFlagName, DefaultNumEvents, fmt.Sprintf("Number of events to be fetched (default %d)", DefaultNumEvents))
@@ -152,7 +139,6 @@ func runCollectors(log logd.Logger, supportArchive archiver) error {
 
 	logInfof(log, "%s=%s", k8slabel.AppNameLabel, appName)
 
-	fileSize := loadsimFileSizeFlagValue * Mebi
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
 		newKubernetesVersionCollector(log, supportArchive, discoveryClient),
@@ -160,7 +146,6 @@ func runCollectors(log logd.Logger, supportArchive archiver) error {
 		newFsLogCollector(ctx, kubeConfig, &DefaultExecutor{}, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
 		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
-		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
 	}
 
 	for _, c := range collectors {

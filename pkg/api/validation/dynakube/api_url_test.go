@@ -72,8 +72,8 @@ func TestHasApiUrl(t *testing.T) {
 			},
 		})
 	})
-	t.Run("third gen API URL with regular token is rejected", func(t *testing.T) {
-		assertDenied(t, []string{errorThirdGenAPIURL}, &dynakube.DynaKube{
+	t.Run("third gen API URL with regular token is allowed", func(t *testing.T) {
+		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://tenantid.doma.apps.in/api",
