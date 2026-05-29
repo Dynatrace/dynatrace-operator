@@ -35,7 +35,7 @@ func Install(releaseTag string, withCSI bool) env.Func {
 		if releaseTag == "" {
 			return ctx, errors.New("missing release tag")
 		}
-		err := InstallViaHelm(releaseTag, withCSI)
+		err := installViaHelm(releaseTag, withCSI)
 		if err != nil {
 			return ctx, err
 		}
@@ -59,7 +59,7 @@ func InstallLocal(withCSI bool) env.Func {
 				return ctx, err
 			}
 		} else {
-			err := InstallViaHelm("", withCSI)
+			err := installViaHelm("", withCSI)
 			if err != nil {
 				return ctx, err
 			}
@@ -158,10 +158,7 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	return err
 }
 
-// InstallViaHelm runs helm upgrade --install for the operator chart.
-// When releaseTag is empty it installs from the local filesystem.
-// Extra helm options (e.g. helm.WithArgs("--kube-as-user", sa)) are appended.
-func InstallViaHelm(releaseTag string, withCSI bool, extra ...helm.Option) error {
+func installViaHelm(releaseTag string, withCSI bool, extra ...helm.Option) error {
 	manager := helm.New("''")
 
 	_platform, err := platform.NewResolver().GetPlatform()
@@ -188,13 +185,6 @@ func InstallViaHelm(releaseTag string, withCSI bool, extra ...helm.Option) error
 	return manager.RunUpgrade(opts...)
 }
 
-// UninstallViaHelm runs helm uninstall for the given release.
-func UninstallViaHelm(opts ...helm.Option) error {
-	manager := helm.New("''")
-
-	return manager.RunUninstall(opts...)
-}
-
 func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
 	opts := []helm.Option{
 		helm.WithReleaseName("dynatrace-operator"),
@@ -217,7 +207,7 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 	}
 
 	rootDir := project.RootDir()
-	imageRef, err := GetImageRef(rootDir)
+	imageRef, err := getImageRef(rootDir)
 	if err != nil {
 		return nil, err
 	}
@@ -251,9 +241,7 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 // Cache image ref on first invocation to allow switching branches.
 var imageRef string
 
-// GetImageRef resolves the operator container image reference by running
-// `make deploy/show-image-ref`. The result is cached for the process lifetime.
-func GetImageRef(rootDir string) (string, error) {
+func getImageRef(rootDir string) (string, error) {
 	if imageRef == "" {
 		cmdShowImage := "deploy/show-image-ref"
 
