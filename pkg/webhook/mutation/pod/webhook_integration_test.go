@@ -731,6 +731,10 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			"pre-existing pod annotation must be preserved in metadata annotation")
 		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.existing.vs.pod"],
 			"pre-existing pod annotation must be preserved in metadata annotation")
+		assert.Equal(t, "from-ns", pod.Annotations["metadata.dynatrace.com/conflict.ns.vs.dynakube"],
+			"namespace metadata annotation must be preserved in pod annotations")
+		assert.NotContains(t, pod.Annotations, "metadata.dynatrace.com/conflict.additional.vs.global",
+			"dynakube resource attributes must not be written as individual metadata annotations")
 
 		// JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation: dynakube + namespaceAnnotations + podAnnotations, no custom/existing OTEL_RA)
 		jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
