@@ -402,6 +402,8 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		expectedMetadataJSON := map[string]string{
 			"copyofannotations": "copyofannotations",
+			"k8s.workload.kind": "pod",
+			"k8s.workload.name": "test-pod",
 		}
 		require.Equal(t, expectedMetadataJSON, actualMetadataJSON)
 	})
@@ -467,6 +469,8 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"dt.copyifruleexists": "copyifruleexists",
 			"dt.test-annotation":  "test-value",
 			"test-label":          "test-value",
+			"k8s.workload.kind":   "pod",
+			"k8s.workload.name":   "test-pod",
 		}
 		require.Equal(t, expectedMetadataJSON, actualMetadataJSON)
 	})
@@ -528,7 +532,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		var actualMetadataJSON map[string]string
 
 		require.NoError(t, json.Unmarshal([]byte(request.Pod.Annotations[metadataenrichment.Annotation]), &actualMetadataJSON))
-		require.Len(t, actualMetadataJSON, 5)
+		require.Len(t, actualMetadataJSON, 6)
 
 		expectedMetadataJSON := map[string]string{
 			"dt.test-annotation": "test-annotation-value3",
@@ -536,6 +540,8 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"dt.custom":          "my-custom-value",
 			metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.AnnotationRule), "test4"): "test-annotation-value4",
 			metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "test2"):      "test-label-value2",
+			"k8s.workload.kind": "pod",
+			"k8s.workload.name": "test-pod",
 		}
 		require.Equal(t, expectedMetadataJSON, actualMetadataJSON)
 	})
@@ -572,6 +578,8 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		expectedMetadataJSON := map[string]string{
 			"someannotation":    "do-not-overwrite",
 			"anotherannotation": "othervalue",
+			"k8s.workload.kind": "pod",
+			"k8s.workload.name": "test-pod",
 		}
 		require.Equal(t, expectedMetadataJSON, actualMetadataJSON)
 	})
