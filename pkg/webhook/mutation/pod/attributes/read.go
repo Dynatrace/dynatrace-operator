@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
@@ -53,6 +52,10 @@ func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.D
 		case metadataenrichment.AnnotationRule, metadataenrichment.K8sAnnotationRule:
 			valueFromNamespace, exists = namespace.Annotations[rule.Source]
 		case metadataenrichment.CustomRule:
+			if len(rule.Target) == 0 {
+				continue
+			}
+
 			valueFromNamespace = rule.Source
 			exists = true
 		}
@@ -61,12 +64,7 @@ func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.D
 			if len(rule.Target) > 0 {
 				attrs.rulesPropagate[rule.Target] = valueFromNamespace
 			} else {
-				keyPart := rule.Source
-				if rule.Type == metadataenrichment.CustomRule {
-					keyPart = resourceattributes.SanitizeKey(rule.Source)
-				}
-
-				attrs.rules[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), keyPart)] = valueFromNamespace
+				attrs.rules[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
 			}
 		}
 	}

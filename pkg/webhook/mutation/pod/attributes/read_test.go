@@ -323,7 +323,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 		assert.Empty(t, attrs.rules)
 	})
 
-	t.Run("CUSTOM without target stores under sanitized fallback key", func(t *testing.T) {
+	t.Run("CUSTOM without target is dropped", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		dk := dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -337,9 +337,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		attrs.applyEnrichmentRules(corev1.Namespace{}, dk)
 
-		// "high prio!" sanitized → "high_prio"
-		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.CustomRule), "high_prio")
-		assert.Equal(t, "high prio!", attrs.rules[expectedKey])
+		assert.Empty(t, attrs.rules)
 		assert.Empty(t, attrs.rulesPropagate)
 	})
 }
