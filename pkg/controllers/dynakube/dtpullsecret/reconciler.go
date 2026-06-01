@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -34,7 +33,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
 	ctx, log := logd.NewFromContext(ctx, "dynakube-pullsecret")
 
-	if dttoken.IsPlatform(tokens.APIToken().String()) || (!dk.OneAgent().IsDaemonsetRequired() && !dk.ActiveGate().IsEnabled()) {
+	if tokens.HasPlatformToken() || (!dk.OneAgent().IsDaemonsetRequired() && !dk.ActiveGate().IsEnabled()) {
 		if meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
