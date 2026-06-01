@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
@@ -19,11 +18,6 @@ const (
 	errorInvalidAPIURL = `The DynaKube's specification has an invalid API URL value set.
 	Make sure you correctly specify the URL in your custom resource (including the /api postfix).
 	`
-
-	errorThirdGenAPIURL = `The DynaKube's specification has an 3rd gen API URL and the apiToken provided is not a platform token. Make sure to remove the 'apps' part
-	out of it. Example: ` + ExampleAPIURL
-
-	errorCheckingSecret = `Failed to check the DynaKube's secret to check for 3rd gen API URL. Make sure the secret exists and is accessible by the operator.`
 
 	errorMutatedAPIURL = `The DynaKube's specification mutated the tenant in the API URL although it is immutable. Please delete the CR and then apply a new one`
 )
@@ -85,26 +79,6 @@ func isInvalidAPIURL(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) s
 
 func isThirdGenHost(hostname string) bool {
 	return strings.Contains(hostname, ".apps.")
-}
-
-func isThirdGenAPIURL(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	parsed, err := url.Parse(dk.APIURL())
-	if err != nil || !isThirdGenHost(parsed.Hostname()) {
-		return ""
-	}
-
-	tokenReader := token.NewReader(dv.apiReader, dk)
-
-	hasPlatformToken, err := tokenReader.HasPlatformToken(ctx)
-	if err != nil {
-		return errorCheckingSecret
-	}
-
-	if !hasPlatformToken {
-		return errorThirdGenAPIURL
-	}
-
-	return ""
 }
 
 func tenantUUIDFromAPIURL(apiURL string) string {
