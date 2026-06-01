@@ -1,5 +1,7 @@
 package attributes
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+
 const (
 	K8sContainerNameAttr = "k8s.container.name"
 	K8sNodeNameEnv       = "K8S_NODE_NAME"
@@ -20,7 +22,7 @@ const (
 )
 
 var SafeEnvRefs = []string{
-	K8sPodNameEnv,
-	K8sPodUIDEnv,
-	K8sNodeNameEnv,
+	k8senv.NewRef(K8sPodNameEnv),
+	k8senv.NewRef(K8sPodUIDEnv),
+	k8senv.NewRef(K8sNodeNameEnv),
 }

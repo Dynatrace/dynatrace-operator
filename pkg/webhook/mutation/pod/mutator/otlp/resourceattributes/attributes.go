@@ -29,22 +29,11 @@ func NewAttributesFromEnv(envs []corev1.EnvVar, name string) (map[string]string,
 	return res, found
 }
 
-func isSafeEnvRef(value string) bool {
-	after, found := strings.CutPrefix(value, "$(")
-	if !found {
-		return false
-	}
-
-	before, found := strings.CutSuffix(after, ")")
-
-	return found && slices.Contains(attributes.SafeEnvRefs, before)
-}
-
 // sanitizeValue percent-encodes value for use in OTEL_RESOURCE_ATTRIBUTES, except for the
 // small set of operator-injected env refs that the kubelet must expand at pod startup.
 // See https://opentelemetry.io/docs/specs/otel/resource/sdk/#specifying-resource-information-via-an-environment-variable
 func sanitizeValue(value string) string {
-	if isSafeEnvRef(value) {
+	if slices.Contains(attributes.SafeEnvRefs, value) {
 		return value
 	}
 
