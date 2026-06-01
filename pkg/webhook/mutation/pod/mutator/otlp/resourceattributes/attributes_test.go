@@ -17,9 +17,28 @@ func TestSanitizeValue(t *testing.T) {
 		assert.Equal(t, "hello", sanitizeValue("hello"))
 	})
 
-	t.Run("env var reference is passed through unchanged", func(t *testing.T) {
-		assert.Equal(t, "$(K8S_POD_NAME)", sanitizeValue("$(K8S_POD_NAME)"))
-	})
+	envRefCases := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"K8S_PODNAME (allowlisted) => no changes", "$(K8S_PODNAME)", "$(K8S_PODNAME)"},
+		{"K8S_PODUID (allowlisted) => no changes", "$(K8S_PODUID)", "$(K8S_PODUID)"},
+		{"K8S_NODE_NAME (allowlisted) => no changes", "$(K8S_NODE_NAME)", "$(K8S_NODE_NAME)"},
+		{"DT_API_TOKEN (not allowlisted) => encoded", "$(DT_API_TOKEN)", "%24%28DT_API_TOKEN%29"},
+		{"lowercase name (case-sensitive) => encoded", "$(k8s_podname)", "%24%28k8s_podname%29"},
+		{"whitespace inside parens => encoded", "$( K8S_PODNAME )", "%24%28+K8S_PODNAME+%29"},
+		{"chars before $(...) (not anchored) => encoded", "helloo$(K8S_PODNAME)", "helloo%24%28K8S_PODNAME%29"},
+		{"chars after $(...) (not anchored) => encoded", "$(K8S_PODNAME)byeee", "%24%28K8S_PODNAME%29byeee"},
+		{"nested reference => encoded", "$($(K8S_PODNAME))", "%24%28%24%28K8S_PODNAME%29%29"},
+		{"missing ')' at the end => encoded", "$(K8S_PODNAME", "%24%28K8S_PODNAME"},
+		{"unknown name => encoded", "$(UNKNOWN_VAR)", "%24%28UNKNOWN_VAR%29"},
+	}
+	for _, tc := range envRefCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, sanitizeValue(tc.input))
+		})
+	}
 
 	t.Run("spaces are encoded as +", func(t *testing.T) {
 		assert.Equal(t, "hello+world", sanitizeValue("hello world"))
