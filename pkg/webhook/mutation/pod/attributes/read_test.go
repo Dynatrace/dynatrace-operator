@@ -216,6 +216,132 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 		assert.Equal(t, "prod", attrs.rules[envKey])
 		assert.Equal(t, "platform", attrs.rulesPropagate["custom.team"])
 	})
+
+	t.Run("K8S_NAMESPACE_LABEL with target stores in rulesPropagate", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		ns := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{"env": "production"},
+			},
+		}
+		dk := dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				MetadataEnrichment: metadataenrichment.Status{
+					Rules: []metadataenrichment.Rule{
+						{Type: metadataenrichment.K8sLabelRule, Source: "env", Target: "custom.env"},
+					},
+				},
+			},
+		}
+
+		attrs.applyEnrichmentRules(ns, dk)
+
+		assert.Equal(t, "production", attrs.rulesPropagate["custom.env"])
+		assert.Empty(t, attrs.rules)
+	})
+
+	t.Run("K8S_NAMESPACE_LABEL without target stores under computed rules key", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		ns := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{"env": "production"},
+			},
+		}
+		dk := dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				MetadataEnrichment: metadataenrichment.Status{
+					Rules: []metadataenrichment.Rule{
+						{Type: metadataenrichment.K8sLabelRule, Source: "env"},
+					},
+				},
+			},
+		}
+
+		attrs.applyEnrichmentRules(ns, dk)
+
+		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.K8sLabelRule), "env")
+		assert.Equal(t, "production", attrs.rules[expectedKey])
+		assert.Empty(t, attrs.rulesPropagate)
+	})
+
+	t.Run("K8S_NAMESPACE_ANNOTATION with target stores in rulesPropagate", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		ns := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{"team": "backend"},
+			},
+		}
+		dk := dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				MetadataEnrichment: metadataenrichment.Status{
+					Rules: []metadataenrichment.Rule{
+						{Type: metadataenrichment.K8sAnnotationRule, Source: "team", Target: "team.name"},
+					},
+				},
+			},
+		}
+
+		attrs.applyEnrichmentRules(ns, dk)
+
+		assert.Equal(t, "backend", attrs.rulesPropagate["team.name"])
+		assert.Empty(t, attrs.rules)
+	})
+
+	t.Run("K8S_NAMESPACE_LABEL with absent source is skipped", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		dk := dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				MetadataEnrichment: metadataenrichment.Status{
+					Rules: []metadataenrichment.Rule{
+						{Type: metadataenrichment.K8sLabelRule, Source: "missing-label"},
+					},
+				},
+			},
+		}
+
+		attrs.applyEnrichmentRules(corev1.Namespace{}, dk)
+
+		assert.Empty(t, attrs.rules)
+		assert.Empty(t, attrs.rulesPropagate)
+	})
+
+	t.Run("CUSTOM with target stores literal source in rulesPropagate", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		dk := dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				MetadataEnrichment: metadataenrichment.Status{
+					Rules: []metadataenrichment.Rule{
+						{Type: metadataenrichment.CustomRule, Source: "my-literal-value", Target: "dt.custom"},
+					},
+				},
+			},
+		}
+
+		attrs.applyEnrichmentRules(corev1.Namespace{}, dk)
+
+		assert.Equal(t, "my-literal-value", attrs.rulesPropagate["dt.custom"])
+		assert.Empty(t, attrs.rules)
+	})
+
+	t.Run("CUSTOM without target stores under sanitized fallback key", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		dk := dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				MetadataEnrichment: metadataenrichment.Status{
+					Rules: []metadataenrichment.Rule{
+						{Type: metadataenrichment.CustomRule, Source: "high prio!"},
+					},
+				},
+			},
+		}
+
+		attrs.applyEnrichmentRules(corev1.Namespace{}, dk)
+
+		// "high prio!" sanitized → "high_prio"
+		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.CustomRule), "high_prio")
+		assert.Equal(t, "high prio!", attrs.rules[expectedKey])
+		assert.Empty(t, attrs.rulesPropagate)
+	})
 }
 
 func TestGetMetadataAnnotations(t *testing.T) {
@@ -382,27 +508,34 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 				Source: "test4",
 				Target: "", // mapping missing => rule used as primary grail tag with the source name for data enrichment
 			},
+			{
+				Type:   metadataenrichment.CustomRule,
+				Source: "my-custom-value",
+				Target: "dt.custom",
+			},
 		}
 
 		attrs, err := NewPodAttributes(t.Context(), *request.BaseRequest, fake.NewClient())
 		require.NoError(t, err)
 		require.NoError(t, attrs.ApplyAnnotationsToPod(request.Pod))
 
-		require.Len(t, request.Pod.Annotations, 5)
+		require.Len(t, request.Pod.Annotations, 6)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "test-label-value", request.Pod.Annotations[metadataenrichment.Prefix+"dt.test-label"])
 		require.Equal(t, "test-annotation-value3", request.Pod.Annotations[metadataenrichment.Prefix+"dt.test-annotation"])
+		require.Equal(t, "my-custom-value", request.Pod.Annotations[metadataenrichment.Prefix+"dt.custom"])
 
 		checkDefaultAnnotations(t, *request.Pod)
 
 		var actualMetadataJSON map[string]string
 
 		require.NoError(t, json.Unmarshal([]byte(request.Pod.Annotations[metadataenrichment.Annotation]), &actualMetadataJSON))
-		require.Len(t, actualMetadataJSON, 4)
+		require.Len(t, actualMetadataJSON, 5)
 
 		expectedMetadataJSON := map[string]string{
 			"dt.test-annotation": "test-annotation-value3",
 			"dt.test-label":      "test-label-value",
+			"dt.custom":          "my-custom-value",
 			metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.AnnotationRule), "test4"): "test-annotation-value4",
 			metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "test2"):      "test-label-value2",
 		}
