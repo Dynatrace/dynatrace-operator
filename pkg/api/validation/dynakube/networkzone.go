@@ -12,22 +12,18 @@ const (
 )
 
 func invalidNetworkZone(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.Spec.NetworkZone != "" {
-		sanitizedNetworkZone := strings.Map(removeWhiteSpaceCharacters, dk.Spec.NetworkZone)
-
-		if len(sanitizedNetworkZone) != len(dk.Spec.NetworkZone) {
-			return errorInvalidNetworkZone
-		}
+	if strings.ContainsFunc(dk.Spec.NetworkZone, isWhiteSpaceCharacter) {
+		return errorInvalidNetworkZone
 	}
 
 	return ""
 }
 
-func removeWhiteSpaceCharacters(r rune) rune {
+func isWhiteSpaceCharacter(r rune) bool {
 	switch r {
 	case '\n', '\t', '\r', '\x00':
-		return -1 // drop the character
+		return true
 	}
 
-	return r
+	return false
 }

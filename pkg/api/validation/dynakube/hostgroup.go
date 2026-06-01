@@ -13,22 +13,12 @@ const (
 )
 
 func invalidOneAgentHostGroup(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	hostGroup := dk.OneAgent().HostGroup
-	if hostGroup != "" {
-		sanitizedHostGroup := strings.Map(removeWhiteSpaceCharacters, hostGroup)
-
-		if len(sanitizedHostGroup) != len(hostGroup) {
-			return errorInvalidHostGroupProperty
-		}
+	if strings.ContainsFunc(dk.OneAgent().HostGroup, isWhiteSpaceCharacter) {
+		return errorInvalidHostGroupProperty
 	}
 
-	hostGroup = dk.OneAgent().GetHostGroupAsParam()
-	if hostGroup != "" {
-		sanitizedHostGroup := strings.Map(removeWhiteSpaceCharacters, hostGroup)
-
-		if len(sanitizedHostGroup) != len(hostGroup) {
-			return errorInvalidHostGroupAsParam
-		}
+	if strings.ContainsFunc(dk.OneAgent().GetHostGroupAsParam(), isWhiteSpaceCharacter) {
+		return errorInvalidHostGroupAsParam
 	}
 
 	return ""
