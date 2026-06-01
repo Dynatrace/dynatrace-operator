@@ -704,6 +704,11 @@ func TestMutate_AnnotationWriter(t *testing.T) {
 
 		assert.Equal(t, otlpCollVal, annotationAttrs[collisionKey], "OTLP additionalResourceAttributes must win in JSON annotation")
 		assert.NotEqual(t, globalCollVal, annotationAttrs[collisionKey])
+
+		assert.Equal(t, "pod", annotationAttrs["k8s.workload.kind"], "workload kind must be in JSON annotation")
+		assert.Equal(t, "pod1", annotationAttrs["k8s.workload.name"], "workload name must be in JSON annotation")
+
+		assert.NotContains(t, pod.Annotations, metadataenrichment.Prefix+collisionKey, "DynaKube resource attr must not be written as individual annotation")
 	})
 
 	t.Run("user-set metadata.dynatrace.com/ annotation still wins over dynakube attrs", func(t *testing.T) {

@@ -209,7 +209,7 @@ func assessOTLPInjectionAttributes(dk dynakube.DynaKube, app *sample.App, expect
 }
 
 // assessPodMetadataJSONAnnotation checks that the pod's metadata.dynatrace.com JSON annotation
-// contains all expected key-value pairs.
+// contains all expected key-value pairs and workload info attributes (k8s.workload.kind/name).
 // This annotation is written by ApplyAnnotationsToPod (combineForJSONAnnotation case) and uses
 // dynakube + namespaceAnnotations + rules + rulesPropagate + podAnnotations sources.
 // When both OA and OTLP mutators are active the annotation is written once (SetAnnotationIfNotExists),
@@ -233,31 +233,23 @@ func assessPodMetadataJSONAnnotation(app *sample.App, expected map[string]string
 			assert.NotContainsf(t, parsed, k, "JSON annotation leaked key %q in pod %s", k, pod.Name)
 		}
 
+		assert.Equalf(t, app.Kind(), parsed["k8s.workload.kind"], "JSON annotation workload kind in pod %s", pod.Name)
+		assert.Equalf(t, app.Name(), parsed["k8s.workload.name"], "JSON annotation workload name in pod %s", pod.Name)
+
 		return ctx
 	}
 }
 
-// assessPodIndividualAnnotations checks that the pod's individual metadata.dynatrace.com/<key>
-// annotations contain all expected key-value pairs.
-// These annotations are written by ApplyAnnotationsToPod (combineForMetadataAnnotations case) and
-// use workloadInfo + dynakube + namespaceAnnotations + rulesPropagate sources.
-// SetAnnotationIfNotExists means pre-existing values are never overwritten.
-func assessPodIndividualAnnotations(app *sample.App, expected map[string]string) features.Func {
+// assessDynakubeAttrsNotInIndividualAnnotations verifies that DynaKube resource attributes
+// are NOT written as individual metadata.dynatrace.com/<key> annotations.
+func assessDynakubeAttrsNotInIndividualAnnotations(app *sample.App, dynakubeAttrs map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		pod := app.GetPod(ctx, t, resource)
 
-		for k, v := range expected {
+		for k := range dynakubeAttrs {
 			annotationKey := dkmetadata.Prefix + k
-			got, ok := pod.Annotations[annotationKey]
-			if assert.Truef(t, ok, "pod %s missing annotation %q", pod.Name, annotationKey) {
-				assert.Equalf(t, v, got, "annotation %q in pod %s", annotationKey, pod.Name)
-			}
-		}
-
-		for k := range forbiddenAttrs(expected) {
-			annotationKey := dkmetadata.Prefix + k
-			assert.NotContainsf(t, pod.Annotations, annotationKey, "annotation %q leaked in pod %s", annotationKey, pod.Name)
+			assert.NotContainsf(t, pod.Annotations, annotationKey, "DynaKube resource attr %q must not appear as individual annotation in pod %s", annotationKey, pod.Name)
 		}
 
 		return ctx
