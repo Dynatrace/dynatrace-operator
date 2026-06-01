@@ -73,16 +73,13 @@ func (dk *DynaKube) TenantRegistryPullSecretName() string {
 }
 
 func (dk *DynaKube) PullSecretNames() []string {
-	customNames := dk.customPullSecretNames()
-	names := make([]string, 0, 1+len(customNames))
+	var names []string
 
 	if !ptr.Deref(dk.Status.APIToken.Platform, false) {
 		names = append(names, dk.TenantRegistryPullSecretName())
 	}
 
-	names = append(names, customNames...)
-
-	return names
+	return append(names, dk.customPullSecretNames()...)
 }
 
 func (dk *DynaKube) customPullSecretNames() []string {
