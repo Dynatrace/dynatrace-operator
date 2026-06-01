@@ -9,7 +9,6 @@ env:
   IMAGE_REGISTRY: ghcr.io
   IMAGE_NAME: dynatrace/dynatrace-operator
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
-  FIPS_PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   prepare:
@@ -20,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Prepare build parameters
@@ -40,11 +39,11 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -58,40 +57,24 @@ jobs:
     outputs:
       digest: ${{ steps.build-image.outputs.digest }}
 
-  build-push-fips:
+  create-sbom:
     if: github.repository_owner == 'Dynatrace'
-    name: Build FIPS image
-    needs: [prepare]
-    runs-on: ubuntu-24.04
-    permissions:
-      packages: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Login to Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ${{ env.IMAGE_REGISTRY }}
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build FIPS image
-        id: build-fips-image
-        uses: ./.github/actions/build-push-image
-        with:
-          platforms: ${{ env.FIPS_PLATFORMS }}
-          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          fips: true
-          suffix: fips
-    outputs:
-      fips-digest: ${{ steps.build-fips-image.outputs.digest }}
+    needs: [prepare, build-push]
+    permissions: {}
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+      artifact-name: nightly-sbom
+      registry: ${{ env.IMAGE_REGISTRY }}
+    secrets:
+      registry-username: ${{ github.repository_owner }}
+      registry-token: ${{ secrets.GITHUB_TOKEN }}
 
   signing:
     if: github.repository_owner == 'Dynatrace'
     name: Sign the image index/manifests + Add SBOM
     environment: Release
-    needs: [prepare, build-push, build-push-fips]
+    needs: [prepare, build-push, create-sbom]
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -100,11 +83,11 @@ jobs:
       artifact-metadata: write
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -115,15 +98,10 @@ jobs:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Create SBOM
-        id: sbom
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-          format: 'cyclonedx'
-          output: 'result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-          skip-files: '/usr/local/bin/dynatrace-operator'
+          name: nightly-sbom
       - name: Upload SBOM
         uses: ./.github/actions/upload-sbom
         with:
@@ -136,33 +114,6 @@ jobs:
         with:
           subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ needs.build-push.outputs.digest }}
-      - name: Sign FIPS image
-        uses: ./.github/actions/sign-image
-        with:
-          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Create FIPS SBOM
-        id: sbom-fips
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
-          format: 'cyclonedx'
-          output: 'fips-result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-          skip-files: '/usr/local/bin/dynatrace-operator'
-      - name: Upload FIPS SBOM
-        uses: ./.github/actions/upload-sbom
-        with:
-          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
-          sbom: 'fips-result.json'
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Add FIPS build provenance attestation
-        uses: ./.github/actions/attest-artifact
-        with:
-          subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ needs.build-push-fips.outputs.fips-digest }}
 
   release:
     if: github.repository_owner == 'Dynatrace'
@@ -179,11 +130,11 @@ jobs:
       HELM_PACKAGE_VERSION: 0.0.0-${{ needs.prepare.outputs.version_without_prefix }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Setup Golang
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: 'stable' # Latest stable version
           cache: false
@@ -200,7 +151,7 @@ jobs:
         run: |
           helm registry login -u "${{ github.repository_owner }}" -p "${{ secrets.GITHUB_TOKEN }}" "${{ env.IMAGE_REGISTRY }}"
       - name: Authenticate Docker
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
