@@ -532,7 +532,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		var actualMetadataJSON map[string]string
 
 		require.NoError(t, json.Unmarshal([]byte(request.Pod.Annotations[metadataenrichment.Annotation]), &actualMetadataJSON))
-		require.Len(t, actualMetadataJSON, 6)
+		require.Len(t, actualMetadataJSON, 7)
 
 		expectedMetadataJSON := map[string]string{
 			"dt.test-annotation": "test-annotation-value3",
