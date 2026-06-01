@@ -37,14 +37,9 @@ type ruleItemValue struct {
 }
 
 type ingestEnrichmentConfig struct {
-	Type        string `json:"type"`
-	Target      string `json:"target"`
-	ValueSource string `json:"valueSource"`
-}
-
-// Check whether necessary fields are set. For now, keep it simple and just check whether any field is set.
-func (c ingestEnrichmentConfig) isEmpty() bool {
-	return c == ingestEnrichmentConfig{}
+	Type        metadataenrichment.RuleType `json:"type"`
+	Target      string                      `json:"target"`
+	ValueSource string                      `json:"valueSource"`
 }
 
 // GetRules returns metadata enrichment rules.
@@ -133,17 +128,20 @@ func getRulesFromResponse(resp getRulesResponse) []metadataenrichment.Rule {
 	// In practice, this loop is only actually required for the new schema where each rule is a separate item.
 	// The legacy schema put all rules into a single item's value.
 	for _, item := range resp.Items {
-		if cfg := item.Value.ingestEnrichmentConfig; !cfg.isEmpty() {
+		if cfg := item.Value.ingestEnrichmentConfig; metadataenrichment.IsSupportedType(cfg.Type) {
 			rule := metadataenrichment.Rule{
-				Type:   metadataenrichment.RuleType(cfg.Type),
+				Type:   cfg.Type,
 				Target: cfg.Target,
 				Source: cfg.ValueSource,
 			}
 
 			rules = append(rules, rule)
-		} else {
-			rules = append(rules, item.Value.Rules...)
+
+			continue
 		}
+
+		// Old rules always have supported types
+		rules = append(rules, item.Value.Rules...)
 	}
 
 	return rules
