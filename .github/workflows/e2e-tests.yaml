@@ -209,7 +209,7 @@ jobs:
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto
-          flc-environment: dto-ocp-latest-pt-flc
+          flc-environment: dto-ocp-ltst-pt-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
