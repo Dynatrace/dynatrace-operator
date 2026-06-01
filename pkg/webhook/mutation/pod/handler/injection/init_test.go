@@ -7,10 +7,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
@@ -19,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	toolsevents "k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -739,4 +742,41 @@ func getTestSecurityContext() *corev1.SecurityContext {
 		RunAsUser:  new(testUser),
 		RunAsGroup: new(testUser),
 	}
+}
+
+func TestMetadataEnrichmentInitResources(t *testing.T) {
+	t.Run("uses custom resources when initResources is set", func(t *testing.T) {
+		customResources := &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("200m"),
+				corev1.ResourceMemory: resource.MustParse("128Mi"),
+			},
+		}
+
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				MetadataEnrichment: metadataenrichment.Spec{InitResources: customResources},
+			},
+		}
+
+		result := metadataEnrichmentInitResources(dk)
+
+		assert.Equal(t, *customResources, result)
+	})
+
+	t.Run("falls back to defaults when initResources is not set", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+
+		result := metadataEnrichmentInitResources(dk)
+
+		expected := corev1.ResourceRequirements{
+			Requests: k8sresource.NewResourceList("30m", "30Mi"),
+			Limits:   k8sresource.NewResourceList("100m", "60Mi"),
+		}
+		assert.Equal(t, expected, result)
+	})
 }
