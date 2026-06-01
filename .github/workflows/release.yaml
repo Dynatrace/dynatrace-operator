@@ -95,10 +95,85 @@ jobs:
       digest: ${{steps.build-image.outputs.digest}}
       fips-digest: ${{steps.build-fips-image.outputs.digest}}
 
+  create-sbom-gcr:
+    needs: [prepare, build-push]
+    strategy:
+      matrix:
+        registry: [gcr]
+        include:
+          - registry: gcr
+            url: gcr.io
+            repository: GCR_REPOSITORY
+    permissions: {}
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+      artifact-name: release-sbom-${{ matrix.registry }}
+      registry: ${{ matrix.url }}
+    secrets:
+      registry-token: ${{ secrets.GCR_JSON_KEY }}
+      registry-username: ${{ secrets.GCR_USERNAME }}
+
+  create-sbom-dockerhub:
+    needs: [prepare, build-push]
+    strategy:
+      matrix:
+        registry: [dockerhub]
+        include:
+          - registry: dockerhub
+            url: docker.io
+            repository: DOCKERHUB_REPOSITORY
+    permissions: {}
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+      artifact-name: release-sbom-${{ matrix.registry }}
+      registry: ${{ matrix.url }}
+    secrets:
+      registry-token: ${{ secrets.DOCKERHUB_PASSWORD }}
+      registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+
+  create-sbom-amazon-ecr:
+    needs: [prepare, build-push]
+    strategy:
+      matrix:
+        registry: [amazon-ecr]
+        include:
+          - registry: amazon-ecr
+            url: public.ecr.aws
+            repository: ECR_REPOSITORY
+    permissions: {}
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+      artifact-name: release-sbom-${{ matrix.registry }}
+      registry: ${{ matrix.url }}
+    secrets:
+        registry-token: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
+
+  create-sbom-rhcc:
+    needs: [prepare, build-push]
+    strategy:
+      matrix:
+        registry: [rhcc]
+        include:
+          - registry: rhcc
+            url: quay.io
+            repository: RHCC_REPOSITORY
+    permissions: {}
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+      artifact-name: release-sbom-${{ matrix.registry }}
+      registry: ${{ matrix.url }}
+    secrets:
+      registry-token: ${{ secrets.RHCC_PASSWORD }}
+      registry-username: ${{ secrets.RHCC_USERNAME }}
+
   signing:
     name: Sign the image index/manifests + Add SBOM
     environment: Release
-    needs: [prepare, build-push]
+    needs: [prepare, build-push, create-sbom-gcr, create-sbom-dockerhub, create-sbom-amazon-ecr, create-sbom-rhcc]
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -155,15 +230,10 @@ jobs:
           image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Create sbom for ${{matrix.registry}}
-        id: sbom
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          image-ref: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-          format: 'cyclonedx'
-          output: 'result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-          skip-files: '/usr/local/bin/dynatrace-operator'
+          name: release-sbom-${{ matrix.registry }}
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
