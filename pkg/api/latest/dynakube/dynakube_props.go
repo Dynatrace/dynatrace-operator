@@ -75,7 +75,11 @@ func (dk *DynaKube) TenantRegistryPullSecretName() string {
 func (dk *DynaKube) PullSecretNames() []string {
 	customNames := dk.customPullSecretNames()
 	names := make([]string, 0, 1+len(customNames))
-	names = append(names, dk.TenantRegistryPullSecretName())
+
+	if !ptr.Deref(dk.Status.APIToken.Platform, false) {
+		names = append(names, dk.TenantRegistryPullSecretName())
+	}
+
 	names = append(names, customNames...)
 
 	return names
@@ -117,7 +121,13 @@ func (dk *DynaKube) CustomPullSecretReferences() []corev1.LocalObjectReference {
 }
 
 func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
-	return append(dk.TenantRegistryPullSecretReferences(), dk.CustomPullSecretReferences()...)
+	var refs []corev1.LocalObjectReference
+
+	if !ptr.Deref(dk.Status.APIToken.Platform, false) {
+		refs = append(refs, dk.TenantRegistryPullSecretReferences()...)
+	}
+
+	return append(refs, dk.CustomPullSecretReferences()...)
 }
 
 // Tokens returns the name of the Secret to be used for tokens.

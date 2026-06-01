@@ -101,6 +101,26 @@ func TestImagePullSecretReferences(t *testing.T) {
 		assert.Equal(t, customPullSecret, refs[1].Name)
 		assert.Equal(t, helmPullSecret, refs[2].Name)
 	})
+	t.Run("don't return tenant pull secret if platform token", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			Status:     DynaKubeStatus{APIToken: APITokenStatus{Platform: new(true)}},
+		}
+		refs := dk.ImagePullSecretReferences()
+		assert.Empty(t, refs)
+	})
+	t.Run("includes DynaKube customPullSecret if platform token", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			Spec:       DynaKubeSpec{CustomPullSecret: customPullSecret},
+			Status:     DynaKubeStatus{APIToken: APITokenStatus{Platform: new(true)}},
+		}
+		refs := dk.ImagePullSecretReferences()
+		assert.Len(t, refs, 1)
+		assert.Equal(t, customPullSecret, refs[0].Name)
+	})
 }
 
 func TestTenantRegistryPullSecretReferences(t *testing.T) {

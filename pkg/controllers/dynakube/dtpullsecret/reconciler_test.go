@@ -205,6 +205,57 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
 	})
+	t.Run("Cleanup if platform token works", func(t *testing.T) {
+		dk := createTestDynakube()
+		fakeClient := fake.NewClient()
+
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
+			token.APIKey: &token.Token{Value: testValue},
+		})
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		require.NoError(t, err)
+
+		err = r.Reconcile(t.Context(), dk, token.Tokens{
+			token.APIKey: &token.Token{Value: testPlatformToken},
+		})
+		require.NoError(t, err)
+
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		assert.True(t, k8serrors.IsNotFound(err))
+		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+	})
+	t.Run("Don't create if platform token", func(t *testing.T) {
+		dk := createTestDynakube()
+		fakeClient := fake.NewClient()
+		tokens := token.Tokens{
+			token.APIKey: &token.Token{Value: testPlatformToken},
+		}
+
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, tokens)
+		require.NoError(t, err)
+
+		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
 }
 
 func createTestDynakube() *dynakube.DynaKube {
