@@ -57,11 +57,24 @@ jobs:
     outputs:
       digest: ${{ steps.build-image.outputs.digest }}
 
+  create-sbom:
+    if: github.repository_owner == 'Dynatrace'
+    needs: [prepare, build-push]
+    permissions: {}
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+      artifact-name: nightly-sbom
+      registry: ${{ env.IMAGE_REGISTRY }}
+    secrets:
+      registry-username: ${{ github.repository_owner }}
+      registry-token: ${{ secrets.GITHUB_TOKEN }}
+
   signing:
     if: github.repository_owner == 'Dynatrace'
     name: Sign the image index/manifests + Add SBOM
     environment: Release
-    needs: [prepare, build-push]
+    needs: [prepare, build-push, create-sbom]
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -85,15 +98,10 @@ jobs:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Create SBOM
-        id: sbom
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-          format: 'cyclonedx'
-          output: 'result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-          skip-files: '/usr/local/bin/dynatrace-operator'
+          name: nightly-sbom
       - name: Upload SBOM
         uses: ./.github/actions/upload-sbom
         with:
