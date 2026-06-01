@@ -77,6 +77,62 @@ func deprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+func TestUnknownFeatureFlag(t *testing.T) {
+	t.Run("no annotations => no warning", func(t *testing.T) {
+		dk := &dynakube.DynaKube{}
+		assert.Empty(t, unknownFeatureFlag(t.Context(), nil, dk))
+	})
+
+	t.Run("only known flags => no warning", func(t *testing.T) {
+		annotations := map[string]string{}
+		for _, flag := range knownFeatureFlags {
+			annotations[flag] = "true"
+		}
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Annotations: annotations},
+		}
+		assert.Empty(t, unknownFeatureFlag(t.Context(), nil, dk))
+	})
+
+	t.Run("non-feature annotation => no warning", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					"kubectl.kubernetes.io/last-applied-configuration": "{}",
+				},
+			},
+		}
+		assert.Empty(t, unknownFeatureFlag(t.Context(), nil, dk))
+	})
+
+	t.Run("single unknown feature flag => warning", func(t *testing.T) {
+		unknown := exp.FFPrefix + "removed-flag"
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{unknown: "true"},
+			},
+		}
+		result := unknownFeatureFlag(t.Context(), nil, dk)
+		assert.Equal(t, warningFeatureFlagUnknown+unknown, result)
+	})
+
+	t.Run("multiple unknown feature flags => warning with sorted names", func(t *testing.T) {
+		unknownA := exp.FFPrefix + "alpha-removed"
+		unknownB := exp.FFPrefix + "zeta-removed"
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					unknownB: "true",
+					unknownA: "true",
+				},
+			},
+		}
+		result := unknownFeatureFlag(t.Context(), nil, dk)
+		assert.Equal(t, warningFeatureFlagUnknown+unknownA+", "+unknownB, result)
+	})
+}
+
 func TestIsNodeImagePullWithoutCSI(t *testing.T) {
 	type testCase struct {
 		title           string
