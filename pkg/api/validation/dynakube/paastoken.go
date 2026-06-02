@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 )
 
 const (
@@ -27,7 +26,7 @@ func deprecatedPaasToken(ctx context.Context, dv *Validator, dk *dynakube.DynaKu
 	}
 
 	if tokens.PaasToken().Value != "" {
-		if dttoken.IsPlatform(tokens.APIToken().Value) {
+		if tokens.HasPlatformToken() {
 			return warningPaasTokenNotUsed
 		}
 

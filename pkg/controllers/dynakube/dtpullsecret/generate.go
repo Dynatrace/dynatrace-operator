@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/pkg/errors"
 )
 
@@ -47,7 +46,7 @@ func (r *Reconciler) generateData(dk *dynakube.DynaKube, tokens token.Tokens) (m
 	}
 
 	switch {
-	case tokens.PaasToken().Value != "" && !dttoken.IsPlatform(tokens.APIToken().Value):
+	case tokens.PaasToken().Value != "":
 		registryToken = tokens.PaasToken().Value
 	case tokens.APIToken().Value != "":
 		registryToken = tokens.APIToken().Value
