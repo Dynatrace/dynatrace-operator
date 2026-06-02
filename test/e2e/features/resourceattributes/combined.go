@@ -41,8 +41,6 @@ func Combined(t *testing.T) features.Feature {
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithLogMonitoring(),
-		dynakubeComponents.WithLogMonitoringImageRef(t),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedOTLPNamespaceSelector(),
