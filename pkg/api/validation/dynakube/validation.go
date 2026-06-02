@@ -33,7 +33,6 @@ var (
 		forbiddenHostIDSourceArgument,
 		NoAPIURL,
 		isInvalidAPIURL,
-		isThirdGenAPIURL,
 		invalidActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
 		invalidActiveGateProxyURL,

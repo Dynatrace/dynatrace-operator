@@ -379,40 +379,51 @@ func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTe
 	}
 }
 
-func Test_Mutator_EncodesClusterNameWithSpecialChars(t *testing.T) {
+func Test_Mutator_EncodesAttributeValues(t *testing.T) {
 	_ = appsv1.AddToScheme(scheme.Scheme)
 	_ = corev1.AddToScheme(scheme.Scheme)
 
-	baseDK := latestdynakube.DynaKube{}
-	baseDK.Status.KubeSystemUUID = "cluster-uid"
-	baseDK.Status.KubernetesClusterName = "bh-eks-test1 with space=equals,comma"
-	baseDK.Status.KubernetesClusterMEID = "cluster-meid"
-
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{Namespace: "ns"},
-		Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+	tests := []struct {
+		name        string
+		clusterName string
+		annotations map[string]string
+		expected    string
+	}{
+		{
+			name:        "cluster name with special chars",
+			clusterName: "bh-eks-test1 with space=equals,comma",
+			expected:    "k8s.cluster.name=" + url.QueryEscape("bh-eks-test1 with space=equals,comma"),
+		},
+		{
+			name:        "env ref in pod annotation value",
+			clusterName: "cluster-name",
+			annotations: map[string]string{"metadata.dynatrace.com/booom": "$(DT_API_TOKEN)"},
+			expected:    "booom=" + url.QueryEscape("$(DT_API_TOKEN)"),
+		},
 	}
 
-	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			baseDK := latestdynakube.DynaKube{}
+			baseDK.Status.KubeSystemUUID = "cluster-uid"
+			baseDK.Status.KubernetesClusterName = tt.clusterName
+			baseDK.Status.KubernetesClusterMEID = "cluster-meid"
 
-	client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
-	mut := New(client)
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "ns", Annotations: tt.annotations},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+			}
+			namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
 
-	req := dtwebhook.NewMutationRequest(
-		t.Context(),
-		namespace,
-		nil,
-		pod,
-		baseDK,
-	)
-	err := mut.Mutate(req)
-	require.NoError(t, err)
+			client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+			req := dtwebhook.NewMutationRequest(t.Context(), namespace, nil, pod, baseDK)
+			require.NoError(t, New(client).Mutate(req))
 
-	resourceAttributes := k8senv.Find(pod.Spec.Containers[0].Env, "OTEL_RESOURCE_ATTRIBUTES").Value
-	require.NotEmpty(t, resourceAttributes, "OTEL_RESOURCE_ATTRIBUTES must be set")
-
-	expected := "k8s.cluster.name=" + url.QueryEscape("bh-eks-test1 with space=equals,comma")
-	assert.Contains(t, resourceAttributes, expected)
+			resourceAttributes := k8senv.Find(pod.Spec.Containers[0].Env, "OTEL_RESOURCE_ATTRIBUTES").Value
+			require.NotEmpty(t, resourceAttributes, "OTEL_RESOURCE_ATTRIBUTES must be set")
+			assert.Contains(t, resourceAttributes, tt.expected)
+		})
+	}
 }
 
 // Abort mutation if owner reference cannot be resolved, be consistent with metadata mutator
