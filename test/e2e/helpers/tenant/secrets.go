@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -152,6 +153,12 @@ func WithPlatformToken() bool {
 
 func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		if dttoken.IsPlatform(tokens.APIToken) {
+			t.Log("create/update tenant token with platform token")
+		} else {
+			t.Log("create/update tenant token with classic api token")
+		}
+
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
