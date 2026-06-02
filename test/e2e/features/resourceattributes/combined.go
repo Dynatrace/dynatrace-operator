@@ -69,7 +69,7 @@ func Combined(t *testing.T) features.Feature {
 	builder.Assess("OneAgent DaemonSet is ready", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 	builder.Assess("ActiveGate is running", activegate.CheckContainer(&testDynakube))
 
-	builder.Assess("OneAgent dt_node_metadata.properties contains merged OneAgent resource attributes", assessDTNodeMetadataProperties(testDynakube, sampleApp, expectedOneAgent))
+	builder.Assess("OneAgent dt_node_metadata.properties contains merged OneAgent resource attributes", assessDTNodeMetadataProperties(testDynakube, expectedOneAgent))
 	builder.Assess("ActiveGate deployment.properties ConfigMap contains global resource attributes", assessActiveGateDeploymentProperties(testDynakube, globalAttrs))
 
 	installSampleApp(builder, sampleApp)

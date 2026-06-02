@@ -150,7 +150,7 @@ func assessDTMetadataFiles(dk dynakube.DynaKube, app *sample.App, expected map[s
 	}
 }
 
-func assessDTNodeMetadataProperties(dk dynakube.DynaKube, app *sample.App, expected map[string]string) features.Func {
+func assessDTNodeMetadataProperties(dk dynakube.DynaKube, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		r := envConfig.Client().Resources()
 		q := k8sdaemonset.NewQuery(ctx, r, client.ObjectKey{
@@ -158,18 +158,18 @@ func assessDTNodeMetadataProperties(dk dynakube.DynaKube, app *sample.App, expec
 			Namespace: dk.Namespace,
 		})
 
-		expectedDefaults := buildExpectedMetadataEnrichmentDefaults(ctx, t, envConfig, dk, app)
+		expectedDefaults := buildExpectedNodeDefaults(ctx, t, envConfig, dk)
 		forbidden := forbiddenAttrs(expected)
 		err := q.ForEachPod(func(pod corev1.Pod) {
 			properties := metadataenrichment.GetNodeMetadataPropertiesFromPod(ctx, t, r, pod)
 			for k, v := range expected {
-				assert.Equalf(t, v, properties[k], "dt_metadata.properties key %q in pod %s", k, pod.Name)
+				assert.Equalf(t, v, properties[k], "dt_node_metadata.properties key %q in pod %s", k, pod.Name)
 			}
 			for k, v := range expectedDefaults {
-				assert.Equalf(t, v, properties[k], "dt_metadata.properties key %q in pod %s", k, pod.Name)
+				assert.Equalf(t, v, properties[k], "dt_node_metadata.properties key %q in pod %s", k, pod.Name)
 			}
 			for k := range forbidden {
-				assert.NotContainsf(t, properties, k, "dt_metadata.properties leaked key %q in pod %s", k, pod.Name)
+				assert.NotContainsf(t, properties, k, "dt_node_metadata.properties leaked key %q in pod %s", k, pod.Name)
 			}
 		})
 		require.NoError(t, err)
@@ -301,6 +301,17 @@ func buildExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf
 	expectedDefaults["k8s.container.name"] = app.ContainerName()
 
 	return expectedDefaults
+}
+
+func buildExpectedNodeDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube) map[string]string {
+	err := envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &dk)
+	require.NoError(t, err)
+
+	return map[string]string{
+		"k8s.cluster.uid":              dk.Status.KubeSystemUUID,
+		"k8s.cluster.name":             dk.Status.KubernetesClusterName,
+		"dt.entity.kubernetes_cluster": dk.Status.KubernetesClusterMEID,
+	}
 }
 
 func buildExpectedPodDefaultsOTLP() map[string]string {
