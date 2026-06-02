@@ -239,7 +239,7 @@ jobs:
           OCP_OLM_RESULT: ${{ needs.run-in-ocp-olm.result }}
         run: |
           get_emoji() {
-            if [ "$1" = "skipped" ]; then
+            if [ "$1" = "skipped" ] || [ "$2" = "skipped" ]; then
               echo "large_yellow_circle"
             elif [ "$2" = "success" ]; then
               echo "white_check_mark"
