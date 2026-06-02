@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -114,7 +115,7 @@ func TestUnknownFeatureFlag(t *testing.T) {
 			},
 		}
 		result := unknownFeatureFlag(t.Context(), nil, dk)
-		assert.Equal(t, warningFeatureFlagUnknown+unknown, result)
+		assert.Equal(t, fmt.Sprintf(warningFeatureFlagUnknown, unknown), result)
 	})
 
 	t.Run("multiple unknown feature flags => warning with sorted names", func(t *testing.T) {
@@ -129,7 +130,7 @@ func TestUnknownFeatureFlag(t *testing.T) {
 			},
 		}
 		result := unknownFeatureFlag(t.Context(), nil, dk)
-		assert.Equal(t, warningFeatureFlagUnknown+unknownA+", "+unknownB, result)
+		assert.Equal(t, fmt.Sprintf(warningFeatureFlagUnknown, unknownA+", "+unknownB), result)
 	})
 }
 

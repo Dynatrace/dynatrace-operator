@@ -2,8 +2,8 @@ package validation
 
 import (
 	"context"
+	"fmt"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -29,9 +29,9 @@ var knownFeatureFlags = []string{
 	exp.UseEECLegacyMountsKey,
 	exp.UsePublicRegistryKey,
 	// activegate.go
-	exp.AGDisableUpdatesKey,
-	exp.AGIgnoreProxyKey,
-	exp.AGUpdatesKey,
+	exp.AGDisableUpdatesKey, //nolint:staticcheck
+	exp.AGIgnoreProxyKey,    //nolint:staticcheck
+	exp.AGUpdatesKey,        //nolint:staticcheck
 	exp.AGAppArmorKey,
 	exp.AGAutomaticK8sAPIMonitoringKey,
 	exp.AGAutomaticK8sAPIMonitoringClusterNameKey,
@@ -47,10 +47,10 @@ var knownFeatureFlags = []string{
 	exp.InjectionAutomaticKey,
 	exp.InjectionLabelVersionDetectionKey,
 	exp.InjectionFailurePolicyKey,
-	exp.InjectionSeccompKey,
+	exp.InjectionSeccompKey, //nolint:staticcheck
 	// oneagent.go
-	exp.OAProxyIgnoredKey,
-	exp.OAMaxUnavailableKey,
+	exp.OAProxyIgnoredKey,   //nolint:staticcheck
+	exp.OAMaxUnavailableKey, //nolint:staticcheck
 	exp.OAInitialConnectRetryKey,
 	exp.OAPrivilegedKey,
 	exp.OASkipLivenessProbeKey,
@@ -94,9 +94,9 @@ func unknownFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) 
 	}
 
 	if len(results) > 0 {
-		sort.Strings(results)
+		slices.Sort(results)
 
-		return warningFeatureFlagUnknown + strings.Join(results, ", ")
+		return fmt.Sprintf(warningFeatureFlagUnknown, strings.Join(results, ", "))
 	}
 
 	return ""
