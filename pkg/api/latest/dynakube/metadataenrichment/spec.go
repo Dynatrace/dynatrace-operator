@@ -49,7 +49,8 @@ func IsSupportedType(ruleType RuleType) bool {
 	case LabelRule,
 		AnnotationRule,
 		K8sNamespaceLabelRule,
-		K8sNamespaceAnnotationRule:
+		K8sNamespaceAnnotationRule,
+		CustomRule:
 		return true
 	}
 
