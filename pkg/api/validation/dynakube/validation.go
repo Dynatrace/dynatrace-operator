@@ -68,6 +68,8 @@ var (
 		invalidOneAgentResourceAttributesSanitization,
 		invalidOTLPResourceAttributesSanitization,
 		publicRegistryOverrideWithoutPublicRegistry,
+		invalidNetworkZone,
+		invalidOneAgentHostGroup,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
