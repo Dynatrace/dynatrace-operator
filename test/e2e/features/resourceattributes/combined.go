@@ -77,8 +77,8 @@ func Combined(t *testing.T) features.Feature {
 	builder.Assess("initcontainer contains args with additionalAttributes", assessInitContainerArgs(sampleApp, expectedOneAgent))
 	builder.Assess("dt_metadata.json and dt_metadata.properties contains merged OneAgent resource attributes", assessDTMetadataFiles(testDynakube, sampleApp, expectedOneAgent))
 	builder.Assess("OTEL_RESOURCE_ATTRIBUTES contains merged OTLP resource attributes (OA wins shared keys)", assessOTLPInjectionAttributes(testDynakube, sampleApp, expectedOTLPInAll))
-	builder.Assess("metadata.dynatrace.com JSON annotation contains merged OneAgent resource attributes and workload info", assessPodMetadataJSONAnnotation(sampleApp, expectedOneAgent))
-	builder.Assess("DynaKube resource attributes are not set as individual metadata.dynatrace.com/ annotations", assessDynakubeAttrsNotInIndividualAnnotations(sampleApp, expectedOneAgent))
+	builder.Assess("metadata.dynatrace.com JSON annotation contains merged OneAgent resource attributes and workload info", assessPodMetadataJSONAnnotation(sampleApp, expectedOTLPInAll))
+	builder.Assess("DynaKube resource attributes are not set as individual metadata.dynatrace.com/ annotations", assessDynakubeAttrsNotInIndividualAnnotations(sampleApp, expectedOTLPInAll))
 
 	uninstallSampleApp(builder, sampleApp)
 

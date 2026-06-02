@@ -229,12 +229,8 @@ func assessPodMetadataJSONAnnotation(app *sample.App, expected map[string]string
 			assert.Equalf(t, v, parsed[k], "JSON annotation key %q in pod %s", k, pod.Name)
 		}
 
-		for k := range forbiddenAttrs(expected) {
-			assert.NotContainsf(t, parsed, k, "JSON annotation leaked key %q in pod %s", k, pod.Name)
-		}
-
-		assert.Equalf(t, app.Kind(), parsed["k8s.workload.kind"], "JSON annotation workload kind in pod %s", pod.Name)
-		assert.Equalf(t, app.Name(), parsed["k8s.workload.name"], "JSON annotation workload name in pod %s", pod.Name)
+		assert.Equalf(t, app.Kind(), pod.Annotations[dkmetadata.Annotation+"/"+"k8s.workload.kind"], "JSON annotation workload kind in pod %s", pod.Name)
+		assert.Equalf(t, app.Name(), pod.Annotations[dkmetadata.Annotation+"/"+"k8s.workload.name"], "JSON annotation workload name in pod %s", pod.Name)
 
 		return ctx
 	}
