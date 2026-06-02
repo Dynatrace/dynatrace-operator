@@ -10,6 +10,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type versionStatusUpdater interface {
+	Name() string
+	RequiresReconcile() bool
+	Update(ctx context.Context) error
+}
+
 type Reconciler struct {
 	edgeConnect  *edgeconnect.EdgeConnect
 	timeProvider *timeprovider.Provider

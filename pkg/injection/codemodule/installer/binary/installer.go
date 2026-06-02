@@ -16,6 +16,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const VersionLatest = "latest"
+
 type Properties struct {
 	OS            string
 	Arch          string

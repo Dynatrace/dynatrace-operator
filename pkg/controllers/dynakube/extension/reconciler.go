@@ -13,6 +13,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	secretConditionType  = "ExtensionsSecret"
+	serviceConditionType = "ExtensionsService"
+)
+
 type Reconciler struct {
 	client       client.Client
 	apiReader    client.Reader

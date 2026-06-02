@@ -21,6 +21,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	ActiveGateStatefulSetConditionType string = "ActiveGateStatefulSet"
+	InternalProxySecretVolumeName      string = "internal-proxy-secret-volume"
+)
+
 type Reconciler struct {
 	apiReader    client.Reader
 	statefulsets k8sstatefulset.QueryObject

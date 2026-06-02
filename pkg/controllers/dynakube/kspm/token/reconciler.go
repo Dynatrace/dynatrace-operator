@@ -19,6 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	kspmConditionType = "KSPMTokenSecret"
+)
+
 type Reconciler struct {
 	secrets k8ssecret.QueryObject
 }

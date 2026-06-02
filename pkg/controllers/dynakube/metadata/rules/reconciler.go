@@ -17,6 +17,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
+const (
+	conditionType = "MetadataEnrichmentRules"
+)
+
 type Reconciler struct {
 	dtClient     settings.Client
 	dk           *dynakube.DynaKube

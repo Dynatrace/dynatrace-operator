@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	PullSecretSuffix = "-pull-secret"
+	PullSecretSuffix        = "-pull-secret"
+	PullSecretConditionType = "PullSecret"
 )
 
 type Reconciler struct {

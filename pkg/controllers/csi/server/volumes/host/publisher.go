@@ -29,6 +29,8 @@ import (
 	"k8s.io/mount-utils"
 )
 
+const Mode = "host"
+
 func NewPublisher(mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
 	return &Publisher{
 		mounter: mounter,

@@ -36,3 +36,9 @@ type Rule struct {
 	Source string   `json:"source,omitempty"`
 	Target string   `json:"target,omitempty"`
 }
+
+// +kubebuilder:object:generate=true
+
+type Status struct {
+	Rules []Rule `json:"rules,omitempty"`
+}

@@ -22,6 +22,8 @@ import (
 const (
 	activeGateTrustedCertVolumeName = "otlp-dynatrace-certs"
 	exporterCertsMountPath          = "/etc/dynatrace/ssl"
+
+	CouldNotGetIngestEndpointReason = "IngestEndpointUnavailable"
 )
 
 type Mutator struct{}

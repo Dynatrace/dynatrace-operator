@@ -26,6 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var (
+	unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
+)
+
 type Controller struct {
 	client          client.Client
 	apiReader       client.Reader

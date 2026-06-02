@@ -19,6 +19,8 @@ import (
 )
 
 const (
+	ConditionType = "LogMonitoringDaemonSet"
+
 	serviceAccountName = "dynatrace-logmonitoring"
 )
 
