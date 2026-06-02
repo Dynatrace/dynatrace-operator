@@ -52,7 +52,7 @@ func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Lev
 }
 
 func Create(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, testDynakube dynakube.DynaKube) {
-	if tenant.WithPlatformToken() && testDynakube.Spec.CustomPullSecret == "" {
+	if tenant.UsePlatformToken() && testDynakube.Spec.CustomPullSecret == "" {
 		testDynakube.Spec.CustomPullSecret = e2econst.DevRegistryPullSecretName
 	}
 	if !tokens.IsEmpty() {

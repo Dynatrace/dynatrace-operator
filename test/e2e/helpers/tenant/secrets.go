@@ -62,7 +62,7 @@ func (s Secret) TokensWithoutSettingsScope() Tokens {
 }
 
 func (s Secret) tokens(hasSettingsScope bool) Tokens {
-	if WithPlatformToken() {
+	if UsePlatformToken() {
 		return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestToken}
 	}
 
@@ -147,7 +147,7 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	return result
 }
 
-func WithPlatformToken() bool {
+func UsePlatformToken() bool {
 	return os.Getenv("USE_PLATFORM_TOKEN") == "true"
 }
 

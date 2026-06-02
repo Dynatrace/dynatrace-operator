@@ -13,7 +13,7 @@ import (
 )
 
 func FromPlatformToAPIToken(t *testing.T) features.Feature {
-	if !tenant.WithPlatformToken() {
+	if !tenant.UsePlatformToken() {
 		t.Skip("skip test from platform to api token if default is api token")
 	}
 	builder := features.New("migrate-from-platform-to-api-token")
@@ -37,7 +37,7 @@ func FromPlatformToAPIToken(t *testing.T) features.Feature {
 }
 
 func FromAPIToPlatformToken(t *testing.T) features.Feature {
-	if tenant.WithPlatformToken() {
+	if tenant.UsePlatformToken() {
 		t.Skip("skip test from api to platform token if default is platform token")
 	}
 
