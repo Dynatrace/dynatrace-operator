@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -498,6 +499,41 @@ func TestCheckForDataIngestToken(t *testing.T) {
 
 		assert.False(t, CheckForDataIngestToken(tokens))
 	})
+}
+
+func TestTokens_HasPlatformToken(t *testing.T) {
+	tests := []struct {
+		name     string
+		tokens   Tokens
+		expected bool
+	}{
+		{
+			name:     "no api token",
+			tokens:   Tokens{},
+			expected: false,
+		},
+		{
+			name:     "empty api token value",
+			tokens:   Tokens{APIKey: &Token{Value: ""}},
+			expected: false,
+		},
+		{
+			name:     "regular api token",
+			tokens:   Tokens{APIKey: &Token{Value: "dt0c01.regular-token"}},
+			expected: false,
+		},
+		{
+			name:     "platform api token",
+			tokens:   Tokens{APIKey: &Token{Value: dttoken.PlatformPrefix + ".platform-token"}},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.tokens.HasPlatformToken())
+		})
+	}
 }
 
 func TestGetMissingScopes(t *testing.T) {

@@ -29,7 +29,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -478,7 +477,7 @@ func (controller *Controller) warnAboutDeprecatedTokens(ctx context.Context) {
 	log := logd.FromContext(ctx)
 
 	if controller.tokens.PaasToken().Value != "" {
-		if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
+		if controller.tokens.HasPlatformToken() {
 			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be ignored because the '" + token.APIKey + "' field in the secret contains a platform token, which will be used for authentication.")
 		} else {
 			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be used for authentication because the '" + token.APIKey + "' field in the secret does not contain a platform token.")
@@ -495,7 +494,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 		return err
 	}
 
-	if dttoken.IsPlatform(controller.tokens.APIToken().Value) {
+	if controller.tokens.HasPlatformToken() {
 		dk.Status.APIToken.Platform = new(true)
 
 		logd.FromContext(ctx).Info("skipping token scope lookup due to platform token")
