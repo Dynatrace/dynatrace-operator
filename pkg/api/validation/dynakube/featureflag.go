@@ -12,7 +12,7 @@ import (
 
 const (
 	warningFeatureFlagDeprecated   = `Using deprecated feature flags: `
-	warningFeatureFlagUnknown      = `Using unknown feature flags: `
+	warningFeatureFlagUnknown      = `Using unknown feature flags: %s. Please remove it from Dynakube specification.`
 	warningNodeImagePullWithoutCSI = "The `" + exp.OANodeImagePullKey + "` annotation is set, but the CSI driver is not available on this cluster. This feature flag only affects the behavior of the CSI driver, so it will have no effect. Other previous `node-image-pull` related behavior has been defaulted."
 )
 
