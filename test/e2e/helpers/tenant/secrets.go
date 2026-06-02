@@ -154,9 +154,9 @@ func WithPlatformToken() bool {
 func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		if dttoken.IsPlatform(tokens.APIToken) {
-			t.Log("create/update tenant token with platform token")
+			t.Log("create/update tenant secret with platform token")
 		} else {
-			t.Log("create/update tenant token with classic api token")
+			t.Log("create/update tenant secret with classic api token")
 		}
 
 		defaultSecret := corev1.Secret{
