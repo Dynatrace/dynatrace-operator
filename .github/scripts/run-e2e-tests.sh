@@ -37,4 +37,11 @@ else
   make BRANCH="$TARGET_BRANCH" test/e2e-publish
 fi
 
+# Permissions scenario: helm-chart RBAC validation. Run once on k8s-latest and ocp-latest.
+# Excluded from FIPS (same RBAC, only the image differs) and OLM (non-helm install).
+if [[ $FLC_ENVIRONMENT == "dto-k8s-latest-flc" || $FLC_ENVIRONMENT == "dto-ocp-latest-flc" ]]; then
+  echo "run permissions e2e suite"
+  make BRANCH="$TARGET_BRANCH" test/e2e/permissions/publish
+fi
+
 echo "Success!"

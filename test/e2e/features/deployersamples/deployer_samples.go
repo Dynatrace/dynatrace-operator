@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -178,13 +179,21 @@ func assessInstallFails(ctx context.Context, t *testing.T, v variant) context.Co
 func helmInstall(v variant) error {
 	chartPath := filepath.Join(project.RootDir(), "config", "helm", "chart", "default")
 
+	// Resolve the platform from the cluster so the chart renders the right resource set.
+	// On OpenShift this renders the SCC / *.openshift.io resources, which is what
+	// exercises the OpenShift-specific rules in the deployer clusterrole samples.
+	plat, err := platform.NewResolver().GetPlatform()
+	if err != nil {
+		return fmt.Errorf("failed to resolve platform: %w", err)
+	}
+
 	args := []string{
 		"upgrade", "--install", releaseName, chartPath,
 		"--namespace", targetNamespace,
 		"--create-namespace",
 		"--set", "installCRD=true",
 		"--set", fmt.Sprintf("csidriver.enabled=%t", v.csiEnabled),
-		"--set", "platform=kubernetes",
+		"--set", fmt.Sprintf("platform=%s", plat),
 		"--set", "manifests=true",
 		"--set", "webhook.replicas=1",
 		"--kube-as-user", v.serviceAccount,
@@ -194,7 +203,7 @@ func helmInstall(v variant) error {
 	stderr := new(bytes.Buffer)
 	cmd.Stderr = stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("%s: %w", strings.TrimSpace(stderr.String()), err)
 	}

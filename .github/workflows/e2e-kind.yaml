@@ -44,7 +44,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `🚀 E2E workflow started! [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nℹ️ Please note that currently only the edgeconnect tests without a proxy (\`test/e2e/edgeconnect/normal\`) are being run.`
+              body: `🚀 E2E workflow started! [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nℹ️ Please note that currently only the edgeconnect tests without a proxy (\`test/e2e/edgeconnect/normal\`) and the permissions tests (\`test/e2e/permissions\`) are being run.`
             });
       - name: Checkout PR
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -101,6 +101,11 @@ jobs:
           echo The branch is $BRANCH
 
           make test/e2e/edgeconnect/normal
+        env:
+          BRANCH: ${{ needs.check-comment.outputs.pr_branch }}
+      - name: Run permissions E2E tests on kind
+        id: run-e2e-permissions
+        run: make test/e2e/permissions
         env:
           BRANCH: ${{ needs.check-comment.outputs.pr_branch }}
       - name: Comment on PR - Success
