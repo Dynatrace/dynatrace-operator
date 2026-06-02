@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/logs"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -33,6 +34,11 @@ func TestMain(m *testing.M) {
 	}
 
 	testEnv.BeforeEachTest(func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
+		// TODO Remove this after 1.10 release
+		if tenant.UsePlatformToken() {
+			t.Skip("skip test from platform token")
+		}
+
 		return operator.Install(releaseTag, true)(ctx, envConfig) // TODO: add logic to get releaseTag in a dynamic way instead of hard coding it
 	})
 
