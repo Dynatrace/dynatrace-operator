@@ -10,8 +10,8 @@ const (
 	LabelRule      RuleType = "LABEL"
 	AnnotationRule RuleType = "ANNOTATION"
 
-	K8sLabelRule      RuleType = "K8S_NAMESPACE_LABEL"
-	K8sAnnotationRule RuleType = "K8S_NAMESPACE_ANNOTATION"
+	K8sNamespaceLabelRule      RuleType = "K8S_NAMESPACE_LABEL"
+	K8sNamespaceAnnotationRule RuleType = "K8S_NAMESPACE_ANNOTATION"
 	// TODO: implement support for this type.
 	CustomRule RuleType = "CUSTOM"
 
@@ -48,8 +48,8 @@ func IsSupportedType(ruleType RuleType) bool {
 	switch ruleType {
 	case LabelRule,
 		AnnotationRule,
-		K8sLabelRule,
-		K8sAnnotationRule:
+		K8sNamespaceLabelRule,
+		K8sNamespaceAnnotationRule:
 		return true
 	}
 

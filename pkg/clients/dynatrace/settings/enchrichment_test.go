@@ -49,8 +49,8 @@ func TestGetRulesSetting(t *testing.T) {
 
 	newResponse := getRulesResponse{
 		Items: []ruleItem{
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sLabelRule, ValueSource: "source-1", Target: "target-1"}}},
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sAnnotationRule, ValueSource: "source-2", Target: "target-2"}}},
+			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceLabelRule, ValueSource: "source-1", Target: "target-1"}}},
+			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceAnnotationRule, ValueSource: "source-2", Target: "target-2"}}},
 			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.CustomRule, ValueSource: "source-3", Target: "target-3"}}},
 		},
 	}
@@ -123,8 +123,8 @@ func TestGetRulesSetting(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 		expectRules := []metadataenrichment.Rule{
-			{Type: metadataenrichment.K8sLabelRule, Source: "source-1", Target: "target-1"},
-			{Type: metadataenrichment.K8sAnnotationRule, Source: "source-2", Target: "target-2"},
+			{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "source-1", Target: "target-1"},
+			{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "source-2", Target: "target-2"},
 		}
 
 		expectCallOrder(
@@ -168,8 +168,8 @@ func TestGetRulesSetting(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 		expectRules := []metadataenrichment.Rule{
-			{Type: metadataenrichment.K8sLabelRule, Source: "source-1", Target: "target-1"},
-			{Type: metadataenrichment.K8sAnnotationRule, Source: "source-2", Target: "target-2"},
+			{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "source-1", Target: "target-1"},
+			{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "source-2", Target: "target-2"},
 		}
 
 		expectCallOrder(
@@ -256,8 +256,8 @@ func Test_enrichmentSchemaModel(t *testing.T) {
 
 	expectNew := getRulesResponse{
 		Items: []ruleItem{
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sLabelRule, ValueSource: "test-label", Target: "dt.cost.product"}}},
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sAnnotationRule, ValueSource: "my.test.annotation/value", Target: "dt.security_context"}}},
+			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceLabelRule, ValueSource: "test-label", Target: "dt.cost.product"}}},
+			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceAnnotationRule, ValueSource: "my.test.annotation/value", Target: "dt.security_context"}}},
 		},
 	}
 
