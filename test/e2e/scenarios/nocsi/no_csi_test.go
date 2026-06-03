@@ -93,6 +93,10 @@ func TestNoCSI_resource_attributes_metadata_only(t *testing.T) {
 	testEnv.Test(t, resourceattributes.MetadataOnly(t))
 }
 
+func TestNoCSI_resource_attributes_oneagent(t *testing.T) {
+	testEnv.Test(t, resourceattributes.OneAgent(t))
+}
+
 func TestNoCSI_resource_attributes_otlp(t *testing.T) {
 	testEnv.Test(t, resourceattributes.OTLPExporterConfig(t))
 }
