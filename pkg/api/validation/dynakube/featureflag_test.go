@@ -1,6 +1,8 @@
 package validation
 
 import (
+	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -8,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -75,6 +78,66 @@ func deprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 	result := deprecatedFeatureFlag(t.Context(), nil, dk)
 	expected := warningFeatureFlagDeprecated + strings.Join(deprecatedFeatureFlags, ", ")
 	assert.Equal(t, expected, result)
+}
+
+func TestUnknownFeatureFlag(t *testing.T) {
+	getDK := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: "test"},
+			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
+		}
+	}
+
+	t.Run("no annotations => no warning", func(t *testing.T) {
+		dk := getDK()
+		assertAllowedWithoutWarnings(t, dk)
+	})
+
+	t.Run("only known flags => no warning", func(t *testing.T) {
+		annotations := map[string]string{}
+		for _, flag := range knownFeatureFlags {
+			if !slices.Contains(deprecatedFeatureFlags, flag) {
+				annotations[flag] = "true"
+			}
+		}
+
+		dk := getDK()
+		dk.Annotations = annotations
+		assertAllowedWithoutWarnings(t, dk)
+	})
+
+	t.Run("non-feature annotation => no warning", func(t *testing.T) {
+		dk := getDK()
+		dk.Annotations = map[string]string{
+			"kubectl.kubernetes.io/last-applied-configuration": "{}",
+		}
+
+		assertAllowedWithoutWarnings(t, dk)
+	})
+
+	t.Run("single unknown feature flag => warning", func(t *testing.T) {
+		unknown := exp.FFPrefix + "removed-flag"
+		dk := getDK()
+		dk.Annotations = map[string]string{unknown: "true"}
+
+		assertAllowedWithWarnings(t, 1, dk)
+	})
+
+	t.Run("multiple unknown feature flags => warning with sorted names", func(t *testing.T) {
+		unknownA := exp.FFPrefix + "alpha-removed"
+		unknownB := exp.FFPrefix + "zeta-removed"
+
+		dk := getDK()
+		dk.Annotations = map[string]string{
+			unknownB: "true",
+			unknownA: "true",
+		}
+
+		warnings, err := assertAllowed(t, dk)
+		require.NoError(t, err)
+		assert.Len(t, warnings, 1)
+		assert.Equal(t, fmt.Sprintf(warningFeatureFlagUnknown, unknownA+", "+unknownB), warnings[0])
+	})
 }
 
 func TestIsNodeImagePullWithoutCSI(t *testing.T) {
