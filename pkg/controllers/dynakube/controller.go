@@ -62,21 +62,27 @@ const (
 )
 
 func Add(mgr manager.Manager, _ string) error {
-	kubeSysUID, err := system.GetUID(context.Background(), mgr.GetAPIReader())
+	ctx := context.Background()
+
+	kubeSysUID, err := system.GetUID(ctx, mgr.GetAPIReader())
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	return NewController(mgr, string(kubeSysUID)).SetupWithManager(mgr)
+	return NewController(mgr, string(kubeSysUID), k8senv.GetDefaultRequeueAfter(ctx)).SetupWithManager(mgr)
 }
 
-func NewController(mgr manager.Manager, clusterID string) *Controller {
-	return NewDynaKubeController(
+func NewController(mgr manager.Manager, clusterID string, defaultRequeueAfter time.Duration) *Controller {
+	controller := NewDynaKubeController(
 		mgr.GetClient(),
 		mgr.GetAPIReader(),
 		mgr.GetEventRecorder(controllerName),
 		mgr.GetConfig(),
 		clusterID)
+	controller.defaultRequeueAfter = defaultRequeueAfter
+	controller.requeueAfter = defaultRequeueAfter
+
+	return controller
 }
 
 func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, eventRecorder events.EventRecorder, config *rest.Config, clusterID string) *Controller {
@@ -182,7 +188,8 @@ type Controller struct {
 	operatorNamespace string
 	clusterID         string
 
-	requeueAfter time.Duration
+	defaultRequeueAfter time.Duration
+	requeueAfter        time.Duration
 
 	dtClientFactory dynatrace.ClientFactory
 }
@@ -216,7 +223,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		k8sevent.SendCRDVersionMismatch(controller.eventRecorder, dk)
 	}
 
-	controller.requeueAfter = k8senv.GetDefaultRequeueAfter(ctx)
+	controller.requeueAfter = controller.defaultRequeueAfter
 	oldStatus := *dk.Status.DeepCopy()
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)

@@ -113,6 +113,8 @@ func GetDefaultRequeueAfter(ctx context.Context) time.Duration {
 
 	rawDuration := os.Getenv(DefaultRequeueAfterEnvVar)
 	if rawDuration == "" {
+		log.Debug("no custom env set, using default", "env", DefaultRequeueAfterEnvVar, "default", defaultRequeueInterval)
+
 		return defaultRequeueInterval
 	}
 
