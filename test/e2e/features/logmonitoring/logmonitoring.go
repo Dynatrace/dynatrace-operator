@@ -88,6 +88,10 @@ func Feature(t *testing.T) features.Feature {
 func WithOptionalScopes(t *testing.T) features.Feature {
 	builder := features.New("logmonitoring-with-optional-scopes")
 
+	if tenant.UsePlatformToken() {
+		t.Skip("platform token always has all scopes, missing-scope scenario cannot be tested")
+	}
+
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	if secretConfig.APITokenNoSettings == "" {
 		t.Skip("skipping test. no token with missing settings scopes provided")
