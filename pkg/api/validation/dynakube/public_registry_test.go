@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -56,6 +57,66 @@ func TestPublicRegistryOverrideWithoutPublicRegistry(t *testing.T) {
 		dk.Spec.PublicRegistryOverride = "my.custom.registry.com"
 
 		assertAllowedWithoutWarnings(t, dk, platformTokenSecret())
+	})
+}
+
+func TestPublicRegistryNotAllowedForClassic(t *testing.T) {
+	newClassicDynakube := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
+				},
+			},
+		}
+	}
+
+	t.Run("non-classic mode returns no error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+			},
+		}
+		assertAllowedWithoutWarnings(t, dk)
+	})
+
+	t.Run("classic mode without public registry features returns no error", func(t *testing.T) {
+		dk := newClassicDynakube()
+		assertAllowedWithoutWarnings(t, dk, regularTokenSecret())
+	})
+
+	t.Run("classic mode with publicRegistryOverride returns error", func(t *testing.T) {
+		dk := newClassicDynakube()
+		dk.Spec.PublicRegistryOverride = "my.custom.registry.com"
+
+		assertDenied(t, []string{errorClassicFullStackIncompatibleWithPublicRegistry}, dk)
+	})
+
+	t.Run("classic mode with use-public-registry FF returns error", func(t *testing.T) {
+		dk := newClassicDynakube()
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+
+		assertDenied(t, []string{errorClassicFullStackIncompatibleWithPublicRegistry}, dk)
+	})
+
+	t.Run("classic mode with platform token returns error", func(t *testing.T) {
+		dk := newClassicDynakube()
+
+		assertDenied(t, []string{errorClassicFullStackIncompatibleWithPublicRegistry}, dk, platformTokenSecret())
+	})
+
+	t.Run("classic mode with token secret read error returns no error", func(t *testing.T) {
+		dk := newClassicDynakube()
+		assertAllowedWithoutWarnings(t, dk)
 	})
 }
 
