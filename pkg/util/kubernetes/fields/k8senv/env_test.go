@@ -269,7 +269,7 @@ func TestGetDefaultRequeueAfter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv(DefaultRequeueAfter, tt.envValue)
+			t.Setenv(DefaultRequeueAfterEnvVar, tt.envValue)
 			assert.Equal(t, tt.want, GetDefaultRequeueAfter(t.Context()))
 		})
 	}
