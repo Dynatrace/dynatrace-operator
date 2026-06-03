@@ -79,6 +79,7 @@ var (
 		deprecatedAutoUpdate,
 		deprecatedOneAgentVersionField,
 		deprecatedFeatureFlag,
+		unknownFeatureFlag,
 		ignoredOtelCollectorTemplate,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,
