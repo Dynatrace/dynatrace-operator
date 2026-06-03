@@ -98,20 +98,20 @@ func TestPublicRegistryNotAllowedForClassic(t *testing.T) {
 		dk := newClassicDynakube()
 		dk.Spec.PublicRegistryOverride = "my.custom.registry.com"
 
-		assertDenied(t, []string{errorPublicRegistryFeatureNotAllowedForClassic}, dk)
+		assertDenied(t, []string{errorClassicFullStackIncompatibleWithPublicRegistry}, dk)
 	})
 
 	t.Run("classic mode with use-public-registry FF returns error", func(t *testing.T) {
 		dk := newClassicDynakube()
 		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
 
-		assertDenied(t, []string{errorPublicRegistryFeatureNotAllowedForClassic}, dk)
+		assertDenied(t, []string{errorClassicFullStackIncompatibleWithPublicRegistry}, dk)
 	})
 
 	t.Run("classic mode with platform token returns error", func(t *testing.T) {
 		dk := newClassicDynakube()
 
-		assertDenied(t, []string{errorPublicRegistryFeatureNotAllowedForClassic}, dk, platformTokenSecret())
+		assertDenied(t, []string{errorClassicFullStackIncompatibleWithPublicRegistry}, dk, platformTokenSecret())
 	})
 
 	t.Run("classic mode with token secret read error returns no error", func(t *testing.T) {
