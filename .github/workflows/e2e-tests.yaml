@@ -39,6 +39,8 @@ on:
 
 permissions:
   checks: write
+  contents: read
+  pull-requests: write
 
 jobs:
   run-in-k8s:
@@ -51,6 +53,17 @@ jobs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
       job_id: ${{ job.check_run_id }}
     steps:
+      - name: Comment with workflow link
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🚀 E2E workflow started! [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n`
+            });
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -76,13 +89,37 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
-        if: failure()
+        id: determine_cluster_status
+        if: steps.run_e2e_test.outputs == 'failure'
         env:
           CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
         run: |
           if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            if steps.run_e2e_test.outputs.cluster_status == 'skipped' {
+              return;
+            }
+            if steps.run_e2e_test.outputs.result == 'success' {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '✅ E2E tests on kind cluster passed successfully!\n\n[View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '❌ E2E tests on kind cluster failed.\n\n[View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              });
+            }
   run-in-ocp:
     if: ${{ github.event.inputs.run-e2e-in-ocp != 'false' }}
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
