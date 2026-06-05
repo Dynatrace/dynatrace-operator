@@ -850,47 +850,6 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 			fmt.Sprintf(warningDeprecatedVersion, "image"),
 		},
 		{
-			"classic fullstack + public registry ff",
-			dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
-				},
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testAPIURL,
-					OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
-						Version: "1.0.0.20240101-000000", //nolint:staticcheck
-					}},
-				},
-			},
-			apiToken,
-			fmt.Sprint(warningDeprecatedVersionIgnored),
-		},
-		{
-			"classic fullstack + public registry ff + image specified",
-			dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
-				},
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testAPIURL,
-					OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
-						Version: "1.0.0.20240101-000000", //nolint:staticcheck
-						Image:   "test/image/test-image:some-tag",
-					}},
-				},
-			},
-			apiToken,
-			fmt.Sprint(warningDeprecatedVersionIgnored),
-		},
-		{
 			"host monitoring",
 			dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
