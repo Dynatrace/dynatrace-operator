@@ -29,10 +29,10 @@ rules:
     verbs: ["create", "get", "update", "patch", "delete", "list"]
   - apiGroups: [""]
     resources: ["namespaces"]
-    verbs: ["get", "list", "create"]
+    verbs: ["get", "list", "create", "patch"]
   - apiGroups: ["batch"]
     resources: ["jobs"]
-    verbs: ["create", "get", "update", "patch", "delete", "list"]
+    verbs: ["create", "get", "update", "patch", "delete", "list", "watch"]
   # --- DynaKube / EdgeConnect custom resources (namespace-scoped) ---
   - apiGroups: ["dynatrace.com"]
     resources: ["dynakubes", "edgeconnects"]

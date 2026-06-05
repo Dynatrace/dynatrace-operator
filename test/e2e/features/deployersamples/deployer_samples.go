@@ -3,21 +3,20 @@
 package deployersamples
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
+	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
 const (
@@ -27,7 +26,7 @@ const (
 
 var (
 	samplesDir  = filepath.Join(project.RootDir(), "assets", "samples", "deployer")
-	testDataDir = filepath.Join(project.TestDataDir(), "deployer-samples")
+	testDataDir = filepath.Join(project.TestDataDir(), "deployer")
 
 	sharedSAFile = filepath.Join(samplesDir, "deployer-sa-and-binding.yaml")
 )
@@ -50,88 +49,52 @@ func (s *sharedFile) Uninstall(ctx context.Context, c *envconf.Config) (context.
 	return manifests.UninstallFromFile(s.path)(ctx, c)
 }
 
-type variant struct {
-	name           string
-	clusterRole    string
-	serviceAccount string
-	csiEnabled     bool
-	expectFailure  bool
-}
-
-var positiveVariants = []variant{
-	{
-		name:           "escalate-no-csi",
-		clusterRole:    filepath.Join(samplesDir, "deployer-clusterrole-no-csi.yaml"),
-		serviceAccount: "system:serviceaccount:dynatrace:dynatrace-deployer-no-csi",
-		csiEnabled:     false,
-	},
-	{
-		name:           "escalate-with-csi",
-		clusterRole:    filepath.Join(samplesDir, "deployer-clusterrole-with-csi.yaml"),
-		serviceAccount: "system:serviceaccount:dynatrace:dynatrace-deployer-with-csi",
-		csiEnabled:     true,
-	},
-	{
-		name:           "no-escalate-no-csi",
-		clusterRole:    filepath.Join(samplesDir, "deployer-clusterrole-no-escalate-no-csi.yaml"),
-		serviceAccount: "system:serviceaccount:dynatrace:dynatrace-deployer-no-escalate-no-csi",
-		csiEnabled:     false,
-	},
-	{
-		name:           "no-escalate-with-csi",
-		clusterRole:    filepath.Join(samplesDir, "deployer-clusterrole-no-escalate-with-csi.yaml"),
-		serviceAccount: "system:serviceaccount:dynatrace:dynatrace-deployer-no-escalate-with-csi",
-		csiEnabled:     true,
-	},
-}
-
-var negativeVariant = variant{
-	name:           "insufficient-permissions",
-	clusterRole:    filepath.Join(testDataDir, "insufficient-permissions.yaml"),
-	serviceAccount: "system:serviceaccount:default:dynatrace-deployer-insufficient",
-	csiEnabled:     false,
-	expectFailure:  true,
-}
-
-// Feature creates a test feature for a specific deployer variant.
-func Feature(t *testing.T, v variant) features.Feature {
-	builder := features.New("deployer-sample-" + v.name)
+// Feature builds a deployer-permissions test feature.
+// expectFailure=true exercises the negative path (insufficient permissions);
+// expectFailure=false exercises the positive path (install + upgrade + CR lifecycle).
+func Feature(t *testing.T, clusterRole, serviceAccount string, csiEnabled, expectFailure bool) features.Feature {
+	name := filepath.Base(strings.TrimSuffix(clusterRole, ".yaml"))
+	builder := features.New("deployer-sample-" + name)
 
 	builder.Setup(func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		t.Helper()
 
-		_, err := manifests.InstallFromFile(v.clusterRole)(ctx, c)
-		require.NoError(t, err, "failed to apply %s", v.clusterRole)
+		_, err := manifests.InstallFromFile(clusterRole)(ctx, c)
+		require.NoError(t, err, "failed to apply %s", clusterRole)
 
 		return ctx
 	})
 
-	if v.expectFailure {
+	if expectFailure {
 		builder.Assess("helm install fails with insufficient permissions", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			t.Helper()
 
-			return assessInstallFails(ctx, t, v)
+			return assessInstallFails(ctx, t, serviceAccount, csiEnabled)
 		})
 	} else {
 		builder.Assess("helm install succeeds as deployer", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			t.Helper()
 
-			return assessInstallSucceeds(ctx, t, v)
+			return assessInstallSucceeds(ctx, t, serviceAccount, csiEnabled)
+		})
+		builder.Assess("deployer can upgrade existing release", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+			t.Helper()
+
+			return assessUpgrade(ctx, t, serviceAccount, csiEnabled)
 		})
 		builder.Assess("deployer can manage DynaKube and EdgeConnect CRs", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			t.Helper()
 
-			return assessCRLifecycle(ctx, t, v)
+			return assessCRLifecycle(ctx, t, serviceAccount)
 		})
 	}
 
 	builder.Teardown(func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		t.Helper()
 
-		// Always attempt uninstall (may already be cleaned up on failure path)
-		helmUninstall(t, v)
+		helmUninstall(t, serviceAccount)
 
-		_, err := manifests.UninstallFromFile(v.clusterRole)(ctx, c)
+		_, err := manifests.UninstallFromFile(clusterRole)(ctx, c)
 		assert.NoError(t, err)
 
 		return ctx
@@ -140,35 +103,60 @@ func Feature(t *testing.T, v variant) features.Feature {
 	return builder.Feature()
 }
 
-// AllFeatures returns all positive deployer sample features.
-func AllFeatures(t *testing.T) []features.Feature {
-	feats := make([]features.Feature, 0, len(positiveVariants))
-	for _, v := range positiveVariants {
-		feats = append(feats, Feature(t, v))
-	}
-
-	return feats
+func EscalateNoCsi(t *testing.T) features.Feature {
+	return Feature(t,
+		filepath.Join(samplesDir, "deployer-clusterrole-no-csi.yaml"),
+		"system:serviceaccount:dynatrace:dynatrace-deployer-no-csi",
+		false, false,
+	)
 }
 
-// NegativeFeature returns the insufficient-permissions feature (manages its own SA).
-func NegativeFeature(t *testing.T) features.Feature {
-	return Feature(t, negativeVariant)
+func EscalateWithCsi(t *testing.T) features.Feature {
+	return Feature(t,
+		filepath.Join(samplesDir, "deployer-clusterrole-with-csi.yaml"),
+		"system:serviceaccount:dynatrace:dynatrace-deployer-with-csi",
+		true, false,
+	)
 }
 
-func assessInstallSucceeds(ctx context.Context, t *testing.T, v variant) context.Context {
+func NoEscalateNoCsi(t *testing.T) features.Feature {
+	return Feature(t,
+		filepath.Join(samplesDir, "deployer-clusterrole-no-escalate-no-csi.yaml"),
+		"system:serviceaccount:dynatrace:dynatrace-deployer-no-escalate-no-csi",
+		false, false,
+	)
+}
+
+func NoEscalateWithCsi(t *testing.T) features.Feature {
+	return Feature(t,
+		filepath.Join(samplesDir, "deployer-clusterrole-no-escalate-with-csi.yaml"),
+		"system:serviceaccount:dynatrace:dynatrace-deployer-no-escalate-with-csi",
+		true, false,
+	)
+}
+
+func InsufficientPermissions(t *testing.T) features.Feature {
+	return Feature(t,
+		filepath.Join(testDataDir, "insufficient-clusterrole-permissions.yaml"),
+		"system:serviceaccount:default:dynatrace-deployer-insufficient",
+		false, true,
+	)
+}
+
+func assessInstallSucceeds(ctx context.Context, t *testing.T, serviceAccount string, csiEnabled bool) context.Context {
 	t.Helper()
 
-	err := helmInstall(v)
-	require.NoError(t, err, "helm install as %q should succeed but failed", v.serviceAccount)
+	err := helmInstall(serviceAccount, csiEnabled)
+	require.NoError(t, err, "helm install as %q should succeed but failed", serviceAccount)
 
 	return ctx
 }
 
-func assessInstallFails(ctx context.Context, t *testing.T, v variant) context.Context {
+func assessInstallFails(ctx context.Context, t *testing.T, serviceAccount string, csiEnabled bool) context.Context {
 	t.Helper()
 
-	err := helmInstall(v)
-	require.Error(t, err, "helm install as %q should have failed but succeeded", v.serviceAccount)
+	err := helmInstall(serviceAccount, csiEnabled)
+	require.Error(t, err, "helm install as %q should have failed but succeeded", serviceAccount)
 
 	// Verify it's a permission error, not some other issue
 	assert.Contains(t, err.Error(), "forbidden", "expected a permission denied error")
@@ -176,67 +164,55 @@ func assessInstallFails(ctx context.Context, t *testing.T, v variant) context.Co
 	return ctx
 }
 
-func helmInstall(v variant) error {
-	chartPath := filepath.Join(project.RootDir(), "config", "helm", "chart", "default")
-
-	// Resolve the platform from the cluster so the chart renders the right resource set.
-	// On OpenShift this renders the SCC / *.openshift.io resources, which is what
-	// exercises the OpenShift-specific rules in the deployer clusterrole samples.
-	plat, err := platform.NewResolver().GetPlatform()
-	if err != nil {
-		return fmt.Errorf("failed to resolve platform: %w", err)
-	}
-
-	args := []string{
-		"upgrade", "--install", releaseName, chartPath,
-		"--namespace", targetNamespace,
-		"--create-namespace",
-		"--set", "installCRD=true",
-		"--set", fmt.Sprintf("csidriver.enabled=%t", v.csiEnabled),
-		"--set", fmt.Sprintf("platform=%s", plat),
-		"--set", "manifests=true",
-		"--set", "webhook.replicas=1",
-		"--kube-as-user", v.serviceAccount,
-	}
-
-	cmd := exec.Command("helm", args...)
-	stderr := new(bytes.Buffer)
-	cmd.Stderr = stderr
-
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("%s: %w", strings.TrimSpace(stderr.String()), err)
-	}
-
-	return nil
-}
-
-func helmUninstall(t *testing.T, v variant) {
+func assessUpgrade(ctx context.Context, t *testing.T, serviceAccount string, csiEnabled bool) context.Context {
 	t.Helper()
 
-	args := []string{
-		"uninstall", releaseName,
-		"--namespace", targetNamespace,
-		"--kube-as-user", v.serviceAccount,
-	}
+	err := helmUpgrade(serviceAccount, csiEnabled)
+	require.NoError(t, err, "helm upgrade as %q should succeed but failed", serviceAccount)
 
-	cmd := exec.Command("helm", args...)
-	// Ignore errors — may not have been installed (failure case)
-	_ = cmd.Run()
+	return ctx
+}
 
+func helmInstall(serviceAccount string, csiEnabled bool) error {
+	return operator.InstallViaHelm("", csiEnabled,
+		helm.WithArgs("--install"),
+		helm.WithArgs("--create-namespace"),
+		helm.WithArgs("--set", "webhook.replicas=1"),
+		helm.WithArgs("--kube-as-user", serviceAccount),
+	)
+}
+
+// helmUpgrade runs helm upgrade (no --install) to cover upgrade-specific behavior,
+// e.g. the crd storage migration pre-upgrade hook Job that exercises batch/jobs permissions.
+func helmUpgrade(serviceAccount string, csiEnabled bool) error {
+	return operator.InstallViaHelm("", csiEnabled,
+		helm.WithArgs("--set", "webhook.replicas=1"),
+		helm.WithArgs("--set", "crdStorageMigrationJob=true"),
+		helm.WithArgs("--kube-as-user", serviceAccount),
+	)
+}
+
+func helmUninstall(t *testing.T, serviceAccount string) {
+	t.Helper()
+
+	manager := helm.New("''")
+
+	// Try with impersonation first
+	_ = manager.RunUninstall(
+		helm.WithReleaseName(releaseName),
+		helm.WithNamespace(targetNamespace),
+		helm.WithArgs("--kube-as-user", serviceAccount),
+	)
 	// Also try without impersonation in case the SA can't uninstall
-	args = []string{
-		"uninstall", releaseName,
-		"--namespace", targetNamespace,
-	}
-
-	cmd = exec.Command("helm", args...)
-	_ = cmd.Run()
+	_ = manager.RunUninstall(
+		helm.WithReleaseName(releaseName),
+		helm.WithNamespace(targetNamespace),
+	)
 }
 
 // assessCRLifecycle verifies that the deployer SA can perform the full ArgoCD-style
 // lifecycle (create, get, update, delete) on DynaKube and EdgeConnect custom resources.
-func assessCRLifecycle(ctx context.Context, t *testing.T, v variant) context.Context {
+func assessCRLifecycle(ctx context.Context, t *testing.T, serviceAccount string) context.Context {
 	t.Helper()
 
 	resources := []string{"dynakubes.dynatrace.com", "edgeconnects.dynatrace.com"}
@@ -247,12 +223,12 @@ func assessCRLifecycle(ctx context.Context, t *testing.T, v variant) context.Con
 			args := []string{
 				"auth", "can-i", verb, resource,
 				"--namespace", targetNamespace,
-				"--as", v.serviceAccount,
+				"--as", serviceAccount,
 			}
 
 			cmd := exec.Command("kubectl", args...)
 			out, err := cmd.CombinedOutput()
-			require.NoError(t, err, "deployer %q cannot %s %s: %s", v.serviceAccount, verb, resource, strings.TrimSpace(string(out)))
+			require.NoError(t, err, "deployer %q cannot %s %s: %s", serviceAccount, verb, resource, strings.TrimSpace(string(out)))
 		}
 	}
 

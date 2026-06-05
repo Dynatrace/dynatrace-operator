@@ -34,12 +34,22 @@ func TestMain(m *testing.M) {
 	testEnv.Run(m)
 }
 
-func TestDeployerSamples(t *testing.T) {
-	for _, feat := range deployersamples.AllFeatures(t) {
-		testEnv.Test(t, feat)
-	}
+func TestDeployerSampleEscalateNoCsi(t *testing.T) {
+	testEnv.Test(t, deployersamples.EscalateNoCsi(t))
 }
 
-func TestDeployerSamplesNegative(t *testing.T) {
-	testEnv.Test(t, deployersamples.NegativeFeature(t))
+func TestDeployerSampleEscalateWithCsi(t *testing.T) {
+	testEnv.Test(t, deployersamples.EscalateWithCsi(t))
+}
+
+func TestDeployerSampleNoEscalateNoCsi(t *testing.T) {
+	testEnv.Test(t, deployersamples.NoEscalateNoCsi(t))
+}
+
+func TestDeployerSampleNoEscalateWithCsi(t *testing.T) {
+	testEnv.Test(t, deployersamples.NoEscalateWithCsi(t))
+}
+
+func TestDeployerSampleInsufficientPermissions(t *testing.T) {
+	testEnv.Test(t, deployersamples.InsufficientPermissions(t))
 }

@@ -35,7 +35,10 @@ func Install(releaseTag string, withCSI bool) env.Func {
 		if releaseTag == "" {
 			return ctx, errors.New("missing release tag")
 		}
-		err := installViaHelm(releaseTag, withCSI)
+		err := InstallViaHelm(releaseTag, withCSI,
+			helm.WithArgs("--create-namespace"),
+			helm.WithArgs("--install"),
+		)
 		if err != nil {
 			return ctx, err
 		}
@@ -59,7 +62,10 @@ func InstallLocal(withCSI bool) env.Func {
 				return ctx, err
 			}
 		} else {
-			err := installViaHelm("", withCSI)
+			err := InstallViaHelm("", withCSI,
+				helm.WithArgs("--create-namespace"),
+				helm.WithArgs("--install"),
+			)
 			if err != nil {
 				return ctx, err
 			}
@@ -158,15 +164,12 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	return err
 }
 
-func installViaHelm(releaseTag string, withCSI bool) error {
-	manager := helm.New("''")
-
-	_platform, err := platform.NewResolver().GetPlatform()
-	if err != nil {
-		return err
-	}
-
-	opts, err := getHelmOptions(releaseTag, _platform, withCSI)
+// RunHelmUpgrade resolves the base helm options for a local chart and runs helm upgrade
+// with any additional caller-supplied options appended. It sets klog verbosity so helm
+// command args and output are visible in test logs.
+// Use this for both installs (pass --install/--create-namespace as extraOpts) and plain upgrades.
+func RunHelmUpgrade(withCSI bool, extraOpts ...helm.Option) error {
+	opts, err := GetHelmBaseOptions(withCSI)
 	if err != nil {
 		return err
 	}
@@ -180,37 +183,61 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 		_ = klogLevel.Set("0")
 	}()
 
-	return manager.RunUpgrade(opts...)
+	return helm.New("''").RunUpgrade(append(opts, extraOpts...)...)
 }
 
-func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
+// InstallViaHelm runs helm upgrade for the operator chart. It resolves the chart source and
+// platform, then appends extraOpts — so callers control whether this is a fresh install
+// (pass helm.WithArgs("--install"), helm.WithArgs("--create-namespace")) or a plain upgrade.
+func InstallViaHelm(releaseTag string, withCSI bool, extraOpts ...helm.Option) error {
+	// Registry installs cannot use GetHelmBaseOptions — build opts directly.
+	if releaseTag != "" {
+		_platform, err := platform.NewResolver().GetPlatform()
+		if err != nil {
+			return err
+		}
+
+		opts, err := getHelmOptions(releaseTag, _platform, withCSI)
+		if err != nil {
+			return err
+		}
+
+		var klogLevel klog.Level
+		_ = klogLevel.Set("4")
+		defer func() { _ = klogLevel.Set("0") }()
+
+		return helm.New("''").RunUpgrade(append(opts, extraOpts...)...)
+	}
+
+	_platform, err := platform.NewResolver().GetPlatform()
+	if err != nil {
+		return err
+	}
+
+	return RunHelmUpgrade(withCSI,
+		append([]helm.Option{helm.WithArgs("--set", fmt.Sprintf("platform=%s", _platform))}, extraOpts...)...,
+	)
+}
+
+// GetHelmBaseOptions returns helm options common to both install and upgrade for a local chart.
+// It handles image resolution and chart source selection (TARGET_BRANCH, HELM_CHART env vars)
+// but does not include --install or --create-namespace so callers can use it for either operation.
+func GetHelmBaseOptions(withCSI bool) ([]helm.Option, error) {
 	opts := []helm.Option{
 		helm.WithReleaseName("dynatrace-operator"),
 		helm.WithNamespace("dynatrace"),
-		helm.WithArgs("--create-namespace"),
-		helm.WithArgs("--install"),
-		helm.WithArgs("--set", fmt.Sprintf("platform=%s", platform)),
 		helm.WithArgs("--set", "installCRD=true"),
 		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCSI)),
 		helm.WithArgs("--set", "manifests=true"),
 		helm.WithArgs("--set", "debugLogs=true"),
 	}
 
-	// Install from registry
-	if releaseTag != "" {
-		return append(opts,
-			helm.WithArgs(helmRegistryURL),
-			helm.WithVersion(releaseTag),
-		), nil
-	}
-
 	rootDir := project.RootDir()
 	isFIPS := os.Getenv("FIPS") == "true"
-	imageRef, err := getImageRef(rootDir, isFIPS)
+	imageRef, err := GetImageRef(rootDir, isFIPS)
 	if err != nil {
 		return nil, err
 	}
-
 	if imageRef == "" {
 		return nil, errors.New("could not determine operator image")
 	}
@@ -237,10 +264,40 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 	), nil
 }
 
+func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
+	// Install from registry — build options directly, no local chart involved.
+	if releaseTag != "" {
+		return []helm.Option{
+			helm.WithReleaseName("dynatrace-operator"),
+			helm.WithNamespace("dynatrace"),
+			helm.WithArgs("--create-namespace"),
+			helm.WithArgs("--install"),
+			helm.WithArgs("--set", fmt.Sprintf("platform=%s", platform)),
+			helm.WithArgs("--set", "installCRD=true"),
+			helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCSI)),
+			helm.WithArgs("--set", "manifests=true"),
+			helm.WithArgs("--set", "debugLogs=true"),
+			helm.WithArgs(helmRegistryURL),
+			helm.WithVersion(releaseTag),
+		}, nil
+	}
+
+	base, err := GetHelmBaseOptions(withCSI)
+	if err != nil {
+		return nil, err
+	}
+
+	return append([]helm.Option{
+		helm.WithArgs("--create-namespace"),
+		helm.WithArgs("--install"),
+		helm.WithArgs("--set", fmt.Sprintf("platform=%s", platform)),
+	}, base...), nil
+}
+
 // Cache image ref on first invocation to allow switching branches.
 var imageRef string
 
-func getImageRef(rootDir string, fips140 bool) (string, error) {
+func GetImageRef(rootDir string, fips140 bool) (string, error) {
 	if imageRef == "" {
 		cmdShowImage := "deploy/show-image-ref"
 

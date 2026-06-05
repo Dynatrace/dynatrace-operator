@@ -52,7 +52,7 @@ test/e2e/release:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release $(SKIPCLEANUP)
 
 ## Run permissions e2e test (validates deployer RBAC by running helm install)
-test/e2e/permissions:
+test/e2e/permissions/deployer:
 	$(GOTESTCMD) -timeout 10m ./test/e2e/scenarios/permissions $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
