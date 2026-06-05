@@ -62,7 +62,7 @@ rules:
     resources: ["namespaces"]
     verbs: ["get", "list", "update", "watch"]
   - apiGroups: [""]
-    resources: ["endpoints", "nodes", "nodes/metrics", "nodes/proxy", "persistentvolumeclaims", "persistentvolumes", "pods", "pods/proxy", "replicationcontrollers", "resourcequotas", "serviceaccounts"]
+    resources: ["endpoints", "nodes", "nodes/metrics", "nodes/pods", "nodes/proxy", "persistentvolumeclaims", "persistentvolumes", "pods", "pods/proxy", "replicationcontrollers", "resourcequotas", "serviceaccounts"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["admissionregistration.k8s.io"]
     resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
