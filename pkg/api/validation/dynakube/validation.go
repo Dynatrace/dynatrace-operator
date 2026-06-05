@@ -70,6 +70,7 @@ var (
 		publicRegistryOverrideWithoutPublicRegistry,
 		invalidNetworkZone,
 		invalidOneAgentHostGroup,
+		publicRegistryNotAllowedForClassic,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

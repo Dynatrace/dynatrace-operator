@@ -647,6 +647,29 @@ tests:
           count: 1
           any: true
 
+  - it: should have DT_CLIENT_CACHE_CLEAN_INTERVAL if operator.clientCacheCleanupInterval is set
+    set:
+      platform: kubernetes
+      operator.clientCacheCleanupInterval: "30m"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CACHE_CLEAN_INTERVAL
+            value: "30m"
+          count: 1
+          any: true
+
+  - it: should not have DT_CLIENT_CACHE_CLEAN_INTERVAL if operator.clientCacheCleanupInterval is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CACHE_CLEAN_INTERVAL
+          any: true
+
   - it: should have PPROF_BIND_ADDRESS if enableInsecurePprofEndpoint is set
     set:
       enableInsecurePprofEndpoint: true
