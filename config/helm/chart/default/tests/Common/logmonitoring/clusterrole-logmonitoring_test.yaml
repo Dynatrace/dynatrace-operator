@@ -22,6 +22,7 @@ tests:
               - ""
             resources:
               - nodes/proxy
+              - nodes/pods
             verbs:
               - get
       - notContains:
