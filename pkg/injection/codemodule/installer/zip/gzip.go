@@ -108,7 +108,7 @@ func extract(ctx context.Context, targetDir string, reader *tar.Reader, header *
 func extractLink(ctx context.Context, targetDir, target string, header *tar.Header) error {
 	log := logd.FromContext(ctx)
 
-	if isSafeToLink(header.Linkname, targetDir, target) && isSafeToLink(header.Name, targetDir, target) {
+	if isSafeToLink(header.Linkname, targetDir, targetDir) && isSafeToLink(header.Name, targetDir, target) {
 		if err := os.Link(filepath.Join(targetDir, header.Linkname), target); err != nil {
 			return errors.WithStack(err)
 		}

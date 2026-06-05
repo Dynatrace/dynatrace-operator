@@ -2,6 +2,7 @@ package zip
 
 import (
 	"archive/tar"
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -247,5 +248,59 @@ func TestExtractGzip(t *testing.T) {
 		target, err = os.Readlink(escapeParent)
 		require.NoError(t, err)
 		require.Equal(t, "../../outside.txt", target)
+	})
+
+	t.Run("extract gzip with malicious hard link blocks escaping link", func(t *testing.T) {
+		base := t.TempDir()
+		root := filepath.Join(base, "extract")
+		require.NoError(t, os.MkdirAll(root, 0o755))
+
+		secret := filepath.Join(base, "secret.txt")
+		require.NoError(t, os.WriteFile(secret, []byte("secret"), 0o600))
+
+		var buf bytes.Buffer
+		writer := tar.NewWriter(&buf)
+		require.NoError(t, writer.WriteHeader(&tar.Header{
+			Name:     "payload",
+			Linkname: "../secret.txt",
+			Typeflag: tar.TypeLink,
+			Mode:     0o644,
+		}))
+		require.NoError(t, writer.Close())
+
+		err := extractFilesFromGzip(t.Context(), root, tar.NewReader(&buf))
+		require.NoError(t, err)
+
+		_, err = os.Lstat(filepath.Join(root, "payload"))
+		require.True(t, os.IsNotExist(err))
+	})
+
+	t.Run("extract gzip with hard link inside target dir", func(t *testing.T) {
+		root := t.TempDir()
+
+		var buf bytes.Buffer
+		writer := tar.NewWriter(&buf)
+		require.NoError(t, writer.WriteHeader(&tar.Header{
+			Name:     "original.txt",
+			Typeflag: tar.TypeReg,
+			Mode:     0o644,
+			Size:     int64(len("payload")),
+		}))
+		_, err := writer.Write([]byte("payload"))
+		require.NoError(t, err)
+		require.NoError(t, writer.WriteHeader(&tar.Header{
+			Name:     "hardlink.txt",
+			Linkname: "original.txt",
+			Typeflag: tar.TypeLink,
+			Mode:     0o644,
+		}))
+		require.NoError(t, writer.Close())
+
+		err = extractFilesFromGzip(t.Context(), root, tar.NewReader(&buf))
+		require.NoError(t, err)
+
+		content, err := os.ReadFile(filepath.Join(root, "hardlink.txt"))
+		require.NoError(t, err)
+		require.Equal(t, "payload", string(content))
 	})
 }
