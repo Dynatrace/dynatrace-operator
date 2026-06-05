@@ -497,7 +497,7 @@ func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokencl
 	if controller.tokens.HasPlatformToken() {
 		dk.Status.APIToken.Platform = new(true)
 
-		logd.FromContext(ctx).Info("skipping token scope lookup due to platform token")
+		logd.FromContext(ctx).Debug("skipping token scope lookup due to platform token")
 
 		// Scope related conditions are obsolete when using a platform token
 		_ = meta.RemoveStatusCondition(&dk.Status.Conditions, conditionTypeAPITokenSettingsRead)
