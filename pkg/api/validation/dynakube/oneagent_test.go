@@ -8,6 +8,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -804,63 +806,253 @@ func TestDeprecatedOneAgentAutoUpdate(t *testing.T) {
 }
 
 func TestDeprecatedOneAgentVersion(t *testing.T) {
-	baseDK := &dynakube.DynaKube{
+	apiToken := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube",
 			Namespace: testNamespace,
 		},
-		Spec: dynakube.DynaKubeSpec{
-			APIURL:   testAPIURL,
-			OneAgent: oneagent.Spec{},
+		Data: map[string][]byte{
+			token.APIKey: []byte("test-platform-token"),
 		},
+		Type: corev1.SecretTypeOpaque,
 	}
-
+	platformToken := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			token.APIKey: []byte(dttoken.PlatformPrefix + "test-platform-token"),
+		},
+		Type: corev1.SecretTypeOpaque,
+	}
 	testcases := []struct {
 		name            string
-		valid           oneagent.Spec
+		dk              dynakube.DynaKube
+		apiToken        *corev1.Secret
 		expectedWarning string
 	}{
 		{
 			"classic fullstack",
-			oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
-				Version: "1.0.0.20240101-000000", //nolint:staticcheck
-			}},
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
 			fmt.Sprintf(warningDeprecatedVersion, "image"),
 		},
 		{
 			"host monitoring",
-			oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
-				Version: "1.0.0.20240101-000000", //nolint:staticcheck
-			}},
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
 			fmt.Sprintf(warningDeprecatedVersion, "image"),
 		},
 		{
-			"cloudnative fullstack",
-			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-				HostInjectSpec: oneagent.HostInjectSpec{
-					Version: "1.0.0.20240101-000000", //nolint:staticcheck
+			"host monitoring + public registry ff",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
 				},
-			}},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"host monitoring + public registry ff + image specified",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+						Image:   "test/image/test-image:some-tag",
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"cloudnative fullstack",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
+							Version: "1.0.0.20240101-000000", //nolint:staticcheck
+						},
+					}},
+				},
+			},
+			apiToken,
 			fmt.Sprintf(warningDeprecatedVersion, "image and/or codeModulesImage"),
 		},
 		{
+			"cloudnative fullstack + public registry ff",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
+							Version: "1.0.0.20240101-000000", //nolint:staticcheck
+						},
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"cloudnative fullstack + public registry ff + image specified",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
+							Version: "1.0.0.20240101-000000", //nolint:staticcheck
+							Image:   "test/image/test-image:some-tag",
+						},
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
 			"app monitoring",
-			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-				Version: "1.0.0.20240101-000000", //nolint:staticcheck
-			}},
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
 			fmt.Sprintf(warningDeprecatedVersion, "codeModulesImage"),
+		},
+		{
+			"app monitoring + public registry ff",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"app monitoring + platform token",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			platformToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"app monitoring + platform token + image specified",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{
+						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+							Version: "1.0.0.20240101-000000", //nolint:staticcheck
+							AppInjectionSpec: oneagent.AppInjectionSpec{
+								CodeModulesImage: "test/image/test-image:some-tag",
+							},
+						},
+					},
+				},
+			},
+			platformToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			validDK := baseDK.DeepCopy()
-			validDK.Spec.OneAgent = tc.valid
-
-			deprecatedDK := baseDK.DeepCopy()
-			deprecatedDK.Spec.OneAgent = tc.valid
-
-			warnings, err := assertAllowed(t, deprecatedDK)
+			deprecatedDK := &tc.dk
+			warnings, err := assertAllowed(t, deprecatedDK, tc.apiToken)
 			require.NoError(t, err, "creation")
 			require.Len(t, warnings, 1)
 			assert.Equal(t, tc.expectedWarning, warnings[0])
