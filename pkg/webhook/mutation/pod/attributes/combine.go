@@ -29,11 +29,10 @@ const (
 		withContainerAttrs | withDynakube | withNamespaceAnnotations |
 		withRules | withRulesPropagate | withPodAnnotations | withCustom
 
-	caseMetadataAnnotations = withWorkloadInfo | withDynakube |
-		withNamespaceAnnotations | withRulesPropagate
+	caseMetadataAnnotations = withWorkloadInfo | withNamespaceAnnotations | withRulesPropagate
 
 	caseJSONAnnotation = withDynakube | withNamespaceAnnotations |
-		withRules | withRulesPropagate | withPodAnnotations
+		withRules | withRulesPropagate | withPodAnnotations | withWorkloadInfo
 )
 
 // combine copies maps into a single result in fixed precedence order (low → high).
