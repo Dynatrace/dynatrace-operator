@@ -143,6 +143,33 @@ func TestGetRulesSetting(t *testing.T) {
 		assert.Equal(t, expectRules, rules)
 	})
 
+	t.Run("use new schema with old empty rules", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		expectRules := []metadataenrichment.Rule{
+			{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "source-1", Target: "target-1"},
+			{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "source-2", Target: "target-2"},
+		}
+
+		// No rules defined
+		oldResponse := getRulesResponse{Items: []ruleItem{{}}}
+
+		expectCallOrder(
+			apiClient.EXPECT().GET(anyCtx, effectiveValuesPath).Return(request).Once(),
+			request.EXPECT().WithQueryParams(oldParams).Return(request).Once(),
+			request.EXPECT().Execute(new(getRulesResponse)).Run(injectResponse(setFlag(oldResponse))).Return(nil).Once(),
+			// Switch to new schema
+			apiClient.EXPECT().GET(anyCtx, effectiveValuesPath).Return(request).Once(),
+			request.EXPECT().WithQueryParams(newParams).Return(request).Once(),
+			request.EXPECT().Execute(new(getRulesResponse)).Run(injectResponse(newResponse)).Return(nil).Once(),
+		)
+
+		client := NewClient(apiClient)
+		rules, err := client.GetRules(ctx, "kube-system-uuid", "ENVIRONMENT_ID")
+		require.NoError(t, err)
+		assert.Equal(t, expectRules, rules)
+	})
+
 	t.Run("new enrichment settings schema not available", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
