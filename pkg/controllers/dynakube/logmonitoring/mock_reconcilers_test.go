@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	oaClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -215,16 +215,16 @@ func (_m *mockOaConnectionInfoReconciler) EXPECT() *mockOaConnectionInfoReconcil
 }
 
 // Reconcile provides a mock function for the type mockOaConnectionInfoReconciler
-func (_mock *mockOaConnectionInfoReconciler) Reconcile(ctx context.Context, c oaClient.Client, dk *dynakube.DynaKube) error {
-	ret := _mock.Called(ctx, c, dk)
+func (_mock *mockOaConnectionInfoReconciler) Reconcile(ctx context.Context, oaClient oneagent.Client, dk *dynakube.DynaKube) error {
+	ret := _mock.Called(ctx, oaClient, dk)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, oaClient.Client, *dynakube.DynaKube) error); ok {
-		r0 = returnFunc(ctx, c, dk)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, oneagent.Client, *dynakube.DynaKube) error); ok {
+		r0 = returnFunc(ctx, oaClient, dk)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -238,27 +238,31 @@ type mockOaConnectionInfoReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - c oaClient.Client
+//   - oaClient oneagent.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockOaConnectionInfoReconciler_Expecter) Reconcile(ctx interface{}, c interface{}, dk interface{}) *mockOaConnectionInfoReconciler_Reconcile_Call {
-	return &mockOaConnectionInfoReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, c, dk)}
+func (_e *mockOaConnectionInfoReconciler_Expecter) Reconcile(ctx interface{}, oaClient interface{}, dk interface{}) *mockOaConnectionInfoReconciler_Reconcile_Call {
+	return &mockOaConnectionInfoReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, oaClient, dk)}
 }
 
-func (_c *mockOaConnectionInfoReconciler_Reconcile_Call) Run(run func(ctx context.Context, c oaClient.Client, dk *dynakube.DynaKube)) *mockOaConnectionInfoReconciler_Reconcile_Call {
+func (_c *mockOaConnectionInfoReconciler_Reconcile_Call) Run(run func(ctx context.Context, oaClient oneagent.Client, dk *dynakube.DynaKube)) *mockOaConnectionInfoReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 oaClient.Client
+		var arg1 oneagent.Client
 		if args[1] != nil {
-			arg1 = args[1].(oaClient.Client)
+			arg1 = args[1].(oneagent.Client)
 		}
 		var arg2 *dynakube.DynaKube
 		if args[2] != nil {
 			arg2 = args[2].(*dynakube.DynaKube)
 		}
-		run(arg0, arg1, arg2)
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
@@ -268,7 +272,7 @@ func (_c *mockOaConnectionInfoReconciler_Reconcile_Call) Return(err error) *mock
 	return _c
 }
 
-func (_c *mockOaConnectionInfoReconciler_Reconcile_Call) RunAndReturn(run func(context.Context, oaClient.Client, *dynakube.DynaKube) error) *mockOaConnectionInfoReconciler_Reconcile_Call {
+func (_c *mockOaConnectionInfoReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, oaClient oneagent.Client, dk *dynakube.DynaKube) error) *mockOaConnectionInfoReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }
