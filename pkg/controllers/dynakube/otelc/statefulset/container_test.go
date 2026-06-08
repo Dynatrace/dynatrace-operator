@@ -23,6 +23,9 @@ func TestProbes(t *testing.T) {
 		assert.Equal(t, expectedHTTPGet, probe.HTTPGet)
 		assert.EqualValues(t, 10, probe.InitialDelaySeconds)
 		assert.EqualValues(t, 30, probe.PeriodSeconds)
+		assert.EqualValues(t, 3, probe.FailureThreshold)
+		assert.EqualValues(t, 2, probe.TimeoutSeconds)
+		assert.EqualValues(t, 1, probe.SuccessThreshold)
 	})
 
 	t.Run("readiness probe", func(t *testing.T) {
@@ -31,6 +34,9 @@ func TestProbes(t *testing.T) {
 		assert.Equal(t, expectedHTTPGet, probe.HTTPGet)
 		assert.EqualValues(t, 5, probe.InitialDelaySeconds)
 		assert.EqualValues(t, 10, probe.PeriodSeconds)
+		assert.EqualValues(t, 3, probe.FailureThreshold)
+		assert.EqualValues(t, 2, probe.TimeoutSeconds)
+		assert.EqualValues(t, 1, probe.SuccessThreshold)
 	})
 }
 

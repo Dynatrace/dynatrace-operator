@@ -41,6 +41,9 @@ func buildLivenessProbe() *corev1.Probe {
 		},
 		InitialDelaySeconds: 10,
 		PeriodSeconds:       30,
+		FailureThreshold:    3,
+		TimeoutSeconds:      2,
+		SuccessThreshold:    1,
 	}
 }
 
@@ -54,6 +57,9 @@ func buildReadinessProbe() *corev1.Probe {
 		},
 		InitialDelaySeconds: 5,
 		PeriodSeconds:       10,
+		FailureThreshold:    3,
+		TimeoutSeconds:      2,
+		SuccessThreshold:    1,
 	}
 }
 
