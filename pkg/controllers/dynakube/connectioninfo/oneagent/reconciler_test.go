@@ -164,7 +164,7 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		r := NewReconciler(fakeClient, fakeClient)
-		
+
 		r.timeProvider.Set(r.timeProvider.Now().Add(time.Minute * 20))
 
 		err := r.Reconcile(ctx, dtClient, dk)

@@ -57,8 +57,8 @@ func TestReconcile(t *testing.T) {
 		versionClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return("", errors.New("Something wrong happened"))
 
 		versionReconciler := reconciler{
-			apiReader:     fake.NewClient(),
-			timeProvider:  timeprovider.New().Freeze(),
+			apiReader:    fake.NewClient(),
+			timeProvider: timeprovider.New().Freeze(),
 		}
 		dk := dynakubeTemplate.DeepCopy()
 		err := versionReconciler.ReconcileActiveGate(ctx, dk, nil, versionClient)
@@ -83,8 +83,8 @@ func TestReconcile(t *testing.T) {
 		mockLatestActiveGateVersion(versionClient, latestActiveGateVersion)
 
 		versionReconciler := reconciler{
-			apiReader:     fakeClient,
-			timeProvider:  timeProvider,
+			apiReader:    fakeClient,
+			timeProvider: timeProvider,
 		}
 		err := versionReconciler.ReconcileCodeModules(ctx, dk, nil, versionClient)
 		require.NoError(t, err)
@@ -122,8 +122,8 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 	t.Run("empty version info + failing reconcile => return error", func(t *testing.T) {
 		versionReconciler := reconciler{
-			apiReader:     fake.NewClient(),
-			timeProvider:  timeprovider.New().Freeze(),
+			apiReader:    fake.NewClient(),
+			timeProvider: timeprovider.New().Freeze(),
 		}
 		updater := newFailingUpdater(t)
 		updater.EXPECT().Target().Return(&status.VersionStatus{}).Times(2)
@@ -133,8 +133,8 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 	t.Run("version info (.Version) set + failing reconcile => return nil", func(t *testing.T) {
 		versionReconciler := reconciler{
-			apiReader:     fake.NewClient(),
-			timeProvider:  timeprovider.New().Freeze(),
+			apiReader:    fake.NewClient(),
+			timeProvider: timeprovider.New().Freeze(),
 		}
 		updater := newFailingUpdater(t)
 		updater.EXPECT().Target().Return(&status.VersionStatus{Version: "1.2.3"}).Times(2)
@@ -144,8 +144,8 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 	t.Run("version info (.ImageID) set + failing reconcile => return nil", func(t *testing.T) {
 		versionReconciler := reconciler{
-			apiReader:     fake.NewClient(),
-			timeProvider:  timeprovider.New().Freeze(),
+			apiReader:    fake.NewClient(),
+			timeProvider: timeprovider.New().Freeze(),
 		}
 		updater := newFailingUpdater(t)
 		updater.EXPECT().Target().Return(&status.VersionStatus{ImageID: "some-image"}).Once()

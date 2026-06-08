@@ -768,13 +768,15 @@ func newMockConnectionInfoReconciler(t interface {
 	Cleanup(func())
 }) *mockConnectionInfoReconciler {
 	m := &mockConnectionInfoReconciler{}
-	m.Mock.Test(t)
+	m.Test(t)
 	t.Cleanup(func() { m.AssertExpectations(t) })
+
 	return m
 }
 
 func (m *mockConnectionInfoReconciler) Reconcile(ctx context.Context, oaClient oaClientPkg.Client, dk *dynakube.DynaKube) error {
 	ret := m.Called(ctx, oaClient, dk)
+
 	return ret.Error(0)
 }
 

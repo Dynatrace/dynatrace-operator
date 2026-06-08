@@ -807,18 +807,21 @@ func assertSecretNotFound(t *testing.T, clt client.Client, secretName string, se
 func createConnectionInfoReconcilerMock(t *testing.T) connectionInfoReconciler {
 	m := newMockConnectionInfoReconciler(t)
 	m.On("Reconcile", anyCtx, mock.Anything, mock.Anything).Return(nil)
+
 	return m
 }
 
 func createEnrichmentRulesReconcilerMock(t *testing.T) enrichmentRulesReconciler {
 	m := newMockEnrichmentRulesReconciler(t)
 	m.On("Reconcile", anyCtx, mock.Anything, mock.Anything).Return(nil)
+
 	return m
 }
 
 func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 	versionReconciler := versionmock.NewReconciler(t)
 	versionReconciler.EXPECT().ReconcileCodeModules(anyCtx, mock.AnythingOfType("*dynakube.DynaKube"), mock.Anything, mock.Anything).Return(nil).Once()
+
 	return versionReconciler
 }
 
@@ -829,8 +832,9 @@ func newMockConnectionInfoReconciler(t interface {
 	Cleanup(func())
 }) *mockConnectionInfoReconciler {
 	m := &mockConnectionInfoReconciler{}
-	m.Mock.Test(t)
+	m.Test(t)
 	t.Cleanup(func() { m.AssertExpectations(t) })
+
 	return m
 }
 
@@ -845,8 +849,9 @@ func newMockEnrichmentRulesReconciler(t interface {
 	Cleanup(func())
 }) *mockEnrichmentRulesReconciler {
 	m := &mockEnrichmentRulesReconciler{}
-	m.Mock.Test(t)
+	m.Test(t)
 	t.Cleanup(func() { m.AssertExpectations(t) })
+
 	return m
 }
 
