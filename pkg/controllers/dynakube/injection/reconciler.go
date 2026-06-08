@@ -134,7 +134,7 @@ func (r *Reconciler) setupOTLPSecret(ctx context.Context, namespaces []corev1.Na
 }
 
 func (r *Reconciler) setupInitSecret(ctx context.Context, dtClient *dynatrace.Client, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichment().IsEnabled() || dk.OneAgent().IsHostMonitoringMode() {
+	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichment().IsEnabled() || dk.OneAgent().IsDaemonsetRequired() {
 		if err := r.generateInitSecret(ctx, dtClient, namespaces, dk); err != nil {
 			return err
 		}

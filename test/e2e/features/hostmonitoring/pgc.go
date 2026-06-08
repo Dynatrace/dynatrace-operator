@@ -72,6 +72,7 @@ func allPodsHavePGCFile(ctx context.Context, r *resources.Resources, dk dynakube
 
 	allFound := true
 	podCount := 0
+	var firstExecErr error
 
 	err := q.ForEachPod(func(pod corev1.Pod) {
 		podCount++
@@ -83,13 +84,27 @@ func allPodsHavePGCFile(ctx context.Context, r *resources.Resources, dk dynakube
 		}
 
 		result, execErr := k8spod.Exec(ctx, r, pod, pod.Spec.Containers[0].Name, shell.Shell(shell.Exists(pgcFilePath))...)
-		if execErr != nil || !strings.Contains(result.StdOut.String(), "found") {
+		if execErr != nil {
+			if firstExecErr == nil {
+				firstExecErr = execErr
+			}
+
+			allFound = false
+
+			return
+		}
+
+		if !strings.Contains(result.StdOut.String(), "found") {
 			allFound = false
 		}
 	})
 
 	if err != nil {
-		return false, nil
+		return false, err
+	}
+
+	if firstExecErr != nil {
+		return false, firstExecErr
 	}
 
 	return podCount > 0 && allFound, nil

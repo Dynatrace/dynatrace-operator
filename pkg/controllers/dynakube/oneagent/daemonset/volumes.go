@@ -37,7 +37,7 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		volumeMounts = append(volumeMounts, getHTTPProxyMount())
 	}
 
-	if dk.OneAgent().IsHostMonitoringMode() {
+	if dk.OneAgent().IsDaemonsetRequired() {
 		volumeMounts = append(volumeMounts, getPGCSecretFileMount())
 	}
 
@@ -123,7 +123,7 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		}
 	}
 
-	if dk.OneAgent().IsHostMonitoringMode() {
+	if dk.OneAgent().IsDaemonsetRequired() {
 		volumes = append(volumes, getPGCSecretVolume(dk))
 	}
 

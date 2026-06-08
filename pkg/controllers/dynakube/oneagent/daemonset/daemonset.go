@@ -29,10 +29,11 @@ import (
 )
 
 const (
-	appArmorAnnotation                     = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
-	appArmorUnconfined                     = corev1.DeprecatedAppArmorBetaProfileNameUnconfined
+	appArmorAnnotation                = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
+	appArmorUnconfined                = corev1.DeprecatedAppArmorBetaProfileNameUnconfined
 	annotationTenantTokenHash         = api.InternalFlagPrefix + "tenant-token-hash"
 	annotationEnableDaemonSetEviction = "cluster-autoscaler.kubernetes.io/enable-ds-eviction"
+	AnnotationPGCHash                 = api.InternalFlagPrefix + "pgc-hash"
 
 	serviceAccountName = "dynatrace-dynakube-oneagent"
 

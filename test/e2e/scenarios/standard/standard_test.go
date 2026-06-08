@@ -8,11 +8,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/bootstrapper"
 	classicToCloud "github.com/Dynatrace/dynatrace-operator/test/e2e/features/classic/switchmodes"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/codemodules"
 	noInjection "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/noinjection"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/standard"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/switchmodes"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/e2e/features/supportarchive"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
