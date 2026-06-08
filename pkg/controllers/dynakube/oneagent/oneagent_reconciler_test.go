@@ -338,7 +338,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	dkKey := metav1.ObjectMeta{Name: "my-dynakube", Namespace: "my-namespace"}
 	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
-	r := Reconciler{}
+	r := Reconciler{apiReader: fake.NewClient()}
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: dkKey,
@@ -488,7 +488,7 @@ func TestHasSpecChanged(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r := Reconciler{}
+			r := Reconciler{apiReader: fake.NewClient()}
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
 			oldInstance := dynakube.DynaKube{
 				ObjectMeta: key,
@@ -523,7 +523,7 @@ func TestHasSpecChanged(t *testing.T) {
 
 func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run("adds correct affinities", func(t *testing.T) {
-		r := Reconciler{}
+		r := Reconciler{apiReader: fake.NewClient()}
 		dk := newDynaKube()
 		ds, err := r.buildDesiredDaemonSet(t.Context(), dk)
 

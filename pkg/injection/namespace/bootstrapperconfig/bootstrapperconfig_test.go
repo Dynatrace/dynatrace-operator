@@ -504,6 +504,46 @@ func TestGenerateForDynakube(t *testing.T) {
 	})
 }
 
+func TestGenerateForDynakubeHostMonitoring(t *testing.T) {
+	t.Run("source secret created with declarative.cbor, no app-namespace secrets", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIurl,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
+		}
+
+		clt := fake.NewClientWithIndex(dk)
+
+		mockDTClient := oneagentclientmock.NewClient(t)
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").
+			Return(&oneagentclient.ProcessGroupConfig{Data: []byte("cbor")}, nil).Once()
+
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
+		require.NoError(t, err)
+
+		var sourceSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		require.NoError(t, err)
+		assert.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
+		assert.NotEmpty(t, sourceSecret.Data[DeclarativeInputFileName])
+
+		var appNSSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &appNSSecret)
+		assert.True(t, errors.IsNotFound(err), "no init secret should be created in app namespaces for hostMonitoring")
+	})
+}
+
 func TestCleanup(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{

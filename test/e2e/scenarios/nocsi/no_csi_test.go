@@ -216,3 +216,7 @@ func TestNoCSI_extensions_db_executor_scaling_enforce_replicas(t *testing.T) {
 func TestNoCSI_pgc_with_fullstack(t *testing.T) {
 	testEnv.Test(t, bootstrapper.PGCWithCloudNativeFullStack(t))
 }
+
+func TestNoCSI_host_monitoring_pgc(t *testing.T) {
+	testEnv.Test(t, hostmonitoring.PGCWithHostMonitoring(t))
+}

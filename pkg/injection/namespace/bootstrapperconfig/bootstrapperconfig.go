@@ -218,7 +218,9 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 			initialConnectRetryMs := strconv.Itoa(dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio))
 			data[curl.InputFileName] = []byte(initialConnectRetryMs)
 		}
+	}
 
+	if needsPGC(dk) {
 		if err := s.addPGC(ctx, dk, data, annotations); err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
@@ -240,6 +242,10 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 
 func NeedsDownloadConfig(dk *dynakube.DynaKube) bool {
 	return dk.OneAgent().IsAppInjectionNeeded() && !dk.OneAgent().IsCSIAvailable() && dk.OneAgent().GetCodeModulesImage() == ""
+}
+
+func needsPGC(dk *dynakube.DynaKube) bool {
+	return dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsHostMonitoringMode()
 }
 
 // generateCerts gets the necessary info they create the init certs secret data

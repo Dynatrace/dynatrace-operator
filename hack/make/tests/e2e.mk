@@ -246,6 +246,21 @@ test/e2e/hostmonitoring/withoutcsi:
 test/e2e/hostmonitoring/generate-metadata:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "host_monitoring_generate_metadata" $(SKIPCLEANUP)
 
+## Runs Host Monitoring PGC with CSI e2e test only
+test/e2e/hostmonitoring/pgc-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "host_monitoring_pgc" $(SKIPCLEANUP)
+
+## Runs Host Monitoring PGC without CSI e2e test only
+test/e2e/hostmonitoring/pgc-no-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "host_monitoring_pgc" $(SKIPCLEANUP)
+
+## Runs Host Monitoring PGC e2e tests for both CSI and no-CSI
+test/e2e/hostmonitoring/pgc:
+	RC=0; \
+	make test/e2e/hostmonitoring/pgc-csi || RC=1; \
+	make test/e2e/hostmonitoring/pgc-no-csi || RC=1; \
+	exit $$RC
+
 ## Runs CloudNative default e2e test only
 test/e2e/cloudnative/withoutcsi:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "cloudnative" $(SKIPCLEANUP)

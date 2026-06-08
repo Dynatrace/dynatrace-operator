@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/bootstrapper"
 	classicToCloud "github.com/Dynatrace/dynatrace-operator/test/e2e/features/classic/switchmodes"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/codemodules"
 	noInjection "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/noinjection"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/standard"
@@ -111,4 +112,8 @@ func TestStandard_node_image_pull_with_csi(t *testing.T) {
 
 func TestStandard_pgc_with_fullstack(t *testing.T) {
 	testEnv.Test(t, bootstrapper.PGCWithCloudNativeFullStack(t))
+}
+
+func TestStandard_host_monitoring_pgc(t *testing.T) {
+	testEnv.Test(t, hostmonitoring.PGCWithHostMonitoring(t))
 }
