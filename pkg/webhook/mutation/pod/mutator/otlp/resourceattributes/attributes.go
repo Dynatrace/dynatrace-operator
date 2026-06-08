@@ -2,9 +2,11 @@ package resourceattributes
 
 import (
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -27,10 +29,11 @@ func NewAttributesFromEnv(envs []corev1.EnvVar, name string) (map[string]string,
 	return res, found
 }
 
+// sanitizeValue percent-encodes value for use in OTEL_RESOURCE_ATTRIBUTES, except for the
+// small set of operator-injected env refs that the kubelet must expand at pod startup.
+// See https://opentelemetry.io/docs/specs/otel/resource/sdk/#specifying-resource-information-via-an-environment-variable
 func sanitizeValue(value string) string {
-	// apply percent encoding to prevent errors when passing attribute values with special characters to the OTEL SDKs
-	// see https://opentelemetry.io/docs/specs/otel/resource/sdk/#specifying-resource-information-via-an-environment-variable
-	if strings.HasPrefix(value, "$(") && strings.HasSuffix(value, ")") {
+	if slices.Contains(attributes.SafeEnvRefs, value) {
 		return value
 	}
 

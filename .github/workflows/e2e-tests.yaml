@@ -52,7 +52,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run e2e test
@@ -94,7 +94,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run e2e test
@@ -136,7 +136,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run e2e test
@@ -178,7 +178,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run e2e test
@@ -218,7 +218,7 @@ jobs:
     if: ${{ always() }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Set Slack message
@@ -239,7 +239,7 @@ jobs:
           OCP_OLM_RESULT: ${{ needs.run-in-ocp-olm.result }}
         run: |
           get_emoji() {
-            if [ "$1" = "skipped" ]; then
+            if [ "$1" = "skipped" ] || [ "$2" = "skipped" ]; then
               echo "large_yellow_circle"
             elif [ "$2" = "success" ]; then
               echo "white_check_mark"

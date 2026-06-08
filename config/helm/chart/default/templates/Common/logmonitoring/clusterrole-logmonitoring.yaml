@@ -23,6 +23,7 @@ rules:
     - ""
   resources:
     - nodes/proxy
+    - nodes/pods
   verbs:
     - get
 {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}

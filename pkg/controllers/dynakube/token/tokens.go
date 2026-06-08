@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 )
 
 const (
@@ -81,6 +82,10 @@ func (tokens Tokens) VerifyValues() (err error) {
 	}
 
 	return
+}
+
+func (tokens Tokens) HasPlatformToken() bool {
+	return dttoken.IsPlatform(tokens.APIToken().String())
 }
 
 func CheckForDataIngestToken(tokens Tokens) bool {

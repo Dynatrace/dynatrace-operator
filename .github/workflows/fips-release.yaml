@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Prepare build parameters
@@ -44,7 +44,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Docker
@@ -54,7 +54,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
@@ -65,8 +65,8 @@ jobs:
       - name: Build ${{ matrix.platform }} image
         uses: ./.github/actions/build-push-image
         env:
-            ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}
-            DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}
+            ECR_IMAGE: public.ecr.aws/${{ vars.ECR_REPOSITORY }}
+            DOCKER_IMAGE: docker.io/${{ vars.DOCKERHUB_REPOSITORY }}
         with:
           platforms: ${{ matrix.platform }}
           images: ${{ env.DOCKER_IMAGE }},${{ env.ECR_IMAGE }}
@@ -94,7 +94,7 @@ jobs:
             repository: ECR_REPOSITORY
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Docker
@@ -104,7 +104,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
@@ -115,21 +115,21 @@ jobs:
       - name: Create image-index manifest for ${{matrix.registry}}
         id: image-index
         env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips
+          IMAGE: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips
         shell: bash
         run: |
           hack/build/ci/create-image-index.sh "${IMAGE}"
       - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.image-index.outputs.digest }}
+          image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.image-index.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.image-index.outputs.digest }}
+          image-ref: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.image-index.outputs.digest }}
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
@@ -137,12 +137,12 @@ jobs:
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.image-index.outputs.digest }}
+          image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.image-index.outputs.digest }}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Add build provenance attestation for ${{ matrix.registry }}
         uses: ./.github/actions/attest-artifact
         with:
-          subject-name: ${{ matrix.url }}/${{ secrets[matrix.repository] }}
+          subject-name: ${{ matrix.url }}/${{ vars[matrix.repository] }}
           subject-digest: ${{ steps.image-index.outputs.digest }}
