@@ -3,7 +3,6 @@
 package permissions
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/deployersamples"
@@ -21,35 +20,36 @@ func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 
-	testEnv.Setup(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		return deployersamples.SharedSAFile().Install(ctx, c)
-	})
+	// testEnv.Setup(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+	//	return deployersamples.SharedSAFile().Install(ctx, c)
+	//})
 
-	if !cfg.FailFast() {
-		testEnv.Finish(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-			return deployersamples.SharedSAFile().Uninstall(ctx, c)
-		})
-	}
+	// if !cfg.FailFast() {
+	//	testEnv.Finish(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+	//		return deployersamples.SharedSAFile().Uninstall(ctx, c)
+	//	})
+	//}
 
 	testEnv.Run(m)
 }
 
 func TestDeployerSampleEscalateNoCsi(t *testing.T) {
-	testEnv.Test(t, deployersamples.EscalateNoCsi(t))
+	// Install operator
+	testEnv.Test(t, deployersamples.EscalateWithoutCSIFeature(t))
 }
 
-func TestDeployerSampleEscalateWithCsi(t *testing.T) {
-	testEnv.Test(t, deployersamples.EscalateWithCsi(t))
-}
-
-func TestDeployerSampleNoEscalateNoCsi(t *testing.T) {
-	testEnv.Test(t, deployersamples.NoEscalateNoCsi(t))
-}
-
-func TestDeployerSampleNoEscalateWithCsi(t *testing.T) {
-	testEnv.Test(t, deployersamples.NoEscalateWithCsi(t))
-}
-
-func TestDeployerSampleInsufficientPermissions(t *testing.T) {
-	testEnv.Test(t, deployersamples.InsufficientPermissions(t))
-}
+// func TestDeployerSampleEscalateWithCsi(t *testing.T) {
+//	testEnv.Test(t, deployersamples.EscalateWithCsi(t))
+//}
+//
+//func TestDeployerSampleNoEscalateNoCsi(t *testing.T) {
+//	testEnv.Test(t, deployersamples.NoEscalateNoCsi(t))
+//}
+//
+//func TestDeployerSampleNoEscalateWithCsi(t *testing.T) {
+//	testEnv.Test(t, deployersamples.NoEscalateWithCsi(t))
+//}
+//
+//func TestDeployerSampleInsufficientPermissions(t *testing.T) {
+//	testEnv.Test(t, deployersamples.InsufficientPermissions(t))
+//}

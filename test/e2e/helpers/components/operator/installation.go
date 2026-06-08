@@ -75,6 +75,21 @@ func InstallLocal(withCSI bool) env.Func {
 	}
 }
 
+func InstallWithHelmAsUser(releaseTag string, withCSI bool, serviceAccount string) env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		err := InstallViaHelm(releaseTag, withCSI,
+			helm.WithArgs("--create-namespace"),
+			helm.WithArgs("--install"),
+			helm.WithArgs("--kube-as-user", serviceAccount),
+		)
+		if err != nil {
+			return ctx, err
+		}
+
+		return VerifyInstall(ctx, envConfig, withCSI)
+	}
+}
+
 func installViaOLMLocalBundle() error {
 	err := execMakeCommand(project.RootDir(), "bundle/show-image-ref")
 	if err != nil {
