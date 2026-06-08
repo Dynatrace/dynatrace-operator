@@ -8,6 +8,8 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -39,16 +41,16 @@ func (_m *Reconciler) EXPECT() *Reconciler_Expecter {
 }
 
 // ReconcileActiveGate provides a mock function for the type Reconciler
-func (_mock *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
-	ret := _mock.Called(ctx, dk)
+func (_mock *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient dtversion.Client) error {
+	ret := _mock.Called(ctx, dk, imageClient, versionClient)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ReconcileActiveGate")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
-		r0 = returnFunc(ctx, dk)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube, image.Client, dtversion.Client) error); ok {
+		r0 = returnFunc(ctx, dk, imageClient, versionClient)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -63,11 +65,13 @@ type Reconciler_ReconcileActiveGate_Call struct {
 // ReconcileActiveGate is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *Reconciler_Expecter) ReconcileActiveGate(ctx interface{}, dk interface{}) *Reconciler_ReconcileActiveGate_Call {
-	return &Reconciler_ReconcileActiveGate_Call{Call: _e.mock.On("ReconcileActiveGate", ctx, dk)}
+//   - imageClient image.Client
+//   - versionClient dtversion.Client
+func (_e *Reconciler_Expecter) ReconcileActiveGate(ctx interface{}, dk interface{}, imageClient interface{}, versionClient interface{}) *Reconciler_ReconcileActiveGate_Call {
+	return &Reconciler_ReconcileActiveGate_Call{Call: _e.mock.On("ReconcileActiveGate", ctx, dk, imageClient, versionClient)}
 }
 
-func (_c *Reconciler_ReconcileActiveGate_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube)) *Reconciler_ReconcileActiveGate_Call {
+func (_c *Reconciler_ReconcileActiveGate_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient dtversion.Client)) *Reconciler_ReconcileActiveGate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -77,10 +81,7 @@ func (_c *Reconciler_ReconcileActiveGate_Call) Run(run func(ctx context.Context,
 		if args[1] != nil {
 			arg1 = args[1].(*dynakube.DynaKube)
 		}
-		run(
-			arg0,
-			arg1,
-		)
+		run(arg0, arg1, args[2].(image.Client), args[3].(dtversion.Client))
 	})
 	return _c
 }
@@ -90,22 +91,22 @@ func (_c *Reconciler_ReconcileActiveGate_Call) Return(err error) *Reconciler_Rec
 	return _c
 }
 
-func (_c *Reconciler_ReconcileActiveGate_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube) error) *Reconciler_ReconcileActiveGate_Call {
+func (_c *Reconciler_ReconcileActiveGate_Call) RunAndReturn(run func(context.Context, *dynakube.DynaKube, image.Client, dtversion.Client) error) *Reconciler_ReconcileActiveGate_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ReconcileCodeModules provides a mock function for the type Reconciler
-func (_mock *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
-	ret := _mock.Called(ctx, dk)
+func (_mock *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient dtversion.Client) error {
+	ret := _mock.Called(ctx, dk, imageClient, versionClient)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ReconcileCodeModules")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
-		r0 = returnFunc(ctx, dk)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube, image.Client, dtversion.Client) error); ok {
+		r0 = returnFunc(ctx, dk, imageClient, versionClient)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -120,11 +121,13 @@ type Reconciler_ReconcileCodeModules_Call struct {
 // ReconcileCodeModules is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *Reconciler_Expecter) ReconcileCodeModules(ctx interface{}, dk interface{}) *Reconciler_ReconcileCodeModules_Call {
-	return &Reconciler_ReconcileCodeModules_Call{Call: _e.mock.On("ReconcileCodeModules", ctx, dk)}
+//   - imageClient image.Client
+//   - versionClient dtversion.Client
+func (_e *Reconciler_Expecter) ReconcileCodeModules(ctx interface{}, dk interface{}, imageClient interface{}, versionClient interface{}) *Reconciler_ReconcileCodeModules_Call {
+	return &Reconciler_ReconcileCodeModules_Call{Call: _e.mock.On("ReconcileCodeModules", ctx, dk, imageClient, versionClient)}
 }
 
-func (_c *Reconciler_ReconcileCodeModules_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube)) *Reconciler_ReconcileCodeModules_Call {
+func (_c *Reconciler_ReconcileCodeModules_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient dtversion.Client)) *Reconciler_ReconcileCodeModules_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -134,10 +137,7 @@ func (_c *Reconciler_ReconcileCodeModules_Call) Run(run func(ctx context.Context
 		if args[1] != nil {
 			arg1 = args[1].(*dynakube.DynaKube)
 		}
-		run(
-			arg0,
-			arg1,
-		)
+		run(arg0, arg1, args[2].(image.Client), args[3].(dtversion.Client))
 	})
 	return _c
 }
@@ -147,22 +147,22 @@ func (_c *Reconciler_ReconcileCodeModules_Call) Return(err error) *Reconciler_Re
 	return _c
 }
 
-func (_c *Reconciler_ReconcileCodeModules_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube) error) *Reconciler_ReconcileCodeModules_Call {
+func (_c *Reconciler_ReconcileCodeModules_Call) RunAndReturn(run func(context.Context, *dynakube.DynaKube, image.Client, dtversion.Client) error) *Reconciler_ReconcileCodeModules_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ReconcileOneAgent provides a mock function for the type Reconciler
-func (_mock *Reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error {
-	ret := _mock.Called(ctx, dk)
+func (_mock *Reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient dtversion.Client) error {
+	ret := _mock.Called(ctx, dk, imageClient, versionClient)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ReconcileOneAgent")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
-		r0 = returnFunc(ctx, dk)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube, image.Client, dtversion.Client) error); ok {
+		r0 = returnFunc(ctx, dk, imageClient, versionClient)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -177,11 +177,13 @@ type Reconciler_ReconcileOneAgent_Call struct {
 // ReconcileOneAgent is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *Reconciler_Expecter) ReconcileOneAgent(ctx interface{}, dk interface{}) *Reconciler_ReconcileOneAgent_Call {
-	return &Reconciler_ReconcileOneAgent_Call{Call: _e.mock.On("ReconcileOneAgent", ctx, dk)}
+//   - imageClient image.Client
+//   - versionClient dtversion.Client
+func (_e *Reconciler_Expecter) ReconcileOneAgent(ctx interface{}, dk interface{}, imageClient interface{}, versionClient interface{}) *Reconciler_ReconcileOneAgent_Call {
+	return &Reconciler_ReconcileOneAgent_Call{Call: _e.mock.On("ReconcileOneAgent", ctx, dk, imageClient, versionClient)}
 }
 
-func (_c *Reconciler_ReconcileOneAgent_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube)) *Reconciler_ReconcileOneAgent_Call {
+func (_c *Reconciler_ReconcileOneAgent_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient dtversion.Client)) *Reconciler_ReconcileOneAgent_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -191,10 +193,7 @@ func (_c *Reconciler_ReconcileOneAgent_Call) Run(run func(ctx context.Context, d
 		if args[1] != nil {
 			arg1 = args[1].(*dynakube.DynaKube)
 		}
-		run(
-			arg0,
-			arg1,
-		)
+		run(arg0, arg1, args[2].(image.Client), args[3].(dtversion.Client))
 	})
 	return _c
 }
@@ -204,7 +203,7 @@ func (_c *Reconciler_ReconcileOneAgent_Call) Return(err error) *Reconciler_Recon
 	return _c
 }
 
-func (_c *Reconciler_ReconcileOneAgent_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube) error) *Reconciler_ReconcileOneAgent_Call {
+func (_c *Reconciler_ReconcileOneAgent_Call) RunAndReturn(run func(context.Context, *dynakube.DynaKube, image.Client, dtversion.Client) error) *Reconciler_ReconcileOneAgent_Call {
 	_c.Call.Return(run)
 	return _c
 }

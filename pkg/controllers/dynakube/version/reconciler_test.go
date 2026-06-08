@@ -57,12 +57,11 @@ func TestReconcile(t *testing.T) {
 		versionClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return("", errors.New("Something wrong happened"))
 
 		versionReconciler := reconciler{
-			versionClient: versionClient,
 			apiReader:     fake.NewClient(),
 			timeProvider:  timeprovider.New().Freeze(),
 		}
 		dk := dynakubeTemplate.DeepCopy()
-		err := versionReconciler.ReconcileActiveGate(ctx, dk)
+		err := versionReconciler.ReconcileActiveGate(ctx, dk, nil, versionClient)
 		require.Error(t, err)
 
 		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
@@ -86,13 +85,12 @@ func TestReconcile(t *testing.T) {
 		versionReconciler := reconciler{
 			apiReader:     fakeClient,
 			timeProvider:  timeProvider,
-			versionClient: versionClient,
 		}
-		err := versionReconciler.ReconcileCodeModules(ctx, dk)
+		err := versionReconciler.ReconcileCodeModules(ctx, dk, nil, versionClient)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileActiveGate(ctx, dk)
+		err = versionReconciler.ReconcileActiveGate(ctx, dk, nil, versionClient)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileOneAgent(ctx, dk)
+		err = versionReconciler.ReconcileOneAgent(ctx, dk, nil, versionClient)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
@@ -106,14 +104,14 @@ func TestReconcile(t *testing.T) {
 
 		// no change if probe not old enough
 		previousProbe := *dkStatus.CodeModules.LastProbeTimestamp
-		err = versionReconciler.ReconcileCodeModules(ctx, dk)
+		err = versionReconciler.ReconcileCodeModules(ctx, dk, nil, versionClient)
 		require.NoError(t, err)
 		assert.Equal(t, previousProbe, *dkStatus.CodeModules.LastProbeTimestamp)
 
 		// change if probe old enough
 		changeTime(timeProvider, 15*time.Minute+1*time.Second)
 
-		err = versionReconciler.ReconcileCodeModules(ctx, dk)
+		err = versionReconciler.ReconcileCodeModules(ctx, dk, nil, versionClient)
 		require.NoError(t, err)
 		assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.LastProbeTimestamp)
 	})
@@ -124,7 +122,6 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 	t.Run("empty version info + failing reconcile => return error", func(t *testing.T) {
 		versionReconciler := reconciler{
-			versionClient: versionclientmock.NewClient(t),
 			apiReader:     fake.NewClient(),
 			timeProvider:  timeprovider.New().Freeze(),
 		}
@@ -136,7 +133,6 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 	t.Run("version info (.Version) set + failing reconcile => return nil", func(t *testing.T) {
 		versionReconciler := reconciler{
-			versionClient: versionclientmock.NewClient(t),
 			apiReader:     fake.NewClient(),
 			timeProvider:  timeprovider.New().Freeze(),
 		}
@@ -148,7 +144,6 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 	t.Run("version info (.ImageID) set + failing reconcile => return nil", func(t *testing.T) {
 		versionReconciler := reconciler{
-			versionClient: versionclientmock.NewClient(t),
 			apiReader:     fake.NewClient(),
 			timeProvider:  timeprovider.New().Freeze(),
 		}

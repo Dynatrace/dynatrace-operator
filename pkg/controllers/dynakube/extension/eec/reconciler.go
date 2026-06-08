@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -17,31 +16,28 @@ import (
 type reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-
-	dk *dynakube.DynaKube
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader) *reconciler {
 	return &reconciler{
 		client:    clt,
 		apiReader: apiReader,
-		dk:        dk,
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context) error {
+func (r *reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "extension-eec")
 
 	// TODO: Remove as part of ICP-1086
-	meta.RemoveStatusCondition(r.dk.Conditions(), "ExtensionsControllerStatefulSet")
+	meta.RemoveStatusCondition(dk.Conditions(), "ExtensionsControllerStatefulSet")
 
-	if ext := r.dk.Extensions(); !ext.IsAnyEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), extensionControllerStatefulSetConditionType) == nil {
+	if ext := dk.Extensions(); !ext.IsAnyEnabled() {
+		if meta.FindStatusCondition(*dk.Conditions(), extensionControllerStatefulSetConditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionControllerStatefulSetConditionType)
+		defer meta.RemoveStatusCondition(dk.Conditions(), extensionControllerStatefulSetConditionType)
 
-		sts, err := k8sstatefulset.Build(r.dk, ext.GetExecutionControllerStatefulsetName(), corev1.Container{})
+		sts, err := k8sstatefulset.Build(dk, ext.GetExecutionControllerStatefulsetName(), corev1.Container{})
 		if err != nil {
 			log.Error(err, "could not build "+ext.GetExecutionControllerStatefulsetName()+" during cleanup")
 
@@ -56,17 +52,17 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID == "" {
-		k8sconditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
+	if dk.Status.ActiveGate.ConnectionInfo.TenantUUID == "" {
+		k8sconditions.SetStatefulSetOutdated(dk.Conditions(), extensionControllerStatefulSetConditionType, dk.Extensions().GetExecutionControllerStatefulsetName())
 
 		return errors.New("tenantUUID unknown")
 	}
 
-	if r.dk.Status.KubeSystemUUID == "" {
-		k8sconditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
+	if dk.Status.KubeSystemUUID == "" {
+		k8sconditions.SetStatefulSetOutdated(dk.Conditions(), extensionControllerStatefulSetConditionType, dk.Extensions().GetExecutionControllerStatefulsetName())
 
 		return errors.New("kubeSystemUUID unknown")
 	}
 
-	return r.createOrUpdateStatefulset(ctx)
+	return r.createOrUpdateStatefulset(ctx, dk)
 }

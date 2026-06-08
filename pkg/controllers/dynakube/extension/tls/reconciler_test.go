@@ -35,9 +35,9 @@ func TestReconcile(t *testing.T) {
 		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "dummy-value"
 		fakeClient := fake.NewClient()
 
-		reconciler := NewReconciler(fakeClient, fakeClient, dk)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(t.Context())
+		err := reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -54,9 +54,9 @@ func TestReconcile(t *testing.T) {
 		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = ""
 		fakeClient := fake.NewClient()
 
-		reconciler := NewReconciler(fakeClient, fakeClient, dk)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(t.Context())
+		err := reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -80,9 +80,9 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient()
 		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)
 
-		reconciler := NewReconciler(fakeClient, fakeClient, dk)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(t.Context())
+		err := reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -102,9 +102,9 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient()
 		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)
 
-		reconciler := NewReconciler(fakeClient, fakeClient, dk)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(t.Context())
+		err := reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -124,9 +124,9 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient()
 		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)
 
-		reconciler := NewReconciler(fakeClient, fakeClient, dk)
+		reconciler := NewReconciler(fakeClient, fakeClient)
 
-		err := reconciler.Reconcile(t.Context())
+		err := reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var secret corev1.Secret

@@ -82,68 +82,68 @@ func useLegacyMounts(dk *dynakube.DynaKube) bool {
 	return exp.NewFlags(dk.Annotations, false).UseEECLegacyMounts()
 }
 
-func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
+func (r *reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
-	appLabels := buildAppLabels(r.dk)
+	appLabels := buildAppLabels(dk)
 
-	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
+	templateAnnotations, err := r.buildTemplateAnnotations(ctx, dk)
 	if err != nil {
 		return err
 	}
 
 	topologySpreadConstraints := k8stopology.MaxOnePerNode(appLabels)
-	if len(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints) > 0 {
-		topologySpreadConstraints = r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
+	if len(dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints) > 0 {
+		topologySpreadConstraints = dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
 	}
 
-	desiredSts, err := k8sstatefulset.Build(r.dk, r.dk.Extensions().GetExecutionControllerStatefulsetName(), buildContainer(r.dk),
+	desiredSts, err := k8sstatefulset.Build(dk, dk.Extensions().GetExecutionControllerStatefulsetName(), buildContainer(dk),
 		k8sstatefulset.SetReplicas(1),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
-		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
+		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.ExtensionExecutionController.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, templateAnnotations),
 		k8sstatefulset.SetAffinity(buildAffinity()),
-		k8sstatefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
+		k8sstatefulset.SetTolerations(dk.Spec.Templates.ExtensionExecutionController.Tolerations),
 		k8sstatefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
 		k8sstatefulset.SetServiceAccount(serviceAccountName),
 		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
 		k8sstatefulset.SetRollingUpdateStrategyType(),
-		setImagePullSecrets(r.dk.CustomPullSecretReferences()),
-		setVolumes(r.dk),
-		setPersistentVolumeClaim(r.dk),
+		setImagePullSecrets(dk.CustomPullSecretReferences()),
+		setVolumes(dk),
+		setPersistentVolumeClaim(dk),
 	)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), extensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
-	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
-		log.Info("failed to create/update " + r.dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+		log.Info("failed to create/update " + dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
+		k8sconditions.SetKubeAPIError(dk.Conditions(), extensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
-	k8sconditions.SetStatefulSetCreated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, desiredSts.Name)
+	k8sconditions.SetStatefulSetCreated(dk.Conditions(), extensionControllerStatefulSetConditionType, desiredSts.Name)
 
 	return nil
 }
 
-func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
+func (r *reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	secrets := k8ssecret.Query(r.client, r.client)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
-		Name:      r.dk.Extensions().GetTLSSecretName(),
-		Namespace: r.dk.Namespace,
+		Name:      dk.Extensions().GetTLSSecretName(),
+		Namespace: dk.Namespace,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	templateAnnotations := make(map[string]string)
-	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(r.dk.Spec.Templates.ExtensionExecutionController.Annotations, containerName))
+	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.ExtensionExecutionController.Annotations, containerName))
 
 	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
 	if err != nil {

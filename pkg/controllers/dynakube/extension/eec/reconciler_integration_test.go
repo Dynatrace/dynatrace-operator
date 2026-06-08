@@ -16,11 +16,11 @@ func TestStatefulSet(t *testing.T) {
 	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
 	mockTLSSecret(t, clt, dk)
 
-	reconciler := NewReconciler(clt, clt, dk)
-	err := reconciler.Reconcile(t.Context())
+	reconciler := NewReconciler(clt, clt)
+	err := reconciler.Reconcile(t.Context(), dk)
 	require.NoError(t, err)
 
 	dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
-	err = reconciler.Reconcile(t.Context())
+	err = reconciler.Reconcile(t.Context(), dk)
 	require.NoError(t, err)
 }

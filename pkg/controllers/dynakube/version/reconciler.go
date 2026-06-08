@@ -14,32 +14,27 @@ import (
 )
 
 type Reconciler interface {
-	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
-	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error
-	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error
+	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error
+	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error
 }
 
 type reconciler struct {
-	imageClient   image.Client
-	versionClient version.Client
-	timeProvider  *timeprovider.Provider
-
-	apiReader client.Reader
+	timeProvider *timeprovider.Provider
+	apiReader    client.Reader
 }
 
-func NewReconciler(apiReader client.Reader, imageClient image.Client, versionClient version.Client, timeProvider *timeprovider.Provider) Reconciler {
+func NewReconciler(apiReader client.Reader, timeProvider *timeprovider.Provider) Reconciler {
 	return &reconciler{
-		apiReader:     apiReader,
-		timeProvider:  timeProvider,
-		imageClient:   imageClient,
-		versionClient: versionClient,
+		apiReader:    apiReader,
+		timeProvider: timeProvider,
 	}
 }
 
-func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "dynakube-version")
 
-	updater := newCodeModulesUpdater(dk, r.imageClient, r.versionClient)
+	updater := newCodeModulesUpdater(dk, imageClient, versionClient)
 	if r.needsUpdate(ctx, updater, dk) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
@@ -47,10 +42,10 @@ func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 	return nil
 }
 
-func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "dynakube-version")
 
-	updater := newOneAgentUpdater(dk, r.apiReader, r.imageClient, r.versionClient)
+	updater := newOneAgentUpdater(dk, r.apiReader, imageClient, versionClient)
 	if r.needsUpdate(ctx, updater, dk) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
@@ -58,10 +53,10 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKub
 	return nil
 }
 
-func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "dynakube-version")
 
-	updater := newActiveGateUpdater(dk, r.apiReader, r.imageClient, r.versionClient)
+	updater := newActiveGateUpdater(dk, r.apiReader, imageClient, versionClient)
 	if r.needsUpdate(ctx, updater, dk) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
 

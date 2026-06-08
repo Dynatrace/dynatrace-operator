@@ -14,9 +14,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
@@ -27,7 +27,6 @@ import (
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
-	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -230,7 +229,8 @@ func TestReconciler(t *testing.T) {
 			},
 		})
 
-		fakeReconciler := createReconcilerMock(t)
+		fakeConnInfoReconciler := newMockConnectionInfoReconciler(t)
+		fakeConnInfoReconciler.On("Reconcile", anyCtx, mock.Anything, mock.Anything).Return(nil)
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
 		oneAgentClient := oneagentclientmock.NewClient(t)
@@ -241,7 +241,7 @@ func TestReconciler(t *testing.T) {
 
 		rec := NewReconciler(boomClient, boomClient)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
-		rec.connectionInfoReconciler = fakeReconciler
+		rec.connectionInfoReconciler = fakeConnInfoReconciler
 		rec.versionReconciler = fakeVersionReconciler
 
 		err := rec.Reconcile(t.Context(), dtClient, dk)
@@ -261,8 +261,8 @@ func TestRemoveAppInjection(t *testing.T) {
 	rec := createReconciler(clt)
 
 	rec.versionReconciler = createVersionReconcilerMock(t)
-	rec.connectionInfoReconciler = createReconcilerMock(t)
-	rec.enrichmentRulesReconciler = createReconcilerMock(t)
+	rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
+	rec.enrichmentRulesReconciler = createEnrichmentRulesReconcilerMock(t)
 	rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
 	setCodeModulesInjectionCreatedCondition(dk.Conditions())
@@ -296,9 +296,9 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
 		versionReconciler := createVersionReconcilerMock(t)
-		connectionInfoReconciler := createReconcilerMock(t)
+		connectionInfoReconciler := createConnectionInfoReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler)
+		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler, &dynatrace.Client{})
 		require.NoError(t, err)
 	})
 
@@ -311,9 +311,9 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
 		versionReconciler := createVersionReconcilerMock(t)
-		connectionInfoReconciler := createReconcilerMock(t)
+		connectionInfoReconciler := createConnectionInfoReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler)
+		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler, &dynatrace.Client{})
 		require.NoError(t, err)
 	})
 
@@ -326,9 +326,9 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
 		versionReconciler := createVersionReconcilerMock(t)
-		connectionInfoReconciler := createReconcilerMock(t)
+		connectionInfoReconciler := createConnectionInfoReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler)
+		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler, &dynatrace.Client{})
 		require.NoError(t, err)
 	})
 
@@ -341,9 +341,9 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
 		versionReconciler := createVersionReconcilerMock(t)
-		connectionInfoReconciler := createReconcilerMock(t)
+		connectionInfoReconciler := createConnectionInfoReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler)
+		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler, &dynatrace.Client{})
 		require.NoError(t, err)
 	})
 }
@@ -357,9 +357,9 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		})
 		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
-		enrichmentRulesReconciler := createReconcilerMock(t)
+		enrichmentRulesReconciler := createEnrichmentRulesReconcilerMock(t)
 
-		err := rec.setupEnrichmentInjection(t.Context(), dk, enrichmentRulesReconciler)
+		err := rec.setupEnrichmentInjection(t.Context(), dk, enrichmentRulesReconciler, nil)
 		require.NoError(t, err)
 	})
 
@@ -371,9 +371,9 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		})
 		dk.Spec.MetadataEnrichment.Enabled = new(true)
 
-		enrichmentRulesReconciler := createReconcilerMock(t)
+		enrichmentRulesReconciler := createEnrichmentRulesReconcilerMock(t)
 
-		err := rec.setupEnrichmentInjection(t.Context(), dk, enrichmentRulesReconciler)
+		err := rec.setupEnrichmentInjection(t.Context(), dk, enrichmentRulesReconciler, nil)
 		require.NoError(t, err)
 	})
 }
@@ -804,18 +804,54 @@ func assertSecretNotFound(t *testing.T, clt client.Client, secretName string, se
 	assert.True(t, k8serrors.IsNotFound(err), "%s.%s secret, unexpected error: %s", secretName, secretNamespace, err)
 }
 
-func createReconcilerMock(t *testing.T) controllers.Reconciler {
-	connectionInfoReconciler := controllermock.NewReconciler(t)
-	connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
+func createConnectionInfoReconcilerMock(t *testing.T) connectionInfoReconciler {
+	m := newMockConnectionInfoReconciler(t)
+	m.On("Reconcile", anyCtx, mock.Anything, mock.Anything).Return(nil)
+	return m
+}
 
-	return connectionInfoReconciler
+func createEnrichmentRulesReconcilerMock(t *testing.T) enrichmentRulesReconciler {
+	m := newMockEnrichmentRulesReconciler(t)
+	m.On("Reconcile", anyCtx, mock.Anything, mock.Anything).Return(nil)
+	return m
 }
 
 func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 	versionReconciler := versionmock.NewReconciler(t)
-	versionReconciler.EXPECT().ReconcileCodeModules(anyCtx, mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
-
+	versionReconciler.EXPECT().ReconcileCodeModules(anyCtx, mock.AnythingOfType("*dynakube.DynaKube"), mock.Anything, mock.Anything).Return(nil).Once()
 	return versionReconciler
+}
+
+type mockConnectionInfoReconciler struct{ mock.Mock }
+
+func newMockConnectionInfoReconciler(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *mockConnectionInfoReconciler {
+	m := &mockConnectionInfoReconciler{}
+	m.Mock.Test(t)
+	t.Cleanup(func() { m.AssertExpectations(t) })
+	return m
+}
+
+func (m *mockConnectionInfoReconciler) Reconcile(ctx context.Context, oaClient oneagentclient.Client, dk *dynakube.DynaKube) error {
+	return m.Called(ctx, oaClient, dk).Error(0)
+}
+
+type mockEnrichmentRulesReconciler struct{ mock.Mock }
+
+func newMockEnrichmentRulesReconciler(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *mockEnrichmentRulesReconciler {
+	m := &mockEnrichmentRulesReconciler{}
+	m.Mock.Test(t)
+	t.Cleanup(func() { m.AssertExpectations(t) })
+	return m
+}
+
+func (m *mockEnrichmentRulesReconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error {
+	return m.Called(ctx, dtClient, dk).Error(0)
 }
 
 func createIstioReconcilerMock(t *testing.T, dk *dynakube.DynaKube) istioReconciler {

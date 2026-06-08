@@ -15,70 +15,67 @@ import (
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-
-	dk *dynakube.DynaKube
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,
-		dk:        dk,
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "extension-databases")
 
 	log.Debug("reconciling deployments")
 
 	query := k8sdeployment.Query(r.client, r.apiReader)
-	ext := r.dk.Extensions()
+	ext := dk.Extensions()
 	expectedDeploymentNames := make([]string, len(ext.Databases))
 
 	for i, dbSpec := range ext.Databases {
 		expectedDeploymentNames[i] = ext.GetDatabaseDatasourceName(dbSpec.ID)
 	}
 
-	if err := deleteDeployments(ctx, r.client, r.dk, expectedDeploymentNames); err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+	if err := deleteDeployments(ctx, r.client, dk, expectedDeploymentNames); err != nil {
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	for i, dbSpec := range ext.Databases {
-		replicas, err := k8sdeployment.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: expectedDeploymentNames[i], Namespace: r.dk.Namespace}, dbSpec.Replicas)
+		replicas, err := k8sdeployment.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: expectedDeploymentNames[i], Namespace: dk.Namespace}, dbSpec.Replicas)
 		if err != nil {
-			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+			k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 			return err
 		}
 
 		deploy, err := k8sdeployment.Build(
-			r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
+			dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
 			k8sdeployment.SetReplicas(replicas),
-			k8sdeployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
+			k8sdeployment.SetAllLabels(buildAllLabels(dk, dbSpec)),
 			k8sdeployment.SetAllAnnotations(nil, k8ssecuritycontext.RemoveAppArmorAnnotation(dbSpec.Annotations, containerName)),
 			k8sdeployment.SetAffinity(dbSpec.Affinity),
-			k8sdeployment.SetTolerations(r.dk.Spec.Templates.SQLExtensionExecutor.Tolerations),
+			k8sdeployment.SetTolerations(dk.Spec.Templates.SQLExtensionExecutor.Tolerations),
 			k8sdeployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),
 			k8sdeployment.SetNodeSelector(dbSpec.NodeSelector),
-			k8sdeployment.SetImagePullSecrets(r.dk.CustomPullSecretReferences()),
+			k8sdeployment.SetImagePullSecrets(dk.CustomPullSecretReferences()),
 			k8sdeployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
 			k8sdeployment.SetSecurityContext(buildPodSecurityContext()),
-			k8sdeployment.SetContainer(buildContainer(r.dk, dbSpec)),
-			k8sdeployment.SetVolumes(buildVolumes(r.dk, dbSpec)),
+			k8sdeployment.SetContainer(buildContainer(dk, dbSpec)),
+			k8sdeployment.SetVolumes(buildVolumes(dk, dbSpec)),
 		)
 		if err != nil {
 			// This error indicates that the scheme is missing required types and is unrecoverable.
-			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+			k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 			return err
 		}
 
-		changed, err := query.WithOwner(r.dk).CreateOrUpdate(ctx, deploy)
+		changed, err := query.WithOwner(dk).CreateOrUpdate(ctx, deploy)
 		if err != nil {
-			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+			k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 			return err
 		}
@@ -89,9 +86,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if len(expectedDeploymentNames) > 0 {
-		k8sconditions.SetDeploymentsApplied(r.dk, conditionType, expectedDeploymentNames)
+		k8sconditions.SetDeploymentsApplied(dk, conditionType, expectedDeploymentNames)
 	} else {
-		_ = meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 	}
 
 	return nil

@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -184,4 +185,24 @@ func (_c *mockLogmonsettingsSubReconciler_Reconcile_Call) Return(err error) *moc
 func (_c *mockLogmonsettingsSubReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error) *mockLogmonsettingsSubReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
+}
+
+// mockOaConnectionInfoReconciler is a mock for the oaConnectionInfoReconciler interface.
+type mockOaConnectionInfoReconciler struct {
+	mock.Mock
+}
+
+func newMockOaConnectionInfoReconciler(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *mockOaConnectionInfoReconciler {
+	m := &mockOaConnectionInfoReconciler{}
+	m.Mock.Test(t)
+	t.Cleanup(func() { m.AssertExpectations(t) })
+	return m
+}
+
+func (m *mockOaConnectionInfoReconciler) Reconcile(ctx context.Context, oaClient oneagentclient.Client, dk *dynakube.DynaKube) error {
+	ret := m.Called(ctx, oaClient, dk)
+	return ret.Error(0)
 }
