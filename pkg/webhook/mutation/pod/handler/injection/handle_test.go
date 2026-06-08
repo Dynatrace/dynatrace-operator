@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
@@ -20,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -368,100 +366,4 @@ func getTestNamespace() *corev1.Namespace {
 			},
 		},
 	}
-}
-
-func TestHandlePodMutationInitResources(t *testing.T) {
-	initSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.BootstrapperInitSecretName,
-			Namespace: testNamespaceName,
-		},
-	}
-
-	customResources := &corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("200m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-		},
-	}
-
-	metaOnlyDK := func(initResources *corev1.ResourceRequirements) *dynakube.DynaKube {
-		enabled := true
-
-		return &dynakube.DynaKube{
-			ObjectMeta: getTestDynakubeMeta(),
-			Spec: dynakube.DynaKubeSpec{
-				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled:       &enabled,
-					InitResources: initResources,
-				},
-			},
-		}
-	}
-
-	t.Run("standalone metadata-enrichment with custom initResources applies custom resources", func(t *testing.T) {
-		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
-
-		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		metaMutator.On("Mutate", mock.Anything).Return(nil)
-
-		h := createTestHandler(oaMutator, metaMutator, &initSecret)
-		request := createTestMutationRequest(t, metaOnlyDK(customResources))
-
-		err := h.Handle(request)
-		require.NoError(t, err)
-
-		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
-		require.NotNil(t, installContainer)
-		assert.Equal(t, *customResources, installContainer.Resources)
-	})
-
-	t.Run("standalone metadata-enrichment without initResources uses defaults", func(t *testing.T) {
-		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
-
-		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		metaMutator.On("Mutate", mock.Anything).Return(nil)
-
-		h := createTestHandler(oaMutator, metaMutator, &initSecret)
-		request := createTestMutationRequest(t, metaOnlyDK(nil))
-
-		err := h.Handle(request)
-		require.NoError(t, err)
-
-		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
-		require.NotNil(t, installContainer)
-		assert.Equal(t, defaultInitContainerResources(), installContainer.Resources)
-	})
-
-	t.Run("OneAgent injected ignores metadataEnrichment.initResources", func(t *testing.T) {
-		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		oaMutator.On("Mutate", mock.Anything).Return(nil)
-
-		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
-		metaMutator.On("Mutate", mock.Anything).Return(nil)
-
-		dk := getTestDynakube()
-		dk.Spec.MetadataEnrichment.InitResources = customResources
-
-		h := createTestHandler(oaMutator, metaMutator, &initSecret)
-		request := createTestMutationRequest(t, dk)
-
-		err := h.Handle(request)
-		require.NoError(t, err)
-
-		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
-		require.NotNil(t, installContainer)
-		assert.Equal(t, k8sresource.NewResourceList("30m", "30Mi"), installContainer.Resources.Requests)
-		assert.Equal(t, k8sresource.NewResourceList("100m", "60Mi"), installContainer.Resources.Limits)
-	})
 }

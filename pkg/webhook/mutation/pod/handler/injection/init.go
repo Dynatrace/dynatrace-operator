@@ -73,14 +73,6 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 	}
 }
 
-func metadataEnrichmentInitResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
-	if custom := dk.MetadataEnrichment().GetInitResources(); custom != nil {
-		return *custom
-	}
-
-	return defaultInitContainerResources()
-}
-
 func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   new(true),

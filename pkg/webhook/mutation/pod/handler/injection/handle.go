@@ -127,14 +127,6 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 	var mutated bool
 
 	oaEnabled := h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest)
-	if oaEnabled {
-		err := h.oaMutator.Mutate(mutationRequest)
-		if err != nil {
-			return false, err
-		}
-
-		mutated = true
-	}
 
 	// metaMutator is automatically enabled if oaMutator is enabled, but it can also be enabled standalone
 	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) || oaEnabled {
@@ -146,8 +138,13 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 		mutated = true
 	}
 
-	if !oaEnabled {
-		mutationRequest.InstallContainer.Resources = metadataEnrichmentInitResources(mutationRequest.DynaKube)
+	if oaEnabled {
+		err := h.oaMutator.Mutate(mutationRequest)
+		if err != nil {
+			return false, err
+		}
+
+		mutated = true
 	}
 
 	if mutated {
