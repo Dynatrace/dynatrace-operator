@@ -90,16 +90,16 @@ func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID stri
 	resp = getRulesResponse{}
 
 	if err := c.apiClient.GET(ctx, effectiveValuesPath).WithQueryParams(params).Execute(&resp); err != nil {
-		if !useNewSchema && core.IsNotFound(err) {
-			// Keep the established behavior of not failing when the legacy schema is not available
-			// This covers the managed use-case.
-			log.Info("enrichment settings not available on cluster, skipping getting the enrichment rules", "schemaID", legacyMetadataEnrichmentSchemaID)
-
-			return nil, nil
+		if useNewSchema || !core.IsNotFound(err) {
+			// The error is either not 404 or the user enabled the new schema explicitly. In this case a missing schema is an error.
+			return nil, fmt.Errorf("get rules settings for schema %s: %w", metadataEnrichmentSchemaID, err)
 		}
 
-		// The error is either not 404 or the user enabled the new schema explicitly. In this case a missing schema is an error.
-		return nil, fmt.Errorf("get rules settings for schema %s: %w", metadataEnrichmentSchemaID, err)
+		// Keep the established behavior of not failing when the legacy schema is not available
+		// This covers the managed use-case.
+		log.Info("enrichment settings not available on cluster, skipping getting the enrichment rules", "schemaID", legacyMetadataEnrichmentSchemaID)
+
+		return nil, nil
 	}
 
 	rules := getRulesFromResponse(resp)
