@@ -7,7 +7,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
@@ -51,9 +53,22 @@ func (mut *Mutator) IsInjected(_ context.Context, request *dtwebhook.BaseRequest
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
+func initResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
+	if custom := dk.MetadataEnrichment().GetInitResources(); custom != nil {
+		return *custom
+	}
+
+	return corev1.ResourceRequirements{
+		Requests: k8sresource.NewResourceList("30m", "30Mi"),
+		Limits:   k8sresource.NewResourceList("100m", "60Mi"),
+	}
+}
+
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	_, log := logd.NewFromContext(request.Context, "metadata-enrichment-pod-common")
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
+
+	request.InstallContainer.Resources = initResources(request.DynaKube)
 
 	attrs, err := attributes.NewPodAttributes(request.Context, *request.BaseRequest, mut.metaClient)
 	if err != nil {

@@ -77,6 +77,7 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`enabled`||-|boolean|
+|`initResources`||-|object|
 |`namespaceSelector`||-|object|
 
 ### .spec.oneAgent.hostMonitoring
