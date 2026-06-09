@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/applicationmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/classic"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/standard"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/extensions"
@@ -219,4 +220,8 @@ func TestNoCSI_pgc_with_fullstack(t *testing.T) {
 
 func TestNoCSI_host_monitoring_pgc(t *testing.T) {
 	testEnv.Test(t, hostmonitoring.PGCWithHostMonitoring(t))
+}
+
+func TestNoCSI_pgc_with_cloudnative_hostagent(t *testing.T) {
+	testEnv.Test(t, cloudnative.PGCWithHostAgent(t))
 }

@@ -544,6 +544,27 @@ func TestGenerateForDynakubeHostMonitoring(t *testing.T) {
 	})
 }
 
+func TestNeedsPGC(t *testing.T) {
+	tests := []struct {
+		name     string
+		spec     oneagent.Spec
+		expected bool
+	}{
+		{name: "HostMonitoring", spec: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}}, expected: true},
+		{name: "CloudNativeFullStack", spec: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}, expected: true},
+		{name: "ApplicationMonitoring", spec: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}, expected: true},
+		{name: "ClassicFullStack", spec: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}}, expected: false},
+		{name: "none", spec: oneagent.Spec{}, expected: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: test.spec}}
+			assert.Equal(t, test.expected, NeedsPGC(dk))
+		})
+	}
+}
+
 func TestCleanup(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{

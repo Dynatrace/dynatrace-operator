@@ -333,7 +333,7 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 		return nil, err
 	}
 
-	if dk.OneAgent().IsDaemonsetRequired() {
+	if bootstrapperconfig.NeedsPGC(dk) {
 		configHash, err := r.pgcConfigHash(ctx, dk)
 		if err != nil {
 			return nil, err

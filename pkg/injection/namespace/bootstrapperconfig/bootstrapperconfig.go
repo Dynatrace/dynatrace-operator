@@ -220,7 +220,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		}
 	}
 
-	if needsPGC(dk) {
+	if NeedsPGC(dk) {
 		if err := s.addPGC(ctx, dk, data, annotations); err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
@@ -244,8 +244,8 @@ func NeedsDownloadConfig(dk *dynakube.DynaKube) bool {
 	return dk.OneAgent().IsAppInjectionNeeded() && !dk.OneAgent().IsCSIAvailable() && dk.OneAgent().GetCodeModulesImage() == ""
 }
 
-func needsPGC(dk *dynakube.DynaKube) bool {
-	return dk.OneAgent().IsDaemonsetRequired() || dk.OneAgent().IsAppInjectionNeeded()
+func NeedsPGC(dk *dynakube.DynaKube) bool {
+	return dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsHostMonitoringMode()
 }
 
 // generateCerts gets the necessary info they create the init certs secret data

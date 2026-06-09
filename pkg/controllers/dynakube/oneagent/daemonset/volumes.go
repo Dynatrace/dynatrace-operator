@@ -37,7 +37,7 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		volumeMounts = append(volumeMounts, getHTTPProxyMount())
 	}
 
-	if dk.OneAgent().IsDaemonsetRequired() {
+	if bootstrapperconfig.NeedsPGC(dk) {
 		volumeMounts = append(volumeMounts, getPGCSecretFileMount())
 	}
 
@@ -123,7 +123,7 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		}
 	}
 
-	if dk.OneAgent().IsDaemonsetRequired() {
+	if bootstrapperconfig.NeedsPGC(dk) {
 		volumes = append(volumes, getPGCSecretVolume(dk))
 	}
 
