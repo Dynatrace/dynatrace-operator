@@ -82,6 +82,7 @@ runs:
       with:
         # renovate datasource=github-releases depName=helm/helm
         version: v4.2.0
+        token: ${{ github.token }}
     - name: Install gotestsum
       shell: bash
       run: go install gotest.tools/gotestsum@latest
