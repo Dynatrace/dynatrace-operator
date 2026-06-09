@@ -3,6 +3,7 @@ package metadataenrichment
 import (
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,4 +25,8 @@ func (m *MetadataEnrichment) IsEnabled() bool {
 
 func (m *MetadataEnrichment) GetNamespaceSelector() *metav1.LabelSelector {
 	return &m.NamespaceSelector
+}
+
+func (m *MetadataEnrichment) GetInitResources() *corev1.ResourceRequirements {
+	return m.InitResources
 }
