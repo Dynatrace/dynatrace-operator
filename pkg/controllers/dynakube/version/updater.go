@@ -29,7 +29,7 @@ type StatusUpdater interface {
 	UseTenantRegistry(context.Context) error
 }
 
-func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
+func (r *Reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	log := logd.FromContext(ctx)
 	currentSource := determineSource(updater)
 
@@ -80,7 +80,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	return updater.ValidateStatus(ctx)
 }
 
-func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
+func (r *Reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
 	log := logd.FromContext(ctx)
 	log.Info("updating version status according to public registry", "updater", updater.Name())
 
