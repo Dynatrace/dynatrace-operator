@@ -52,7 +52,6 @@ func Combined(t *testing.T) features.Feature {
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
 		dynakubeComponents.WithOneAgentAdditionalResourceAttributes(oneAgentAdditional),
 		dynakubeComponents.WithOTLPAdditionalResourceAttributes(otlpAdditional),
-		devRegistryOptions(),
 	)
 
 	injectEverythingLabels := maputil.MergeMap(

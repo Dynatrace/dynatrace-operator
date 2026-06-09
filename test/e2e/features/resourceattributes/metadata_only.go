@@ -20,7 +20,6 @@ func MetadataOnly(t *testing.T) features.Feature {
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
-		devRegistryOptions(),
 	)
 
 	sampleApp := newSampleApp(t, &testDynakube, ns, testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels)

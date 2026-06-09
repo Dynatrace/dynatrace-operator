@@ -30,7 +30,6 @@ func LogmonOnly(t *testing.T) features.Feature {
 		dynakubeComponents.WithLogMonitoring(),
 		dynakubeComponents.WithLogMonitoringImageRef(t),
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
-		devRegistryOptions(),
 	)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)

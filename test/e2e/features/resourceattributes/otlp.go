@@ -26,7 +26,6 @@ func OTLPExporterConfig(t *testing.T) features.Feature {
 		}),
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
 		dynakubeComponents.WithOTLPAdditionalResourceAttributes(otlpAdditional),
-		devRegistryOptions(),
 	)
 
 	sampleApp := newSampleApp(t, &testDynakube, ns, testDynakube.Spec.OTLPExporterConfiguration.NamespaceSelector.MatchLabels)

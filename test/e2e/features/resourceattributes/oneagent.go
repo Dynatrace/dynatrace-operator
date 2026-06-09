@@ -26,7 +26,6 @@ func OneAgent(t *testing.T) features.Feature {
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
 		dynakubeComponents.WithOneAgentAdditionalResourceAttributes(oneAgentAdditional),
-		devRegistryOptions(),
 	)
 
 	injectEverythingLabels := maputil.MergeMap(
