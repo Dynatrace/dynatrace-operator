@@ -226,10 +226,6 @@ func assessOTLPInjectionAttributesAbsent(app *sample.App) features.Func {
 
 // assessPodMetadataJSONAnnotation checks that the pod's metadata.dynatrace.com JSON annotation
 // contains all expected key-value pairs and workload info attributes (k8s.workload.kind/name).
-// This annotation is written by ApplyAnnotationsToPod (combineForJSONAnnotation case) and uses
-// dynakube + namespaceAnnotations + rules + rulesPropagate + podAnnotations sources.
-// When both OA and OTLP mutators are active the annotation is written once (SetAnnotationIfNotExists),
-// so the first mutator's attributes win.
 func assessPodMetadataJSONAnnotation(app *sample.App, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
