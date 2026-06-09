@@ -13,18 +13,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Reconciler interface {
-	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error
-	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error
-	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error
-}
-
 type reconciler struct {
 	timeProvider *timeprovider.Provider
 	apiReader    client.Reader
 }
 
-func NewReconciler(apiReader client.Reader, timeProvider *timeprovider.Provider) Reconciler {
+func NewReconciler(apiReader client.Reader, timeProvider *timeprovider.Provider) *reconciler {
 	return &reconciler{
 		apiReader:    apiReader,
 		timeProvider: timeProvider,

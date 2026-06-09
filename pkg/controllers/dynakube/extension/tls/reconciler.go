@@ -24,19 +24,19 @@ const (
 	extensionsSelfSignedTLSCommonNameSuffix = "extension-controller"
 )
 
-type reconciler struct {
+type Reconciler struct {
 	timeProvider *timeprovider.Provider
 	secrets      k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader) *reconciler {
-	return &reconciler{
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
+	return &Reconciler{
 		timeProvider: timeprovider.New(),
 		secrets:      k8ssecret.Query(clt, apiReader),
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
 	ctx, _ = logd.NewFromContext(ctx, "extension-tls")
 
 	if ext := dk.Extensions(); ext.IsAnyEnabled() && ext.NeedsSelfSignedTLS() {
@@ -54,7 +54,7 @@ func (r *reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	return r.deleteSelfSignedTLSSecret(ctx, dk)
 }
 
-func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) reconcileSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
 	_, err := r.secrets.Get(ctx, types.NamespacedName{
 		Name:      dk.Extensions().GetSelfSignedTLSSecretName(),
 		Namespace: dk.Namespace,
@@ -72,7 +72,7 @@ func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context, dk *dynak
 	return nil
 }
 
-func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) deleteSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
 	return r.secrets.Delete(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dk.Extensions().GetSelfSignedTLSSecretName(),
@@ -81,7 +81,7 @@ func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context, dk *dynakube
 	})
 }
 
-func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
 	cert, err := certificates.New(r.timeProvider)
 	if err != nil {
 		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)

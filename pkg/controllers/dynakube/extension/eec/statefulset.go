@@ -82,7 +82,7 @@ func useLegacyMounts(dk *dynakube.DynaKube) bool {
 	return exp.NewFlags(dk.Annotations, false).UseEECLegacyMounts()
 }
 
-func (r *reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
 	appLabels := buildAppLabels(dk)
@@ -131,7 +131,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 	return nil
 }
 
-func (r *reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
+func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	secrets := k8ssecret.Query(r.client, r.client)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{

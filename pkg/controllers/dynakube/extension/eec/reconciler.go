@@ -13,19 +13,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type reconciler struct {
+type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader) *reconciler {
-	return &reconciler{
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
+	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "extension-eec")
 
 	// TODO: Remove as part of ICP-1086

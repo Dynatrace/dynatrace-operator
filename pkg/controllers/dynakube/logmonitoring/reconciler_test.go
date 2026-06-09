@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/mock"
@@ -16,37 +15,36 @@ import (
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
-var anyOAClient = mock.MatchedBy(func(oneagentclient.Client) bool { return true })
 
 func TestReconcile(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("connection-info fail => error", func(t *testing.T) {
-		failOAConnectionInfo := newMockOaConnectionInfoReconciler(t)
-		failOAConnectionInfo.On("Reconcile", anyCtx, anyOAClient, mock.Anything).Return(errors.New("BOOM"))
-		dk := &dynakube.DynaKube{}
 		oaClientMock := oneagentclientmock.NewClient(t)
 		dtClient := &dynatrace.Client{OneAgent: oaClientMock}
+		dk := &dynakube.DynaKube{}
+
+		failOAConnectionInfo := newMockOaConnectionInfoReconciler(t)
+		failOAConnectionInfo.EXPECT().Reconcile(anyCtx, oaClientMock, dk).Return(errors.New("BOOM")).Once()
 		r := Reconciler{
 			oneAgentConnectionInfoReconciler: failOAConnectionInfo,
 		}
 
 		err := r.Reconcile(ctx, dtClient, dk)
 		require.Error(t, err)
-
-		failOAConnectionInfo.AssertCalled(t, "Reconcile", anyCtx, anyOAClient, dk)
 	})
 
 	t.Run("config-secret fail => error", func(t *testing.T) {
-		passOAConnectionInfo := newMockOaConnectionInfoReconciler(t)
-		passOAConnectionInfo.On("Reconcile", anyCtx, anyOAClient, mock.Anything).Return(nil)
+		oaClientMock := oneagentclientmock.NewClient(t)
+		dtClient := &dynatrace.Client{OneAgent: oaClientMock}
 		dk := &dynakube.DynaKube{}
+
+		passOAConnectionInfo := newMockOaConnectionInfoReconciler(t)
+		passOAConnectionInfo.EXPECT().Reconcile(anyCtx, oaClientMock, dk).Return(nil).Once()
 
 		failConfigSecret := newMockSubReconciler(t)
 		failConfigSecret.EXPECT().Reconcile(anyCtx, dk).Return(errors.New("BOOM")).Once()
 
-		oaClientMock := oneagentclientmock.NewClient(t)
-		dtClient := &dynatrace.Client{OneAgent: oaClientMock}
 		r := Reconciler{
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           failConfigSecret,
@@ -57,13 +55,18 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("all reconcilers pass", func(t *testing.T) {
-		passOAConnectionInfo := newMockOaConnectionInfoReconciler(t)
-		passOAConnectionInfo.On("Reconcile", anyCtx, anyOAClient, mock.Anything).Return(nil)
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				LogMonitoring: &logmonitoring.Spec{},
 			},
 		}
+
+		dtClient := &dynatrace.Client{Settings: settings.NewClient(nil)}
+		oaClientMock := oneagentclientmock.NewClient(t)
+		dtClient.OneAgent = oaClientMock
+
+		passOAConnectionInfo := newMockOaConnectionInfoReconciler(t)
+		passOAConnectionInfo.EXPECT().Reconcile(anyCtx, oaClientMock, dk).Return(nil).Once()
 
 		passConfigSecret := newMockSubReconciler(t)
 		passConfigSecret.EXPECT().Reconcile(anyCtx, dk).Return(nil).Once()
@@ -71,13 +74,8 @@ func TestReconcile(t *testing.T) {
 		passDaemonSet := newMockSubReconciler(t)
 		passDaemonSet.EXPECT().Reconcile(anyCtx, dk).Return(nil).Once()
 
-		dtClient := &dynatrace.Client{Settings: settings.NewClient(nil)}
-
 		passLogMonSetting := newMockLogmonsettingsSubReconciler(t)
 		passLogMonSetting.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()
-
-		oaClientMock := oneagentclientmock.NewClient(t)
-		dtClient.OneAgent = oaClientMock
 
 		r := Reconciler{
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,

@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	oaClientPkg "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -20,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -161,7 +159,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		versionReconciler := versionmock.NewReconciler(t)
+		versionReconciler := newMockVersionReconciler(t)
 		versionReconciler.EXPECT().ReconcileOneAgent(anyCtx, &dk, mock.Anything, mock.Anything).Return(errors.New("BOOM")).Once()
 
 		fakeClient := fake.NewClient()
@@ -746,38 +744,17 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 }
 
 func createConnectionInfoReconcilerMock(t *testing.T) connectionInfoReconciler {
-	connInfoReconciler := newMockConnectionInfoReconciler(t)
-	connInfoReconciler.On("Reconcile", anyCtx, mock.Anything, mock.Anything).Return(nil).Once()
-
-	return connInfoReconciler
-}
-
-func createVersionReconcilerMock(t *testing.T) versionReconciler {
-	versionReconciler := versionmock.NewReconciler(t)
-	versionReconciler.EXPECT().ReconcileOneAgent(anyCtx, mock.AnythingOfType("*dynakube.DynaKube"), mock.Anything, mock.Anything).Return(nil).Once()
-
-	return versionReconciler
-}
-
-type mockConnectionInfoReconciler struct {
-	mock.Mock
-}
-
-func newMockConnectionInfoReconciler(t interface {
-	mock.TestingT
-	Cleanup(func())
-}) *mockConnectionInfoReconciler {
-	m := &mockConnectionInfoReconciler{}
-	m.Test(t)
-	t.Cleanup(func() { m.AssertExpectations(t) })
+	m := newMockConnectionInfoReconciler(t)
+	m.EXPECT().Reconcile(anyCtx, mock.Anything, mock.Anything).Return(nil).Once()
 
 	return m
 }
 
-func (m *mockConnectionInfoReconciler) Reconcile(ctx context.Context, oaClient oaClientPkg.Client, dk *dynakube.DynaKube) error {
-	ret := m.Called(ctx, oaClient, dk)
+func createVersionReconcilerMock(t *testing.T) versionReconciler {
+	m := newMockVersionReconciler(t)
+	m.EXPECT().ReconcileOneAgent(anyCtx, mock.AnythingOfType("*dynakube.DynaKube"), mock.Anything, mock.Anything).Return(nil).Once()
 
-	return ret.Error(0)
+	return m
 }
 
 func createTokens() token.Tokens {

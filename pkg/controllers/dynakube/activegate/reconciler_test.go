@@ -18,10 +18,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
-	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -816,13 +814,13 @@ func mockTLSReconcileOnce(t *testing.T) tlsReconciler {
 	return reconciler
 }
 
-func mockVersionReconcileOnce(t *testing.T) version.Reconciler {
+func mockVersionReconcileOnce(t *testing.T) versionReconciler {
 	t.Helper()
 
-	versionReconciler := versionmock.NewReconciler(t)
-	versionReconciler.EXPECT().ReconcileActiveGate(anyCtx, anyDynakube, mock.Anything, mock.Anything).Return(nil).Once()
+	m := newMockVersionReconciler(t)
+	m.EXPECT().ReconcileActiveGate(anyCtx, anyDynakube, mock.Anything, mock.Anything).Return(nil).Once()
 
-	return versionReconciler
+	return m
 }
 
 func createIstioReconcilerMock(t *testing.T) istioReconciler {
