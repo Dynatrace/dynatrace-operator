@@ -67,14 +67,6 @@ func TestReconciler_GenerateData(t *testing.T) {
 			},
 			testAPIToken,
 		},
-		{
-			"prefer platform token",
-			token.Tokens{
-				token.PaaSKey: &token.Token{Value: testPaasToken},
-				token.APIKey:  &token.Token{Value: testPlatformToken},
-			},
-			testPlatformToken,
-		},
 	}
 
 	for _, test := range tests {

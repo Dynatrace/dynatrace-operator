@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -42,6 +43,8 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
 
 	warningDeprecatedVersion = `version field is deprecated. Please use "%s" field instead to set a version.`
+
+	warningDeprecatedVersionIgnored = `version field is deprecated and ignored. Please remove the version field from the DynaKube specification.`
 )
 
 func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -278,10 +281,20 @@ func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube
 	return ""
 }
 
-func deprecatedOneAgentVersionField(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func deprecatedOneAgentVersionField(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	oa := dk.OneAgent()
 
 	if oa.GetCustomVersion() != "" {
+		if dk.FF().IsPublicRegistry() {
+			return warningDeprecatedVersionIgnored
+		}
+
+		// For new DynaKubes (status not yet set), check the token secret directly.
+		hasPlatformToken, err := token.NewReader(dv.apiReader, dk).HasPlatformToken(ctx)
+		if err == nil && hasPlatformToken {
+			return warningDeprecatedVersionIgnored
+		}
+
 		switch {
 		case oa.IsApplicationMonitoringMode():
 			return fmt.Sprintf(warningDeprecatedVersion, "codeModulesImage")

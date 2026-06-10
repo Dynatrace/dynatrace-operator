@@ -64,6 +64,7 @@ operator:
     cpu: 100m
     memory: 128Mi
   startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
+  clientCacheCleanupInterval: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 1h
 
 webhook:
   hostNetwork: false

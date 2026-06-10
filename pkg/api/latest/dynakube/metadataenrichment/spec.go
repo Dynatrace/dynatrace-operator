@@ -1,6 +1,7 @@
 package metadataenrichment
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -10,9 +11,10 @@ const (
 	LabelRule      RuleType = "LABEL"
 	AnnotationRule RuleType = "ANNOTATION"
 
-	K8sLabelRule      RuleType = "K8S_NAMESPACE_LABEL"
-	K8sAnnotationRule RuleType = "K8S_NAMESPACE_ANNOTATION"
-	CustomRule        RuleType = "CUSTOM"
+	K8sNamespaceLabelRule      RuleType = "K8S_NAMESPACE_LABEL"
+	K8sNamespaceAnnotationRule RuleType = "K8S_NAMESPACE_ANNOTATION"
+	// TODO: implement support for this type.
+	CustomRule RuleType = "CUSTOM"
 
 	Annotation         = "metadata.dynatrace.com"
 	Prefix             = Annotation + "/"
@@ -34,10 +36,30 @@ type Spec struct {
 	// The namespaces where you want Dynatrace Operator to inject enrichment.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+
+	// Define resources' requests and limits for the initContainer used for standalone metadata-enrichment.
+	// Only respected when no OneAgent is injected.
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements"
+	InitResources *corev1.ResourceRequirements `json:"initResources,omitempty"`
 }
 
 type Rule struct {
 	Type   RuleType `json:"type,omitempty"`
 	Source string   `json:"source,omitempty"`
 	Target string   `json:"target,omitempty"`
+}
+
+// IsSupportedType returns true if a rule's type should be used for further processing.
+func IsSupportedType(ruleType RuleType) bool {
+	switch ruleType {
+	case LabelRule,
+		AnnotationRule,
+		K8sNamespaceLabelRule,
+		K8sNamespaceAnnotationRule,
+		CustomRule:
+		return true
+	}
+
+	return false
 }

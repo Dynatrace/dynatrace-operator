@@ -28,22 +28,21 @@ type ruleItem struct {
 type ruleItemValue struct {
 	Rules []metadataenrichment.Rule `json:"rules"`
 
-	// If true, use new schema
+	// If this flag is enabled, the client should retry using the new schema
 	UseIngestEnrichmentConfigSchema bool `json:"useIngestEnrichmentConfigSchema"`
 
 	// These fields are embedded into the value instead of part of a rules list, when using the builtin:ingest.enrichment.config schema.
-	// Use a pointer to have a simple discriminator when looking at a response without the context of where it came from.
-	*IngestEnrichmentConfig `json:",inline"`
+	// Group them in a struct for easy emptiness check.
+	ingestEnrichmentConfig
 }
 
-// We cannot unmarshal into unexported embedded fields. Do not use outside this package.
-type IngestEnrichmentConfig struct {
-	Type        string `json:"type"`
-	Target      string `json:"target"`
-	ValueSource string `json:"valueSource"`
+type ingestEnrichmentConfig struct {
+	Type        metadataenrichment.RuleType `json:"type"`
+	Target      string                      `json:"target"`
+	ValueSource string                      `json:"valueSource"`
 }
 
-// GetRules returns metadata enrichment rules with the number of settings objects and their values.
+// GetRules returns metadata enrichment rules.
 func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID string) ([]metadataenrichment.Rule, error) {
 	ctx, log := logd.NewFromContext(ctx, "dtclient-settings")
 
@@ -91,18 +90,16 @@ func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID stri
 	resp = getRulesResponse{}
 
 	if err := c.apiClient.GET(ctx, effectiveValuesPath).WithQueryParams(params).Execute(&resp); err != nil {
-		if !useNewSchema && core.IsNotFound(err) {
-			// Keep the established behavior of not failing when the legacy schema is not available
-			// This covers the managed use-case.
-			log.Info("enrichment settings not available on cluster, skipping getting the enrichment rules", "schemaID", legacyMetadataEnrichmentSchemaID)
-
-			return nil, nil
+		if useNewSchema || !core.IsNotFound(err) {
+			// The error is either not 404 or the user enabled the new schema explicitly. In this case a missing schema is an error.
+			return nil, fmt.Errorf("get rules settings for schema %s: %w", metadataEnrichmentSchemaID, err)
 		}
 
-		// The error is either not 404 or the user enabled the new schema explicitly. In this case a missing schema is an error.
-		log.Info("failed to retrieve enrichment rules")
+		// Keep the established behavior of not failing when the legacy schema is not available
+		// This covers the managed use-case.
+		log.Info("enrichment settings not available on cluster, skipping getting the enrichment rules", "schemaID", legacyMetadataEnrichmentSchemaID)
 
-		return nil, fmt.Errorf("get rules settings: %w", err)
+		return nil, nil
 	}
 
 	rules := getRulesFromResponse(resp)
@@ -128,20 +125,23 @@ func isNewSchemaRequested(resp getRulesResponse) bool {
 func getRulesFromResponse(resp getRulesResponse) []metadataenrichment.Rule {
 	var rules []metadataenrichment.Rule
 
-	// In practice, this loop is only actually required for the new schema where each rule is a separate items.
+	// In practice, this loop is only actually required for the new schema where each rule is a separate item.
 	// The legacy schema put all rules into a single item's value.
 	for _, item := range resp.Items {
-		if cfg := item.Value.IngestEnrichmentConfig; cfg != nil {
+		if cfg := item.Value.ingestEnrichmentConfig; metadataenrichment.IsSupportedType(cfg.Type) {
 			rule := metadataenrichment.Rule{
-				Type:   metadataenrichment.RuleType(cfg.Type),
+				Type:   cfg.Type,
 				Target: cfg.Target,
 				Source: cfg.ValueSource,
 			}
 
 			rules = append(rules, rule)
-		} else {
-			rules = append(rules, item.Value.Rules...)
+
+			continue
 		}
+
+		// Old rules always have supported types
+		rules = append(rules, item.Value.Rules...)
 	}
 
 	return rules

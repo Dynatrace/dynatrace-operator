@@ -126,8 +126,11 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 
 	var mutated bool
 
-	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
-		err := h.oaMutator.Mutate(mutationRequest)
+	oaEnabled := h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest)
+
+	// metaMutator is automatically enabled if oaMutator is enabled, but it can also be enabled standalone
+	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) || oaEnabled {
+		err := h.metaMutator.Mutate(mutationRequest)
 		if err != nil {
 			return false, err
 		}
@@ -135,10 +138,8 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 		mutated = true
 	}
 
-	// metaMutator is automatically enabled if oaMutator is enabled, but it can also be enabled standalone
-	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) ||
-		h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
-		err := h.metaMutator.Mutate(mutationRequest)
+	if oaEnabled {
+		err := h.oaMutator.Mutate(mutationRequest)
 		if err != nil {
 			return false, err
 		}
