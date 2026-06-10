@@ -55,7 +55,7 @@ func oneAgentHaveGeneratedMetadata(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		r := envConfig.Client().Resources()
 
-		q := k8sdaemonset.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{
+		q := k8sdaemonset.NewQuery(ctx, r, client.ObjectKey{
 			Name:      dk.OneAgent().GetDaemonsetName(),
 			Namespace: dk.Namespace,
 		})
@@ -69,7 +69,7 @@ func oneAgentHaveGeneratedMetadata(dk dynakube.DynaKube) features.Func {
 
 func assertGeneratedMetadataFields(ctx context.Context, t *testing.T, resource *resources.Resources) k8sdaemonset.PodConsumer {
 	return func(pod corev1.Pod) {
-		generatedMetadata := metadataenrichment.GetMetadataPropertiesFromPod(ctx, t, resource, pod)
+		generatedMetadata := metadataenrichment.GetNodeMetadataPropertiesFromPod(ctx, t, resource, pod)
 		assert.NotEmpty(t, generatedMetadata, "generated metadata should not be empty")
 		for _, attribute := range expectedMetadataFields {
 			assert.Containsf(t, generatedMetadata, attribute, "generated metadata should contain %s attribute", attribute)
