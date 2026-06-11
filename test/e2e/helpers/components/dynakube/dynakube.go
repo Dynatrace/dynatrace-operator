@@ -55,9 +55,7 @@ func Create(builder *features.FeatureBuilder, level features.Level, tokens tenan
 	if tenant.UsePlatformToken() && testDynakube.Spec.CustomPullSecret == "" {
 		testDynakube.Spec.CustomPullSecret = e2econst.DevRegistryPullSecretName
 	}
-	if !tokens.IsEmpty() {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace))
-	}
+	builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace))
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),
 		level,
@@ -69,9 +67,7 @@ func Update(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
 }
 
 func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, prevDK prevDynakube.DynaKube) {
-	if !tokens.IsEmpty() {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, prevDK.Name, prevDK.Namespace))
-	}
+	builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, prevDK.Name, prevDK.Namespace))
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", prevDK.Name),
 		level,
@@ -136,6 +132,27 @@ func WaitForPhasePreviousVersion(dk prevDynakube.DynaKube, phase status.Deployme
 			return isDynakube && dynakube.Status.Phase == phase
 		}), wait.WithTimeout(timeout))
 
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func VerifyPlatformTokenStatus(builder *features.FeatureBuilder, dk dynakube.DynaKube, expectPlatform bool) {
+	builder.WithStep("verify platform token status", features.LevelAssess, verifyPlatformTokenStatus(dk, expectPlatform))
+}
+
+func verifyPlatformTokenStatus(dk dynakube.DynaKube, expectPlatform bool) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := wait.For(conditions.New(envConfig.Client().Resources()).ResourceMatch(&dk, func(object k8s.Object) bool {
+			current, isDynakube := object.(*dynakube.DynaKube)
+			if !isDynakube {
+				return false
+			}
+			isPlatform := current.Status.APIToken.Platform != nil && *current.Status.APIToken.Platform
+
+			return isPlatform == expectPlatform
+		}), wait.WithTimeout(2*time.Minute))
 		require.NoError(t, err)
 
 		return ctx

@@ -86,11 +86,11 @@ jobs:
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
@@ -131,11 +131,11 @@ jobs:
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           use-platform-token: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
@@ -176,11 +176,11 @@ jobs:
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
@@ -220,11 +220,11 @@ jobs:
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           use-platform-token: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
@@ -265,11 +265,11 @@ jobs:
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()
@@ -309,11 +309,11 @@ jobs:
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           use-platform-token: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
@@ -353,11 +353,11 @@ jobs:
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
       - name: Determine cluster status
         if: failure()

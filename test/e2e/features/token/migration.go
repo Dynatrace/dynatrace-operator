@@ -32,6 +32,7 @@ func FromPlatformToAPIToken(t *testing.T) features.Feature {
 	// trigger manually to not wait 15 minutes until next reconcile
 	componentDynakube.TriggerReconciliation(builder, testDynakube)
 	componentDynakube.VerifyStartup(builder, features.LevelAssess, testDynakube)
+	componentDynakube.VerifyPlatformTokenStatus(builder, testDynakube, false)
 
 	return builder.Feature()
 }
@@ -58,6 +59,7 @@ func FromAPIToPlatformToken(t *testing.T) features.Feature {
 	// trigger manually to not wait 15 minutes until next reconcile
 	componentDynakube.TriggerReconciliation(builder, testDynakube)
 	componentDynakube.VerifyStartup(builder, features.LevelAssess, testDynakube)
+	componentDynakube.VerifyPlatformTokenStatus(builder, testDynakube, true)
 
 	return builder.Feature()
 }

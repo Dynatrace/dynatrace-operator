@@ -14,6 +14,7 @@ apiToken: $TENANT1_APITOKEN
 apiTokenNoSettings: $TENANT1_APITOKEN_NOSETTINGS
 dataIngestToken: $TENANT1_DATAINGESTTOKEN
 platformToken: $TENANT1_PLATFORM_TOKEN
+platformTokenNoSettings: $TENANT1_PLATFORM_TOKEN_NOSETTINGS
 EOF
 
   cat << EOF > multi-tenant.yaml

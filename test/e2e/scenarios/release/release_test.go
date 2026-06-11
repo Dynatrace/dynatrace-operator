@@ -8,6 +8,7 @@ import (
 
 	cloudnativeupgrade "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/upgrade"
 	extensionsupgrade "github.com/Dynatrace/dynatrace-operator/test/e2e/features/extensions/upgrade"
+	tokenupgrade "github.com/Dynatrace/dynatrace-operator/test/e2e/features/token/upgrade"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
@@ -65,4 +66,8 @@ func TestRelease_cloudnative_upgrade(t *testing.T) {
 
 func TestRelease_extensions_upgrade(t *testing.T) {
 	testEnv.Test(t, extensionsupgrade.Feature(t))
+}
+
+func TestRelease_platform_token_upgrade(t *testing.T) {
+	testEnv.Test(t, tokenupgrade.FromAPIToPlatformToken(t))
 }

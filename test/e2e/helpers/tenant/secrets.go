@@ -31,12 +31,13 @@ type Secrets struct {
 }
 
 type Secret struct {
-	TenantUID          string `yaml:"tenantUid"`
-	APIURL             string `yaml:"apiUrl"`
-	APIToken           string `yaml:"apiToken"`
-	DataIngestToken    string `yaml:"dataIngestToken"`
-	APITokenNoSettings string `yaml:"apiTokenNoSettings"`
-	PlatformToken      string `yaml:"platformToken"`
+	TenantUID               string `yaml:"tenantUid"`
+	APIURL                  string `yaml:"apiUrl"`
+	APIToken                string `yaml:"apiToken"`
+	DataIngestToken         string `yaml:"dataIngestToken"`
+	APITokenNoSettings      string `yaml:"apiTokenNoSettings"`
+	PlatformToken           string `yaml:"platformToken"`
+	PlatformTokenNoSettings string `yaml:"platformTokenNoSettings"`
 }
 
 type Tokens struct {
@@ -54,24 +55,19 @@ type EdgeConnectSecret struct {
 }
 
 func (s Secret) TokensWithSettingsScope() Tokens {
-	return s.tokens(true)
-}
-
-func (s Secret) TokensWithoutSettingsScope() Tokens {
-	return s.tokens(false)
-}
-
-func (s Secret) tokens(hasSettingsScope bool) Tokens {
 	if UsePlatformToken() {
 		return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestToken}
 	}
 
-	t := s.APIToken
-	if !hasSettingsScope {
-		t = s.APITokenNoSettings
+	return Tokens{APIToken: s.APIToken, DataIngestToken: s.DataIngestToken}
+}
+
+func (s Secret) TokensWithoutSettingsScope() Tokens {
+	if UsePlatformToken() {
+		return Tokens{APIToken: s.PlatformTokenNoSettings, DataIngestToken: s.DataIngestToken}
 	}
 
-	return Tokens{APIToken: t, DataIngestToken: s.DataIngestToken}
+	return Tokens{APIToken: s.APITokenNoSettings, DataIngestToken: s.DataIngestToken}
 }
 
 func (s Secret) PlatformTokens() Tokens {
@@ -80,10 +76,6 @@ func (s Secret) PlatformTokens() Tokens {
 
 func (s Secret) ClassicTokens() Tokens {
 	return Tokens{APIToken: s.APIToken, DataIngestToken: s.DataIngestToken}
-}
-
-func (t Tokens) IsEmpty() bool {
-	return t.APIToken == "" && t.DataIngestToken == ""
 }
 
 func manyFromConfig(path string) ([]Secret, error) {

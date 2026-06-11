@@ -47,8 +47,8 @@ func OptionalScopes(t *testing.T) features.Feature {
 	builder := features.New("kspm-with-optional-scopes")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	if secretConfig.APITokenNoSettings == "" {
-		t.Skip("skipping test. no token with missing settings scopes provided")
+	if secretConfig.APITokenNoSettings == "" && secretConfig.PlatformTokenNoSettings == "" {
+		t.Skip("skipping test. no tokens with missing settings scopes provided")
 	}
 
 	builder.Setup(componentKspm.DeleteKSPMSettingsFromTenant(secretConfig))

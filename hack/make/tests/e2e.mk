@@ -140,6 +140,9 @@ test/e2e/cloudnative/upgrade:
 test/e2e/extensions/upgrade:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "extensions_upgrade" $(SKIPCLEANUP)
 
+test/e2e/token/upgrade:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "token_upgrade" $(SKIPCLEANUP)
+
 ## Runs DatabaseExecutor related e2e tests
 test/e2e/extensions/dbexecutor:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "extensions_db_executor" $(SKIPCLEANUP)
