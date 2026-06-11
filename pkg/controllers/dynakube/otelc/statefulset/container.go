@@ -17,7 +17,7 @@ const (
 )
 
 func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
-	return corev1.Container{
+	container := corev1.Container{
 		Name:            containerName,
 		Image:           dk.Spec.Templates.OpenTelemetryCollector.ImageRef.String(),
 		ImagePullPolicy: dk.Spec.Templates.OpenTelemetryCollector.ImageRef.GetPullPolicy(),
@@ -26,9 +26,17 @@ func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
 		Args:            buildArgs(dk),
 		VolumeMounts:    buildContainerVolumeMounts(dk),
-		LivenessProbe:   buildLivenessProbe(),
-		ReadinessProbe:  buildReadinessProbe(),
 	}
+
+	// Only enable the probes when we control the configuration.
+	// When using Prometheus extensions, the EEC sends configuration without health checks.
+	// The feature is not GA and may be removed in a future release, so it's an accepted caveat.
+	if dk.TelemetryIngest().IsEnabled() {
+		container.LivenessProbe = buildLivenessProbe()
+		container.ReadinessProbe = buildReadinessProbe()
+	}
+
+	return container
 }
 
 func buildLivenessProbe() *corev1.Probe {
