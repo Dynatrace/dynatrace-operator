@@ -8,11 +8,17 @@ import (
 type RuleType string
 
 const (
-	LabelRule          RuleType = "LABEL"
-	AnnotationRule     RuleType = "ANNOTATION"
-	Annotation         string   = "metadata.dynatrace.com"
-	Prefix                      = Annotation + "/"
-	namespaceKeyPrefix string   = "k8s.namespace."
+	LabelRule      RuleType = "LABEL"
+	AnnotationRule RuleType = "ANNOTATION"
+
+	K8sNamespaceLabelRule      RuleType = "K8S_NAMESPACE_LABEL"
+	K8sNamespaceAnnotationRule RuleType = "K8S_NAMESPACE_ANNOTATION"
+	// TODO: implement support for this type.
+	CustomRule RuleType = "CUSTOM"
+
+	Annotation         = "metadata.dynatrace.com"
+	Prefix             = Annotation + "/"
+	namespaceKeyPrefix = "k8s.namespace."
 )
 
 type MetadataEnrichment struct {
@@ -42,4 +48,18 @@ type Rule struct {
 	Type   RuleType `json:"type,omitempty"`
 	Source string   `json:"source,omitempty"`
 	Target string   `json:"target,omitempty"`
+}
+
+// IsSupportedType returns true if a rule's type should be used for further processing.
+func IsSupportedType(ruleType RuleType) bool {
+	switch ruleType {
+	case LabelRule,
+		AnnotationRule,
+		K8sNamespaceLabelRule,
+		K8sNamespaceAnnotationRule,
+		CustomRule:
+		return true
+	}
+
+	return false
 }

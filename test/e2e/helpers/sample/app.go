@@ -35,6 +35,10 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+const (
+	InitContainerName = "dynatrace-operator"
+)
+
 var (
 	defaultNameTemplate        = "sample-%s"
 	podTemplatePath            = filepath.Join(project.TestDataDir(), "sample-app/pod-base.yaml")
@@ -175,6 +179,14 @@ func WithImagePullSecret(secretName string) Option {
 
 func (app *App) Name() string {
 	return app.base.Name
+}
+
+func (app *App) Kind() string {
+	if app.isDeployment {
+		return "deployment"
+	}
+
+	return "pod"
 }
 
 func (app *App) ContainerName() string {
@@ -388,6 +400,19 @@ func (app *App) GetPod(ctx context.Context, t *testing.T, resource *resources.Re
 	require.NotEmpty(t, pods.Items)
 
 	return pods.Items[0]
+}
+
+func (app *App) GetInitContainer(ctx context.Context, t *testing.T, resource *resources.Resources, name string) corev1.Container {
+	t.Helper()
+	pod := app.GetPod(ctx, t, resource)
+	for _, c := range pod.Spec.InitContainers {
+		if c.Name == name {
+			return c
+		}
+	}
+	require.Failf(t, "init container not found", "no init container named %q in pod %s", name, pod.Name)
+
+	return corev1.Container{}
 }
 
 func (app *App) Restart() features.Func {

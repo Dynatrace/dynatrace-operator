@@ -7,6 +7,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/deploymentproperties"
@@ -44,7 +46,7 @@ type connectionReconciler interface {
 }
 
 type versionReconciler interface {
-	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, imageClient dtimage.Client, versionClient dtversion.Client) error
 }
 type pullSecretReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error
@@ -83,6 +85,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		authTokenReconciler:        authtoken.NewReconciler(clt, apiReader),
 		istioReconciler:            istio.NewReconciler(clt, apiReader),
 		connectionReconciler:       agconnectioninfo.NewReconciler(clt, apiReader),
+		versionReconciler:          version.NewReconciler(apiReader, timeprovider.New().Freeze()),
 		pullSecretReconciler:       dtpullsecret.NewReconciler(clt, apiReader),
 		customPropertiesReconciler: customproperties.NewReconciler(clt, apiReader),
 		statefulsetReconciler:      statefulset.NewReconciler(clt, apiReader),
@@ -122,12 +125,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return err
 	}
 
-	versionReconciler := r.versionReconciler
-	if versionReconciler == nil {
-		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Images, dtClient.Version, timeprovider.New().Freeze())
-	}
-
-	err = versionReconciler.ReconcileActiveGate(ctx, dk)
+	err = r.versionReconciler.ReconcileActiveGate(ctx, dk, dtClient.Images, dtClient.Version)
 	if err != nil {
 		return err
 	}
