@@ -218,10 +218,10 @@ func TestNoCSI_pgc_with_fullstack(t *testing.T) {
 	testEnv.Test(t, bootstrapper.PGCWithCloudNativeFullStack(t))
 }
 
-func TestNoCSI_host_monitoring_pgc(t *testing.T) {
-	testEnv.Test(t, hostmonitoring.PGCWithHostMonitoring(t))
+func TestNoCSI_host_agent_pgc_host_monitoring(t *testing.T) {
+	testEnv.Test(t, hostmonitoring.HostAgentPGC(t))
 }
 
-func TestNoCSI_pgc_with_cloudnative_hostagent(t *testing.T) {
-	testEnv.Test(t, cloudnative.PGCWithHostAgent(t))
+func TestNoCSI_host_agent_pgc_cloudnative(t *testing.T) {
+	testEnv.Test(t, cloudnative.HostAgentPGC(t))
 }
