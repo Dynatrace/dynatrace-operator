@@ -56,13 +56,13 @@ func TestProbes(t *testing.T) {
 		assert.Nil(t, container.ReadinessProbe)
 	})
 
-	t.Run("disable with EEC prometheus and telemetryingest", func(t *testing.T) {
+	t.Run("enabled with EEC prometheus and telemetryingest", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
 		container := getContainer(dk, 1)
-		assert.Nil(t, container.LivenessProbe)
-		assert.Nil(t, container.ReadinessProbe)
+		assert.NotNil(t, container.LivenessProbe)
+		assert.NotNil(t, container.ReadinessProbe)
 	})
 }
 

@@ -28,9 +28,10 @@ func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 		VolumeMounts:    buildContainerVolumeMounts(dk),
 	}
 
-	// It seems like EEC doesn't send the health probe config to OTELC, so disable the probes for it.
-	// The EEC + prometheus is not GA and may be removed in a future release, so it's an accepted caveat.
-	if !dk.Extensions().IsPrometheusEnabled() {
+	// Only enable the probes when we control the configuration.
+	// When using Prometheus extensions, the EEC sends configuration without health checks.
+	// The feature is not GA and may be removed in a future release, so it's an accepted caveat.
+	if dk.TelemetryIngest().IsEnabled() {
 		container.LivenessProbe = buildLivenessProbe()
 		container.ReadinessProbe = buildReadinessProbe()
 	}
