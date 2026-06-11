@@ -17,7 +17,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		updater := NewMockStatusUpdater(t)
@@ -34,7 +34,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("set source and probe at the end, if invalid custom image", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		updater := NewMockStatusUpdater(t)
@@ -49,7 +49,7 @@ func TestRun(t *testing.T) {
 	})
 	t.Run("autoUpdate disabled, runs if status is empty or source changes", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		updater := newDefaultUpdater(t, false)
@@ -85,7 +85,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("autoUpdate disabled, runs if status custom-version is set", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		updater := newCustomVersionUpdater(t, false)
@@ -112,7 +112,7 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		updater := NewMockStatusUpdater(t)
@@ -133,7 +133,7 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		updater := NewMockStatusUpdater(t)
@@ -148,7 +148,7 @@ func TestRun(t *testing.T) {
 	})
 	t.Run("public registry: happy path, status updated", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		imageInfo := &image.Info{URI: "registry.io/dynatrace/oneagent:1.2.3", Tag: "1.2.3"}
@@ -169,7 +169,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("public registry: API error propagated, status not updated", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		updater := newPublicRegistryUpdater(t, true)
@@ -184,7 +184,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("public registry: downgrade detected, image not updated", func(t *testing.T) {
 		target := &status.VersionStatus{ImageID: "registry.io/oneagent:1.3.0", Version: "1.3.0"}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		imageInfo := &image.Info{URI: "registry.io/dynatrace/oneagent:1.2.0", Tag: "1.2.0"}
@@ -203,7 +203,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("public registry: empty tag, ValidateStatus fails", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := reconciler{
+		versionReconciler := Reconciler{
 			timeProvider: timeProvider,
 		}
 		imageInfo := &image.Info{URI: "registry.io/dynatrace/oneagent@sha256:abc123", Tag: ""}

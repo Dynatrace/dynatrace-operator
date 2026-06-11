@@ -16,9 +16,7 @@ import (
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -27,8 +25,6 @@ import (
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
-	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -230,18 +226,19 @@ func TestReconciler(t *testing.T) {
 			},
 		})
 
-		fakeReconciler := createReconcilerMock(t)
-		fakeVersionReconciler := createVersionReconcilerMock(t)
-
 		oneAgentClient := oneagentclientmock.NewClient(t)
 		settingsClient := settingsmock.NewClient(t)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient}
 
+		fakeConnInfoReconciler := newMockConnectionInfoReconciler(t)
+		fakeConnInfoReconciler.EXPECT().Reconcile(anyCtx, oneAgentClient, dk).Return(nil).Once()
+		fakeVersionReconciler := createVersionReconcilerMock(t)
+
 		rec := NewReconciler(boomClient, boomClient)
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
-		rec.connectionInfoReconciler = fakeReconciler
+		rec.connectionInfoReconciler = fakeConnInfoReconciler
 		rec.versionReconciler = fakeVersionReconciler
 
 		err := rec.Reconcile(t.Context(), dtClient, dk)
@@ -261,8 +258,8 @@ func TestRemoveAppInjection(t *testing.T) {
 	rec := createReconciler(clt)
 
 	rec.versionReconciler = createVersionReconcilerMock(t)
-	rec.connectionInfoReconciler = createReconcilerMock(t)
-	rec.enrichmentRulesReconciler = createReconcilerMock(t)
+	rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
+	rec.enrichmentRulesReconciler = createEnrichmentRulesReconcilerMock(t)
 	rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
 	setCodeModulesInjectionCreatedCondition(dk.Conditions())
@@ -295,10 +292,10 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
-		versionReconciler := createVersionReconcilerMock(t)
-		connectionInfoReconciler := createReconcilerMock(t)
+		rec.versionReconciler = createVersionReconcilerMock(t)
+		rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler)
+		err := rec.setupOneAgentInjection(t.Context(), dk, &dynatrace.Client{})
 		require.NoError(t, err)
 	})
 
@@ -310,10 +307,10 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
-		versionReconciler := createVersionReconcilerMock(t)
-		connectionInfoReconciler := createReconcilerMock(t)
+		rec.versionReconciler = createVersionReconcilerMock(t)
+		rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler)
+		err := rec.setupOneAgentInjection(t.Context(), dk, &dynatrace.Client{})
 		require.NoError(t, err)
 	})
 
@@ -325,10 +322,10 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
-		versionReconciler := createVersionReconcilerMock(t)
-		connectionInfoReconciler := createReconcilerMock(t)
+		rec.versionReconciler = createVersionReconcilerMock(t)
+		rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler)
+		err := rec.setupOneAgentInjection(t.Context(), dk, &dynatrace.Client{})
 		require.NoError(t, err)
 	})
 
@@ -340,10 +337,10 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.istioReconciler = createIstioReconcilerMock(t, dk)
 
-		versionReconciler := createVersionReconcilerMock(t)
-		connectionInfoReconciler := createReconcilerMock(t)
+		rec.versionReconciler = createVersionReconcilerMock(t)
+		rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(t.Context(), dk, versionReconciler, connectionInfoReconciler)
+		err := rec.setupOneAgentInjection(t.Context(), dk, &dynatrace.Client{})
 		require.NoError(t, err)
 	})
 }
@@ -357,9 +354,9 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		})
 		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
-		enrichmentRulesReconciler := createReconcilerMock(t)
+		rec.enrichmentRulesReconciler = createEnrichmentRulesReconcilerMock(t)
 
-		err := rec.setupEnrichmentInjection(t.Context(), dk, enrichmentRulesReconciler)
+		err := rec.setupEnrichmentInjection(t.Context(), dk, nil)
 		require.NoError(t, err)
 	})
 
@@ -371,9 +368,9 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		})
 		dk.Spec.MetadataEnrichment.Enabled = new(true)
 
-		enrichmentRulesReconciler := createReconcilerMock(t)
+		rec.enrichmentRulesReconciler = createEnrichmentRulesReconcilerMock(t)
 
-		err := rec.setupEnrichmentInjection(t.Context(), dk, enrichmentRulesReconciler)
+		err := rec.setupEnrichmentInjection(t.Context(), dk, nil)
 		require.NoError(t, err)
 	})
 }
@@ -804,18 +801,25 @@ func assertSecretNotFound(t *testing.T, clt client.Client, secretName string, se
 	assert.True(t, k8serrors.IsNotFound(err), "%s.%s secret, unexpected error: %s", secretName, secretNamespace, err)
 }
 
-func createReconcilerMock(t *testing.T) controllers.Reconciler {
-	connectionInfoReconciler := controllermock.NewReconciler(t)
-	connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
+func createConnectionInfoReconcilerMock(t *testing.T) connectionInfoReconciler {
+	m := newMockConnectionInfoReconciler(t)
+	m.EXPECT().Reconcile(anyCtx, mock.Anything, mock.Anything).Return(nil).Once()
 
-	return connectionInfoReconciler
+	return m
 }
 
-func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
-	versionReconciler := versionmock.NewReconciler(t)
-	versionReconciler.EXPECT().ReconcileCodeModules(anyCtx, mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+func createEnrichmentRulesReconcilerMock(t *testing.T) enrichmentRulesReconciler {
+	m := newMockEnrichmentRulesReconciler(t)
+	m.EXPECT().Reconcile(anyCtx, mock.Anything, mock.Anything).Return(nil).Once()
 
-	return versionReconciler
+	return m
+}
+
+func createVersionReconcilerMock(t *testing.T) versionReconciler {
+	m := newMockVersionReconciler(t)
+	m.EXPECT().ReconcileCodeModules(anyCtx, mock.AnythingOfType("*dynakube.DynaKube"), mock.Anything, mock.Anything).Return(nil).Once()
+
+	return m
 }
 
 func createIstioReconcilerMock(t *testing.T, dk *dynakube.DynaKube) istioReconciler {

@@ -211,6 +211,26 @@ test/e2e/usepublicregistry/activegate:
 test/e2e/usepublicregistry/codemodules:
 	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_codemodules" $(SKIPCLEANUP)
 
+
+test/e2e/resourceattributes:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes" $(SKIPCLEANUP)
+
+test/e2e/resourceattributes/logmononly:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_logmon_only" $(SKIPCLEANUP)
+
+test/e2e/resourceattributes/metadataonly:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_metadata_only" $(SKIPCLEANUP)
+
+test/e2e/resourceattributes/oneagent:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_oneagent" $(SKIPCLEANUP)
+
+test/e2e/resourceattributes/otlp:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_otlp" $(SKIPCLEANUP)
+
+test/e2e/resourceattributes/combined:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_combined" $(SKIPCLEANUP)
+
+
 ## Runs SupportArchive e2e test only
 test/e2e/supportarchive:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "support_archive" $(SKIPCLEANUP)

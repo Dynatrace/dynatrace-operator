@@ -302,7 +302,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		dk.Spec.Extensions.Databases[0].Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 		clt := fakeClient()
 
-		require.NoError(t, NewReconciler(clt, clt, dk).Reconcile(t.Context()))
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
 		deployments := &appsv1.DeploymentList{}
 		require.NoError(t, clt.List(t.Context(), deployments))
 		require.Len(t, deployments.Items, 1)
@@ -345,9 +345,9 @@ func requireReconcileFails(t *testing.T, dk *dynakube.DynaKube, builder *fake.Cl
 		WithScheme(scheme.Scheme).
 		WithObjects(dk).
 		Build()
-	reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
+	reconciler := NewReconciler(mockK8sClient, mockK8sClient)
 
-	err := reconciler.Reconcile(t.Context())
+	err := reconciler.Reconcile(t.Context(), dk)
 	require.Error(t, err)
 	require.True(t, k8serrors.IsInternalError(err))
 	require.True(t, meta.IsStatusConditionFalse(dk.Status.Conditions, conditionType), meta.FindStatusCondition(dk.Status.Conditions, conditionType))
@@ -357,7 +357,7 @@ func getReconciledDeployment(t *testing.T, clt client.Client, dk *dynakube.DynaK
 	t.Cleanup(version.DisableCacheForTest(123))
 	t.Helper()
 
-	require.NoError(t, NewReconciler(clt, clt, dk).Reconcile(t.Context()))
+	require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
 	deployments := &appsv1.DeploymentList{}
 	require.NoError(t, clt.List(t.Context(), deployments))
 	if len(deployments.Items) == 0 {

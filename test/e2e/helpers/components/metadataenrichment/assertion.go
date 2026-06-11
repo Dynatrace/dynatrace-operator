@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	MetadataFile   = "/var/lib/dynatrace/enrichment/dt_metadata.json"
-	PropertiesFile = "/var/lib/dynatrace/enrichment/dt_node_metadata.properties"
+	MetadataFile       = "/var/lib/dynatrace/enrichment/dt_metadata.json"
+	PropertiesFile     = "/var/lib/dynatrace/enrichment/dt_metadata.properties"
+	NodePropertiesFile = "/var/lib/dynatrace/enrichment/dt_node_metadata.properties"
 )
 
 type Metadata struct {
@@ -40,8 +41,18 @@ func GetMetadataJSONFromPod(ctx context.Context, t *testing.T, resource *resourc
 	return enrichmentMetadata
 }
 
+func GetRawMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) []byte {
+	return readMetadataFile(ctx, t, resource, enrichedPod, MetadataFile)
+}
+
 func GetMetadataPropertiesFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {
 	properties := readMetadataFile(ctx, t, resource, enrichedPod, PropertiesFile)
+
+	return parseProperties(string(properties))
+}
+
+func GetNodeMetadataPropertiesFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {
+	properties := readMetadataFile(ctx, t, resource, enrichedPod, NodePropertiesFile)
 
 	return parseProperties(string(properties))
 }

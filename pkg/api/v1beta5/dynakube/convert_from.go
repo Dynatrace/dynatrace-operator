@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/telemetryingest"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -29,6 +30,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.fromOneAgentSpec(src)
 	dst.fromActiveGateSpec(src)
 	dst.fromTemplatesSpec(src)
+	dst.fromTelemetryIngestSpec(src)
 
 	return nil
 }
@@ -290,4 +292,16 @@ func fromAppInjectSpec(src oneagentlatest.AppInjectionSpec) *oneagent.AppInjecti
 func (dst *DynaKube) fromMetadataEnrichment(src *dynakubelatest.DynaKube) {
 	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
+}
+
+func (dst *DynaKube) fromTelemetryIngestSpec(src *dynakubelatest.DynaKube) {
+	if src.Spec.TelemetryIngest != nil {
+		dst.Spec.TelemetryIngest = &telemetryingest.Spec{
+			ServiceName: src.Spec.TelemetryIngest.ServiceName,
+			TLSRefName:  src.Spec.TelemetryIngest.TLSRefName,
+			Protocols:   src.Spec.TelemetryIngest.Protocols,
+		}
+	} else {
+		dst.Spec.TelemetryIngest = nil
+	}
 }

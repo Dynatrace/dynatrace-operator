@@ -196,21 +196,36 @@ func compareWebhookResult(t *testing.T, clt client.Client, version, name string,
 		assert.NoError(t, clt.Delete(context.Background(), oldObj))
 	})
 
-	expectData, err := os.ReadFile(filepath.Join("testdata", "latest-"+name+".yaml"))
+	// Sanity check to reduce chances of human error
+	require.NotContains(t, seen, oldObj.GroupVersionKind().String(), "duplicate entry")
+	seen.Insert(oldObj.GroupVersionKind().String())
+
+	// Path forward: a served version is stored as the Hub (latest) version.
+	latestObj := getConvertedObject(t, clt, oldObj, "latest-"+name+".yaml")
+	require.NotEqual(t, oldObj.GroupVersionKind(), latestObj.GroupVersionKind())
+
+	// Path backward: reading the object back in its served version exercises
+	// ConvertFrom (Hub -> spoke), where silently dropped fields - like
+	// spec.telemetryIngest used to be - would otherwise go unnoticed.
+	backObj := getConvertedObject(t, clt, oldObj, version+"-"+name+".converted.yaml")
+	require.Equal(t, oldObj.GroupVersionKind(), backObj.GroupVersionKind())
+}
+
+// getConvertedObject reads the stored object in the version declared by the
+// golden file, clears server-managed fields and asserts it matches the file.
+func getConvertedObject(t *testing.T, clt client.Client, srcObj *unstructured.Unstructured, expectedFile string) *unstructured.Unstructured {
+	t.Helper()
+
+	expectData, err := os.ReadFile(filepath.Join("testdata", expectedFile))
 	require.NoError(t, err)
 
 	expectObj := &unstructured.Unstructured{}
 	require.NoError(t, yaml.Unmarshal(expectData, &expectObj.Object))
 
-	// Sanity checks to reduce chances of human error
-	require.NotEqual(t, expectObj.GroupVersionKind(), oldObj.GroupVersionKind())
-	require.NotContains(t, seen, oldObj.GroupVersionKind().String(), "duplicate entry")
-	seen.Insert(oldObj.GroupVersionKind().String())
-
 	gotObj := &unstructured.Unstructured{}
 	gotObj.SetGroupVersionKind(expectObj.GroupVersionKind())
 
-	require.NoError(t, clt.Get(t.Context(), client.ObjectKeyFromObject(oldObj), gotObj))
+	require.NoError(t, clt.Get(t.Context(), client.ObjectKeyFromObject(srcObj), gotObj))
 	// Clear server-side fields for comparison
 	gotObj.SetCreationTimestamp(metav1.Time{})
 	gotObj.SetGeneration(0)
@@ -222,6 +237,8 @@ func compareWebhookResult(t *testing.T, clt client.Client, version, name string,
 	require.NoError(t, err)
 
 	assert.Equal(t, string(expectData), string(gotData))
+
+	return gotObj
 }
 
 func readTestData(t *testing.T, version, name string) *unstructured.Unstructured {
