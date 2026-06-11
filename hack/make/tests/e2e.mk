@@ -181,17 +181,13 @@ test/e2e/bootstrapper/pgc-fullstack-no-csi:
 
 ## Runs PGC bootstrapper and host agent tests for CloudNativeFullStack (both CSI and no-CSI)
 test/e2e/bootstrapper/pgc-fullstack:
-	RC=0; \
-	make test/e2e/bootstrapper/pgc-fullstack-csi || RC=1; \
-	make test/e2e/bootstrapper/pgc-fullstack-no-csi || RC=1; \
-	exit $$RC
+	$(MAKE) test/e2e/bootstrapper/pgc-fullstack-csi && \
+	$(MAKE) test/e2e/bootstrapper/pgc-fullstack-no-csi
 
 ## Runs PGC e2e tests for all OneAgent modes (HostMonitoring and CloudNativeFullStack)
 test/e2e/pgc:
-	RC=0; \
-	make test/e2e/bootstrapper/pgc-fullstack || RC=1; \
-	make test/e2e/hostmonitoring/pgc || RC=1; \
-	exit $$RC
+	$(MAKE) test/e2e/bootstrapper/pgc-fullstack && \
+	$(MAKE) test/e2e/hostmonitoring/pgc
 
 ## Runs public registry images e2e test only
 test/e2e/publicregistry:
@@ -270,10 +266,8 @@ test/e2e/hostmonitoring/pgc-no-csi:
 
 ## Runs Host Monitoring PGC e2e tests for both CSI and no-CSI
 test/e2e/hostmonitoring/pgc:
-	RC=0; \
-	make test/e2e/hostmonitoring/pgc-csi || RC=1; \
-	make test/e2e/hostmonitoring/pgc-no-csi || RC=1; \
-	exit $$RC
+	$(MAKE) test/e2e/hostmonitoring/pgc-csi && \
+	$(MAKE) test/e2e/hostmonitoring/pgc-no-csi
 
 ## Runs CloudNativeFullStack host agent PGC with CSI e2e test only
 test/e2e/cloudnative/pgc-hostagent-csi:
@@ -285,10 +279,8 @@ test/e2e/cloudnative/pgc-hostagent-no-csi:
 
 ## Runs CloudNativeFullStack host agent PGC e2e tests for both CSI and no-CSI
 test/e2e/cloudnative/pgc-hostagent:
-	RC=0; \
-	make test/e2e/cloudnative/pgc-hostagent-csi || RC=1; \
-	make test/e2e/cloudnative/pgc-hostagent-no-csi || RC=1; \
-	exit $$RC
+	$(MAKE) test/e2e/cloudnative/pgc-hostagent-csi && \
+	$(MAKE) test/e2e/cloudnative/pgc-hostagent-no-csi
 
 ## Runs CloudNative default e2e test only
 test/e2e/cloudnative/withoutcsi:
