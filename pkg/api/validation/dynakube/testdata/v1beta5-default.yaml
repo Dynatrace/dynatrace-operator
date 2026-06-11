@@ -129,6 +129,13 @@ spec:
 
   extensions: {}
 
+  telemetryIngest:
+    serviceName: telemetry-ingest-service-name
+    tlsRefName: telemetry-ingest-tls-secret-name
+    protocols:
+      - zipkin
+      - otlp
+
   templates:
     logMonitoring:
       labels:
