@@ -228,7 +228,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
-						{Type: metadataenrichment.K8sLabelRule, Source: "env", Target: "custom.env"},
+						{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "env", Target: "custom.env"},
 					},
 				},
 			},
@@ -251,7 +251,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
-						{Type: metadataenrichment.K8sLabelRule, Source: "env"},
+						{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "env"},
 					},
 				},
 			},
@@ -259,7 +259,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		attrs.applyEnrichmentRules(ns, dk)
 
-		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.K8sLabelRule), "env")
+		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.K8sNamespaceLabelRule), "env")
 		assert.Equal(t, "production", attrs.rules[expectedKey])
 		assert.Empty(t, attrs.rulesPropagate)
 	})
@@ -275,7 +275,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
-						{Type: metadataenrichment.K8sAnnotationRule, Source: "team", Target: "team.name"},
+						{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "team", Target: "team.name"},
 					},
 				},
 			},
@@ -293,7 +293,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
-						{Type: metadataenrichment.K8sLabelRule, Source: "missing-label"},
+						{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "missing-label"},
 					},
 				},
 			},

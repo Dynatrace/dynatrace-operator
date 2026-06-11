@@ -47,9 +47,9 @@ func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.D
 		)
 
 		switch rule.Type {
-		case metadataenrichment.LabelRule, metadataenrichment.K8sLabelRule:
+		case metadataenrichment.LabelRule, metadataenrichment.K8sNamespaceLabelRule:
 			valueFromNamespace, exists = namespace.Labels[rule.Source]
-		case metadataenrichment.AnnotationRule, metadataenrichment.K8sAnnotationRule:
+		case metadataenrichment.AnnotationRule, metadataenrichment.K8sNamespaceAnnotationRule:
 			valueFromNamespace, exists = namespace.Annotations[rule.Source]
 		case metadataenrichment.CustomRule:
 			if len(rule.Target) == 0 {
