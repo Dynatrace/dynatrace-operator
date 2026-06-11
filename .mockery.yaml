@@ -33,7 +33,6 @@ packages:
           pkgname: "{{.SrcPackageName}}"
           structname: "{{.Mock}}{{.InterfaceName}}"
           filename: "mock_{{.InterfaceName | snakecase}}_test.go"
-      Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube:
     config:
       dir: "{{.InterfaceDir}}"
@@ -58,6 +57,7 @@ packages:
     interfaces:
       subReconciler:
       logmonsettingsSubReconciler:
+      oaConnectionInfoReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection:
     config:
       dir: "{{.InterfaceDir}}"
@@ -66,6 +66,18 @@ packages:
       filename: "mock_reconcilers_test.go"
     interfaces:
       istioReconciler:
+      versionReconciler:
+      connectionInfoReconciler:
+      enrichmentRulesReconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{.SrcPackageName}}"
+      structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
+      filename: "mock_reconcilers_test.go"
+    interfaces:
+      versionReconciler:
+      connectionInfoReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
     config:
       dir: "{{.InterfaceDir}}"
@@ -80,6 +92,7 @@ packages:
       statefulsetReconciler:
       customPropertiesReconciler:
       tlsReconciler:
+      versionReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
@@ -119,9 +132,6 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect:
     interfaces:
       Client:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers:
-    interfaces:
-      Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:

@@ -7,7 +7,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	oaClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/metadata/rules"
@@ -27,13 +30,25 @@ type istioReconciler interface {
 	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
+type versionReconciler interface {
+	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, imageClient dtimage.Client, versionClient dtversion.Client) error
+}
+
+type connectionInfoReconciler interface {
+	Reconcile(ctx context.Context, oaClient oaClient.Client, dk *dynakube.DynaKube) error
+}
+
+type enrichmentRulesReconciler interface {
+	Reconcile(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error
+}
+
 type Reconciler struct {
 	client                    client.Client
 	apiReader                 client.Reader
 	istioReconciler           istioReconciler
-	versionReconciler         version.Reconciler
-	connectionInfoReconciler  controllers.Reconciler
-	enrichmentRulesReconciler controllers.Reconciler
+	versionReconciler         versionReconciler
+	connectionInfoReconciler  connectionInfoReconciler
+	enrichmentRulesReconciler enrichmentRulesReconciler
 }
 
 func NewReconciler(
@@ -41,9 +56,12 @@ func NewReconciler(
 	apiReader client.Reader,
 ) *Reconciler {
 	return &Reconciler{
-		client:          client,
-		apiReader:       apiReader,
-		istioReconciler: istio.NewReconciler(client, apiReader),
+		client:                    client,
+		apiReader:                 apiReader,
+		istioReconciler:           istio.NewReconciler(client, apiReader),
+		versionReconciler:         version.NewReconciler(apiReader, timeprovider.New().Freeze()),
+		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader),
+		enrichmentRulesReconciler: rules.NewReconciler(),
 	}
 }
 
@@ -92,27 +110,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, 
 }
 
 func (r *Reconciler) reconcileSubReconcilers(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
-	versionReconciler := r.versionReconciler
-	if versionReconciler == nil {
-		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Images, dtClient.Version, timeprovider.New().Freeze())
-	}
-
-	connectionInfoReconciler := r.connectionInfoReconciler
-	if connectionInfoReconciler == nil {
-		connectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient.OneAgent, dk)
-	}
-
-	enrichmentRulesReconciler := r.enrichmentRulesReconciler
-	if enrichmentRulesReconciler == nil {
-		enrichmentRulesReconciler = rules.NewReconciler(dtClient.Settings, dk)
-	}
-
 	var setupErrors []error
-	if err := r.setupOneAgentInjection(ctx, dk, versionReconciler, connectionInfoReconciler); err != nil {
+	if err := r.setupOneAgentInjection(ctx, dk, dtClient); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
-	if err := r.setupEnrichmentInjection(ctx, dk, enrichmentRulesReconciler); err != nil {
+	if err := r.setupEnrichmentInjection(ctx, dk, dtClient.Settings); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
@@ -159,15 +162,15 @@ func (r *Reconciler) unmap(ctx context.Context, dk *dynakube.DynaKube) {
 	}
 }
 
-func (r *Reconciler) setupOneAgentInjection(ctx context.Context, dk *dynakube.DynaKube, versionReconciler version.Reconciler, connectionInfoReconciler controllers.Reconciler) error {
+func (r *Reconciler) setupOneAgentInjection(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client) error {
 	log := logd.FromContext(ctx)
 
-	err := versionReconciler.ReconcileCodeModules(ctx, dk)
+	err := r.versionReconciler.ReconcileCodeModules(ctx, dk, dtClient.Images, dtClient.Version)
 	if err != nil {
 		return err
 	}
 
-	err = connectionInfoReconciler.Reconcile(ctx)
+	err = r.connectionInfoReconciler.Reconcile(ctx, dtClient.OneAgent, dk)
 	if err != nil {
 		return err
 	}
@@ -216,10 +219,10 @@ func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1
 	return nil
 }
 
-func (r *Reconciler) setupEnrichmentInjection(ctx context.Context, dk *dynakube.DynaKube, enrichmentRulesReconciler controllers.Reconciler) error {
+func (r *Reconciler) setupEnrichmentInjection(ctx context.Context, dk *dynakube.DynaKube, settingsClient dtsettings.Client) error {
 	log := logd.FromContext(ctx)
 
-	err := enrichmentRulesReconciler.Reconcile(ctx)
+	err := r.enrichmentRulesReconciler.Reconcile(ctx, settingsClient, dk)
 	if err != nil {
 		log.Info("couldn't reconcile metadata-enrichment rules")
 

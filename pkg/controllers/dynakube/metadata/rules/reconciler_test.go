@@ -31,9 +31,9 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKube()
 		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
-		reconciler := NewReconciler(nil, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, nil, &dk)
 
 		require.NoError(t, err)
 	})
@@ -45,9 +45,9 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, "TESTING")
 
 		dtClient := settingsmock.NewClient(t)
-		reconciler := NewReconciler(dtClient, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, dtClient, &dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -60,9 +60,9 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
 
 		dtClient := settingsmock.NewClient(t)
-		reconciler := NewReconciler(dtClient, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, dtClient, &dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -84,12 +84,10 @@ func TestReconcile(t *testing.T) {
 		futureTime := timeprovider.New()
 		futureTime.Set(time.Now().Add(time.Hour))
 		reconciler := Reconciler{
-			dtClient:     dtClient,
-			dk:           &dk,
 			timeProvider: futureTime,
 		}
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, dtClient, &dk)
 
 		require.NoError(t, err)
 		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
@@ -106,9 +104,9 @@ func TestReconcile(t *testing.T) {
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
-		reconciler := NewReconciler(dtClient, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, dtClient, &dk)
 
 		require.NoError(t, err)
 		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
@@ -127,9 +125,9 @@ func TestReconcile(t *testing.T) {
 		}
 
 		dtClient := settingsmock.NewClient(t)
-		reconciler := NewReconciler(dtClient, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, dtClient, &dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -141,9 +139,9 @@ func TestReconcile(t *testing.T) {
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, errors.New("BOOM"))
-		reconciler := NewReconciler(dtClient, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, dtClient, &dk)
 
 		require.Error(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -155,9 +153,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("no update if optional scope missing", func(t *testing.T) {
 		dk := createDynaKube()
 		dtClient := settingsmock.NewClient(t)
-		reconciler := NewReconciler(dtClient, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, dtClient, &dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -173,9 +171,9 @@ func TestReconcile(t *testing.T) {
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, &core.HTTPError{StatusCode: 403})
-		reconciler := NewReconciler(dtClient, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, dtClient, &dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
