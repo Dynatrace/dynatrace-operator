@@ -183,7 +183,7 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 	builder.Assess("create registry pull secret in sample namespace",
-		copyDevRegistrySecret(sampleNamespace.Name))
+		CopyDevRegistrySecret(sampleNamespace.Name))
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
@@ -196,10 +196,10 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 	return builder.Feature()
 }
 
-// copyDevRegistrySecret copies the devregistry pull secret from the operator
+// CopyDevRegistrySecret copies the devregistry pull secret from the operator
 // namespace into the sample namespace so the user's pod can authenticate to
 // the registry when imagePullSecrets references it.
-func copyDevRegistrySecret(targetNamespace string) features.Func {
+func CopyDevRegistrySecret(targetNamespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 

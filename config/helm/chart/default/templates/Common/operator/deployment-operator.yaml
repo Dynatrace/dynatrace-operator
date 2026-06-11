@@ -123,6 +123,10 @@ spec:
             - name: DT_CLIENT_LOG_LEVEL
               value: {{ . }}
             {{- end }}
+            {{- if .Values.operator.clientCacheCleanupInterval }}
+            - name: DT_CLIENT_CACHE_CLEAN_INTERVAL
+              value: "{{ .Values.operator.clientCacheCleanupInterval }}"
+            {{- end }}
             {{- if .Values.enableInsecurePprofEndpoint }}
             - name: PPROF_BIND_ADDRESS
               value: ":6060"

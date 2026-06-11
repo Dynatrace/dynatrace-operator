@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	oaClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
@@ -23,13 +23,17 @@ type logmonsettingsSubReconciler interface {
 	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
 }
 
+type oaConnectionInfoReconciler interface {
+	Reconcile(ctx context.Context, oaClient oaClient.Client, dk *dynakube.DynaKube) error
+}
+
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
 
 	configSecretReconciler           subReconciler
 	daemonsetReconciler              subReconciler
-	oneAgentConnectionInfoReconciler controllers.Reconciler
+	oneAgentConnectionInfoReconciler oaConnectionInfoReconciler
 	logmonsettingsReconciler         logmonsettingsSubReconciler
 }
 
@@ -38,21 +42,17 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		client:    clt,
 		apiReader: apiReader,
 
-		configSecretReconciler:   configsecret.NewReconciler(clt, apiReader),
-		daemonsetReconciler:      daemonset.NewReconciler(clt, apiReader),
-		logmonsettingsReconciler: logmonsettings.NewReconciler(),
+		configSecretReconciler:           configsecret.NewReconciler(clt, apiReader),
+		daemonsetReconciler:              daemonset.NewReconciler(clt, apiReader),
+		logmonsettingsReconciler:         logmonsettings.NewReconciler(),
+		oneAgentConnectionInfoReconciler: oaconnectioninfo.NewReconciler(clt, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	ctx, _ = logd.NewFromContext(ctx, "dynakube-logmonitoring")
 
-	oaConnectionInfoReconciler := r.oneAgentConnectionInfoReconciler
-	if oaConnectionInfoReconciler == nil {
-		oaConnectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient.OneAgent, dk)
-	}
-
-	err := oaConnectionInfoReconciler.Reconcile(ctx)
+	err := r.oneAgentConnectionInfoReconciler.Reconcile(ctx, dtClient.OneAgent, dk)
 	if err != nil {
 		return err
 	}

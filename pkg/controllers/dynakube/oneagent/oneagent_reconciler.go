@@ -12,6 +12,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	oaClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -44,11 +47,11 @@ const (
 )
 
 type connectionInfoReconciler interface {
-	Reconcile(ctx context.Context) error
+	Reconcile(ctx context.Context, oaClient oaClient.Client, dk *dynakube.DynaKube) error
 }
 
 type versionReconciler interface {
-	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, imageClient dtimage.Client, versionClient dtversion.Client) error
 }
 
 // NewReconciler initializes a new Reconciler instance
@@ -58,11 +61,13 @@ func NewReconciler(
 	clusterID string,
 ) *Reconciler {
 	return &Reconciler{
-		client:    client,
-		apiReader: apiReader,
-		clusterID: clusterID,
-		configmap: k8sconfigmap.Query(client, apiReader),
-		daemonset: k8sdaemonset.Query(client, apiReader),
+		client:                   client,
+		apiReader:                apiReader,
+		clusterID:                clusterID,
+		configmap:                k8sconfigmap.Query(client, apiReader),
+		daemonset:                k8sdaemonset.Query(client, apiReader),
+		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader),
+		versionReconciler:        version.NewReconciler(apiReader, timeprovider.New().Freeze()),
 	}
 }
 
@@ -88,22 +93,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 	ctx, log := logd.NewFromContext(ctx, "dynakube-oneagent")
 	log.Info("reconciling OneAgent")
 
-	versionReconciler := r.versionReconciler
-	if versionReconciler == nil {
-		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Images, dtClient.Version, timeprovider.New().Freeze())
-	}
-
-	connectionInfoReconciler := r.connectionInfoReconciler
-	if connectionInfoReconciler == nil {
-		connectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient.OneAgent, dk)
-	}
-
-	err := versionReconciler.ReconcileOneAgent(ctx, dk)
+	err := r.versionReconciler.ReconcileOneAgent(ctx, dk, dtClient.Images, dtClient.Version)
 	if err != nil {
 		return err
 	}
 
-	err = connectionInfoReconciler.Reconcile(ctx)
+	err = r.connectionInfoReconciler.Reconcile(ctx, dtClient.OneAgent, dk)
 	if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) { // This only informational
 		log.Info("OneAgents are not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
 

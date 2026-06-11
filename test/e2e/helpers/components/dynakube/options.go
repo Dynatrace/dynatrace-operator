@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -143,6 +144,58 @@ func WithActiveGateReplicas(replicas *int32) Option {
 func WithMetadataEnrichment() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.MetadataEnrichment.Enabled = new(true)
+	}
+}
+
+func WithResourceAttributes(attrs map[string]string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.ResourceAttributes = attrs
+	}
+}
+
+func WithOneAgentAdditionalResourceAttributes(attrs map[string]string) Option {
+	return func(dk *dynakube.DynaKube) {
+		switch {
+		case dk.OneAgent().IsCloudNativeFullstackMode():
+			dk.Spec.OneAgent.CloudNativeFullStack.AdditionalResourceAttributes = attrs
+		case dk.OneAgent().IsApplicationMonitoringMode():
+			dk.Spec.OneAgent.ApplicationMonitoring.AdditionalResourceAttributes = attrs
+		case dk.OneAgent().IsHostMonitoringMode():
+			dk.Spec.OneAgent.HostMonitoring.AdditionalResourceAttributes = attrs
+		case dk.OneAgent().IsClassicFullStackMode():
+			dk.Spec.OneAgent.ClassicFullStack.AdditionalResourceAttributes = attrs
+		}
+	}
+}
+
+func WithOTLPAdditionalResourceAttributes(attrs map[string]string) Option {
+	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.OTLPExporterConfiguration == nil {
+			dk.Spec.OTLPExporterConfiguration = &otlp.ExporterConfigurationSpec{}
+		}
+		dk.Spec.OTLPExporterConfiguration.AdditionalResourceAttributes = attrs
+	}
+}
+
+func WithNameBasedOTLPNamespaceSelector() Option {
+	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.OTLPExporterConfiguration == nil {
+			dk.Spec.OTLPExporterConfiguration = &otlp.ExporterConfigurationSpec{}
+		}
+		dk.Spec.OTLPExporterConfiguration.NamespaceSelector = metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"otlp-inject": dk.Name,
+			},
+		}
+	}
+}
+
+func WithOTLPSignals(signals otlp.SignalConfiguration) Option {
+	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.OTLPExporterConfiguration == nil {
+			dk.Spec.OTLPExporterConfiguration = &otlp.ExporterConfigurationSpec{}
+		}
+		dk.Spec.OTLPExporterConfiguration.Signals = signals
 	}
 }
 

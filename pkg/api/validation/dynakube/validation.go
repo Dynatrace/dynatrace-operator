@@ -68,6 +68,9 @@ var (
 		invalidOneAgentResourceAttributesSanitization,
 		invalidOTLPResourceAttributesSanitization,
 		publicRegistryOverrideWithoutPublicRegistry,
+		invalidNetworkZone,
+		invalidOneAgentHostGroup,
+		publicRegistryNotAllowedForClassic,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -77,6 +80,7 @@ var (
 		deprecatedAutoUpdate,
 		deprecatedOneAgentVersionField,
 		deprecatedFeatureFlag,
+		unknownFeatureFlag,
 		ignoredOtelCollectorTemplate,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,

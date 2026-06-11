@@ -13,6 +13,7 @@ import (
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	metadataenrichmentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -22,6 +23,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -245,6 +248,48 @@ func TestConvertFrom(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, to.Spec.OneAgent.HostGroup, from.Spec.OneAgent.HostGroup)
+	})
+
+	t.Run("migrate telemetryIngest from latest to v1beta5", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Spec.TelemetryIngest = &telemetryingestlatest.Spec{
+			ServiceName: "telemetry-ingest-service-name",
+			TLSRefName:  "telemetry-ingest-tls-secret-name",
+			Protocols:   []otelcgen.Protocol{"protocol1", "protocol2"},
+		}
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		require.NotNil(t, to.Spec.TelemetryIngest)
+		assert.Equal(t, from.Spec.TelemetryIngest.ServiceName, to.Spec.TelemetryIngest.ServiceName)
+		assert.Equal(t, from.Spec.TelemetryIngest.TLSRefName, to.Spec.TelemetryIngest.TLSRefName)
+		assert.Equal(t, from.Spec.TelemetryIngest.Protocols, to.Spec.TelemetryIngest.Protocols)
+	})
+
+	t.Run("telemetryIngest round-trip preserves spec via v1beta5", func(t *testing.T) {
+		original := DynaKube{
+			Spec: DynaKubeSpec{
+				APIURL: "api-url",
+				TelemetryIngest: &telemetryingest.Spec{
+					ServiceName: "telemetry-ingest-service-name",
+					TLSRefName:  "telemetry-ingest-tls-secret-name",
+					Protocols:   []otelcgen.Protocol{"protocol1", "protocol2"},
+				},
+			},
+		}
+
+		hub := dynakubelatest.DynaKube{}
+		require.NoError(t, original.ConvertTo(&hub))
+
+		roundTripped := DynaKube{}
+		require.NoError(t, roundTripped.ConvertFrom(&hub))
+
+		require.NotNil(t, roundTripped.Spec.TelemetryIngest)
+		assert.Equal(t, original.Spec.TelemetryIngest.ServiceName, roundTripped.Spec.TelemetryIngest.ServiceName)
+		assert.Equal(t, original.Spec.TelemetryIngest.TLSRefName, roundTripped.Spec.TelemetryIngest.TLSRefName)
+		assert.Equal(t, original.Spec.TelemetryIngest.Protocols, roundTripped.Spec.TelemetryIngest.Protocols)
 	})
 }
 

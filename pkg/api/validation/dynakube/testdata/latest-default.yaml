@@ -123,6 +123,12 @@ spec:
     value: proxy-value
     valueFrom: proxy-from
   skipCertCheck: true
+  telemetryIngest:
+    protocols:
+    - zipkin
+    - otlp
+    serviceName: telemetry-ingest-service-name
+    tlsRefName: telemetry-ingest-tls-secret-name
   templates:
     extensionExecutionController:
       annotations:
