@@ -18,6 +18,7 @@ func HostAgentPGC(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
+		componentDynakube.WithActiveGate(),
 		componentDynakube.WithCloudNativeSpec(DefaultCloudNativeSpec()),
 	)
 

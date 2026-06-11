@@ -269,7 +269,7 @@ func getPGCSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 func getPGCSecretFileMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      pgcSecretVolumeName,
-		MountPath: csiStorageVolumeMount + "/opt/agent/conf/" + bootstrapperconfig.DeclarativeInputFileName,
+		MountPath: csiStorageVolumeMount + "/opt/agent/conf/",
 		SubPath:   bootstrapperconfig.DeclarativeInputFileName,
 		ReadOnly:  true,
 	}

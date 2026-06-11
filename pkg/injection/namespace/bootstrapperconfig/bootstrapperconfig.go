@@ -245,7 +245,7 @@ func NeedsDownloadConfig(dk *dynakube.DynaKube) bool {
 }
 
 func NeedsPGC(dk *dynakube.DynaKube) bool {
-	return !dk.OneAgent().IsClassiFullStackMode()
+	return dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsHostMonitoringMode()
 }
 
 // generateCerts gets the necessary info they create the init certs secret data
