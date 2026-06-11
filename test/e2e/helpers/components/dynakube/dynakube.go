@@ -139,21 +139,15 @@ func WaitForPhasePreviousVersion(dk prevDynakube.DynaKube, phase status.Deployme
 }
 
 func VerifyPlatformTokenStatus(builder *features.FeatureBuilder, dk dynakube.DynaKube, expectPlatform bool) {
-	builder.WithStep("verify platform token status", features.LevelAssess, verifyPlatformTokenStatus(dk, expectPlatform))
+	builder.WithStep("verify platform token status", features.LevelAssess, assert(dk, func(current *dynakube.DynaKube) bool {
+		return current.Status.APIToken.Platform != nil && *current.Status.APIToken.Platform == expectPlatform
+	}))
 }
 
-func verifyPlatformTokenStatus(dk dynakube.DynaKube, expectPlatform bool) features.Func {
+func assert(dk dynakube.DynaKube, check func(*dynakube.DynaKube) bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := wait.For(conditions.New(envConfig.Client().Resources()).ResourceMatch(&dk, func(object k8s.Object) bool {
-			current, isDynakube := object.(*dynakube.DynaKube)
-			if !isDynakube {
-				return false
-			}
-			isPlatform := current.Status.APIToken.Platform != nil && *current.Status.APIToken.Platform
-
-			return isPlatform == expectPlatform
-		}), wait.WithTimeout(2*time.Minute))
-		require.NoError(t, err)
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &dk))
+		require.True(t, check(&dk))
 
 		return ctx
 	}
