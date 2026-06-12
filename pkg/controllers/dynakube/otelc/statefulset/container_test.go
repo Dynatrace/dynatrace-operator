@@ -38,6 +38,32 @@ func TestProbes(t *testing.T) {
 		assert.EqualValues(t, 2, probe.TimeoutSeconds)
 		assert.EqualValues(t, 1, probe.SuccessThreshold)
 	})
+
+	t.Run("enable with telemetryIngest", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
+
+		container := getContainer(dk, 1)
+		assert.NotNil(t, container.LivenessProbe)
+		assert.NotNil(t, container.ReadinessProbe)
+	})
+
+	t.Run("disable with EEC prometheus", func(t *testing.T) {
+		dk := getTestDynakubeWithExtensions()
+
+		container := getContainer(dk, 1)
+		assert.Nil(t, container.LivenessProbe)
+		assert.Nil(t, container.ReadinessProbe)
+	})
+
+	t.Run("enabled with EEC prometheus and telemetryingest", func(t *testing.T) {
+		dk := getTestDynakubeWithExtensions()
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
+
+		container := getContainer(dk, 1)
+		assert.NotNil(t, container.LivenessProbe)
+		assert.NotNil(t, container.ReadinessProbe)
+	})
 }
 
 func TestContainer(t *testing.T) {

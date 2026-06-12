@@ -1,6 +1,7 @@
 package k8senv
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -24,6 +25,11 @@ const (
 	defaultDTClientCacheCleanInterval = time.Hour
 	minDTClientCacheCleanInterval     = 5 * time.Minute
 	maxDTClientCacheCleanInterval     = 100 * time.Hour
+
+	DefaultRequeueAfterEnvVar = "DT_DEFAULT_REQUEUE_AFTER"
+	defaultRequeueInterval    = 15 * time.Minute
+	minRequeueInterval        = time.Minute
+	maxRequeueInterval        = time.Hour
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
@@ -102,7 +108,35 @@ func GetCSIDataDir() string {
 	return os.Getenv(CSIDataDir)
 }
 
-func GetDTClientCacheCleanInterval(log logd.Logger) time.Duration {
+func GetDefaultRequeueAfter(ctx context.Context) time.Duration {
+	_, log := logd.NewFromContext(ctx, "k8senv")
+
+	rawDuration := os.Getenv(DefaultRequeueAfterEnvVar)
+	if rawDuration == "" {
+		log.Debug("no custom env set, using default", "env", DefaultRequeueAfterEnvVar, "default", defaultRequeueInterval)
+
+		return defaultRequeueInterval
+	}
+
+	duration, err := time.ParseDuration(rawDuration)
+	if err != nil {
+		log.Error(err, "failed to parse default requeue interval, fallback to", "duration", rawDuration)
+
+		return defaultRequeueInterval
+	}
+
+	if duration < minRequeueInterval || duration > maxRequeueInterval {
+		log.Info("requeueAfter from env is not in the allowed range, using default", "env", DefaultRequeueAfterEnvVar, "value", duration, "min", minRequeueInterval, "max", maxRequeueInterval, "default", defaultRequeueInterval)
+
+		return defaultRequeueInterval
+	}
+
+	return duration
+}
+
+func GetDTClientCacheCleanInterval(ctx context.Context) time.Duration {
+	_, log := logd.NewFromContext(ctx, "k8senv")
+
 	rawDuration := os.Getenv(DTClientCacheCleanInterval)
 	if rawDuration == "" {
 		log.Debug("no custom env set, using default", "env", DTClientCacheCleanInterval, "default", defaultDTClientCacheCleanInterval)

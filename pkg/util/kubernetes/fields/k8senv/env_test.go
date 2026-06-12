@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -223,7 +222,7 @@ func TestGetDTClientCacheCleanInterval(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv(DTClientCacheCleanInterval, tt.envValue)
-			assert.Equal(t, tt.want, GetDTClientCacheCleanInterval(logd.Logger{}))
+			assert.Equal(t, tt.want, GetDTClientCacheCleanInterval(t.Context()))
 		})
 	}
 }
@@ -233,4 +232,45 @@ func TestNewRef(t *testing.T) {
 		assert.Equal(t, "$(K8S_PODNAME)", NewRef("K8S_PODNAME"))
 		assert.Equal(t, "$(MY_VAR)", NewRef("MY_VAR"))
 	})
+}
+
+func TestGetDefaultRequeueAfter(t *testing.T) {
+	tests := []struct {
+		name     string
+		envValue string
+		want     time.Duration
+	}{
+		{
+			name:     "valid duration returns parsed value",
+			envValue: "17m",
+			want:     17 * time.Minute,
+		},
+		{
+			name:     "empty env var returns default",
+			envValue: "",
+			want:     defaultRequeueInterval,
+		},
+		{
+			name:     "invalid duration returns default",
+			envValue: "not-a-duration",
+			want:     defaultRequeueInterval,
+		},
+		{
+			name:     "duration below minimum returns default",
+			envValue: "1s",
+			want:     defaultRequeueInterval,
+		},
+		{
+			name:     "duration above maximum returns default",
+			envValue: "2h",
+			want:     defaultRequeueInterval,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(DefaultRequeueAfterEnvVar, tt.envValue)
+			assert.Equal(t, tt.want, GetDefaultRequeueAfter(t.Context()))
+		})
+	}
 }
