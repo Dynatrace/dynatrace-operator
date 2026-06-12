@@ -67,7 +67,7 @@ type mockConnectionInfoReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - oaClient oneagent.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockConnectionInfoReconciler_Expecter) Reconcile(ctx interface{}, oaClient interface{}, dk interface{}) *mockConnectionInfoReconciler_Reconcile_Call {
+func (_e *mockConnectionInfoReconciler_Expecter) Reconcile(ctx any, oaClient any, dk any) *mockConnectionInfoReconciler_Reconcile_Call {
 	return &mockConnectionInfoReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, oaClient, dk)}
 }
 
@@ -158,7 +158,7 @@ type mockVersionReconciler_ReconcileOneAgent_Call struct {
 //   - dk *dynakube.DynaKube
 //   - imageClient image.Client
 //   - versionClient version.Client
-func (_e *mockVersionReconciler_Expecter) ReconcileOneAgent(ctx interface{}, dk interface{}, imageClient interface{}, versionClient interface{}) *mockVersionReconciler_ReconcileOneAgent_Call {
+func (_e *mockVersionReconciler_Expecter) ReconcileOneAgent(ctx any, dk any, imageClient any, versionClient any) *mockVersionReconciler_ReconcileOneAgent_Call {
 	return &mockVersionReconciler_ReconcileOneAgent_Call{Call: _e.mock.On("ReconcileOneAgent", ctx, dk, imageClient, versionClient)}
 }
 

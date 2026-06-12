@@ -75,7 +75,7 @@ type Client_CreateKSPMSetting_Call struct {
 //   - ctx context.Context
 //   - monitoredEntity string
 //   - datasetPipelineEnabled bool
-func (_e *Client_Expecter) CreateKSPMSetting(ctx interface{}, monitoredEntity interface{}, datasetPipelineEnabled interface{}) *Client_CreateKSPMSetting_Call {
+func (_e *Client_Expecter) CreateKSPMSetting(ctx any, monitoredEntity any, datasetPipelineEnabled any) *Client_CreateKSPMSetting_Call {
 	return &Client_CreateKSPMSetting_Call{Call: _e.mock.On("CreateKSPMSetting", ctx, monitoredEntity, datasetPipelineEnabled)}
 }
 
@@ -148,7 +148,7 @@ type Client_CreateLogMonitoringSetting_Call struct {
 //   - scope string
 //   - clusterName string
 //   - matchers []logmonitoring.IngestRuleMatchers
-func (_e *Client_Expecter) CreateLogMonitoringSetting(ctx interface{}, scope interface{}, clusterName interface{}, matchers interface{}) *Client_CreateLogMonitoringSetting_Call {
+func (_e *Client_Expecter) CreateLogMonitoringSetting(ctx any, scope any, clusterName any, matchers any) *Client_CreateLogMonitoringSetting_Call {
 	return &Client_CreateLogMonitoringSetting_Call{Call: _e.mock.On("CreateLogMonitoringSetting", ctx, scope, clusterName, matchers)}
 }
 
@@ -224,7 +224,7 @@ type Client_CreateOrUpdateKubernetesAppSetting_Call struct {
 // CreateOrUpdateKubernetesAppSetting is a helper method to define mock.On call
 //   - ctx context.Context
 //   - scope string
-func (_e *Client_Expecter) CreateOrUpdateKubernetesAppSetting(ctx interface{}, scope interface{}) *Client_CreateOrUpdateKubernetesAppSetting_Call {
+func (_e *Client_Expecter) CreateOrUpdateKubernetesAppSetting(ctx any, scope any) *Client_CreateOrUpdateKubernetesAppSetting_Call {
 	return &Client_CreateOrUpdateKubernetesAppSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesAppSetting", ctx, scope)}
 }
 
@@ -292,7 +292,7 @@ type Client_CreateOrUpdateKubernetesSetting_Call struct {
 //   - clusterLabel string
 //   - kubeSystemUUID string
 //   - scope string
-func (_e *Client_Expecter) CreateOrUpdateKubernetesSetting(ctx interface{}, clusterLabel interface{}, kubeSystemUUID interface{}, scope interface{}) *Client_CreateOrUpdateKubernetesSetting_Call {
+func (_e *Client_Expecter) CreateOrUpdateKubernetesSetting(ctx any, clusterLabel any, kubeSystemUUID any, scope any) *Client_CreateOrUpdateKubernetesSetting_Call {
 	return &Client_CreateOrUpdateKubernetesSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesSetting", ctx, clusterLabel, kubeSystemUUID, scope)}
 }
 
@@ -359,7 +359,7 @@ type Client_DeleteSettings_Call struct {
 // DeleteSettings is a helper method to define mock.On call
 //   - ctx context.Context
 //   - settingsID string
-func (_e *Client_Expecter) DeleteSettings(ctx interface{}, settingsID interface{}) *Client_DeleteSettings_Call {
+func (_e *Client_Expecter) DeleteSettings(ctx any, settingsID any) *Client_DeleteSettings_Call {
 	return &Client_DeleteSettings_Call{Call: _e.mock.On("DeleteSettings", ctx, settingsID)}
 }
 
@@ -425,7 +425,7 @@ type Client_GetK8sClusterME_Call struct {
 // GetK8sClusterME is a helper method to define mock.On call
 //   - ctx context.Context
 //   - kubeSystemUUID string
-func (_e *Client_Expecter) GetK8sClusterME(ctx interface{}, kubeSystemUUID interface{}) *Client_GetK8sClusterME_Call {
+func (_e *Client_Expecter) GetK8sClusterME(ctx any, kubeSystemUUID any) *Client_GetK8sClusterME_Call {
 	return &Client_GetK8sClusterME_Call{Call: _e.mock.On("GetK8sClusterME", ctx, kubeSystemUUID)}
 }
 
@@ -491,7 +491,7 @@ type Client_GetKSPMSettings_Call struct {
 // GetKSPMSettings is a helper method to define mock.On call
 //   - ctx context.Context
 //   - monitoredEntity string
-func (_e *Client_Expecter) GetKSPMSettings(ctx interface{}, monitoredEntity interface{}) *Client_GetKSPMSettings_Call {
+func (_e *Client_Expecter) GetKSPMSettings(ctx any, monitoredEntity any) *Client_GetKSPMSettings_Call {
 	return &Client_GetKSPMSettings_Call{Call: _e.mock.On("GetKSPMSettings", ctx, monitoredEntity)}
 }
 
@@ -560,7 +560,7 @@ type Client_GetRules_Call struct {
 //   - ctx context.Context
 //   - kubeSystemUUID string
 //   - entityID string
-func (_e *Client_Expecter) GetRules(ctx interface{}, kubeSystemUUID interface{}, entityID interface{}) *Client_GetRules_Call {
+func (_e *Client_Expecter) GetRules(ctx any, kubeSystemUUID any, entityID any) *Client_GetRules_Call {
 	return &Client_GetRules_Call{Call: _e.mock.On("GetRules", ctx, kubeSystemUUID, entityID)}
 }
 
@@ -631,7 +631,7 @@ type Client_GetSettingsForLogModule_Call struct {
 // GetSettingsForLogModule is a helper method to define mock.On call
 //   - ctx context.Context
 //   - monitoredEntity string
-func (_e *Client_Expecter) GetSettingsForLogModule(ctx interface{}, monitoredEntity interface{}) *Client_GetSettingsForLogModule_Call {
+func (_e *Client_Expecter) GetSettingsForLogModule(ctx any, monitoredEntity any) *Client_GetSettingsForLogModule_Call {
 	return &Client_GetSettingsForLogModule_Call{Call: _e.mock.On("GetSettingsForLogModule", ctx, monitoredEntity)}
 }
 
@@ -698,7 +698,7 @@ type Client_GetSettingsForMonitoredEntity_Call struct {
 //   - ctx context.Context
 //   - monitoredEntity settings.K8sClusterME
 //   - schemaID string
-func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx interface{}, monitoredEntity interface{}, schemaID interface{}) *Client_GetSettingsForMonitoredEntity_Call {
+func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx any, monitoredEntity any, schemaID any) *Client_GetSettingsForMonitoredEntity_Call {
 	return &Client_GetSettingsForMonitoredEntity_Call{Call: _e.mock.On("GetSettingsForMonitoredEntity", ctx, monitoredEntity, schemaID)}
 }
 

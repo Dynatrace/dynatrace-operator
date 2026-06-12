@@ -82,7 +82,7 @@ type PodInterface_Apply_Call struct {
 //   - ctx context.Context
 //   - pod *v1.PodApplyConfiguration
 //   - opts v10.ApplyOptions
-func (_e *PodInterface_Expecter) Apply(ctx interface{}, pod interface{}, opts interface{}) *PodInterface_Apply_Call {
+func (_e *PodInterface_Expecter) Apply(ctx any, pod any, opts any) *PodInterface_Apply_Call {
 	return &PodInterface_Apply_Call{Call: _e.mock.On("Apply", ctx, pod, opts)}
 }
 
@@ -156,7 +156,7 @@ type PodInterface_ApplyStatus_Call struct {
 //   - ctx context.Context
 //   - pod *v1.PodApplyConfiguration
 //   - opts v10.ApplyOptions
-func (_e *PodInterface_Expecter) ApplyStatus(ctx interface{}, pod interface{}, opts interface{}) *PodInterface_ApplyStatus_Call {
+func (_e *PodInterface_Expecter) ApplyStatus(ctx any, pod any, opts any) *PodInterface_ApplyStatus_Call {
 	return &PodInterface_ApplyStatus_Call{Call: _e.mock.On("ApplyStatus", ctx, pod, opts)}
 }
 
@@ -219,7 +219,7 @@ type PodInterface_Bind_Call struct {
 //   - ctx context.Context
 //   - binding *v11.Binding
 //   - opts v10.CreateOptions
-func (_e *PodInterface_Expecter) Bind(ctx interface{}, binding interface{}, opts interface{}) *PodInterface_Bind_Call {
+func (_e *PodInterface_Expecter) Bind(ctx any, binding any, opts any) *PodInterface_Bind_Call {
 	return &PodInterface_Bind_Call{Call: _e.mock.On("Bind", ctx, binding, opts)}
 }
 
@@ -293,7 +293,7 @@ type PodInterface_Create_Call struct {
 //   - ctx context.Context
 //   - pod *v11.Pod
 //   - opts v10.CreateOptions
-func (_e *PodInterface_Expecter) Create(ctx interface{}, pod interface{}, opts interface{}) *PodInterface_Create_Call {
+func (_e *PodInterface_Expecter) Create(ctx any, pod any, opts any) *PodInterface_Create_Call {
 	return &PodInterface_Create_Call{Call: _e.mock.On("Create", ctx, pod, opts)}
 }
 
@@ -356,7 +356,7 @@ type PodInterface_Delete_Call struct {
 //   - ctx context.Context
 //   - name string
 //   - opts v10.DeleteOptions
-func (_e *PodInterface_Expecter) Delete(ctx interface{}, name interface{}, opts interface{}) *PodInterface_Delete_Call {
+func (_e *PodInterface_Expecter) Delete(ctx any, name any, opts any) *PodInterface_Delete_Call {
 	return &PodInterface_Delete_Call{Call: _e.mock.On("Delete", ctx, name, opts)}
 }
 
@@ -419,7 +419,7 @@ type PodInterface_DeleteCollection_Call struct {
 //   - ctx context.Context
 //   - opts v10.DeleteOptions
 //   - listOpts v10.ListOptions
-func (_e *PodInterface_Expecter) DeleteCollection(ctx interface{}, opts interface{}, listOpts interface{}) *PodInterface_DeleteCollection_Call {
+func (_e *PodInterface_Expecter) DeleteCollection(ctx any, opts any, listOpts any) *PodInterface_DeleteCollection_Call {
 	return &PodInterface_DeleteCollection_Call{Call: _e.mock.On("DeleteCollection", ctx, opts, listOpts)}
 }
 
@@ -481,7 +481,7 @@ type PodInterface_Evict_Call struct {
 // Evict is a helper method to define mock.On call
 //   - ctx context.Context
 //   - eviction *v1beta1.Eviction
-func (_e *PodInterface_Expecter) Evict(ctx interface{}, eviction interface{}) *PodInterface_Evict_Call {
+func (_e *PodInterface_Expecter) Evict(ctx any, eviction any) *PodInterface_Evict_Call {
 	return &PodInterface_Evict_Call{Call: _e.mock.On("Evict", ctx, eviction)}
 }
 
@@ -538,7 +538,7 @@ type PodInterface_EvictV1_Call struct {
 // EvictV1 is a helper method to define mock.On call
 //   - ctx context.Context
 //   - eviction *v12.Eviction
-func (_e *PodInterface_Expecter) EvictV1(ctx interface{}, eviction interface{}) *PodInterface_EvictV1_Call {
+func (_e *PodInterface_Expecter) EvictV1(ctx any, eviction any) *PodInterface_EvictV1_Call {
 	return &PodInterface_EvictV1_Call{Call: _e.mock.On("EvictV1", ctx, eviction)}
 }
 
@@ -595,7 +595,7 @@ type PodInterface_EvictV1beta1_Call struct {
 // EvictV1beta1 is a helper method to define mock.On call
 //   - ctx context.Context
 //   - eviction *v1beta1.Eviction
-func (_e *PodInterface_Expecter) EvictV1beta1(ctx interface{}, eviction interface{}) *PodInterface_EvictV1beta1_Call {
+func (_e *PodInterface_Expecter) EvictV1beta1(ctx any, eviction any) *PodInterface_EvictV1beta1_Call {
 	return &PodInterface_EvictV1beta1_Call{Call: _e.mock.On("EvictV1beta1", ctx, eviction)}
 }
 
@@ -664,7 +664,7 @@ type PodInterface_Get_Call struct {
 //   - ctx context.Context
 //   - name string
 //   - opts v10.GetOptions
-func (_e *PodInterface_Expecter) Get(ctx interface{}, name interface{}, opts interface{}) *PodInterface_Get_Call {
+func (_e *PodInterface_Expecter) Get(ctx any, name any, opts any) *PodInterface_Get_Call {
 	return &PodInterface_Get_Call{Call: _e.mock.On("Get", ctx, name, opts)}
 }
 
@@ -728,7 +728,7 @@ type PodInterface_GetLogs_Call struct {
 // GetLogs is a helper method to define mock.On call
 //   - name string
 //   - opts *v11.PodLogOptions
-func (_e *PodInterface_Expecter) GetLogs(name interface{}, opts interface{}) *PodInterface_GetLogs_Call {
+func (_e *PodInterface_Expecter) GetLogs(name any, opts any) *PodInterface_GetLogs_Call {
 	return &PodInterface_GetLogs_Call{Call: _e.mock.On("GetLogs", name, opts)}
 }
 
@@ -796,7 +796,7 @@ type PodInterface_List_Call struct {
 // List is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts v10.ListOptions
-func (_e *PodInterface_Expecter) List(ctx interface{}, opts interface{}) *PodInterface_List_Call {
+func (_e *PodInterface_Expecter) List(ctx any, opts any) *PodInterface_List_Call {
 	return &PodInterface_List_Call{Call: _e.mock.On("List", ctx, opts)}
 }
 
@@ -874,9 +874,9 @@ type PodInterface_Patch_Call struct {
 //   - data []byte
 //   - opts v10.PatchOptions
 //   - subresources ...string
-func (_e *PodInterface_Expecter) Patch(ctx interface{}, name interface{}, pt interface{}, data interface{}, opts interface{}, subresources ...interface{}) *PodInterface_Patch_Call {
+func (_e *PodInterface_Expecter) Patch(ctx any, name any, pt any, data any, opts any, subresources ...any) *PodInterface_Patch_Call {
 	return &PodInterface_Patch_Call{Call: _e.mock.On("Patch",
-		append([]interface{}{ctx, name, pt, data, opts}, subresources...)...)}
+		append([]any{ctx, name, pt, data, opts}, subresources...)...)}
 }
 
 func (_c *PodInterface_Patch_Call) Run(run func(ctx context.Context, name string, pt types.PatchType, data []byte, opts v10.PatchOptions, subresources ...string)) *PodInterface_Patch_Call {
@@ -959,7 +959,7 @@ type PodInterface_ProxyGet_Call struct {
 //   - port string
 //   - path string
 //   - params map[string]string
-func (_e *PodInterface_Expecter) ProxyGet(scheme interface{}, name interface{}, port interface{}, path interface{}, params interface{}) *PodInterface_ProxyGet_Call {
+func (_e *PodInterface_Expecter) ProxyGet(scheme any, name any, port any, path any, params any) *PodInterface_ProxyGet_Call {
 	return &PodInterface_ProxyGet_Call{Call: _e.mock.On("ProxyGet", scheme, name, port, path, params)}
 }
 
@@ -1043,7 +1043,7 @@ type PodInterface_Update_Call struct {
 //   - ctx context.Context
 //   - pod *v11.Pod
 //   - opts v10.UpdateOptions
-func (_e *PodInterface_Expecter) Update(ctx interface{}, pod interface{}, opts interface{}) *PodInterface_Update_Call {
+func (_e *PodInterface_Expecter) Update(ctx any, pod any, opts any) *PodInterface_Update_Call {
 	return &PodInterface_Update_Call{Call: _e.mock.On("Update", ctx, pod, opts)}
 }
 
@@ -1118,7 +1118,7 @@ type PodInterface_UpdateEphemeralContainers_Call struct {
 //   - podName string
 //   - pod *v11.Pod
 //   - opts v10.UpdateOptions
-func (_e *PodInterface_Expecter) UpdateEphemeralContainers(ctx interface{}, podName interface{}, pod interface{}, opts interface{}) *PodInterface_UpdateEphemeralContainers_Call {
+func (_e *PodInterface_Expecter) UpdateEphemeralContainers(ctx any, podName any, pod any, opts any) *PodInterface_UpdateEphemeralContainers_Call {
 	return &PodInterface_UpdateEphemeralContainers_Call{Call: _e.mock.On("UpdateEphemeralContainers", ctx, podName, pod, opts)}
 }
 
@@ -1198,7 +1198,7 @@ type PodInterface_UpdateResize_Call struct {
 //   - podName string
 //   - pod *v11.Pod
 //   - opts v10.UpdateOptions
-func (_e *PodInterface_Expecter) UpdateResize(ctx interface{}, podName interface{}, pod interface{}, opts interface{}) *PodInterface_UpdateResize_Call {
+func (_e *PodInterface_Expecter) UpdateResize(ctx any, podName any, pod any, opts any) *PodInterface_UpdateResize_Call {
 	return &PodInterface_UpdateResize_Call{Call: _e.mock.On("UpdateResize", ctx, podName, pod, opts)}
 }
 
@@ -1277,7 +1277,7 @@ type PodInterface_UpdateStatus_Call struct {
 //   - ctx context.Context
 //   - pod *v11.Pod
 //   - opts v10.UpdateOptions
-func (_e *PodInterface_Expecter) UpdateStatus(ctx interface{}, pod interface{}, opts interface{}) *PodInterface_UpdateStatus_Call {
+func (_e *PodInterface_Expecter) UpdateStatus(ctx any, pod any, opts any) *PodInterface_UpdateStatus_Call {
 	return &PodInterface_UpdateStatus_Call{Call: _e.mock.On("UpdateStatus", ctx, pod, opts)}
 }
 
@@ -1350,7 +1350,7 @@ type PodInterface_Watch_Call struct {
 // Watch is a helper method to define mock.On call
 //   - ctx context.Context
 //   - opts v10.ListOptions
-func (_e *PodInterface_Expecter) Watch(ctx interface{}, opts interface{}) *PodInterface_Watch_Call {
+func (_e *PodInterface_Expecter) Watch(ctx any, opts any) *PodInterface_Watch_Call {
 	return &PodInterface_Watch_Call{Call: _e.mock.On("Watch", ctx, opts)}
 }
 

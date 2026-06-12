@@ -65,7 +65,7 @@ type Client_Get_Call struct {
 //   - ctx context.Context
 //   - args oneagent.GetParams
 //   - writer io.Writer
-func (_e *Client_Expecter) Get(ctx interface{}, args interface{}, writer interface{}) *Client_Get_Call {
+func (_e *Client_Expecter) Get(ctx any, args any, writer any) *Client_Get_Call {
 	return &Client_Get_Call{Call: _e.mock.On("Get", ctx, args, writer)}
 }
 
@@ -135,7 +135,7 @@ type Client_GetConnectionInfo_Call struct {
 
 // GetConnectionInfo is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Client_Expecter) GetConnectionInfo(ctx interface{}) *Client_GetConnectionInfo_Call {
+func (_e *Client_Expecter) GetConnectionInfo(ctx any) *Client_GetConnectionInfo_Call {
 	return &Client_GetConnectionInfo_Call{Call: _e.mock.On("GetConnectionInfo", ctx)}
 }
 
@@ -188,7 +188,7 @@ type Client_GetLatest_Call struct {
 //   - ctx context.Context
 //   - args oneagent.GetParams
 //   - writer io.Writer
-func (_e *Client_Expecter) GetLatest(ctx interface{}, args interface{}, writer interface{}) *Client_GetLatest_Call {
+func (_e *Client_Expecter) GetLatest(ctx any, args any, writer any) *Client_GetLatest_Call {
 	return &Client_GetLatest_Call{Call: _e.mock.On("GetLatest", ctx, args, writer)}
 }
 
@@ -262,7 +262,7 @@ type Client_GetProcessGroupingConfig_Call struct {
 //   - ctx context.Context
 //   - kubernetesClusterID string
 //   - etag string
-func (_e *Client_Expecter) GetProcessGroupingConfig(ctx interface{}, kubernetesClusterID interface{}, etag interface{}) *Client_GetProcessGroupingConfig_Call {
+func (_e *Client_Expecter) GetProcessGroupingConfig(ctx any, kubernetesClusterID any, etag any) *Client_GetProcessGroupingConfig_Call {
 	return &Client_GetProcessGroupingConfig_Call{Call: _e.mock.On("GetProcessGroupingConfig", ctx, kubernetesClusterID, etag)}
 }
 
@@ -334,7 +334,7 @@ type Client_GetProcessModuleConfig_Call struct {
 
 // GetProcessModuleConfig is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Client_Expecter) GetProcessModuleConfig(ctx interface{}) *Client_GetProcessModuleConfig_Call {
+func (_e *Client_Expecter) GetProcessModuleConfig(ctx any) *Client_GetProcessModuleConfig_Call {
 	return &Client_GetProcessModuleConfig_Call{Call: _e.mock.On("GetProcessModuleConfig", ctx)}
 }
 
@@ -397,7 +397,7 @@ type Client_GetVersions_Call struct {
 // GetVersions is a helper method to define mock.On call
 //   - ctx context.Context
 //   - args oneagent.GetParams
-func (_e *Client_Expecter) GetVersions(ctx interface{}, args interface{}) *Client_GetVersions_Call {
+func (_e *Client_Expecter) GetVersions(ctx any, args any) *Client_GetVersions_Call {
 	return &Client_GetVersions_Call{Call: _e.mock.On("GetVersions", ctx, args)}
 }
 

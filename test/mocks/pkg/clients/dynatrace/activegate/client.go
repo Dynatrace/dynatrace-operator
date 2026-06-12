@@ -74,7 +74,7 @@ type Client_GetAuthToken_Call struct {
 // GetAuthToken is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dynakubeName string
-func (_e *Client_Expecter) GetAuthToken(ctx interface{}, dynakubeName interface{}) *Client_GetAuthToken_Call {
+func (_e *Client_Expecter) GetAuthToken(ctx any, dynakubeName any) *Client_GetAuthToken_Call {
 	return &Client_GetAuthToken_Call{Call: _e.mock.On("GetAuthToken", ctx, dynakubeName)}
 }
 
@@ -139,7 +139,7 @@ type Client_GetConnectionInfo_Call struct {
 
 // GetConnectionInfo is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Client_Expecter) GetConnectionInfo(ctx interface{}) *Client_GetConnectionInfo_Call {
+func (_e *Client_Expecter) GetConnectionInfo(ctx any) *Client_GetConnectionInfo_Call {
 	return &Client_GetConnectionInfo_Call{Call: _e.mock.On("GetConnectionInfo", ctx)}
 }
 
