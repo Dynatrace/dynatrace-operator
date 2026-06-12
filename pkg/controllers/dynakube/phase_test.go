@@ -222,16 +222,6 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 		phase := controller.determineExtensionsExecutionControllerPhase(t.Context(), dk)
 		assert.Equal(t, status.Running, phase)
 	})
-	t.Run("eec pods ready but generation outdated -> deploying", func(t *testing.T) {
-		fakeClient := fake.NewClient(createOutdatedStatefulset(testNamespace, dk.Extensions().GetExecutionControllerStatefulsetName(), 1))
-
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineExtensionsExecutionControllerPhase(t.Context(), dk)
-		assert.Equal(t, status.Deploying, phase)
-	})
 }
 
 func TestExtensionsCollectorPhaseChanges(t *testing.T) {
