@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -86,17 +87,26 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 func createStatefulset(namespace, name string, replicas, readyReplicas int32) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name:       name,
+			Namespace:  namespace,
+			Generation: 1,
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas: &replicas,
 		},
 		Status: appsv1.StatefulSetStatus{
-			Replicas:      replicas,
-			ReadyReplicas: readyReplicas,
+			Replicas:           replicas,
+			ReadyReplicas:      readyReplicas,
+			ObservedGeneration: 1,
 		},
 	}
+}
+
+func createOutdatedStatefulset(namespace, name string, replicas int32) *appsv1.StatefulSet {
+	sts := createStatefulset(namespace, name, replicas, replicas)
+	sts.Generation = 2
+
+	return sts
 }
 
 func TestOneAgentPhaseChanges(t *testing.T) {
@@ -212,6 +222,16 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 		phase := controller.determineExtensionsExecutionControllerPhase(t.Context(), dk)
 		assert.Equal(t, status.Running, phase)
 	})
+	t.Run("eec pods ready but generation outdated -> deploying", func(t *testing.T) {
+		fakeClient := fake.NewClient(createOutdatedStatefulset(testNamespace, dk.Extensions().GetExecutionControllerStatefulsetName(), 1))
+
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineExtensionsExecutionControllerPhase(t.Context(), dk)
+		assert.Equal(t, status.Deploying, phase)
+	})
 }
 
 func TestExtensionsCollectorPhaseChanges(t *testing.T) {
@@ -261,6 +281,86 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			apiReader: fakeClient,
 		}
 		phase := controller.determineExtensionsCollectorPhase(t.Context(), dk)
+		assert.Equal(t, status.Running, phase)
+	})
+	t.Run("otelc pods ready but generation outdated -> deploying", func(t *testing.T) {
+		fakeClient := fake.NewClient(createOutdatedStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 2))
+
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineExtensionsCollectorPhase(t.Context(), dk)
+		assert.Equal(t, status.Deploying, phase)
+	})
+}
+
+func TestTelemetryIngestPhaseChanges(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			TelemetryIngest: &telemetryingest.Spec{},
+		},
+	}
+
+	t.Run("no otelc statefulset in cluster -> deploying", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineTelemetryIngestPhase(t.Context(), dk)
+		assert.Equal(t, status.Deploying, phase)
+	})
+	t.Run("error accessing k8s api -> error", func(t *testing.T) {
+		fakeClient := errorClient{}
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineTelemetryIngestPhase(t.Context(), dk)
+		assert.Equal(t, status.Error, phase)
+	})
+	t.Run("otelc pods not ready -> deploying", func(t *testing.T) {
+		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 1, 0))
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineTelemetryIngestPhase(t.Context(), dk)
+		assert.Equal(t, status.Deploying, phase)
+	})
+	t.Run("otelc deployed -> running", func(t *testing.T) {
+		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 1, 1))
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineTelemetryIngestPhase(t.Context(), dk)
+		assert.Equal(t, status.Running, phase)
+	})
+	t.Run("otelc pods ready but generation outdated -> deploying", func(t *testing.T) {
+		fakeClient := fake.NewClient(createOutdatedStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 1))
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineTelemetryIngestPhase(t.Context(), dk)
+		assert.Equal(t, status.Deploying, phase)
+	})
+	t.Run("telemetryingest not enabled -> running", func(t *testing.T) {
+		dkNoTI := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+		}
+		fakeClient := fake.NewClient()
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineTelemetryIngestPhase(t.Context(), dkNoTI)
 		assert.Equal(t, status.Running, phase)
 	})
 }
