@@ -32,19 +32,25 @@ func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 	// When using Prometheus extensions, the EEC sends configuration without health checks.
 	// The feature is not GA and may be removed in a future release, so it's an accepted caveat.
 	if dk.TelemetryIngest().IsEnabled() {
-		container.LivenessProbe = buildLivenessProbe()
-		container.ReadinessProbe = buildReadinessProbe()
+		scheme := corev1.URISchemeHTTP
+		if dk.Spec.TelemetryIngest.TLSRefName != "" {
+			// If TLS is enabled, we need to use the HTTPS scheme for the health checks.
+			scheme = corev1.URISchemeHTTPS
+		}
+		container.LivenessProbe = buildLivenessProbe(scheme)
+		container.ReadinessProbe = buildReadinessProbe(scheme)
 	}
 
 	return container
 }
 
-func buildLivenessProbe() *corev1.Probe {
+func buildLivenessProbe(scheme corev1.URIScheme) *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/",
-				Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
+				Path:   "/",
+				Port:   intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
+				Scheme: scheme,
 			},
 		},
 		InitialDelaySeconds: 10,
@@ -55,12 +61,13 @@ func buildLivenessProbe() *corev1.Probe {
 	}
 }
 
-func buildReadinessProbe() *corev1.Probe {
+func buildReadinessProbe(scheme corev1.URIScheme) *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: "/",
 				Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
+				Scheme: scheme,
 			},
 		},
 		InitialDelaySeconds: 5,
