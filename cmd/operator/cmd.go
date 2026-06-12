@@ -48,10 +48,10 @@ func run(cmd *cobra.Command, args []string) error {
 		return runLocally(ctrl.SetupSignalHandler(), kubeCfg)
 	}
 
-	return runInPod(kubeCfg)
+	return runInPod(ctrl.SetupSignalHandler(), kubeCfg)
 }
 
-func runInPod(kubeCfg *rest.Config) error {
+func runInPod(ctx context.Context, kubeCfg *rest.Config) error {
 	namespace := k8senv.DefaultNamespace()
 	isOLM := system.IsDeployedViaOLM()
 
@@ -60,10 +60,9 @@ func runInPod(kubeCfg *rest.Config) error {
 		return err
 	}
 
-	signalHandler := ctrl.SetupSignalHandler()
-	go middleware.RunPeriodicCacheCleanup(signalHandler, k8senv.GetDTClientCacheCleanInterval(log))
+	go middleware.RunPeriodicCacheCleanup(ctx, k8senv.GetDTClientCacheCleanInterval(ctx))
 
-	return errors.WithStack(operatorManager.Start(signalHandler))
+	return errors.WithStack(operatorManager.Start(ctx))
 }
 
 func runLocally(ctx context.Context, kubeCfg *rest.Config) error {
