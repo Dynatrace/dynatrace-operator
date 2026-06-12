@@ -795,7 +795,7 @@ func TestPGCConfigHash(t *testing.T) {
 
 		hash, err := r.pgcConfigHash(context.Background(), dk)
 		require.NoError(t, err)
-		assert.NotEmpty(t, hash)
+		assert.Empty(t, hash)
 	})
 }
 

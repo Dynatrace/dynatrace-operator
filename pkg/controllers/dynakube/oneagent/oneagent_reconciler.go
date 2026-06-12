@@ -334,7 +334,9 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 			return nil, err
 		}
 
-		ds.Spec.Template.Annotations[daemonset.AnnotationPGCHash] = configHash
+		if configHash != "" {
+			ds.Spec.Template.Annotations[daemonset.AnnotationPGCHash] = configHash
+		}
 	}
 
 	dsHash, err := hasher.GenerateHash(ds)
@@ -359,7 +361,12 @@ func (r *Reconciler) pgcConfigHash(ctx context.Context, dk *dynakube.DynaKube) (
 		return "", errors.WithStack(err)
 	}
 
-	return hasher.GenerateHash(secret.Data[bootstrapperconfig.DeclarativeInputFileName])
+	pgcData := secret.Data[bootstrapperconfig.DeclarativeInputFileName]
+	if pgcData == nil {
+		return "", nil
+	}
+
+	return hasher.GenerateHash(pgcData)
 }
 
 func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube.DynaKube) error {
