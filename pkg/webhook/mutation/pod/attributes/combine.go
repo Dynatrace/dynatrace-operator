@@ -18,7 +18,6 @@ const (
 	withDynakube
 	withNamespaceAnnotations
 	withRules
-	withRulesPropagate
 	withPodAnnotations
 	withCustom
 )
@@ -27,12 +26,10 @@ const (
 	// withDeprecated is not included; combineAll adds it conditionally.
 	caseAll = withWorkloadInfo | withPodInfo | withClusterInfo |
 		withContainerAttrs | withDynakube | withNamespaceAnnotations |
-		withRules | withRulesPropagate | withPodAnnotations | withCustom
-
-	caseMetadataAnnotations = withWorkloadInfo | withNamespaceAnnotations | withRulesPropagate
+		withRules | withPodAnnotations | withCustom
 
 	caseJSONAnnotation = withDynakube | withNamespaceAnnotations |
-		withRules | withRulesPropagate | withPodAnnotations | withWorkloadInfo
+		withRules | withPodAnnotations | withWorkloadInfo
 )
 
 // combine copies maps into a single result in fixed precedence order (low → high).
@@ -51,7 +48,6 @@ func (attrs *Pod) combine(c combinationCase, containerAttrs map[string]string) m
 		{withDynakube, attrs.dynakube},
 		{withNamespaceAnnotations, attrs.namespaceAnnotations},
 		{withRules, attrs.rules},
-		{withRulesPropagate, attrs.rulesPropagate},
 		{withPodAnnotations, attrs.podAnnotations},
 		{withCustom, attrs.custom},
 	}
@@ -83,10 +79,6 @@ func (attrs *Pod) combineAll(containerAttrs ...Container) map[string]string {
 	}
 
 	return attrs.combine(c, flattenContainerAttrs(containerAttrs))
-}
-
-func (attrs *Pod) combineForMetadataAnnotations() map[string]string {
-	return attrs.combine(caseMetadataAnnotations, nil)
 }
 
 func (attrs *Pod) combineForJSONAnnotation() (string, error) {

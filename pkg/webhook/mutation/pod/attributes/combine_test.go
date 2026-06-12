@@ -72,24 +72,14 @@ func TestCombine_RulesWinsOverContainer(t *testing.T) {
 	assert.Equal(t, "from-rules", result[K8sContainerNameAttr])
 }
 
-func TestCombine_RulesPropagateWinsOverRules(t *testing.T) {
+func TestCombine_RulesWinOverNamespaceAnnotation(t *testing.T) {
 	attrs := newTestPodAttributes()
 	attrs.rules["shared.key"] = "from-rules"
-	attrs.rulesPropagate["shared.key"] = "from-rules-propagate"
-
-	result := attrs.combineAll()
-
-	assert.Equal(t, "from-rules-propagate", result["shared.key"])
-}
-
-func TestCombine_RulesPropagateWinsOverNamespaceAnnotation(t *testing.T) {
-	attrs := newTestPodAttributes()
-	attrs.rulesPropagate["shared.key"] = "from-rules-propagate"
 	attrs.namespaceAnnotations["shared.key"] = "from-namespace"
 
 	result := attrs.combineAll()
 
-	assert.Equal(t, "from-rules-propagate", result["shared.key"])
+	assert.Equal(t, "from-rules", result["shared.key"])
 }
 
 func TestCombine_PodAnnotationWinsOverNamespaceAnnotation(t *testing.T) {
@@ -142,7 +132,7 @@ func TestCombine_UniqueKeysFromAllSourcesMerged(t *testing.T) {
 	attrs.podInfo["pod.key"] = "pod-val"
 	attrs.clusterInfo["cluster.key"] = "cluster-val"
 	attrs.rules["rules.key"] = "rules-val"
-	attrs.rulesPropagate["rulespropagate.key"] = "rulespropagate-val"
+	attrs.rules["rules-extra.key"] = "rules-extra-val"
 	attrs.namespaceAnnotations["ns.key"] = "ns-val"
 	attrs.podAnnotations["pod-anno.key"] = "pod-anno-val"
 	attrs.custom["custom.key"] = "custom-val"
@@ -156,7 +146,7 @@ func TestCombine_UniqueKeysFromAllSourcesMerged(t *testing.T) {
 	assert.Equal(t, "cluster-val", result["cluster.key"])
 	assert.Equal(t, "my-container", result[K8sContainerNameAttr])
 	assert.Equal(t, "rules-val", result["rules.key"])
-	assert.Equal(t, "rulespropagate-val", result["rulespropagate.key"])
+	assert.Equal(t, "rules-extra-val", result["rules-extra.key"])
 	assert.Equal(t, "ns-val", result["ns.key"])
 	assert.Equal(t, "pod-anno-val", result["pod-anno.key"])
 	assert.Equal(t, "custom-val", result["custom.key"])

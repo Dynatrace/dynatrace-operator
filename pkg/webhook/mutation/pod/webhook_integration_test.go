@@ -340,9 +340,13 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 	require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
 	require.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
 	require.True(t, maputils.GetFieldBool(pod.Annotations, oneagentmutator.AnnotationInjected, false))
-	assert.Equal(t, "sales", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.cost.costcenter", ""))
-	assert.Equal(t, "high", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.security_context", ""))
-	assert.Equal(t, "custom-ns-meta-value", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/custom.ns-meta", ""))
+	jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
+	require.NotEmpty(t, jsonAnnotation, "metadata.dynatrace.com JSON annotation must be set")
+	var jsonAttrs map[string]string
+	require.NoError(t, json.Unmarshal([]byte(jsonAnnotation), &jsonAttrs))
+	assert.Equal(t, "sales", jsonAttrs["dt.cost.costcenter"])
+	assert.Equal(t, "high", jsonAttrs["dt.security_context"])
+	assert.Equal(t, "custom-ns-meta-value", jsonAttrs["custom.ns-meta"])
 	require.Len(t, pod.Spec.InitContainers, 1)
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.kind", strings.ToLower(pod.OwnerReferences[0].Kind)))
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.name", strings.ToLower(pod.OwnerReferences[0].Name)))
@@ -726,15 +730,11 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		// existing OTEL_RESOURCE_ATTRIBUTES wins over pod annotation
 		assert.Equal(t, "from-existing", gotRA["conflict.existing.vs.pod"], "existing OTEL_RESOURCE_ATTRIBUTES must win over pod annotation")
 
-		// SetAnnotationIfNotExists preserves the pre-existing pod annotation over the caseMetadataAnnotations result
+		// pre-seeded pod annotations are preserved
 		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.pod.vs.ns"],
-			"pre-existing pod annotation must be preserved in metadata annotation")
+			"pre-existing pod annotation must be preserved")
 		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.existing.vs.pod"],
-			"pre-existing pod annotation must be preserved in metadata annotation")
-		assert.Equal(t, "from-ns", pod.Annotations["metadata.dynatrace.com/conflict.ns.vs.dynakube"],
-			"namespace metadata annotation must be preserved in pod annotations")
-		assert.NotContains(t, pod.Annotations, "metadata.dynatrace.com/conflict.additional.vs.global",
-			"dynakube resource attributes must not be written as individual metadata annotations")
+			"pre-existing pod annotation must be preserved")
 
 		// JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation: dynakube + namespaceAnnotations + podAnnotations, no custom/existing OTEL_RA)
 		jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]

@@ -32,19 +32,9 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		assert.Equal(t, "from-rules", parseJSON(t, pod)["shared.key"])
 	})
 
-	t.Run("rulesPropagate overrides rules for shared key", func(t *testing.T) {
+	t.Run("podAnnotations overrides rules for shared key", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		attrs.rules["shared.key"] = "from-rules"
-		attrs.rulesPropagate["shared.key"] = "from-rulesPropagate"
-		pod := &corev1.Pod{}
-
-		require.NoError(t, attrs.setPodMetadataJSONAnnotation(pod))
-		assert.Equal(t, "from-rulesPropagate", parseJSON(t, pod)["shared.key"])
-	})
-
-	t.Run("podAnnotations overrides rulesPropagate for shared key", func(t *testing.T) {
-		attrs := newTestPodAttributes()
-		attrs.rulesPropagate["shared.key"] = "from-rulesPropagate"
 		attrs.podAnnotations["shared.key"] = "from-pod"
 		pod := &corev1.Pod{}
 
@@ -57,9 +47,8 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		attrs.namespaceAnnotations["ns-only"] = "ns-val"
 		attrs.namespaceAnnotations["shared.key"] = "from-ns"
 		attrs.rules["rules-only"] = "rules-val"
+		attrs.rules["rules-extra"] = "rules-extra-val"
 		attrs.rules["shared.key"] = "from-rules"
-		attrs.rulesPropagate["propagate-only"] = "propagate-val"
-		attrs.rulesPropagate["shared.key"] = "from-rulesPropagate"
 		attrs.podAnnotations["pod-only"] = "pod-val"
 		attrs.podAnnotations["shared.key"] = "from-pod"
 		pod := &corev1.Pod{}
@@ -69,7 +58,7 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		assert.Equal(t, "from-pod", parsed["shared.key"])
 		assert.Equal(t, "ns-val", parsed["ns-only"])
 		assert.Equal(t, "rules-val", parsed["rules-only"])
-		assert.Equal(t, "propagate-val", parsed["propagate-only"])
+		assert.Equal(t, "rules-extra-val", parsed["rules-extra"])
 		assert.Equal(t, "pod-val", parsed["pod-only"])
 	})
 
@@ -81,7 +70,7 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 			},
 		}
 		attrs := newTestPodAttributes()
-		attrs.rulesPropagate["custom-annotation1"] = "foobar"
+		attrs.rules["custom-annotation1"] = "foobar"
 		err := attrs.setPodMetadataJSONAnnotation(pod)
 
 		require.NoError(t, err)
@@ -90,19 +79,42 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 }
 
 func TestApplyAnnotationsToPod(t *testing.T) {
-	t.Run("sets individual annotations for each merged source", func(t *testing.T) {
+	t.Run("namespace annotations appear in JSON block", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		attrs.namespaceAnnotations["ns-attr"] = "from-ns"
-		attrs.rulesPropagate["rule-attr"] = "from-rule"
-		attrs.workloadInfo[K8sWorkloadKindAttr] = "deployment"
 		pod := &corev1.Pod{}
 
-		err := attrs.ApplyAnnotationsToPod(pod)
+		require.NoError(t, attrs.ApplyAnnotationsToPod(pod))
 
-		require.NoError(t, err)
-		assert.Equal(t, "deployment", pod.Annotations[metadataenrichment.Prefix+K8sWorkloadKindAttr])
-		assert.Equal(t, "from-ns", pod.Annotations[metadataenrichment.Prefix+"ns-attr"])
-		assert.Equal(t, "from-rule", pod.Annotations[metadataenrichment.Prefix+"rule-attr"])
+		var parsed map[string]string
+		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
+		assert.Equal(t, "from-ns", parsed["ns-attr"])
+	})
+
+	t.Run("enrichment-rule results appear in JSON block", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		attrs.rules["rule-attr"] = "from-rule"
+		pod := &corev1.Pod{}
+
+		require.NoError(t, attrs.ApplyAnnotationsToPod(pod))
+
+		var parsed map[string]string
+		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
+		assert.Equal(t, "from-rule", parsed["rule-attr"])
+	})
+
+	t.Run("workload kind and name appear in JSON block", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		attrs.workloadInfo[K8sWorkloadKindAttr] = "deployment"
+		attrs.workloadInfo[K8sWorkloadNameAttr] = "my-deploy"
+		pod := &corev1.Pod{}
+
+		require.NoError(t, attrs.ApplyAnnotationsToPod(pod))
+
+		var parsed map[string]string
+		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
+		assert.Equal(t, "deployment", parsed[K8sWorkloadKindAttr])
+		assert.Equal(t, "my-deploy", parsed[K8sWorkloadNameAttr])
 	})
 
 	t.Run("namespaceAnnotations overrides workloadInfo in the JSON annotation", func(t *testing.T) {
@@ -119,10 +131,10 @@ func TestApplyAnnotationsToPod(t *testing.T) {
 		assert.Equal(t, "from-ns", parsed["shared.key"])
 	})
 
-	t.Run("namespaceAnnotations overrides rulesPropagate in the JSON annotation", func(t *testing.T) {
+	t.Run("namespaceAnnotations overrides rules in the JSON annotation", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		attrs.namespaceAnnotations["shared.key"] = "from-ns"
-		attrs.rulesPropagate["shared.key"] = "from-rules"
+		attrs.rules["shared.key"] = "from-rules"
 		pod := &corev1.Pod{}
 
 		err := attrs.ApplyAnnotationsToPod(pod)
@@ -131,22 +143,5 @@ func TestApplyAnnotationsToPod(t *testing.T) {
 		var parsed map[string]string
 		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
 		assert.Equal(t, "from-rules", parsed["shared.key"])
-	})
-
-	t.Run("does not overwrite existing individual annotations on pod", func(t *testing.T) {
-		attrs := newTestPodAttributes()
-		attrs.namespaceAnnotations["existing-key"] = "new-value"
-		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					metadataenrichment.Prefix + "existing-key": "original-value",
-				},
-			},
-		}
-
-		err := attrs.ApplyAnnotationsToPod(pod)
-
-		require.NoError(t, err)
-		assert.Equal(t, "original-value", pod.Annotations[metadataenrichment.Prefix+"existing-key"])
 	})
 }
