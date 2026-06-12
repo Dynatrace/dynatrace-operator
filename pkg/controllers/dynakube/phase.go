@@ -22,6 +22,7 @@ func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dy
 		controller.determineOneAgentPhase,
 		controller.determineLogAgentPhase,
 		controller.determineKSPMPhase,
+		controller.determineTelemetryIngestPhase,
 	}
 	for _, component := range components {
 		if phase := component(ctx, dk); phase != status.Running {
@@ -67,35 +68,50 @@ func (controller *Controller) determineExtensionsCollectorPhase(ctx context.Cont
 	return controller.determinePrometheusStatefulsetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
 }
 
+func (controller *Controller) determineTelemetryIngestPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	if dk.TelemetryIngest().IsEnabled() {
+		return controller.determineStatefulSetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
+	}
+
+	return status.Running
+}
+
 func (controller *Controller) determinePrometheusStatefulsetPhase(ctx context.Context, dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
+	if dk.Extensions().IsPrometheusEnabled() {
+		return controller.determineStatefulSetPhase(ctx, dk, statefulsetName)
+	}
+
+	return status.Running
+}
+
+func (controller *Controller) determineStatefulSetPhase(ctx context.Context, dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
 	log := logd.FromContext(ctx)
 
-	if dk.Extensions().IsPrometheusEnabled() {
-		statefulSet := &appsv1.StatefulSet{}
+	statefulSet := &appsv1.StatefulSet{}
 
-		err := controller.client.Get(ctx, types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
-		if k8serrors.IsNotFound(err) {
-			log.Info("statefulset to be deployed", "dynakube", dk.Name, "statefulset", statefulsetName)
+	err := controller.client.Get(ctx, types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
+	if k8serrors.IsNotFound(err) {
+		log.Info("statefulset to be deployed", "dynakube", dk.Name, "statefulset", statefulsetName)
 
-			return status.Deploying
-		}
+		return status.Deploying
+	}
 
-		if err != nil {
-			log.Error(err, "statefulset could not be accessed", "dynakube", dk.Name, "statefulset", statefulsetName)
+	if err != nil {
+		log.Error(err, "statefulset could not be accessed", "dynakube", dk.Name, "statefulset", statefulsetName)
 
-			return status.Error
-		}
+		return status.Error
+	}
 
-		scheduledReplicas := int32(0)
-		if statefulSet.Spec.Replicas != nil {
-			scheduledReplicas = *statefulSet.Spec.Replicas
-		}
+	scheduledReplicas := int32(0)
+	if statefulSet.Spec.Replicas != nil {
+		scheduledReplicas = *statefulSet.Spec.Replicas
+	}
 
-		if scheduledReplicas != statefulSet.Status.ReadyReplicas {
-			log.Info("statefulset is still deploying", "dynakube", dk.Name, "statefulset", statefulsetName)
+	if statefulSet.Generation != statefulSet.Status.ObservedGeneration ||
+		scheduledReplicas != statefulSet.Status.ReadyReplicas {
+		log.Info("statefulset is still deploying", "dynakube", dk.Name, "statefulset", statefulsetName)
 
-			return status.Deploying
-		}
+		return status.Deploying
 	}
 
 	return status.Running
