@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/token"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
@@ -236,4 +237,12 @@ func TestNoCSI_extensions_db_executor_scaling_enforce_replicas(t *testing.T) {
 
 func TestNoCSI_pgc_with_fullstack(t *testing.T) {
 	testEnv.Test(t, bootstrapper.PGCWithCloudNativeFullStack(t))
+}
+
+func TestNoCSI_token_migration_to_platform(t *testing.T) {
+	testEnv.Test(t, token.FromAPIToPlatformToken(t))
+}
+
+func TestNoCSI_token_migration_revert_platform(t *testing.T) {
+	testEnv.Test(t, token.FromPlatformToAPIToken(t))
 }

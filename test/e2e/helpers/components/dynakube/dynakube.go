@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	e2econst "github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -27,35 +28,34 @@ const (
 	defaultName = "dynakube"
 )
 
-// Install creates a tenant secret and waits until the DynaKube is Running.
+// install creates a tenant secret and waits until the DynaKube is Running.
 // It also registers the deletion of these resources in reverse order.
-func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
-	Create(builder, features.LevelAssess, secretConfig.APIToken, secretConfig.DataIngestToken, dk)
+func install(builder *features.FeatureBuilder, t tenant.Tokens, dk dynakube.DynaKube) {
+	Create(builder, features.LevelAssess, t, dk)
 	VerifyStartup(builder, features.LevelAssess, dk)
 	// The secret is required for correct cleanup, so always delete it last
 	Delete(builder, features.LevelTeardown, dk)
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(dk.Name, dk.Namespace))
 }
 
-// InstallWithoutSettingsScopes creates a tenant secret without settings scopes and waits until the DynaKube is Running.
-// It also registers the deletion of these resources in reverse order.
+func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
+	install(builder, secretConfig.TokensWithSettingsScope(), dk)
+}
+
 func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
-	Create(builder, features.LevelAssess, secretConfig.APITokenNoSettings, secretConfig.DataIngestToken, dk)
-	VerifyStartup(builder, features.LevelAssess, dk)
-	// The secret is required for correct cleanup, so always delete it last
-	Delete(builder, features.LevelTeardown, dk)
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(dk.Name, dk.Namespace))
+	install(builder, secretConfig.TokensWithoutSettingsScope(), dk)
 }
 
 func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDK prevDynakube.DynaKube) {
-	CreatePreviousVersion(builder, level, secretConfig.APIToken, secretConfig.DataIngestToken, prevDK)
+	CreatePreviousVersion(builder, level, secretConfig.TokensWithSettingsScope(), prevDK)
 	VerifyStartupPreviousVersion(builder, level, prevDK)
 }
 
-func Create(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken string, testDynakube dynakube.DynaKube) {
-	if apiToken != "" || dataIngestToken != "" {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, testDynakube.Name, testDynakube.Namespace))
+func Create(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, testDynakube dynakube.DynaKube) {
+	if tenant.UsePlatformToken() && testDynakube.Spec.CustomPullSecret == "" {
+		testDynakube.Spec.CustomPullSecret = e2econst.DevRegistryPullSecretName
 	}
+	builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace))
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),
 		level,
@@ -66,10 +66,8 @@ func Update(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
 	builder.WithStep("dynakube updated", features.LevelAssess, update(testDynakube))
 }
 
-func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken string, prevDK prevDynakube.DynaKube) {
-	if apiToken != "" || dataIngestToken != "" {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, prevDK.Name, prevDK.Namespace))
-	}
+func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, prevDK prevDynakube.DynaKube) {
+	builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, prevDK.Name, prevDK.Namespace))
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", prevDK.Name),
 		level,
@@ -140,6 +138,21 @@ func WaitForPhasePreviousVersion(dk prevDynakube.DynaKube, phase status.Deployme
 	}
 }
 
+func VerifyPlatformTokenStatus(builder *features.FeatureBuilder, dk dynakube.DynaKube, expectPlatform bool) {
+	builder.WithStep("verify platform token status", features.LevelAssess, assert(dk, func(current *dynakube.DynaKube) bool {
+		return current.Status.APIToken.Platform != nil && *current.Status.APIToken.Platform == expectPlatform
+	}))
+}
+
+func assert(dk dynakube.DynaKube, check func(*dynakube.DynaKube) bool) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &dk))
+		require.True(t, check(&dk))
+
+		return ctx
+	}
+}
+
 func create(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dk))
@@ -162,6 +175,37 @@ func update(dk dynakube.DynaKube) features.Func {
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &oldDK))
 		dk.ResourceVersion = oldDK.ResourceVersion
 		require.NoError(t, envConfig.Client().Resources().Update(ctx, &dk))
+
+		return ctx
+	}
+}
+
+// TriggerReconciliation forces an immediate reconcile
+func TriggerReconciliation(builder *features.FeatureBuilder, dk dynakube.DynaKube) {
+	builder.WithStep("triggered dynakube reconciliation", features.LevelAssess, triggerReconciliation(dk))
+}
+
+func triggerReconciliation(dk dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		var current dynakube.DynaKube
+		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, &current))
+
+		beforeTime := current.Status.UpdatedTimestamp.Time
+
+		if current.Annotations == nil {
+			current.Annotations = map[string]string{}
+		}
+		current.Annotations["test.dynatrace.com/reconcile-trigger"] = time.Now().Format(time.RFC3339Nano)
+		require.NoError(t, resources.Update(ctx, &current))
+
+		err := wait.For(conditions.New(resources).ResourceMatch(&current, func(object k8s.Object) bool {
+			updated, ok := object.(*dynakube.DynaKube)
+
+			return ok && updated.Status.UpdatedTimestamp.After(beforeTime)
+		}), wait.WithTimeout(2*time.Minute))
+		require.NoError(t, err)
 
 		return ctx
 	}

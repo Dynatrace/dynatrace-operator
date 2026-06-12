@@ -24,8 +24,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -182,8 +180,6 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 	)
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
-	builder.Assess("create registry pull secret in sample namespace",
-		CopyDevRegistrySecret(sampleNamespace.Name))
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
@@ -194,32 +190,6 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
-}
-
-// CopyDevRegistrySecret copies the devregistry pull secret from the operator
-// namespace into the sample namespace so the user's pod can authenticate to
-// the registry when imagePullSecrets references it.
-func CopyDevRegistrySecret(targetNamespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-
-		var source corev1.Secret
-		require.NoError(t, resources.Get(ctx, consts.DevRegistryPullSecretName, operator.DefaultNamespace, &source))
-
-		target := corev1.Secret{
-			Type: source.Type,
-			Data: source.Data,
-		}
-		target.Name = consts.DevRegistryPullSecretName
-		target.Namespace = targetNamespace
-
-		err := resources.Create(ctx, &target)
-		if err != nil && !k8serrors.IsAlreadyExists(err) {
-			require.NoError(t, err)
-		}
-
-		return ctx
-	}
 }
 
 // statusSourceIsPublicRegistry refetches the DynaKube and verifies that the

@@ -17,6 +17,10 @@ test/e2e/%/olm:
 test/e2e/%/fips:
 	@make FIPS=true $(@D)
 
+## Run any e2e test with platform token
+test/e2e/%/platform-token:
+	@make USE_PLATFORM_TOKEN=true $(@D)
+
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \
@@ -134,6 +138,9 @@ test/e2e/cloudnative/upgrade:
 ## Runs extensions upgrade e2e test only
 test/e2e/extensions/upgrade:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "extensions_upgrade" $(SKIPCLEANUP)
+
+test/e2e/token/upgrade:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "token_upgrade" $(SKIPCLEANUP)
 
 ## Runs DatabaseExecutor related e2e tests
 test/e2e/extensions/dbexecutor:
@@ -295,3 +302,6 @@ test/e2e/kspm:
 
 test/e2e/kspm/optionalscopes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm_with_optional_scopes" $(SKIPCLEANUP)
+
+test/e2e/token/migration:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "token_migration" $(SKIPCLEANUP)
