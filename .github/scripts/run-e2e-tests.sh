@@ -26,15 +26,14 @@ source ../ref/.github/scripts/prepare-e2e-secrets.sh
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
+TARGET="${E2E_MAKE_TARGET:+test/e2e/${E2E_MAKE_TARGET}}"
+
 if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
-  echo "run no csi tests suite using OLM"
-  make test/e2e/no-csi/publish/olm
+  make OLM=true "${TARGET:-test/e2e/no-csi/publish}"
 elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
-  echo "run fips e2e test suites"
-  make BRANCH="$TARGET_BRANCH" FIPS=true test/e2e-publish
+  make BRANCH="$TARGET_BRANCH" FIPS=true "${TARGET:-test/e2e-publish}"
 else
-  echo "fall back to default branch target"
-  make BRANCH="$TARGET_BRANCH" test/e2e-publish
+  make BRANCH="$TARGET_BRANCH" "${TARGET:-test/e2e-publish}"
 fi
 
 echo "Success!"
