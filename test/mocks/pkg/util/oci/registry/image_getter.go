@@ -73,7 +73,7 @@ type ImageGetter_GetImageVersion_Call struct {
 // GetImageVersion is a helper method to define mock.On call
 //   - ctx context.Context
 //   - imageName string
-func (_e *ImageGetter_Expecter) GetImageVersion(ctx interface{}, imageName interface{}) *ImageGetter_GetImageVersion_Call {
+func (_e *ImageGetter_Expecter) GetImageVersion(ctx any, imageName any) *ImageGetter_GetImageVersion_Call {
 	return &ImageGetter_GetImageVersion_Call{Call: _e.mock.On("GetImageVersion", ctx, imageName)}
 }
 
@@ -141,7 +141,7 @@ type ImageGetter_PullImageInfo_Call struct {
 // PullImageInfo is a helper method to define mock.On call
 //   - ctx context.Context
 //   - imageName string
-func (_e *ImageGetter_Expecter) PullImageInfo(ctx interface{}, imageName interface{}) *ImageGetter_PullImageInfo_Call {
+func (_e *ImageGetter_Expecter) PullImageInfo(ctx any, imageName any) *ImageGetter_PullImageInfo_Call {
 	return &ImageGetter_PullImageInfo_Call{Call: _e.mock.On("PullImageInfo", ctx, imageName)}
 }
 

@@ -74,7 +74,7 @@ type IdentityServer_GetPluginCapabilities_Call struct {
 // GetPluginCapabilities is a helper method to define mock.On call
 //   - context1 context.Context
 //   - getPluginCapabilitiesRequest *csi.GetPluginCapabilitiesRequest
-func (_e *IdentityServer_Expecter) GetPluginCapabilities(context1 interface{}, getPluginCapabilitiesRequest interface{}) *IdentityServer_GetPluginCapabilities_Call {
+func (_e *IdentityServer_Expecter) GetPluginCapabilities(context1 any, getPluginCapabilitiesRequest any) *IdentityServer_GetPluginCapabilities_Call {
 	return &IdentityServer_GetPluginCapabilities_Call{Call: _e.mock.On("GetPluginCapabilities", context1, getPluginCapabilitiesRequest)}
 }
 
@@ -142,7 +142,7 @@ type IdentityServer_GetPluginInfo_Call struct {
 // GetPluginInfo is a helper method to define mock.On call
 //   - context1 context.Context
 //   - getPluginInfoRequest *csi.GetPluginInfoRequest
-func (_e *IdentityServer_Expecter) GetPluginInfo(context1 interface{}, getPluginInfoRequest interface{}) *IdentityServer_GetPluginInfo_Call {
+func (_e *IdentityServer_Expecter) GetPluginInfo(context1 any, getPluginInfoRequest any) *IdentityServer_GetPluginInfo_Call {
 	return &IdentityServer_GetPluginInfo_Call{Call: _e.mock.On("GetPluginInfo", context1, getPluginInfoRequest)}
 }
 
@@ -210,7 +210,7 @@ type IdentityServer_Probe_Call struct {
 // Probe is a helper method to define mock.On call
 //   - context1 context.Context
 //   - probeRequest *csi.ProbeRequest
-func (_e *IdentityServer_Expecter) Probe(context1 interface{}, probeRequest interface{}) *IdentityServer_Probe_Call {
+func (_e *IdentityServer_Expecter) Probe(context1 any, probeRequest any) *IdentityServer_Probe_Call {
 	return &IdentityServer_Probe_Call{Call: _e.mock.On("Probe", context1, probeRequest)}
 }
 

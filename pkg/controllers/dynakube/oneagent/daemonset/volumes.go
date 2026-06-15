@@ -7,6 +7,7 @@ import (
 	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/host"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -34,6 +35,10 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 	if dk.NeedsOneAgentProxy() {
 		volumeMounts = append(volumeMounts, getHTTPProxyMount())
+	}
+
+	if bootstrapperconfig.NeedsPGC(dk) {
+		volumeMounts = append(volumeMounts, getPGCSecretFileMount())
 	}
 
 	return volumeMounts
@@ -116,6 +121,10 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		} else {
 			volumes = append(volumes, getStorageVolume(dk))
 		}
+	}
+
+	if bootstrapperconfig.NeedsPGC(dk) {
+		volumes = append(volumes, getPGCSecretVolume(dk))
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -238,5 +247,30 @@ func getRootVolume() corev1.Volume {
 				Path: "/",
 			},
 		},
+	}
+}
+
+func getPGCSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
+	return corev1.Volume{
+		Name: pgcSecretVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: bootstrapperconfig.GetSourceConfigSecretName(dk.Name),
+				Items: []corev1.KeyToPath{{
+					Key:  bootstrapperconfig.DeclarativeInputFileName,
+					Path: bootstrapperconfig.DeclarativeInputFileName,
+				}},
+				Optional: new(true),
+			},
+		},
+	}
+}
+
+func getPGCSecretFileMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      pgcSecretVolumeName,
+		MountPath: csiStorageVolumeMount + "/opt/agent/conf/" + bootstrapperconfig.DeclarativeInputFileName,
+		SubPath:   bootstrapperconfig.DeclarativeInputFileName,
+		ReadOnly:  true,
 	}
 }

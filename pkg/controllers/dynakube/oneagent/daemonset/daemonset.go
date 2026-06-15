@@ -33,6 +33,7 @@ const (
 	appArmorUnconfined                = corev1.DeprecatedAppArmorBetaProfileNameUnconfined
 	annotationTenantTokenHash         = api.InternalFlagPrefix + "tenant-token-hash"
 	annotationEnableDaemonSetEviction = "cluster-autoscaler.kubernetes.io/enable-ds-eviction"
+	AnnotationPGCHash                 = api.InternalFlagPrefix + "pgc-hash"
 
 	serviceAccountName = "dynatrace-dynakube-oneagent"
 
@@ -70,6 +71,8 @@ const (
 	userGroupID int64 = 1000
 
 	initContainerName = "dynatrace-operator"
+
+	pgcSecretVolumeName = "bootstrapper-pgc"
 )
 
 var nodeMetadataFilePath = filepath.Join(nodeMetadataFolderPath, nodeMetadataFilename)
@@ -224,9 +227,7 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 	affinity := b.affinity()
 
 	podSpec := corev1.PodSpec{
-		InitContainers: []corev1.Container{
-			b.initContainerSpec(),
-		},
+		InitContainers: []corev1.Container{b.initContainerSpec()},
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,

@@ -71,7 +71,7 @@ type Installer_InstallAgent_Call struct {
 // InstallAgent is a helper method to define mock.On call
 //   - ctx context.Context
 //   - targetDir string
-func (_e *Installer_Expecter) InstallAgent(ctx interface{}, targetDir interface{}) *Installer_InstallAgent_Call {
+func (_e *Installer_Expecter) InstallAgent(ctx any, targetDir any) *Installer_InstallAgent_Call {
 	return &Installer_InstallAgent_Call{Call: _e.mock.On("InstallAgent", ctx, targetDir)}
 }
 

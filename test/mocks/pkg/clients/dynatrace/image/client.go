@@ -75,7 +75,7 @@ type Client_GetComponentLatestInfo_Call struct {
 //   - ctx context.Context
 //   - component image.ComponentType
 //   - registry string
-func (_e *Client_Expecter) GetComponentLatestInfo(ctx interface{}, component interface{}, registry interface{}) *Client_GetComponentLatestInfo_Call {
+func (_e *Client_Expecter) GetComponentLatestInfo(ctx any, component any, registry any) *Client_GetComponentLatestInfo_Call {
 	return &Client_GetComponentLatestInfo_Call{Call: _e.mock.On("GetComponentLatestInfo", ctx, component, registry)}
 }
 

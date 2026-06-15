@@ -66,7 +66,7 @@ type mockIstioReconciler_ReconcileAPIURL_Call struct {
 // ReconcileAPIURL is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *mockIstioReconciler_Expecter) ReconcileAPIURL(ctx interface{}, dk interface{}) *mockIstioReconciler_ReconcileAPIURL_Call {
+func (_e *mockIstioReconciler_Expecter) ReconcileAPIURL(ctx any, dk any) *mockIstioReconciler_ReconcileAPIURL_Call {
 	return &mockIstioReconciler_ReconcileAPIURL_Call{Call: _e.mock.On("ReconcileAPIURL", ctx, dk)}
 }
 
@@ -150,7 +150,7 @@ type mockDynakubeReconciler_Reconcile_Call struct {
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *mockDynakubeReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}) *mockDynakubeReconciler_Reconcile_Call {
+func (_e *mockDynakubeReconciler_Expecter) Reconcile(ctx any, dk any) *mockDynakubeReconciler_Reconcile_Call {
 	return &mockDynakubeReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk)}
 }
 
@@ -235,7 +235,7 @@ type mockDtSettingReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - dtClient settings.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockDtSettingReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockDtSettingReconciler_Reconcile_Call {
+func (_e *mockDtSettingReconciler_Expecter) Reconcile(ctx any, dtClient any, dk any) *mockDtSettingReconciler_Reconcile_Call {
 	return &mockDtSettingReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
@@ -325,7 +325,7 @@ type mockLogMonitoringReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - dtClient *dynatrace.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockLogMonitoringReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockLogMonitoringReconciler_Reconcile_Call {
+func (_e *mockLogMonitoringReconciler_Expecter) Reconcile(ctx any, dtClient any, dk any) *mockLogMonitoringReconciler_Reconcile_Call {
 	return &mockLogMonitoringReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
@@ -416,7 +416,7 @@ type mockOneAgentReconciler_Reconcile_Call struct {
 //   - dk *dynakube.DynaKube
 //   - dtClient *dynatrace.Client
 //   - tokens token.Tokens
-func (_e *mockOneAgentReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}, dtClient interface{}, tokens interface{}) *mockOneAgentReconciler_Reconcile_Call {
+func (_e *mockOneAgentReconciler_Expecter) Reconcile(ctx any, dk any, dtClient any, tokens any) *mockOneAgentReconciler_Reconcile_Call {
 	return &mockOneAgentReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, dtClient, tokens)}
 }
 
@@ -512,7 +512,7 @@ type mockActiveGateReconciler_Reconcile_Call struct {
 //   - dk *dynakube.DynaKube
 //   - dtClient *dynatrace.Client
 //   - tokens token.Tokens
-func (_e *mockActiveGateReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}, dtClient interface{}, tokens interface{}) *mockActiveGateReconciler_Reconcile_Call {
+func (_e *mockActiveGateReconciler_Expecter) Reconcile(ctx any, dk any, dtClient any, tokens any) *mockActiveGateReconciler_Reconcile_Call {
 	return &mockActiveGateReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, dtClient, tokens)}
 }
 
@@ -607,7 +607,7 @@ type mockKspmReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - dtClient settings.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockKspmReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockKspmReconciler_Reconcile_Call {
+func (_e *mockKspmReconciler_Expecter) Reconcile(ctx any, dtClient any, dk any) *mockKspmReconciler_Reconcile_Call {
 	return &mockKspmReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
@@ -697,7 +697,7 @@ type mockInjectionReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - dtClient *dynatrace.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockInjectionReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockInjectionReconciler_Reconcile_Call {
+func (_e *mockInjectionReconciler_Expecter) Reconcile(ctx any, dtClient any, dk any) *mockInjectionReconciler_Reconcile_Call {
 	return &mockInjectionReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 

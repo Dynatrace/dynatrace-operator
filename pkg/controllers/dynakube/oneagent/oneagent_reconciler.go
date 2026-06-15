@@ -22,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -327,6 +328,17 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 		return nil, err
 	}
 
+	if bootstrapperconfig.NeedsPGC(dk) {
+		configHash, err := r.pgcConfigHash(ctx, dk)
+		if err != nil {
+			return nil, err
+		}
+
+		if configHash != "" {
+			ds.Spec.Template.Annotations[daemonset.AnnotationPGCHash] = configHash
+		}
+	}
+
 	dsHash, err := hasher.GenerateHash(ds)
 	if err != nil {
 		return nil, err
@@ -335,6 +347,26 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 	ds.Annotations[hasher.AnnotationHash] = dsHash
 
 	return ds, nil
+}
+
+func (r *Reconciler) pgcConfigHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	var secret corev1.Secret
+
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: bootstrapperconfig.GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	pgcData := secret.Data[bootstrapperconfig.DeclarativeInputFileName]
+	if pgcData == nil {
+		return "", nil
+	}
+
+	return hasher.GenerateHash(pgcData)
 }
 
 func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube.DynaKube) error {
