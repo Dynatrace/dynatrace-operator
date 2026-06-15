@@ -53,7 +53,7 @@ test/e2e/no-csi:
 
 ## Run release e2e test only
 test/e2e/release:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/release $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:

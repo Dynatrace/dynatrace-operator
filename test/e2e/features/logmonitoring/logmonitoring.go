@@ -152,9 +152,13 @@ func checkConditions(name string, namespace string, scopesEnabled bool) features
 			assert.True(t, meta.IsStatusConditionFalse(dk.Status.Conditions, logmonsettings.ConditionType))
 		}
 
-		for _, scope := range token.OptionalScopes {
-			hasScope := optionalscope.IsAvailable(dk, scope)
-			assert.Equalf(t, scopesEnabled, hasScope, "expected %s condition to be %t", scope, scopesEnabled)
+		// Platform tokens do not populate AvailableOptionalScopes,
+		// scope availability is inferred from 403 responses at runtime.
+		if !tenant.UsePlatformToken() {
+			for _, scope := range token.OptionalScopes {
+				hasScope := optionalscope.IsAvailable(dk, scope)
+				assert.Equalf(t, scopesEnabled, hasScope, "expected %s condition to be %t", scope, scopesEnabled)
+			}
 		}
 
 		return ctx
