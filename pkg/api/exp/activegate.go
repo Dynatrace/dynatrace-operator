@@ -12,8 +12,8 @@ const (
 	AGAutomaticK8sAPIMonitoringKey            = FFPrefix + "automatic-kubernetes-api-monitoring"
 	AGAutomaticK8sAPIMonitoringClusterNameKey = FFPrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	// Deprecated: The builtin:app-transition.kubernetes schema is no longer available on phase 3 tenants.
-	AGK8sAppEnabledKey = FFPrefix + "k8s-app-enabled"
-	AGAutomaticTLSCertificateKey              = FFPrefix + "automatic-tls-certificate"
+	AGK8sAppEnabledKey           = FFPrefix + "k8s-app-enabled"
+	AGAutomaticTLSCertificateKey = FFPrefix + "automatic-tls-certificate"
 )
 
 // IsActiveGateUpdatesDisabled is a feature flag to disable ActiveGate updates.
