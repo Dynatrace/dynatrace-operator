@@ -60,6 +60,12 @@ rules:
     verbs:
       - create
       - patch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

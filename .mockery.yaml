@@ -101,6 +101,14 @@ packages:
       filename: "mock_{{.InterfaceName | snakecase}}_test.go"
     interfaces:
       Modifier:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{.SrcPackageName}}"
+      structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+    interfaces:
+      volumeAuthorizer:
   # =============================================================================
   # Shared mocks: placed in test/mocks/ (using default config)
   # =============================================================================

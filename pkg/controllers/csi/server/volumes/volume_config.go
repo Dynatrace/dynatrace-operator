@@ -14,6 +14,7 @@ import (
 const (
 	PodNameContextKey      = "csi.storage.k8s.io/pod.name"
 	PodNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
+	PodUIDContextKey       = "csi.storage.k8s.io/pod.uid"
 
 	// CSIVolumeAttributeModeField used for identifying the origin of the NodePublishVolume request
 	CSIVolumeAttributeModeField     = "mode"
@@ -32,6 +33,7 @@ type VolumeConfig struct {
 	VolumeInfo
 	PodName      string
 	PodNamespace string
+	PodUID       string
 	Mode         string
 	DynakubeName string
 	RetryTimeout time.Duration
@@ -65,34 +67,49 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (VolumeCon
 		return volumeConfig, status.Error(codes.InvalidArgument, "Publish context missing in request")
 	}
 
+	if err := parseVolumeContext(volCtx, &volumeConfig); err != nil {
+		return volumeConfig, err
+	}
+
+	return volumeConfig, nil
+}
+
+func parseVolumeContext(volCtx map[string]string, volumeConfig *VolumeConfig) error {
 	podName := volCtx[PodNameContextKey]
 	if podName == "" {
-		return volumeConfig, status.Error(codes.InvalidArgument, "No Pod Name included in request")
+		return status.Error(codes.InvalidArgument, "No Pod Name included in request")
 	}
 
 	volumeConfig.PodName = podName
 
 	podNamespace := volCtx[PodNamespaceContextKey]
 	if podNamespace == "" {
-		return volumeConfig, status.Error(codes.InvalidArgument, "No Pod Namespace included in request")
+		return status.Error(codes.InvalidArgument, "No Pod Namespace included in request")
 	}
 
 	volumeConfig.PodNamespace = podNamespace
 
+	podUID := volCtx[PodUIDContextKey]
+	if podUID == "" {
+		return status.Error(codes.InvalidArgument, "No Pod UID included in request")
+	}
+
+	volumeConfig.PodUID = podUID
+
 	mode := volCtx[CSIVolumeAttributeModeField]
 	if mode == "" {
-		return volumeConfig, status.Error(codes.InvalidArgument, "No mode attribute included in request")
+		return status.Error(codes.InvalidArgument, "No mode attribute included in request")
 	}
 
 	volumeConfig.Mode = mode
 
 	dynakubeName := volCtx[CSIVolumeAttributeDynakubeField]
 	if dynakubeName == "" {
-		return volumeConfig, status.Error(codes.InvalidArgument, "No dynakube attribute included in request")
+		return status.Error(codes.InvalidArgument, "No dynakube attribute included in request")
 	}
 
 	if errs := validation.IsDNS1035Label(dynakubeName); len(errs) > 0 {
-		return volumeConfig, status.Errorf(codes.InvalidArgument, "Invalid dynakube name: %s", strings.Join(errs, "; "))
+		return status.Errorf(codes.InvalidArgument, "Invalid dynakube name: %s", strings.Join(errs, "; "))
 	}
 
 	volumeConfig.DynakubeName = dynakubeName
@@ -104,12 +121,12 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (VolumeCon
 
 	retryTimeout, err := time.ParseDuration(retryTimeoutValue)
 	if err != nil {
-		return volumeConfig, status.Error(codes.InvalidArgument, "The retryTimeout attribute has incorrect format")
+		return status.Error(codes.InvalidArgument, "The retryTimeout attribute has incorrect format")
 	}
 
 	volumeConfig.RetryTimeout = retryTimeout
 
-	return volumeConfig, nil
+	return nil
 }
 
 // Transforms the NodeUnpublishVolumeRequest into a VolumeInfo

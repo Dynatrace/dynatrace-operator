@@ -11,6 +11,7 @@ import (
 const (
 	testVolumeID     = "a-volume-id"
 	testTargetPath   = "a-target-path"
+	testPodName      = "a-pod-name"
 	testPodUID       = "a-pod-uid"
 	testNs           = "a-namespace"
 	testDynakubeName = "a-dynakube"
@@ -121,7 +122,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNameContextKey: testPodUID,
+				PodNameContextKey: testPodName,
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -131,6 +132,29 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
+	})
+	t.Run("Pod uid missing from requests volume context", func(t *testing.T) {
+		request := &csi.NodePublishVolumeRequest{
+			VolumeCapability: &csi.VolumeCapability{
+				AccessType: &csi.VolumeCapability_Mount{
+					Mount: &csi.VolumeCapability_MountVolume{},
+				},
+			},
+			VolumeId:   testVolumeID,
+			TargetPath: testTargetPath,
+			VolumeContext: map[string]string{
+				PodNameContextKey:      testPodName,
+				PodNamespaceContextKey: testNs,
+			},
+		}
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
+
+		require.Error(t, err)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
+		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
+		assert.Equal(t, request.GetVolumeContext()[PodNamespaceContextKey], volumeCfg.PodNamespace)
 	})
 	t.Run("mode missing from requests volume context", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
@@ -142,8 +166,9 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNameContextKey:      testPodUID,
+				PodNameContextKey:      testPodName,
 				PodNamespaceContextKey: testNs,
+				PodUIDContextKey:       testPodUID,
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -165,8 +190,9 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNameContextKey:           testPodUID,
+				PodNameContextKey:           testPodName,
 				PodNamespaceContextKey:      testNs,
+				PodUIDContextKey:            testPodUID,
 				CSIVolumeAttributeModeField: "test",
 			},
 		}
@@ -200,8 +226,9 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					VolumeId:   testVolumeID,
 					TargetPath: testTargetPath,
 					VolumeContext: map[string]string{
-						PodNameContextKey:               testPodUID,
+						PodNameContextKey:               testPodName,
 						PodNamespaceContextKey:          testNs,
+						PodUIDContextKey:                testPodUID,
 						CSIVolumeAttributeModeField:     "test",
 						CSIVolumeAttributeDynakubeField: name,
 					},
@@ -225,8 +252,9 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNameContextKey:               testPodUID,
+				PodNameContextKey:               testPodName,
 				PodNamespaceContextKey:          testNs,
+				PodUIDContextKey:                testPodUID,
 				CSIVolumeAttributeModeField:     "test",
 				CSIVolumeAttributeDynakubeField: "dk",
 			},
@@ -239,6 +267,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
 		assert.Equal(t, request.GetVolumeContext()[PodNamespaceContextKey], volumeCfg.PodNamespace)
+		assert.Equal(t, request.GetVolumeContext()[PodUIDContextKey], volumeCfg.PodUID)
 		assert.Equal(t, request.GetVolumeContext()[CSIVolumeAttributeModeField], volumeCfg.Mode)
 		assert.Equal(t, request.GetVolumeContext()[CSIVolumeAttributeDynakubeField], volumeCfg.DynakubeName)
 		assert.NotNil(t, volumeCfg.RetryTimeout)

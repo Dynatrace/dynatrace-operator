@@ -57,7 +57,9 @@ func run(*cobra.Command, []string) error {
 		return err
 	}
 
-	csiManager, err := createManager(kubeConfig, k8senv.DefaultNamespace())
+	defaultNamespace := k8senv.DefaultNamespace()
+
+	csiManager, err := createManager(kubeConfig, defaultNamespace)
 	if err != nil {
 		return err
 	}
@@ -69,7 +71,7 @@ func run(*cobra.Command, []string) error {
 		return err
 	}
 
-	err = csiserver.NewServer(createCsiOptions()).SetupWithManager(csiManager)
+	err = csiserver.NewServer(createCsiOptions()).SetupWithManager(csiManager, defaultNamespace)
 	if err != nil {
 		return err
 	}

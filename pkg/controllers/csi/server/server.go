@@ -30,6 +30,7 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/authorization"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/app"
 	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/host"
@@ -48,11 +49,17 @@ const DefaultMaxGRPCRequests = 20
 
 var counter atomic.Int32
 
+// volumeAuthorizer is the authorization gate called on every NodePublishVolume request.
+type volumeAuthorizer interface {
+	Authorize(ctx context.Context, cfg csivolumes.VolumeConfig) (string, error)
+}
+
 type Server struct {
 	csi.UnimplementedIdentityServer
 	csi.UnimplementedNodeServer
 
-	mounter mount.Interface
+	mounter    mount.Interface
+	authorizer volumeAuthorizer
 
 	publishers map[string]csivolumes.Publisher
 	opts       dtcsi.CSIOptions
@@ -70,7 +77,9 @@ func NewServer(opts dtcsi.CSIOptions) *Server {
 	}
 }
 
-func (srv *Server) SetupWithManager(mgr ctrl.Manager) error {
+func (srv *Server) SetupWithManager(mgr ctrl.Manager, operatorNamespace string) error {
+	srv.authorizer = authorization.New(mgr.GetAPIReader(), operatorNamespace)
+
 	return mgr.Add(srv)
 }
 
@@ -175,6 +184,17 @@ func (srv *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 	if err != nil {
 		return nil, err
 	}
+
+	if srv.authorizer == nil {
+		return nil, status.Error(codes.Internal, "server not initialized")
+	}
+
+	dynakubeName, err := srv.authorizer.Authorize(ctx, volumeCfg)
+	if err != nil {
+		return nil, status.Error(codes.PermissionDenied, "access denied")
+	}
+
+	volumeCfg.DynakubeName = dynakubeName
 
 	if isMounted, err := srv.mounter.IsMountPoint(volumeCfg.TargetPath); err != nil && !os.IsNotExist(err) {
 		return nil, err
