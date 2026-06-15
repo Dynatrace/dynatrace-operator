@@ -60,7 +60,7 @@ type Handler_Handle_Call struct {
 
 // Handle is a helper method to define mock.On call
 //   - mutationRequest *mutator.MutationRequest
-func (_e *Handler_Expecter) Handle(mutationRequest interface{}) *Handler_Handle_Call {
+func (_e *Handler_Expecter) Handle(mutationRequest any) *Handler_Handle_Call {
 	return &Handler_Handle_Call{Call: _e.mock.On("Handle", mutationRequest)}
 }
 

@@ -89,7 +89,8 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	builder := features.New("logmonitoring-with-optional-scopes")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	if secretConfig.APITokenNoSettings == "" {
+
+	if secretConfig.APITokenNoSettings == "" && secretConfig.PlatformTokenNoSettings == "" {
 		t.Skip("skipping test. no token with missing settings scopes provided")
 	}
 
@@ -118,7 +119,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	builder.Assess("log monitoring conditions with disabled scopes", checkConditions(testDynakube.Name, testDynakube.Namespace, false))
 
-	builder.Assess("update token secret", tenant.CreateTenantSecret(secretConfig.APIToken, secretConfig.DataIngestToken, testDynakube.Name, testDynakube.Namespace))
+	builder.Assess("update token secret", tenant.CreateTenantSecret(secretConfig.TokensWithSettingsScope(), testDynakube.Name, testDynakube.Namespace))
 
 	builder.Assess("trigger reconcile", triggerDaemonSetReconcile(testDynakube))
 

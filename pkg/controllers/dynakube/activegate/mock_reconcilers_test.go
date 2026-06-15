@@ -70,7 +70,7 @@ type mockAuthTokenReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - agClient activegate.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockAuthTokenReconciler_Expecter) Reconcile(ctx interface{}, agClient interface{}, dk interface{}) *mockAuthTokenReconciler_Reconcile_Call {
+func (_e *mockAuthTokenReconciler_Expecter) Reconcile(ctx any, agClient any, dk any) *mockAuthTokenReconciler_Reconcile_Call {
 	return &mockAuthTokenReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, agClient, dk)}
 }
 
@@ -159,7 +159,7 @@ type mockIstioReconciler_ReconcileActiveGate_Call struct {
 // ReconcileActiveGate is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *mockIstioReconciler_Expecter) ReconcileActiveGate(ctx interface{}, dk interface{}) *mockIstioReconciler_ReconcileActiveGate_Call {
+func (_e *mockIstioReconciler_Expecter) ReconcileActiveGate(ctx any, dk any) *mockIstioReconciler_ReconcileActiveGate_Call {
 	return &mockIstioReconciler_ReconcileActiveGate_Call{Call: _e.mock.On("ReconcileActiveGate", ctx, dk)}
 }
 
@@ -244,7 +244,7 @@ type mockConnectionReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - agClient activegate.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockConnectionReconciler_Expecter) Reconcile(ctx interface{}, agClient interface{}, dk interface{}) *mockConnectionReconciler_Reconcile_Call {
+func (_e *mockConnectionReconciler_Expecter) Reconcile(ctx any, agClient any, dk any) *mockConnectionReconciler_Reconcile_Call {
 	return &mockConnectionReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, agClient, dk)}
 }
 
@@ -335,7 +335,7 @@ type mockVersionReconciler_ReconcileActiveGate_Call struct {
 //   - dk *dynakube.DynaKube
 //   - imageClient image.Client
 //   - versionClient version.Client
-func (_e *mockVersionReconciler_Expecter) ReconcileActiveGate(ctx interface{}, dk interface{}, imageClient interface{}, versionClient interface{}) *mockVersionReconciler_ReconcileActiveGate_Call {
+func (_e *mockVersionReconciler_Expecter) ReconcileActiveGate(ctx any, dk any, imageClient any, versionClient any) *mockVersionReconciler_ReconcileActiveGate_Call {
 	return &mockVersionReconciler_ReconcileActiveGate_Call{Call: _e.mock.On("ReconcileActiveGate", ctx, dk, imageClient, versionClient)}
 }
 
@@ -430,7 +430,7 @@ type mockPullSecretReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
 //   - tokens token.Tokens
-func (_e *mockPullSecretReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}, tokens interface{}) *mockPullSecretReconciler_Reconcile_Call {
+func (_e *mockPullSecretReconciler_Expecter) Reconcile(ctx any, dk any, tokens any) *mockPullSecretReconciler_Reconcile_Call {
 	return &mockPullSecretReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, tokens)}
 }
 
@@ -520,7 +520,7 @@ type mockStatefulsetReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
 //   - agCapability capability.Capability
-func (_e *mockStatefulsetReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}, agCapability interface{}) *mockStatefulsetReconciler_Reconcile_Call {
+func (_e *mockStatefulsetReconciler_Expecter) Reconcile(ctx any, dk any, agCapability any) *mockStatefulsetReconciler_Reconcile_Call {
 	return &mockStatefulsetReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, agCapability)}
 }
 
@@ -611,7 +611,7 @@ type mockCustomPropertiesReconciler_Reconcile_Call struct {
 //   - dk *dynakube.DynaKube
 //   - customPropertiesOwnerName string
 //   - customPropertiesSource *value.Source
-func (_e *mockCustomPropertiesReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}, customPropertiesOwnerName interface{}, customPropertiesSource interface{}) *mockCustomPropertiesReconciler_Reconcile_Call {
+func (_e *mockCustomPropertiesReconciler_Expecter) Reconcile(ctx any, dk any, customPropertiesOwnerName any, customPropertiesSource any) *mockCustomPropertiesReconciler_Reconcile_Call {
 	return &mockCustomPropertiesReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, customPropertiesOwnerName, customPropertiesSource)}
 }
 
@@ -705,7 +705,7 @@ type mockTlsReconciler_Reconcile_Call struct {
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *mockTlsReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}) *mockTlsReconciler_Reconcile_Call {
+func (_e *mockTlsReconciler_Expecter) Reconcile(ctx any, dk any) *mockTlsReconciler_Reconcile_Call {
 	return &mockTlsReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk)}
 }
 

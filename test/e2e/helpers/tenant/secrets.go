@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -30,11 +31,18 @@ type Secrets struct {
 }
 
 type Secret struct {
-	TenantUID          string `yaml:"tenantUid"`
-	APIURL             string `yaml:"apiUrl"`
-	APIToken           string `yaml:"apiToken"`
-	DataIngestToken    string `yaml:"dataIngestToken"`
-	APITokenNoSettings string `yaml:"apiTokenNoSettings"`
+	TenantUID               string `yaml:"tenantUid"`
+	APIURL                  string `yaml:"apiUrl"`
+	APIToken                string `yaml:"apiToken"`
+	DataIngestToken         string `yaml:"dataIngestToken"`
+	APITokenNoSettings      string `yaml:"apiTokenNoSettings"`
+	PlatformToken           string `yaml:"platformToken"`
+	PlatformTokenNoSettings string `yaml:"platformTokenNoSettings"`
+}
+
+type Tokens struct {
+	APIToken        string
+	DataIngestToken string
 }
 
 type EdgeConnectSecret struct {
@@ -44,6 +52,30 @@ type EdgeConnectSecret struct {
 	OauthClientID     string `yaml:"oAuthClientId"`
 	OauthClientSecret string `yaml:"oAuthClientSecret"`
 	Resource          string `yaml:"resource"`
+}
+
+func (s Secret) TokensWithSettingsScope() Tokens {
+	if UsePlatformToken() {
+		return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestToken}
+	}
+
+	return Tokens{APIToken: s.APIToken, DataIngestToken: s.DataIngestToken}
+}
+
+func (s Secret) TokensWithoutSettingsScope() Tokens {
+	if UsePlatformToken() {
+		return Tokens{APIToken: s.PlatformTokenNoSettings, DataIngestToken: s.DataIngestToken}
+	}
+
+	return Tokens{APIToken: s.APITokenNoSettings, DataIngestToken: s.DataIngestToken}
+}
+
+func (s Secret) PlatformTokens() Tokens {
+	return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestToken}
+}
+
+func (s Secret) ClassicTokens() Tokens {
+	return Tokens{APIToken: s.APIToken, DataIngestToken: s.DataIngestToken}
 }
 
 func manyFromConfig(path string) ([]Secret, error) {
@@ -107,8 +139,18 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	return result
 }
 
-func CreateTenantSecret(apiToken, dataIngestToken, name, namespace string) features.Func {
+func UsePlatformToken() bool {
+	return os.Getenv("USE_PLATFORM_TOKEN") == "true"
+}
+
+func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		if dttoken.IsPlatform(tokens.APIToken) {
+			t.Log("create/update tenant secret with platform token")
+		} else {
+			t.Log("create/update tenant secret with classic api token")
+		}
+
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -118,12 +160,12 @@ func CreateTenantSecret(apiToken, dataIngestToken, name, namespace string) featu
 				},
 			},
 			Data: map[string][]byte{
-				"apiToken": []byte(apiToken),
+				"apiToken": []byte(tokens.APIToken),
 			},
 		}
 
-		if dataIngestToken != "" {
-			defaultSecret.Data["dataIngestToken"] = []byte(dataIngestToken)
+		if tokens.DataIngestToken != "" {
+			defaultSecret.Data["dataIngestToken"] = []byte(tokens.DataIngestToken)
 		}
 
 		err := envConfig.Client().Resources().Create(ctx, &defaultSecret)

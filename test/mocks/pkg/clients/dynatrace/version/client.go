@@ -71,7 +71,7 @@ type Client_GetLatestActiveGateVersion_Call struct {
 // GetLatestActiveGateVersion is a helper method to define mock.On call
 //   - ctx context.Context
 //   - os string
-func (_e *Client_Expecter) GetLatestActiveGateVersion(ctx interface{}, os interface{}) *Client_GetLatestActiveGateVersion_Call {
+func (_e *Client_Expecter) GetLatestActiveGateVersion(ctx any, os any) *Client_GetLatestActiveGateVersion_Call {
 	return &Client_GetLatestActiveGateVersion_Call{Call: _e.mock.On("GetLatestActiveGateVersion", ctx, os)}
 }
 
@@ -138,7 +138,7 @@ type Client_GetLatestAgentVersion_Call struct {
 //   - ctx context.Context
 //   - os string
 //   - installerType string
-func (_e *Client_Expecter) GetLatestAgentVersion(ctx interface{}, os interface{}, installerType interface{}) *Client_GetLatestAgentVersion_Call {
+func (_e *Client_Expecter) GetLatestAgentVersion(ctx any, os any, installerType any) *Client_GetLatestAgentVersion_Call {
 	return &Client_GetLatestAgentVersion_Call{Call: _e.mock.On("GetLatestAgentVersion", ctx, os, installerType)}
 }
 

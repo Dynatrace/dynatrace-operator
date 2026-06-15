@@ -73,7 +73,7 @@ type MockStatusUpdater_CheckForDowngrade_Call struct {
 // CheckForDowngrade is a helper method to define mock.On call
 //   - ctx context.Context
 //   - latestVersion string
-func (_e *MockStatusUpdater_Expecter) CheckForDowngrade(ctx interface{}, latestVersion interface{}) *MockStatusUpdater_CheckForDowngrade_Call {
+func (_e *MockStatusUpdater_Expecter) CheckForDowngrade(ctx any, latestVersion any) *MockStatusUpdater_CheckForDowngrade_Call {
 	return &MockStatusUpdater_CheckForDowngrade_Call{Call: _e.mock.On("CheckForDowngrade", ctx, latestVersion)}
 }
 
@@ -360,7 +360,7 @@ type MockStatusUpdater_LatestImageInfo_Call struct {
 
 // LatestImageInfo is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockStatusUpdater_Expecter) LatestImageInfo(ctx interface{}) *MockStatusUpdater_LatestImageInfo_Call {
+func (_e *MockStatusUpdater_Expecter) LatestImageInfo(ctx any) *MockStatusUpdater_LatestImageInfo_Call {
 	return &MockStatusUpdater_LatestImageInfo_Call{Call: _e.mock.On("LatestImageInfo", ctx)}
 }
 
@@ -501,7 +501,7 @@ type MockStatusUpdater_UseTenantRegistry_Call struct {
 
 // UseTenantRegistry is a helper method to define mock.On call
 //   - context1 context.Context
-func (_e *MockStatusUpdater_Expecter) UseTenantRegistry(context1 interface{}) *MockStatusUpdater_UseTenantRegistry_Call {
+func (_e *MockStatusUpdater_Expecter) UseTenantRegistry(context1 any) *MockStatusUpdater_UseTenantRegistry_Call {
 	return &MockStatusUpdater_UseTenantRegistry_Call{Call: _e.mock.On("UseTenantRegistry", context1)}
 }
 
@@ -552,7 +552,7 @@ type MockStatusUpdater_ValidateStatus_Call struct {
 
 // ValidateStatus is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockStatusUpdater_Expecter) ValidateStatus(ctx interface{}) *MockStatusUpdater_ValidateStatus_Call {
+func (_e *MockStatusUpdater_Expecter) ValidateStatus(ctx any) *MockStatusUpdater_ValidateStatus_Call {
 	return &MockStatusUpdater_ValidateStatus_Call{Call: _e.mock.On("ValidateStatus", ctx)}
 }
 

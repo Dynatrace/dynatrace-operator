@@ -72,7 +72,7 @@ type Client_GetEntityIDForIP_Call struct {
 // GetEntityIDForIP is a helper method to define mock.On call
 //   - ctx context.Context
 //   - ip string
-func (_e *Client_Expecter) GetEntityIDForIP(ctx interface{}, ip interface{}) *Client_GetEntityIDForIP_Call {
+func (_e *Client_Expecter) GetEntityIDForIP(ctx any, ip any) *Client_GetEntityIDForIP_Call {
 	return &Client_GetEntityIDForIP_Call{Call: _e.mock.On("GetEntityIDForIP", ctx, ip)}
 }
 
@@ -129,7 +129,7 @@ type Client_SendEvent_Call struct {
 // SendEvent is a helper method to define mock.On call
 //   - ctx context.Context
 //   - event hostevent.Event
-func (_e *Client_Expecter) SendEvent(ctx interface{}, event interface{}) *Client_SendEvent_Call {
+func (_e *Client_Expecter) SendEvent(ctx any, event any) *Client_SendEvent_Call {
 	return &Client_SendEvent_Call{Call: _e.mock.On("SendEvent", ctx, event)}
 }
 

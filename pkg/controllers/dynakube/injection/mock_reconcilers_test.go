@@ -67,7 +67,7 @@ type mockIstioReconciler_ReconcileCodeModules_Call struct {
 // ReconcileCodeModules is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *mockIstioReconciler_Expecter) ReconcileCodeModules(ctx interface{}, dk interface{}) *mockIstioReconciler_ReconcileCodeModules_Call {
+func (_e *mockIstioReconciler_Expecter) ReconcileCodeModules(ctx any, dk any) *mockIstioReconciler_ReconcileCodeModules_Call {
 	return &mockIstioReconciler_ReconcileCodeModules_Call{Call: _e.mock.On("ReconcileCodeModules", ctx, dk)}
 }
 
@@ -153,7 +153,7 @@ type mockVersionReconciler_ReconcileCodeModules_Call struct {
 //   - dk *dynakube.DynaKube
 //   - imageClient image.Client
 //   - versionClient version.Client
-func (_e *mockVersionReconciler_Expecter) ReconcileCodeModules(ctx interface{}, dk interface{}, imageClient interface{}, versionClient interface{}) *mockVersionReconciler_ReconcileCodeModules_Call {
+func (_e *mockVersionReconciler_Expecter) ReconcileCodeModules(ctx any, dk any, imageClient any, versionClient any) *mockVersionReconciler_ReconcileCodeModules_Call {
 	return &mockVersionReconciler_ReconcileCodeModules_Call{Call: _e.mock.On("ReconcileCodeModules", ctx, dk, imageClient, versionClient)}
 }
 
@@ -248,7 +248,7 @@ type mockConnectionInfoReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - oaClient oneagent.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockConnectionInfoReconciler_Expecter) Reconcile(ctx interface{}, oaClient interface{}, dk interface{}) *mockConnectionInfoReconciler_Reconcile_Call {
+func (_e *mockConnectionInfoReconciler_Expecter) Reconcile(ctx any, oaClient any, dk any) *mockConnectionInfoReconciler_Reconcile_Call {
 	return &mockConnectionInfoReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, oaClient, dk)}
 }
 
@@ -338,7 +338,7 @@ type mockEnrichmentRulesReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - dtClient settings.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockEnrichmentRulesReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockEnrichmentRulesReconciler_Reconcile_Call {
+func (_e *mockEnrichmentRulesReconciler_Expecter) Reconcile(ctx any, dtClient any, dk any) *mockEnrichmentRulesReconciler_Reconcile_Call {
 	return &mockEnrichmentRulesReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 

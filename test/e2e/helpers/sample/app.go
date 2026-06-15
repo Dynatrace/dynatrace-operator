@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	e2econst "github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sevent"
@@ -18,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sreplicaset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -80,6 +83,10 @@ func NewApp(t *testing.T, owner metav1.Object, options ...Option) *App {
 
 	defaultOptions := []Option{
 		WithFailurePolicy(true),
+	}
+
+	if tenant.UsePlatformToken() {
+		defaultOptions = append(defaultOptions, WithImagePullSecret(e2econst.DevRegistryPullSecretName))
 	}
 
 	for _, opt := range append(defaultOptions, options...) {
@@ -218,6 +225,14 @@ func (app *App) Install() features.Func {
 		resource := c.Client().Resources()
 		if !app.installedNamespace {
 			ctx = app.InstallNamespace()(ctx, t, c)
+		}
+
+		for _, pullSecret := range app.base.Spec.ImagePullSecrets {
+			if pullSecret.Name == e2econst.DevRegistryPullSecretName {
+				ctx = copyDevRegistrySecret(app.Namespace())(ctx, t, c)
+
+				break
+			}
 		}
 
 		if !app.withoutClusterRole {
@@ -437,6 +452,29 @@ func deletePods(t *testing.T, ctx context.Context, pods corev1.PodList, resource
 		require.NoError(t, resource.Delete(ctx, &pod))
 		require.NoError(t, wait.For(
 			conditions.New(resource).ResourceDeleted(&pod)), wait.WithTimeout(1*time.Minute))
+	}
+}
+
+func copyDevRegistrySecret(targetNamespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		resource := c.Client().Resources()
+
+		var source corev1.Secret
+		require.NoError(t, resource.Get(ctx, e2econst.DevRegistryPullSecretName, operator.DefaultNamespace, &source))
+
+		target := corev1.Secret{
+			Type: source.Type,
+			Data: source.Data,
+		}
+		target.Name = e2econst.DevRegistryPullSecretName
+		target.Namespace = targetNamespace
+
+		err := resource.Create(ctx, &target)
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			require.NoError(t, err)
+		}
+
+		return ctx
 	}
 }
 

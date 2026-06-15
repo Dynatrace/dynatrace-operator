@@ -2,7 +2,7 @@
 # Per-schema overrides can be set in sync-config.yaml under the 'generate' key.
 
 # renovate datasource=github-releases depName=OpenAPITools/openapi-generator
-generatorVersion: v7.22.0
+generatorVersion: v7.23.0
 outputDir: pkg/clients/generated
 additionalProperties: "generateInterfaces"
 globalProperties: "supportingFiles"
