@@ -64,7 +64,7 @@ type Request_Execute_Call struct {
 
 // Execute is a helper method to define mock.On call
 //   - model any
-func (_e *Request_Expecter) Execute(model interface{}) *Request_Execute_Call {
+func (_e *Request_Expecter) Execute(model any) *Request_Execute_Call {
 	return &Request_Execute_Call{Call: _e.mock.On("Execute", model)}
 }
 
@@ -126,7 +126,7 @@ type Request_ExecuteWriter_Call struct {
 
 // ExecuteWriter is a helper method to define mock.On call
 //   - writer io.Writer
-func (_e *Request_Expecter) ExecuteWriter(writer interface{}) *Request_ExecuteWriter_Call {
+func (_e *Request_Expecter) ExecuteWriter(writer any) *Request_ExecuteWriter_Call {
 	return &Request_ExecuteWriter_Call{Call: _e.mock.On("ExecuteWriter", writer)}
 }
 
@@ -180,7 +180,7 @@ type Request_WithHeader_Call struct {
 // WithHeader is a helper method to define mock.On call
 //   - key string
 //   - value string
-func (_e *Request_Expecter) WithHeader(key interface{}, value interface{}) *Request_WithHeader_Call {
+func (_e *Request_Expecter) WithHeader(key any, value any) *Request_WithHeader_Call {
 	return &Request_WithHeader_Call{Call: _e.mock.On("WithHeader", key, value)}
 }
 
@@ -238,7 +238,7 @@ type Request_WithJSONBody_Call struct {
 
 // WithJSONBody is a helper method to define mock.On call
 //   - body any
-func (_e *Request_Expecter) WithJSONBody(body interface{}) *Request_WithJSONBody_Call {
+func (_e *Request_Expecter) WithJSONBody(body any) *Request_WithJSONBody_Call {
 	return &Request_WithJSONBody_Call{Call: _e.mock.On("WithJSONBody", body)}
 }
 
@@ -343,9 +343,9 @@ type Request_WithPath_Call struct {
 
 // WithPath is a helper method to define mock.On call
 //   - path ...string
-func (_e *Request_Expecter) WithPath(path ...interface{}) *Request_WithPath_Call {
+func (_e *Request_Expecter) WithPath(path ...any) *Request_WithPath_Call {
 	return &Request_WithPath_Call{Call: _e.mock.On("WithPath",
-		append([]interface{}{}, path...)...)}
+		append([]any{}, path...)...)}
 }
 
 func (_c *Request_WithPath_Call) Run(run func(path ...string)) *Request_WithPath_Call {
@@ -399,7 +399,7 @@ type Request_WithQueryParams_Call struct {
 
 // WithQueryParams is a helper method to define mock.On call
 //   - params map[string]string
-func (_e *Request_Expecter) WithQueryParams(params interface{}) *Request_WithQueryParams_Call {
+func (_e *Request_Expecter) WithQueryParams(params any) *Request_WithQueryParams_Call {
 	return &Request_WithQueryParams_Call{Call: _e.mock.On("WithQueryParams", params)}
 }
 
@@ -452,7 +452,7 @@ type Request_WithRawQueryParams_Call struct {
 
 // WithRawQueryParams is a helper method to define mock.On call
 //   - params url.Values
-func (_e *Request_Expecter) WithRawQueryParams(params interface{}) *Request_WithRawQueryParams_Call {
+func (_e *Request_Expecter) WithRawQueryParams(params any) *Request_WithRawQueryParams_Call {
 	return &Request_WithRawQueryParams_Call{Call: _e.mock.On("WithRawQueryParams", params)}
 }
 

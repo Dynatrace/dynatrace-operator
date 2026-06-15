@@ -73,7 +73,7 @@ type Client_GetScopes_Call struct {
 // GetScopes is a helper method to define mock.On call
 //   - ctx context.Context
 //   - token string
-func (_e *Client_Expecter) GetScopes(ctx interface{}, token interface{}) *Client_GetScopes_Call {
+func (_e *Client_Expecter) GetScopes(ctx any, token any) *Client_GetScopes_Call {
 	return &Client_GetScopes_Call{Call: _e.mock.On("GetScopes", ctx, token)}
 }
 

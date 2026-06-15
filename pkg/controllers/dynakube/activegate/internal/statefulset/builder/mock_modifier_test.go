@@ -104,7 +104,7 @@ type MockModifier_Modify_Call struct {
 
 // Modify is a helper method to define mock.On call
 //   - statefulSet *v1.StatefulSet
-func (_e *MockModifier_Expecter) Modify(statefulSet interface{}) *MockModifier_Modify_Call {
+func (_e *MockModifier_Expecter) Modify(statefulSet any) *MockModifier_Modify_Call {
 	return &MockModifier_Modify_Call{Call: _e.mock.On("Modify", statefulSet)}
 }
 

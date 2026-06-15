@@ -65,7 +65,7 @@ type mockSubReconciler_Reconcile_Call struct {
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *mockSubReconciler_Expecter) Reconcile(ctx interface{}, dk interface{}) *mockSubReconciler_Reconcile_Call {
+func (_e *mockSubReconciler_Expecter) Reconcile(ctx any, dk any) *mockSubReconciler_Reconcile_Call {
 	return &mockSubReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk)}
 }
 
@@ -150,7 +150,7 @@ type mockLogmonsettingsSubReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - dtClient settings.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockLogmonsettingsSubReconciler_Expecter) Reconcile(ctx interface{}, dtClient interface{}, dk interface{}) *mockLogmonsettingsSubReconciler_Reconcile_Call {
+func (_e *mockLogmonsettingsSubReconciler_Expecter) Reconcile(ctx any, dtClient any, dk any) *mockLogmonsettingsSubReconciler_Reconcile_Call {
 	return &mockLogmonsettingsSubReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
@@ -240,7 +240,7 @@ type mockOaConnectionInfoReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - oaClient oneagent.Client
 //   - dk *dynakube.DynaKube
-func (_e *mockOaConnectionInfoReconciler_Expecter) Reconcile(ctx interface{}, oaClient interface{}, dk interface{}) *mockOaConnectionInfoReconciler_Reconcile_Call {
+func (_e *mockOaConnectionInfoReconciler_Expecter) Reconcile(ctx any, oaClient any, dk any) *mockOaConnectionInfoReconciler_Reconcile_Call {
 	return &mockOaConnectionInfoReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, oaClient, dk)}
 }
 

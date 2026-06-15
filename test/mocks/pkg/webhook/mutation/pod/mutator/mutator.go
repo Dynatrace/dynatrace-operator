@@ -63,7 +63,7 @@ type Mutator_IsEnabled_Call struct {
 // IsEnabled is a helper method to define mock.On call
 //   - ctx context.Context
 //   - request *mutator.BaseRequest
-func (_e *Mutator_Expecter) IsEnabled(ctx interface{}, request interface{}) *Mutator_IsEnabled_Call {
+func (_e *Mutator_Expecter) IsEnabled(ctx any, request any) *Mutator_IsEnabled_Call {
 	return &Mutator_IsEnabled_Call{Call: _e.mock.On("IsEnabled", ctx, request)}
 }
 
@@ -120,7 +120,7 @@ type Mutator_IsInjected_Call struct {
 // IsInjected is a helper method to define mock.On call
 //   - ctx context.Context
 //   - request *mutator.BaseRequest
-func (_e *Mutator_Expecter) IsInjected(ctx interface{}, request interface{}) *Mutator_IsInjected_Call {
+func (_e *Mutator_Expecter) IsInjected(ctx any, request any) *Mutator_IsInjected_Call {
 	return &Mutator_IsInjected_Call{Call: _e.mock.On("IsInjected", ctx, request)}
 }
 
@@ -176,7 +176,7 @@ type Mutator_Mutate_Call struct {
 
 // Mutate is a helper method to define mock.On call
 //   - request *mutator.MutationRequest
-func (_e *Mutator_Expecter) Mutate(request interface{}) *Mutator_Mutate_Call {
+func (_e *Mutator_Expecter) Mutate(request any) *Mutator_Mutate_Call {
 	return &Mutator_Mutate_Call{Call: _e.mock.On("Mutate", request)}
 }
 
@@ -228,7 +228,7 @@ type Mutator_Reinvoke_Call struct {
 // Reinvoke is a helper method to define mock.On call
 //   - ctx context.Context
 //   - request *mutator.ReinvocationRequest
-func (_e *Mutator_Expecter) Reinvoke(ctx interface{}, request interface{}) *Mutator_Reinvoke_Call {
+func (_e *Mutator_Expecter) Reinvoke(ctx any, request any) *Mutator_Reinvoke_Call {
 	return &Mutator_Reinvoke_Call{Call: _e.mock.On("Reinvoke", ctx, request)}
 }
 
