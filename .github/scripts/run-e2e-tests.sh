@@ -28,6 +28,8 @@ echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
 TARGET="${E2E_MAKE_TARGET:+test/e2e/${E2E_MAKE_TARGET}}"
 
+echo "Running make target: ${TARGET:-default}"
+
 if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
   make OLM=true "${TARGET:-test/e2e/no-csi/publish}"
 elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
