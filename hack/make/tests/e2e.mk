@@ -178,13 +178,16 @@ test/e2e/applicationmonitoring/bootstrapper-csi:
 test/e2e/applicationmonitoring/bootstrapper-no-csi:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "node_image_pull_with_no_csi" $(SKIPCLEANUP)
 
-## Runs PGC bootstrapper with CloudNativeFullStack (with CSI) e2e test only
-test/e2e/bootstrapper/pgc-fullstack-csi:
+## Runs PGC bootstrapper tests for CloudNativeFullStack (both CSI and no-CSI)
+test/e2e/cloudnative/pgc-bootstrapper:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "pgc_with_fullstack" $(SKIPCLEANUP)
-
-## Runs PGC bootstrapper with CloudNativeFullStack (without CSI) e2e test only
-test/e2e/bootstrapper/pgc-fullstack-no-csi:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "pgc_with_fullstack" $(SKIPCLEANUP)
+
+## Runs PGC e2e tests for all OneAgent modes (HostMonitoring and CloudNativeFullStack)
+test/e2e/pgc:
+	$(MAKE) test/e2e/cloudnative/pgc-bootstrapper
+	$(MAKE) test/e2e/cloudnative/pgc-hostagent
+	$(MAKE) test/e2e/hostmonitoring/pgc
 
 ## Runs public registry images e2e test only
 test/e2e/publicregistry:
@@ -272,6 +275,32 @@ test/e2e/hostmonitoring/withoutcsi:
 ## Runs Host Monitoring generate metadata tests
 test/e2e/hostmonitoring/generate-metadata:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "host_monitoring_generate_metadata" $(SKIPCLEANUP)
+
+## Runs Host Monitoring PGC with CSI e2e test only
+test/e2e/hostmonitoring/pgc-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "host_agent_pgc_host_monitoring" $(SKIPCLEANUP)
+
+## Runs Host Monitoring PGC without CSI e2e test only
+test/e2e/hostmonitoring/pgc-no-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "host_agent_pgc_host_monitoring" $(SKIPCLEANUP)
+
+## Runs Host Monitoring PGC e2e tests for both CSI and no-CSI
+test/e2e/hostmonitoring/pgc:
+	$(MAKE) test/e2e/hostmonitoring/pgc-csi
+	$(MAKE) test/e2e/hostmonitoring/pgc-no-csi
+
+## Runs CloudNativeFullStack host agent PGC with CSI e2e test only
+test/e2e/cloudnative/pgc-hostagent-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "host_agent_pgc_cloudnative" $(SKIPCLEANUP)
+
+## Runs CloudNativeFullStack host agent PGC without CSI e2e test only
+test/e2e/cloudnative/pgc-hostagent-no-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "host_agent_pgc_cloudnative" $(SKIPCLEANUP)
+
+## Runs CloudNativeFullStack host agent PGC e2e tests for both CSI and no-CSI
+test/e2e/cloudnative/pgc-hostagent:
+	$(MAKE) test/e2e/cloudnative/pgc-hostagent-csi
+	$(MAKE) test/e2e/cloudnative/pgc-hostagent-no-csi
 
 ## Runs CloudNative default e2e test only
 test/e2e/cloudnative/withoutcsi:

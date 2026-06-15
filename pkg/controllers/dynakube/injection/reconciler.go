@@ -137,7 +137,7 @@ func (r *Reconciler) setupOTLPSecret(ctx context.Context, namespaces []corev1.Na
 }
 
 func (r *Reconciler) setupInitSecret(ctx context.Context, dtClient *dynatrace.Client, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichment().IsEnabled() {
+	if bootstrapperconfig.NeedsPGC(dk) || dk.MetadataEnrichment().IsEnabled() {
 		if err := r.generateInitSecret(ctx, dtClient, namespaces, dk); err != nil {
 			return err
 		}
@@ -249,7 +249,8 @@ func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.
 	log := logd.FromContext(ctx)
 
 	if meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType) == nil &&
-		meta.FindStatusCondition(*dk.Conditions(), metaDataEnrichmentConditionType) == nil {
+		meta.FindStatusCondition(*dk.Conditions(), metaDataEnrichmentConditionType) == nil &&
+		meta.FindStatusCondition(*dk.Conditions(), bootstrapperconfig.ConfigConditionType) == nil {
 		return
 	}
 
@@ -260,6 +261,7 @@ func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.
 
 	meta.RemoveStatusCondition(dk.Conditions(), codeModulesInjectionConditionType)
 	meta.RemoveStatusCondition(dk.Conditions(), metaDataEnrichmentConditionType)
+	meta.RemoveStatusCondition(dk.Conditions(), bootstrapperconfig.ConfigConditionType)
 }
 
 func (r *Reconciler) cleanupOTLPSecret(ctx context.Context, namespaces []corev1.Namespace, dk *dynakube.DynaKube) {
