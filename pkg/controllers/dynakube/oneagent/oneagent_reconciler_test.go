@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
@@ -741,61 +740,6 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDKey])
 		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsKey])
-	})
-}
-
-func TestPGCConfigHash(t *testing.T) {
-	const testNamespace = "test-namespace"
-	const testDynakubeName = "test-dynakube"
-
-	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeName, Namespace: testNamespace},
-	}
-
-	t.Run("secret not found returns empty hash", func(t *testing.T) {
-		fakeClient := fake.NewClient()
-		r := &Reconciler{apiReader: fakeClient}
-
-		hash, err := r.pgcConfigHash(context.Background(), dk)
-		require.NoError(t, err)
-		assert.Empty(t, hash)
-	})
-
-	t.Run("secret found returns hash of pgc data", func(t *testing.T) {
-		pgcData := []byte("some-pgc-content")
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				bootstrapperconfig.DeclarativeInputFileName: pgcData,
-			},
-		}
-		fakeClient := fake.NewClient(secret)
-		r := &Reconciler{apiReader: fakeClient}
-
-		hash, err := r.pgcConfigHash(context.Background(), dk)
-		require.NoError(t, err)
-
-		expectedHash, err := hasher.GenerateHash(pgcData)
-		require.NoError(t, err)
-		assert.Equal(t, expectedHash, hash)
-	})
-
-	t.Run("secret found but no pgc data returns hash of nil", func(t *testing.T) {
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
-				Namespace: testNamespace,
-			},
-		}
-		fakeClient := fake.NewClient(secret)
-		r := &Reconciler{apiReader: fakeClient}
-
-		hash, err := r.pgcConfigHash(context.Background(), dk)
-		require.NoError(t, err)
-		assert.Empty(t, hash)
 	})
 }
 

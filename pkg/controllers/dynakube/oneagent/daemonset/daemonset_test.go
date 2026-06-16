@@ -9,8 +9,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
@@ -283,7 +286,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID, false)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, nil)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -317,7 +320,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID, false)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, nil)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -346,7 +349,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID, false)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, nil)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -373,7 +376,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID, false)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, nil)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -764,7 +767,7 @@ func TestUpdateStrategy(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID, false)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, nil)
 		daemonset, err := dsBuilder.BuildDaemonSet(t.Context())
 
 		expected := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
@@ -789,7 +792,7 @@ func TestUpdateStrategy(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID, false)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, nil)
 		daemonset, err := dsBuilder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -899,7 +902,7 @@ func TestAnnotations(t *testing.T) {
 	t.Run("default apparmor annotation is present in 1.30", func(t *testing.T) {
 		k8sversion.DisableCacheForTest(30)
 
-		ds, err := NewCloudNativeFullStack(baseDK, testClusterID, false).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID, nil).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.Contains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 		assert.Equal(t, appArmorUnconfined, ds.Spec.Template.Annotations[appArmorAnnotation])
@@ -911,7 +914,7 @@ func TestAnnotations(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewCloudNativeFullStack(dk, testClusterID, false).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(dk, testClusterID, nil).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, corev1.DeprecatedAppArmorBetaProfileRuntimeDefault, ds.Spec.Template.Annotations[appArmorAnnotation])
 	})
@@ -919,7 +922,7 @@ func TestAnnotations(t *testing.T) {
 	t.Run("apparmor annotation is absent in 1.31", func(t *testing.T) {
 		k8sversion.DisableCacheForTest(31)
 
-		ds, err := NewCloudNativeFullStack(baseDK, testClusterID, false).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID, nil).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 	})
@@ -930,7 +933,7 @@ func TestAnnotations(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewCloudNativeFullStack(dk, testClusterID, false).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(dk, testClusterID, nil).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 	})
@@ -958,7 +961,7 @@ func TestAnnotations(t *testing.T) {
 			annotationEnableDaemonSetEviction: "false",
 		}
 
-		builder := NewCloudNativeFullStack(&dk, testClusterID, false)
+		builder := NewCloudNativeFullStack(&dk, testClusterID, nil)
 		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -986,7 +989,7 @@ func TestAnnotations(t *testing.T) {
 			annotationEnableDaemonSetEviction: "false",
 		}
 
-		builder := NewHostMonitoring(&dk, testClusterID, false)
+		builder := NewHostMonitoring(&dk, testClusterID, nil)
 		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -1042,7 +1045,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 			},
 		}
 
-		builder := NewCloudNativeFullStack(&dk, testClusterID, false)
+		builder := NewCloudNativeFullStack(&dk, testClusterID, nil)
 		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -1308,4 +1311,67 @@ func TestInitContainerSecurityContext(t *testing.T) {
 	assert.Contains(t, securityContext.Capabilities.Drop, corev1.Capability("ALL"))
 	assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, securityContext.SeccompProfile.Type)
 	assert.True(t, *securityContext.ReadOnlyRootFilesystem)
+}
+
+func TestPGCConfigHash(t *testing.T) {
+	const testNamespace = "test-namespace"
+	const testDynakubeName = "test-dynakube"
+
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeName, Namespace: testNamespace},
+	}
+
+	t.Run("secret not found returns empty hash", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		b := &builder{dk: dk, apiReader: fakeClient}
+
+		hash, err := b.pgcConfigHash(t.Context())
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("secret found returns hash of pgc data", func(t *testing.T) {
+		pgcData := []byte("some-pgc-content")
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				bootstrapperconfig.DeclarativeInputFileName: pgcData,
+			},
+		}
+		fakeClient := fake.NewClient(secret)
+		b := &builder{dk: dk, apiReader: fakeClient}
+
+		hash, err := b.pgcConfigHash(t.Context())
+		require.NoError(t, err)
+
+		expectedHash, err := hasher.GenerateHash(pgcData)
+		require.NoError(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("secret found but no pgc data returns empty hash", func(t *testing.T) {
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
+				Namespace: testNamespace,
+			},
+		}
+		fakeClient := fake.NewClient(secret)
+		b := &builder{dk: dk, apiReader: fakeClient}
+
+		hash, err := b.pgcConfigHash(t.Context())
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("nil apiReader returns empty hash", func(t *testing.T) {
+		b := &builder{dk: dk, apiReader: nil}
+
+		hash, err := b.pgcConfigHash(t.Context())
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
 }
