@@ -276,7 +276,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		reconciler.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
 		dk.Status.OneAgent.Version = oldComponentVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID, false)
 		ds, err := dsInfo.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -307,7 +307,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
 		dk.Spec.OneAgent.ClassicFullStack.Version = "version" //nolint:staticcheck
 		dk.Status.OneAgent.Version = oldComponentVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID, false)
 		ds, err := dsInfo.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 

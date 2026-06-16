@@ -311,32 +311,38 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube,
 }
 
 func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
+	var configHash string
+
+	if bootstrapperconfig.NeedsPGC(dk) {
+		var err error
+
+		configHash, err = r.pgcConfigHash(ctx, dk)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	pgcReady := configHash != ""
+
 	var ds *appsv1.DaemonSet
 
 	var err error
 
 	switch {
 	case dk.OneAgent().IsClassicFullStackMode():
-		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
+		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID, pgcReady).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsHostMonitoringMode():
-		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID).BuildDaemonSet(ctx)
+		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID, pgcReady).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsCloudNativeFullstackMode():
-		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
+		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID, pgcReady).BuildDaemonSet(ctx)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	if bootstrapperconfig.NeedsPGC(dk) {
-		configHash, err := r.pgcConfigHash(ctx, dk)
-		if err != nil {
-			return nil, err
-		}
-
-		if configHash != "" {
-			ds.Spec.Template.Annotations[daemonset.AnnotationPGCHash] = configHash
-		}
+	if pgcReady {
+		ds.Spec.Template.Annotations[daemonset.AnnotationPGCHash] = configHash
 	}
 
 	dsHash, err := hasher.GenerateHash(ds)

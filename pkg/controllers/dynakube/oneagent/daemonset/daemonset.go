@@ -90,41 +90,45 @@ type builder struct {
 	hostInjectSpec *oneagent.HostInjectSpec
 	clusterID      string
 	deploymentType string
+	pgcReady       bool
 }
 
 type Builder interface {
 	BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewHostMonitoring(dk *dynakube.DynaKube, clusterID string, pgcReady bool) Builder {
 	return &hostMonitoring{
 		builder{
 			dk:             dk,
 			hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
 			clusterID:      clusterID,
 			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
+			pgcReady:       pgcReady,
 		},
 	}
 }
 
-func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID string, pgcReady bool) Builder {
 	return &hostMonitoring{
 		builder{
 			dk:             dk,
 			hostInjectSpec: &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterID:      clusterID,
 			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
+			pgcReady:       pgcReady,
 		},
 	}
 }
 
-func NewClassicFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewClassicFullStack(dk *dynakube.DynaKube, clusterID string, pgcReady bool) Builder {
 	return &classicFullStack{
 		builder{
 			dk:             dk,
 			hostInjectSpec: dk.Spec.OneAgent.ClassicFullStack,
 			clusterID:      clusterID,
 			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
+			pgcReady:       pgcReady,
 		},
 	}
 }
@@ -422,11 +426,11 @@ func (b *builder) dnsPolicy() corev1.DNSPolicy {
 }
 
 func (b *builder) volumeMounts() []corev1.VolumeMount {
-	return prepareVolumeMounts(b.dk)
+	return prepareVolumeMounts(b.dk, b.pgcReady)
 }
 
 func (b *builder) volumes() []corev1.Volume {
-	return prepareVolumes(b.dk)
+	return prepareVolumes(b.dk, b.pgcReady)
 }
 
 func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
