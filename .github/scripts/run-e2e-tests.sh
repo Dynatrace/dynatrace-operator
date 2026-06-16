@@ -26,7 +26,7 @@ source ../ref/.github/scripts/prepare-e2e-secrets.sh
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
-TARGET="${E2E_MAKE_TARGET:+test/e2e/${E2E_MAKE_TARGET}}"
+TARGET="${E2E_MAKE_TARGET:+test/e2e/${E2E_MAKE_TARGET}/publish}"
 
 echo "Running make target: ${TARGET:-default}"
 
