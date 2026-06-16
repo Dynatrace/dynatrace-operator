@@ -148,9 +148,6 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 }
 
 func MetadataEnrichmentWithoutDeprecatedAttributes(t *testing.T) features.Feature {
-	if tenant.UsePlatformToken() {
-		t.Skip("Skip test until new bootstraper image with deprecated attributes fix")
-	}
 	builder := features.New("metadata-enrichment-without-deprecated-attributes")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
