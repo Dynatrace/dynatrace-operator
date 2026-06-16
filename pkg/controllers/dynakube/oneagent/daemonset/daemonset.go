@@ -121,14 +121,13 @@ func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID string, pgcReady b
 	}
 }
 
-func NewClassicFullStack(dk *dynakube.DynaKube, clusterID string, pgcReady bool) Builder {
+func NewClassicFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
 	return &classicFullStack{
 		builder{
 			dk:             dk,
 			hostInjectSpec: dk.Spec.OneAgent.ClassicFullStack,
 			clusterID:      clusterID,
 			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
-			pgcReady:       pgcReady,
 		},
 	}
 }

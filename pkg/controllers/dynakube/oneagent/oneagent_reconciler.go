@@ -330,7 +330,7 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 
 	switch {
 	case dk.OneAgent().IsClassicFullStackMode():
-		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID, pgcReady).BuildDaemonSet(ctx)
+		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsHostMonitoringMode():
 		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID, pgcReady).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsCloudNativeFullstackMode():
