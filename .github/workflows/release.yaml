@@ -88,6 +88,7 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           images: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
           annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
+          fips: true
           suffix: fips
     outputs:
       digest: ${{steps.build-image.outputs.digest}}
