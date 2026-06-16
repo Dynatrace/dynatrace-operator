@@ -384,10 +384,15 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		attrs, err := NewPodAttributes(t.Context(), *request.BaseRequest, fake.NewClient())
 		require.NoError(t, err)
-		require.NoError(t, attrs.ApplyAnnotationsToPod(request.Pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(request.Pod))
 
 		require.Len(t, request.Pod.Annotations, 1)
 		require.Empty(t, request.Pod.Labels)
+
+		// individual metadata.dynatrace.com/<key> annotations must not be written
+		assert.NotContains(t, request.Pod.Annotations, metadataenrichment.Prefix+"copyofannotations")
+		assert.NotContains(t, request.Pod.Annotations, metadataenrichment.Prefix+K8sWorkloadKindAttr)
+		assert.NotContains(t, request.Pod.Annotations, metadataenrichment.Prefix+K8sWorkloadNameAttr)
 
 		var actualMetadataJSON map[string]string
 
@@ -440,9 +445,9 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		attrs, err := NewPodAttributes(t.Context(), *request.BaseRequest, fake.NewClient())
 		require.NoError(t, err)
-		require.NoError(t, attrs.ApplyAnnotationsToPod(request.Pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(request.Pod))
 
-		// pod was pre-seeded with one annotation; ApplyAnnotationsToPod only adds the JSON block
+		// pod was pre-seeded with one annotation; ApplyJSONAnnotationToPod only adds the JSON block
 		require.Len(t, request.Pod.Annotations, 2)
 		require.Empty(t, request.Pod.Labels)
 
@@ -505,7 +510,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		attrs, err := NewPodAttributes(t.Context(), *request.BaseRequest, fake.NewClient())
 		require.NoError(t, err)
-		require.NoError(t, attrs.ApplyAnnotationsToPod(request.Pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(request.Pod))
 
 		require.Len(t, request.Pod.Annotations, 1)
 		require.Empty(t, request.Pod.Labels)
@@ -542,9 +547,9 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		attrs, err := NewPodAttributes(t.Context(), *request.BaseRequest, fake.NewClient())
 		require.NoError(t, err)
-		require.NoError(t, attrs.ApplyAnnotationsToPod(request.Pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(request.Pod))
 
-		// pod was pre-seeded with one annotation; ApplyAnnotationsToPod only adds the JSON block
+		// pod was pre-seeded with one annotation; ApplyJSONAnnotationToPod only adds the JSON block
 		require.Len(t, request.Pod.Annotations, 2)
 
 		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[metadataenrichment.Prefix+"someannotation"])

@@ -6,11 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (attrs *Pod) ApplyAnnotationsToPod(pod *corev1.Pod) error {
-	return attrs.setPodMetadataJSONAnnotation(pod)
-}
-
-func (attrs *Pod) setPodMetadataJSONAnnotation(pod *corev1.Pod) error {
+func (attrs *Pod) ApplyJSONAnnotationToPod(pod *corev1.Pod) error {
 	json, err := attrs.combineForJSONAnnotation()
 	if err != nil {
 		return err

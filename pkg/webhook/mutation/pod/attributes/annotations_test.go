@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestSetPodMetadataJSONAnnotation(t *testing.T) {
+func TestApplyJSONAnnotationToPod(t *testing.T) {
 	parseJSON := func(t *testing.T, pod *corev1.Pod) map[string]string {
 		t.Helper()
 		jsonVal, ok := pod.Annotations[metadataenrichment.Annotation]
@@ -28,7 +28,7 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		attrs.rules["shared.key"] = "from-rules"
 		pod := &corev1.Pod{}
 
-		require.NoError(t, attrs.setPodMetadataJSONAnnotation(pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
 		assert.Equal(t, "from-rules", parseJSON(t, pod)["shared.key"])
 	})
 
@@ -38,7 +38,7 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		attrs.podAnnotations["shared.key"] = "from-pod"
 		pod := &corev1.Pod{}
 
-		require.NoError(t, attrs.setPodMetadataJSONAnnotation(pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
 		assert.Equal(t, "from-pod", parseJSON(t, pod)["shared.key"])
 	})
 
@@ -53,7 +53,7 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		attrs.podAnnotations["shared.key"] = "from-pod"
 		pod := &corev1.Pod{}
 
-		require.NoError(t, attrs.setPodMetadataJSONAnnotation(pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
 		parsed := parseJSON(t, pod)
 		assert.Equal(t, "from-pod", parsed["shared.key"])
 		assert.Equal(t, "ns-val", parsed["ns-only"])
@@ -71,20 +71,18 @@ func TestSetPodMetadataJSONAnnotation(t *testing.T) {
 		}
 		attrs := newTestPodAttributes()
 		attrs.rules["custom-annotation1"] = "foobar"
-		err := attrs.setPodMetadataJSONAnnotation(pod)
+		err := attrs.ApplyJSONAnnotationToPod(pod)
 
 		require.NoError(t, err)
 		assert.JSONEq(t, existingJSON, pod.Annotations[metadataenrichment.Annotation])
 	})
-}
 
-func TestApplyAnnotationsToPod(t *testing.T) {
 	t.Run("namespace annotations appear in JSON block", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		attrs.namespaceAnnotations["ns-attr"] = "from-ns"
 		pod := &corev1.Pod{}
 
-		require.NoError(t, attrs.ApplyAnnotationsToPod(pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
 
 		var parsed map[string]string
 		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
@@ -96,7 +94,7 @@ func TestApplyAnnotationsToPod(t *testing.T) {
 		attrs.rules["rule-attr"] = "from-rule"
 		pod := &corev1.Pod{}
 
-		require.NoError(t, attrs.ApplyAnnotationsToPod(pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
 
 		var parsed map[string]string
 		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
@@ -109,7 +107,7 @@ func TestApplyAnnotationsToPod(t *testing.T) {
 		attrs.workloadInfo[K8sWorkloadNameAttr] = "my-deploy"
 		pod := &corev1.Pod{}
 
-		require.NoError(t, attrs.ApplyAnnotationsToPod(pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
 
 		var parsed map[string]string
 		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
@@ -123,7 +121,7 @@ func TestApplyAnnotationsToPod(t *testing.T) {
 		attrs.namespaceAnnotations["shared.key"] = "from-ns"
 		pod := &corev1.Pod{}
 
-		err := attrs.ApplyAnnotationsToPod(pod)
+		err := attrs.ApplyJSONAnnotationToPod(pod)
 
 		require.NoError(t, err)
 		var parsed map[string]string
@@ -137,11 +135,43 @@ func TestApplyAnnotationsToPod(t *testing.T) {
 		attrs.rules["shared.key"] = "from-rules"
 		pod := &corev1.Pod{}
 
-		err := attrs.ApplyAnnotationsToPod(pod)
+		err := attrs.ApplyJSONAnnotationToPod(pod)
 
 		require.NoError(t, err)
 		var parsed map[string]string
 		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
 		assert.Equal(t, "from-rules", parsed["shared.key"])
+	})
+
+	t.Run("namespace annotation is not written as individual pod annotation", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		attrs.namespaceAnnotations["ns-attr"] = "from-ns"
+		pod := &corev1.Pod{}
+
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
+
+		assert.NotContains(t, pod.Annotations, metadataenrichment.Prefix+"ns-attr")
+	})
+
+	t.Run("enrichment-rule result is not written as individual pod annotation", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		attrs.rules["rule-attr"] = "from-rule"
+		pod := &corev1.Pod{}
+
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
+
+		assert.NotContains(t, pod.Annotations, metadataenrichment.Prefix+"rule-attr")
+	})
+
+	t.Run("workload kind and name are not written as individual pod annotations", func(t *testing.T) {
+		attrs := newTestPodAttributes()
+		attrs.workloadInfo[K8sWorkloadKindAttr] = "deployment"
+		attrs.workloadInfo[K8sWorkloadNameAttr] = "my-deploy"
+		pod := &corev1.Pod{}
+
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
+
+		assert.NotContains(t, pod.Annotations, metadataenrichment.Prefix+K8sWorkloadKindAttr)
+		assert.NotContains(t, pod.Annotations, metadataenrichment.Prefix+K8sWorkloadNameAttr)
 	})
 }

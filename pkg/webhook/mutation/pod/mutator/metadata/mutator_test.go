@@ -400,7 +400,7 @@ func TestMutate(t *testing.T) {
 
 				// annotations are written by the post-step in webhook.Handle, not by Mutate directly
 				require.NotNil(t, request.AnnotationWriter)
-				require.NoError(t, request.AnnotationWriter.ApplyAnnotationsToPod(request.Pod))
+				require.NoError(t, request.AnnotationWriter.ApplyJSONAnnotationToPod(request.Pod))
 
 				// only the injected annotation and the JSON block are written
 				require.Len(t, request.Pod.Annotations, 2)

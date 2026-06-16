@@ -694,7 +694,7 @@ func TestMutate_AnnotationWriter(t *testing.T) {
 
 		require.NoError(t, New(client).Mutate(req))
 		require.NotNil(t, req.AnnotationWriter)
-		require.NoError(t, req.AnnotationWriter.ApplyAnnotationsToPod(pod))
+		require.NoError(t, req.AnnotationWriter.ApplyJSONAnnotationToPod(pod))
 
 		jsonAnnotation := pod.Annotations[metadataenrichment.Annotation]
 		require.NotEmpty(t, jsonAnnotation)

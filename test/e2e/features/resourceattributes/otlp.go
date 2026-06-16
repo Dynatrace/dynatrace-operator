@@ -34,7 +34,7 @@ func OTLPExporterConfig(t *testing.T) features.Feature {
 	installSampleApp(builder, sampleApp)
 
 	builder.Assess("OTEL_RESOURCE_ATTRIBUTES contains merged OTLP resource attributes", assessOTLPInjectionAttributes(testDynakube, sampleApp, expectedOTLP))
-	// The OTLP resource-attributes mutator calls ApplyAnnotationsToPod with the OTLP-merged attrs
+	// The OTLP resource-attributes mutator calls ApplyJSONAnnotationToPod with the OTLP-merged attrs
 	// (no OA or metadata-enrichment mutator runs here — those require their namespace selectors to match).
 	builder.Assess("metadata.dynatrace.com JSON annotation contains merged OTLP resource attributes and workload info", assessPodMetadataJSONAnnotation(sampleApp, expectedOTLP))
 
