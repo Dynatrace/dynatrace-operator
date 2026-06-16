@@ -95,71 +95,31 @@ jobs:
       digest: ${{steps.build-image.outputs.digest}}
       fips-digest: ${{steps.build-fips-image.outputs.digest}}
 
-  create-sbom-gcr:
+  create-sbom:
     needs: [prepare, build-push]
     strategy:
       matrix:
-        registry: [gcr]
+        registry: [gcr, dockerhub, amazon-ecr, rhcc]
         include:
           - registry: gcr
             url: gcr.io
             repository: GCR_REPOSITORY
-    permissions: {}
-    uses: ./.github/workflows/create-sbom.yaml
-    with:
-      image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-      artifact-name: release-sbom-${{ matrix.registry }}
-      registry: ${{ matrix.url }}
-    secrets:
-      registry-token: ${{ secrets.GCR_JSON_KEY }}
-      registry-username: ${{ secrets.GCR_USERNAME }}
-
-  create-sbom-dockerhub:
-    needs: [prepare, build-push]
-    strategy:
-      matrix:
-        registry: [dockerhub]
-        include:
+            registry-token: GCR_JSON_KEY
+            registry-username: GCR_USERNAME
           - registry: dockerhub
             url: docker.io
             repository: DOCKERHUB_REPOSITORY
-    permissions: {}
-    uses: ./.github/workflows/create-sbom.yaml
-    with:
-      image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-      artifact-name: release-sbom-${{ matrix.registry }}
-      registry: ${{ matrix.url }}
-    secrets:
-      registry-token: ${{ secrets.DOCKERHUB_PASSWORD }}
-      registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
-
-  create-sbom-amazon-ecr:
-    needs: [prepare, build-push]
-    strategy:
-      matrix:
-        registry: [amazon-ecr]
-        include:
+            registry-token: DOCKERHUB_PASSWORD
+            registry-username: DOCKERHUB_USERNAME
           - registry: amazon-ecr
             url: public.ecr.aws
             repository: ECR_REPOSITORY
-    permissions: {}
-    uses: ./.github/workflows/create-sbom.yaml
-    with:
-      image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-      artifact-name: release-sbom-${{ matrix.registry }}
-      registry: ${{ matrix.url }}
-    secrets:
-        registry-token: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
-
-  create-sbom-rhcc:
-    needs: [prepare, build-push]
-    strategy:
-      matrix:
-        registry: [rhcc]
-        include:
+            registry-token: ECR_IMAGEPUSH_ROLE
           - registry: rhcc
             url: quay.io
             repository: RHCC_REPOSITORY
+            registry-token: RHCC_PASSWORD
+            registry-username: RHCC_USERNAME
     permissions: {}
     uses: ./.github/workflows/create-sbom.yaml
     with:
@@ -167,13 +127,13 @@ jobs:
       artifact-name: release-sbom-${{ matrix.registry }}
       registry: ${{ matrix.url }}
     secrets:
-      registry-token: ${{ secrets.RHCC_PASSWORD }}
-      registry-username: ${{ secrets.RHCC_USERNAME }}
+      registry-token: ${{ secrets[matrix.registry-token] }}
+      registry-username: ${{ secrets[matrix.registry-username] }}
 
   signing:
     name: Sign the image index/manifests + Add SBOM
     environment: Release
-    needs: [prepare, build-push, create-sbom-gcr, create-sbom-dockerhub, create-sbom-amazon-ecr, create-sbom-rhcc]
+    needs: [prepare, build-push, create-sbom]
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
