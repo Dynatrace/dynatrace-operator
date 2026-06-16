@@ -11,7 +11,7 @@ const (
 	AGAppArmorKey                             = FFPrefix + "activegate-apparmor"
 	AGAutomaticK8sAPIMonitoringKey            = FFPrefix + "automatic-kubernetes-api-monitoring"
 	AGAutomaticK8sAPIMonitoringClusterNameKey = FFPrefix + "automatic-kubernetes-api-monitoring-cluster-name"
-	// Deprecated: The builtin:app-transition.kubernetes schema is no longer available on phase 3 tenants.
+	// Deprecated: The builtin:app-transition.kubernetes schema is no longer available on the "Latest Dynatrace" environments. Remove this annotation if you are on a "Latest Dynatrace" environment.
 	AGK8sAppEnabledKey           = FFPrefix + "k8s-app-enabled"
 	AGAutomaticTLSCertificateKey = FFPrefix + "automatic-tls-certificate"
 )
@@ -37,7 +37,7 @@ func (ff *FeatureFlags) GetAutomaticK8sAPIMonitoringClusterName() string {
 	return ff.getRaw(AGAutomaticK8sAPIMonitoringClusterNameKey)
 }
 
-// Deprecated: The builtin:app-transition.kubernetes schema is no longer available on phase 3 tenants.
+// Deprecated: The builtin:app-transition.kubernetes schema is no longer available on the "Latest Dynatrace" environments. Remove this annotation if you are on a "Latest Dynatrace" environment.
 // IsK8sAppEnabled is a feature flag to enable automatically enable current Kubernetes cluster for the Kubernetes app.
 func (ff *FeatureFlags) IsK8sAppEnabled() bool {
 	return ff.getBoolWithDefault(AGK8sAppEnabledKey, false) //nolint:staticcheck
