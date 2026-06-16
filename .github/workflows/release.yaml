@@ -8,6 +8,7 @@ on:
 env:
   GOOGLE_MARKETPLACE_ANNOTATION: com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+  FIPS_PLATFORMS: linux/amd64,linux/arm64
   DEPLOYER_PLATFORMS: linux/amd64
 
 jobs:
@@ -85,7 +86,7 @@ jobs:
         id: build-fips-image
         uses: ./.github/actions/build-push-image
         with:
-          platforms: ${{ env.PLATFORMS }}
+          platforms: ${{ env.FIPS_PLATFORMS }}
           images: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
           annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
           fips: true
