@@ -394,6 +394,7 @@ jobs:
         id: set_slack_message
         env:
           TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
+          E2E_MAKE_TARGET: ${{ github.event.inputs.e2e-make-target }}
           K8S_CLUSTER_STATUS: ${{ needs.run-in-k8s.outputs.cluster_status }}
           K8S_JOB_ID: ${{ needs.run-in-k8s.outputs.job_id }}
           K8S_RESULT: ${{ needs.run-in-k8s.result }}
@@ -455,6 +456,12 @@ jobs:
           echo "OCP_OLM_PLATFORM_TOKEN_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_PLATFORM_TOKEN_JOB_ID}" >> $GITHUB_ENV
 
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
+
+          if [ -n "$E2E_MAKE_TARGET" ]; then
+              echo "MAKE_TARGET_INFO= run via \`make test/e2e/$E2E_MAKE_TARGET/publish\`" >> $GITHUB_ENV
+            else
+              echo "MAKE_TARGET_INFO=" >> $GITHUB_ENV
+          fi
       - name: Notify in Slack
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
