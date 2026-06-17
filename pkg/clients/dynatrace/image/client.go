@@ -77,7 +77,7 @@ func (c *ClientImpl) GetComponentLatestInfo(ctx context.Context, component Compo
 
 	idx := slices.IndexFunc(resp.Components, func(c componentResponse) bool { return c.Type == component })
 	if idx == -1 {
-		return nil, fmt.Errorf("no %s image found", component)
+		return nil, fmt.Errorf("image discovery failed for '%s': no matching image in DT API response", component)
 	}
 
 	imageInfo, err := parseImageInfo(resp.Components[idx].ImageURI)
