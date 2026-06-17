@@ -57,6 +57,8 @@ on:
 
 permissions:
   checks: write
+  pull-requests: write
+
 
 jobs:
   run-in-k8s:

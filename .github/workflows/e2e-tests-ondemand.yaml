@@ -17,6 +17,7 @@ env:
 
 permissions:
   checks: write
+  pull-requests: write
 
 # based on:
 # https://docs.dynatrace.com/docs/setup-and-configuration/technology-support/support-model-for-kubernetes
