@@ -35,3 +35,19 @@
 | validatingwebhookconfigurations.admissionregistration.k8s.io | dynatrace-webhook                      | get, update               | Required for setting the CABundles aka. public cert created by our webhook cert controller. These certs are used by the API-Server to create a secure connection to the webhook. |
 | customresourcedefinitions.apiextensions.k8s.io               | dynakubes.dynatrace.com                | get, update               | Required for webhook cert controller.                                                                                                                                            |
 | customresourcedefinitions.apiextensions.k8s.io               | edgeconnects.dynatrace.com             | get, update               | Required for webhook cert controller.                                                                                                                                            |
+
+**Permissions for Extension Execution Controller (EEC):**
+
+Namespace-scoped (Role):
+
+| Resources                       | Verbs | Comments                                                        |
+| ------------------------------- | ----- | --------------------------------------------------------------- |
+| pods                            | list  | Required to find database executor pods in operator namespace   |
+| securitycontextconstraints (OS) | use   | Required for OpenShift SCC (nonroot-v2 / privileged)           |
+
+Cluster-scoped (ClusterRole `dynatrace-extension-controller`):
+
+| Resources | Verbs       | Comments                                                                    |
+| --------- | ----------- | --------------------------------------------------------------------------- |
+| pods      | list, watch | Required to discover pods cluster-wide for metadata enrichment              |
+| services  | list, watch | Required to discover services cluster-wide for metadata enrichment          |

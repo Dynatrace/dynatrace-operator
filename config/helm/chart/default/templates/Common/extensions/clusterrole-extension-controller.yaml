@@ -15,7 +15,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: dynatrace-extension-controller-metadata-enrichment
+  name: dynatrace-extension-controller
   labels:
     {{- include "dynatrace-operator.extensionControllerLabels" . | nindent 4 }}
 rules:
@@ -31,13 +31,13 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: dynatrace-extension-controller-metadata-enrichment
+  name: dynatrace-extension-controller
   labels:
     {{- include "dynatrace-operator.extensionControllerLabels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: dynatrace-extension-controller-metadata-enrichment
+  name: dynatrace-extension-controller
 subjects:
   - kind: ServiceAccount
     name: dynatrace-extension-controller

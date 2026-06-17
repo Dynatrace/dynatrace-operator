@@ -14,7 +14,7 @@ tests:
           of: ClusterRole
       - equal:
           path: metadata.name
-          value: dynatrace-extension-controller-metadata-enrichment
+          value: dynatrace-extension-controller
       - isNotEmpty:
           path: metadata.labels
       - contains:
@@ -36,7 +36,7 @@ tests:
           of: ClusterRoleBinding
       - equal:
           path: metadata.name
-          value: dynatrace-extension-controller-metadata-enrichment
+          value: dynatrace-extension-controller
       - isNotEmpty:
           path: metadata.labels
 
