@@ -313,30 +313,22 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube,
 func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 
-	var err error
+	processGroupConfigHash, err := r.getProcessGroupConfigHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
 
 	switch {
 	case dk.OneAgent().IsClassicFullStackMode():
 		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsHostMonitoringMode():
-		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID).BuildDaemonSet(ctx)
+		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID, processGroupConfigHash).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsCloudNativeFullstackMode():
-		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
+		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID, processGroupConfigHash).BuildDaemonSet(ctx)
 	}
 
 	if err != nil {
 		return nil, err
-	}
-
-	if bootstrapperconfig.NeedsPGC(dk) {
-		configHash, err := r.pgcConfigHash(ctx, dk)
-		if err != nil {
-			return nil, err
-		}
-
-		if configHash != "" {
-			ds.Spec.Template.Annotations[daemonset.AnnotationPGCHash] = configHash
-		}
 	}
 
 	dsHash, err := hasher.GenerateHash(ds)
@@ -347,26 +339,6 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 	ds.Annotations[hasher.AnnotationHash] = dsHash
 
 	return ds, nil
-}
-
-func (r *Reconciler) pgcConfigHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
-	var secret corev1.Secret
-
-	err := r.apiReader.Get(ctx, client.ObjectKey{Name: bootstrapperconfig.GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &secret)
-	if k8serrors.IsNotFound(err) {
-		return "", nil
-	}
-
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	pgcData := secret.Data[bootstrapperconfig.DeclarativeInputFileName]
-	if pgcData == nil {
-		return "", nil
-	}
-
-	return hasher.GenerateHash(pgcData)
 }
 
 func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube.DynaKube) error {
@@ -395,6 +367,26 @@ func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dk *dynakube.D
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetDaemonsetName(), Namespace: dk.Namespace}}
 
 	return client.IgnoreNotFound(r.client.Delete(ctx, &oneAgentDaemonSet))
+}
+
+func (r *Reconciler) getProcessGroupConfigHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	var secret corev1.Secret
+
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: bootstrapperconfig.GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	pgcData := secret.Data[bootstrapperconfig.DeclarativeInputFileName]
+	if pgcData == nil {
+		return "", nil
+	}
+
+	return hasher.GenerateHash(pgcData)
 }
 
 func getInstanceStatuses(pods []corev1.Pod) map[string]oneagent.Instance {

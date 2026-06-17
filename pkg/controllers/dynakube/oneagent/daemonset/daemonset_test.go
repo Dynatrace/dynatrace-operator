@@ -283,7 +283,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -317,7 +317,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -346,7 +346,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -373,7 +373,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -764,7 +764,7 @@ func TestUpdateStrategy(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		daemonset, err := dsBuilder.BuildDaemonSet(t.Context())
 
 		expected := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
@@ -789,7 +789,7 @@ func TestUpdateStrategy(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		daemonset, err := dsBuilder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -899,7 +899,7 @@ func TestAnnotations(t *testing.T) {
 	t.Run("default apparmor annotation is present in 1.30", func(t *testing.T) {
 		k8sversion.DisableCacheForTest(30)
 
-		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID, testProcessGroupConfigHash).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.Contains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 		assert.Equal(t, appArmorUnconfined, ds.Spec.Template.Annotations[appArmorAnnotation])
@@ -911,7 +911,7 @@ func TestAnnotations(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(dk, testClusterID, testProcessGroupConfigHash).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, corev1.DeprecatedAppArmorBetaProfileRuntimeDefault, ds.Spec.Template.Annotations[appArmorAnnotation])
 	})
@@ -919,7 +919,7 @@ func TestAnnotations(t *testing.T) {
 	t.Run("apparmor annotation is absent in 1.31", func(t *testing.T) {
 		k8sversion.DisableCacheForTest(31)
 
-		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID, testProcessGroupConfigHash).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 	})
@@ -930,7 +930,7 @@ func TestAnnotations(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(dk, testClusterID, testProcessGroupConfigHash).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 	})
@@ -957,8 +957,7 @@ func TestAnnotations(t *testing.T) {
 			annotationTenantTokenHash:         testTokenHash,
 			annotationEnableDaemonSetEviction: "false",
 		}
-
-		builder := NewCloudNativeFullStack(&dk, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID, "")
 		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -984,9 +983,10 @@ func TestAnnotations(t *testing.T) {
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
 			annotationEnableDaemonSetEviction: "false",
+			AnnotationPGCHash:                 testProcessGroupConfigHash,
 		}
 
-		builder := NewHostMonitoring(&dk, testClusterID)
+		builder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -1042,7 +1042,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 			},
 		}
 
-		builder := NewCloudNativeFullStack(&dk, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID, testProcessGroupConfigHash)
 		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
