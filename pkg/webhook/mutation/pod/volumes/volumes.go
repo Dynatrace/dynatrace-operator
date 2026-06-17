@@ -44,7 +44,7 @@ func (e existingVolumeError) Error() string {
 }
 
 func AddConfigVolume(ctx context.Context, pod *corev1.Pod) error {
-	if vol, _ := k8svolume.FindByName(pod.Spec.Volumes, ConfigVolumeName); vol != nil {
+	if vol := k8svolume.FindByName(pod.Spec.Volumes, ConfigVolumeName); vol != nil {
 		if vol.EmptyDir == nil {
 			return dtwebhook.MutatorError{
 				Err:      existingVolumeError{ConfigVolumeName},
@@ -116,7 +116,7 @@ func AddInitConfigVolumeMount(container *corev1.Container) {
 }
 
 func AddInputVolume(pod *corev1.Pod) error {
-	if vol, _ := k8svolume.FindByName(pod.Spec.Volumes, InputVolumeName); vol != nil {
+	if vol := k8svolume.FindByName(pod.Spec.Volumes, InputVolumeName); vol != nil {
 		if vol.Projected == nil || len(vol.Projected.Sources) != 2 ||
 			vol.Projected.Sources[0].Secret == nil || vol.Projected.Sources[0].Secret.Name != consts.BootstrapperInitSecretName ||
 			vol.Projected.Sources[1].Secret == nil || vol.Projected.Sources[1].Secret.Name != consts.BootstrapperInitCertsSecretName {
