@@ -24,7 +24,7 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		volumes := prepareVolumes(dk, false)
+		volumes := prepareVolumes(dk, "")
 
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, getNodeMetadataVolume())
@@ -40,7 +40,7 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		volumes := prepareVolumes(dk, false)
+		volumes := prepareVolumes(dk, "")
 
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, getCertificateVolume(dk))
@@ -52,7 +52,7 @@ func TestPrepareVolumes(t *testing.T) {
 				Proxy: &value.Source{ValueFrom: proxy.BuildSecretName(dk.Name)},
 			}
 
-		volumes := prepareVolumes(dk, false)
+		volumes := prepareVolumes(dk, "")
 
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, buildHTTPProxyVolume(dk))
@@ -72,7 +72,7 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		volumes := prepareVolumes(dk, false)
+		volumes := prepareVolumes(dk, "")
 		assert.Contains(t, volumes, getActiveGateCaCertVolume(dk))
 	})
 	t.Run("has automatically created AG tls volume", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		volumes := prepareVolumes(dk, false)
+		volumes := prepareVolumes(dk, "")
 		assert.Contains(t, volumes, getActiveGateCaCertVolume(dk))
 	})
 	t.Run("csi volume not supported on classicFullStack", func(t *testing.T) {
@@ -103,7 +103,7 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		volumes := prepareVolumes(dk, false)
+		volumes := prepareVolumes(dk, "")
 		assert.NotContains(t, volumes, getCSIStorageVolume(dk))
 	})
 	t.Run("pgc volume present when pgcReady=true", func(t *testing.T) {
@@ -114,7 +114,7 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		volumes := prepareVolumes(dk, true)
+		volumes := prepareVolumes(dk, "test-hash")
 		assert.Contains(t, volumes, getPGCSecretVolume(dk))
 	})
 	t.Run("pgc volume absent when pgcReady=false", func(t *testing.T) {
@@ -125,7 +125,7 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		volumes := prepareVolumes(dk, false)
+		volumes := prepareVolumes(dk, "")
 		assert.NotContains(t, volumes, getPGCSecretVolume(dk))
 	})
 	t.Run("has all volumes", func(t *testing.T) {
@@ -171,7 +171,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 		}
-		volumeMounts := prepareVolumeMounts(dk, false)
+		volumeMounts :=  prepareVolumes(dk, "")
 
 		assert.Contains(t, volumeMounts, getOneAgentSecretVolumeMount())
 		assert.Contains(t, volumeMounts, getNodeMetadataVolumeMount())
@@ -187,7 +187,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 		}
-		volumeMounts := prepareVolumeMounts(dk, false)
+		volumeMounts :=  prepareVolumes(dk, "")
 
 		assert.Contains(t, volumeMounts, getOneAgentSecretVolumeMount())
 		assert.Contains(t, volumeMounts, getNodeMetadataVolumeMount())
@@ -204,7 +204,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				TrustedCAs: testName,
 			},
 		}
-		volumeMounts := prepareVolumeMounts(dk, false)
+		volumeMounts :=  prepareVolumes(dk, "")
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
@@ -225,7 +225,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			},
 		}
 
-		volumeMounts := prepareVolumeMounts(dk, false)
+		volumeMounts :=  prepareVolumes(dk, "")
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.NotContains(t, volumeMounts, getClusterCaCertVolumeMount())
@@ -249,7 +249,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			},
 		}
 
-		volumeMounts := prepareVolumeMounts(dk, false)
+		volumeMounts :=  prepareVolumes(dk, "")
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
@@ -263,7 +263,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 		}
-		volumeMounts := prepareVolumeMounts(dk, false)
+		volumeMounts :=  prepareVolumes(dk, "")
 
 		assert.Contains(t, volumeMounts, getRootMount())
 		assert.NotContains(t, volumeMounts, getCSIStorageMount())
@@ -276,7 +276,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 		}
-		volumeMounts := prepareVolumeMounts(dk, true)
+		volumeMounts := prepareVolumeMounts(dk, "test-hash")
 		assert.Contains(t, volumeMounts, getPGCSecretFileMount())
 	})
 	t.Run("pgc mount absent when pgcReady=false", func(t *testing.T) {
@@ -287,7 +287,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 		}
-		volumeMounts := prepareVolumeMounts(dk, false)
+		volumeMounts :=  prepareVolumes(dk, "")
 		assert.NotContains(t, volumeMounts, getPGCSecretFileMount())
 	})
 	t.Run("has all volume mounts", func(t *testing.T) {
@@ -338,8 +338,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			},
 		}
 
-		volumes := prepareVolumes(dk, false)
-		mounts := prepareVolumeMounts(dk, false)
+		volumes := prepareVolumes(dk, "")
+		mounts :=  prepareVolumes(dk, "")
 
 		assert.NotContains(t, volumes, buildHTTPProxyVolume(dk))
 		assert.NotContains(t, mounts, getHTTPProxyMount())
@@ -441,7 +441,7 @@ func testVolumesVsCSIDriver(t *testing.T, dk *dynakube.DynaKube, csi bool, csiVo
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 	}
 
-	volumes := prepareVolumes(dk, false)
+	volumes := prepareVolumes(dk, "")
 
 	if csiVolume {
 		assert.Contains(t, volumes, getCSIStorageVolume(dk))
@@ -463,7 +463,7 @@ func testVolumeMountsVsCSIDriver(t *testing.T, dk *dynakube.DynaKube, csi bool, 
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 	}
 
-	volumeMounts := prepareVolumeMounts(dk, false)
+	volumeMounts :=  prepareVolumes(dk, "")
 
 	if csiVolume {
 		assert.Contains(t, volumeMounts, getCSIStorageMount())

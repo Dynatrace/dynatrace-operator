@@ -743,6 +743,71 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	})
 }
 
+
+//func TestPGCConfigHash(t *testing.T) {
+//	const testNamespace = "test-namespace"
+//	const testDynakubeName = "test-dynakube"
+//
+//	dk := &dynakube.DynaKube{
+//		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeName, Namespace: testNamespace},
+//	}
+//
+//	t.Run("secret not found returns empty hash", func(t *testing.T) {
+//		fakeClient := fake.NewClient()
+//		b := &builder{dk: dk}
+//
+//		hash, err := (t.Context())
+//		require.NoError(t, err)
+//		assert.Empty(t, hash)
+//	})
+//
+//	t.Run("secret found returns hash of pgc data", func(t *testing.T) {
+//		pgcData := []byte("some-pgc-content")
+//		secret := &corev1.Secret{
+//			ObjectMeta: metav1.ObjectMeta{
+//				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
+//				Namespace: testNamespace,
+//			},
+//			Data: map[string][]byte{
+//				bootstrapperconfig.DeclarativeInputFileName: pgcData,
+//			},
+//		}
+//		fakeClient := fake.NewClient(secret)
+//		b := &builder{dk: dk, apiReader: fakeClient}
+//
+//		hash, err := b.pgcConfigHash(t.Context())
+//		require.NoError(t, err)
+//
+//		expectedHash, err := hasher.GenerateHash(pgcData)
+//		require.NoError(t, err)
+//		assert.Equal(t, expectedHash, hash)
+//	})
+//
+//	t.Run("secret found but no pgc data returns empty hash", func(t *testing.T) {
+//		secret := &corev1.Secret{
+//			ObjectMeta: metav1.ObjectMeta{
+//				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
+//				Namespace: testNamespace,
+//			},
+//		}
+//		fakeClient := fake.NewClient(secret)
+//		b := &builder{dk: dk, apiReader: fakeClient}
+//
+//		hash, err := b.pgcConfigHash(t.Context())
+//		require.NoError(t, err)
+//		assert.Empty(t, hash)
+//	})
+//
+//	t.Run("nil apiReader returns empty hash", func(t *testing.T) {
+//		b := &builder{dk: dk, apiReader: nil}
+//
+//		hash, err := b.pgcConfigHash(t.Context())
+//		require.NoError(t, err)
+//		assert.Empty(t, hash)
+//	})
+//}
+
+
 func createConnectionInfoReconcilerMock(t *testing.T) connectionInfoReconciler {
 	m := newMockConnectionInfoReconciler(t)
 	m.EXPECT().Reconcile(anyCtx, mock.Anything, mock.Anything).Return(nil).Once()

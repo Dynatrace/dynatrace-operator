@@ -16,21 +16,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	"github.com/pkg/errors"
 	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -95,34 +91,33 @@ type builder struct {
 	hostInjectSpec         *oneagent.HostInjectSpec
 	clusterID              string
 	deploymentType         string
-	processGroupConfigHash string
-	apiReader              client.Reader
+	processGroupConfigHash 	 string
 }
 
 type Builder interface {
 	BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(dk *dynakube.DynaKube, clusterID string, apiReader client.Reader) Builder {
+func NewHostMonitoring(dk *dynakube.DynaKube, clusterID, processGroupConfigHash string) Builder {
 	return &hostMonitoring{
 		builder{
 			dk:             dk,
 			hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
 			clusterID:      clusterID,
 			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
-			apiReader:      apiReader,
+			processGroupConfigHash:      processGroupConfigHash,
 		},
 	}
 }
 
-func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID string, apiReader client.Reader) Builder {
+func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID, processGroupConfigHash string) Builder {
 	return &hostMonitoring{
 		builder{
 			dk:             dk,
 			hostInjectSpec: &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterID:      clusterID,
 			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
-			apiReader:      apiReader,
+			processGroupConfigHash:      processGroupConfigHash,
 		},
 	}
 }
@@ -164,42 +159,11 @@ func (classic *classicFullStack) BuildDaemonSet(ctx context.Context) (*appsv1.Da
 	return result, nil
 }
 
-func (b *builder) pgcConfigHash(ctx context.Context) (string, error) {
-	if b.apiReader == nil {
-		return "", nil
-	}
 
-	var secret corev1.Secret
-
-	err := b.apiReader.Get(ctx, client.ObjectKey{Name: bootstrapperconfig.GetSourceConfigSecretName(b.dk.Name), Namespace: b.dk.Namespace}, &secret)
-	if k8serrors.IsNotFound(err) {
-		return "", nil
-	}
-
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	pgcData := secret.Data[bootstrapperconfig.DeclarativeInputFileName]
-	if pgcData == nil {
-		return "", nil
-	}
-
-	return hasher.GenerateHash(pgcData)
-}
 
 func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
 	ctx, _ = logd.NewFromContext(ctx, "oneagent-daemonset")
 	dk := b.dk
-
-	if bootstrapperconfig.NeedsPGC(dk) {
-		pgcHash, err := b.pgcConfigHash(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		b.processGroupConfigHash = pgcHash
-	}
 
 	podSpec, err := b.podSpec(ctx)
 	if err != nil {
@@ -222,8 +186,10 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 		annotationEnableDaemonSetEviction: "false",
 	}
 
-	if b.processGroupConfigHash != "" {
-		templateAnnotations[AnnotationPGCHash] = b.processGroupConfigHash
+	if bootstrapperconfig.NeedsPGC(dk) {
+		if b.processGroupConfigHash != "" {
+			templateAnnotations[AnnotationPGCHash] =  b.processGroupConfigHash
+		}
 	}
 
 	templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations), containerName, initContainerName)
@@ -468,11 +434,11 @@ func (b *builder) dnsPolicy() corev1.DNSPolicy {
 }
 
 func (b *builder) volumeMounts() []corev1.VolumeMount {
-	return prepareVolumeMounts(b.dk, b.processGroupConfigHash != "")
+	return prepareVolumeMounts(b.dk, b.processGroupConfigHash)
 }
 
 func (b *builder) volumes() []corev1.Volume {
-	return prepareVolumes(b.dk, b.processGroupConfigHash != "")
+	return prepareVolumes(b.dk, b.processGroupConfigHash)
 }
 
 func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {

@@ -22,6 +22,7 @@ const (
 	testValue = "test-value"
 
 	testClusterID    = "test-cluster-id"
+	testProcessGroupConfigHash = "test-process-group-config-hash"
 	testURL          = "https://testing.dev.dynatracelabs.com/api"
 	testDynakubeName = "test-dynakube-name"
 	testName         = "test-name"
