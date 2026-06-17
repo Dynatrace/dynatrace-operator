@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
@@ -17,6 +18,7 @@ import (
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
@@ -87,6 +89,14 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 		"use-public-registry-cm-ovrd",
 		"use-public-registry-cm-sample-ovrd",
 		publicRegistryOverride(t))
+}
+
+func DBExecutor(t *testing.T) features.Feature {
+	return dbExecutorFeature(t, "use-public-registry-db-executor", "")
+}
+
+func DBExecutorOverride(t *testing.T) features.Feature {
+	return dbExecutorFeature(t, "use-public-registry-db-executor-with-override", "")
 }
 
 func oneAgentFeature(t *testing.T, featureName, dkName, override string) features.Feature {
@@ -190,6 +200,41 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
+}
+
+func dbExecutorFeature(t *testing.T, featureName, override string) features.Feature {
+	builder := features.New(featureName)
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
+	testDatabaseID := "mysql"
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithExtensionsEECImageRef(t),
+		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
+		dynakubeComponents.WithActiveGate(),
+		dynakubeComponents.WithUsePublicRegistryFF(),
+	}
+
+	if override != "" {
+		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+
+	testDynakube := *dynakubeComponents.New(options...)
+
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+
+	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
+
+	builder.Assess("extensions db-a datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-a"), testDynakube.Namespace))
+	builder.Assess("extensions db-b datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-b"), testDynakube.Namespace))
+	builder.Assess("extensions db-c datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-c"), testDynakube.Namespace))
+
+	return builder.Feature()
+
 }
 
 // statusSourceIsPublicRegistry refetches the DynaKube and verifies that the
