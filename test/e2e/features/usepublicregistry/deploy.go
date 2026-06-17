@@ -5,8 +5,10 @@ package usepublicregistry
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -22,8 +24,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -97,6 +101,18 @@ func DBExecutor(t *testing.T) features.Feature {
 
 func DBExecutorOverride(t *testing.T) features.Feature {
 	return dbExecutorFeature(t, "use-public-registry-db-executor-with-override", "")
+}
+
+func LogMon(t *testing.T) features.Feature {
+	return logMonFeature(t,
+		"use-public-registry-logmon",
+		"")
+}
+
+func LogMonWithOverride(t *testing.T) features.Feature {
+	return logMonFeature(t,
+		"use-public-registry-logmon-with-override",
+		publicRegistryOverride(t))
 }
 
 func oneAgentFeature(t *testing.T, featureName, dkName, override string) features.Feature {
@@ -215,6 +231,7 @@ func dbExecutorFeature(t *testing.T, featureName, override string) features.Feat
 		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithUsePublicRegistryFF(),
+		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 
 	if override != "" {
@@ -234,7 +251,59 @@ func dbExecutorFeature(t *testing.T, featureName, override string) features.Feat
 	builder.Assess("extensions db-c datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-c"), testDynakube.Namespace))
 
 	return builder.Feature()
+}
 
+func logMonFeature(t *testing.T, featureName, override string) features.Feature {
+	builder := features.New(featureName)
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithLogMonitoring(),
+		dynakubeComponents.WithLogMonitoringImageRef(t),
+		dynakubeComponents.WithActiveGate(),
+		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
+		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
+	}
+
+	if override != "" {
+		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err)
+	if isOpenshift {
+		options = append(options, dynakubeComponents.WithAnnotations(map[string]string{
+			exp.OAPrivilegedKey: "true",
+		}))
+	}
+
+	testDynakube := *dynakubeComponents.New(options...)
+
+	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
+	require.NoError(t, err)
+
+	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
+	require.NoError(t, err)
+
+	agSecret := k8ssecret.New(consts.AgSecretName, testDynakube.Namespace,
+		map[string][]byte{
+			dynakube.ServerCertKey:                 agCrt,
+			consts.AgCertificateAndPrivateKeyField: agP12,
+		})
+	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
+
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+
+	builder.Assess("log agent started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+
+	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
+
+	return builder.Feature()
 }
 
 // statusSourceIsPublicRegistry refetches the DynaKube and verifies that the

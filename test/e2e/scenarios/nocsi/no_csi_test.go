@@ -179,6 +179,14 @@ func TestNoCSI_use_public_registry_db_executor_with_override(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.DBExecutorOverride(t))
 }
 
+func TestNoCSI_use_public_registry_logmon(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.LogMon(t))
+}
+
+func TestNoCSI_use_public_registry_logmon_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.LogMonWithOverride(t))
+}
+
 func TestNoCSI_logmonitoring(t *testing.T) {
 	testEnv.Test(t, logmonitoring.Feature(t))
 }
