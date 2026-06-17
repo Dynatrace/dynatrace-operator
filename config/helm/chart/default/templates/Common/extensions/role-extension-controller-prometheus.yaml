@@ -1,6 +1,6 @@
 {{- if (and .Values.rbac.extensions.prometheus.create .Values.rbac.extensions.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true")) }}
-kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
   name: dynatrace-extension-controller-prometheus
   namespace: {{ .Release.Namespace }}
