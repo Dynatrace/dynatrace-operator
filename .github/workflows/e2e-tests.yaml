@@ -458,9 +458,9 @@ jobs:
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
 
           if [ -n "$E2E_MAKE_TARGET" ]; then
-              echo "MAKE_TARGET_INFO= run via \`make test/e2e/$E2E_MAKE_TARGET/publish\`" >> $GITHUB_ENV
-            else
-              echo "MAKE_TARGET_INFO=" >> $GITHUB_ENV
+            echo "MAKE_TARGET_INFO=run via \`make test/e2e/$E2E_MAKE_TARGET/publish\`" >> $GITHUB_ENV
+          else
+            echo "MAKE_TARGET_INFO=" >> $GITHUB_ENV
           fi
       - name: Notify in Slack
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
