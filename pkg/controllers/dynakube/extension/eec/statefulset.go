@@ -40,6 +40,7 @@ const (
 	envExtensionsModuleExecPathName = "ExtensionsModuleExecPath"
 	envDsInstallDirName             = "DsInstallDir"
 	envK8sClusterID                 = "K8sClusterUID"
+	envK8sClusterName               = "K8sClusterName"
 	envActiveGateTrustedCertName    = "ActiveGateTrustedCert"
 	envK8sExtServiceURL             = "K8sExtServiceUrl"
 	envHTTPSCertPathPem             = "DsHttpsCertPathPem"
@@ -247,6 +248,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID},
+		{Name: envK8sClusterName, Value: dk.Status.KubernetesClusterName},
 		{Name: envK8sExtServiceURL, Value: serviceURLScheme + dk.Extensions().GetServiceNameFQDN()},
 		{Name: envDSTokenPath, Value: prefix + eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey},
 		{Name: envHTTPSCertPathPem, Value: prefix + envEECHTTPSCertPathPem},
