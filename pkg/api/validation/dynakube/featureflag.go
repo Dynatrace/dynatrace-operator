@@ -21,6 +21,7 @@ var deprecatedFeatureFlags = []string{
 	exp.AGUpdatesKey,        //nolint:staticcheck
 	exp.AGDisableUpdatesKey, //nolint:staticcheck
 	exp.OAMaxUnavailableKey, //nolint:staticcheck
+	exp.AGK8sAppEnabledKey,  //nolint:staticcheck
 }
 
 var knownFeatureFlags = []string{
@@ -35,7 +36,7 @@ var knownFeatureFlags = []string{
 	exp.AGAppArmorKey,
 	exp.AGAutomaticK8sAPIMonitoringKey,
 	exp.AGAutomaticK8sAPIMonitoringClusterNameKey,
-	exp.AGK8sAppEnabledKey,
+	exp.AGK8sAppEnabledKey, //nolint:staticcheck
 	exp.AGAutomaticTLSCertificateKey,
 	// csi.go
 	exp.CSIMaxFailedMountAttemptsKey,

@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
+func prepareVolumeMounts(dk *dynakube.DynaKube, processGroupConfigHash string) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{getOneAgentSecretVolumeMount(), getNodeMetadataVolumeMount()}
 
 	if dk.OneAgent().IsReadOnlyFSSupported() {
@@ -37,7 +37,9 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		volumeMounts = append(volumeMounts, getHTTPProxyMount())
 	}
 
-	if bootstrapperconfig.NeedsPGC(dk) {
+	// Mount the PGC secret file only if the PGC is needed and the processGroupConfigHash is not empty meaning that the
+	// PGC secret has required key and is available for mounting.
+	if bootstrapperconfig.NeedsPGC(dk) && processGroupConfigHash != "" {
 		volumeMounts = append(volumeMounts, getPGCSecretFileMount())
 	}
 
@@ -112,7 +114,7 @@ func getHTTPProxyMount() corev1.VolumeMount {
 	return proxy.BuildVolumeMount()
 }
 
-func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
+func prepareVolumes(dk *dynakube.DynaKube, processGroupConfigHash string) []corev1.Volume {
 	volumes := []corev1.Volume{getRootVolume(), getNodeMetadataVolume(), getOneAgentSecretVolume(dk)}
 
 	if dk.OneAgent().IsReadOnlyFSSupported() {
@@ -123,7 +125,9 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		}
 	}
 
-	if bootstrapperconfig.NeedsPGC(dk) {
+	// Mount the PGC secret volume only if the PGC is needed and the processGroupConfigHash is not empty meaning that the
+	// PGC secret has required key and is available for mounting.
+	if bootstrapperconfig.NeedsPGC(dk) && processGroupConfigHash != "" {
 		volumes = append(volumes, getPGCSecretVolume(dk))
 	}
 
@@ -260,7 +264,6 @@ func getPGCSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 					Key:  bootstrapperconfig.DeclarativeInputFileName,
 					Path: bootstrapperconfig.DeclarativeInputFileName,
 				}},
-				Optional: new(true),
 			},
 		},
 	}
