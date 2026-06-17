@@ -22,7 +22,8 @@ on:
       registry-username:
         description: username for registry authentication
         required: false
-permissions: {}
+permissions:
+  id-token: write
 jobs:
   create-sbom:
     runs-on: ubuntu-24.04
