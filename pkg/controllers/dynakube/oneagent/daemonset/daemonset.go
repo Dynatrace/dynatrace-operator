@@ -91,7 +91,7 @@ type builder struct {
 	hostInjectSpec         *oneagent.HostInjectSpec
 	clusterID              string
 	deploymentType         string
-	processGroupConfigHash 	 string
+	processGroupConfigHash string
 }
 
 type Builder interface {
@@ -101,11 +101,11 @@ type Builder interface {
 func NewHostMonitoring(dk *dynakube.DynaKube, clusterID, processGroupConfigHash string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
-			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
-			processGroupConfigHash:      processGroupConfigHash,
+			dk:                     dk,
+			hostInjectSpec:         dk.Spec.OneAgent.HostMonitoring,
+			clusterID:              clusterID,
+			deploymentType:         deploymentmetadata.HostMonitoringDeploymentType,
+			processGroupConfigHash: processGroupConfigHash,
 		},
 	}
 }
@@ -113,11 +113,11 @@ func NewHostMonitoring(dk *dynakube.DynaKube, clusterID, processGroupConfigHash 
 func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID, processGroupConfigHash string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
-			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
-			processGroupConfigHash:      processGroupConfigHash,
+			dk:                     dk,
+			hostInjectSpec:         &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			clusterID:              clusterID,
+			deploymentType:         deploymentmetadata.CloudNativeDeploymentType,
+			processGroupConfigHash: processGroupConfigHash,
 		},
 	}
 }
@@ -159,8 +159,6 @@ func (classic *classicFullStack) BuildDaemonSet(ctx context.Context) (*appsv1.Da
 	return result, nil
 }
 
-
-
 func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
 	ctx, _ = logd.NewFromContext(ctx, "oneagent-daemonset")
 	dk := b.dk
@@ -188,7 +186,7 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 
 	if bootstrapperconfig.NeedsPGC(dk) {
 		if b.processGroupConfigHash != "" {
-			templateAnnotations[AnnotationPGCHash] =  b.processGroupConfigHash
+			templateAnnotations[AnnotationPGCHash] = b.processGroupConfigHash
 		}
 	}
 

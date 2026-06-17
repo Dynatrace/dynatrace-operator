@@ -81,7 +81,6 @@ type Reconciler struct {
 	configmap                k8sconfigmap.QueryObject
 	daemonset                k8sdaemonset.QueryObject
 	clusterID                string
-
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -369,7 +368,6 @@ func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dk *dynakube.D
 
 	return client.IgnoreNotFound(r.client.Delete(ctx, &oneAgentDaemonSet))
 }
-
 
 func (r *Reconciler) getProcessGroupConfigHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
 	var secret corev1.Secret

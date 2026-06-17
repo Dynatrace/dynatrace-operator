@@ -983,6 +983,7 @@ func TestAnnotations(t *testing.T) {
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
 			annotationEnableDaemonSetEviction: "false",
+			AnnotationPGCHash:                 testProcessGroupConfigHash,
 		}
 
 		builder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
