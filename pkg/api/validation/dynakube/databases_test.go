@@ -6,11 +6,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,6 +40,35 @@ func TestMissingDatabaseExecutorImage(t *testing.T) {
 	}
 
 	assertDenied(t, []string{errorExtensionDatabaseExecutorImageNotSpecified}, dk)
+
+	t.Run("image not required when public registry is enabled", func(t *testing.T) {
+		assertAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        testName,
+					Namespace:   testNamespace,
+					Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+						CapabilityProperties: activegate.CapabilityProperties{
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceMemory: resource.MustParse("256Mi"),
+								},
+							},
+						},
+					},
+					Extensions: &extensions.Spec{
+						Databases: []extensions.DatabaseSpec{{ID: "test"}},
+					},
+				},
+			})
+	})
 }
 
 func TestConflictingOrInvalidVolumeMounts(t *testing.T) {

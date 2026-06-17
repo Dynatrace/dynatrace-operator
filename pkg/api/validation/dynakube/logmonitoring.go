@@ -28,7 +28,7 @@ func missingLogMonitoringImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 		return ""
 	}
 
-	if dk.FF().IsPublicRegistry() || dk.PublicRegistryOverride() != "" {
+	if dk.FF().IsPublicRegistry() {
 		return ""
 	}
 

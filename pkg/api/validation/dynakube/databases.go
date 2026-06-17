@@ -30,7 +30,7 @@ func missingDatabaseExecutorImage(ctx context.Context, _ *Validator, dk *dynakub
 		return ""
 	}
 
-	if dk.FF().IsPublicRegistry() || dk.PublicRegistryOverride() != "" {
+	if dk.FF().IsPublicRegistry() {
 		return ""
 	}
 

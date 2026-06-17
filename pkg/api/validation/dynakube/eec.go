@@ -22,7 +22,7 @@ func extensionControllerImage(ctx context.Context, _ *Validator, dk *dynakube.Dy
 		return ""
 	}
 
-	if dk.FF().IsPublicRegistry() || dk.PublicRegistryOverride() != "" {
+	if dk.FF().IsPublicRegistry() {
 		return ""
 	}
 
