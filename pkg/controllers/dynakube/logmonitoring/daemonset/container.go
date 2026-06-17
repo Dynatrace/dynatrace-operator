@@ -27,7 +27,7 @@ var (
 	}
 )
 
-func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
+func getContainer(dk dynakube.DynaKube, tenantUUID string, imageURI string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededCapabilities
 
@@ -35,9 +35,14 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, containerName)
 	}
 
+	image := dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag)
+	if imageURI != "" {
+		image = imageURI
+	}
+
 	container := corev1.Container{
 		Name:            containerName,
-		Image:           dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
+		Image:           image,
 		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.GetPullPolicy(),
 		VolumeMounts:    getVolumeMounts(tenantUUID),
 		Env:             getEnvs(),
@@ -48,7 +53,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	return container
 }
 
-func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
+func getInitContainer(dk dynakube.DynaKube, tenantUUID string, imageURI string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededInitCapabilities
 
@@ -56,9 +61,14 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container 
 		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, initContainerName)
 	}
 
+	image := dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag)
+	if imageURI != "" {
+		image = imageURI
+	}
+
 	container := corev1.Container{
 		Name:            initContainerName,
-		Image:           dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
+		Image:           image,
 		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.GetPullPolicy(),
 		VolumeMounts:    []corev1.VolumeMount{getDTVolumeMounts(tenantUUID)},
 		Command:         []string{bootstrapCommand},

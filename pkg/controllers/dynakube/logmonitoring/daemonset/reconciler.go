@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -35,7 +36,7 @@ func NewReconciler(clt client.Client,
 
 var KubernetesSettingsNotAvailableError = errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment until it is ready")
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "logmonitoring-daemonset")
 
 	if !dk.LogMonitoring().IsStandalone() {
@@ -53,7 +54,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	ds, err := r.generateDaemonSet(dk)
+	imageURI, err := resolveImage(ctx, imageClient, dk)
+	if err != nil {
+		return err
+	}
+
+	ds, err := r.generateDaemonSet(dk, imageURI)
 	if err != nil {
 		return err
 	}
@@ -73,7 +79,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	return nil
 }
 
-func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
+func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) (string, error) {
+	if !dk.FF().IsPublicRegistry() {
+		return "", nil
+	}
+
+	imageInfo, err := imageClient.GetComponentLatestInfo(ctx, dtimage.LogModule, dk.PublicRegistryOverride())
+	if err != nil {
+		return "", err
+	}
+
+	return imageInfo.URI, nil
+}
+
+func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (*appsv1.DaemonSet, error) {
 	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		return nil, err
@@ -86,8 +105,8 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 
 	labels := k8slabel.NewAppLabels(k8slabel.LogMonitoringComponentLabel, dk.Name, k8slabel.LogMonitoringComponentLabel, tag)
 
-	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(*dk, tenantUUID),
-		k8sdaemonset.SetInitContainer(getInitContainer(*dk, tenantUUID)),
+	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(*dk, tenantUUID, imageURI),
+		k8sdaemonset.SetInitContainer(getInitContainer(*dk, tenantUUID, imageURI)),
 		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.LogMonitoring().Template().Labels),
 		k8sdaemonset.SetAllAnnotations(nil, r.getAnnotations(dk)),
 		k8sdaemonset.SetServiceAccount(serviceAccountName),

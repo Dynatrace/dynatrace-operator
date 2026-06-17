@@ -11,6 +11,7 @@ import (
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
@@ -136,6 +137,10 @@ type dynakubeReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
+type extensionDynakubeReconciler interface {
+	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
+}
+
 // dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
 type dtSettingReconciler interface {
 	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
@@ -169,7 +174,7 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder events.EventRecorder
 
-	extensionReconciler          dynakubeReconciler
+	extensionReconciler          extensionDynakubeReconciler
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               kspmReconciler
 	otelcReconciler              dynakubeReconciler
@@ -390,7 +395,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 		componentErrors = append(componentErrors, err)
 	}
 
-	if err := controller.extensionReconciler.Reconcile(ctx, dk); err != nil {
+	if err := controller.extensionReconciler.Reconcile(ctx, dtClient.Images, dk); err != nil {
 		log.Info("could not reconcile Extensions")
 
 		componentErrors = append(componentErrors, err)

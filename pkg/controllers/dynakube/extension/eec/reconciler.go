@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -25,7 +26,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "extension-eec")
 
 	// TODO: Remove as part of ICP-1086
@@ -64,5 +65,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return errors.New("kubeSystemUUID unknown")
 	}
 
-	return r.createOrUpdateStatefulset(ctx, dk)
+	imageURI, err := resolveImage(ctx, imageClient, image.EEC, dk)
+	if err != nil {
+		return err
+	}
+
+	return r.createOrUpdateStatefulset(ctx, dk, imageURI)
+}
+
+func resolveImage(ctx context.Context, imageClient image.Client, component image.ComponentType, dk *dynakube.DynaKube) (string, error) {
+	if !dk.FF().IsPublicRegistry() {
+		return "", nil
+	}
+
+	imageInfo, err := imageClient.GetComponentLatestInfo(ctx, component, dk.PublicRegistryOverride())
+	if err != nil {
+		return "", err
+	}
+
+	return imageInfo.URI, nil
 }
