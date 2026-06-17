@@ -16,6 +16,9 @@ const (
 	OneAgent    ComponentType = "oneagent"
 	CodeModules ComponentType = "codemodules"
 	ActiveGate  ComponentType = "activegate"
+	EEC         ComponentType = "eec"
+	LogModule   ComponentType = "logmodule"
+	DBExecutor  ComponentType = "database-datasource-executor"
 )
 
 type Info struct {
