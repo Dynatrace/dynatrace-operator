@@ -40,9 +40,9 @@
 
 Namespace-scoped (Role):
 
-| Resources                       | Verbs | Comments                                                        |
-| ------------------------------- | ----- | --------------------------------------------------------------- |
-| pods                            | list  | Required to find database executor pods in operator namespace   |
+| Resources                       | Verbs | Comments                                                       |
+| ------------------------------- | ----- |----------------------------------------------------------------|
+| pods                            | list  | Required to find database executor pods in operator namespace  |
 | securitycontextconstraints (OS) | use   | Required for OpenShift SCC (nonroot-v2 / privileged)           |
 
 Cluster-scoped (ClusterRole `dynatrace-extension-controller`):
