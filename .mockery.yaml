@@ -42,6 +42,7 @@ packages:
     interfaces:
       dtSettingReconciler:
       dynakubeReconciler:
+      extensionDynakubeReconciler:
       istioReconciler:
       logMonitoringReconciler:
       oneAgentReconciler:
@@ -56,6 +57,7 @@ packages:
       filename: "mock_reconcilers_test.go"
     interfaces:
       subReconciler:
+      imageAwareSubReconciler:
       logmonsettingsSubReconciler:
       oaConnectionInfoReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection:
