@@ -47,13 +47,13 @@ jobs:
       MARKETPLACE: ${{ matrix.marketplace }}
     steps:
       - name: Checkout workflow scripts
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 1
           token: ${{ secrets.TEAM_USER_TOKEN }}
           persist-credentials: false
       - name: Checkout dynatrace-operator at release-branch
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.branch || github.event.pull_request.base.ref }}
           path: release-src
