@@ -191,7 +191,7 @@ jobs:
           output: 'fips-result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
           skip-files: '/usr/local/bin/dynatrace-operator'
-      - name: Upload sbom to ${{matrix.registry}}
+      - name: Upload sbom to ${{matrix.registry}} fips
         uses: ./.github/actions/upload-sbom
         with:
           image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
