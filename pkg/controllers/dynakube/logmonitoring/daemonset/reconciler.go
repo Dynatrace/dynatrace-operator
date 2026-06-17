@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -54,7 +55,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	imageURI, err := resolveImage(ctx, imageClient, dk)
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk, dtimage.LogModule)
 	if err != nil {
 		return err
 	}
@@ -77,19 +78,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	}
 
 	return nil
-}
-
-func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) (string, error) {
-	if !dk.FF().IsPublicRegistry() {
-		return "", nil
-	}
-
-	imageInfo, err := imageClient.GetComponentLatestInfo(ctx, dtimage.LogModule, dk.PublicRegistryOverride())
-	if err != nil {
-		return "", err
-	}
-
-	return imageInfo.URI, nil
 }
 
 func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (*appsv1.DaemonSet, error) {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -65,23 +66,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient image.Client, dk
 		return errors.New("kubeSystemUUID unknown")
 	}
 
-	imageURI, err := resolveImage(ctx, imageClient, image.EEC, dk)
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk, image.EEC)
 	if err != nil {
 		return err
 	}
 
 	return r.createOrUpdateStatefulset(ctx, dk, imageURI)
-}
-
-func resolveImage(ctx context.Context, imageClient image.Client, component image.ComponentType, dk *dynakube.DynaKube) (string, error) {
-	if !dk.FF().IsPublicRegistry() {
-		return "", nil
-	}
-
-	imageInfo, err := imageClient.GetComponentLatestInfo(ctx, component, dk.PublicRegistryOverride())
-	if err != nil {
-		return "", err
-	}
-
-	return imageInfo.URI, nil
 }
