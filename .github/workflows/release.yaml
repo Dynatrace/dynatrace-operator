@@ -198,11 +198,11 @@ jobs:
           sbom: 'fips-result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-#      - name: Add build provenance attestation for ${{ matrix.registry }} fips
-#        uses: ./.github/actions/attest-artifact
-#        with:
-#          subject-name: ${{ matrix.url }}/${{ vars[matrix.repository] }}
-#          subject-digest: ${{ needs.build-push.outputs.fips-digest }}
+      - name: Add build provenance attestation for ${{ matrix.registry }} fips
+        uses: ./.github/actions/attest-artifact
+        with:
+          subject-name: ${{ matrix.url }}/${{ vars[matrix.repository] }}
+          subject-digest: ${{ needs.build-push.outputs.fips-digest }}
 
   run-preflight-rhcc:
     name: Run preflight for rhcc
