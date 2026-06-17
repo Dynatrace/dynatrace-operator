@@ -52,7 +52,7 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, nil, dk)
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -73,7 +73,7 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, nil, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
@@ -83,7 +83,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context(), dk)
+		err = reconciler.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -105,7 +105,7 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, nil, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
@@ -115,7 +115,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context(), dk)
+		err = reconciler.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -138,7 +138,7 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, nil, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, *dk.Conditions())
@@ -159,7 +159,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := NewReconciler(boomClient,
 			boomClient)
 
-		err := reconciler.Reconcile(t.Context(), dk)
+		err := reconciler.Reconcile(t.Context(), nil, dk)
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
@@ -178,7 +178,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -203,6 +203,19 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Equal(t, intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable) //nolint:staticcheck
 	})
 
+	t.Run("respect public-registry resolved image", func(t *testing.T) {
+		expectedImageURI := "my-public-registry:5000/my-test-repo:my-test-tag"
+		dk := createDynakube(false)
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{}
+		reconciler := NewReconciler(nil, fake.NewClient())
+		daemonset, err := reconciler.generateDaemonSet(dk, expectedImageURI)
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+
+		assert.Equal(t, expectedImageURI, daemonset.Spec.Template.Spec.InitContainers[0].Image)
+		assert.Equal(t, expectedImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
+	})
+
 	t.Run("respect custom labels", func(t *testing.T) {
 		customLabels := map[string]string{
 			"custom": "label",
@@ -214,7 +227,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -234,7 +247,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -251,7 +264,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -271,7 +284,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -285,7 +298,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.NetworkZone = "my-networkzone"
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -299,7 +312,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Status.ProxyURLHash = "proxy-hash"
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -314,7 +327,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -331,7 +344,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -345,7 +358,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.CustomPullSecret = customPullSecret
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -368,7 +381,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			Tolerations: customTolerations,
 		}
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -385,7 +398,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			NodeSelector: customNodeSelector,
 		}
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -397,7 +410,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = ""
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -419,7 +432,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 		assert.Contains(t, daemonset.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+containerName)
@@ -438,7 +451,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 		assert.NotContains(t, daemonset.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+containerName)

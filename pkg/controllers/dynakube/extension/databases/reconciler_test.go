@@ -302,7 +302,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		dk.Spec.Extensions.Databases[0].Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 		clt := fakeClient()
 
-		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), nil, dk))
 		deployments := &appsv1.DeploymentList{}
 		require.NoError(t, clt.List(t.Context(), deployments))
 		require.Len(t, deployments.Items, 1)
@@ -347,7 +347,7 @@ func requireReconcileFails(t *testing.T, dk *dynakube.DynaKube, builder *fake.Cl
 		Build()
 	reconciler := NewReconciler(mockK8sClient, mockK8sClient)
 
-	err := reconciler.Reconcile(t.Context(), dk)
+	err := reconciler.Reconcile(t.Context(), nil, dk)
 	require.Error(t, err)
 	require.True(t, k8serrors.IsInternalError(err))
 	require.True(t, meta.IsStatusConditionFalse(dk.Status.Conditions, conditionType), meta.FindStatusCondition(dk.Status.Conditions, conditionType))
@@ -357,7 +357,7 @@ func getReconciledDeployment(t *testing.T, clt client.Client, dk *dynakube.DynaK
 	t.Cleanup(version.DisableCacheForTest(123))
 	t.Helper()
 
-	require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+	require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), nil, dk))
 	deployments := &appsv1.DeploymentList{}
 	require.NoError(t, clt.List(t.Context(), deployments))
 	if len(deployments.Items) == 0 {
@@ -423,7 +423,7 @@ func getMatchingDeployment(dk *dynakube.DynaKube) *appsv1.Deployment {
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						buildContainer(dk, db),
+						buildContainer(dk, db, ""),
 					},
 					Volumes: buildVolumes(dk, db),
 				},

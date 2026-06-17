@@ -21,7 +21,7 @@ func TestGetContainer(t *testing.T) {
 
 	t.Run("get main container", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		mainContainer := getContainer(dk, tenantUUID)
+		mainContainer := getContainer(dk, tenantUUID, "")
 
 		require.NotEmpty(t, mainContainer)
 
@@ -46,7 +46,7 @@ func TestGetContainer(t *testing.T) {
 				Tag:        expectedTag,
 			},
 		}
-		mainContainer := getContainer(dk, tenantUUID)
+		mainContainer := getContainer(dk, tenantUUID, "")
 
 		require.NotEmpty(t, mainContainer)
 		assert.NotEmpty(t, mainContainer.Image)
@@ -69,7 +69,7 @@ func TestGetContainer(t *testing.T) {
 				Limits:   limits,
 			},
 		}
-		mainContainer := getContainer(dk, tenantUUID)
+		mainContainer := getContainer(dk, tenantUUID, "")
 
 		require.NotEmpty(t, mainContainer)
 		assert.NotEmpty(t, mainContainer.Resources)
@@ -88,7 +88,7 @@ func TestGetInitContainer(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk, tenantUUID, "")
 
 		require.NotEmpty(t, initContainer)
 
@@ -115,7 +115,7 @@ func TestGetInitContainer(t *testing.T) {
 				Tag:        expectedTag,
 			},
 		}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk, tenantUUID, "")
 
 		require.NotEmpty(t, initContainer)
 		assert.NotEmpty(t, initContainer.Image)
@@ -138,7 +138,7 @@ func TestGetInitContainer(t *testing.T) {
 				Limits:   limits,
 			},
 		}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk, tenantUUID, "")
 
 		require.NotEmpty(t, initContainer)
 		assert.NotEmpty(t, initContainer.Resources)
@@ -148,7 +148,7 @@ func TestGetInitContainer(t *testing.T) {
 
 	t.Run("get main container without the use of metadata", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk, tenantUUID, "")
 
 		require.NotEmpty(t, initContainer)
 
@@ -198,8 +198,8 @@ func TestSecurityContext(t *testing.T) {
 
 	t.Run("main and init container securityContext differ only in capabilities", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		initContainer := getInitContainer(dk, tenantUUID)
-		mainContainer := getContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk, tenantUUID, "")
+		mainContainer := getContainer(dk, tenantUUID, "")
 
 		require.NotNil(t, initContainer)
 		require.NotNil(t, mainContainer)
@@ -240,8 +240,8 @@ func TestSecurityContext(t *testing.T) {
 	t.Run("apparmor annotation is not converted in 1.30", func(t *testing.T) {
 		version.DisableCacheForTest(30)
 
-		initContainer := getInitContainer(appArmorDK, tenantUUID)
-		mainContainer := getContainer(appArmorDK, tenantUUID)
+		initContainer := getInitContainer(appArmorDK, tenantUUID, "")
+		mainContainer := getContainer(appArmorDK, tenantUUID, "")
 
 		require.Nil(t, initContainer.SecurityContext.AppArmorProfile)
 		require.Nil(t, mainContainer.SecurityContext.AppArmorProfile)
@@ -250,8 +250,8 @@ func TestSecurityContext(t *testing.T) {
 	t.Run("apparmor annotation is converted in 1.31", func(t *testing.T) {
 		version.DisableCacheForTest(31)
 
-		initContainer := getInitContainer(appArmorDK, tenantUUID)
-		mainContainer := getContainer(appArmorDK, tenantUUID)
+		initContainer := getInitContainer(appArmorDK, tenantUUID, "")
+		mainContainer := getContainer(appArmorDK, tenantUUID, "")
 
 		require.NotNil(t, initContainer.SecurityContext.AppArmorProfile)
 		require.NotNil(t, mainContainer.SecurityContext.AppArmorProfile)

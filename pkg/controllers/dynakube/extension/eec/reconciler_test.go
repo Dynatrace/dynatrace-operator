@@ -82,7 +82,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	mockK8sClient := fake.NewClient(dk)
 	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-	err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
+	err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), nil, dk)
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
@@ -132,7 +132,7 @@ func TestConditions(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), nil, dk)
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -148,7 +148,7 @@ func TestConditions(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), nil, dk)
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -165,7 +165,7 @@ func TestConditions(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -220,7 +220,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(t.Context(), dk)
+		err := reconciler.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
@@ -233,7 +233,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Update(t.Context(), &updatedTLSSecret)
 		require.NoError(t, err)
 
-		err = reconciler.Reconcile(t.Context(), dk)
+		err = reconciler.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
@@ -1917,7 +1917,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 		require.NoError(t, clt.Create(t.Context(), &tlsSecret))
 
-		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), nil, dk))
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, sts))
 

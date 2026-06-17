@@ -34,7 +34,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient)
-		err := r.Reconcile(t.Context(), dk)
+		err := r.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		// assert extensions token is not generated
@@ -71,7 +71,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		require.NotEmpty(t, dk.Conditions())
 
 		// reconcile
-		err = r.Reconcile(t.Context(), dk)
+		err = r.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		// assert extensions token is deleted after reconciliation
@@ -87,7 +87,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient)
-		err := r.Reconcile(t.Context(), dk)
+		err := r.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		// assert extensions token is generated
@@ -111,7 +111,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
 		r := NewReconciler(fake.NewClient(), misconfiguredReader)
-		err := r.Reconcile(t.Context(), dk)
+		err := r.Reconcile(t.Context(), nil, dk)
 		require.Error(t, err)
 
 		// assert extensions token condition is added
@@ -145,7 +145,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		fakeClient := fake.NewClient(oldSecret)
 		r := NewReconciler(fakeClient, fakeClient)
 
-		err = r.Reconcile(t.Context(), dk)
+		err = r.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		// assert extensions token is generated
@@ -175,7 +175,7 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 
 		r := NewReconciler(mockK8sClient, mockK8sClient)
-		err := r.Reconcile(t.Context(), dk)
+		err := r.Reconcile(t.Context(), nil, dk)
 
 		require.NoError(t, err)
 
@@ -200,7 +200,7 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 
 		r := NewReconciler(mockK8sClient, mockK8sClient)
-		err := r.Reconcile(t.Context(), dk)
+		err := r.Reconcile(t.Context(), nil, dk)
 
 		require.NoError(t, err)
 
