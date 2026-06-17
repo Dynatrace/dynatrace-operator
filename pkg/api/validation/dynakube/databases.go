@@ -30,6 +30,10 @@ func missingDatabaseExecutorImage(ctx context.Context, _ *Validator, dk *dynakub
 		return ""
 	}
 
+	if dk.FF().IsPublicRegistry() || dk.PublicRegistryOverride() != "" {
+		return ""
+	}
+
 	if !dk.Spec.Templates.SQLExtensionExecutor.ImageRef.HasImage() {
 		log.Info("requested dynakube doesn't specify the sqlExtensionExecutor image.", "name", dk.Name, "namespace", dk.Namespace)
 
