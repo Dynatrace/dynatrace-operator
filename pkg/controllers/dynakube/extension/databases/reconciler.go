@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/registry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
@@ -31,7 +31,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 
 	log.Debug("reconciling deployments")
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk, dtimage.DBExecutor)
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.FF().IsPublicRegistry(), dk.PublicRegistryOverride(), dtimage.DBExecutor)
 	if err != nil {
 		return err
 	}
