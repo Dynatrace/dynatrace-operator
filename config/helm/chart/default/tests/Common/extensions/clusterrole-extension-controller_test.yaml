@@ -40,6 +40,42 @@ tests:
       - isNotEmpty:
           path: metadata.labels
 
+  - it: ClusterRole should contain SCC rule on OpenShift
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
+  - it: ClusterRole should not contain SCC rule on non-OpenShift
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
   - it: shouldn't exist if extensions are turned off
     set:
       rbac.extensions.create: false
