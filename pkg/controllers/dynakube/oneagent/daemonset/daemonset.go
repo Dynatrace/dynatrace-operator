@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -86,34 +87,37 @@ type classicFullStack struct {
 }
 
 type builder struct {
-	dk             *dynakube.DynaKube
-	hostInjectSpec *oneagent.HostInjectSpec
-	clusterID      string
-	deploymentType string
+	dk                     *dynakube.DynaKube
+	hostInjectSpec         *oneagent.HostInjectSpec
+	clusterID              string
+	deploymentType         string
+	processGroupConfigHash string
 }
 
 type Builder interface {
 	BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewHostMonitoring(dk *dynakube.DynaKube, clusterID, processGroupConfigHash string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
-			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
+			dk:                     dk,
+			hostInjectSpec:         dk.Spec.OneAgent.HostMonitoring,
+			clusterID:              clusterID,
+			deploymentType:         deploymentmetadata.HostMonitoringDeploymentType,
+			processGroupConfigHash: processGroupConfigHash,
 		},
 	}
 }
 
-func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID, processGroupConfigHash string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
-			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
+			dk:                     dk,
+			hostInjectSpec:         &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			clusterID:              clusterID,
+			deploymentType:         deploymentmetadata.CloudNativeDeploymentType,
+			processGroupConfigHash: processGroupConfigHash,
 		},
 	}
 }
@@ -178,6 +182,12 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 		webhook.AnnotationDynatraceInject: "false",
 		annotationTenantTokenHash:         dk.Status.OneAgent.ConnectionInfo.TenantTokenHash,
 		annotationEnableDaemonSetEviction: "false",
+	}
+
+	if bootstrapperconfig.NeedsPGC(dk) {
+		if b.processGroupConfigHash != "" {
+			templateAnnotations[AnnotationPGCHash] = b.processGroupConfigHash
+		}
 	}
 
 	templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations), containerName, initContainerName)
@@ -422,11 +432,11 @@ func (b *builder) dnsPolicy() corev1.DNSPolicy {
 }
 
 func (b *builder) volumeMounts() []corev1.VolumeMount {
-	return prepareVolumeMounts(b.dk)
+	return prepareVolumeMounts(b.dk, b.processGroupConfigHash)
 }
 
 func (b *builder) volumes() []corev1.Volume {
-	return prepareVolumes(b.dk)
+	return prepareVolumes(b.dk, b.processGroupConfigHash)
 }
 
 func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
