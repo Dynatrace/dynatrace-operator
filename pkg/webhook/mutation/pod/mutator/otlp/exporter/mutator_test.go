@@ -720,7 +720,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 
 		// Volume referencing certificate secret must be present
 		{
-			volume := k8svolume.FindByName(request.Pod.Spec.Volumes, activeGateTrustedCertVolumeName)
+			volume := k8svolume.FindByName(request.Pod.Spec.Volumes, ActiveGateTrustedCertVolumeName)
 			require.NotNil(t, volume)
 			require.NotNil(t, volume.Secret)
 			assert.Equal(t, consts.OTLPExporterCertsSecretName, volume.Secret.SecretName)
@@ -730,7 +730,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 		for _, c := range request.Pod.Spec.Containers {
 			mountFound := false
 			for _, mnt := range c.VolumeMounts {
-				if mnt.Name == activeGateTrustedCertVolumeName && mnt.MountPath == exporterCertsMountPath {
+				if mnt.Name == ActiveGateTrustedCertVolumeName && mnt.MountPath == exporterCertsMountPath {
 					mountFound = true
 					assert.True(t, mnt.ReadOnly)
 
@@ -758,7 +758,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 		// Init containers should not have the mount
 		for _, c := range request.Pod.Spec.InitContainers {
 			for _, mnt := range c.VolumeMounts {
-				assert.NotEqual(t, activeGateTrustedCertVolumeName, mnt.Name)
+				assert.NotEqual(t, ActiveGateTrustedCertVolumeName, mnt.Name)
 			}
 		}
 	})
@@ -766,7 +766,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 	t.Run("existing activegate cert volume", func(t *testing.T) {
 		pod := getTestPod()
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: activeGateTrustedCertVolumeName, VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: consts.OTLPExporterCertsSecretName}},
+			Name: ActiveGateTrustedCertVolumeName, VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: consts.OTLPExporterCertsSecretName}},
 		})
 		expectVolumes := pod.DeepCopy().Spec.Volumes
 
@@ -787,7 +787,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 	t.Run("conflicting activegate cert volume", func(t *testing.T) {
 		pod := getTestPod()
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: activeGateTrustedCertVolumeName, VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: "foo-cert"}},
+			Name: ActiveGateTrustedCertVolumeName, VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: "foo-cert"}},
 		})
 
 		m := Mutator{}
@@ -854,14 +854,14 @@ func Test_ensureCertificateVolumeMounted(t *testing.T) {
 		ensureCertificateVolumeMounted(&c)
 		require.Len(t, c.VolumeMounts, 1)
 		vm := c.VolumeMounts[0]
-		assert.Equal(t, activeGateTrustedCertVolumeName, vm.Name)
+		assert.Equal(t, ActiveGateTrustedCertVolumeName, vm.Name)
 		assert.Equal(t, exporterCertsMountPath, vm.MountPath)
 		assert.True(t, vm.ReadOnly)
 	})
 
 	t.Run("does not duplicate mount", func(t *testing.T) {
 		c := newContainer()
-		c.VolumeMounts = []corev1.VolumeMount{{Name: activeGateTrustedCertVolumeName, MountPath: exporterCertsMountPath, ReadOnly: true}}
+		c.VolumeMounts = []corev1.VolumeMount{{Name: ActiveGateTrustedCertVolumeName, MountPath: exporterCertsMountPath, ReadOnly: true}}
 		ensureCertificateVolumeMounted(&c)
 		assert.Len(t, c.VolumeMounts, 1)
 	})
@@ -885,7 +885,7 @@ func Test_addActiveGateCertVolume(t *testing.T) {
 		addActiveGateCertVolume(dk, pod)
 		require.Len(t, pod.Spec.Volumes, 1)
 		v := pod.Spec.Volumes[0]
-		assert.Equal(t, activeGateTrustedCertVolumeName, v.Name)
+		assert.Equal(t, ActiveGateTrustedCertVolumeName, v.Name)
 		require.NotNil(t, v.Secret)
 		assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
 

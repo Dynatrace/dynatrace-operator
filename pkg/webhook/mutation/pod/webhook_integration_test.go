@@ -33,6 +33,7 @@ import (
 	oneagentmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -371,6 +372,163 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 	}
 
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
+}
+
+// TestConflictingVolumeType verifies that the webhook refuses to inject when a pod pre-defines one of the
+// operator-managed volumes with a source that conflicts with the one the mutators would add, and that the
+// corresponding not-injected reason is exposed on the pod. See ICP-6182.
+func TestConflictingVolumeType(t *testing.T) {
+	clt := integrationtests.SetupWebhookTestEnvironment(t,
+		getWebhookInstallOptions(),
+
+		func(mgr ctrl.Manager) error {
+			require.NoError(t, mgr.GetClient().Create(t.Context(), getNamespace(testNamespace)))
+
+			dummyWebhookPod := getDummyWebhookPod()
+			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
+			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
+			t.Setenv(k8senv.DTOperatorImageEnvName, dummyWebhookPod.Spec.Containers[0].Image)
+
+			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
+		},
+	)
+
+	// shared between test cases
+	createObject(t, clt, getBoostrapperSecret(testNamespace))
+	createObject(t, clt, getOTLPExporterSecret(testNamespace))
+	createObject(t, clt, getOTLPExporterCertsSecret(testNamespace))
+
+	// a volume with a source the mutators would never produce
+	hostPathVolume := func(name string) corev1.Volume {
+		return corev1.Volume{
+			Name:         name,
+			VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}},
+		}
+	}
+
+	// a fully ready cloud-native DynaKube so injection proceeds up to the conflicting volume
+	oneAgentDynaKube := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: oneagent.Status{
+					ConnectionInfo: communication.ConnectionInfo{
+						TenantUUID: uuid.NewString(),
+					},
+				},
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.2.3",
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("config volume", func(t *testing.T) {
+		createDynaKube(t, clt, oneAgentDynaKube())
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.ConfigVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[volumes.AnnotationReason])
+	})
+
+	t.Run("input volume", func(t *testing.T) {
+		createDynaKube(t, clt, oneAgentDynaKube())
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.InputVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[volumes.AnnotationReason])
+	})
+
+	t.Run("oneagent-bin emptyDir volume", func(t *testing.T) {
+		dk := oneAgentDynaKube()
+		// a code modules image lets the pod-level volume-type annotation force the emptyDir bin volume path
+		dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.EphemeralVolumeType
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(oneagentmutator.BinVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[oneagentmutator.AnnotationReason])
+	})
+
+	t.Run("oneagent-bin CSI volume", func(t *testing.T) {
+		dk := oneAgentDynaKube()
+		// a code modules image lets the pod-level volume-type annotation force the CSI bin volume path
+		dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.CSIVolumeType
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(oneagentmutator.BinVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[oneagentmutator.AnnotationReason])
+	})
+
+	t.Run("otlp activegate cert volume", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: "https://example.live.dynatrace.com",
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
+					},
+				},
+				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
+					NamespaceSelector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
+						},
+					},
+					Signals: otlpspec.SignalConfiguration{
+						Metrics: &otlpspec.MetricsSignal{},
+						Logs:    &otlpspec.LogsSignal{},
+						Traces:  &otlpspec.TracesSignal{},
+					},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: oneagent.Status{
+					ConnectionInfo: communication.ConnectionInfo{
+						TenantUUID: uuid.NewString(),
+					},
+				},
+			},
+		}
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(exporter.ActiveGateTrustedCertVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[podmutator.AnnotationOTLPReason])
+	})
 }
 
 func TestOTLPWebhook(t *testing.T) { //nolint:revive
@@ -1267,6 +1425,18 @@ func getOTLPExporterSecret(namespace string) *corev1.Secret {
 		Data: map[string][]byte{
 			token.APIKey:        []byte(dataIngestToken),
 			token.DataIngestKey: []byte(dataIngestToken),
+		},
+	}
+}
+
+func getOTLPExporterCertsSecret(namespace string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OTLPExporterCertsSecretName,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			dynakube.TLSCertKey: []byte("ag-cert-data"),
 		},
 	}
 }

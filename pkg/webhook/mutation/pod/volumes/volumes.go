@@ -26,10 +26,10 @@ const (
 	// AnnotationConfigVolumeNameResource is used to specify the volume size for EmptyDir for dynatrace-config.
 	AnnotationConfigVolumeNameResource = AnnotationResourcePrefix + ConfigVolumeName
 
-	// annotationDynatraceInjected is set to "true" by the webhook to Pods to indicate that it has been injected.
-	annotationInjected = AnnotationResourcePrefix + "injected"
-	// annotationDynatraceReason is add to provide extra info why an injection didn't happen.
-	annotationReason = AnnotationResourcePrefix + "reason"
+	// AnnotationInjected is set to "true" by the webhook to Pods to indicate that it has been injected.
+	AnnotationInjected = AnnotationResourcePrefix + "injected"
+	// AnnotationReason is add to provide extra info why an injection didn't happen.
+	AnnotationReason = AnnotationResourcePrefix + "reason"
 	// ConflictingVolumeTypeReason indicates that the user provided a volume definition that conflicts with the one that would be added by the mutator.
 	ConflictingVolumeTypeReason = "ConflictingVolumeType"
 )
@@ -178,7 +178,7 @@ func setNotInjectedReason(reason string) func(*corev1.Pod) {
 			pod.Annotations = make(map[string]string)
 		}
 
-		pod.Annotations[annotationInjected] = "false"
-		pod.Annotations[annotationReason] = reason
+		pod.Annotations[AnnotationInjected] = "false"
+		pod.Annotations[AnnotationReason] = reason
 	}
 }
