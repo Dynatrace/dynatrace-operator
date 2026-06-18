@@ -5,15 +5,19 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -329,6 +333,31 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		assert.NotNil(t, deploy.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
 		assert.NotContains(t, deploy.Spec.Template.Annotations, appArmorAnnotationKey)
 	})
+}
+
+func TestPublicRegistryImage(t *testing.T) {
+	expectedImageURI := "my-public-registry:5000/my-test-repo:my-test-tag"
+	getReconciledDeployment := func(t *testing.T) *appsv1.Deployment {
+		t.Helper()
+
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.Templates = dynakube.TemplatesSpec{}
+		clt := fakeClient()
+
+		imageClient := imageclientmock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.DBExecutor, "").Return(&dtimage.Info{URI: expectedImageURI}, nil)
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
+		deployments := &appsv1.DeploymentList{}
+		require.NoError(t, clt.List(t.Context(), deployments))
+		require.Len(t, deployments.Items, 1)
+
+		return &deployments.Items[0]
+	}
+
+	deployment := getReconciledDeployment(t)
+	require.Equal(t, expectedImageURI, deployment.Spec.Template.Spec.Containers[0].Image)
 }
 
 func fakeClient() client.Client {
