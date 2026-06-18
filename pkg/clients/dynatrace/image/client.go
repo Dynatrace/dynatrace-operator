@@ -68,16 +68,16 @@ func (c *ClientImpl) GetComponentLatestInfo(ctx context.Context, component Compo
 
 	err := c.apiClient.GET(ctx, containerImagesPath).WithQueryParams(params).Execute(&resp)
 	if err != nil {
-		return nil, fmt.Errorf("get latest %s image: %w", component, err)
+		return nil, fmt.Errorf("get latest %q image: %w", component, err)
 	}
 
 	if resp.IsEmpty() {
-		return nil, fmt.Errorf("image discovery failed for '%s': no matching image in DT API response", component)
+		return nil, fmt.Errorf("image discovery failed for %q: no matching image in DT API response", component)
 	}
 
 	idx := slices.IndexFunc(resp.Components, func(c componentResponse) bool { return c.Type == component })
 	if idx == -1 {
-		return nil, fmt.Errorf("image discovery failed for '%s': no matching image in DT API response", component)
+		return nil, fmt.Errorf("image discovery failed for %q: no matching image in DT API response", component)
 	}
 
 	imageInfo, err := parseImageInfo(resp.Components[idx].ImageURI)
