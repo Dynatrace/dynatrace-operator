@@ -57,18 +57,35 @@ jobs:
     outputs:
       digest: ${{ steps.build-image.outputs.digest }}
 
+  copy-image-to-artifact:
+    if: github.repository_owner == 'Dynatrace'
+    name: Create image artifacts
+    environment: Release
+    needs: [prepare, build-push]
+    permissions: {}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Copy image to artifact for ${{ matrix.registry }}
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          artifact-name: nightly-image
+          registry: ${{ env.IMAGE_REGISTRY }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-username: ${{ github.repository_owner }}
+
   create-sbom:
     if: github.repository_owner == 'Dynatrace'
-    needs: [prepare, build-push]
+    needs: [copy-image-to-artifact]
     permissions: {}
     uses: ./.github/workflows/create-sbom.yaml
     with:
-      image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-      artifact-name: nightly-sbom
-      registry: ${{ env.IMAGE_REGISTRY }}
-    secrets:
-      registry-username: ${{ github.repository_owner }}
-      registry-token: ${{ secrets.GITHUB_TOKEN }}
+      sbom-artifact-name:  nightly-sbom
+      image-artifact-name: nightly-image
 
   signing:
     if: github.repository_owner == 'Dynatrace'
