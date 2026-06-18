@@ -96,7 +96,7 @@ runs:
       uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
       with:
         # renovate datasource=github-releases depName=helm/helm
-        version: v4.2.1
+        version: v4.2.2
         token: ${{ github.token }}
     - name: Install gotestsum
       shell: bash
@@ -152,11 +152,7 @@ runs:
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
       if: always()
     - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
-      with:
-        files: target/results/*.xml
       if: always()
-    - name: Publish test results
       uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
       with:
         files: target/results/*.xml
