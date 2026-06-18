@@ -84,9 +84,16 @@ func addEmptyDirBinVolume(pod *corev1.Pod, log logd.Logger) error {
 	return nil
 }
 
-func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) {
-	if k8svolume.Contains(pod.Spec.Volumes, BinVolumeName) {
-		return
+func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) error {
+	if vol := k8svolume.FindByName(pod.Spec.Volumes, BinVolumeName); vol != nil {
+		if vol.CSI == nil || vol.CSI.Driver != dtcsi.DriverName {
+			return dtwebhook.MutatorError{
+				Err:      volumes.ExistingVolumeError(BinVolumeName),
+				Annotate: setNotInjectedAnnotationFunc(volumes.ConflictingVolumeTypeReason),
+			}
+		}
+
+		return nil
 	}
 
 	volumeSource := corev1.VolumeSource{
@@ -107,4 +114,6 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) {
 			VolumeSource: volumeSource,
 		},
 	)
+
+	return nil
 }
