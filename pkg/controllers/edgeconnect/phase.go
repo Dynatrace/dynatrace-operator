@@ -18,19 +18,19 @@ func (controller *Controller) determineEdgeConnectPhase(ctx context.Context, ec 
 
 	err := controller.client.Get(ctx, types.NamespacedName{Name: ec.Name, Namespace: ec.Namespace}, deployment)
 	if k8serrors.IsNotFound(err) {
-		log.Info("edgeConnect deployment to be deployed", "edgeConnect", ec.Name, "deployment", ec.Name)
+		log.Info("edgeConnect deployment to be deployed", "deployment", ec.Name)
 
 		return status.Deploying
 	}
 
 	if err != nil {
-		log.Error(err, "edgeConnect deployment could not be accessed", "edgeConnect", ec.Name, "namespace", ec.Namespace)
+		log.Error(err, "edgeConnect deployment could not be accessed")
 
 		return status.Error
 	}
 
 	if deployment.Status.Replicas != deployment.Status.ReadyReplicas {
-		log.Info("edgeConnect deployment is still deploying", "edgeConnect", ec.Name, "namespace", ec.Name)
+		log.Info("edgeConnect deployment is still deploying")
 
 		return status.Deploying
 	}
