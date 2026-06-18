@@ -8,6 +8,7 @@ import (
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/app"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -44,9 +45,16 @@ func addInitBinMount(initContainer *corev1.Container, readonly bool) {
 	)
 }
 
-func addEmptyDirBinVolume(pod *corev1.Pod, log logd.Logger) {
-	if k8svolume.Contains(pod.Spec.Volumes, BinVolumeName) {
-		return
+func addEmptyDirBinVolume(pod *corev1.Pod, log logd.Logger) error {
+	if vol := k8svolume.FindByName(pod.Spec.Volumes, BinVolumeName); vol != nil {
+		if vol.EmptyDir == nil {
+			return dtwebhook.MutatorError{
+				Err:      volumes.ExistingVolumeError(BinVolumeName),
+				Annotate: setNotInjectedAnnotationFunc(volumes.ConflictingVolumeTypeReason),
+			}
+		}
+
+		return nil
 	}
 
 	emptyDirVS := corev1.EmptyDirVolumeSource{}
@@ -72,6 +80,8 @@ func addEmptyDirBinVolume(pod *corev1.Pod, log logd.Logger) {
 			VolumeSource: volumeSource,
 		},
 	)
+
+	return nil
 }
 
 func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) {

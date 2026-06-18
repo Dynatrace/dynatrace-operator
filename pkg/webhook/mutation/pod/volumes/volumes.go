@@ -30,25 +30,23 @@ const (
 	annotationInjected = AnnotationResourcePrefix + "injected"
 	// annotationDynatraceReason is add to provide extra info why an injection didn't happen.
 	annotationReason = AnnotationResourcePrefix + "reason"
-	// reasonConflictingVolumeType indicates that the user provided a volume definition that conflicts with the one that would be added by the mutator.
-	reasonConflictingVolumeType = "ConflictingVolumeType"
+	// ConflictingVolumeTypeReason indicates that the user provided a volume definition that conflicts with the one that would be added by the mutator.
+	ConflictingVolumeTypeReason = "ConflictingVolumeType"
 )
 
-// existingVolumeError indicates that an existing volume cannot be used for injection because it does not match the expected spec.
-type existingVolumeError struct {
-	volumeName string
-}
+// ExistingVolumeError indicates that an existing volume cannot be used for injection because it does not match the expected spec.
+type ExistingVolumeError string
 
-func (e existingVolumeError) Error() string {
-	return "user-provided " + e.volumeName + " volume cannot be mounted due to invalid configuration"
+func (e ExistingVolumeError) Error() string {
+	return "user-provided " + string(e) + " volume cannot be mounted due to invalid configuration"
 }
 
 func AddConfigVolume(ctx context.Context, pod *corev1.Pod) error {
 	if vol := k8svolume.FindByName(pod.Spec.Volumes, ConfigVolumeName); vol != nil {
 		if vol.EmptyDir == nil {
 			return dtwebhook.MutatorError{
-				Err:      existingVolumeError{ConfigVolumeName},
-				Annotate: setNotInjectedReason(reasonConflictingVolumeType),
+				Err:      ExistingVolumeError(ConfigVolumeName),
+				Annotate: setNotInjectedReason(ConflictingVolumeTypeReason),
 			}
 		}
 
@@ -121,8 +119,8 @@ func AddInputVolume(pod *corev1.Pod) error {
 			vol.Projected.Sources[0].Secret == nil || vol.Projected.Sources[0].Secret.Name != consts.BootstrapperInitSecretName ||
 			vol.Projected.Sources[1].Secret == nil || vol.Projected.Sources[1].Secret.Name != consts.BootstrapperInitCertsSecretName {
 			return dtwebhook.MutatorError{
-				Err:      existingVolumeError{InputVolumeName},
-				Annotate: setNotInjectedReason(reasonConflictingVolumeType),
+				Err:      ExistingVolumeError(InputVolumeName),
+				Annotate: setNotInjectedReason(ConflictingVolumeTypeReason),
 			}
 		}
 

@@ -49,7 +49,10 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	} else {
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
-		addEmptyDirBinVolume(mutationRequest.Pod, log)
+
+		if err := addEmptyDirBinVolume(mutationRequest.Pod, log); err != nil {
+			return err
+		}
 		// in case of no CSI, the the emptyDir can't be readonly for the init-container, as it first has to download/move the agent into it
 		addInitBinMount(mutationRequest.InstallContainer, false)
 

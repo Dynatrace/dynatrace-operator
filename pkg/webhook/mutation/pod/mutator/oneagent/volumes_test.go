@@ -103,4 +103,30 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 			},
 		}, pod.Spec.Volumes[0])
 	})
+
+	t.Run("existing volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: corev1.StorageMediumHugePages}}},
+				},
+			},
+		}
+		expectedPod := pod.DeepCopy()
+
+		require.NoError(t, addEmptyDirBinVolume(pod, logd.Get()))
+		assert.Equal(t, expectedPod, pod)
+	})
+
+	t.Run("conflicting volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}}},
+				},
+			},
+		}
+
+		require.Error(t, addEmptyDirBinVolume(pod, logd.Get()))
+	})
 }
