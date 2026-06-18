@@ -756,7 +756,7 @@ func TestPGCConfigHash(t *testing.T) {
 		fakeClient := fake.NewClient()
 		r := &Reconciler{apiReader: fakeClient}
 
-		hash, err := r.pgcConfigHash(context.Background(), dk)
+		hash, err := r.getProcessGroupConfigHash(t.Context(), dk)
 		require.NoError(t, err)
 		assert.Empty(t, hash)
 	})
@@ -775,7 +775,7 @@ func TestPGCConfigHash(t *testing.T) {
 		fakeClient := fake.NewClient(secret)
 		r := &Reconciler{apiReader: fakeClient}
 
-		hash, err := r.pgcConfigHash(context.Background(), dk)
+		hash, err := r.getProcessGroupConfigHash(t.Context(), dk)
 		require.NoError(t, err)
 
 		expectedHash, err := hasher.GenerateHash(pgcData)
@@ -783,7 +783,7 @@ func TestPGCConfigHash(t *testing.T) {
 		assert.Equal(t, expectedHash, hash)
 	})
 
-	t.Run("secret found but no pgc data returns hash of nil", func(t *testing.T) {
+	t.Run("secret found but no pgc data returns empty hash", func(t *testing.T) {
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
@@ -793,7 +793,7 @@ func TestPGCConfigHash(t *testing.T) {
 		fakeClient := fake.NewClient(secret)
 		r := &Reconciler{apiReader: fakeClient}
 
-		hash, err := r.pgcConfigHash(context.Background(), dk)
+		hash, err := r.getProcessGroupConfigHash(t.Context(), dk)
 		require.NoError(t, err)
 		assert.Empty(t, hash)
 	})

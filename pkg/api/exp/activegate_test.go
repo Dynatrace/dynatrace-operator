@@ -177,10 +177,10 @@ func TestIsK8sAppEnabled(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				AGK8sAppEnabledKey: c.in,
+				AGK8sAppEnabledKey: c.in, //nolint:staticcheck
 			}}
 
-			out := ff.IsK8sAppEnabled()
+			out := ff.IsK8sAppEnabled() //nolint:staticcheck
 
 			assert.Equal(t, c.out, out)
 		})
