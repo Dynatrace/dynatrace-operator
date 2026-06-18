@@ -1,6 +1,7 @@
 package eec
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -22,7 +24,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -1943,4 +1947,32 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
 		assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
 	})
+}
+
+func TestPublicRegistryImage(t *testing.T) {
+	expectedImageURI := "my-public-registry:5000/my-test-repo:my-test-tag"
+	getStatefulset := func(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+		t.Cleanup(version.DisableCacheForTest(123))
+		t.Helper()
+		mockK8sClient := fake.NewClient(dk)
+		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+		imageClient := imageclientmock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.EEC, "").Return(&dtimage.Info{URI: expectedImageURI}, nil)
+
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), imageClient, dk)
+		require.NoError(t, err)
+
+		statefulSet := &appsv1.StatefulSet{}
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		return statefulSet
+	}
+	dk := getTestDynakube()
+	dk.Spec.Templates = dynakube.TemplatesSpec{}
+	dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+	sts := getStatefulset(t, dk)
+
+	require.Equal(t, expectedImageURI, sts.Spec.Template.Spec.Containers[0].Image)
 }
