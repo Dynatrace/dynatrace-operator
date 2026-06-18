@@ -54,7 +54,7 @@ func setClusterNameFF(dk *dynakube.DynaKube, name string) {
 }
 
 func enableAppFF(dk *dynakube.DynaKube) {
-	dk.Annotations[exp.AGK8sAppEnabledKey] = "true"
+	dk.Annotations[exp.AGK8sAppEnabledKey] = "true" //nolint:staticcheck
 }
 
 func setMEInfo(dk *dynakube.DynaKube, me settings.K8sClusterME) {

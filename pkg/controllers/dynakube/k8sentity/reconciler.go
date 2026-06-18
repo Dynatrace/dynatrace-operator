@@ -189,7 +189,7 @@ func (r *Reconciler) createK8sAppSettingIfAbsent(ctx context.Context, dtClient s
 	log := logd.FromContext(ctx)
 
 	k8sEntity := settings.K8sClusterME{ID: dk.Status.KubernetesClusterMEID, Name: dk.Status.KubernetesClusterName}
-	if dk.FF().IsK8sAppEnabled() {
+	if dk.FF().IsK8sAppEnabled() { //nolint:staticcheck
 		appSettings, err := dtClient.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.AppTransitionSchemaID)
 		if err != nil {
 			if !core.IsNotFound(err) {
