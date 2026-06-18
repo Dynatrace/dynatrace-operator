@@ -352,7 +352,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockInjectionReconciler := newMockInjectionReconciler(t)
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 
-		mockExtensionReconciler := newMockExtensionDynakubeReconciler(t)
+		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKSPMReconciler := newMockDtSettingReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockOtelcReconciler := newMockDynakubeReconciler(t)
@@ -394,7 +394,7 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := newMockActiveGateReconciler(t)
-		mockExtensionReconciler := newMockExtensionDynakubeReconciler(t)
+		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockOtelcReconciler := newMockDynakubeReconciler(t)
 		k8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
@@ -473,8 +473,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 	mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, anyDynaKube).Return(nil)
 
-	mockExtensionReconciler := newMockExtensionDynakubeReconciler(t)
-
+	mockExtensionReconciler := newMockExtensionReconciler(t)
 	mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, anyDynaKube).Return(nil)
 
 	mockOtelcReconciler := newMockDynakubeReconciler(t)

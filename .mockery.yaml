@@ -42,7 +42,7 @@ packages:
     interfaces:
       dtSettingReconciler:
       dynakubeReconciler:
-      extensionDynakubeReconciler:
+      extensionReconciler:
       istioReconciler:
       logMonitoringReconciler:
       oneAgentReconciler:

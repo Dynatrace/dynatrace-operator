@@ -137,7 +137,7 @@ type dynakubeReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
-type extensionDynakubeReconciler interface {
+type extensionReconciler interface {
 	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
 }
 
@@ -174,7 +174,7 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder events.EventRecorder
 
-	extensionReconciler          extensionDynakubeReconciler
+	extensionReconciler          extensionReconciler
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               kspmReconciler
 	otelcReconciler              dynakubeReconciler
