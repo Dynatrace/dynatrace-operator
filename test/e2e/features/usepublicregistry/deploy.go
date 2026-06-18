@@ -125,8 +125,6 @@ func oneAgentFeature(t *testing.T, featureName, dkName, override string) feature
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
-		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
@@ -157,8 +155,6 @@ func activeGateFeature(t *testing.T, featureName, dkName, override string) featu
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithActiveGate(),
-		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
@@ -190,8 +186,6 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
-		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
@@ -236,7 +230,6 @@ func dbExecutorFeature(t *testing.T, featureName, override string) features.Feat
 		dynakubeComponents.WithExtensionsEECImageRef(t),
 		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
@@ -272,7 +265,6 @@ func logMonFeature(t *testing.T, featureName, override string) features.Feature 
 		dynakubeComponents.WithLogMonitoringImageRef(t),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
