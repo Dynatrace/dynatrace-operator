@@ -69,6 +69,35 @@ func TestMissingDatabaseExecutorImage(t *testing.T) {
 				},
 			})
 	})
+
+	t.Run("image not required when platform token is present", func(t *testing.T) {
+		assertAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+						CapabilityProperties: activegate.CapabilityProperties{
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceMemory: resource.MustParse("256Mi"),
+								},
+							},
+						},
+					},
+					Extensions: &extensions.Spec{
+						Databases: []extensions.DatabaseSpec{{ID: "test"}},
+					},
+				},
+			},
+			platformTokenSecret())
+	})
 }
 
 func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
