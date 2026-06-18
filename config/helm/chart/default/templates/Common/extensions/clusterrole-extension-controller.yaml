@@ -1,5 +1,5 @@
-{{- if (and .Values.rbac.extensions.prometheus.create .Values.rbac.extensions.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true")) }}
-# Copyright 2021 Dynatrace LLC
+{{- if .Values.rbac.extensions.create }}
+# Copyright 2026 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,34 +13,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: dynatrace-extension-controller-prometheus
-  namespace: {{ .Release.Namespace }}
+  name: dynatrace-extension-controller
   labels:
     {{- include "dynatrace-operator.extensionControllerLabels" . | nindent 4 }}
 rules:
   - apiGroups:
+      - ""
+    resources:
+      - pods
+      - services
+    verbs:
+      - list
+      - watch
+  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  - apiGroups:
       - security.openshift.io
     resourceNames:
-      - privileged
+      - nonroot-v2
     resources:
       - securitycontextconstraints
     verbs:
       - use
+  {{ end }}
 ---
-kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
-  name: dynatrace-extension-controller-prometheus
-  namespace: {{ .Release.Namespace }}
+  name: dynatrace-extension-controller
   labels:
     {{- include "dynatrace-operator.extensionControllerLabels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-extension-controller
 subjects:
   - kind: ServiceAccount
     name: dynatrace-extension-controller
-roleRef:
-  kind: Role
-  name: dynatrace-extension-controller-prometheus
-  apiGroup: rbac.authorization.k8s.io
+    namespace: {{ .Release.Namespace }}
 {{ end }}
