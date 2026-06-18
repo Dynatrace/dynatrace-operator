@@ -1,8 +1,4 @@
 {{- if .Values.crdStorageMigrationJob }}
-
-{{- if .Values.crdStorageMigrationJob }}
-{{- if .Values.crdStorageMigrationJob }}
-{{- if .Values.crdStorageMigrationJob }}
 # Copyright 2026 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
