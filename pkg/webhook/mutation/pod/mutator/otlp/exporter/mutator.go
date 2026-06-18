@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -155,10 +156,10 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest, log logd.Logger) (bool, 
 	}
 
 	if shouldAddCertificate && mutated {
-		addActiveGateCertVolume(request.DynaKube, request.Pod)
+		err = addActiveGateCertVolume(request.DynaKube, request.Pod)
 	}
 
-	return mutated, nil
+	return mutated, err
 }
 
 func ensureCertificateVolumeMounted(c *corev1.Container) {
@@ -230,14 +231,21 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	}
 }
 
-func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
+func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) error {
 	if !dk.ActiveGate().HasCaCert() && dk.Spec.TrustedCAs == "" {
-		return
+		return nil
 	}
 
 	// avoid duplicate volume additions on reinvocation or multiple container matches
-	if k8svolume.Contains(pod.Spec.Volumes, activeGateTrustedCertVolumeName) {
-		return
+	if vol := k8svolume.FindByName(pod.Spec.Volumes, activeGateTrustedCertVolumeName); vol != nil {
+		if vol.Secret == nil || vol.Secret.SecretName != consts.OTLPExporterCertsSecretName {
+			return dtwebhook.MutatorError{
+				Err:      volumes.ExistingVolumeError(activeGateTrustedCertVolumeName),
+				Annotate: setNotInjectedAnnotationFunc(volumes.ConflictingVolumeTypeReason),
+			}
+		}
+
+		return nil
 	}
 
 	defaultMode := int32(420)
@@ -256,4 +264,6 @@ func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
 	}
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes, agCertVolume)
+
+	return nil
 }
