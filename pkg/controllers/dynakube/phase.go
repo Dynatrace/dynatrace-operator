@@ -17,12 +17,11 @@ func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dy
 	components := []func(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase{
 		controller.determineActiveGatePhase,
 		controller.determineExtensionsExecutionControllerPhase,
-		controller.determineExtensionsCollectorPhase,
 		controller.determineExtensionsDatabasesPhase,
 		controller.determineOneAgentPhase,
 		controller.determineLogAgentPhase,
 		controller.determineKSPMPhase,
-		controller.determineTelemetryIngestPhase,
+		controller.determineOTELCollectorPhase,
 	}
 	for _, component := range components {
 		if phase := component(ctx, dk); phase != status.Running {
@@ -61,24 +60,16 @@ func (controller *Controller) determineActiveGatePhase(ctx context.Context, dk *
 }
 
 func (controller *Controller) determineExtensionsExecutionControllerPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(ctx, dk, dk.Extensions().GetExecutionControllerStatefulsetName())
-}
-
-func (controller *Controller) determineExtensionsCollectorPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
-}
-
-func (controller *Controller) determineTelemetryIngestPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
-	if dk.TelemetryIngest().IsEnabled() {
-		return controller.determineStatefulSetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
+	if dk.Extensions().IsAnyEnabled() {
+		return controller.determineStatefulSetPhase(ctx, dk, dk.Extensions().GetExecutionControllerStatefulsetName())
 	}
 
 	return status.Running
 }
 
-func (controller *Controller) determinePrometheusStatefulsetPhase(ctx context.Context, dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
-	if dk.Extensions().IsPrometheusEnabled() {
-		return controller.determineStatefulSetPhase(ctx, dk, statefulsetName)
+func (controller *Controller) determineOTELCollectorPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
+		return controller.determineStatefulSetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
 	}
 
 	return status.Running
