@@ -59,7 +59,6 @@ permissions:
   checks: write
   pull-requests: write
 
-
 jobs:
   run-in-k8s:
     if: ${{ github.event.inputs.run-e2e-in-k8s != 'false' }}
