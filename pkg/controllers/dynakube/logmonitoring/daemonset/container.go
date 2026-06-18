@@ -7,9 +7,6 @@ import (
 )
 
 const (
-	defaultImageRepo = "registry.lab.dynatrace.org/oneagent/dynatrace-logmodule-amd64" // TODO: finalize
-	defaultImageTag  = "latest"
-
 	containerName       = "main"
 	runAs         int64 = 65532
 
@@ -35,14 +32,13 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string, imageURI string) core
 		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, containerName)
 	}
 
-	image := dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag)
-	if imageURI != "" {
-		image = imageURI
+	if imageURI == "" {
+		imageURI = dk.LogMonitoring().Template().ImageRef.String()
 	}
 
 	container := corev1.Container{
 		Name:            containerName,
-		Image:           image,
+		Image:           imageURI,
 		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.GetPullPolicy(),
 		VolumeMounts:    getVolumeMounts(tenantUUID),
 		Env:             getEnvs(),
@@ -61,9 +57,9 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID string, imageURI string) 
 		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, initContainerName)
 	}
 
-	image := dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag)
-	if imageURI != "" {
-		image = imageURI
+	image := imageURI
+	if imageURI == "" {
+		image = dk.LogMonitoring().Template().ImageRef.String()
 	}
 
 	container := corev1.Container{
