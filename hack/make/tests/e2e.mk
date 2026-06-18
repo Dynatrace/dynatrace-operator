@@ -217,7 +217,7 @@ test/e2e/usepublicregistry/dbexecutor:
 	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_db_executor" $(SKIPCLEANUP)
 
 test/e2e/usepublicregistry/logmon:
-	$(GOTESTCMD) -timeout 30m $(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_logmon" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_logmon" $(SKIPCLEANUP)
 
 test/e2e/resourceattributes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes" $(SKIPCLEANUP)
