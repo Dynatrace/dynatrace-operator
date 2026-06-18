@@ -39,7 +39,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader) *SecretGe
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	ctx, log := logd.NewFromContext(ctx, "otlp-exporter-configuration")
 
-	log.Info("reconciling namespace OTLP exporter secret for", "dynakube", dk.Name)
+	log.Info("reconciling namespace OTLP exporter secret for")
 
 	data, err := s.generateConfig(ctx, dk)
 	if err != nil {

@@ -206,13 +206,13 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	entityID, err := hostEventClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {
 		if core.IsNotFound(err) || errors.As(err, new(hostevent.EntityNotFoundError)) {
-			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+			log.Info("skipping to send mark for termination event", "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
 			return nil
 		}
 
 		log.Info("failed to send mark for termination event",
-			"reason", "failed to determine entity id", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
+			"reason", "failed to determine entity id", "nodeIP", cachedNode.IPAddress, "cause", err)
 
 		return err
 	}
@@ -225,7 +225,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	))
 
 	if core.IsNotFound(err) {
-		log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+		log.Info("skipping to send mark for termination event", "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
 		return nil
 	}
@@ -242,7 +242,7 @@ func (controller *Controller) markForTermination(ctx context.Context, dk *dynaku
 
 	cacheEntry.SetLastMarkedForTerminationTimestamp(controller.timeProvider.Now().UTC())
 
-	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cacheEntry.IPAddress,
+	log.Info("sending mark for termination event to dynatrace server", "ip", cacheEntry.IPAddress,
 		"node", cacheEntry.NodeName)
 
 	return controller.sendMarkedForTermination(ctx, dk, cacheEntry)

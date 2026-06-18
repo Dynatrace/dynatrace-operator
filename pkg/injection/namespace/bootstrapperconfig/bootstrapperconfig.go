@@ -49,7 +49,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 // Used by the dynakube controller during reconcile.
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	ctx, log := logd.NewFromContext(ctx, "bootstrapper-config")
-	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
+	log.Info("reconciling namespace bootstrapper init secret for")
 
 	configErr := s.reconcileConfig(ctx, dk, namespaces)
 	certsErr := s.reconcileCerts(ctx, dk, namespaces)

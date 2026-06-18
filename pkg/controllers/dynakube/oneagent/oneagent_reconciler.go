@@ -103,12 +103,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		log.Info("OneAgents are not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
 
 		if dk.Spec.NetworkZone != "" {
-			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", dk.Spec.NetworkZone, "dynakube", dk.Name)
+			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", dk.Spec.NetworkZone)
 		}
 	}
 
 	if errors.Is(err, oaconnectioninfo.StaleNetworkZoneEndpointsError) { // This only informational
-		log.Info("OneAgent endpoints do not yet advertise every local ActiveGate Service IP, postponing OneAgent deployment until the ActiveGate has re-registered", "dynakube", dk.Name)
+		log.Info("OneAgent endpoints do not yet advertise every local ActiveGate Service IP, postponing OneAgent deployment until the ActiveGate has re-registered")
 	}
 
 	if err != nil {

@@ -92,7 +92,7 @@ func (c *Cleaner) collectRelevantHostDirs(ctx context.Context, dks []dynakube.Dy
 
 		tenantUUID, err := metadata.TenantUUIDFromAPIURL(dk.APIURL())
 		if err != nil {
-			log.Error(err, "malformed APIURL for dynakube during host mount directory cleanup", "dk", dk.Name, "apiUrl", dk.APIURL())
+			log.Error(err, "malformed APIURL for dynakube during host mount directory cleanup", "apiUrl", dk.APIURL())
 
 			continue
 		}

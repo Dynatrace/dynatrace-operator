@@ -33,7 +33,7 @@ func NoAPIURL(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	}
 
 	if apiURL == "" {
-		log.Info("requested dynakube has no api url", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube has no api url")
 
 		return errorNoAPIURL
 	}
