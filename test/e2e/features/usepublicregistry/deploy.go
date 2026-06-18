@@ -230,12 +230,15 @@ func dbExecutorFeature(t *testing.T, featureName, override string) features.Feat
 		dynakubeComponents.WithExtensionsEECImageRef(t),
 		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithUsePublicRegistryFF(),
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	testDynakube := *dynakubeComponents.New(options...)
@@ -270,6 +273,10 @@ func logMonFeature(t *testing.T, featureName, override string) features.Feature 
 
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	isOpenshift, err := platform.NewResolver().IsOpenshift()
