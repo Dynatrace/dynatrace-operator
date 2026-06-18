@@ -17,7 +17,6 @@ env:
 
 permissions:
   checks: write
-  pull-requests: write
 
 # based on:
 # https://docs.dynatrace.com/docs/setup-and-configuration/technology-support/support-model-for-kubernetes
@@ -25,6 +24,9 @@ permissions:
 jobs:
   run-matrix:
     name: Run using version/platform
+    permissions:
+      checks: write
+      pull-requests: write
     strategy:
       # we don't want to cancel all in-progress jobs if any matrix job fails.
       fail-fast: false
