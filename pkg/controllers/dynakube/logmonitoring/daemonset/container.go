@@ -24,7 +24,7 @@ var (
 	}
 )
 
-func getContainer(dk dynakube.DynaKube, tenantUUID string, imageURI string) corev1.Container {
+func getContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededCapabilities
 
@@ -49,7 +49,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string, imageURI string) core
 	return container
 }
 
-func getInitContainer(dk dynakube.DynaKube, tenantUUID string, imageURI string) corev1.Container {
+func getInitContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededInitCapabilities
 
