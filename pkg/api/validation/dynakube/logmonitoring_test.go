@@ -158,6 +158,36 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 				},
 			})
 	})
+
+	t.Run("image not required when public registry is enabled", func(t *testing.T) {
+		assertAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        testName,
+					Namespace:   testNamespace,
+					Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:        testAPIURL,
+					LogMonitoring: &logmonitoring.Spec{},
+				},
+			})
+	})
+
+	t.Run("image not required when platform token is present", func(t *testing.T) {
+		assertAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:        testAPIURL,
+					LogMonitoring: &logmonitoring.Spec{},
+				},
+			},
+			platformTokenSecret())
+	})
 }
 
 func TestConflictingMaxUnavailableAnnotationWithRollingUpdateLogMonitoring(t *testing.T) {

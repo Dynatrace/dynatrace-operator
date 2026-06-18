@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -351,7 +352,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockInjectionReconciler := newMockInjectionReconciler(t)
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 
-		mockExtensionReconciler := newMockDynakubeReconciler(t)
+		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKSPMReconciler := newMockDtSettingReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockOtelcReconciler := newMockDynakubeReconciler(t)
@@ -371,7 +372,7 @@ func TestReconcileComponents(t *testing.T) {
 			activeGateReconciler:    mockActiveGateReconciler,
 			injectionReconciler:     mockInjectionReconciler,
 		}
-		dtClient := &dynatrace.Client{Settings: settings.NewClient(nil)}
+		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
 
 		var err error
 
@@ -379,10 +380,10 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockActiveGateReconciler, &err, dk, dtClient, token.Tokens(nil))
 		expectReconcileError(t, mockInjectionReconciler, &err, dtClient, dk)
 		expectReconcileError(t, mockLogMonitoringReconciler, &err, dtClient, dk)
-		expectReconcileError(t, mockExtensionReconciler, &err, dk)
+		expectReconcileError(t, mockExtensionReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
-		expectReconcileError(t, mockKSPMReconciler, &err, settings.NewClient(nil), dk)
-		expectReconcileError(t, mockK8sEntityReconciler, &err, settings.NewClient(nil), dk)
+		expectReconcileError(t, mockKSPMReconciler, &err, dtClient.Settings, dk)
+		expectReconcileError(t, mockK8sEntityReconciler, &err, dtClient.Settings, dk)
 
 		err = controller.reconcileComponents(ctx, dtClient, dk)
 		require.Error(t, err)
@@ -393,13 +394,13 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := newMockActiveGateReconciler(t)
-		mockExtensionReconciler := newMockDynakubeReconciler(t)
+		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockOtelcReconciler := newMockDynakubeReconciler(t)
 		k8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
 		mockKSPMReconciler := newMockKspmReconciler(t)
 
-		dtClient := &dynatrace.Client{Settings: settings.NewClient(nil)}
+		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
 
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
@@ -418,10 +419,10 @@ func TestReconcileComponents(t *testing.T) {
 
 		var err error
 		expectReconcileError(t, mockActiveGateReconciler, &err, dk, dtClient, token.Tokens(nil))
-		expectReconcileError(t, mockExtensionReconciler, &err, dk)
+		expectReconcileError(t, mockExtensionReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
-		expectReconcileError(t, k8sEntityReconciler, &err, settings.NewClient(nil), dk)
-		expectReconcileError(t, mockKSPMReconciler, &err, settings.NewClient(nil), dk)
+		expectReconcileError(t, k8sEntityReconciler, &err, dtClient.Settings, dk)
+		expectReconcileError(t, mockKSPMReconciler, &err, dtClient.Settings, dk)
 
 		err = controller.reconcileComponents(ctx, dtClient, dk)
 		require.Error(t, err)
@@ -449,6 +450,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	}, nil)
 
 	dtClient := &dynatrace.Client{
+		Images:   image.NewClient(nil),
 		Settings: settings.NewClient(nil),
 		Token:    mockedTokenClient,
 	}
@@ -460,10 +462,10 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockProxyReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
 	mockOneAgentReconciler := newMockOneAgentReconciler(t)
-	mockOneAgentReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil)
+	mockOneAgentReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, dtClient, mock.Anything).Return(nil)
 
 	mockActiveGateReconciler := newMockActiveGateReconciler(t)
-	mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil)
+	mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, dtClient, mock.Anything).Return(nil)
 
 	mockInjectionReconciler := newMockInjectionReconciler(t)
 	mockInjectionReconciler.EXPECT().Reconcile(anyCtx, dtClient, anyDynaKube).Return(nil)
@@ -471,9 +473,8 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 	mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, anyDynaKube).Return(nil)
 
-	mockExtensionReconciler := newMockDynakubeReconciler(t)
-
-	mockExtensionReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
+	mockExtensionReconciler := newMockExtensionReconciler(t)
+	mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, anyDynaKube).Return(nil)
 
 	mockOtelcReconciler := newMockDynakubeReconciler(t)
 	mockOtelcReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
@@ -482,10 +483,10 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockIstioReconciler.EXPECT().ReconcileAPIURL(anyCtx, anyDynaKube).Return(nil)
 
 	mockKSPMReconciler := newMockDtSettingReconciler(t)
-	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, settings.NewClient(nil), anyDynaKube).Return(nil)
+	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, anyDynaKube).Return(nil)
 
 	mockK8sEntityReconciler := newMockDtSettingReconciler(t)
-	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, settings.NewClient(nil), anyDynaKube).Return(nil)
+	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, anyDynaKube).Return(nil)
 
 	baseController := &Controller{
 		apiReader:                    fakeClient,
