@@ -204,21 +204,27 @@ test/e2e/usepublicregistry/codemodules:
 	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_codemodules" $(SKIPCLEANUP)
 
 
+## Runs E2E tests related to propagation of resource attributes
 test/e2e/resourceattributes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (logomon)
 test/e2e/resourceattributes/logmononly:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_logmon_only" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (metadata enrichment only)
 test/e2e/resourceattributes/metadataonly:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_metadata_only" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (oneagent)
 test/e2e/resourceattributes/oneagent:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_oneagent" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (otlp)
 test/e2e/resourceattributes/otlp:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_otlp" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (combined)
 test/e2e/resourceattributes/combined:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_combined" $(SKIPCLEANUP)
 

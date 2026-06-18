@@ -72,14 +72,14 @@ func TestCombine_RulesWinsOverContainer(t *testing.T) {
 	assert.Equal(t, "from-rules", result[K8sContainerNameAttr])
 }
 
-func TestCombine_RulesWinOverNamespaceAnnotation(t *testing.T) {
+func TestCombine_NamespaceAnnotationWinsOverRules(t *testing.T) {
 	attrs := newTestPodAttributes()
 	attrs.rules["shared.key"] = "from-rules"
 	attrs.namespaceAnnotations["shared.key"] = "from-namespace"
 
 	result := attrs.combineAll()
 
-	assert.Equal(t, "from-rules", result["shared.key"])
+	assert.Equal(t, "from-namespace", result["shared.key"])
 }
 
 func TestCombine_PodAnnotationWinsOverNamespaceAnnotation(t *testing.T) {

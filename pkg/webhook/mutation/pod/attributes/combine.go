@@ -45,9 +45,9 @@ func (attrs *Pod) combine(c combinationCase, containerAttrs map[string]string) m
 		{withPodInfo, attrs.podInfo},
 		{withClusterInfo, attrs.clusterInfo},
 		{withContainerAttrs, containerAttrs},
+		{withRules, attrs.rules},
 		{withDynakube, attrs.dynakube},
 		{withNamespaceAnnotations, attrs.namespaceAnnotations},
-		{withRules, attrs.rules},
 		{withPodAnnotations, attrs.podAnnotations},
 		{withCustom, attrs.custom},
 	}

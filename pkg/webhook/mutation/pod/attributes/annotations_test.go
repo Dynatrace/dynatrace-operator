@@ -22,14 +22,14 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 		return parsed
 	}
 
-	t.Run("rules override namespaceAnnotations for shared key", func(t *testing.T) {
+	t.Run("namespaceAnnotations override rules for shared key", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		attrs.namespaceAnnotations["shared.key"] = "from-ns"
 		attrs.rules["shared.key"] = "from-rules"
 		pod := &corev1.Pod{}
 
 		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
-		assert.Equal(t, "from-rules", parseJSON(t, pod)["shared.key"])
+		assert.Equal(t, "from-ns", parseJSON(t, pod)["shared.key"])
 	})
 
 	t.Run("podAnnotations overrides rules for shared key", func(t *testing.T) {
@@ -140,7 +140,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 		require.NoError(t, err)
 		var parsed map[string]string
 		require.NoError(t, json.Unmarshal([]byte(pod.Annotations[metadataenrichment.Annotation]), &parsed))
-		assert.Equal(t, "from-rules", parsed["shared.key"])
+		assert.Equal(t, "from-ns", parsed["shared.key"])
 	})
 
 	t.Run("namespace annotation is not written as individual pod annotation", func(t *testing.T) {
