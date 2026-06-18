@@ -125,12 +125,14 @@ func oneAgentFeature(t *testing.T, featureName, dkName, override string) feature
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
-		dynakubeComponents.WithUsePublicRegistryFF(),
 		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	testDynakube := *dynakubeComponents.New(options...)
@@ -155,12 +157,14 @@ func activeGateFeature(t *testing.T, featureName, dkName, override string) featu
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithUsePublicRegistryFF(),
 		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	testDynakube := *dynakubeComponents.New(options...)
@@ -186,12 +190,14 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
-		dynakubeComponents.WithUsePublicRegistryFF(),
 		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	testDynakube := *dynakubeComponents.New(options...)
@@ -232,11 +238,9 @@ func dbExecutorFeature(t *testing.T, featureName, override string) features.Feat
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
-
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
 	}
-
 	if !tenant.UsePlatformToken() {
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
@@ -270,11 +274,9 @@ func logMonFeature(t *testing.T, featureName, override string) features.Feature 
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
-
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
 	}
-
 	if !tenant.UsePlatformToken() {
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
