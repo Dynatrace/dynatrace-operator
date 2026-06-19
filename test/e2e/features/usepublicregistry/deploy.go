@@ -98,14 +98,14 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 func DBExecutor(t *testing.T) features.Feature {
 	return dbExecutorFeature(t,
 		"use-public-registry-db-executor",
-		"use-public-registry-db-executor",
+		"use-public-registry-db-exec",
 		"")
 }
 
 func DBExecutorOverride(t *testing.T) features.Feature {
 	return dbExecutorFeature(t,
 		"use-public-registry-db-executor-with-override",
-		"use-public-registry-db-executor-ovrd",
+		"use-public-registry-db-exec-ovrd",
 		publicRegistryOverride(t))
 }
 
