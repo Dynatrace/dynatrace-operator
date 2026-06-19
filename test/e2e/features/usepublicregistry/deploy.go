@@ -100,7 +100,7 @@ func DBExecutor(t *testing.T) features.Feature {
 }
 
 func DBExecutorOverride(t *testing.T) features.Feature {
-	return dbExecutorFeature(t, "use-public-registry-db-executor-with-override", "")
+	return dbExecutorFeature(t, "use-public-registry-db-executor-with-override", publicRegistryOverride(t))
 }
 
 func LogMon(t *testing.T) features.Feature {
