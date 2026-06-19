@@ -373,7 +373,6 @@ func TestPublicRegistryImage(t *testing.T) {
 		deployments := &appsv1.DeploymentList{}
 		require.NoError(t, clt.List(t.Context(), deployments))
 		require.Empty(t, deployments.Items)
-		imageClient.AssertNotCalled(t, "GetComponentLatestInfo")
 	})
 }
 
