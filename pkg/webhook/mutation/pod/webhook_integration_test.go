@@ -73,7 +73,7 @@ var (
 		testSecContextLabel:     "high",
 		testCustomMetadataLabel: "custom-label",
 	}
-	metadataEnrichmentStatus = metadataenrichment.Status{
+	metadataEnrichmentRules = metadataenrichment.Status{
 		Rules: []metadataenrichment.Rule{
 			{
 				Type:   "LABEL",
@@ -156,7 +156,7 @@ func TestWebhook(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: testMEID,
 				KubernetesClusterName: testClusterName,
-				MetadataEnrichment:    metadataEnrichmentStatus,
+				MetadataEnrichment:    metadataEnrichmentRules,
 				KubeSystemUUID:        testClusterUUID,
 				OneAgent: oneagent.Status{
 					ConnectionInfo: communication.ConnectionInfo{
@@ -309,7 +309,7 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 		Status: dynakube.DynaKubeStatus{
 			KubernetesClusterMEID: testMEID,
 			KubernetesClusterName: testClusterName,
-			MetadataEnrichment:    metadataEnrichmentStatus,
+			MetadataEnrichment:    metadataEnrichmentRules,
 			KubeSystemUUID:        testClusterUUID,
 			OneAgent: oneagent.Status{
 				ConnectionInfo: communication.ConnectionInfo{
@@ -340,9 +340,13 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 	require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
 	require.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
 	require.True(t, maputils.GetFieldBool(pod.Annotations, oneagentmutator.AnnotationInjected, false))
-	assert.Equal(t, "sales", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.cost.costcenter", ""))
-	assert.Equal(t, "high", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.security_context", ""))
-	assert.Equal(t, "custom-ns-meta-value", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/custom.ns-meta", ""))
+	jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
+	require.NotEmpty(t, jsonAnnotation, "metadata.dynatrace.com JSON annotation must be set")
+	var jsonAttrs map[string]string
+	require.NoError(t, json.Unmarshal([]byte(jsonAnnotation), &jsonAttrs))
+	assert.Equal(t, "sales", jsonAttrs["dt.cost.costcenter"])
+	assert.Equal(t, "high", jsonAttrs["dt.security_context"])
+	assert.Equal(t, "custom-ns-meta-value", jsonAttrs["custom.ns-meta"])
 	require.Len(t, pod.Spec.InitContainers, 1)
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.kind", strings.ToLower(pod.OwnerReferences[0].Kind)))
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.name", strings.ToLower(pod.OwnerReferences[0].Name)))
@@ -448,7 +452,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 					Status: dynakube.DynaKubeStatus{
 						KubernetesClusterMEID: testMEID,
 						KubernetesClusterName: testClusterName,
-						MetadataEnrichment:    metadataEnrichmentStatus,
+						MetadataEnrichment:    metadataEnrichmentRules,
 					},
 				}
 
@@ -588,7 +592,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: testMEID,
 				KubernetesClusterName: testClusterName,
-				MetadataEnrichment:    metadataEnrichmentStatus,
+				MetadataEnrichment:    metadataEnrichmentRules,
 			},
 		}
 
@@ -638,16 +642,15 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 
 	t.Run("resource attribute full precedence chain", func(t *testing.T) {
 		// Precedence order low→high for OTEL_RESOURCE_ATTRIBUTES:
-		//   dynakube (resourceAttributes, with additionalResourceAttributes winning on collision)
+		//   enrichment rules
+		//   < dynakube.resourceAttributes
+		//   < dynakube.otlpExporterConfiguration.additionalResourceAttributes
 		//   < namespace metadata.dynatrace.com/ annotations
 		//   < pod metadata.dynatrace.com/ annotations
 		//   < existing OTEL_RESOURCE_ATTRIBUTES
 		//
-		// For metadata.dynatrace.com/<key> pod annotations (caseMetadataAnnotations):
-		//   dynakube < namespaceAnnotations (pod annotations not in this set)
-		//
 		// For the JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation):
-		//   dynakube < namespaceAnnotations < podAnnotations (existing OTEL_RA not included)
+		//   enrichment rules < dynakube < namespaceAnnotations < podAnnotations (existing OTEL_RA not included)
 		const raPrecedenceNs = "ra-precedence-ns"
 
 		raNS := getNamespace(raPrecedenceNs)
@@ -657,6 +660,8 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			// will be overridden by pod annotation in OTEL_RA and JSON, but preserved via SetAnnotationIfNotExists
 			"metadata.dynatrace.com/conflict.pod.vs.ns": "from-ns",
 		}
+		// label picked up by the enrichment rule below; dynakube layer must win over the rule result
+		raNS.Labels["conflict-rule-label"] = "from-rule"
 		createObject(t, clt, raNS)
 		createObject(t, clt, getOTLPExporterSecret(raPrecedenceNs))
 
@@ -675,6 +680,8 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 					"conflict.additional.vs.global": "from-global",
 					// overridden by namespace annotation in every combine case
 					"conflict.ns.vs.dynakube": "from-dynakube",
+					// wins over enrichment-rule result for the same key (dynakube layer 7 > rules layer 6)
+					"conflict.dynakube.vs.rules": "from-dynakube",
 				},
 				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
 					NamespaceSelector: metav1.LabelSelector{
@@ -694,6 +701,15 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: testMEID,
 				KubernetesClusterName: testClusterName,
+				MetadataEnrichment: metadataenrichment.Status{
+					Rules: []metadataenrichment.Rule{
+						{
+							Type:   "LABEL",
+							Source: "conflict-rule-label",
+							Target: "conflict.dynakube.vs.rules",
+						},
+					},
+				},
 			},
 		}
 		createDynaKube(t, clt, dk)
@@ -719,6 +735,8 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 
 		// additionalResourceAttributes wins over resourceAttributes (both merged into dynakube layer)
 		assert.Equal(t, "from-additional", gotRA["conflict.additional.vs.global"], "additionalResourceAttributes must win over resourceAttributes")
+		// dynakube.resourceAttributes wins over enrichment-rule result (dynakube layer 7 > rules layer 6)
+		assert.Equal(t, "from-dynakube", gotRA["conflict.dynakube.vs.rules"], "dynakube must win over enrichment rules")
 		// namespace metadata.dynatrace.com/ annotation wins over dynakube layer
 		assert.Equal(t, "from-ns", gotRA["conflict.ns.vs.dynakube"], "namespace annotation must win over dynakube layer")
 		// pod metadata.dynatrace.com/ annotation wins over namespace annotation
@@ -726,15 +744,11 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		// existing OTEL_RESOURCE_ATTRIBUTES wins over pod annotation
 		assert.Equal(t, "from-existing", gotRA["conflict.existing.vs.pod"], "existing OTEL_RESOURCE_ATTRIBUTES must win over pod annotation")
 
-		// SetAnnotationIfNotExists preserves the pre-existing pod annotation over the caseMetadataAnnotations result
+		// pre-seeded pod annotations are preserved
 		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.pod.vs.ns"],
-			"pre-existing pod annotation must be preserved in metadata annotation")
+			"pre-existing pod annotation must be preserved")
 		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.existing.vs.pod"],
-			"pre-existing pod annotation must be preserved in metadata annotation")
-		assert.Equal(t, "from-ns", pod.Annotations["metadata.dynatrace.com/conflict.ns.vs.dynakube"],
-			"namespace metadata annotation must be preserved in pod annotations")
-		assert.NotContains(t, pod.Annotations, "metadata.dynatrace.com/conflict.additional.vs.global",
-			"dynakube resource attributes must not be written as individual metadata annotations")
+			"pre-existing pod annotation must be preserved")
 
 		// JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation: dynakube + namespaceAnnotations + podAnnotations, no custom/existing OTEL_RA)
 		jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
@@ -745,6 +759,9 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 
 		assert.Equal(t, "from-additional", jsonAttrs["conflict.additional.vs.global"],
 			"dynakube value must appear in JSON annotation")
+		// dynakube wins over enrichment rules in the JSON annotation too (caseJSONAnnotation includes both layers)
+		assert.Equal(t, "from-dynakube", jsonAttrs["conflict.dynakube.vs.rules"],
+			"dynakube must win over enrichment rules in JSON annotation")
 		assert.Equal(t, "from-ns", jsonAttrs["conflict.ns.vs.dynakube"],
 			"namespace annotation must win over dynakube in JSON annotation")
 		assert.Equal(t, "from-pod", jsonAttrs["conflict.pod.vs.ns"],
