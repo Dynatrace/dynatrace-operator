@@ -36,7 +36,9 @@ Auto-detect whether or not we need allowlisting for logagent and csi-driver
 
 {{/*
 Determine if RBAC should use KubeletFineGrainedAuthz (nodes/pods) instead of nodes/proxy.
-Auto-enabled on GKE Autopilot (nodes/proxy is forbidden) and k8s >= 1.36 (KubeletFineGrainedAuthz GA).
+Auto-enabled on k8s >= 1.36 (KubeletFineGrainedAuthz GA). GKE Autopilot on older k8s also
+requires nodes/pods (nodes/proxy is forbidden) but cannot be reliably detected from Helm
+capabilities, so it must be enabled there via the override below.
 Override with .Values.rbac.kubeletFineGrainedAuthz: true/false
 */}}
 {{- define "dynatrace-operator.kubeletFineGrainedAuthz" -}}
@@ -44,8 +46,6 @@ Override with .Values.rbac.kubeletFineGrainedAuthz: true/false
         {{- if .Values.rbac.kubeletFineGrainedAuthz -}}
             {{- "true" -}}
         {{- end -}}
-    {{- else if eq (include "dynatrace-operator.needAutopilotAllowlisting" .) "true" -}}
-        {{- "true" -}}
     {{- else if semverCompare ">=1.36.0" .Capabilities.KubeVersion.Version -}}
         {{- "true" -}}
     {{- end -}}
