@@ -227,7 +227,6 @@ func dbExecutorFeature(t *testing.T, featureName, override string) features.Feat
 
 	options := []dynakubeComponents.Option{
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithExtensionsEECImageRef(t),
 		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
 		dynakubeComponents.WithActiveGate(),
 	}
@@ -262,7 +261,6 @@ func logMonFeature(t *testing.T, featureName, override string) features.Feature 
 	options := []dynakubeComponents.Option{
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithLogMonitoring(),
-		dynakubeComponents.WithLogMonitoringImageRef(t),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
