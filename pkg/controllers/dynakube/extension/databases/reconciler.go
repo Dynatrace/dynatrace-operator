@@ -31,12 +31,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 
 	log.Debug("reconciling deployments")
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.FF().IsPublicRegistry(), dk.PublicRegistryOverride(), dtimage.DBExecutor)
-	if err != nil {
-		return err
-	}
-
-	query := k8sdeployment.Query(r.client, r.apiReader)
 	ext := dk.Extensions()
 	expectedDeploymentNames := make([]string, len(ext.Databases))
 
@@ -49,6 +43,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 
 		return err
 	}
+
+	if !ext.IsDatabasesEnabled() {
+		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
+
+		return nil
+	}
+
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.FF().IsPublicRegistry(), dk.PublicRegistryOverride(), dtimage.DBExecutor)
+	if err != nil {
+		return err
+	}
+
+	query := k8sdeployment.Query(r.client, r.apiReader)
 
 	for i, dbSpec := range ext.Databases {
 		replicas, err := k8sdeployment.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: expectedDeploymentNames[i], Namespace: dk.Namespace}, dbSpec.Replicas)
@@ -92,11 +99,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		}
 	}
 
-	if len(expectedDeploymentNames) > 0 {
-		k8sconditions.SetDeploymentsApplied(dk, conditionType, expectedDeploymentNames)
-	} else {
-		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
-	}
+	k8sconditions.SetDeploymentsApplied(dk, conditionType, expectedDeploymentNames)
 
 	return nil
 }
