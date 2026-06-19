@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	logmondaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
@@ -34,6 +35,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/pkg/errors"
@@ -96,6 +98,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 
 		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
+		kubemonReconciler:            kubemon.NewReconciler(kubeClient),
 		k8sEntityReconciler:          k8sentity.NewReconciler(),
 		otelcReconciler:              otelc.NewReconciler(kubeClient, apiReader),
 		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
@@ -161,6 +164,10 @@ type injectionReconciler interface {
 	Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error
 }
 
+type kubemonReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error
+}
+
 // Controller reconciles a DynaKube object
 type Controller struct {
 	// This client, initialized using mgr.client() above, is a split client
@@ -172,6 +179,7 @@ type Controller struct {
 	extensionReconciler          dynakubeReconciler
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               kspmReconciler
+	kubemonReconciler            kubemonReconciler
 	otelcReconciler              dynakubeReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
@@ -372,6 +380,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dtClient, nil
 }
 
+//nolint:revive // complexity is above 13; this function needs refactoring.
 func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
@@ -386,6 +395,20 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 	err := controller.reconcileActiveGate(ctx, dk, dtClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
+
+		componentErrors = append(componentErrors, err)
+	}
+
+	log.Info("start reconciling KubernetesMonitoring")
+
+	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient, controller.tokens); err != nil {
+		if errors.Is(err, k8sstatefulset.ErrRolloutInProgress) {
+			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
+
+			return goerrors.Join(componentErrors...)
+		}
+
+		log.Info("could not reconcile KubernetesMonitoring")
 
 		componentErrors = append(componentErrors, err)
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,6 +17,7 @@ import (
 func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
 	components := []func(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase{
 		controller.determineActiveGatePhase,
+		controller.determineKubernetesMonitoringPhase,
 		controller.determineExtensionsExecutionControllerPhase,
 		controller.determineExtensionsCollectorPhase,
 		controller.determineExtensionsDatabasesPhase,
@@ -28,6 +30,14 @@ func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dy
 		if phase := component(ctx, dk); phase != status.Running {
 			return phase
 		}
+	}
+
+	return status.Running
+}
+
+func (controller *Controller) determineKubernetesMonitoringPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	if dk.KubernetesMonitoring().IsEnabled() {
+		return controller.determineStatefulSetPhase(ctx, dk, dk.KubernetesMonitoring().GetStatefulSetName())
 	}
 
 	return status.Running
@@ -102,13 +112,7 @@ func (controller *Controller) determineStatefulSetPhase(ctx context.Context, dk 
 		return status.Error
 	}
 
-	scheduledReplicas := int32(0)
-	if statefulSet.Spec.Replicas != nil {
-		scheduledReplicas = *statefulSet.Spec.Replicas
-	}
-
-	if statefulSet.Generation != statefulSet.Status.ObservedGeneration ||
-		scheduledReplicas != statefulSet.Status.ReadyReplicas {
+	if !k8sstatefulset.IsRolloutComplete(statefulSet) {
 		log.Info("statefulset is still deploying", "dynakube", dk.Name, "statefulset", statefulsetName)
 
 		return status.Deploying

@@ -48,6 +48,7 @@ packages:
       activeGateReconciler:
       kspmReconciler:
       injectionReconciler:
+      kubemonReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring:
     config:
       dir: "{{.InterfaceDir}}"
@@ -93,6 +94,14 @@ packages:
       customPropertiesReconciler:
       tlsReconciler:
       versionReconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{.SrcPackageName}}"
+      structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
+      filename: "mock_reconcilers_test.go"
+    interfaces:
+      statefulsetReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
