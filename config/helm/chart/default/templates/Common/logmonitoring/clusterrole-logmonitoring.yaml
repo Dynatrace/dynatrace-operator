@@ -22,8 +22,11 @@ rules:
 - apiGroups:
     - ""
   resources:
-    - nodes/proxy
+{{- if eq (include "dynatrace-operator.kubeletFineGrainedAuthz" .) "true" }}
     - nodes/pods
+{{- else }}
+    - nodes/proxy
+{{- end }}
   verbs:
     - get
 {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
