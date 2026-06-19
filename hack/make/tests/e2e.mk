@@ -208,7 +208,7 @@ test/e2e/usepublicregistry/codemodules:
 test/e2e/resourceattributes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes" $(SKIPCLEANUP)
 
-## Runs E2E tests related to propagation of resource attributes (logomon)
+## Runs E2E tests related to propagation of resource attributes (logmon)
 test/e2e/resourceattributes/logmononly:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_logmon_only" $(SKIPCLEANUP)
 

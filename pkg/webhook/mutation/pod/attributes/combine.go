@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"maps"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type combinationCase uint
@@ -32,6 +35,17 @@ const (
 		withRules | withPodAnnotations | withWorkloadInfo
 )
 
+func (attrs *Pod) ApplyJSONAnnotationToPod(pod *corev1.Pod) error {
+	json, err := attrs.combineForJSONAnnotation()
+	if err != nil {
+		return err
+	}
+
+	k8spod.SetAnnotationIfNotExists(pod, metadataenrichment.Annotation, json)
+
+	return nil
+}
+
 // combine copies maps into a single result in fixed precedence order (low → high).
 func (attrs *Pod) combine(c combinationCase, containerAttrs map[string]string) map[string]string {
 	type layer struct {
@@ -39,6 +53,7 @@ func (attrs *Pod) combine(c combinationCase, containerAttrs map[string]string) m
 		data map[string]string
 	}
 
+	// this slice defines the precedence order (lowest to highest), "customer over built in" and "local wins"-policy
 	layers := []layer{
 		{withDeprecated, attrs.deprecated},
 		{withWorkloadInfo, attrs.workloadInfo},
