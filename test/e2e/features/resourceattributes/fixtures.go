@@ -229,25 +229,6 @@ func assessPodMetadataJSONAnnotation(app *sample.App, expected map[string]string
 		assert.Equalf(t, app.Kind(), parsed["k8s.workload.kind"], "JSON blob k8s.workload.kind in pod %s", pod.Name)
 		assert.Equalf(t, app.Name(), parsed["k8s.workload.name"], "JSON blob k8s.workload.name in pod %s", pod.Name)
 
-		assert.Equalf(t, app.Kind(), pod.Annotations[dkmetadata.Annotation+"/"+"k8s.workload.kind"], "individual annotation k8s.workload.kind in pod %s", pod.Name)
-		assert.Equalf(t, app.Name(), pod.Annotations[dkmetadata.Annotation+"/"+"k8s.workload.name"], "individual annotation k8s.workload.name in pod %s", pod.Name)
-
-		return ctx
-	}
-}
-
-// assessDynakubeAttrsNotInIndividualAnnotations verifies that DynaKube resource attributes
-// are NOT written as individual metadata.dynatrace.com/<key> annotations.
-func assessDynakubeAttrsNotInIndividualAnnotations(app *sample.App, dynakubeAttrs map[string]string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resource := envConfig.Client().Resources()
-		pod := app.GetPod(ctx, t, resource)
-
-		for k := range dynakubeAttrs {
-			annotationKey := dkmetadata.Prefix + k
-			assert.NotContainsf(t, pod.Annotations, annotationKey, "DynaKube resource attr %q must not appear as individual annotation in pod %s", annotationKey, pod.Name)
-		}
-
 		return ctx
 	}
 }

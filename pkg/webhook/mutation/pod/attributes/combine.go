@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"maps"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type combinationCase uint
@@ -18,7 +21,6 @@ const (
 	withDynakube
 	withNamespaceAnnotations
 	withRules
-	withRulesPropagate
 	withPodAnnotations
 	withCustom
 )
@@ -27,13 +29,22 @@ const (
 	// withDeprecated is not included; combineAll adds it conditionally.
 	caseAll = withWorkloadInfo | withPodInfo | withClusterInfo |
 		withContainerAttrs | withDynakube | withNamespaceAnnotations |
-		withRules | withRulesPropagate | withPodAnnotations | withCustom
-
-	caseMetadataAnnotations = withWorkloadInfo | withNamespaceAnnotations | withRulesPropagate
+		withRules | withPodAnnotations | withCustom
 
 	caseJSONAnnotation = withDynakube | withNamespaceAnnotations |
-		withRules | withRulesPropagate | withPodAnnotations | withWorkloadInfo
+		withRules | withPodAnnotations | withWorkloadInfo
 )
+
+func (attrs *Pod) ApplyJSONAnnotationToPod(pod *corev1.Pod) error {
+	json, err := attrs.combineForJSONAnnotation()
+	if err != nil {
+		return err
+	}
+
+	k8spod.SetAnnotationIfNotExists(pod, metadataenrichment.Annotation, json)
+
+	return nil
+}
 
 // combine copies maps into a single result in fixed precedence order (low → high).
 func (attrs *Pod) combine(c combinationCase, containerAttrs map[string]string) map[string]string {
@@ -42,16 +53,16 @@ func (attrs *Pod) combine(c combinationCase, containerAttrs map[string]string) m
 		data map[string]string
 	}
 
+	// this slice defines the precedence order (lowest to highest), "customer over built in" and "local wins"-policy
 	layers := []layer{
 		{withDeprecated, attrs.deprecated},
 		{withWorkloadInfo, attrs.workloadInfo},
 		{withPodInfo, attrs.podInfo},
 		{withClusterInfo, attrs.clusterInfo},
 		{withContainerAttrs, containerAttrs},
+		{withRules, attrs.rules},
 		{withDynakube, attrs.dynakube},
 		{withNamespaceAnnotations, attrs.namespaceAnnotations},
-		{withRules, attrs.rules},
-		{withRulesPropagate, attrs.rulesPropagate},
 		{withPodAnnotations, attrs.podAnnotations},
 		{withCustom, attrs.custom},
 	}
@@ -83,10 +94,6 @@ func (attrs *Pod) combineAll(containerAttrs ...Container) map[string]string {
 	}
 
 	return attrs.combine(c, flattenContainerAttrs(containerAttrs))
-}
-
-func (attrs *Pod) combineForMetadataAnnotations() map[string]string {
-	return attrs.combine(caseMetadataAnnotations, nil)
 }
 
 func (attrs *Pod) combineForJSONAnnotation() (string, error) {
