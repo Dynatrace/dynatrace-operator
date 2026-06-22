@@ -52,8 +52,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 
 	// templates section takes precedence over public registry
 	var imageURI string
-	if dk.Spec.Templates.SQLExtensionExecutor.ImageRef.HasImage() {
-		imageURI = dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String()
+
+	templateImageRef := dk.Spec.Templates.SQLExtensionExecutor.ImageRef
+	if templateImageRef.HasImage() {
+		imageURI = templateImageRef.String()
 	} else {
 		var err error
 
