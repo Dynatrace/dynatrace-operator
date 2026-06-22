@@ -11,12 +11,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -166,6 +168,31 @@ func TestReconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		assert.Equal(t, k8sconditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+
+	t.Run("template image takes precedence over public registry", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+		templateImageURI := "my-custom-registry:5000/my-custom-repo:my-custom-tag"
+		dk := createDynakube(true)
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			ImageRef: image.Ref{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"},
+		}
+
+		mockK8sClient := fake.NewClient()
+		imageClient := imageclientmock.NewClient(t)
+
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
+		require.NoError(t, err)
+
+		var daemonset appsv1.DaemonSet
+		err = mockK8sClient.Get(ctx, types.NamespacedName{
+			Name:      dk.LogMonitoring().GetDaemonSetName(),
+			Namespace: dk.Namespace,
+		}, &daemonset)
+		require.NoError(t, err)
+		assert.Equal(t, templateImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, templateImageURI, daemonset.Spec.Template.Spec.InitContainers[0].Image)
 	})
 }
 

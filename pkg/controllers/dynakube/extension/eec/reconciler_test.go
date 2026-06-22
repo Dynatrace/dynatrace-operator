@@ -1975,4 +1975,26 @@ func TestPublicRegistryImage(t *testing.T) {
 	sts := getStatefulset(t, dk)
 
 	require.Equal(t, expectedImageURI, sts.Spec.Template.Spec.Containers[0].Image)
+
+	t.Run("template image takes precedence over public registry", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+		templateImageURI := "my-custom-registry:5000/my-custom-repo:my-custom-tag"
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.Templates.ExtensionExecutionController.ImageRef = image.Ref{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"}
+
+		mockK8sClient := fake.NewClient(dk)
+		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+		imageClient := imageclientmock.NewClient(t)
+
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), imageClient, dk)
+		require.NoError(t, err)
+
+		statefulSet := &appsv1.StatefulSet{}
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		require.Equal(t, templateImageURI, statefulSet.Spec.Template.Spec.Containers[0].Image)
+	})
 }
