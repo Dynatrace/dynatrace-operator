@@ -51,11 +51,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	}
 
 	// templates section takes precedence over public registry
-	usePublicRegistry := dk.FF().IsPublicRegistry() && !dk.Spec.Templates.SQLExtensionExecutor.ImageRef.HasImage()
+	var imageURI string
+	if dk.Spec.Templates.SQLExtensionExecutor.ImageRef.HasImage() {
+		imageURI = dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String()
+	} else {
+		var err error
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, usePublicRegistry, dk.PublicRegistryOverride(), dtimage.DBExecutor)
-	if err != nil {
-		return err
+		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutor)
+		if err != nil {
+			return err
+		}
 	}
 
 	query := k8sdeployment.Query(r.client, r.apiReader)

@@ -67,11 +67,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient image.Client, dk
 	}
 
 	// templates section takes precedence over public registry
-	usePublicRegistry := dk.FF().IsPublicRegistry() && !dk.Spec.Templates.ExtensionExecutionController.ImageRef.HasImage()
+	var imageURI string
+	if dk.Spec.Templates.ExtensionExecutionController.ImageRef.HasImage() {
+		imageURI = dk.Spec.Templates.ExtensionExecutionController.ImageRef.String()
+	} else {
+		var err error
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, usePublicRegistry, dk.PublicRegistryOverride(), image.EEC)
-	if err != nil {
-		return err
+		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), image.EEC)
+		if err != nil {
+			return err
+		}
 	}
 
 	return r.createOrUpdateStatefulset(ctx, dk, imageURI)

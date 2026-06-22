@@ -501,7 +501,9 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 			APIURL:        "test-url",
 			LogMonitoring: logMonitoring,
 			Templates: dynakube.TemplatesSpec{
-				LogMonitoring: &logmonitoring.TemplateSpec{},
+				LogMonitoring: &logmonitoring.TemplateSpec{
+					ImageRef: image.Ref{Repository: "some-registry/dynatrace/logmonitoring", Tag: "1.0.0"},
+				},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{

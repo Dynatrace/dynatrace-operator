@@ -171,10 +171,6 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 }
 
 func buildContainer(dk *dynakube.DynaKube, imageURI string) corev1.Container {
-	if imageURI == "" {
-		imageURI = dk.Spec.Templates.ExtensionExecutionController.ImageRef.String()
-	}
-
 	return corev1.Container{
 		Name:            containerName,
 		Image:           imageURI,

@@ -486,7 +486,7 @@ func getMatchingDeployment(dk *dynakube.DynaKube) *appsv1.Deployment {
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						buildContainer(dk, db, ""),
+						buildContainer(dk, db, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String()),
 					},
 					Volumes: buildVolumes(dk, db),
 				},
