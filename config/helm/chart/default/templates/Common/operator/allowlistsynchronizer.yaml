@@ -1,4 +1,4 @@
-{{ if eq (include "dynatrace-operator.needAutopilotAllowlisting" .) "true" }}
+{{ if (include "dynatrace-operator.needAutopilotAllowlisting" .) }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");

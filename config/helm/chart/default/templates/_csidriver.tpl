@@ -32,7 +32,7 @@ CSI PriorityClassName
 Check if we need the csi default priority class
 */}}
 {{- define "dynatrace-operator.needPriorityClass" -}}
-	{{- if and (eq (include "dynatrace-operator.needCSI" .) "true") (not .Values.csidriver.existingPriorityClassName) -}}
+	{{- if and (include "dynatrace-operator.needCSI" .) (not .Values.csidriver.existingPriorityClassName) -}}
 		{{- printf "true" -}}
 	{{- end -}}
 {{- end -}}

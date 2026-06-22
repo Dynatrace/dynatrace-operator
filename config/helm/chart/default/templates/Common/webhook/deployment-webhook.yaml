@@ -38,7 +38,7 @@ spec:
       annotations:
         dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: webhook
-        {{- if and (.Values.webhook.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
+        {{- if and (.Values.webhook.apparmor) (not (include "kubernetes.appArmorSecurityContextSupported" .)) }}
         container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
         {{- end }}
         {{- if .Values.webhook.annotations}}
