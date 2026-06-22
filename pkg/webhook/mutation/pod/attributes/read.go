@@ -62,7 +62,7 @@ func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.D
 
 		if exists {
 			if len(rule.Target) > 0 {
-				attrs.rulesPropagate[rule.Target] = valueFromNamespace
+				attrs.rules[rule.Target] = valueFromNamespace
 			} else {
 				attrs.rules[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
 			}

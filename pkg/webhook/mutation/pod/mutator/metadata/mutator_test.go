@@ -400,14 +400,18 @@ func TestMutate(t *testing.T) {
 
 				// annotations are written by the post-step in webhook.Handle, not by Mutate directly
 				require.NotNil(t, request.AnnotationWriter)
-				require.NoError(t, request.AnnotationWriter.ApplyAnnotationsToPod(request.Pod))
+				require.NoError(t, request.AnnotationWriter.ApplyJSONAnnotationToPod(request.Pod))
 
-				require.Len(t, request.Pod.Annotations, 7) // workload.kind + workload.name + dt.security_context + dt.cost.costcenter + injected + propagated ns annotations
-				assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[metadataenrichment.Prefix+attributes.K8sWorkloadKindAttr])
-				assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[metadataenrichment.Prefix+attributes.K8sWorkloadNameAttr])
+				// only the injected annotation and the JSON block are written
+				require.Len(t, request.Pod.Annotations, 2)
 				assert.Equal(t, "true", request.Pod.Annotations[AnnotationInjected])
-				assert.Equal(t, nsMetaAnnotationValue, request.Pod.Annotations[metadataenrichment.Prefix+nsMetaAnnotationKey])
-				assert.NotEmpty(t, request.Pod.Annotations[metadataenrichment.Annotation])
+				jsonAnnotationVal := request.Pod.Annotations[metadataenrichment.Annotation]
+				require.NotEmpty(t, jsonAnnotationVal)
+				var jsonAttrs map[string]string
+				require.NoError(t, json.Unmarshal([]byte(jsonAnnotationVal), &jsonAttrs))
+				assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), jsonAttrs[attributes.K8sWorkloadKindAttr])
+				assert.Equal(t, request.Pod.OwnerReferences[0].Name, jsonAttrs[attributes.K8sWorkloadNameAttr])
+				assert.Equal(t, nsMetaAnnotationValue, jsonAttrs[nsMetaAnnotationKey])
 			})
 		}
 	})

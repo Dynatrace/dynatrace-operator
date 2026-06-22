@@ -3,7 +3,6 @@ package attributes
 import (
 	"context"
 	"encoding/json"
-	"maps"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -123,10 +122,10 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "production", attrs.rules[expectedKey])
-		assert.Empty(t, attrs.rulesPropagate)
+		assert.Len(t, attrs.rules, 1)
 	})
 
-	t.Run("LabelRule with target stores in rulesPropagate under the target key", func(t *testing.T) {
+	t.Run("LabelRule with target stores in rules under the target key", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		ns := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -145,8 +144,8 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		attrs.applyEnrichmentRules(ns, dk)
 
-		assert.Equal(t, "staging", attrs.rulesPropagate["custom.env"])
-		assert.Empty(t, attrs.rules)
+		assert.Equal(t, "staging", attrs.rules["custom.env"])
+		assert.Len(t, attrs.rules, 1)
 	})
 
 	t.Run("AnnotationRule reads from namespace annotations", func(t *testing.T) {
@@ -168,7 +167,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		attrs.applyEnrichmentRules(ns, dk)
 
-		assert.Equal(t, "backend", attrs.rulesPropagate["team.name"])
+		assert.Equal(t, "backend", attrs.rules["team.name"])
 	})
 
 	t.Run("rule whose source is absent from namespace is skipped", func(t *testing.T) {
@@ -186,7 +185,6 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 		attrs.applyEnrichmentRules(corev1.Namespace{}, dk)
 
 		assert.Empty(t, attrs.rules)
-		assert.Empty(t, attrs.rulesPropagate)
 	})
 
 	t.Run("mix of target and no-target rules routes correctly", func(t *testing.T) {
@@ -214,10 +212,10 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		envKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "prod", attrs.rules[envKey])
-		assert.Equal(t, "platform", attrs.rulesPropagate["custom.team"])
+		assert.Equal(t, "platform", attrs.rules["custom.team"])
 	})
 
-	t.Run("K8S_NAMESPACE_LABEL with target stores in rulesPropagate", func(t *testing.T) {
+	t.Run("K8S_NAMESPACE_LABEL with target stores in rules", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		ns := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -236,8 +234,8 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		attrs.applyEnrichmentRules(ns, dk)
 
-		assert.Equal(t, "production", attrs.rulesPropagate["custom.env"])
-		assert.Empty(t, attrs.rules)
+		assert.Equal(t, "production", attrs.rules["custom.env"])
+		assert.Len(t, attrs.rules, 1)
 	})
 
 	t.Run("K8S_NAMESPACE_LABEL without target stores under computed rules key", func(t *testing.T) {
@@ -261,10 +259,10 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.K8sNamespaceLabelRule), "env")
 		assert.Equal(t, "production", attrs.rules[expectedKey])
-		assert.Empty(t, attrs.rulesPropagate)
+		assert.Len(t, attrs.rules, 1)
 	})
 
-	t.Run("K8S_NAMESPACE_ANNOTATION with target stores in rulesPropagate", func(t *testing.T) {
+	t.Run("K8S_NAMESPACE_ANNOTATION with target stores in rules", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		ns := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -283,8 +281,8 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		attrs.applyEnrichmentRules(ns, dk)
 
-		assert.Equal(t, "backend", attrs.rulesPropagate["team.name"])
-		assert.Empty(t, attrs.rules)
+		assert.Equal(t, "backend", attrs.rules["team.name"])
+		assert.Len(t, attrs.rules, 1)
 	})
 
 	t.Run("K8S_NAMESPACE_LABEL with absent source is skipped", func(t *testing.T) {
@@ -302,10 +300,9 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 		attrs.applyEnrichmentRules(corev1.Namespace{}, dk)
 
 		assert.Empty(t, attrs.rules)
-		assert.Empty(t, attrs.rulesPropagate)
 	})
 
-	t.Run("CUSTOM with target stores literal source in rulesPropagate", func(t *testing.T) {
+	t.Run("CUSTOM with target stores literal source in rules", func(t *testing.T) {
 		attrs := newTestPodAttributes()
 		dk := dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -319,8 +316,8 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 		attrs.applyEnrichmentRules(corev1.Namespace{}, dk)
 
-		assert.Equal(t, "my-literal-value", attrs.rulesPropagate["dt.custom"])
-		assert.Empty(t, attrs.rules)
+		assert.Equal(t, "my-literal-value", attrs.rules["dt.custom"])
+		assert.Len(t, attrs.rules, 1)
 	})
 
 	t.Run("CUSTOM without target is dropped", func(t *testing.T) {
@@ -338,7 +335,6 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 		attrs.applyEnrichmentRules(corev1.Namespace{}, dk)
 
 		assert.Empty(t, attrs.rules)
-		assert.Empty(t, attrs.rulesPropagate)
 	})
 }
 
@@ -370,12 +366,12 @@ func TestGetMetadataAnnotations(t *testing.T) {
 
 		assert.Equal(t, "ns-val", attrs.namespaceAnnotations["ns-key"])
 		assert.Equal(t, "pod-val", attrs.podAnnotations["pod-key"])
-		assert.Equal(t, "prod", attrs.rulesPropagate["custom.env"])
+		assert.Equal(t, "prod", attrs.rules["custom.env"])
 	})
 }
 
 func TestCopyMetadataFromNamespace(t *testing.T) {
-	t.Run("should copy annotations not labels with prefix from namespace to pod", func(t *testing.T) {
+	t.Run("namespace annotations appear in JSON block", func(t *testing.T) {
 		request := createTestMutationRequest(t, nil, nil)
 		request.Namespace.Labels = map[string]string{
 			metadataenrichment.Prefix + "nocopyoflabels": "nocopyoflabels",
@@ -388,13 +384,15 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		attrs, err := NewPodAttributes(t.Context(), *request.BaseRequest, fake.NewClient())
 		require.NoError(t, err)
-		require.NoError(t, attrs.ApplyAnnotationsToPod(request.Pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(request.Pod))
 
-		require.Len(t, request.Pod.Annotations, 4)
+		require.Len(t, request.Pod.Annotations, 1)
 		require.Empty(t, request.Pod.Labels)
-		require.Equal(t, "copyofannotations", request.Pod.Annotations[metadataenrichment.Prefix+"copyofannotations"])
 
-		checkDefaultAnnotations(t, *request.Pod)
+		// individual metadata.dynatrace.com/<key> annotations must not be written
+		assert.NotContains(t, request.Pod.Annotations, metadataenrichment.Prefix+"copyofannotations")
+		assert.NotContains(t, request.Pod.Annotations, metadataenrichment.Prefix+K8sWorkloadKindAttr)
+		assert.NotContains(t, request.Pod.Annotations, metadataenrichment.Prefix+K8sWorkloadNameAttr)
 
 		var actualMetadataJSON map[string]string
 
@@ -447,18 +445,11 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		attrs, err := NewPodAttributes(t.Context(), *request.BaseRequest, fake.NewClient())
 		require.NoError(t, err)
-		require.NoError(t, attrs.ApplyAnnotationsToPod(request.Pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(request.Pod))
 
-		require.Len(t, request.Pod.Annotations, 7)
+		// pod was pre-seeded with one annotation; ApplyJSONAnnotationToPod only adds the JSON block
+		require.Len(t, request.Pod.Annotations, 2)
 		require.Empty(t, request.Pod.Labels)
-
-		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[metadataenrichment.Prefix+"copyofannotations"])
-		require.Equal(t, "copyifruleexists", request.Pod.Annotations[metadataenrichment.Prefix+"dt.copyifruleexists"])
-
-		require.Equal(t, "test-value", request.Pod.Annotations[metadataenrichment.Prefix+"dt.test-annotation"])
-		require.Equal(t, "test-value", request.Pod.Annotations[metadataenrichment.Prefix+"test-label"])
-
-		checkDefaultAnnotations(t, *request.Pod)
 
 		var actualMetadataJSON map[string]string
 
@@ -519,15 +510,10 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		attrs, err := NewPodAttributes(t.Context(), *request.BaseRequest, fake.NewClient())
 		require.NoError(t, err)
-		require.NoError(t, attrs.ApplyAnnotationsToPod(request.Pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(request.Pod))
 
-		require.Len(t, request.Pod.Annotations, 6)
+		require.Len(t, request.Pod.Annotations, 1)
 		require.Empty(t, request.Pod.Labels)
-		require.Equal(t, "test-label-value", request.Pod.Annotations[metadataenrichment.Prefix+"dt.test-label"])
-		require.Equal(t, "test-annotation-value3", request.Pod.Annotations[metadataenrichment.Prefix+"dt.test-annotation"])
-		require.Equal(t, "my-custom-value", request.Pod.Annotations[metadataenrichment.Prefix+"dt.custom"])
-
-		checkDefaultAnnotations(t, *request.Pod)
 
 		var actualMetadataJSON map[string]string
 
@@ -561,15 +547,12 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		attrs, err := NewPodAttributes(t.Context(), *request.BaseRequest, fake.NewClient())
 		require.NoError(t, err)
-		require.NoError(t, attrs.ApplyAnnotationsToPod(request.Pod))
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(request.Pod))
 
-		require.Len(t, request.Pod.Annotations, 5)
+		// pod was pre-seeded with one annotation; ApplyJSONAnnotationToPod only adds the JSON block
+		require.Len(t, request.Pod.Annotations, 2)
 
 		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[metadataenrichment.Prefix+"someannotation"])
-
-		require.Equal(t, "othervalue", request.Pod.Annotations[metadataenrichment.Prefix+"anotherannotation"])
-
-		checkDefaultAnnotations(t, *request.Pod)
 
 		var actualMetadataJSON map[string]string
 
@@ -658,23 +641,6 @@ func getTestPod(annotations map[string]string) *corev1.Pod {
 				},
 			},
 		},
-	}
-}
-
-func mergeWithDefaultAnnotations(expected map[string]string) map[string]string {
-	maps.Copy(expected, map[string]string{
-		"k8s.workload.kind": "pod",
-		"k8s.workload.name": "test-pod",
-	})
-
-	return expected
-}
-
-func checkDefaultAnnotations(t *testing.T, pod corev1.Pod) {
-	defaults := mergeWithDefaultAnnotations(map[string]string{})
-
-	for key, value := range defaults {
-		assert.Equal(t, value, pod.Annotations[metadataenrichment.Prefix+key])
 	}
 }
 

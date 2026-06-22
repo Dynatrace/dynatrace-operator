@@ -96,15 +96,26 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 }
 
 func DBExecutor(t *testing.T) features.Feature {
-	return dbExecutorFeature(t, "use-public-registry-db-executor", "")
+	t.Skip("Skip test until we find out why the db executor image is missing from some tenants registry")
+
+	return dbExecutorFeature(t,
+		"use-public-registry-db-executor",
+		"use-public-registry-db-exec",
+		"")
 }
 
 func DBExecutorOverride(t *testing.T) features.Feature {
-	return dbExecutorFeature(t, "use-public-registry-db-executor-with-override", "")
+	t.Skip("Skip test until we find out why the db executor image is missing from some tenants registry")
+
+	return dbExecutorFeature(t,
+		"use-public-registry-db-executor-with-override",
+		"use-public-registry-db-exec-ovrd",
+		publicRegistryOverride(t))
 }
 
 func LogMon(t *testing.T) features.Feature {
 	return logMonFeature(t,
+		"use-public-registry-logmon",
 		"use-public-registry-logmon",
 		"")
 }
@@ -112,6 +123,7 @@ func LogMon(t *testing.T) features.Feature {
 func LogMonWithOverride(t *testing.T) features.Feature {
 	return logMonFeature(t,
 		"use-public-registry-logmon-with-override",
+		"use-public-registry-logmon-ovrd",
 		publicRegistryOverride(t))
 }
 
@@ -218,7 +230,7 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 	return builder.Feature()
 }
 
-func dbExecutorFeature(t *testing.T, featureName, override string) features.Feature {
+func dbExecutorFeature(t *testing.T, featureName, dkName, override string) features.Feature {
 	builder := features.New(featureName)
 	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
 	testDatabaseID := "mysql"
@@ -226,8 +238,8 @@ func dbExecutorFeature(t *testing.T, featureName, override string) features.Feat
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithExtensionsEECImageRef(t),
 		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
 		dynakubeComponents.WithActiveGate(),
 	}
@@ -253,16 +265,16 @@ func dbExecutorFeature(t *testing.T, featureName, override string) features.Feat
 	return builder.Feature()
 }
 
-func logMonFeature(t *testing.T, featureName, override string) features.Feature {
+func logMonFeature(t *testing.T, featureName, dkName, override string) features.Feature {
 	builder := features.New(featureName)
 	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithLogMonitoring(),
-		dynakubeComponents.WithLogMonitoringImageRef(t),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
 	}

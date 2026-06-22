@@ -336,28 +336,44 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 }
 
 func TestPublicRegistryImage(t *testing.T) {
-	expectedImageURI := "my-public-registry:5000/my-test-repo:my-test-tag"
-	getReconciledDeployment := func(t *testing.T) *appsv1.Deployment {
-		t.Helper()
+	t.Run("imageURI from public registry", func(t *testing.T) {
+		expectedImageURI := "my-public-registry:5000/my-test-repo:my-test-tag"
+		getReconciledDeployment := func(t *testing.T) *appsv1.Deployment {
+			t.Helper()
 
+			dk := getTestDynakube()
+			dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+			dk.Spec.Templates = dynakube.TemplatesSpec{}
+			clt := fakeClient()
+
+			imageClient := imageclientmock.NewClient(t)
+			imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.DBExecutor, "").Return(&dtimage.Info{URI: expectedImageURI}, nil)
+
+			require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
+			deployments := &appsv1.DeploymentList{}
+			require.NoError(t, clt.List(t.Context(), deployments))
+			require.Len(t, deployments.Items, 1)
+
+			return &deployments.Items[0]
+		}
+
+		deployment := getReconciledDeployment(t)
+		require.Equal(t, expectedImageURI, deployment.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("no call to api when extensions are not used", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
-		dk.Spec.Templates = dynakube.TemplatesSpec{}
+		dk.Spec.Extensions.Databases = nil
 		clt := fakeClient()
 
 		imageClient := imageclientmock.NewClient(t)
-		imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.DBExecutor, "").Return(&dtimage.Info{URI: expectedImageURI}, nil)
 
 		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
 		deployments := &appsv1.DeploymentList{}
 		require.NoError(t, clt.List(t.Context(), deployments))
-		require.Len(t, deployments.Items, 1)
-
-		return &deployments.Items[0]
-	}
-
-	deployment := getReconciledDeployment(t)
-	require.Equal(t, expectedImageURI, deployment.Spec.Template.Spec.Containers[0].Image)
+		require.Empty(t, deployments.Items)
+	})
 }
 
 func fakeClient() client.Client {
