@@ -81,7 +81,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	if skip, err := token.NewReader(controller.apiReader, dk).HasPlatformToken(ctx); err != nil {
 		return reconcile.Result{}, err
 	} else if skip {
-		log.Info("node controller disabled due to detected platform token in secret", "node", nodeName)
+		log.Info("node controller disabled due to detected platform token in secret")
 
 		return reconcile.Result{}, nil
 	}
