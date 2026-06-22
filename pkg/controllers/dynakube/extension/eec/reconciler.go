@@ -66,10 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient image.Client, dk
 		return errors.New("kubeSystemUUID unknown")
 	}
 
-	// templates section takes precedence over public registry
-	usePublicRegistry := dk.FF().IsPublicRegistry() && !dk.Spec.Templates.ExtensionExecutionController.ImageRef.HasImage()
-
-	imageURI, err := registry.ResolveImage(ctx, imageClient, usePublicRegistry, dk.PublicRegistryOverride(), image.EEC)
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.FF().IsPublicRegistry(), dk.PublicRegistryOverride(), image.EEC, &dk.Spec.Templates.ExtensionExecutionController.ImageRef)
 	if err != nil {
 		return err
 	}

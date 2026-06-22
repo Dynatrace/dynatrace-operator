@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,12 +20,13 @@ func TestGetContainer(t *testing.T) {
 
 	t.Run("get main container", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		mainContainer := getContainer(dk, tenantUUID, "")
+		expectedImageURI := "my-test-repo:my-test-tag"
+		mainContainer := getContainer(dk, tenantUUID, expectedImageURI)
 
 		require.NotEmpty(t, mainContainer)
 
 		assert.NotEmpty(t, mainContainer.Name)
-		assert.NotEmpty(t, mainContainer.Image)
+		assert.Equal(t, expectedImageURI, mainContainer.Image)
 		assert.Empty(t, mainContainer.ImagePullPolicy)
 		assert.NotEmpty(t, mainContainer.VolumeMounts)
 		assert.Len(t, mainContainer.VolumeMounts, expectedMountLen)
@@ -34,23 +34,6 @@ func TestGetContainer(t *testing.T) {
 		assert.Len(t, mainContainer.Env, expectedBaseEnvLen)
 		assert.Empty(t, mainContainer.Resources)
 		assert.NotEmpty(t, mainContainer.SecurityContext)
-	})
-
-	t.Run("image-ref is respected", func(t *testing.T) {
-		expectedRepo := "my-test-repo"
-		expectedTag := "my-test-tag"
-		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			ImageRef: image.Ref{
-				Repository: expectedRepo,
-				Tag:        expectedTag,
-			},
-		}
-		mainContainer := getContainer(dk, tenantUUID, "")
-
-		require.NotEmpty(t, mainContainer)
-		assert.NotEmpty(t, mainContainer.Image)
-		assert.Equal(t, expectedRepo+":"+expectedTag, mainContainer.Image)
 	})
 
 	t.Run("resources are respected", func(t *testing.T) {
@@ -87,13 +70,14 @@ func TestGetInitContainer(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
+		expectedImageURI := "my-test-repo:my-test-tag"
 
-		initContainer := getInitContainer(dk, tenantUUID, "")
+		initContainer := getInitContainer(dk, tenantUUID, expectedImageURI)
 
 		require.NotEmpty(t, initContainer)
 
 		assert.NotEmpty(t, initContainer.Name)
-		assert.NotEmpty(t, initContainer.Image)
+		assert.Equal(t, expectedImageURI, initContainer.Image)
 		assert.Empty(t, initContainer.ImagePullPolicy)
 		assert.NotEmpty(t, initContainer.Args)
 		assert.Len(t, initContainer.Args, expectedBaseInitArgsLen)
@@ -103,23 +87,6 @@ func TestGetInitContainer(t *testing.T) {
 		assert.NotEmpty(t, initContainer.Env)
 		assert.Len(t, initContainer.Env, expectedBaseInitEnvLen)
 		assert.NotEmpty(t, initContainer.SecurityContext)
-	})
-
-	t.Run("image-ref is respected", func(t *testing.T) {
-		expectedRepo := "my-test-repo"
-		expectedTag := "my-test-tag"
-		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			ImageRef: image.Ref{
-				Repository: expectedRepo,
-				Tag:        expectedTag,
-			},
-		}
-		initContainer := getInitContainer(dk, tenantUUID, "")
-
-		require.NotEmpty(t, initContainer)
-		assert.NotEmpty(t, initContainer.Image)
-		assert.Equal(t, expectedRepo+":"+expectedTag, initContainer.Image)
 	})
 
 	t.Run("resources are respected", func(t *testing.T) {

@@ -32,10 +32,6 @@ func getContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.Cont
 		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, containerName)
 	}
 
-	if imageURI == "" {
-		imageURI = dk.LogMonitoring().Template().ImageRef.String()
-	}
-
 	container := corev1.Container{
 		Name:            containerName,
 		Image:           imageURI,
@@ -57,14 +53,9 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.
 		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, initContainerName)
 	}
 
-	image := imageURI
-	if imageURI == "" {
-		image = dk.LogMonitoring().Template().ImageRef.String()
-	}
-
 	container := corev1.Container{
 		Name:            initContainerName,
-		Image:           image,
+		Image:           imageURI,
 		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.GetPullPolicy(),
 		VolumeMounts:    []corev1.VolumeMount{getDTVolumeMounts(tenantUUID)},
 		Command:         []string{bootstrapCommand},
