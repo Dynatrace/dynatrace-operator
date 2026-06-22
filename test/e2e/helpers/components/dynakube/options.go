@@ -22,7 +22,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
-	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,11 +43,7 @@ type Option func(dk *dynakube.DynaKube)
 func New(opts ...Option) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			// based on current validator it's 32 characters max,
-			// so we use 8+8+1=17
-			// characters of the uuid to avoid hitting the limit
-			// Example: dynakube-651081d6
-			Name:        defaultName + "-" + uuid.NewString()[:8],
+			Name:        defaultName,
 			Namespace:   operator.DefaultNamespace,
 			Annotations: map[string]string{},
 		},
