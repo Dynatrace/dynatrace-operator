@@ -86,7 +86,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, nil
 	}
 
-	log.Info("reconciling node", "node", nodeName)
+	log.Info("reconciling node")
 
 	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
@@ -242,8 +242,7 @@ func (controller *Controller) markForTermination(ctx context.Context, dk *dynaku
 
 	cacheEntry.SetLastMarkedForTerminationTimestamp(controller.timeProvider.Now().UTC())
 
-	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cacheEntry.IPAddress,
-		"node", cacheEntry.NodeName)
+	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cacheEntry.IPAddress)
 
 	return controller.sendMarkedForTermination(ctx, dk, cacheEntry)
 }
