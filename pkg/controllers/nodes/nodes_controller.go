@@ -242,7 +242,7 @@ func (controller *Controller) markForTermination(ctx context.Context, dk *dynaku
 
 	cacheEntry.SetLastMarkedForTerminationTimestamp(controller.timeProvider.Now().UTC())
 
-	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cacheEntry.IPAddress)
+	log.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", cacheEntry.IPAddress)
 
 	return controller.sendMarkedForTermination(ctx, dk, cacheEntry)
 }
