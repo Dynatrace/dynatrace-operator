@@ -83,7 +83,7 @@ func useLegacyMounts(dk *dynakube.DynaKube) bool {
 	return exp.NewFlags(dk.Annotations, false).UseEECLegacyMounts()
 }
 
-func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube, imageURI string) error {
 	log := logd.FromContext(ctx)
 
 	appLabels := buildAppLabels(dk)
@@ -98,7 +98,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		topologySpreadConstraints = dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
 	}
 
-	desiredSts, err := k8sstatefulset.Build(dk, dk.Extensions().GetExecutionControllerStatefulsetName(), buildContainer(dk),
+	desiredSts, err := k8sstatefulset.Build(dk, dk.Extensions().GetExecutionControllerStatefulsetName(), buildContainer(dk, imageURI),
 		k8sstatefulset.SetReplicas(1),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.ExtensionExecutionController.Labels),
@@ -170,10 +170,14 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 	}
 }
 
-func buildContainer(dk *dynakube.DynaKube) corev1.Container {
+func buildContainer(dk *dynakube.DynaKube, imageURI string) corev1.Container {
+	if imageURI == "" {
+		imageURI = dk.Spec.Templates.ExtensionExecutionController.ImageRef.String()
+	}
+
 	return corev1.Container{
 		Name:            containerName,
-		Image:           dk.Spec.Templates.ExtensionExecutionController.ImageRef.String(),
+		Image:           imageURI,
 		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.GetPullPolicy(),
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{

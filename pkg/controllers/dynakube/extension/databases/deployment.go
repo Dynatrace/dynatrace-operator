@@ -87,10 +87,14 @@ func buildServiceAccountName(dbSpec extensions.DatabaseSpec) string {
 	return defaultServiceAccount
 }
 
-func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev1.Container {
+func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec, imageURI string) corev1.Container {
+	if imageURI == "" {
+		imageURI = dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String()
+	}
+
 	container := corev1.Container{
 		Name:            containerName,
-		Image:           dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String(),
+		Image:           imageURI,
 		ImagePullPolicy: dk.Spec.Templates.SQLExtensionExecutor.ImageRef.GetPullPolicy(),
 		Args:            buildContainerArgs(dk),
 		Env:             buildContainerEnvs(),

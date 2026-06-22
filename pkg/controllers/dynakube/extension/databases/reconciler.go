@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
@@ -24,12 +26,11 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "extension-databases")
 
 	log.Debug("reconciling deployments")
 
-	query := k8sdeployment.Query(r.client, r.apiReader)
 	ext := dk.Extensions()
 	expectedDeploymentNames := make([]string, len(ext.Databases))
 
@@ -42,6 +43,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 		return err
 	}
+
+	if !ext.IsDatabasesEnabled() {
+		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
+
+		return nil
+	}
+
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.FF().IsPublicRegistry(), dk.PublicRegistryOverride(), dtimage.DBExecutor)
+	if err != nil {
+		return err
+	}
+
+	query := k8sdeployment.Query(r.client, r.apiReader)
 
 	for i, dbSpec := range ext.Databases {
 		replicas, err := k8sdeployment.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: expectedDeploymentNames[i], Namespace: dk.Namespace}, dbSpec.Replicas)
@@ -63,7 +77,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 			k8sdeployment.SetImagePullSecrets(dk.CustomPullSecretReferences()),
 			k8sdeployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
 			k8sdeployment.SetSecurityContext(buildPodSecurityContext()),
-			k8sdeployment.SetContainer(buildContainer(dk, dbSpec)),
+			k8sdeployment.SetContainer(buildContainer(dk, dbSpec, imageURI)),
 			k8sdeployment.SetVolumes(buildVolumes(dk, dbSpec)),
 		)
 		if err != nil {
@@ -85,11 +99,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		}
 	}
 
-	if len(expectedDeploymentNames) > 0 {
-		k8sconditions.SetDeploymentsApplied(dk, conditionType, expectedDeploymentNames)
-	} else {
-		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
-	}
+	k8sconditions.SetDeploymentsApplied(dk, conditionType, expectedDeploymentNames)
 
 	return nil
 }

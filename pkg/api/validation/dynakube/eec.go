@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -15,10 +16,20 @@ const (
 	warningConflictingAPIURLForExtensions                    = `You are already using a Dynakube ('%s') that enables extensions. Having multiple Dynakubes with same '.spec.apiUrl' and '.spec.extensions' enabled can have severe side-effects on “sum” and “count” metrics and cause double-billing.`
 )
 
-func extensionControllerImage(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func extensionControllerImage(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	log := logd.FromContext(ctx)
 
 	if !dk.Extensions().IsAnyEnabled() {
+		return ""
+	}
+
+	if dk.FF().IsPublicRegistry() {
+		return ""
+	}
+
+	// For new DynaKubes (status not yet set), check the token secret directly.
+	hasPlatformToken, err := token.NewReader(dv.apiReader, dk).HasPlatformToken(ctx)
+	if err == nil && hasPlatformToken {
 		return ""
 	}
 

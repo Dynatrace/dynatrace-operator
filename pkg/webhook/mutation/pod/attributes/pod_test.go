@@ -14,7 +14,6 @@ import (
 func newTestPodAttributes() *Pod {
 	return &Pod{
 		rules:                make(map[string]string),
-		rulesPropagate:       make(map[string]string),
 		namespaceAnnotations: make(map[string]string),
 		podAnnotations:       make(map[string]string),
 		dynakube:             make(map[string]string),

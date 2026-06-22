@@ -5,9 +5,12 @@ package usepublicregistry
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
@@ -17,11 +20,14 @@ import (
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -89,6 +95,26 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 		publicRegistryOverride(t))
 }
 
+func DBExecutor(t *testing.T) features.Feature {
+	return dbExecutorFeature(t, "use-public-registry-db-executor", "")
+}
+
+func DBExecutorOverride(t *testing.T) features.Feature {
+	return dbExecutorFeature(t, "use-public-registry-db-executor-with-override", "")
+}
+
+func LogMon(t *testing.T) features.Feature {
+	return logMonFeature(t,
+		"use-public-registry-logmon",
+		"")
+}
+
+func LogMonWithOverride(t *testing.T) features.Feature {
+	return logMonFeature(t,
+		"use-public-registry-logmon-with-override",
+		publicRegistryOverride(t))
+}
+
 func oneAgentFeature(t *testing.T, featureName, dkName, override string) features.Feature {
 	builder := features.New(featureName)
 	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
@@ -99,12 +125,12 @@ func oneAgentFeature(t *testing.T, featureName, dkName, override string) feature
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
-		dynakubeComponents.WithUsePublicRegistryFF(),
-		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	testDynakube := *dynakubeComponents.New(options...)
@@ -129,12 +155,12 @@ func activeGateFeature(t *testing.T, featureName, dkName, override string) featu
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithUsePublicRegistryFF(),
-		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	testDynakube := *dynakubeComponents.New(options...)
@@ -160,12 +186,12 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
-		dynakubeComponents.WithUsePublicRegistryFF(),
-		// dev tenants need customPullSecret to be able to pull images from dev ECR registry
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	}
 	if override != "" {
 		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	testDynakube := *dynakubeComponents.New(options...)
@@ -188,6 +214,95 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 		statusSourceIsPublicRegistry(testDynakube, image.CodeModules))
 
 	builder.Teardown(sampleApp.Uninstall())
+
+	return builder.Feature()
+}
+
+func dbExecutorFeature(t *testing.T, featureName, override string) features.Feature {
+	builder := features.New(featureName)
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
+	testDatabaseID := "mysql"
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithExtensionsEECImageRef(t),
+		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
+		dynakubeComponents.WithActiveGate(),
+	}
+	if override != "" {
+		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
+	}
+
+	testDynakube := *dynakubeComponents.New(options...)
+
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+
+	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
+
+	builder.Assess("extensions db-a datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-a"), testDynakube.Namespace))
+	builder.Assess("extensions db-b datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-b"), testDynakube.Namespace))
+	builder.Assess("extensions db-c datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-c"), testDynakube.Namespace))
+
+	return builder.Feature()
+}
+
+func logMonFeature(t *testing.T, featureName, override string) features.Feature {
+	builder := features.New(featureName)
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithLogMonitoring(),
+		dynakubeComponents.WithLogMonitoringImageRef(t),
+		dynakubeComponents.WithActiveGate(),
+		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
+	}
+	if override != "" {
+		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
+	}
+
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err)
+	if isOpenshift {
+		options = append(options, dynakubeComponents.WithAnnotations(map[string]string{
+			exp.OAPrivilegedKey: "true",
+		}))
+	}
+
+	testDynakube := *dynakubeComponents.New(options...)
+
+	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
+	require.NoError(t, err)
+
+	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
+	require.NoError(t, err)
+
+	agSecret := k8ssecret.New(consts.AgSecretName, testDynakube.Namespace,
+		map[string][]byte{
+			dynakube.ServerCertKey:                 agCrt,
+			consts.AgCertificateAndPrivateKeyField: agP12,
+		})
+	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
+
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+
+	builder.Assess("log agent started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+
+	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
 
 	return builder.Feature()
 }

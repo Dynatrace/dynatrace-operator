@@ -52,7 +52,7 @@ func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.Dyn
 // complete, preventing earlier-mutator annotations from being read back as
 // high-precedence pod annotations by later mutators.
 type PodAnnotationWriter interface {
-	ApplyAnnotationsToPod(*corev1.Pod) error
+	ApplyJSONAnnotationToPod(*corev1.Pod) error
 }
 
 // BaseRequest is the base request for all mutation requests

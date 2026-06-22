@@ -52,7 +52,8 @@ func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Lev
 }
 
 func Create(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, testDynakube dynakube.DynaKube) {
-	if tenant.UsePlatformToken() && testDynakube.Spec.CustomPullSecret == "" {
+	useDevRegistryPullSecret := tenant.UsePlatformToken() || testDynakube.FF().IsPublicRegistry()
+	if useDevRegistryPullSecret && testDynakube.Spec.CustomPullSecret == "" {
 		testDynakube.Spec.CustomPullSecret = e2econst.DevRegistryPullSecretName
 	}
 	builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, testDynakube.Name, testDynakube.Namespace))
