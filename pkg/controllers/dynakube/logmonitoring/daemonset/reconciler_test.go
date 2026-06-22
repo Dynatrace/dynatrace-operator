@@ -36,9 +36,6 @@ import (
 const (
 	dkName      = "test-name"
 	dkNamespace = "test-namespace"
-
-	testImageRepository = "some-registry/dynatrace/logmonitoring"
-	testImageTag        = "1.0.0"
 )
 
 func TestReconcile(t *testing.T) {
@@ -504,9 +501,7 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 			APIURL:        "test-url",
 			LogMonitoring: logMonitoring,
 			Templates: dynakube.TemplatesSpec{
-				LogMonitoring: &logmonitoring.TemplateSpec{
-					ImageRef: image.Ref{Repository: testImageRepository, Tag: testImageTag},
-				},
+				LogMonitoring: &logmonitoring.TemplateSpec{},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{

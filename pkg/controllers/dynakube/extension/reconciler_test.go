@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
@@ -218,13 +217,7 @@ func createDynakube() *dynakube.DynaKube {
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Spec: dynakube.DynaKubeSpec{
-			Templates: dynakube.TemplatesSpec{
-				ExtensionExecutionController: extensions.ExecutionControllerSpec{
-					ImageRef: image.Ref{Repository: "some-registry/dynatrace/eec", Tag: "1.0.0"},
-				},
-			},
-		},
+		Spec: dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
 				ConnectionInfo: communication.ConnectionInfo{
