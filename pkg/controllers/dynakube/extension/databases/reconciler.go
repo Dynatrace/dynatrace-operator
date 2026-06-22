@@ -50,9 +50,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return nil
 	}
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.FF().IsPublicRegistry(), dk.PublicRegistryOverride(), dtimage.DBExecutor)
-	if err != nil {
-		return err
+	// templates section takes precedence over public registry
+	var imageURI string
+
+	templateImageRef := dk.Spec.Templates.SQLExtensionExecutor.ImageRef
+	if templateImageRef.HasImage() {
+		imageURI = templateImageRef.String()
+	} else {
+		var err error
+
+		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutor)
+		if err != nil {
+			return err
+		}
 	}
 
 	query := k8sdeployment.Query(r.client, r.apiReader)

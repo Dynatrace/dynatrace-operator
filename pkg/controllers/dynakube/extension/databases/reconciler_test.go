@@ -3,6 +3,7 @@ package databases
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -374,6 +375,23 @@ func TestPublicRegistryImage(t *testing.T) {
 		require.NoError(t, clt.List(t.Context(), deployments))
 		require.Empty(t, deployments.Items)
 	})
+
+	t.Run("template image takes precedence over public registry", func(t *testing.T) {
+		templateImage := "my-custom-template-registry:5000/my-custom-template-repo"
+		tempateTag := "my-custom-template-tag"
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.Templates.SQLExtensionExecutor.ImageRef = image.Ref{Repository: templateImage, Tag: tempateTag}
+		clt := fakeClient()
+
+		imageClient := imageclientmock.NewClient(t)
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
+		deployments := &appsv1.DeploymentList{}
+		require.NoError(t, clt.List(t.Context(), deployments))
+		require.Len(t, deployments.Items, 1)
+		require.Equal(t, fmt.Sprintf("%s:%s", templateImage, tempateTag), deployments.Items[0].Spec.Template.Spec.Containers[0].Image)
+	})
 }
 
 func fakeClient() client.Client {
@@ -468,7 +486,7 @@ func getMatchingDeployment(dk *dynakube.DynaKube) *appsv1.Deployment {
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						buildContainer(dk, db, ""),
+						buildContainer(dk, db, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String()),
 					},
 					Volumes: buildVolumes(dk, db),
 				},
