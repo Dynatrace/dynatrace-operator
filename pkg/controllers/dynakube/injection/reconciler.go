@@ -153,12 +153,12 @@ func (r *Reconciler) unmap(ctx context.Context, dk *dynakube.DynaKube) {
 
 	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
 	if err != nil {
-		log.Error(err, "failed to list namespaces for dynakube", "dkName", dk.Name)
+		log.Error(err, "failed to list namespaces for dynakube")
 	}
 
 	dkMapper := r.createDynakubeMapper(ctx, dk)
 	if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
-		log.Error(err, "could not unmap dynakube from namespace", "dkName", dk.Name)
+		log.Error(err, "could not unmap dynakube from namespace")
 	}
 }
 

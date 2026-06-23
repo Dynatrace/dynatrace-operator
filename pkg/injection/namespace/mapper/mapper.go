@@ -193,7 +193,7 @@ func updateLabels(ctx context.Context, matches bool, dk *dynakube.DynaKube, name
 			updated = true
 
 			addNamespaceInjectLabel(dk.Name, namespace)
-			log.Info("started monitoring namespace", "namespace", namespace.Name, "dk", dk.Name)
+			log.Info("started monitoring namespace", "namespace", namespace.Name)
 		}
 	} else if instanceLabelFound && associatedDynakubeName == dk.Name {
 		updated = true

@@ -32,7 +32,7 @@ func invalidActiveGateCapabilities(ctx context.Context, _ *Validator, dk *dynaku
 		capabilities := dk.Spec.ActiveGate.Capabilities
 		for _, capability := range capabilities {
 			if _, ok := activegate.CapabilityDisplayNames[capability]; !ok {
-				log.Info("requested dynakube has invalid active gate capability", "name", dk.Name, "namespace", dk.Namespace)
+				log.Info("requested dynakube has invalid active gate capability")
 
 				return fmt.Sprintf(errorInvalidActiveGateCapability, capability)
 			}
@@ -63,7 +63,7 @@ func mutuallyExclusiveActiveGatePVsettings(ctx context.Context, _ *Validator, dk
 	log := logd.FromContext(ctx)
 
 	if activeGateMutuallyExclusivePVCSettings(dk) {
-		log.Info("requested dynakube specifies mutually exclusive VolumeClaimTemplate settings for ActiveGate.", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube specifies mutually exclusive VolumeClaimTemplate settings for ActiveGate.")
 
 		return errorActiveGateInvalidPVCConfiguration
 	}

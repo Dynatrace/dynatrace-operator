@@ -140,7 +140,7 @@ func (c Generic[T, L]) Recreate(ctx context.Context, object T) error {
 }
 
 func (c Generic[T, L]) GetAllFromNamespaces(ctx context.Context, objectName string) ([]T, error) {
-	logd.FromContext(ctx).Info("querying from all namespaces", "name", objectName)
+	logd.FromContext(ctx).Info("querying from all namespaces", "objectName", objectName)
 
 	listOps := []client.ListOption{
 		client.MatchingFields{
@@ -217,7 +217,7 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 }
 
 func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string, options ...client.DeleteOption) error {
-	logd.FromContext(ctx).Info("deleting object from namespace", "name", objectName, "namespace", namespace)
+	logd.FromContext(ctx).Info("deleting object from namespace", "objectName", objectName, "objectNamespace", namespace)
 
 	c.Target.SetName(objectName)
 	c.Target.SetNamespace(namespace)
@@ -226,7 +226,7 @@ func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string
 }
 
 func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName string, namespaces []string) error {
-	logd.FromContext(ctx).Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
+	logd.FromContext(ctx).Info("deleting objects from multiple namespaces", "objectName", objectName, "len(namespaces)", len(namespaces))
 
 	errs := make([]error, 0, len(namespaces))
 
@@ -241,7 +241,7 @@ func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName strin
 }
 
 func (c Generic[T, L]) log(ctx context.Context, object T) logd.Logger {
-	return logd.FromContext(ctx).WithValues("kind", reflect.TypeOf(object), "name", object.GetName(), "namespace", object.GetNamespace())
+	return logd.FromContext(ctx).WithValues("objectKind", reflect.TypeOf(object), "objectName", object.GetName(), "objectNamespace", object.GetNamespace())
 }
 
 func asNamespacedName(object client.Object) types.NamespacedName {

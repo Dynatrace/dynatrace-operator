@@ -4,6 +4,9 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
+	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/app"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/stretchr/testify/assert"
@@ -102,5 +105,88 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 				},
 			},
 		}, pod.Spec.Volumes[0])
+	})
+
+	t.Run("existing volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: corev1.StorageMediumHugePages}}},
+				},
+			},
+		}
+		expectedPod := pod.DeepCopy()
+
+		require.NoError(t, addEmptyDirBinVolume(pod, logd.Get()))
+		assert.Equal(t, expectedPod, pod)
+	})
+
+	t.Run("conflicting volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}}},
+				},
+			},
+		}
+
+		require.Error(t, addEmptyDirBinVolume(pod, logd.Get()))
+	})
+}
+
+func Test_addCSIBinVolume(t *testing.T) {
+	t.Run("should add CSI bin volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{Name: "test-container", Image: "test-image"},
+				},
+			},
+		}
+
+		require.NoError(t, addCSIBinVolume(pod, "test-dk", "10m"))
+
+		assert.Len(t, pod.Spec.Volumes, 1)
+
+		assert.Equal(t, corev1.Volume{
+			Name: BinVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				CSI: &corev1.CSIVolumeSource{
+					Driver:   dtcsi.DriverName,
+					ReadOnly: new(true),
+					VolumeAttributes: map[string]string{
+						csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
+						csivolumes.CSIVolumeAttributeDynakubeField: "test-dk",
+						csivolumes.CSIVolumeAttributeRetryTimeout:  "10m",
+					},
+				},
+			},
+		}, pod.Spec.Volumes[0])
+	})
+
+	t.Run("existing volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{CSI: &corev1.CSIVolumeSource{Driver: dtcsi.DriverName}}},
+				},
+			},
+		}
+		expectedPod := pod.DeepCopy()
+
+		require.NoError(t, addCSIBinVolume(pod, "test-dk", "10m"))
+		assert.Equal(t, expectedPod, pod)
+	})
+
+	t.Run("conflicting volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}}},
+				},
+			},
+		}
+
+		require.Error(t, addCSIBinVolume(pod, "test-dk", "10m"))
 	})
 }

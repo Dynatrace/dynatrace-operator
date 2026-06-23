@@ -36,10 +36,13 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 
 	if isCSIVolume(mutationRequest.BaseRequest) {
 		log.Info("configuring init-container with CSI bin volume", "name", mutationRequest.PodName())
-		addCSIBinVolume(
+
+		if err := addCSIBinVolume(
 			mutationRequest.Pod,
 			mutationRequest.DynaKube.Name,
-			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String())
+			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String()); err != nil {
+			return err
+		}
 		// in case of CSI, the CSI volume itself is already always readonly, so the mount should always be readonly, the init-container should just read from it
 		addInitBinMount(mutationRequest.InstallContainer, true)
 
@@ -49,7 +52,10 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	} else {
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
-		addEmptyDirBinVolume(mutationRequest.Pod, log)
+
+		if err := addEmptyDirBinVolume(mutationRequest.Pod, log); err != nil {
+			return err
+		}
 		// in case of no CSI, the the emptyDir can't be readonly for the init-container, as it first has to download/move the agent into it
 		addInitBinMount(mutationRequest.InstallContainer, false)
 
