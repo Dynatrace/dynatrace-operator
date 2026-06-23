@@ -144,6 +144,14 @@ tests:
                         "kubernetesMonitoring": true,
                         "kspm": true
                       }
+                  - name: DT_WEBHOOK_CERTS_ROOT_DURATION
+                    value: 8760h
+                  - name: DT_WEBHOOK_CERTS_SERVER_DURATION
+                    value: 168h
+                  - name: DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD
+                    value: 12h
+                  - name: DT_WEBHOOK_CERTS_CONTROLLER_SUCCESS_REQUEUE_INTERVAL
+                    value: 3h
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -357,6 +365,14 @@ tests:
                         "kubernetesMonitoring": true,
                         "kspm": true
                       }
+                  - name: DT_WEBHOOK_CERTS_ROOT_DURATION
+                    value: 8760h
+                  - name: DT_WEBHOOK_CERTS_SERVER_DURATION
+                    value: 168h
+                  - name: DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD
+                    value: 12h
+                  - name: DT_WEBHOOK_CERTS_CONTROLLER_SUCCESS_REQUEUE_INTERVAL
+                    value: 3h
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -535,6 +551,14 @@ tests:
                         "kubernetesMonitoring": true,
                         "kspm": true
                       }
+                  - name: DT_WEBHOOK_CERTS_ROOT_DURATION
+                    value: 8760h
+                  - name: DT_WEBHOOK_CERTS_SERVER_DURATION
+                    value: 168h
+                  - name: DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD
+                    value: 12h
+                  - name: DT_WEBHOOK_CERTS_CONTROLLER_SUCCESS_REQUEUE_INTERVAL
+                    value: 3h
                 livenessProbe:
                   httpGet:
                     path: /livez

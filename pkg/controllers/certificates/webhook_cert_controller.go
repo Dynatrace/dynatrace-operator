@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -25,10 +26,16 @@ import (
 const (
 	SuccessDuration = 3 * time.Hour
 
+	EnvVarSuccessDuration = "DT_WEBHOOK_CERTS_CONTROLLER_SUCCESS_REQUEUE_INTERVAL"
+
 	initReconcileInterval = 5 * time.Second
 
 	secretPostfix = "-certs"
 )
+
+func getSuccessDuration() time.Duration {
+	return envvars.GetDuration(EnvVarSuccessDuration, SuccessDuration)
+}
 
 var errCertificatesSecretEmpty = errors.New("certificates secret is empty")
 
@@ -107,7 +114,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	if controller.isUpToDate(certSecret, mutatingWebhookClientConfigs, validatingWebhookConfigConfigs, crd) {
 		log.Info("secret for certificates up to date, skipping update")
 
-		return ctrl.Result{RequeueAfter: SuccessDuration}, nil
+		return ctrl.Result{RequeueAfter: getSuccessDuration()}, nil
 	}
 
 	if err = certSecret.createOrUpdateIfNecessary(ctx, controller.client); err != nil {
@@ -137,7 +144,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: SuccessDuration}, nil
+	return ctrl.Result{RequeueAfter: getSuccessDuration()}, nil
 }
 
 func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crd *apiextensionsv1.CustomResourceDefinition) bool {

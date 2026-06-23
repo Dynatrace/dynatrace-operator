@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -69,9 +70,12 @@ func (certSecret *certificateSecret) isRecent() bool {
 
 func (certSecret *certificateSecret) validateCertificates(ctx context.Context, namespace string) error {
 	certs := Certs{
-		Domain:  webhook.DeploymentName + "." + namespace,
-		SrcData: certSecret.secret.Data,
-		Now:     time.Now(),
+		Domain:             webhook.DeploymentName + "." + namespace,
+		SrcData:            certSecret.secret.Data,
+		Now:                time.Now(),
+		RenewalThreshold:   envvars.GetDuration(EnvVarRenewalThreshold, defaultRenewalThreshold),
+		ServerCertDuration: envvars.GetDuration(EnvVarServerCertDuration, defaultServerCertDuration),
+		RootCertDuration:   envvars.GetDuration(EnvVarRootCertDuration, defaultRootCertDuration),
 	}
 	if err := certs.ValidateCerts(ctx); err != nil {
 		return fmt.Errorf("validate certificates: %w", err)
