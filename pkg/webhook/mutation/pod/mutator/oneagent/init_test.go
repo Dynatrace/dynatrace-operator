@@ -146,8 +146,8 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		csiVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
-		require.NoError(t, err)
+		csiVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NotNil(t, csiVolume)
 		require.NotNil(t, csiVolume.CSI)
 		require.NotNil(t, csiVolume.CSI.ReadOnly)
 		require.True(t, *csiVolume.CSI.ReadOnly)
@@ -182,8 +182,8 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		csiVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
-		require.NoError(t, err)
+		csiVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NotNil(t, csiVolume)
 		require.NotNil(t, csiVolume.CSI)
 		require.NotNil(t, csiVolume.CSI.ReadOnly)
 		require.True(t, *csiVolume.CSI.ReadOnly)
@@ -223,8 +223,8 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		emptyDirVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
-		require.NoError(t, err)
+		emptyDirVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NotNil(t, emptyDirVolume)
 		require.NotNil(t, emptyDirVolume.EmptyDir)
 
 		emptyDirMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
@@ -262,8 +262,8 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		emptyDirVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
-		require.NoError(t, err)
+		emptyDirVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NotNil(t, emptyDirVolume)
 		require.NotNil(t, emptyDirVolume.EmptyDir)
 
 		emptyDirMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)

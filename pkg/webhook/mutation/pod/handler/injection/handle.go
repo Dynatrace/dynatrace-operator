@@ -148,7 +148,10 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 	}
 
 	if mutated {
-		addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer)
+		if err := addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer); err != nil {
+			return false, err
+		}
+
 		events.SendPodInjectEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
 	}
 
