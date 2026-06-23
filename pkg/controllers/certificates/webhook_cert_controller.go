@@ -71,7 +71,7 @@ type WebhookCertificateController struct {
 func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	ctx, log := logd.NewFromContext(ctx, "webhook-certificates")
 
-	log.Info("reconciling webhook certificates", "namespace", request.Namespace, "name", request.Name)
+	log.Info("reconciling webhook certificates")
 
 	webhookDeployment := &appsv1.Deployment{}
 

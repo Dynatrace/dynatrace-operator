@@ -214,7 +214,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 
 	_, err = r.configmap.CreateOrUpdate(ctx, configMap)
 	if err != nil {
-		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+		log.Info("could not create or update configMap for connection info", "configMapName", configMap.Name)
 		k8sconditions.SetKubeAPIError(dk.Conditions(), oaConditionType, err)
 
 		return err

@@ -18,7 +18,7 @@ func (controller *Controller) determineEdgeConnectPhase(ctx context.Context, ec 
 
 	err := controller.client.Get(ctx, types.NamespacedName{Name: ec.Name, Namespace: ec.Namespace}, deployment)
 	if k8serrors.IsNotFound(err) {
-		log.Info("edgeConnect deployment to be deployed", "deployment", ec.Name)
+		log.Info("edgeConnect deployment to be deployed")
 
 		return status.Deploying
 	}

@@ -217,7 +217,7 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 
 	err := secrets.DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	if err != nil {
-		log.Error(err, "failed to delete the source OTLP exporter config secret", "name", GetSourceConfigSecretName(dk.Name))
+		log.Error(err, "failed to delete the source OTLP exporter config secret", "secretName", GetSourceConfigSecretName(dk.Name))
 	}
 
 	return secrets.DeleteForNamespaces(ctx, consts.OTLPExporterSecretName, nsList)
@@ -237,7 +237,7 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 
 	err := secrets.DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
 	if err != nil {
-		log.Error(err, "failed to delete the source OTLP exporter certs secret", "name", GetSourceCertsSecretName(dk.Name))
+		log.Error(err, "failed to delete the source OTLP exporter certs secret", "secretName", GetSourceCertsSecretName(dk.Name))
 	}
 
 	return secrets.DeleteForNamespaces(ctx, consts.OTLPExporterCertsSecretName, nsList)

@@ -95,7 +95,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		}
 
 		if changed {
-			log.Info("deployment created or updated", "name", deploy.Name)
+			log.Info("deployment created or updated", "deploymentName", deploy.Name)
 		}
 	}
 

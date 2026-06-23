@@ -441,7 +441,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 	}
 
 	if tenantEdgeConnect.ID != "" && !tenantEdgeConnect.ManagedByDynatraceOperator {
-		log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user", "name", tenantEdgeConnect.Name)
+		log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user")
 
 		return nil
 	}
@@ -540,7 +540,6 @@ func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oaut
 
 func getEdgeConnectByName(ctx context.Context, edgeConnectClient edgeconnectClient.Client, name string) (edgeconnectClient.APIResponse, error) {
 	log := logd.FromContext(ctx)
-	log = log.WithValues("name", name)
 
 	ecs, err := edgeConnectClient.ListEdgeConnects(ctx, name)
 	if err != nil {
@@ -839,7 +838,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 
 	_, err = controller.secrets.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {
-		log.Info("could not create or update secret for ec.yaml", "name", secretConfig.Name)
+		log.Info("could not create or update secret for ec.yaml", "secretName", secretConfig.Name)
 		k8sconditions.SetKubeAPIError(ec.Conditions(), consts.SecretConfigConditionType, err)
 
 		return "", "", err

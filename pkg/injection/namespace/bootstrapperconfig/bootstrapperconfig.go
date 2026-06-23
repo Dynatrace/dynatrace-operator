@@ -49,7 +49,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 // Used by the dynakube controller during reconcile.
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	ctx, log := logd.NewFromContext(ctx, "bootstrapper-config")
-	log.Info("reconciling namespace bootstrapper init secret for")
+	log.Info("reconciling namespace bootstrapper init secret")
 
 	configErr := s.reconcileConfig(ctx, dk, namespaces)
 	certsErr := s.reconcileCerts(ctx, dk, namespaces)
@@ -164,7 +164,7 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 
 	err := secrets.DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	if err != nil {
-		log.Error(err, "failed to delete the source bootstrapper-config secret", "name", GetSourceConfigSecretName(dk.Name))
+		log.Error(err, "failed to delete the source bootstrapper-config secret", "secretName", GetSourceConfigSecretName(dk.Name))
 	}
 
 	return secrets.DeleteForNamespaces(ctx, consts.BootstrapperInitSecretName, nsList)
@@ -184,7 +184,7 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 
 	err := secrets.DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
 	if err != nil {
-		log.Error(err, "failed to delete the source bootstrapper-certs secret", "name", GetSourceCertsSecretName(dk.Name))
+		log.Error(err, "failed to delete the source bootstrapper-certs secret", "secretName", GetSourceCertsSecretName(dk.Name))
 	}
 
 	return secrets.DeleteForNamespaces(ctx, consts.BootstrapperInitCertsSecretName, nsList)

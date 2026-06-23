@@ -182,7 +182,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 
 	_, err = r.configMaps.CreateOrUpdate(ctx, configMap)
 	if err != nil {
-		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+		log.Info("could not create or update configMap for connection info", "configMapName", configMap.Name)
 
 		return err
 	}

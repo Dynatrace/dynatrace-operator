@@ -91,9 +91,9 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 	for _, service := range telemetryServiceList.Items {
 		if service.Name != actualServiceName {
 			if err := r.client.Delete(ctx, &service); err != nil {
-				log.Info("failed to clean up telemetry service", "service name", service.Name, "namespace", service.Namespace, "error", err)
+				log.Info("failed to clean up telemetry service", "serviceName", service.Name, "error", err)
 			} else {
-				log.Info("removed unused telemetry service", "service name", service.Name, "namespace", service.Namespace)
+				log.Info("removed unused telemetry service", "serviceName", service.Name)
 			}
 		}
 	}

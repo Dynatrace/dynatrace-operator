@@ -62,7 +62,7 @@ func (r *Reconciler) ensureKSPMSecret(ctx context.Context, dk *dynakube.DynaKube
 
 		err = r.secrets.Create(ctx, secretConfig)
 		if err != nil {
-			log.Info("could not create secret for kspm token", "name", secretConfig.Name)
+			log.Info("could not create secret for kspm token", "secretName", secretConfig.Name)
 			k8sconditions.SetKubeAPIError(dk.Conditions(), kspmConditionType, err)
 
 			return err
@@ -88,7 +88,7 @@ func (r *Reconciler) removeKSPMSecret(ctx context.Context, dk *dynakube.DynaKube
 
 	err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}})
 	if err != nil {
-		log.Info("could not delete kspm token", "name", dk.KSPM().GetTokenSecretName())
+		log.Info("could not delete kspm token", "secretName", dk.KSPM().GetTokenSecretName())
 
 		return err
 	}
