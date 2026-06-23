@@ -29,7 +29,7 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk *dy
 
 	agentInstaller, err := provisioner.getInstaller(ctx, dk)
 	if err != nil {
-		log.Info("failed to create CodeModule installer", "dk", dk.GetName())
+		log.Info("failed to create CodeModule installer")
 
 		return err
 	}

@@ -53,7 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 func (r *Reconciler) deleteConfigMap(ctx context.Context, configMap *corev1.ConfigMap, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
-	log.Info("deleting configmap", "name", configMap.Name)
+	log.Info("deleting configmap", "configMapName", configMap.Name)
 
 	err := r.configMaps.Delete(ctx, configMap)
 
@@ -87,7 +87,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKu
 
 	_, err = r.configMaps.CreateOrUpdate(ctx, configMap)
 	if err != nil {
-		log.Info("could not create or update config map", "name", configMap.Name)
+		log.Info("could not create or update config map", "configMapName", configMap.Name)
 		k8sconditions.SetKubeAPIError(dk.Conditions(), configMapConditionType, errors.WithMessage(err, "failed to create or update config map"))
 
 		return errors.WithMessage(err, "failed to create or update config map")

@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, token
 
 func (r *Reconciler) deleteSecret(ctx context.Context, dk *dynakube.DynaKube, secret *corev1.Secret) error {
 	log := logd.FromContext(ctx)
-	log.Info("deleting pull secret", "name", secret.Name)
+	log.Info("deleting pull secret", "secretName", secret.Name)
 
 	err := r.secrets.Delete(ctx, secret)
 	if err != nil && !k8serrors.IsNotFound(err) {
@@ -94,7 +94,7 @@ func (r *Reconciler) reconcilePullSecret(ctx context.Context, dk *dynakube.DynaK
 
 	_, err = r.secrets.CreateOrUpdate(ctx, secret)
 	if err != nil {
-		log.Info("could not create or update secret", "name", secret.Name)
+		log.Info("could not create or update secret", "secretName", secret.Name)
 		k8sconditions.SetKubeAPIError(dk.Conditions(), PullSecretConditionType, errors.WithMessage(err, "failed to create or update secret"))
 
 		return errors.WithMessage(err, "failed to create or update secret")

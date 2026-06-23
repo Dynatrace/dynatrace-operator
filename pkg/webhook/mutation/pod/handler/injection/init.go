@@ -58,12 +58,21 @@ func areErrorsSuppressed(pod *corev1.Pod, dk dynakube.DynaKube) bool {
 	return maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FF().GetInjectionFailurePolicy()) != "fail" // safer than == silent
 }
 
-func addInitContainerToPod(ctx context.Context, pod *corev1.Pod, initContainer *corev1.Container) {
+func addInitContainerToPod(ctx context.Context, pod *corev1.Pod, initContainer *corev1.Container) error {
 	volumes.AddInitConfigVolumeMount(initContainer)
 	volumes.AddInitInputVolumeMount(initContainer)
-	volumes.AddInputVolume(pod)
-	volumes.AddConfigVolume(ctx, pod)
+
+	if err := volumes.AddInputVolume(pod); err != nil {
+		return err
+	}
+
+	if err := volumes.AddConfigVolume(ctx, pod); err != nil {
+		return err
+	}
+
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
+
+	return nil
 }
 
 func defaultInitContainerResources() corev1.ResourceRequirements {
@@ -94,6 +103,7 @@ func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOp
 
 	return combineSecurityContexts(initSecurityCtx, *pod)
 }
+
 func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.Pod) *corev1.SecurityContext {
 	containerSecurityCtx := &corev1.SecurityContext{}
 	if len(pod.Spec.Containers) > 0 {

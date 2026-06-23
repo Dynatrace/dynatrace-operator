@@ -81,12 +81,12 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	if skip, err := token.NewReader(controller.apiReader, dk).HasPlatformToken(ctx); err != nil {
 		return reconcile.Result{}, err
 	} else if skip {
-		log.Info("node controller disabled due to detected platform token in secret", "node", nodeName)
+		log.Info("node controller disabled due to detected platform token in secret")
 
 		return reconcile.Result{}, nil
 	}
 
-	log.Info("reconciling node", "node", nodeName)
+	log.Info("reconciling node")
 
 	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
@@ -242,8 +242,7 @@ func (controller *Controller) markForTermination(ctx context.Context, dk *dynaku
 
 	cacheEntry.SetLastMarkedForTerminationTimestamp(controller.timeProvider.Now().UTC())
 
-	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cacheEntry.IPAddress,
-		"node", cacheEntry.NodeName)
+	log.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", cacheEntry.IPAddress)
 
 	return controller.sendMarkedForTermination(ctx, dk, cacheEntry)
 }

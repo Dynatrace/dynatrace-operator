@@ -68,7 +68,7 @@ func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dyn
 	}
 
 	if counter > 1 {
-		log.Info("requested dynakube has conflicting one agent configuration", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube has conflicting one agent configuration")
 
 		return errorConflictingOneagentMode
 	}
@@ -100,7 +100,7 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 
 		if hasLogMonitoringSelectorConflict(dk, &item) || hasOneAgentSelectorConflict(dk, &item) {
 			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgent().GetNodeSelector(dk.LogMonitoring().GetNodeSelector())) {
-				log.Info("requested dynakube has conflicting OneAgent nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
+				log.Info("requested dynakube has conflicting OneAgent nodeSelector")
 
 				conflictingDynakubes[item.Name] = true
 			}

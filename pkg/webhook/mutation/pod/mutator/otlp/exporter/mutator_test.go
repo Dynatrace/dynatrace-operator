@@ -11,6 +11,7 @@ import (
 	otelcactivegate "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -711,32 +712,25 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 		// Enable ActiveGate capability + TLS secret so HasCaCert() is true
 		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
 		dk.Status.OneAgent.ConnectionInfo.TenantUUID = "dummy-uuid"
-
-		override := true
-		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override
+		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = new(true)
 
 		request := createTestMutationRequest(t, dk)
 		err := m.Mutate(request)
 		require.NoError(t, err)
 
 		// Volume referencing certificate secret must be present
-		volFound := false
-		for _, v := range request.Pod.Spec.Volumes {
-			if v.Name == activeGateTrustedCertVolumeName {
-				volFound = true
-				require.NotNil(t, v.Secret)
-				assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
-
-				break
-			}
+		{
+			volume := k8svolume.FindByName(request.Pod.Spec.Volumes, ActiveGateTrustedCertVolumeName)
+			require.NotNil(t, volume)
+			require.NotNil(t, volume.Secret)
+			assert.Equal(t, consts.OTLPExporterCertsSecretName, volume.Secret.SecretName)
 		}
-		assert.True(t, volFound, "expected cert volume")
 
 		certPath := getCertificatePath()
 		for _, c := range request.Pod.Spec.Containers {
 			mountFound := false
 			for _, mnt := range c.VolumeMounts {
-				if mnt.Name == activeGateTrustedCertVolumeName && mnt.MountPath == exporterCertsMountPath {
+				if mnt.Name == ActiveGateTrustedCertVolumeName && mnt.MountPath == exporterCertsMountPath {
 					mountFound = true
 					assert.True(t, mnt.ReadOnly)
 
@@ -764,9 +758,49 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 		// Init containers should not have the mount
 		for _, c := range request.Pod.Spec.InitContainers {
 			for _, mnt := range c.VolumeMounts {
-				assert.NotEqual(t, activeGateTrustedCertVolumeName, mnt.Name)
+				assert.NotEqual(t, ActiveGateTrustedCertVolumeName, mnt.Name)
 			}
 		}
+	})
+
+	t.Run("existing activegate cert volume", func(t *testing.T) {
+		pod := getTestPod()
+		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+			Name: ActiveGateTrustedCertVolumeName, VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: consts.OTLPExporterCertsSecretName}},
+		})
+		expectVolumes := pod.DeepCopy().Spec.Volumes
+
+		m := Mutator{}
+
+		dk := getTestDynakube()
+		dk.Spec.APIURL = "http://my-cluster/api"
+		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
+		dk.Status.OneAgent.ConnectionInfo.TenantUUID = "dummy-uuid"
+		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = new(true)
+
+		request := createTestMutationRequest(t, dk)
+		request.Pod = pod
+		require.NoError(t, m.Mutate(request))
+		assert.Equal(t, expectVolumes, pod.Spec.Volumes)
+	})
+
+	t.Run("conflicting activegate cert volume", func(t *testing.T) {
+		pod := getTestPod()
+		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+			Name: ActiveGateTrustedCertVolumeName, VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: "foo-cert"}},
+		})
+
+		m := Mutator{}
+
+		dk := getTestDynakube()
+		dk.Spec.APIURL = "http://my-cluster/api"
+		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
+		dk.Status.OneAgent.ConnectionInfo.TenantUUID = "dummy-uuid"
+		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = new(true)
+
+		request := createTestMutationRequest(t, dk)
+		request.Pod = pod
+		require.Error(t, m.Mutate(request))
 	})
 }
 
@@ -820,14 +854,14 @@ func Test_ensureCertificateVolumeMounted(t *testing.T) {
 		ensureCertificateVolumeMounted(&c)
 		require.Len(t, c.VolumeMounts, 1)
 		vm := c.VolumeMounts[0]
-		assert.Equal(t, activeGateTrustedCertVolumeName, vm.Name)
+		assert.Equal(t, ActiveGateTrustedCertVolumeName, vm.Name)
 		assert.Equal(t, exporterCertsMountPath, vm.MountPath)
 		assert.True(t, vm.ReadOnly)
 	})
 
 	t.Run("does not duplicate mount", func(t *testing.T) {
 		c := newContainer()
-		c.VolumeMounts = []corev1.VolumeMount{{Name: activeGateTrustedCertVolumeName, MountPath: exporterCertsMountPath, ReadOnly: true}}
+		c.VolumeMounts = []corev1.VolumeMount{{Name: ActiveGateTrustedCertVolumeName, MountPath: exporterCertsMountPath, ReadOnly: true}}
 		ensureCertificateVolumeMounted(&c)
 		assert.Len(t, c.VolumeMounts, 1)
 	})
@@ -851,7 +885,7 @@ func Test_addActiveGateCertVolume(t *testing.T) {
 		addActiveGateCertVolume(dk, pod)
 		require.Len(t, pod.Spec.Volumes, 1)
 		v := pod.Spec.Volumes[0]
-		assert.Equal(t, activeGateTrustedCertVolumeName, v.Name)
+		assert.Equal(t, ActiveGateTrustedCertVolumeName, v.Name)
 		require.NotNil(t, v.Secret)
 		assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
 
