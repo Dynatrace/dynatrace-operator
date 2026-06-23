@@ -34,17 +34,17 @@ func TestMain(m *testing.M) {
 }
 
 func TestPermissions_deployer_escalate_no_csi(t *testing.T) {
-	testEnv.Test(t, deployersamples.EscalateNoCsi())
+	testEnv.Test(t, deployersamples.EscalateNoCSI())
 }
 
 func TestPermissions_deployer_escalate_with_csi(t *testing.T) {
-	testEnv.Test(t, deployersamples.EscalateWithCsi())
+	testEnv.Test(t, deployersamples.EscalateWithCSI())
 }
 
 func TestPermissions_deployer_no_escalate_no_csi(t *testing.T) {
-	testEnv.Test(t, deployersamples.NoEscalateNoCsi())
+	testEnv.Test(t, deployersamples.NoEscalateNoCSI())
 }
 
 func TestPermissions_deployer_no_escalate_with_csi(t *testing.T) {
-	testEnv.Test(t, deployersamples.NoEscalateWithCsi())
+	testEnv.Test(t, deployersamples.NoEscalateWithCSI())
 }

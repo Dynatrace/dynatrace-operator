@@ -18,7 +18,7 @@ import (
 
 var samplesDir = filepath.Join(project.RootDir(), "assets", "samples", "deployer")
 
-func EscalateNoCsi() features.Feature {
+func EscalateNoCSI() features.Feature {
 	return feature(
 		"deployer-clusterrole-no-csi.yaml",
 		"dynatrace-deployer-no-csi",
@@ -26,7 +26,7 @@ func EscalateNoCsi() features.Feature {
 	)
 }
 
-func EscalateWithCsi() features.Feature {
+func EscalateWithCSI() features.Feature {
 	return feature(
 		"deployer-clusterrole-with-csi.yaml",
 		"dynatrace-deployer-with-csi",
@@ -34,7 +34,7 @@ func EscalateWithCsi() features.Feature {
 	)
 }
 
-func NoEscalateNoCsi() features.Feature {
+func NoEscalateNoCSI() features.Feature {
 	return feature(
 		"deployer-clusterrole-no-escalate-no-csi.yaml",
 		"dynatrace-deployer-no-escalate-no-csi",
@@ -42,7 +42,7 @@ func NoEscalateNoCsi() features.Feature {
 	)
 }
 
-func NoEscalateWithCsi() features.Feature {
+func NoEscalateWithCSI() features.Feature {
 	return feature(
 		"deployer-clusterrole-no-escalate-with-csi.yaml",
 		"dynatrace-deployer-no-escalate-with-csi",
