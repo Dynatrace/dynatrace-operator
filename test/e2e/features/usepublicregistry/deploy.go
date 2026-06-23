@@ -25,11 +25,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -319,12 +321,147 @@ func logMonFeature(t *testing.T, featureName, dkName, override string) features.
 	return builder.Feature()
 }
 
-// statusSourceIsPublicRegistry refetches the DynaKube and verifies that the
-// given component's reported version-source is status.PublicRegistryVersionSource.
-// This is the operator's own signal that the use-public-registry FF resolution
-// path was taken, so the assertion is identical for the with-override and
-// without-override flavors.
+// AllFeaturesWithImageOverrides deploys a DynaKube with use-public-registry enabled,
+// a CloudNative OneAgent with an explicit image override in the oneagent section,
+// and a DBExecutor with an explicit image override in the templates section.
+// It verifies that every component reaches a ready state and that the overridden
+// images are the ones actually running in the cluster.
+func AllFeaturesWithImageOverrides(t *testing.T) features.Feature {
+	return allFeaturesWithImageOverridesFeature(t,
+		"use-public-registry-all-features-with-image-overrides",
+		"use-pub-reg-all-ovrd")
+}
+
+func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName string) features.Feature {
+	builder := features.New(featureName)
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	// Override the OneAgent image in the oneagent spec section.
+	oaSpec := cloudnative.DefaultCloudNativeSpec()
+	oaSpec.Image = registry.GetLatestOneAgentImageURI(t)
+
+	// Override the ActiveGate image in the activeGate spec section.
+	agExpectedImage := registry.GetLatestActiveGateImageURI(t)
+
+	const dbID = "mysql"
+
+	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithName(dkName),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithCloudNativeSpec(oaSpec),
+		dynakubeComponents.WithActiveGate(),
+		dynakubeComponents.WithCustomActiveGateImage(agExpectedImage),
+		// Extensions with a database triggers the DBExecutor deployment.
+		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: dbID}),
+		// Override the DBExecutor image in the templates section.
+		dynakubeComponents.WithExtensionsDBExecutorImageRef(t),
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
+	}
+
+	testDynakube := *dynakubeComponents.New(options...)
+
+	dbExecutorRef := testDynakube.Spec.Templates.SQLExtensionExecutor.ImageRef
+	dbExecutorExpectedImage := dbExecutorRef.Repository + ":" + dbExecutorRef.Tag
+
+	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
+
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("OneAgent DaemonSet ready",
+		k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
+	builder.Assess("ActiveGate StatefulSet ready",
+		k8sstatefulset.IsReady(agStatefulSetName, testDynakube.Namespace))
+	builder.Assess("extensions execution controller started",
+		k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("DBExecutor deployment ready",
+		k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(dbID), testDynakube.Namespace))
+
+	// All components have explicit images set, which takes precedence over use-public-registry.
+	builder.Assess("OneAgent status reports custom-image source",
+		statusSourceIsCustomImage(testDynakube, image.OneAgent))
+	builder.Assess("ActiveGate status reports custom-image source",
+		statusSourceIsCustomImage(testDynakube, image.ActiveGate))
+
+	// Confirm the overridden images are actually running.
+	builder.Assess("OneAgent DaemonSet uses overridden image",
+		daemonSetUsesImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, oaSpec.Image))
+	builder.Assess("ActiveGate StatefulSet uses overridden image",
+		statefulSetUsesImage(agStatefulSetName, testDynakube.Namespace, agExpectedImage))
+	builder.Assess("DBExecutor deployment uses overridden image",
+		deploymentUsesImage(testDynakube.Extensions().GetDatabaseDatasourceName(dbID), testDynakube.Namespace, dbExecutorExpectedImage))
+
+	return builder.Feature()
+}
+
+func statusSourceIsCustomImage(dk dynakube.DynaKube, component image.ComponentType) features.Func {
+	return statusSourceIs(dk, component, status.CustomImageVersionSource)
+}
+
+func daemonSetUsesImage(dsName, namespace, expectedImage string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var ds appsv1.DaemonSet
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dsName, namespace, &ds))
+
+		for _, c := range ds.Spec.Template.Spec.Containers {
+			if c.Image == expectedImage {
+				return ctx
+			}
+		}
+
+		assert.Failf(t, "image not used",
+			"expected image %q not found in DaemonSet %q containers", expectedImage, dsName)
+
+		return ctx
+	}
+}
+
+func statefulSetUsesImage(stsName, namespace, expectedImage string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var sts appsv1.StatefulSet
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, stsName, namespace, &sts))
+
+		for _, c := range sts.Spec.Template.Spec.Containers {
+			if c.Image == expectedImage {
+				return ctx
+			}
+		}
+
+		assert.Failf(t, "image not used",
+			"expected image %q not found in StatefulSet %q containers", expectedImage, stsName)
+
+		return ctx
+	}
+}
+
+func deploymentUsesImage(deployName, namespace, expectedImage string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var deploy appsv1.Deployment
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, deployName, namespace, &deploy))
+
+		for _, c := range deploy.Spec.Template.Spec.Containers {
+			if c.Image == expectedImage {
+				return ctx
+			}
+		}
+
+		assert.Failf(t, "image not used",
+			"expected image %q not found in Deployment %q containers", expectedImage, deployName)
+
+		return ctx
+	}
+}
+
 func statusSourceIsPublicRegistry(dk dynakube.DynaKube, component image.ComponentType) features.Func {
+	return statusSourceIs(dk, component, status.PublicRegistryVersionSource)
+}
+
+// statusSourceIs is the common base for all version-source assertions. It refetches
+// the DynaKube, reads the component's reported source, and asserts it equals expected.
+func statusSourceIs(dk dynakube.DynaKube, component image.ComponentType, expected status.VersionSource) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var current dynakube.DynaKube
 		require.NoError(t,
@@ -340,12 +477,11 @@ func statusSourceIsPublicRegistry(dk dynakube.DynaKube, component image.Componen
 			actual = current.Status.CodeModules.Source
 		default:
 			require.Failf(t, "unknown component", "unknown component %q", component)
-
 			return ctx
 		}
 
-		assert.Equalf(t, status.PublicRegistryVersionSource, actual,
-			"expected %s status.source == %q, got %q", component, status.PublicRegistryVersionSource, actual)
+		assert.Equalf(t, expected, actual,
+			"expected %s status.source == %q, got %q", component, expected, actual)
 
 		return ctx
 	}
