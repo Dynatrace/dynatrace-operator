@@ -477,6 +477,7 @@ func statusSourceIs(dk dynakube.DynaKube, component image.ComponentType, expecte
 			actual = current.Status.CodeModules.Source
 		default:
 			require.Failf(t, "unknown component", "unknown component %q", component)
+
 			return ctx
 		}
 
