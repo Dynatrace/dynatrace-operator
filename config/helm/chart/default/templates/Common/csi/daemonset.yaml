@@ -1,4 +1,4 @@
-{{ if eq (include "dynatrace-operator.needCSI" .) "true" }}
+{{ if (include "dynatrace-operator.needCSI" .) }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,7 @@ spec:
         dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: {{ if .Values.csidriver.migrationMode }}server{{ else }}provisioner{{ end }}
         cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
-        {{- if and (or .Values.csidriver.apparmor .Values.apparmor) (ne (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
+        {{- if and (or .Values.csidriver.apparmor .Values.apparmor) (not (include "kubernetes.appArmorSecurityContextSupported" .)) }}
         container.apparmor.security.beta.kubernetes.io/csi-init: runtime/default
         container.apparmor.security.beta.kubernetes.io/server: runtime/default
         container.apparmor.security.beta.kubernetes.io/provisioner: runtime/default
@@ -295,7 +295,7 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
-      {{- if and (or .Values.csidriver.apparmor .Values.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
+      {{- if and (or .Values.csidriver.apparmor .Values.apparmor) (include "kubernetes.appArmorSecurityContextSupported" .) }}
       securityContext:
         {{- include "kubernetes.defaultAppArmorProfile" . | nindent 8 }}
       {{- else }}

@@ -44,7 +44,7 @@ rules:
       - get
       - list
       - watch
-  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  {{- if (include "dynatrace-operator.openshiftOrOlm" .) }}
   - apiGroups:
       - security.openshift.io
     resourceNames:

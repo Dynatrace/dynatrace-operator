@@ -29,7 +29,7 @@ spec:
       labels:
         {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 8 }}
       annotations:
-      {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
+      {{- if and (.Values.operator.apparmor) (not (include "kubernetes.appArmorSecurityContextSupported" .)) }}
         container.apparmor.security.beta.kubernetes.io/crd-storage-migration: runtime/default
       {{- end }}
     spec:
@@ -53,7 +53,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- $needsCertgen := not (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+      {{- $needsCertgen := not (include "dynatrace-operator.openshiftOrOlm" .) }}
       {{- if $needsCertgen }}
       initContainers:
         - name: webhook-cert-generator
