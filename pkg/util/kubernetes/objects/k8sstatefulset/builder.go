@@ -124,6 +124,12 @@ func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
 	}
 }
 
+func SetVolumes(volumes []corev1.Volume) builder.Option[*appsv1.StatefulSet] {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.Volumes = append(s.Spec.Template.Spec.Volumes, volumes...)
+	}
+}
+
 func SetPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		if s.Spec.VolumeClaimTemplates != nil {
