@@ -14,17 +14,11 @@ func TestResolveImage(t *testing.T) {
 	const testURI = "registry.example.com/dynatrace/eec:1.2.3"
 	const testOverride = "custom.registry.example.com"
 
-	t.Run("returns empty when public registry is not enabled", func(t *testing.T) {
-		uri, err := ResolveImage(t.Context(), nil, false, "", image.EEC)
-		require.NoError(t, err)
-		assert.Empty(t, uri)
-	})
-
-	t.Run("returns URI when public registry is enabled", func(t *testing.T) {
+	t.Run("returns URI from public registry", func(t *testing.T) {
 		mockClient := imagemock.NewClient(t)
 		mockClient.EXPECT().GetComponentLatestInfo(t.Context(), image.EEC, "").Return(&image.Info{URI: testURI}, nil)
 
-		uri, err := ResolveImage(t.Context(), mockClient, true, "", image.EEC)
+		uri, err := ResolveImage(t.Context(), mockClient, "", image.EEC)
 		require.NoError(t, err)
 		assert.Equal(t, testURI, uri)
 	})
@@ -33,7 +27,7 @@ func TestResolveImage(t *testing.T) {
 		mockClient := imagemock.NewClient(t)
 		mockClient.EXPECT().GetComponentLatestInfo(t.Context(), image.DBExecutor, testOverride).Return(&image.Info{URI: testURI}, nil)
 
-		uri, err := ResolveImage(t.Context(), mockClient, true, testOverride, image.DBExecutor)
+		uri, err := ResolveImage(t.Context(), mockClient, testOverride, image.DBExecutor)
 		require.NoError(t, err)
 		assert.Equal(t, testURI, uri)
 	})
@@ -43,7 +37,7 @@ func TestResolveImage(t *testing.T) {
 		boom := errors.New("connection refused")
 		mockClient.EXPECT().GetComponentLatestInfo(t.Context(), image.LogModule, "").Return(nil, boom)
 
-		uri, err := ResolveImage(t.Context(), mockClient, true, "", image.LogModule)
+		uri, err := ResolveImage(t.Context(), mockClient, "", image.LogModule)
 		require.ErrorIs(t, err, boom)
 		assert.Empty(t, uri)
 	})

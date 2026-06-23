@@ -55,9 +55,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.FF().IsPublicRegistry(), dk.PublicRegistryOverride(), dtimage.LogModule)
-	if err != nil {
-		return err
+	// templates section takes precedence over public registry
+	var imageURI string
+
+	templateImageRef := dk.LogMonitoring().Template().ImageRef
+	if templateImageRef.HasImage() {
+		imageURI = templateImageRef.String()
+	} else {
+		var err error
+
+		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.LogModule)
+		if err != nil {
+			return err
+		}
 	}
 
 	ds, err := r.generateDaemonSet(dk, imageURI)
