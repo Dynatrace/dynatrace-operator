@@ -22,7 +22,7 @@ rules:
 - apiGroups:
     - ""
   resources:
-{{- if eq (include "dynatrace-operator.kubeletFineGrainedAuthz" .) "true" }}
+{{- if (include "dynatrace-operator.kubeletFineGrainedAuthz" .) }}
     - nodes/pods
 {{- else }}
     - nodes/proxy
