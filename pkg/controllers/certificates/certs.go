@@ -17,13 +17,21 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	EnvVarRenewalThreshold   = "DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD"
+	EnvVarServerCertDuration = "DT_WEBHOOK_CERTS_SERVER_DURATION"
+	EnvVarRootCertDuration   = "DT_WEBHOOK_CERTS_ROOT_DURATION"
+
+	defaultRenewalThreshold   = 12 * time.Hour
+	defaultServerCertDuration = 7 * 24 * time.Hour
+	defaultRootCertDuration   = 365 * 24 * time.Hour
+)
+
 const intSerialNumberLimit = 128
 
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), intSerialNumberLimit)
 
 const (
-	renewalThreshold = 12 * time.Hour
-
 	RootKey     = "ca.key"
 	RootCert    = "ca.crt"
 	RootCertOld = "ca.crt.old"
@@ -35,12 +43,40 @@ const (
 type Certs struct {
 	Now time.Time
 
+	RenewalThreshold   time.Duration
+	ServerCertDuration time.Duration
+	RootCertDuration   time.Duration
+
 	SrcData map[string][]byte
 	Data    map[string][]byte
 
 	rootPrivateKey *ecdsa.PrivateKey
 	rootPublicCert *x509.Certificate
 	Domain         string
+}
+
+func (cs *Certs) getRenewalThreshold() time.Duration {
+	if cs.RenewalThreshold > 0 {
+		return cs.RenewalThreshold
+	}
+
+	return defaultRenewalThreshold
+}
+
+func (cs *Certs) getServerCertDuration() time.Duration {
+	if cs.ServerCertDuration > 0 {
+		return cs.ServerCertDuration
+	}
+
+	return defaultServerCertDuration
+}
+
+func (cs *Certs) getRootCertDuration() time.Duration {
+	if cs.RootCertDuration > 0 {
+		return cs.RootCertDuration
+	}
+
+	return defaultRootCertDuration
 }
 
 // ValidateCerts checks for certificates and keys on cs.SrcData and renews them if needed. The existing (or new)
@@ -86,7 +122,7 @@ func (cs *Certs) validateRootCerts(ctx context.Context, now time.Time) bool {
 		log.Info("failed to parse root certificates, renewing", "error", err)
 
 		return true
-	} else if now.After(cs.rootPublicCert.NotAfter.Add(-renewalThreshold)) {
+	} else if now.After(cs.rootPublicCert.NotAfter.Add(-cs.getRenewalThreshold())) {
 		log.Info("root certificates are about to expire, renewing", "current", now, "expiration", cs.rootPublicCert.NotAfter)
 
 		return true
@@ -114,7 +150,7 @@ func (cs *Certs) validateServerCerts(ctx context.Context, now time.Time) bool {
 		return true
 	}
 
-	isValid, err := certificates.ValidateCertificateExpiration(ctx, cs.Data[ServerCert], renewalThreshold, now)
+	isValid, err := certificates.ValidateCertificateExpiration(ctx, cs.Data[ServerCert], cs.getRenewalThreshold(), now)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
 
@@ -158,7 +194,7 @@ func (cs *Certs) generateRootCerts(ctx context.Context, domain string, now time.
 		DNSNames: buildSANs(domain),
 
 		NotBefore: now,
-		NotAfter:  now.Add(365 * 24 * time.Hour),
+		NotAfter:  now.Add(cs.getRootCertDuration()),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
@@ -214,7 +250,7 @@ func (cs *Certs) generateServerCerts(ctx context.Context, domain string, now tim
 		DNSNames: buildSANs(domain),
 
 		NotBefore: now,
-		NotAfter:  now.Add(7 * 24 * time.Hour),
+		NotAfter:  now.Add(cs.getServerCertDuration()),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
