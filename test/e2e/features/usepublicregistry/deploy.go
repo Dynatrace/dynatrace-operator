@@ -96,8 +96,6 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 }
 
 func DBExecutor(t *testing.T) features.Feature {
-	t.Skip("Skip test until we find out why the db executor image is missing from some tenants registry")
-
 	return dbExecutorFeature(t,
 		"use-public-registry-db-executor",
 		"use-public-registry-db-exec",
@@ -105,8 +103,6 @@ func DBExecutor(t *testing.T) features.Feature {
 }
 
 func DBExecutorOverride(t *testing.T) features.Feature {
-	t.Skip("Skip test until we find out why the db executor image is missing from some tenants registry")
-
 	return dbExecutorFeature(t,
 		"use-public-registry-db-executor-with-override",
 		"use-public-registry-db-exec-ovrd",
