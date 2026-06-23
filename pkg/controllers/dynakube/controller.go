@@ -206,13 +206,13 @@ type Controller struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	ctx, log := logd.NewFromContext(ctx, "dynakube")
-	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
+	log.Info("reconciling DynaKube")
 
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
 	} else if dk == nil {
-		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
+		log.Info("reconciling DynaKube finished, no dynakube available", "result", "empty")
 
 		return reconcile.Result{}, nil
 	}
@@ -287,7 +287,7 @@ func (controller *Controller) handleError(
 			errors.WithMessagef(hashErr, "failed to generate a hash for the DynaKube's status %s/%s", dk.Namespace, dk.Name),
 		)
 	} else if isStatusDifferent {
-		log.Info("status changed, updating the DynaKube", "namespace", dk.Namespace, "name", dk.Name)
+		log.Info("status changed, updating the DynaKube")
 
 		if updateErr := dk.UpdateStatus(ctx, controller.client); updateErr != nil {
 			reconcileErr = goerrors.Join(
@@ -302,7 +302,7 @@ func (controller *Controller) handleError(
 		return reconcile.Result{}, reconcileErr
 	}
 
-	log.Info("finished DynaKube reconcile", "namespace", dk.Namespace, "name", dk.Name, "requeueAfter", controller.requeueAfter.String())
+	log.Info("finished DynaKube reconcile", "requeueAfter", controller.requeueAfter.String())
 
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }

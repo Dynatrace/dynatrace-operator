@@ -312,7 +312,7 @@ func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.Dyna
 			return nil
 		}
 
-		log.Info("deleted deployment", "name", deploy.Name)
+		log.Info("deleted deployment", "deploymentName", deploy.Name)
 	}
 
 	return nil

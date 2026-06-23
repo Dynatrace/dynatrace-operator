@@ -105,7 +105,7 @@ func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) erro
 	err := client.Status().Update(ctx, dk)
 
 	if err != nil && k8serrors.IsConflict(err) {
-		log.Info("could not update dynakube due to conflict", "name", dk.Name)
+		log.Info("could not update dynakube due to conflict")
 
 		return nil
 	}

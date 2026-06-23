@@ -119,7 +119,7 @@ func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, 
 		otherDKServiceName := otherDK.TelemetryIngest().GetServiceName()
 
 		if otherDKServiceName == dkServiceName {
-			log.Info(errorTelemetryIngestServiceNameInUse, "other dynakube name", otherDK.Name, "other telemetry service name", otherDKServiceName, "namespace", otherDK.Namespace)
+			log.Info(errorTelemetryIngestServiceNameInUse, "other dynakube name", otherDK.Name, "other telemetry service name", otherDKServiceName)
 
 			return fmt.Sprintf("%s Conflicting Dynakube: %s. Conflicting telemetry service name: %s", errorTelemetryIngestServiceNameInUse, otherDK.Name, otherDKServiceName)
 		}

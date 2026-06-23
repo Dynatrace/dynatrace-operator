@@ -56,7 +56,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 
 	err := r.client.Get(ctx, client.ObjectKeyFromObject(desired), installed)
 	if k8serrors.IsNotFound(err) {
-		log.Info("creating AG service", "dk", dk.Name)
+		log.Info("creating AG service")
 
 		err = controllerutil.SetControllerReference(dk, desired, r.client.Scheme())
 		if err != nil {
