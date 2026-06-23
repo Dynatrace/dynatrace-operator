@@ -353,9 +353,7 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 		dynakubeComponents.WithCloudNativeSpec(oaSpec),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithCustomActiveGateImage(agExpectedImage),
-		// Extensions with a database triggers the DBExecutor deployment.
 		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: dbID}),
-		// Override the DBExecutor image in the templates section.
 		dynakubeComponents.WithExtensionsDBExecutorImageRef(t),
 	}
 	if !tenant.UsePlatformToken() {
@@ -380,13 +378,11 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 	builder.Assess("DBExecutor deployment ready",
 		k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(dbID), testDynakube.Namespace))
 
-	// All components have explicit images set, which takes precedence over use-public-registry.
 	builder.Assess("OneAgent status reports custom-image source",
 		statusSourceIsCustomImage(testDynakube, image.OneAgent))
 	builder.Assess("ActiveGate status reports custom-image source",
 		statusSourceIsCustomImage(testDynakube, image.ActiveGate))
 
-	// Confirm the overridden images are actually running.
 	builder.Assess("OneAgent DaemonSet uses overridden image",
 		daemonSetUsesImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, oaSpec.Image))
 	builder.Assess("ActiveGate StatefulSet uses overridden image",
@@ -399,6 +395,37 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 
 func statusSourceIsCustomImage(dk dynakube.DynaKube, component image.ComponentType) features.Func {
 	return statusSourceIs(dk, component, status.CustomImageVersionSource)
+}
+
+func statusSourceIsPublicRegistry(dk dynakube.DynaKube, component image.ComponentType) features.Func {
+	return statusSourceIs(dk, component, status.PublicRegistryVersionSource)
+}
+
+func statusSourceIs(dk dynakube.DynaKube, component image.ComponentType, expected status.VersionSource) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var current dynakube.DynaKube
+		require.NoError(t,
+			envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
+
+		var actual status.VersionSource
+		switch component {
+		case image.OneAgent:
+			actual = current.Status.OneAgent.Source
+		case image.ActiveGate:
+			actual = current.Status.ActiveGate.Source
+		case image.CodeModules:
+			actual = current.Status.CodeModules.Source
+		default:
+			require.Failf(t, "unknown component", "unknown component %q", component)
+
+			return ctx
+		}
+
+		assert.Equalf(t, expected, actual,
+			"expected %s status.source == %q, got %q", component, expected, actual)
+
+		return ctx
+	}
 }
 
 func daemonSetUsesImage(dsName, namespace, expectedImage string) features.Func {
@@ -450,39 +477,6 @@ func deploymentUsesImage(deployName, namespace, expectedImage string) features.F
 
 		assert.Failf(t, "image not used",
 			"expected image %q not found in Deployment %q containers", expectedImage, deployName)
-
-		return ctx
-	}
-}
-
-func statusSourceIsPublicRegistry(dk dynakube.DynaKube, component image.ComponentType) features.Func {
-	return statusSourceIs(dk, component, status.PublicRegistryVersionSource)
-}
-
-// statusSourceIs is the common base for all version-source assertions. It refetches
-// the DynaKube, reads the component's reported source, and asserts it equals expected.
-func statusSourceIs(dk dynakube.DynaKube, component image.ComponentType, expected status.VersionSource) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		var current dynakube.DynaKube
-		require.NoError(t,
-			envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
-
-		var actual status.VersionSource
-		switch component {
-		case image.OneAgent:
-			actual = current.Status.OneAgent.Source
-		case image.ActiveGate:
-			actual = current.Status.ActiveGate.Source
-		case image.CodeModules:
-			actual = current.Status.CodeModules.Source
-		default:
-			require.Failf(t, "unknown component", "unknown component %q", component)
-
-			return ctx
-		}
-
-		assert.Equalf(t, expected, actual,
-			"expected %s status.source == %q, got %q", component, expected, actual)
 
 		return ctx
 	}
