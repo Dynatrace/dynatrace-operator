@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
@@ -17,7 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
+func (h *Handler) createInitContainerBase(ctx context.Context, pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
 	args := []arg.Arg{
 		{
 			Name:  configure.ConfigFolderFlag,
@@ -46,10 +47,12 @@ func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube)
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		SecurityContext: securityContextForInitContainer(pod, dk, h.isOpenShift),
 		Resources:       defaultInitContainerResources(),
-		Args:            []string{bootstrapper.Use},
+		Args:            append([]string{bootstrapper.Use}, arg.ConvertArgsToStrings(args)...),
 	}
 
-	initContainer.Args = append(initContainer.Args, arg.ConvertArgsToStrings(args)...)
+	if k8senv.GetDTExtractCodeModulesImageLinks(ctx) {
+		initContainer.Env = []corev1.EnvVar{{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"}}
+	}
 
 	return initContainer
 }
