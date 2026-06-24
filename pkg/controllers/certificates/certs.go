@@ -18,10 +18,6 @@ import (
 )
 
 const (
-	EnvVarRenewalThreshold   = "DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD"
-	EnvVarServerCertDuration = "DT_WEBHOOK_CERTS_SERVER_DURATION"
-	EnvVarRootCertDuration   = "DT_WEBHOOK_CERTS_ROOT_DURATION"
-
 	defaultRenewalThreshold   = 12 * time.Hour
 	defaultServerCertDuration = 7 * 24 * time.Hour
 	defaultRootCertDuration   = 365 * 24 * time.Hour
