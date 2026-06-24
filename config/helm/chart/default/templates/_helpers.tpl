@@ -178,11 +178,11 @@ topologySpreadConstraints:
 
 {{- define "dynatrace-operator.webhookCertsCtrl.envs" -}}
 - name: DT_WEBHOOK_CERTS_ROOT_DURATION
-  value: {{ .Values.webhook.certs.rootDuration }}
+  value: {{ .Values.webhook.certs.rootDuration | quote }}
 - name: DT_WEBHOOK_CERTS_SERVER_DURATION
-  value: {{ .Values.webhook.certs.serverDuration }}
+  value: {{ .Values.webhook.certs.serverDuration | quote }}
 - name: DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD
-  value: {{ .Values.webhook.certs.renewalThreshold }}
+  value: {{ .Values.webhook.certs.renewalThreshold | quote }}
 - name: DT_WEBHOOK_CERTS_CONTROLLER_SUCCESS_REQUEUE_INTERVAL
-  value: {{ .Values.webhook.certs.controllerSuccessRequeueInterval }}
+  value: {{ .Values.webhook.certs.controllerSuccessRequeueInterval | quote }}
 {{- end -}}
