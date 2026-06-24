@@ -55,30 +55,6 @@ type Certs struct {
 	Domain         string
 }
 
-func (cs *Certs) getRenewalThreshold() time.Duration {
-	if cs.RenewalThreshold > 0 {
-		return cs.RenewalThreshold
-	}
-
-	return defaultRenewalThreshold
-}
-
-func (cs *Certs) getServerCertDuration() time.Duration {
-	if cs.ServerCertDuration > 0 {
-		return cs.ServerCertDuration
-	}
-
-	return defaultServerCertDuration
-}
-
-func (cs *Certs) getRootCertDuration() time.Duration {
-	if cs.RootCertDuration > 0 {
-		return cs.RootCertDuration
-	}
-
-	return defaultRootCertDuration
-}
-
 // ValidateCerts checks for certificates and keys on cs.SrcData and renews them if needed. The existing (or new)
 // certificates will be stored on cs.Data.
 func (cs *Certs) ValidateCerts(ctx context.Context) error {
@@ -122,7 +98,7 @@ func (cs *Certs) validateRootCerts(ctx context.Context, now time.Time) bool {
 		log.Info("failed to parse root certificates, renewing", "error", err)
 
 		return true
-	} else if now.After(cs.rootPublicCert.NotAfter.Add(-cs.getRenewalThreshold())) {
+	} else if now.After(cs.rootPublicCert.NotAfter.Add(-cs.RenewalThreshold)) {
 		log.Info("root certificates are about to expire, renewing", "current", now, "expiration", cs.rootPublicCert.NotAfter)
 
 		return true
@@ -150,7 +126,7 @@ func (cs *Certs) validateServerCerts(ctx context.Context, now time.Time) bool {
 		return true
 	}
 
-	isValid, err := certificates.ValidateCertificateExpiration(ctx, cs.Data[ServerCert], cs.getRenewalThreshold(), now)
+	isValid, err := certificates.ValidateCertificateExpiration(ctx, cs.Data[ServerCert], cs.RenewalThreshold, now)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
 
@@ -194,7 +170,7 @@ func (cs *Certs) generateRootCerts(ctx context.Context, domain string, now time.
 		DNSNames: buildSANs(domain),
 
 		NotBefore: now,
-		NotAfter:  now.Add(cs.getRootCertDuration()),
+		NotAfter:  now.Add(cs.RootCertDuration),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
@@ -250,7 +226,7 @@ func (cs *Certs) generateServerCerts(ctx context.Context, domain string, now tim
 		DNSNames: buildSANs(domain),
 
 		NotBefore: now,
-		NotAfter:  now.Add(cs.getServerCertDuration()),
+		NotAfter:  now.Add(cs.ServerCertDuration),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},

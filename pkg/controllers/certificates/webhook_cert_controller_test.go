@@ -251,8 +251,11 @@ func createInvalidTestCertData() map[string][]byte {
 
 func createValidTestCertData() map[string][]byte {
 	cert := Certs{
-		Domain: testDomain,
-		Now:    time.Now(),
+		Domain:             testDomain,
+		Now:                time.Now(),
+		RenewalThreshold:   defaultRenewalThreshold,
+		ServerCertDuration: defaultServerCertDuration,
+		RootCertDuration:   defaultRootCertDuration,
 	}
 	_ = cert.ValidateCerts(context.Background())
 
@@ -288,10 +291,13 @@ func prepareController(t testing.TB, clt client.Client) (*WebhookCertificateCont
 func verifyCertificates(t *testing.T, secret *corev1.Secret, clt client.Client, isUpdate bool) {
 	t.Helper()
 	cert := Certs{
-		Domain:  webhook.DeploymentName + "." + testNamespace,
-		Data:    secret.Data,
-		SrcData: secret.Data,
-		Now:     time.Now(),
+		Domain:             webhook.DeploymentName + "." + testNamespace,
+		Data:               secret.Data,
+		SrcData:            secret.Data,
+		Now:                time.Now(),
+		RenewalThreshold:   defaultRenewalThreshold,
+		ServerCertDuration: defaultServerCertDuration,
+		RootCertDuration:   defaultRootCertDuration,
 	}
 
 	// validateRootCerts and validateServerCerts return false if the certificates are valid
