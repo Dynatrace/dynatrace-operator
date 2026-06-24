@@ -152,7 +152,7 @@ func (r *Reconciler) createTenantTokenSecret(ctx context.Context, dk *dynakube.D
 
 	_, err = r.secrets.CreateOrUpdate(ctx, secret)
 	if err != nil {
-		log.Info("could not create or update secret for connection info", "name", secret.Name)
+		log.Info("could not create or update secret for connection info", "secretName", secret.Name)
 		k8sconditions.SetKubeAPIError(dk.Conditions(), oaConnectionInfoConditionType, err)
 
 		return err

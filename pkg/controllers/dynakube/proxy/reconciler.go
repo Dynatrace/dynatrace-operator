@@ -70,7 +70,7 @@ func (r *Reconciler) ensureDeleted(ctx context.Context, dk *dynakube.DynaKube) e
 		return err
 	} else if err == nil {
 		// If the secret is deleted the error is nil, otherwise err is notFound, then we should log nothing
-		log.Info("removed secret", "namespace", dk.Namespace, "secret", secretName)
+		log.Info("removed secret", "secret", secretName)
 	}
 
 	return nil

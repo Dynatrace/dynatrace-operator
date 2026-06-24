@@ -25,11 +25,32 @@ const (
 
 	// AnnotationConfigVolumeNameResource is used to specify the volume size for EmptyDir for dynatrace-config.
 	AnnotationConfigVolumeNameResource = AnnotationResourcePrefix + ConfigVolumeName
+
+	// AnnotationInjected is set to "true" by the webhook to Pods to indicate that it has been injected.
+	AnnotationInjected = AnnotationResourcePrefix + "injected"
+	// AnnotationReason is add to provide extra info why an injection didn't happen.
+	AnnotationReason = AnnotationResourcePrefix + "reason"
+	// ConflictingVolumeTypeReason indicates that the user provided a volume definition that conflicts with the one that would be added by the mutator.
+	ConflictingVolumeTypeReason = "ConflictingVolumeType"
 )
 
-func AddConfigVolume(ctx context.Context, pod *corev1.Pod) {
-	if k8svolume.Contains(pod.Spec.Volumes, ConfigVolumeName) {
-		return
+// ExistingVolumeError indicates that an existing volume cannot be used for injection because it does not match the expected spec.
+type ExistingVolumeError string
+
+func (e ExistingVolumeError) Error() string {
+	return "user-provided " + string(e) + " volume cannot be mounted due to invalid configuration"
+}
+
+func AddConfigVolume(ctx context.Context, pod *corev1.Pod) error {
+	if vol := k8svolume.FindByName(pod.Spec.Volumes, ConfigVolumeName); vol != nil {
+		if vol.EmptyDir == nil {
+			return dtwebhook.MutatorError{
+				Err:      ExistingVolumeError(ConfigVolumeName),
+				Annotate: setNotInjectedReason(ConflictingVolumeTypeReason),
+			}
+		}
+
+		return nil
 	}
 
 	emptyDirVS := corev1.EmptyDirVolumeSource{}
@@ -54,6 +75,8 @@ func AddConfigVolume(ctx context.Context, pod *corev1.Pod) {
 			},
 		},
 	)
+
+	return nil
 }
 
 func AddConfigVolumeMount(container *corev1.Container, request *dtwebhook.BaseRequest) {
@@ -90,9 +113,18 @@ func AddInitConfigVolumeMount(container *corev1.Container) {
 	)
 }
 
-func AddInputVolume(pod *corev1.Pod) {
-	if k8svolume.Contains(pod.Spec.Volumes, InputVolumeName) {
-		return
+func AddInputVolume(pod *corev1.Pod) error {
+	if vol := k8svolume.FindByName(pod.Spec.Volumes, InputVolumeName); vol != nil {
+		if vol.Projected == nil || len(vol.Projected.Sources) != 2 ||
+			vol.Projected.Sources[0].Secret == nil || vol.Projected.Sources[0].Secret.Name != consts.BootstrapperInitSecretName ||
+			vol.Projected.Sources[1].Secret == nil || vol.Projected.Sources[1].Secret.Name != consts.BootstrapperInitCertsSecretName {
+			return dtwebhook.MutatorError{
+				Err:      ExistingVolumeError(InputVolumeName),
+				Annotate: setNotInjectedReason(ConflictingVolumeTypeReason),
+			}
+		}
+
+		return nil
 	}
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
@@ -122,6 +154,8 @@ func AddInputVolume(pod *corev1.Pod) {
 			},
 		},
 	)
+
+	return nil
 }
 
 func AddInitInputVolumeMount(container *corev1.Container) {
@@ -136,4 +170,15 @@ func AddInitInputVolumeMount(container *corev1.Container) {
 			ReadOnly:  true,
 		},
 	)
+}
+
+func setNotInjectedReason(reason string) func(*corev1.Pod) {
+	return func(pod *corev1.Pod) {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
+
+		pod.Annotations[AnnotationInjected] = "false"
+		pod.Annotations[AnnotationReason] = reason
+	}
 }

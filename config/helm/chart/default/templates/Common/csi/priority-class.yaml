@@ -1,4 +1,4 @@
-{{ if (eq (include "dynatrace-operator.needPriorityClass" .) "true") }}
+{{ if (include "dynatrace-operator.needPriorityClass" .) }}
 
 # Copyright 2021 Dynatrace LLC
 

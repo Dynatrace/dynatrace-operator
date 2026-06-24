@@ -34,7 +34,7 @@ func extensionControllerImage(ctx context.Context, dv *Validator, dk *dynakube.D
 	}
 
 	if !dk.Spec.Templates.ExtensionExecutionController.ImageRef.HasImage() {
-		log.Info("requested dynakube doesn't specify the ExtensionExecutionController image.", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube doesn't specify the ExtensionExecutionController image.")
 
 		return errorExtensionExecutionControllerImageNotSpecified
 	}
@@ -77,7 +77,7 @@ func extensionControllerPVCStorageDevice(ctx context.Context, _ *Validator, dk *
 	}
 
 	if extensionControllerMutuallyExclusivePVCSettings(dk) {
-		log.Info("requested dynakube specifies mutually exclusive VolumeClaimTemplate settings for ExtensionExecutionController.", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube specifies mutually exclusive VolumeClaimTemplate settings for ExtensionExecutionController.")
 
 		return errorExtensionExecutionControllerInvalidPVCConfiguration
 	}
