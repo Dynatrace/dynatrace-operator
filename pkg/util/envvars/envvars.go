@@ -1,7 +1,6 @@
 package envvars
 
 import (
-	"context"
 	"os"
 	"strconv"
 	"time"
@@ -9,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
-func GetDuration(ctx context.Context, varName string, defaultValue time.Duration) time.Duration {
+func GetDuration(varName string, defaultValue time.Duration) time.Duration {
 	envValue := os.Getenv(varName)
 	if envValue == "" {
 		return defaultValue
@@ -17,8 +16,7 @@ func GetDuration(ctx context.Context, varName string, defaultValue time.Duration
 
 	parsed, err := time.ParseDuration(envValue)
 	if err != nil {
-		_, log := logd.NewFromContext(ctx, "envvars")
-		log.Info("invalid duration value, using default", "env", varName, "value", envValue, "default", defaultValue)
+		logd.Get().WithName("envvars").Info("invalid duration value, using default", "env", varName, "value", envValue, "default", defaultValue)
 
 		return defaultValue
 	}
