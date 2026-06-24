@@ -201,7 +201,7 @@ func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.Topology
 		{
 			MaxSkew:           1,
 			TopologyKey:       "kubernetes.io/hostname",
-			WhenUnsatisfiable: "DoNotSchedule",
+			WhenUnsatisfiable: "ScheduleAnyway",
 			NodeTaintsPolicy:  &nodeInclusionPolicyHonor,
 			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
