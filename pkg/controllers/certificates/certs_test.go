@@ -14,8 +14,11 @@ func TestCertsValidation(t *testing.T) {
 	now, _ := time.Parse(time.RFC3339, "2018-01-10T00:00:00Z")
 	domain := "dynatrace-oneagent-webhook.webhook.svc"
 	firstCerts := Certs{
-		Domain: domain,
-		Now:    now,
+		Domain:             domain,
+		Now:                now,
+		RenewalThreshold:   defaultRenewalThreshold,
+		ServerCertDuration: defaultServerCertDuration,
+		RootCertDuration:   defaultRootCertDuration,
 	}
 
 	require.NoError(t, firstCerts.ValidateCerts(t.Context()))
@@ -25,7 +28,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("up-to-date certs", func(t *testing.T) {
 		newTime := now.Add(5 * time.Minute)
 
-		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: defaultRenewalThreshold, ServerCertDuration: defaultServerCertDuration, RootCertDuration: defaultRootCertDuration}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
@@ -40,7 +43,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("outdated server certs", func(t *testing.T) {
 		newTime := now.Add((6*24 + 22) * time.Hour) // 6d22h
 
-		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: defaultRenewalThreshold, ServerCertDuration: defaultServerCertDuration, RootCertDuration: defaultRootCertDuration}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
@@ -55,7 +58,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("outdated root certs", func(t *testing.T) {
 		newTime := now.Add((364*24 + 22) * time.Hour) // 364d22h
 
-		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: defaultRenewalThreshold, ServerCertDuration: defaultServerCertDuration, RootCertDuration: defaultRootCertDuration}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
