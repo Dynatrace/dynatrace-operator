@@ -24,17 +24,17 @@ import (
 )
 
 const (
-	SuccessDuration = 3 * time.Hour
+	DefaultRequeueAfter = 3 * time.Hour
 
-	EnvVarSuccessDuration = "DT_WEBHOOK_CERTS_CONTROLLER_SUCCESS_REQUEUE_INTERVAL"
+	EnvVarDefaultRequeueAfter = "DT_WEBHOOK_CERTS_REQUEUE_AFTER"
 
 	initReconcileInterval = 5 * time.Second
 
 	secretPostfix = "-certs"
 )
 
-func getSuccessDuration() time.Duration {
-	return envvars.GetDuration(EnvVarSuccessDuration, SuccessDuration)
+func getDefaultRequeueAfter() time.Duration {
+	return envvars.GetDuration(EnvVarDefaultRequeueAfter, DefaultRequeueAfter)
 }
 
 var errCertificatesSecretEmpty = errors.New("certificates secret is empty")
@@ -114,7 +114,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	if controller.isUpToDate(certSecret, mutatingWebhookClientConfigs, validatingWebhookConfigConfigs, crd) {
 		log.Info("secret for certificates up to date, skipping update")
 
-		return ctrl.Result{RequeueAfter: getSuccessDuration()}, nil
+		return ctrl.Result{RequeueAfter: getDefaultRequeueAfter()}, nil
 	}
 
 	if err = certSecret.createOrUpdateIfNecessary(ctx, controller.client); err != nil {
@@ -144,7 +144,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: getSuccessDuration()}, nil
+	return ctrl.Result{RequeueAfter: getDefaultRequeueAfter()}, nil
 }
 
 func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crd *apiextensionsv1.CustomResourceDefinition) bool {
