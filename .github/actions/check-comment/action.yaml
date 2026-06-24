@@ -43,7 +43,7 @@ runs:
           });
           core.setOutput('pr_branch', pr.data.head.ref);
           core.setOutput('pr_sha', pr.data.head.sha);
-          const isLegitPr = process.env.AUTHOR_AUTHORIZED === 'true' && pr.data.author_association === 'MEMBER';
+          const isLegitPr = process.env.AUTHOR_AUTHORIZED === 'true' && ['MEMBER', 'OWNER', 'COLLABORATOR'].includes(pr.data.author_association);
           core.setOutput('legit-pr', isLegitPr.toString());
 outputs:
   triggered:
