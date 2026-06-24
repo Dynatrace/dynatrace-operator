@@ -3,6 +3,7 @@ package certificates
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -324,53 +325,13 @@ func TestValidateCertificates_DurationValidation(t *testing.T) {
 		}
 	}
 
-	t.Run("defaults satisfy constraint", func(t *testing.T) {
-		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
+	t.Run("valid defaults", func(t *testing.T) {
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace, defaultRenewalThreshold, defaultServerCertDuration, defaultRootCertDuration)
 		require.NoError(t, err)
 	})
 
 	t.Run("custom valid durations", func(t *testing.T) {
-		t.Setenv(EnvVarRootCertDuration, "48h")
-		t.Setenv(EnvVarServerCertDuration, "24h")
-		t.Setenv(EnvVarRenewalThreshold, "1h")
-
-		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace, time.Hour, 24*time.Hour, 48*time.Hour)
 		require.NoError(t, err)
-	})
-
-	t.Run("root cert duration shorter than renewal threshold", func(t *testing.T) {
-		t.Setenv(EnvVarRootCertDuration, "6h")
-		t.Setenv(EnvVarRenewalThreshold, "12h")
-
-		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "root cert duration")
-	})
-
-	t.Run("root cert duration equal to renewal threshold", func(t *testing.T) {
-		t.Setenv(EnvVarRootCertDuration, "12h")
-		t.Setenv(EnvVarRenewalThreshold, "12h")
-
-		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "root cert duration")
-	})
-
-	t.Run("server cert duration shorter than renewal threshold", func(t *testing.T) {
-		t.Setenv(EnvVarServerCertDuration, "6h")
-		t.Setenv(EnvVarRenewalThreshold, "12h")
-
-		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "server cert duration")
-	})
-
-	t.Run("server cert duration equal to renewal threshold", func(t *testing.T) {
-		t.Setenv(EnvVarServerCertDuration, "12h")
-		t.Setenv(EnvVarRenewalThreshold, "12h")
-
-		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "server cert duration")
 	})
 }

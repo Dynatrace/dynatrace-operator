@@ -33,15 +33,16 @@ const (
 	secretPostfix = "-certs"
 )
 
-func getDefaultRequeueAfter() time.Duration {
-	return envvars.GetDuration(EnvVarDefaultRequeueAfter, DefaultRequeueAfter)
-}
-
 var errCertificatesSecretEmpty = errors.New("certificates secret is empty")
 
 func InitReconcile(ctx context.Context, clt client.Client, namespace string) error {
 	ctx, log := logd.NewFromContext(ctx, "init-reconcile")
-	controller := newWebhookCertificateController(clt, clt)
+
+	controller, err := newWebhookCertificateController(ctx, clt, clt)
+	if err != nil {
+		return err
+	}
+
 	request := ctrl.Request{NamespacedName: types.NamespacedName{Name: webhook.DeploymentName, Namespace: namespace}}
 
 	return wait.PollUntilContextCancel(ctx, initReconcileInterval, true, func(ctx context.Context) (bool, error) {
@@ -56,23 +57,75 @@ func InitReconcile(ctx context.Context, clt client.Client, namespace string) err
 }
 
 func Add(mgr manager.Manager, namespace string) error {
+	controller, err := newWebhookCertificateController(context.Background(), mgr.GetClient(), mgr.GetAPIReader())
+	if err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		Named("webhook-cert-controller").
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, namespace)).
-		Complete(newWebhookCertificateController(mgr.GetClient(), mgr.GetAPIReader()))
+		Complete(controller)
 }
 
-func newWebhookCertificateController(clt client.Client, apiReader client.Reader) *WebhookCertificateController {
-	return &WebhookCertificateController{
-		client:    clt,
-		apiReader: apiReader,
+func newWebhookCertificateController(ctx context.Context, clt client.Client, apiReader client.Reader) (*WebhookCertificateController, error) {
+	log := logd.FromContext(ctx)
+
+	requeueAfter := envvars.GetDuration(EnvVarDefaultRequeueAfter, DefaultRequeueAfter)
+	if requeueAfter <= 0 {
+		log.Info("requeue interval must be positive, using default", "env", EnvVarDefaultRequeueAfter, "value", requeueAfter, "default", DefaultRequeueAfter)
+		requeueAfter = DefaultRequeueAfter
 	}
+
+	renewalThreshold := envvars.GetDuration(EnvVarRenewalThreshold, defaultRenewalThreshold)
+	if renewalThreshold <= 0 {
+		log.Info("renewal threshold must be positive, using default", "env", EnvVarRenewalThreshold, "value", renewalThreshold, "default", defaultRenewalThreshold)
+		renewalThreshold = defaultRenewalThreshold
+	}
+
+	rootDuration := envvars.GetDuration(EnvVarRootCertDuration, defaultRootCertDuration)
+	if rootDuration <= 0 {
+		log.Info("root cert duration must be positive, using default", "env", EnvVarRootCertDuration, "value", rootDuration, "default", defaultRootCertDuration)
+		rootDuration = defaultRootCertDuration
+	}
+
+	serverDuration := envvars.GetDuration(EnvVarServerCertDuration, defaultServerCertDuration)
+	if serverDuration <= 0 {
+		log.Info("server cert duration must be positive, using default", "env", EnvVarServerCertDuration, "value", serverDuration, "default", defaultServerCertDuration)
+		serverDuration = defaultServerCertDuration
+	}
+
+	if rootDuration <= renewalThreshold {
+		return nil, fmt.Errorf("root cert duration (%s) must exceed renewal threshold (%s)", rootDuration, renewalThreshold)
+	}
+
+	if serverDuration <= renewalThreshold {
+		return nil, fmt.Errorf("server cert duration (%s) must exceed renewal threshold (%s)", serverDuration, renewalThreshold)
+	}
+
+	if rootDuration <= serverDuration {
+		return nil, fmt.Errorf("root cert duration (%s) must exceed server cert duration (%s)", rootDuration, serverDuration)
+	}
+
+	return &WebhookCertificateController{
+		client:             clt,
+		apiReader:          apiReader,
+		requeueAfter:       requeueAfter,
+		renewalThreshold:   renewalThreshold,
+		serverCertDuration: serverDuration,
+		rootCertDuration:   rootDuration,
+	}, nil
 }
 
 type WebhookCertificateController struct {
 	client    client.Client
 	apiReader client.Reader
+
+	requeueAfter       time.Duration
+	renewalThreshold   time.Duration
+	serverCertDuration time.Duration
+	rootCertDuration   time.Duration
 }
 
 func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
@@ -104,7 +157,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return ctrl.Result{}, err
 	}
 
-	if err := certSecret.validateCertificates(ctx, webhookDeployment.Namespace); err != nil {
+	if err := certSecret.validateCertificates(ctx, webhookDeployment.Namespace, controller.renewalThreshold, controller.serverCertDuration, controller.rootCertDuration); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -114,7 +167,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	if controller.isUpToDate(certSecret, mutatingWebhookClientConfigs, validatingWebhookConfigConfigs, crd) {
 		log.Info("secret for certificates up to date, skipping update")
 
-		return ctrl.Result{RequeueAfter: getDefaultRequeueAfter()}, nil
+		return ctrl.Result{RequeueAfter: controller.requeueAfter}, nil
 	}
 
 	if err = certSecret.createOrUpdateIfNecessary(ctx, controller.client); err != nil {
@@ -144,7 +197,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: getDefaultRequeueAfter()}, nil
+	return ctrl.Result{RequeueAfter: controller.requeueAfter}, nil
 }
 
 func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crd *apiextensionsv1.CustomResourceDefinition) bool {
