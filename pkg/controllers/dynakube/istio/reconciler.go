@@ -43,7 +43,7 @@ func NewReconciler(kubeClient client.Client, apiReader client.Reader) *Reconcile
 	}
 }
 func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-istio")
+	ctx, log := logd.NewFromContext(ctx, "istio")
 
 	log.Info("reconciling istio components for the Dynatrace API url")
 

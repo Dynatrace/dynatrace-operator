@@ -24,7 +24,7 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-proxy")
+	ctx, _ = logd.NewFromContext(ctx, "proxy")
 	if dk.NeedsActiveGateProxy() || dk.NeedsOneAgentProxy() {
 		return r.generateForDynakube(ctx, dk)
 	}
