@@ -81,6 +81,9 @@ jobs:
           TENANT2_NAME: ${{ secrets.TENANT2_NAME }}
           TENANT2_APITOKEN: ${{ secrets.TENANT2_APITOKEN }}
           TENANT2_DATAINGESTTOKEN: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          TENANT1_PLATFORM_TOKEN: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          TENANT1_PLATFORM_TOKEN_NOSETTINGS: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          TENANT2_PLATFORM_TOKEN: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
       - name: Check and wait for image availability
         run: |
           IMAGE="dynatrace/dynatrace-operator"
