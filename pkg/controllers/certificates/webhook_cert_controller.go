@@ -45,7 +45,7 @@ var errCertificatesSecretEmpty = errors.New("certificates secret is empty")
 func InitReconcile(ctx context.Context, clt client.Client, namespace string) error {
 	ctx, log := logd.NewFromContext(ctx, "init-reconcile")
 
-	controller, err := newWebhookCertificateController(ctx, clt, clt)
+	controller, err := newWebhookCertificateController(clt, clt)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func InitReconcile(ctx context.Context, clt client.Client, namespace string) err
 }
 
 func Add(mgr manager.Manager, namespace string) error {
-	controller, err := newWebhookCertificateController(context.Background(), mgr.GetClient(), mgr.GetAPIReader())
+	controller, err := newWebhookCertificateController(mgr.GetClient(), mgr.GetAPIReader())
 	if err != nil {
 		return err
 	}
@@ -76,10 +76,10 @@ func Add(mgr manager.Manager, namespace string) error {
 		Complete(controller)
 }
 
-func newWebhookCertificateController(ctx context.Context, clt client.Client, apiReader client.Reader) (*WebhookCertificateController, error) {
-	log := logd.FromContext(ctx)
+func newWebhookCertificateController(clt client.Client, apiReader client.Reader) (*WebhookCertificateController, error) {
+	log := logd.Get()
 
-	requeueAfter := envvars.GetDuration(ctx, EnvVarDefaultRequeueAfter, DefaultRequeueAfter)
+	requeueAfter := envvars.GetDuration(EnvVarDefaultRequeueAfter, DefaultRequeueAfter)
 	if requeueAfter <= 0 {
 		log.Info("requeue interval must be positive, using default", "env", EnvVarDefaultRequeueAfter, "value", requeueAfter, "default", DefaultRequeueAfter)
 		requeueAfter = DefaultRequeueAfter
@@ -88,7 +88,7 @@ func newWebhookCertificateController(ctx context.Context, clt client.Client, api
 		requeueAfter = minRequeueAfter
 	}
 
-	renewalThreshold := envvars.GetDuration(ctx, EnvVarRenewalThreshold, defaultRenewalThreshold)
+	renewalThreshold := envvars.GetDuration(EnvVarRenewalThreshold, defaultRenewalThreshold)
 	if renewalThreshold <= 0 {
 		log.Info("renewal threshold must be positive, using default", "env", EnvVarRenewalThreshold, "value", renewalThreshold, "default", defaultRenewalThreshold)
 		renewalThreshold = defaultRenewalThreshold
@@ -97,7 +97,7 @@ func newWebhookCertificateController(ctx context.Context, clt client.Client, api
 		renewalThreshold = minRenewalThreshold
 	}
 
-	rootDuration := envvars.GetDuration(ctx, EnvVarRootCertDuration, defaultRootCertDuration)
+	rootDuration := envvars.GetDuration(EnvVarRootCertDuration, defaultRootCertDuration)
 	if rootDuration <= 0 {
 		log.Info("root cert duration must be positive, using default", "env", EnvVarRootCertDuration, "value", rootDuration, "default", defaultRootCertDuration)
 		rootDuration = defaultRootCertDuration
@@ -106,7 +106,7 @@ func newWebhookCertificateController(ctx context.Context, clt client.Client, api
 		rootDuration = minCertDuration
 	}
 
-	serverDuration := envvars.GetDuration(ctx, EnvVarServerCertDuration, defaultServerCertDuration)
+	serverDuration := envvars.GetDuration(EnvVarServerCertDuration, defaultServerCertDuration)
 	if serverDuration <= 0 {
 		log.Info("server cert duration must be positive, using default", "env", EnvVarServerCertDuration, "value", serverDuration, "default", defaultServerCertDuration)
 		serverDuration = defaultServerCertDuration

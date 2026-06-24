@@ -12,17 +12,17 @@ func TestGetDuration(t *testing.T) {
 	const testVar = "TEST_DURATION_VAR"
 
 	t.Run("env var not set returns default", func(t *testing.T) {
-		assert.Equal(t, 5*time.Second, GetDuration(t.Context(), testVar, 5*time.Second))
+		assert.Equal(t, 5*time.Second, GetDuration(testVar, 5*time.Second))
 	})
 
 	t.Run("env var set to valid duration returns parsed value", func(t *testing.T) {
 		t.Setenv(testVar, "10m")
-		assert.Equal(t, 10*time.Minute, GetDuration(t.Context(), testVar, 5*time.Second))
+		assert.Equal(t, 10*time.Minute, GetDuration(testVar, 5*time.Second))
 	})
 
 	t.Run("env var set to invalid string returns default", func(t *testing.T) {
 		t.Setenv(testVar, "not-a-duration")
-		assert.Equal(t, 5*time.Second, GetDuration(t.Context(), testVar, 5*time.Second))
+		assert.Equal(t, 5*time.Second, GetDuration(testVar, 5*time.Second))
 	})
 }
 

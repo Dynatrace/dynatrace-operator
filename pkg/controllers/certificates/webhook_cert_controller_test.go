@@ -275,7 +275,7 @@ func createTestSecret(certData map[string][]byte) *corev1.Secret {
 func prepareController(t testing.TB, clt client.Client) (*WebhookCertificateController, reconcile.Request) {
 	t.Helper()
 
-	rec, err := newWebhookCertificateController(t.Context(), clt, clt)
+	rec, err := newWebhookCertificateController(clt, clt)
 	require.NoError(t, err)
 
 	request := reconcile.Request{
@@ -423,34 +423,34 @@ func TestNewWebhookCertificateController(t *testing.T) {
 	newClient := func() client.Client { return fake.NewClient() }
 
 	t.Run("default config succeeds", func(t *testing.T) {
-		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		_, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
 	})
 
 	t.Run("zero renewal threshold falls back to default", func(t *testing.T) {
 		t.Setenv(EnvVarRenewalThreshold, "0s")
-		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
 		assert.Equal(t, defaultRenewalThreshold, ctrl.renewalThreshold)
 	})
 
 	t.Run("zero root cert duration falls back to default", func(t *testing.T) {
 		t.Setenv(EnvVarRootCertDuration, "0s")
-		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
 		assert.Equal(t, defaultRootCertDuration, ctrl.rootCertDuration)
 	})
 
 	t.Run("zero server cert duration falls back to default", func(t *testing.T) {
 		t.Setenv(EnvVarServerCertDuration, "0s")
-		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
 		assert.Equal(t, defaultServerCertDuration, ctrl.serverCertDuration)
 	})
 
 	t.Run("zero requeue interval falls back to default", func(t *testing.T) {
 		t.Setenv(EnvVarDefaultRequeueAfter, "0s")
-		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
 		assert.Equal(t, DefaultRequeueAfter, ctrl.requeueAfter)
 	})
@@ -458,7 +458,7 @@ func TestNewWebhookCertificateController(t *testing.T) {
 	t.Run("server cert duration shorter than renewal threshold", func(t *testing.T) {
 		t.Setenv(EnvVarServerCertDuration, "6h")
 		t.Setenv(EnvVarRenewalThreshold, "12h")
-		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		_, err := newWebhookCertificateController(newClient(), newClient())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "server cert duration")
 	})
@@ -467,14 +467,14 @@ func TestNewWebhookCertificateController(t *testing.T) {
 		t.Setenv(EnvVarRootCertDuration, "24h")
 		t.Setenv(EnvVarServerCertDuration, "168h")
 		t.Setenv(EnvVarRenewalThreshold, "1h")
-		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		_, err := newWebhookCertificateController(newClient(), newClient())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "root cert duration")
 	})
 
 	t.Run("requeue interval below minimum is clamped to minimum", func(t *testing.T) {
 		t.Setenv(EnvVarDefaultRequeueAfter, "1ns")
-		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
 		assert.Equal(t, minRequeueAfter, ctrl.requeueAfter)
 	})
@@ -482,7 +482,7 @@ func TestNewWebhookCertificateController(t *testing.T) {
 	t.Run("requeue interval exceeds cert renewal window", func(t *testing.T) {
 		t.Setenv(EnvVarServerCertDuration, "14h")
 		t.Setenv(EnvVarRenewalThreshold, "12h")
-		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		_, err := newWebhookCertificateController(newClient(), newClient())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "requeue interval")
 	})
