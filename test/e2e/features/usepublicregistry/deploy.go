@@ -32,6 +32,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -384,11 +386,11 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 		statusSourceIsCustomImage(testDynakube, image.ActiveGate))
 
 	builder.Assess("OneAgent DaemonSet uses overridden image",
-		daemonSetUsesImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, oaSpec.Image))
+		verifyDaemonSetUsesExpectedImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, oaSpec.Image))
 	builder.Assess("ActiveGate StatefulSet uses overridden image",
-		statefulSetUsesImage(agStatefulSetName, testDynakube.Namespace, agExpectedImage))
+		verifyStatefulSetUsesExpectedImage(agStatefulSetName, testDynakube.Namespace, agExpectedImage))
 	builder.Assess("DBExecutor deployment uses overridden image",
-		deploymentUsesImage(testDynakube.Extensions().GetDatabaseDatasourceName(dbID), testDynakube.Namespace, dbExecutorExpectedImage))
+		verifyDeploymentUsesExpectedImage(testDynakube.Extensions().GetDatabaseDatasourceName(dbID), testDynakube.Namespace, dbExecutorExpectedImage))
 
 	return builder.Feature()
 }
@@ -428,56 +430,52 @@ func statusSourceIs(dk dynakube.DynaKube, component image.ComponentType, expecte
 	}
 }
 
-func daemonSetUsesImage(dsName, namespace, expectedImage string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		var ds appsv1.DaemonSet
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, dsName, namespace, &ds))
+func workloadUsesImage[PT k8s.Object](obj PT, name, namespace, expectedImage string, getContainers func(PT) []corev1.Container) features.Func {
+	var kind string
+	switch any(obj).(type) {
+	case *appsv1.DaemonSet:
+		kind = "DaemonSet"
+	case *appsv1.StatefulSet:
+		kind = "StatefulSet"
+	case *appsv1.Deployment:
+		kind = "Deployment"
+	default:
+		kind = "Unknown"
+	}
 
-		for _, c := range ds.Spec.Template.Spec.Containers {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, name, namespace, obj))
+
+		for _, c := range getContainers(obj) {
 			if c.Image == expectedImage {
 				return ctx
 			}
 		}
 
 		assert.Failf(t, "image not used",
-			"expected image %q not found in DaemonSet %q containers", expectedImage, dsName)
+			"expected image %q not found in %s %q containers", expectedImage, kind, name)
 
 		return ctx
 	}
 }
 
-func statefulSetUsesImage(stsName, namespace, expectedImage string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		var sts appsv1.StatefulSet
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, stsName, namespace, &sts))
+func verifyDaemonSetUsesExpectedImage(dsName, namespace, expectedImage string) features.Func {
+	var ds appsv1.DaemonSet
 
-		for _, c := range sts.Spec.Template.Spec.Containers {
-			if c.Image == expectedImage {
-				return ctx
-			}
-		}
-
-		assert.Failf(t, "image not used",
-			"expected image %q not found in StatefulSet %q containers", expectedImage, stsName)
-
-		return ctx
-	}
+	return workloadUsesImage(&ds, dsName, namespace, expectedImage,
+		func(ds *appsv1.DaemonSet) []corev1.Container { return ds.Spec.Template.Spec.Containers })
 }
 
-func deploymentUsesImage(deployName, namespace, expectedImage string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		var deploy appsv1.Deployment
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, deployName, namespace, &deploy))
+func verifyStatefulSetUsesExpectedImage(stsName, namespace, expectedImage string) features.Func {
+	var sts appsv1.StatefulSet
 
-		for _, c := range deploy.Spec.Template.Spec.Containers {
-			if c.Image == expectedImage {
-				return ctx
-			}
-		}
+	return workloadUsesImage(&sts, stsName, namespace, expectedImage,
+		func(sts *appsv1.StatefulSet) []corev1.Container { return sts.Spec.Template.Spec.Containers })
+}
 
-		assert.Failf(t, "image not used",
-			"expected image %q not found in Deployment %q containers", expectedImage, deployName)
+func verifyDeploymentUsesExpectedImage(deployName, namespace, expectedImage string) features.Func {
+	var deploy appsv1.Deployment
 
-		return ctx
-	}
+	return workloadUsesImage(&deploy, deployName, namespace, expectedImage,
+		func(deploy *appsv1.Deployment) []corev1.Container { return deploy.Spec.Template.Spec.Containers })
 }
