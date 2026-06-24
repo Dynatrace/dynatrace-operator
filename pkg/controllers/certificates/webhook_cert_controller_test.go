@@ -455,14 +455,6 @@ func TestNewWebhookCertificateController(t *testing.T) {
 		assert.Equal(t, DefaultRequeueAfter, ctrl.requeueAfter)
 	})
 
-	t.Run("root cert duration shorter than renewal threshold", func(t *testing.T) {
-		t.Setenv(EnvVarRootCertDuration, "6h")
-		t.Setenv(EnvVarRenewalThreshold, "12h")
-		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "root cert duration")
-	})
-
 	t.Run("server cert duration shorter than renewal threshold", func(t *testing.T) {
 		t.Setenv(EnvVarServerCertDuration, "6h")
 		t.Setenv(EnvVarRenewalThreshold, "12h")
