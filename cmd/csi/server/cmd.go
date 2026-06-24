@@ -69,7 +69,7 @@ func run(*cobra.Command, []string) error {
 		return err
 	}
 
-	err = csiserver.NewServer(createCsiOptions()).SetupWithManager(csiManager)
+	err = csiserver.NewServer(createCSIOptions()).SetupWithManager(csiManager)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func createManager(config *rest.Config, namespace string) (manager.Manager, erro
 	return mgr, nil
 }
 
-func createCsiOptions() dtcsi.CSIOptions {
+func createCSIOptions() dtcsi.CSIOptions {
 	return dtcsi.CSIOptions{
 		NodeID:   nodeID,
 		Endpoint: endpoint,

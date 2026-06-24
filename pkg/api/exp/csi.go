@@ -16,18 +16,18 @@ const (
 )
 
 func (ff *FeatureFlags) GetCSIMaxFailedMountAttempts() int {
-	maxCsiMountAttemptsValue := ff.getIntWithDefault(CSIMaxFailedMountAttemptsKey, DefaultCSIMaxFailedMountAttempts)
-	if maxCsiMountAttemptsValue < 0 {
+	maxCSIMountAttemptsValue := ff.getIntWithDefault(CSIMaxFailedMountAttemptsKey, DefaultCSIMaxFailedMountAttempts)
+	if maxCSIMountAttemptsValue < 0 {
 		return DefaultCSIMaxFailedMountAttempts
 	}
 
-	return maxCsiMountAttemptsValue
+	return maxCSIMountAttemptsValue
 }
 
 func (ff *FeatureFlags) GetCSIMaxRetryTimeout() time.Duration {
-	maxCsiMountTimeoutValue := ff.getRaw(CSIMaxMountTimeoutKey)
+	maxCSIMountTimeoutValue := ff.getRaw(CSIMaxMountTimeoutKey)
 
-	duration, err := time.ParseDuration(maxCsiMountTimeoutValue)
+	duration, err := time.ParseDuration(maxCSIMountTimeoutValue)
 	if err != nil || duration < 0 {
 		duration, _ = time.ParseDuration(DefaultCSIMaxMountTimeout)
 	}

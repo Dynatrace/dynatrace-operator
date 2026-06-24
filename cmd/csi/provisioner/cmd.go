@@ -72,7 +72,7 @@ func run(*cobra.Command, []string) error {
 		return err
 	}
 
-	err = csiprovisioner.NewOneAgentProvisioner(csiManager, createCsiOptions()).SetupWithManager(csiManager)
+	err = csiprovisioner.NewOneAgentProvisioner(csiManager, createCSIOptions()).SetupWithManager(csiManager)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func createManager(config *rest.Config, namespace string) (manager.Manager, erro
 	return mgr, nil
 }
 
-func createCsiOptions() dtcsi.CSIOptions {
+func createCSIOptions() dtcsi.CSIOptions {
 	return dtcsi.CSIOptions{
 		RootDir: dtcsi.DataPath,
 	}
