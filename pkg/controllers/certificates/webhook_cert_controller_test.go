@@ -33,7 +33,7 @@ const (
 
 func TestReconcileCertificate_Create(t *testing.T) {
 	clt := newFakeClientBuilder().WithCRD().Build()
-	controller, request := prepareController(clt)
+	controller, request := prepareController(t, clt)
 
 	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
@@ -60,7 +60,7 @@ func TestReconcileCertificate_Create(t *testing.T) {
 
 func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
 	clt := newFakeClientBuilder().Build()
-	controller, request := prepareController(clt)
+	controller, request := prepareController(t, clt)
 
 	res, err := controller.Reconcile(t.Context(), request)
 	require.Error(t, err)
@@ -69,7 +69,7 @@ func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
 
 func TestReconcileCertificate_Update(t *testing.T) {
 	clt := newFakeClientBuilder().WithInvalidCertificateSecret().WithCRD().Build()
-	controller, request := prepareController(clt)
+	controller, request := prepareController(t, clt)
 
 	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
@@ -96,7 +96,7 @@ func TestReconcileCertificate_Update(t *testing.T) {
 
 func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
 	clt := newFakeClientBuilder().WithValidCertificateSecret().WithCRD().Build()
-	controller, request := prepareController(clt)
+	controller, request := prepareController(t, clt)
 
 	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 			})
-		controller, request := prepareController(fakeClient)
+		controller, request := prepareController(t, fakeClient)
 		result, err := controller.Reconcile(t.Context(), request)
 
 		require.NoError(t, err)
@@ -185,7 +185,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 			})
-		controller, request := prepareController(fakeClient)
+		controller, request := prepareController(t, fakeClient)
 		result, err := controller.Reconcile(t.Context(), request)
 
 		require.NoError(t, err)
@@ -202,10 +202,10 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dkCrd, ecCrd, deployment)
 		cs := newCertificateSecret(deployment)
 		_ = cs.setSecretFromReader(t.Context(), fakeClient, testNamespace)
-		_ = cs.validateCertificates(t.Context(), testNamespace)
+		_ = cs.validateCertificates(t.Context(), testNamespace, defaultRenewalThreshold, defaultServerCertDuration, defaultRootCertDuration)
 		_ = cs.createOrUpdateIfNecessary(t.Context(), fakeClient)
 
-		controller, request := prepareController(fakeClient)
+		controller, request := prepareController(t, fakeClient)
 		result, err := controller.Reconcile(t.Context(), request)
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -228,7 +228,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 		})
-		controller, request := prepareController(fakeClient)
+		controller, request := prepareController(t, fakeClient)
 		result, err := controller.Reconcile(t.Context(), request)
 
 		require.NoError(t, err)
@@ -269,11 +269,11 @@ func createTestSecret(certData map[string][]byte) *corev1.Secret {
 	}
 }
 
-func prepareController(clt client.Client) (*WebhookCertificateController, reconcile.Request) {
-	rec := &WebhookCertificateController{
-		client:    clt,
-		apiReader: clt,
-	}
+func prepareController(t testing.TB, clt client.Client) (*WebhookCertificateController, reconcile.Request) {
+	t.Helper()
+
+	rec, err := newWebhookCertificateController(t.Context(), clt, clt)
+	require.NoError(t, err)
 
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -411,4 +411,66 @@ func (builder *fakeClientBuilder) WithCRD() *fakeClientBuilder {
 
 func (builder *fakeClientBuilder) Build() client.Client {
 	return fake.NewClient(builder.objs...)
+}
+
+func TestNewWebhookCertificateController(t *testing.T) {
+	newClient := func() client.Client { return fake.NewClient() }
+
+	t.Run("default config succeeds", func(t *testing.T) {
+		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.NoError(t, err)
+	})
+
+	t.Run("zero renewal threshold falls back to default", func(t *testing.T) {
+		t.Setenv(EnvVarRenewalThreshold, "0s")
+		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.NoError(t, err)
+		assert.Equal(t, defaultRenewalThreshold, ctrl.renewalThreshold)
+	})
+
+	t.Run("zero root cert duration falls back to default", func(t *testing.T) {
+		t.Setenv(EnvVarRootCertDuration, "0s")
+		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.NoError(t, err)
+		assert.Equal(t, defaultRootCertDuration, ctrl.rootCertDuration)
+	})
+
+	t.Run("zero server cert duration falls back to default", func(t *testing.T) {
+		t.Setenv(EnvVarServerCertDuration, "0s")
+		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.NoError(t, err)
+		assert.Equal(t, defaultServerCertDuration, ctrl.serverCertDuration)
+	})
+
+	t.Run("zero requeue interval falls back to default", func(t *testing.T) {
+		t.Setenv(EnvVarDefaultRequeueAfter, "0s")
+		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.NoError(t, err)
+		assert.Equal(t, DefaultRequeueAfter, ctrl.requeueAfter)
+	})
+
+	t.Run("root cert duration shorter than renewal threshold", func(t *testing.T) {
+		t.Setenv(EnvVarRootCertDuration, "6h")
+		t.Setenv(EnvVarRenewalThreshold, "12h")
+		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "root cert duration")
+	})
+
+	t.Run("server cert duration shorter than renewal threshold", func(t *testing.T) {
+		t.Setenv(EnvVarServerCertDuration, "6h")
+		t.Setenv(EnvVarRenewalThreshold, "12h")
+		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "server cert duration")
+	})
+
+	t.Run("server cert duration longer than root cert duration", func(t *testing.T) {
+		t.Setenv(EnvVarRootCertDuration, "24h")
+		t.Setenv(EnvVarServerCertDuration, "168h")
+		t.Setenv(EnvVarRenewalThreshold, "1h")
+		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "root cert duration")
+	})
 }

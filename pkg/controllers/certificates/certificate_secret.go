@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -68,26 +67,14 @@ func (certSecret *certificateSecret) isRecent() bool {
 	}
 }
 
-func (certSecret *certificateSecret) validateCertificates(ctx context.Context, namespace string) error {
-	renewalThreshold := envvars.GetDuration(EnvVarRenewalThreshold, defaultRenewalThreshold)
-	rootDuration := envvars.GetDuration(EnvVarRootCertDuration, defaultRootCertDuration)
-	serverDuration := envvars.GetDuration(EnvVarServerCertDuration, defaultServerCertDuration)
-
-	if rootDuration <= renewalThreshold {
-		return fmt.Errorf("root cert duration (%s) must exceed renewal threshold (%s)", rootDuration, renewalThreshold)
-	}
-
-	if serverDuration <= renewalThreshold {
-		return fmt.Errorf("server cert duration (%s) must exceed renewal threshold (%s)", serverDuration, renewalThreshold)
-	}
-
+func (certSecret *certificateSecret) validateCertificates(ctx context.Context, namespace string, renewalThreshold, serverCertDuration, rootCertDuration time.Duration) error {
 	certs := Certs{
 		Domain:             webhook.DeploymentName + "." + namespace,
 		SrcData:            certSecret.secret.Data,
 		Now:                time.Now(),
 		RenewalThreshold:   renewalThreshold,
-		ServerCertDuration: serverDuration,
-		RootCertDuration:   rootDuration,
+		ServerCertDuration: serverCertDuration,
+		RootCertDuration:   rootCertDuration,
 	}
 	if err := certs.ValidateCerts(ctx); err != nil {
 		return fmt.Errorf("validate certificates: %w", err)
