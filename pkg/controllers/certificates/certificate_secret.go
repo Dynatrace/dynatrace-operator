@@ -69,13 +69,25 @@ func (certSecret *certificateSecret) isRecent() bool {
 }
 
 func (certSecret *certificateSecret) validateCertificates(ctx context.Context, namespace string) error {
+	renewalThreshold := envvars.GetDuration(EnvVarRenewalThreshold, defaultRenewalThreshold)
+	rootDuration := envvars.GetDuration(EnvVarRootCertDuration, defaultRootCertDuration)
+	serverDuration := envvars.GetDuration(EnvVarServerCertDuration, defaultServerCertDuration)
+
+	if rootDuration <= renewalThreshold {
+		return fmt.Errorf("root cert duration (%s) must exceed renewal threshold (%s)", rootDuration, renewalThreshold)
+	}
+
+	if serverDuration <= renewalThreshold {
+		return fmt.Errorf("server cert duration (%s) must exceed renewal threshold (%s)", serverDuration, renewalThreshold)
+	}
+
 	certs := Certs{
 		Domain:             webhook.DeploymentName + "." + namespace,
 		SrcData:            certSecret.secret.Data,
 		Now:                time.Now(),
-		RenewalThreshold:   envvars.GetDuration(EnvVarRenewalThreshold, defaultRenewalThreshold),
-		ServerCertDuration: envvars.GetDuration(EnvVarServerCertDuration, defaultServerCertDuration),
-		RootCertDuration:   envvars.GetDuration(EnvVarRootCertDuration, defaultRootCertDuration),
+		RenewalThreshold:   renewalThreshold,
+		ServerCertDuration: serverDuration,
+		RootCertDuration:   rootDuration,
 	}
 	if err := certs.ValidateCerts(ctx); err != nil {
 		return fmt.Errorf("validate certificates: %w", err)

@@ -316,3 +316,61 @@ func getCRDFromConversionSpec(conversionSpec *apiextensionsv1.CustomResourceConv
 			Conversion: conversionSpec,
 		}}
 }
+
+func TestValidateCertificates_DurationValidation(t *testing.T) {
+	newCertSecret := func() *certificateSecret {
+		return &certificateSecret{
+			secret: &corev1.Secret{Data: map[string][]byte{}},
+		}
+	}
+
+	t.Run("defaults satisfy constraint", func(t *testing.T) {
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
+		require.NoError(t, err)
+	})
+
+	t.Run("custom valid durations", func(t *testing.T) {
+		t.Setenv(EnvVarRootCertDuration, "48h")
+		t.Setenv(EnvVarServerCertDuration, "24h")
+		t.Setenv(EnvVarRenewalThreshold, "1h")
+
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
+		require.NoError(t, err)
+	})
+
+	t.Run("root cert duration shorter than renewal threshold", func(t *testing.T) {
+		t.Setenv(EnvVarRootCertDuration, "6h")
+		t.Setenv(EnvVarRenewalThreshold, "12h")
+
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "root cert duration")
+	})
+
+	t.Run("root cert duration equal to renewal threshold", func(t *testing.T) {
+		t.Setenv(EnvVarRootCertDuration, "12h")
+		t.Setenv(EnvVarRenewalThreshold, "12h")
+
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "root cert duration")
+	})
+
+	t.Run("server cert duration shorter than renewal threshold", func(t *testing.T) {
+		t.Setenv(EnvVarServerCertDuration, "6h")
+		t.Setenv(EnvVarRenewalThreshold, "12h")
+
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "server cert duration")
+	})
+
+	t.Run("server cert duration equal to renewal threshold", func(t *testing.T) {
+		t.Setenv(EnvVarServerCertDuration, "12h")
+		t.Setenv(EnvVarRenewalThreshold, "12h")
+
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "server cert duration")
+	})
+}

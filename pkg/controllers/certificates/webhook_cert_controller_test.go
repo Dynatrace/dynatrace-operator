@@ -38,7 +38,7 @@ func TestReconcileCertificate_Create(t *testing.T) {
 	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
-	assert.Equal(t, SuccessDuration, res.RequeueAfter)
+	assert.Equal(t, DefaultRequeueAfter, res.RequeueAfter)
 
 	secret := &corev1.Secret{}
 	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
@@ -74,7 +74,7 @@ func TestReconcileCertificate_Update(t *testing.T) {
 	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
-	assert.Equal(t, SuccessDuration, res.RequeueAfter)
+	assert.Equal(t, DefaultRequeueAfter, res.RequeueAfter)
 
 	secret := &corev1.Secret{}
 	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
@@ -101,7 +101,7 @@ func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
 	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
-	assert.Equal(t, SuccessDuration, res.RequeueAfter)
+	assert.Equal(t, DefaultRequeueAfter, res.RequeueAfter)
 
 	secret := &corev1.Secret{}
 	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)

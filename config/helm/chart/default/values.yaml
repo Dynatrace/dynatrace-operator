@@ -132,10 +132,10 @@ webhook:
     failurePolicy: Ignore
     timeoutSeconds: 10
   certs:
-    rootDuration: 8760h # 365 days
-    serverDuration: 168h # 7 days
-    renewalThreshold: 12h
-    controllerSuccessRequeueInterval: 3h # interval of certificate controller in case when certificate is up to date
+    rootDuration: "" # CA root certificate validity duration, defaults to 8760h (365 days)
+    serverDuration: "" # server certificate validity duration, defaults to 168h (7 days)
+    renewalThreshold: "" # certificate renewal threshold, defaults to 12h
+    requeueAfter: "" # requeue interval when certificates are up to date, defaults to 3h
   volumes:
     certsDir:
       sizeLimit: 10Mi
