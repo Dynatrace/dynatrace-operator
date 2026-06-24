@@ -479,4 +479,19 @@ func TestNewWebhookCertificateController(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "root cert duration")
 	})
+
+	t.Run("requeue interval below minimum is clamped to minimum", func(t *testing.T) {
+		t.Setenv(EnvVarDefaultRequeueAfter, "1ns")
+		ctrl, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.NoError(t, err)
+		assert.Equal(t, minRequeueAfter, ctrl.requeueAfter)
+	})
+
+	t.Run("requeue interval exceeds cert renewal window", func(t *testing.T) {
+		t.Setenv(EnvVarServerCertDuration, "14h")
+		t.Setenv(EnvVarRenewalThreshold, "12h")
+		_, err := newWebhookCertificateController(t.Context(), newClient(), newClient())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "requeue interval")
+	})
 }

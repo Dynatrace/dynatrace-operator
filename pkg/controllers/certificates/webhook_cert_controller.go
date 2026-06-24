@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -27,6 +27,13 @@ const (
 	DefaultRequeueAfter = 3 * time.Hour
 
 	EnvVarDefaultRequeueAfter = "DT_WEBHOOK_CERTS_REQUEUE_AFTER"
+	EnvVarRenewalThreshold    = "DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD"
+	EnvVarServerCertDuration  = "DT_WEBHOOK_CERTS_SERVER_DURATION"
+	EnvVarRootCertDuration    = "DT_WEBHOOK_CERTS_ROOT_DURATION"
+
+	minRequeueAfter     = time.Minute
+	minRenewalThreshold = time.Minute
+	minCertDuration     = time.Minute
 
 	initReconcileInterval = 5 * time.Second
 
@@ -69,31 +76,59 @@ func Add(mgr manager.Manager, namespace string) error {
 		Complete(controller)
 }
 
+func parseDurationFromEnv(ctx context.Context, varName string, defaultValue time.Duration) time.Duration {
+	envValue := os.Getenv(varName)
+	if envValue == "" {
+		return defaultValue
+	}
+
+	parsed, err := time.ParseDuration(envValue)
+	if err != nil {
+		logd.FromContext(ctx).Info("invalid duration value, using default", "env", varName, "value", envValue, "default", defaultValue)
+
+		return defaultValue
+	}
+
+	return parsed
+}
+
 func newWebhookCertificateController(ctx context.Context, clt client.Client, apiReader client.Reader) (*WebhookCertificateController, error) {
 	log := logd.FromContext(ctx)
 
-	requeueAfter := envvars.GetDuration(EnvVarDefaultRequeueAfter, DefaultRequeueAfter)
+	requeueAfter := parseDurationFromEnv(ctx, EnvVarDefaultRequeueAfter, DefaultRequeueAfter)
 	if requeueAfter <= 0 {
 		log.Info("requeue interval must be positive, using default", "env", EnvVarDefaultRequeueAfter, "value", requeueAfter, "default", DefaultRequeueAfter)
 		requeueAfter = DefaultRequeueAfter
+	} else if requeueAfter < minRequeueAfter {
+		log.Info("requeue interval below minimum, using minimum", "env", EnvVarDefaultRequeueAfter, "value", requeueAfter, "minimum", minRequeueAfter)
+		requeueAfter = minRequeueAfter
 	}
 
-	renewalThreshold := envvars.GetDuration(EnvVarRenewalThreshold, defaultRenewalThreshold)
+	renewalThreshold := parseDurationFromEnv(ctx, EnvVarRenewalThreshold, defaultRenewalThreshold)
 	if renewalThreshold <= 0 {
 		log.Info("renewal threshold must be positive, using default", "env", EnvVarRenewalThreshold, "value", renewalThreshold, "default", defaultRenewalThreshold)
 		renewalThreshold = defaultRenewalThreshold
+	} else if renewalThreshold < minRenewalThreshold {
+		log.Info("renewal threshold below minimum, using minimum", "env", EnvVarRenewalThreshold, "value", renewalThreshold, "minimum", minRenewalThreshold)
+		renewalThreshold = minRenewalThreshold
 	}
 
-	rootDuration := envvars.GetDuration(EnvVarRootCertDuration, defaultRootCertDuration)
+	rootDuration := parseDurationFromEnv(ctx, EnvVarRootCertDuration, defaultRootCertDuration)
 	if rootDuration <= 0 {
 		log.Info("root cert duration must be positive, using default", "env", EnvVarRootCertDuration, "value", rootDuration, "default", defaultRootCertDuration)
 		rootDuration = defaultRootCertDuration
+	} else if rootDuration < minCertDuration {
+		log.Info("root cert duration below minimum, using minimum", "env", EnvVarRootCertDuration, "value", rootDuration, "minimum", minCertDuration)
+		rootDuration = minCertDuration
 	}
 
-	serverDuration := envvars.GetDuration(EnvVarServerCertDuration, defaultServerCertDuration)
+	serverDuration := parseDurationFromEnv(ctx, EnvVarServerCertDuration, defaultServerCertDuration)
 	if serverDuration <= 0 {
 		log.Info("server cert duration must be positive, using default", "env", EnvVarServerCertDuration, "value", serverDuration, "default", defaultServerCertDuration)
 		serverDuration = defaultServerCertDuration
+	} else if serverDuration < minCertDuration {
+		log.Info("server cert duration below minimum, using minimum", "env", EnvVarServerCertDuration, "value", serverDuration, "minimum", minCertDuration)
+		serverDuration = minCertDuration
 	}
 
 	if rootDuration <= renewalThreshold {
@@ -106,6 +141,10 @@ func newWebhookCertificateController(ctx context.Context, clt client.Client, api
 
 	if rootDuration <= serverDuration {
 		return nil, fmt.Errorf("root cert duration (%s) must exceed server cert duration (%s)", rootDuration, serverDuration)
+	}
+
+	if requeueAfter >= serverDuration-renewalThreshold {
+		return nil, fmt.Errorf("requeue interval (%s) must be shorter than the cert renewal window (server duration %s - renewal threshold %s = %s)", requeueAfter, serverDuration, renewalThreshold, serverDuration-renewalThreshold)
 	}
 
 	return &WebhookCertificateController{
