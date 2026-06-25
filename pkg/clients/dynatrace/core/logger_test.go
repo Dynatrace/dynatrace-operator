@@ -21,13 +21,13 @@ func Test_getLogLevel(t *testing.T) {
 		want           int
 	}{
 		{"", "", levelInfo},
+		{"", "request", levelRequest},
+		{"", "response", levelResponse},
+		{"", "full", levelFull},
 		{"info", "", levelInfo},
 		{"info", "request", levelRequest},
 		{"info", "response", levelResponse},
 		{"info", "full", levelFull},
-		{"", "request", levelRequest},
-		{"", "response", levelResponse},
-		{"", "full", levelFull},
 		{"debug", "", levelDebug},
 		{"debug", "request", levelRequest},
 		{"debug", "response", levelResponse},
