@@ -75,6 +75,8 @@ jobs:
             token: platform
           - version: 4-22
             platform: ocp
+          # when you update this matrix, please also update the slack payload in hack/slack/slack-e2e-ondemand-payload.json
+          # `python3 hack/slack/update_e2e_ondemand.py > hack/slack/slack-e2e-ondemand-payload.json`
     environment: E2E
     runs-on:
       - operator-e2e

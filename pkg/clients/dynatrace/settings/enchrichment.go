@@ -40,6 +40,7 @@ type ingestEnrichmentConfig struct {
 	Type        metadataenrichment.RuleType `json:"type"`
 	Target      string                      `json:"target"`
 	ValueSource string                      `json:"valueSource"`
+	Condition   string                      `json:"condition"`
 }
 
 // GetRules returns metadata enrichment rules.
@@ -129,6 +130,11 @@ func getRulesFromResponse(resp getRulesResponse) []metadataenrichment.Rule {
 	// The legacy schema put all rules into a single item's value.
 	for _, item := range resp.Items {
 		if cfg := item.Value.ingestEnrichmentConfig; metadataenrichment.IsSupportedType(cfg.Type) {
+			if cfg.Condition != "" {
+				// Skip rules with conditions for now
+				continue
+			}
+
 			rule := metadataenrichment.Rule{
 				Type:   cfg.Type,
 				Target: cfg.Target,
