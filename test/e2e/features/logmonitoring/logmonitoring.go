@@ -44,7 +44,7 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithLogMonitoring(),
-		componentDynakube.WithLogMonitoringImageRef(t),
+		componentDynakube.WithLogMonitoringImageRef(t, componentDynakube.GetLatestLogMonitoringImageTagURI(t)),
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
@@ -97,7 +97,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithLogMonitoring(),
-		componentDynakube.WithLogMonitoringImageRef(t),
+		componentDynakube.WithLogMonitoringImageRef(t, componentDynakube.GetLatestLogMonitoringImageTagURI(t)),
 		componentDynakube.WithActiveGate(),
 	}
 

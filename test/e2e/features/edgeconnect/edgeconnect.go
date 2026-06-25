@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sconfigmap"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
@@ -71,18 +72,22 @@ func NormalModeFeature(t *testing.T) features.Feature {
 }
 
 func ProvisionerModeFeature(t *testing.T) features.Feature {
-	return provisionerModeFeature(t, "edgeconnect-install-provisioner")
+	return provisionerModeFeature(t, "edgeconnect-install-provisioner", "")
 }
 
 func ProvisionerModeFeatureWithTag(t *testing.T) features.Feature {
-	return provisionerModeFeature(t, "edgeconnect-install-tag", ecComponents.WithImageRefTag(t))
+	expectedImage := ecComponents.GetLatestImageTagURI(t)
+
+	return provisionerModeFeature(t, "edgeconnect-install-tag", expectedImage, ecComponents.WithImageRefTag(t, expectedImage))
 }
 
 func ProvisionerModeFeatureWithDigest(t *testing.T) features.Feature {
-	return provisionerModeFeature(t, "edgeconnect-install-digest", ecComponents.WithImageRefDigest(t))
+	expectedImage := ecComponents.GetLatestImageDigestURI(t)
+
+	return provisionerModeFeature(t, "edgeconnect-install-digest", expectedImage, ecComponents.WithImageRefDigest(t, expectedImage))
 }
 
-func provisionerModeFeature(t *testing.T, featureName string, opts ...ecComponents.Option) features.Feature {
+func provisionerModeFeature(t *testing.T, featureName, expectedImage string, opts ...ecComponents.Option) features.Feature {
 	builder := features.New(featureName)
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
@@ -108,6 +113,10 @@ func provisionerModeFeature(t *testing.T, featureName string, opts ...ecComponen
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 	builder.Assess("get EC status", ecComponents.Get(&testEdgeConnect))
+
+	if expectedImage != "" {
+		builder.Assess("edgeconnect deployment uses expected image", k8sdeployment.VerifyUsesImage(testEdgeConnect.Name, testEdgeConnect.Namespace, expectedImage))
+	}
 	builder.Assess("check if EC configuration exists on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	builder.Assess("check hostPatterns on the tenant - testHostPattern", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern }))
 	builder.Assess("update hostPatterns", updateHostPatterns(&testEdgeConnect, testHostPattern2))

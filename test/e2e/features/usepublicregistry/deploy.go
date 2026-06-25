@@ -337,32 +337,27 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	// Override the OneAgent image in the oneagent spec section.
-	oaSpec := cloudnative.DefaultCloudNativeSpec()
-	oaSpec.Image = registry.GetLatestOneAgentImageURI(t)
-
-	// Override the ActiveGate image in the activeGate spec section.
+	oaExpectedImage := registry.GetLatestOneAgentImageURI(t)
 	agExpectedImage := registry.GetLatestActiveGateImageURI(t)
+	dbExecutorExpectedImage := dynakubeComponents.GetLatestDBExecutorImageTagURI(t)
 
 	const dbID = "mysql"
 
 	options := []dynakubeComponents.Option{
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithCloudNativeSpec(oaSpec),
+		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
+		dynakubeComponents.WithCustomOneAgentImage(oaExpectedImage),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithCustomActiveGateImage(agExpectedImage),
 		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: dbID}),
-		dynakubeComponents.WithExtensionsDBExecutorImageRef(t),
+		dynakubeComponents.WithExtensionsDBExecutorImageRef(t, dbExecutorExpectedImage),
 	}
 	if !tenant.UsePlatformToken() {
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	testDynakube := *dynakubeComponents.New(options...)
-
-	dbExecutorRef := testDynakube.Spec.Templates.SQLExtensionExecutor.ImageRef
-	dbExecutorExpectedImage := dbExecutorRef.Repository + ":" + dbExecutorRef.Tag
 
 	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
 
@@ -383,7 +378,7 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 		statusSourceIsCustomImage(testDynakube, image.ActiveGate))
 
 	builder.Assess("OneAgent DaemonSet uses overridden image",
-		k8sdaemonset.VerifyUsesImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, oaSpec.Image))
+		k8sdaemonset.VerifyUsesImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, oaExpectedImage))
 	builder.Assess("ActiveGate StatefulSet uses overridden image",
 		k8sstatefulset.VerifyUsesImage(agStatefulSetName, testDynakube.Namespace, agExpectedImage))
 	builder.Assess("DBExecutor deployment uses overridden image",

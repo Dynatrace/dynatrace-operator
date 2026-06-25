@@ -29,9 +29,9 @@ func WithHPA(t *testing.T) features.Feature {
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
-		componentDynakube.WithExtensionsEECImageRef(t),
+		componentDynakube.WithExtensionsEECImageRef(t, componentDynakube.GetLatestEECImageTagURI(t)),
 		componentDynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID}),
-		componentDynakube.WithExtensionsDBExecutorImageRef(t),
+		componentDynakube.WithExtensionsDBExecutorImageRef(t, componentDynakube.GetLatestDBExecutorImageTagURI(t)),
 		componentDynakube.WithActiveGate(),
 	}
 
@@ -71,9 +71,9 @@ func EnforceReplicas(t *testing.T) features.Feature {
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
-		componentDynakube.WithExtensionsEECImageRef(t),
+		componentDynakube.WithExtensionsEECImageRef(t, componentDynakube.GetLatestEECImageTagURI(t)),
 		componentDynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID, Replicas: baseReplicas}),
-		componentDynakube.WithExtensionsDBExecutorImageRef(t),
+		componentDynakube.WithExtensionsDBExecutorImageRef(t, componentDynakube.GetLatestDBExecutorImageTagURI(t)),
 		componentDynakube.WithActiveGate(),
 	}
 
