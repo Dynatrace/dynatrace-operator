@@ -7,10 +7,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const DefaultPriority = LowPriority
-const LowPriority = 1
-const MediumPriority = 5
-const HighPriority = 10
+const (
+	DefaultPriority = LowPriority
+	LowPriority     = 1
+	MediumPriority  = 5
+	HighPriority    = 10
+)
+
+var sanitizeArgs = strings.NewReplacer("\n", "", "\t", "", "\r", "", "\x00", "")
 
 type Map struct {
 	entries        map[string][]entry
@@ -67,6 +71,14 @@ func WithAllowDuplicatesFor(key string) Option {
 	}
 }
 
+func WithTrimInvalidStringChars() Option {
+	return func(a *entry) {
+		if s, ok := a.value.(string); ok {
+			a.value = sanitizeArgs.Replace(s)
+		}
+	}
+}
+
 func New(defaultOptions ...Option) *Map {
 	m := &Map{
 		entries:        make(map[string][]entry),
@@ -104,7 +116,7 @@ func (m Map) Append(key string, value any, opts ...Option) {
 		}
 
 		if !slices.ContainsFunc(m.entries[key], func(e entry) bool {
-			return e.value == value
+			return e.value == newArg.value
 		}) {
 			m.entries[key] = append(m.entries[key], newArg)
 		}

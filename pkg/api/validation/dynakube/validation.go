@@ -70,6 +70,7 @@ var (
 		publicRegistryOverrideWithoutPublicRegistry,
 		invalidNetworkZone,
 		invalidOneAgentHostGroup,
+		invalidNoProxy,
 		publicRegistryNotAllowedForClassic,
 	}
 	validatorWarningFuncs = []validatorFunc{

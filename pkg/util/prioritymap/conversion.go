@@ -3,13 +3,14 @@ package prioritymap
 import (
 	"cmp"
 	"fmt"
+	"maps"
 	"slices"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 func (m Map) AsEnvVars() []corev1.EnvVar {
-	keys := m.getSortedKeys()
+	keys := slices.Sorted(maps.Keys(m.entries))
 	envVars := make([]corev1.EnvVar, 0, len(keys))
 
 	for _, key := range keys {
@@ -42,8 +43,8 @@ func (m Map) AsEnvVars() []corev1.EnvVar {
 }
 
 func (m Map) AsKeyValueStrings() []string {
-	keys := m.getSortedKeys()
-	valStrings := make([]string, 0)
+	keys := slices.Sorted(maps.Keys(m.entries))
+	valStrings := make([]string, 0, len(keys))
 
 	for _, key := range keys {
 		slices.SortStableFunc(m.entries[key], func(a, b entry) int {
@@ -56,16 +57,4 @@ func (m Map) AsKeyValueStrings() []string {
 	}
 
 	return valStrings
-}
-
-func (m Map) getSortedKeys() []string {
-	// some unit tests rely on having the resulting env vars always being in the same order
-	keys := make([]string, 0, len(m.entries))
-	for key := range m.entries {
-		keys = append(keys, key)
-	}
-
-	slices.Sort(keys)
-
-	return keys
 }
