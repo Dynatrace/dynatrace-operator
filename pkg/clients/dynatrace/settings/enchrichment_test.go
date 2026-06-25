@@ -52,6 +52,7 @@ func TestGetRulesSetting(t *testing.T) {
 			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceLabelRule, ValueSource: "source-1", Target: "target-1"}}},
 			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceAnnotationRule, ValueSource: "source-2", Target: "target-2"}}},
 			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "FOO", ValueSource: "source-3", Target: "target-3"}}},
+			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.CustomRule, ValueSource: "source-4", Target: "target-4", Condition: "true"}}},
 		},
 	}
 
