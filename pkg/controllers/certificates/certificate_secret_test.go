@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -326,7 +327,7 @@ func TestValidateCertificates_DurationValidation(t *testing.T) {
 	}
 
 	t.Run("valid defaults", func(t *testing.T) {
-		err := newCertSecret().validateCertificates(t.Context(), testNamespace, defaultRenewalThreshold, defaultServerCertDuration, defaultRootCertDuration)
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace, k8senv.GetWebhookCertsRenewalThreshold(t.Context()), k8senv.GetWebhookCertsServerDuration(t.Context()), k8senv.GetWebhookCertsRootDuration(t.Context()))
 		require.NoError(t, err)
 	})
 

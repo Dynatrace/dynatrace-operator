@@ -203,7 +203,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dkCrd, ecCrd, deployment)
 		cs := newCertificateSecret(deployment)
 		_ = cs.setSecretFromReader(t.Context(), fakeClient, testNamespace)
-		_ = cs.validateCertificates(t.Context(), testNamespace, defaultRenewalThreshold, defaultServerCertDuration, defaultRootCertDuration)
+		_ = cs.validateCertificates(t.Context(), testNamespace, k8senv.GetWebhookCertsRenewalThreshold(t.Context()), k8senv.GetWebhookCertsServerDuration(t.Context()), k8senv.GetWebhookCertsRootDuration(t.Context()))
 		_ = cs.createOrUpdateIfNecessary(t.Context(), fakeClient)
 
 		controller, request := prepareController(t, fakeClient)
@@ -251,14 +251,15 @@ func createInvalidTestCertData() map[string][]byte {
 }
 
 func createValidTestCertData() map[string][]byte {
+	ctx := context.Background()
 	cert := Certs{
 		Domain:             testDomain,
 		Now:                time.Now(),
-		RenewalThreshold:   defaultRenewalThreshold,
-		ServerCertDuration: defaultServerCertDuration,
-		RootCertDuration:   defaultRootCertDuration,
+		RenewalThreshold:   k8senv.GetWebhookCertsRenewalThreshold(ctx),
+		ServerCertDuration: k8senv.GetWebhookCertsServerDuration(ctx),
+		RootCertDuration:   k8senv.GetWebhookCertsRootDuration(ctx),
 	}
-	_ = cert.ValidateCerts(context.Background())
+	_ = cert.ValidateCerts(ctx)
 
 	return cert.Data
 }
@@ -296,9 +297,9 @@ func verifyCertificates(t *testing.T, secret *corev1.Secret, clt client.Client, 
 		Data:               secret.Data,
 		SrcData:            secret.Data,
 		Now:                time.Now(),
-		RenewalThreshold:   defaultRenewalThreshold,
-		ServerCertDuration: defaultServerCertDuration,
-		RootCertDuration:   defaultRootCertDuration,
+		RenewalThreshold:   k8senv.GetWebhookCertsRenewalThreshold(t.Context()),
+		ServerCertDuration: k8senv.GetWebhookCertsServerDuration(t.Context()),
+		RootCertDuration:   k8senv.GetWebhookCertsRootDuration(t.Context()),
 	}
 
 	// validateRootCerts and validateServerCerts return false if the certificates are valid
@@ -432,21 +433,21 @@ func TestNewWebhookCertificateController(t *testing.T) {
 		t.Setenv(k8senv.WebhookCertsRenewalThresholdEnvVar, "0s")
 		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
-		assert.Equal(t, defaultRenewalThreshold, ctrl.renewalThreshold)
+		assert.Equal(t, k8senv.GetWebhookCertsRenewalThreshold(t.Context()), ctrl.renewalThreshold)
 	})
 
 	t.Run("zero root cert duration falls back to default", func(t *testing.T) {
 		t.Setenv(k8senv.WebhookCertsRootDurationEnvVar, "0s")
 		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
-		assert.Equal(t, defaultRootCertDuration, ctrl.rootCertDuration)
+		assert.Equal(t, k8senv.GetWebhookCertsRootDuration(t.Context()), ctrl.rootCertDuration)
 	})
 
 	t.Run("zero server cert duration falls back to default", func(t *testing.T) {
 		t.Setenv(k8senv.WebhookCertsServerDurationEnvVar, "0s")
 		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
-		assert.Equal(t, defaultServerCertDuration, ctrl.serverCertDuration)
+		assert.Equal(t, k8senv.GetWebhookCertsServerDuration(t.Context()), ctrl.serverCertDuration)
 	})
 
 	t.Run("zero requeue interval falls back to default", func(t *testing.T) {
