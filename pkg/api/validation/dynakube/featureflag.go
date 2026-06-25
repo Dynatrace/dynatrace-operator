@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
 const (
@@ -113,7 +114,7 @@ func isNodeImagePullWithoutCSI(_ context.Context, v *Validator, dk *dynakube.Dyn
 }
 
 func invalidNoProxy(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if strings.ContainsFunc(dk.FF().GetNoProxy(), isWhiteSpaceCharacter) {
+	if strings.ContainsAny(dk.FF().GetNoProxy(), sanitize.InvalidCommandLineCharset) {
 		return errorInvalidNoProxy
 	}
 

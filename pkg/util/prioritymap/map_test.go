@@ -290,22 +290,13 @@ func TestDuplicateArguments(t *testing.T) {
 
 func TestTrimInvalidStringChars(t *testing.T) {
 	t.Run("remove chars", func(t *testing.T) {
-		invalidChars := []rune{
-			'\n',
-			'\t',
-			'\r',
-			'\x00',
-		}
-
-		for _, c := range invalidChars {
-			m := New(WithSeparator("="), WithTrimInvalidStringChars())
-			m.Append("test", "foo"+string(c)+"bar")
-			assert.Equalf(t, []string{"test=foobar"}, m.AsKeyValueStrings(), "failed to remove %c", c)
-		}
+		m := New(WithSeparator("="), WithSanitizeCommandLineArg())
+		m.Append("test", "foo\nbar")
+		assert.Equal(t, []string{"test=foobar"}, m.AsKeyValueStrings())
 	})
 
 	t.Run("prevent duplicates", func(t *testing.T) {
-		m := New(WithAllowDuplicates(), WithSeparator("="), WithTrimInvalidStringChars())
+		m := New(WithAllowDuplicates(), WithSeparator("="), WithSanitizeCommandLineArg())
 		m.Append("test", "foobar")
 		m.Append("test", "foo\nbar")
 		assert.Equal(t, []string{"test=foobar"}, m.AsKeyValueStrings())

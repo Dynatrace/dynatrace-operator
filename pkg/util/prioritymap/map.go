@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -13,8 +14,6 @@ const (
 	MediumPriority  = 5
 	HighPriority    = 10
 )
-
-var sanitizeArgs = strings.NewReplacer("\n", "", "\t", "", "\r", "", "\x00", "")
 
 type Map struct {
 	entries        map[string][]entry
@@ -71,10 +70,10 @@ func WithAllowDuplicatesFor(key string) Option {
 	}
 }
 
-func WithTrimInvalidStringChars() Option {
+func WithSanitizeCommandLineArg() Option {
 	return func(a *entry) {
 		if s, ok := a.value.(string); ok {
-			a.value = sanitizeArgs.Replace(s)
+			a.value = sanitize.CommandLineArg(s)
 		}
 	}
 }
@@ -140,7 +139,7 @@ func Append[V ValueType](argMap *Map, value V, opts ...Option) {
 			argMap.Append(k, vv, opts...)
 		}
 	case []string:
-		for _, s := range typedValue {
+		for _, s := range sanitize.CommandLineArgs(typedValue) {
 			key, delim, value := ParseCommandLineArgument(s)
 
 			if len(key) > 0 {
