@@ -478,6 +478,6 @@ func isJSONList(body []byte) bool {
 
 func logAPIRequest(log logd.Logger, args []any) {
 	if len(args) > 0 {
-		log.Debug("API request", args...)
+		log.Info("API request", args...)
 	}
 }
