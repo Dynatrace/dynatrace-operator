@@ -20,15 +20,17 @@ func Test_getLogLevel(t *testing.T) {
 		clientDebugEnv string
 		want           int
 	}{
-		{"", "", levelDefault},
-		{"info", "", levelDefault},
-		{"", "disabled", levelDisabled},
+		{"", "", levelInfo},
+		{"info", "", levelInfo},
+		{"info", "request", levelRequest},
+		{"info", "response", levelResponse},
+		{"info", "full", levelFull},
 		{"", "request", levelRequest},
 		{"", "response", levelResponse},
 		{"", "full", levelFull},
-		{"debug", "", levelFull},
-		{"debug", "disabled", levelFull},
-		{"debug", "request", levelFull},
+		{"debug", "", levelDebug},
+		{"debug", "request", levelRequest},
+		{"debug", "response", levelResponse},
 		{"debug", "full", levelFull},
 	}
 
@@ -73,14 +75,32 @@ func Test_loggerArgs(t *testing.T) {
 		logLevel int
 		want     []any
 	}{
-		{"disabled", levelDisabled, nil},
-		{"default", levelDefault, nil},
-		{"default/cached", levelDefault, nil},
+		{"info", levelInfo, nil},
 		{
-			"default/error",
-			levelDefault,
+			"info/error",
+			levelInfo,
 			[]any{
 				"method", "GET", "path", "/path-foo", "status_code", http.StatusBadRequest, "duration", "1s",
+			},
+		},
+		{
+			"debug",
+			levelDebug,
+			[]any{
+				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
+				"cached", false,
+				"host", "host.test",
+				"query", `{"query-foo":"query-bar"}`,
+			},
+		},
+		{
+			"debug/cached",
+			levelDebug,
+			[]any{
+				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
+				"cached", true,
+				"host", "host.test",
+				"query", `{"query-foo":"query-bar"}`,
 			},
 		},
 		{
@@ -88,6 +108,9 @@ func Test_loggerArgs(t *testing.T) {
 			levelRequest,
 			[]any{
 				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
+				"cached", false,
+				"host", "host.test",
+				"query", `{"query-foo":"query-bar"}`,
 				"request_body", sanitizedRequest,
 			},
 		},
@@ -96,6 +119,9 @@ func Test_loggerArgs(t *testing.T) {
 			levelResponse,
 			[]any{
 				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
+				"cached", false,
+				"host", "host.test",
+				"query", `{"query-foo":"query-bar"}`,
 				"request_body", sanitizedRequest,
 				"response_body", sanitizedResponse,
 			},
@@ -108,24 +134,10 @@ func Test_loggerArgs(t *testing.T) {
 				"cached", false,
 				"host", "host.test",
 				"query", `{"query-foo":"query-bar"}`,
+				"request_body", sanitizedRequest,
+				"response_body", sanitizedResponse,
 				"request_headers", `{"Authorization":"Bearer eya.eyb.***","Request-Foo":"request-` + publicPart + `.***"}`,
 				"response_headers", `{"Response-Foo":"response-` + publicPart + `.***"}`,
-				"request_body", sanitizedRequest,
-				"response_body", sanitizedResponse,
-			},
-		},
-		{
-			"full/cached",
-			levelFull,
-			[]any{
-				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
-				"cached", true,
-				"host", "host.test",
-				"query", `{"query-foo":"query-bar"}`,
-				"request_headers", `{"Authorization":"Bearer eya.eyb.***","Request-Foo":"request-` + publicPart + `.***"}`,
-				"response_headers", `{"Response-Foo":"response-` + publicPart + `.***","X-Dt-Cache":"true"}`,
-				"request_body", sanitizedRequest,
-				"response_body", sanitizedResponse,
 			},
 		},
 	}
@@ -145,11 +157,11 @@ func Test_loggerArgs(t *testing.T) {
 
 			resp := response
 			switch tt.name {
-			case "default/error":
+			case "info/error":
 				errResp := *response
 				errResp.StatusCode = http.StatusBadRequest
 				resp = &errResp
-			case "default/cached", "full/cached":
+			case "debug/cached":
 				cached := *response
 				cached.Header = response.Header.Clone()
 				cached.Header.Set(middleware.CacheHitHeader, "true")

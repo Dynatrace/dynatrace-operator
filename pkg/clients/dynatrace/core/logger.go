@@ -14,26 +14,21 @@ import (
 )
 
 const (
-	levelDisabled = iota
-	levelDefault  // default
-	levelRequest  // request
-	levelResponse // response
-	levelFull     // full
+	levelInfo     = iota // default
+	levelDebug           // debug
+	levelRequest         // request
+	levelResponse        // response
+	levelFull            // full
 )
 
 const (
 	// LogLevelEnv controls the verbosity of the Dynatrace API client.
-	// The value will only be used when the LOG_LEVEL variable is set to "debug".
 	LogLevelEnv = "DT_CLIENT_LOG_LEVEL"
 )
 
 var logLevel = getLogLevel()
 
 func getLogLevel() int {
-	if strings.ToLower(os.Getenv(logd.LogLevelEnv)) == "debug" {
-		return levelFull
-	}
-
 	switch strings.ToLower(os.Getenv(LogLevelEnv)) {
 	case "full":
 		return levelFull
@@ -41,11 +36,13 @@ func getLogLevel() int {
 		return levelRequest
 	case "response":
 		return levelResponse
-	case "disabled":
-		return levelDisabled
 	}
 
-	return levelDefault
+	if strings.ToLower(os.Getenv(logd.LogLevelEnv)) == "debug" {
+		return levelDebug
+	}
+
+	return levelInfo
 }
 
 // for unit tests
@@ -58,11 +55,7 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 	start := timeNow()
 
 	return func(resp *http.Response, responseBody []byte) []any {
-		if logLevel < levelDefault {
-			return nil
-		}
-
-		if logLevel == levelDefault && resp.StatusCode < http.StatusBadRequest {
+		if logLevel == levelInfo && resp.StatusCode < http.StatusBadRequest {
 			return nil
 		}
 
@@ -75,12 +68,10 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 			"duration", duration.String(),
 		}
 
-		if logLevel >= levelFull {
+		if logLevel >= levelDebug {
 			args = append(args, "cached", resp.Header.Get(middleware.CacheHitHeader) != "")
 			args = append(args, "host", resp.Request.URL.Host)
 			args = append(args, "query", dumpValues(resp.Request.URL.Query(), false))
-			args = append(args, "request_headers", dumpValues(resp.Request.Header, true))
-			args = append(args, "response_headers", dumpValues(resp.Header, true))
 		}
 
 		if logLevel >= levelRequest {
@@ -89,6 +80,11 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 
 		if logLevel >= levelResponse {
 			args = append(args, "response_body", sanitizeBody(responseBody))
+		}
+
+		if logLevel >= levelFull {
+			args = append(args, "request_headers", dumpValues(resp.Request.Header, true))
+			args = append(args, "response_headers", dumpValues(resp.Header, true))
 		}
 
 		return args
