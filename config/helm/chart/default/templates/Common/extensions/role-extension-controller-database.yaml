@@ -23,7 +23,7 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["list"]
-  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  {{- if (include "dynatrace-operator.openshiftOrOlm" .) }}
   - apiGroups:
       - security.openshift.io
     resourceNames:

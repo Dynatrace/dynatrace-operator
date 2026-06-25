@@ -273,6 +273,7 @@ csidriver:
         memory: 30Mi
 
 rbac:
+  kubeletFineGrainedAuthz: ""
   activeGate:
     create: true
     annotations: {}
