@@ -71,7 +71,19 @@ func NormalModeFeature(t *testing.T) features.Feature {
 }
 
 func ProvisionerModeFeature(t *testing.T) features.Feature {
-	builder := features.New("edgeconnect-install-provisioner")
+	return provisionerModeFeature(t, "edgeconnect-install-provisioner")
+}
+
+func ProvisionerModeFeatureWithTag(t *testing.T) features.Feature {
+	return provisionerModeFeature(t, "edgeconnect-install-tag", ecComponents.WithImageRefTag(t))
+}
+
+func ProvisionerModeFeatureWithDigest(t *testing.T) features.Feature {
+	return provisionerModeFeature(t, "edgeconnect-install-digest", ecComponents.WithImageRefDigest(t))
+}
+
+func provisionerModeFeature(t *testing.T, featureName string, opts ...ecComponents.Option) features.Feature {
+	builder := features.New(featureName)
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
@@ -81,7 +93,7 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 	testHostPattern2 := fmt.Sprintf("%s.e2eTestHostPattern2.internal.org", testECname)
 
-	testEdgeConnect := *ecComponents.New(
+	ecOpts := append([]ecComponents.Option{
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -89,13 +101,13 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 		ecComponents.WithOAuthResource(secretConfig.Resource),
 		ecComponents.WithProvisionerMode(true),
 		ecComponents.WithHostPattern(testHostPattern),
-	)
+	}, opts...)
+	testEdgeConnect := *ecComponents.New(ecOpts...)
 
 	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 	builder.Assess("get EC status", ecComponents.Get(&testEdgeConnect))
-
 	builder.Assess("check if EC configuration exists on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	builder.Assess("check hostPatterns on the tenant - testHostPattern", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern }))
 	builder.Assess("update hostPatterns", updateHostPatterns(&testEdgeConnect, testHostPattern2))

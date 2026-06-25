@@ -3,8 +3,13 @@
 package edgeconnect
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -12,6 +17,9 @@ import (
 const (
 	defaultName      = "edgeconnect"
 	defaultNamespace = "dynatrace"
+
+	defaultECRepo = "docker.io/dynatrace/edgeconnect"
+	ecImageEnvVar = "E2E_EDGECONNECT_IMAGE"
 )
 
 type Option func(ec *edgeconnect.EdgeConnect)
@@ -112,5 +120,34 @@ func WithProxy(spec *proxy.Spec) Option {
 func WithReplicas(replicas *int32) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
 		ec.Spec.Replicas = replicas
+	}
+}
+
+func WithImageRefTag(t *testing.T) Option {
+	return func(ec *edgeconnect.EdgeConnect) {
+		t.Helper()
+
+		uri := registry.GetLatestImageURI(t, defaultECRepo, ecImageEnvVar)
+		ec.Spec.ImageRef.Repository, ec.Spec.ImageRef.Tag, _ = strings.Cut(uri, ":")
+		setCustomPullSecretIfNeeded(t, ec)
+	}
+}
+
+func WithImageRefDigest(t *testing.T) Option {
+	return func(ec *edgeconnect.EdgeConnect) {
+		t.Helper()
+
+		uri := registry.GetLatestImageDigestURI(t, defaultECRepo, ecImageEnvVar)
+		ec.Spec.ImageRef.Repository, ec.Spec.ImageRef.Digest, _ = strings.Cut(uri, "@")
+		setCustomPullSecretIfNeeded(t, ec)
+	}
+}
+
+func setCustomPullSecretIfNeeded(t *testing.T, ec *edgeconnect.EdgeConnect) {
+	t.Helper()
+
+	if ec.Spec.ImageRef.Repository != defaultECRepo {
+		ec.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
+		t.Logf("image repo %s differs from default %s, setting custom pull secret", ec.Spec.ImageRef.Repository, defaultECRepo)
 	}
 }

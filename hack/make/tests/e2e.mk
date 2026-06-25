@@ -273,6 +273,14 @@ test/e2e/edgeconnect:
 test/e2e/edgeconnect/normal:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install" $(SKIPCLEANUP)
 
+## Runs EdgeConnect e2e test with tag-based image reference
+test/e2e/edgeconnect/tag:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_tag" $(SKIPCLEANUP)
+
+## Runs EdgeConnect e2e test with digest-pinned image reference
+test/e2e/edgeconnect/digest:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_digest" $(SKIPCLEANUP)
+
 ## Runs Edgeconnect e2e proxy test cases
 test/e2e/edgeconnect/proxy:
 	$(GOTESTCMD) -timeout 20m  ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_proxy" $(SKIPCLEANUP)
