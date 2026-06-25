@@ -31,19 +31,21 @@ var logLevel = getLogLevel()
 
 func getLogLevel() int {
 	if strings.ToLower(os.Getenv(logd.LogLevelEnv)) == "debug" {
-		switch strings.ToLower(os.Getenv(LogLevelEnv)) {
-		case "full":
-			return levelFull
-		case "request":
-			return levelRequest
-		case "response":
-			return levelResponse
-		default:
-			return levelDefault
-		}
+		return levelFull
 	}
 
-	return levelDisabled
+	switch strings.ToLower(os.Getenv(LogLevelEnv)) {
+	case "full":
+		return levelFull
+	case "request":
+		return levelRequest
+	case "response":
+		return levelResponse
+	case "disabled":
+		return levelDisabled
+	}
+
+	return levelDefault
 }
 
 // for unit tests
@@ -60,19 +62,23 @@ func createLoggerArgs(requestBody []byte) func(resp *http.Response, responseBody
 			return nil
 		}
 
+		if logLevel == levelDefault && resp.StatusCode < http.StatusBadRequest {
+			return nil
+		}
+
 		duration := timeNow().Sub(start)
 
 		args := []any{
 			"method", resp.Request.Method,
-			"host", resp.Request.URL.Host,
 			"path", resp.Request.URL.Path,
-			"query", dumpValues(resp.Request.URL.Query(), false),
 			"status_code", resp.StatusCode,
 			"duration", duration.String(),
-			"cached", resp.Header.Get(middleware.CacheHitHeader) != "",
 		}
 
 		if logLevel >= levelFull {
+			args = append(args, "cached", resp.Header.Get(middleware.CacheHitHeader) != "")
+			args = append(args, "host", resp.Request.URL.Host)
+			args = append(args, "query", dumpValues(resp.Request.URL.Query(), false))
 			args = append(args, "request_headers", dumpValues(resp.Request.Header, true))
 			args = append(args, "response_headers", dumpValues(resp.Header, true))
 		}
