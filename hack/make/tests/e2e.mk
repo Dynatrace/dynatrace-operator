@@ -206,6 +206,10 @@ test/e2e/pgc:
 test/e2e/publicregistry:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images" $(SKIPCLEANUP)
 
+## Runs public registry images e2e test with digest-based image references only
+test/e2e/publicregistry/digest:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_digest" $(SKIPCLEANUP)
+
 ## Runs all use-public-registry e2e scenarios — OneAgent / ActiveGate / CodeModules,
 ## each with and without publicRegistryOverride (OA + AG on standard, CodeModules on nocsi)
 test/e2e/usepublicregistry:

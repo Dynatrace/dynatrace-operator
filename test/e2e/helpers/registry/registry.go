@@ -35,11 +35,20 @@ const (
 	cmImageEnv = "E2E_ECR_CODEMODULES_IMAGE"
 )
 
-var latestImageURIs = map[string]string{}
+var (
+	latestImageURIs  = map[string]string{}
+	latestDigestURIs = map[string]string{}
+
+	registryBackoff = wait.Backoff{
+		Steps:    3,
+		Duration: 5 * time.Second,
+		Factor:   2.0,
+	}
+)
 
 // GetLatestImageURI returns the image URI for the given repository.
 // If the envVar is set, its value is returned directly.
-// Otherwise the latest tag is resolved from the registry and cached per repo for the lifetime of the test binary.
+// Otherwise, the latest tag is resolved from the registry and cached per repo for the lifetime of the test binary.
 func GetLatestImageURI(t *testing.T, repoURI string, envVar string) string {
 	t.Helper()
 
@@ -63,6 +72,51 @@ func GetLatestImageURI(t *testing.T, repoURI string, envVar string) string {
 	return uri
 }
 
+// GetLatestImageDigestURI resolves the content digest of the latest image for the given repository
+// and returns it in "image@algorithm:hex" form (e.g. "public.ecr.aws/...@sha256:abc123").
+// If the envVar is set its value is used as the source tag to resolve the digest from.
+func GetLatestImageDigestURI(t *testing.T, repoURI string, envVar string) string {
+	t.Helper()
+
+	if uri, ok := latestDigestURIs[repoURI]; ok {
+		t.Logf("using cached resolved digest image: %s", uri)
+
+		return uri
+	}
+
+	tagURI := GetLatestImageURI(t, repoURI, envVar)
+	uri := resolveDigestURI(t, tagURI)
+	latestDigestURIs[repoURI] = uri
+	t.Logf("resolved digest image: %s", uri)
+
+	return uri
+}
+
+func resolveDigestURI(t *testing.T, tagURI string) string {
+	t.Helper()
+
+	ref, err := name.ParseReference(tagURI)
+	require.NoError(t, err)
+
+	var digestStr string
+
+	err = retry.OnError(registryBackoff, isRateLimited, func() error {
+		desc, headErr := remote.Head(ref)
+		if headErr != nil {
+			t.Logf("rate limited fetching digest for %s, retrying...", tagURI)
+
+			return headErr
+		}
+
+		digestStr = desc.Digest.String()
+
+		return nil
+	})
+	require.NoError(t, err)
+
+	return ref.Context().String() + "@" + digestStr
+}
+
 func GetLatestActiveGateImageURI(t *testing.T) string {
 	t.Helper()
 
@@ -81,6 +135,24 @@ func GetLatestCodeModulesImageURI(t *testing.T) string {
 	return GetLatestImageURI(t, cmPublicECR, cmImageEnv)
 }
 
+func GetLatestActiveGateImageDigestURI(t *testing.T) string {
+	t.Helper()
+
+	return GetLatestImageDigestURI(t, agPublicECR, agImageEnv)
+}
+
+func GetLatestOneAgentImageDigestURI(t *testing.T) string {
+	t.Helper()
+
+	return GetLatestImageDigestURI(t, oaPublicECR, oaImageEnv)
+}
+
+func GetLatestCodeModulesImageDigestURI(t *testing.T) string {
+	t.Helper()
+
+	return GetLatestImageDigestURI(t, cmPublicECR, cmImageEnv)
+}
+
 func isRateLimited(err error) bool {
 	var transportErr *transport.Error
 
@@ -93,15 +165,9 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 	repo, err := name.NewRepository(repoURI)
 	require.NoError(t, err)
 
-	backoff := wait.Backoff{
-		Steps:    3,
-		Duration: 5 * time.Second,
-		Factor:   2.0,
-	}
-
 	var tags []string
 
-	err = retry.OnError(backoff, isRateLimited, func() error {
+	err = retry.OnError(registryBackoff, isRateLimited, func() error {
 		var listErr error
 		tags, listErr = remote.List(repo)
 		if listErr != nil {

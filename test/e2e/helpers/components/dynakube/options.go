@@ -135,6 +135,30 @@ func WithCustomActiveGateImage(imageURI string) Option {
 	}
 }
 
+func WithCustomOneAgentImage(imageURI string) Option {
+	return func(dk *dynakube.DynaKube) {
+		switch {
+		case dk.OneAgent().IsCloudNativeFullstackMode():
+			dk.Spec.OneAgent.CloudNativeFullStack.Image = imageURI
+		case dk.OneAgent().IsHostMonitoringMode():
+			dk.Spec.OneAgent.HostMonitoring.Image = imageURI
+		case dk.OneAgent().IsClassicFullStackMode():
+			dk.Spec.OneAgent.ClassicFullStack.Image = imageURI
+		}
+	}
+}
+
+func WithCodeModulesImage(imageURI string) Option {
+	return func(dk *dynakube.DynaKube) {
+		switch {
+		case dk.OneAgent().IsCloudNativeFullstackMode():
+			dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage = imageURI
+		case dk.OneAgent().IsApplicationMonitoringMode():
+			dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = imageURI
+		}
+	}
+}
+
 func WithActiveGateReplicas(replicas *int32) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.ActiveGate.Replicas = replicas
@@ -286,7 +310,7 @@ func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 
 func WithExtensionsEECImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
-		if setImageRefFromEnvOrLatest(
+		if setImageRefTagFromEnvOrLatest(
 			t,
 			dk,
 			&dk.Spec.Templates.ExtensionExecutionController.ImageRef,
@@ -308,7 +332,7 @@ func WithLogMonitoring() Option {
 func WithLogMonitoringImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{}
-		setImageRefFromEnvOrLatest(
+		setImageRefTagFromEnvOrLatest(
 			t,
 			dk,
 			&dk.Spec.Templates.LogMonitoring.ImageRef,
@@ -326,7 +350,7 @@ func WithKSPM() Option {
 
 func WithKSPMImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
-		setImageRefFromEnvOrLatest(
+		setImageRefTagFromEnvOrLatest(
 			t,
 			dk,
 			&dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef,
@@ -358,7 +382,7 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 
 func WithOTelCollectorImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
-		setImageRefFromEnvOrLatest(
+		setImageRefTagFromEnvOrLatest(
 			t,
 			dk,
 			&dk.Spec.Templates.OpenTelemetryCollector.ImageRef,
@@ -385,7 +409,7 @@ func WithExtensionsDatabases(databases ...extensions.DatabaseSpec) Option {
 
 func WithExtensionsDBExecutorImageRef(t *testing.T) Option {
 	return func(dk *dynakube.DynaKube) {
-		setImageRefFromEnvOrLatest(
+		setImageRefTagFromEnvOrLatest(
 			t,
 			dk,
 			&dk.Spec.Templates.SQLExtensionExecutor.ImageRef,
@@ -395,21 +419,72 @@ func WithExtensionsDBExecutorImageRef(t *testing.T) Option {
 	}
 }
 
-// setImageRefFromEnvOrLatest populates the image.Ref from an environment variable, falling back to the latest image from the registry.
-// If the image repo differs from the default repo, the custom pull secret is set on the DynaKube.
-// Returns true, if the pull secret was set.
-func setImageRefFromEnvOrLatest(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, envVar, defaultRepo string) bool {
+func setImageRefTagFromEnvOrLatest(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, envVar, defaultRepo string) bool {
 	t.Helper()
 
 	uri := registry.GetLatestImageURI(t, defaultRepo, envVar)
 	imageRef.Repository, imageRef.Tag, _ = strings.Cut(uri, ":")
 
-	if imageRef.Repository != defaultRepo {
+	return applyCustomPullSecretIfNeeded(t, dk, imageRef.Repository, defaultRepo)
+}
+
+func setImageRefDigestFromEnvOrLatest(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, envVar, defaultRepo string) bool {
+	t.Helper()
+
+	uri := registry.GetLatestImageDigestURI(t, defaultRepo, envVar)
+	imageRef.Repository, imageRef.Digest, _ = strings.Cut(uri, "@")
+
+	return applyCustomPullSecretIfNeeded(t, dk, imageRef.Repository, defaultRepo)
+}
+
+// applyCustomPullSecretIfNeeded sets CustomPullSecret when the resolved image repo differs from the default.
+func applyCustomPullSecretIfNeeded(t *testing.T, dk *dynakube.DynaKube, repository, defaultRepo string) bool {
+	t.Helper()
+
+	if repository != defaultRepo {
 		dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
-		t.Logf("image repo %s differs from default %s, setting custom pull secret", imageRef.Repository, defaultRepo)
+		t.Logf("image repo %s differs from default %s, setting custom pull secret", repository, defaultRepo)
 
 		return true
 	}
 
 	return false
+}
+
+func WithExtensionsEECImageRefDigest(t *testing.T) Option {
+	return func(dk *dynakube.DynaKube) {
+		if setImageRefDigestFromEnvOrLatest(
+			t,
+			dk,
+			&dk.Spec.Templates.ExtensionExecutionController.ImageRef,
+			eecImageEnvVar,
+			defaultEECRepo,
+		) {
+			dk.Annotations["feature.dynatrace.com/use-eec-legacy-mounts"] = "false"
+		}
+	}
+}
+
+func WithKSPMImageRefDigest(t *testing.T) Option {
+	return func(dk *dynakube.DynaKube) {
+		setImageRefDigestFromEnvOrLatest(
+			t,
+			dk,
+			&dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef,
+			kspmImageEnvVar,
+			defaultKSPMRepo,
+		)
+	}
+}
+
+func WithOTelCollectorImageRefDigest(t *testing.T) Option {
+	return func(dk *dynakube.DynaKube) {
+		setImageRefDigestFromEnvOrLatest(
+			t,
+			dk,
+			&dk.Spec.Templates.OpenTelemetryCollector.ImageRef,
+			otelCollectorImageEnvVar,
+			defaultOtelCollectorRepo,
+		)
+	}
 }
