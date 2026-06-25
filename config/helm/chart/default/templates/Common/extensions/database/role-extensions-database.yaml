@@ -20,7 +20,7 @@ metadata:
   labels:
     {{- include "dynatrace-operator.databaseDatasourceLabels" . | nindent 4 }}
 rules:
-  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  {{- if (include "dynatrace-operator.openshiftOrOlm" .) }}
   - apiGroups:
       - security.openshift.io
     resourceNames:

@@ -149,15 +149,13 @@ The common envs that inform the component about what is configured in its pod
 {{- end -}}
 
 {{- define "kubernetes.appArmorSecurityContextSupported" -}}
-{{- if semverCompare ">=1.31.0" .Capabilities.KubeVersion.Version  -}}
+{{- if semverCompare ">=1.31.0" .Capabilities.KubeVersion.Version -}}
     true
-{{- else -}}
-    false
 {{- end -}}
 {{- end -}}
 
 {{- define "kubernetes.defaultAppArmorProfile" -}}
-{{- if eq (include "kubernetes.appArmorSecurityContextSupported" .) "true" -}}
+{{- if (include "kubernetes.appArmorSecurityContextSupported" .) -}}
 appArmorProfile:
   type: RuntimeDefault
 {{- end -}}

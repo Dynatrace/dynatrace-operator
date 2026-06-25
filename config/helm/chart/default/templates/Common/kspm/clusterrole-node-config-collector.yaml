@@ -1,4 +1,4 @@
-{{- if and .Values.rbac.kspm.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+{{- if and .Values.rbac.kspm.create (include "dynatrace-operator.openshiftOrOlm" .) }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");

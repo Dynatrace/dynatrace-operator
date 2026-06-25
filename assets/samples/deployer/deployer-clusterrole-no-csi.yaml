@@ -1,0 +1,59 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynatrace-deployer-no-csi
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets", "serviceaccounts", "services"]
+    verbs: ["create", "get", "update", "patch", "delete", "list"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
+    verbs: ["create", "get", "update", "patch", "delete", "list"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["create", "get", "update", "patch", "delete", "list"]
+  - apiGroups: ["apps"]
+    resources: ["daemonsets", "deployments"]
+    verbs: ["create", "get", "update", "patch", "delete", "list"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["create", "get", "update", "patch", "delete", "list"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterrolebindings", "clusterroles", "rolebindings", "roles"]
+    verbs: ["create", "get", "update", "patch", "delete", "list", "bind", "escalate"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "create", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "update", "patch", "delete", "list", "watch"]
+  # --- DynaKube / EdgeConnect custom resources (namespace-scoped) ---
+  - apiGroups: ["dynatrace.com"]
+    resources: ["dynakubes", "edgeconnects"]
+    verbs: ["create", "get", "update", "patch", "delete", "list"]
+  # --- Platform-specific (only needed if the API exists on the cluster) ---
+  - apiGroups: ["auto.gke.io"]
+    resources: ["allowlistsynchronizers"]
+    verbs: ["create", "get", "update", "patch", "delete", "list"]
+  - apiGroups: ["security.openshift.io"]
+    resources: ["securitycontextconstraints"]
+    verbs: ["create", "get", "update", "patch", "delete", "list"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dynatrace-deployer-no-csi
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-deployer-no-csi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-deployer-no-csi
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-deployer-no-csi
+    namespace: default

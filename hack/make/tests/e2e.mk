@@ -28,6 +28,7 @@ test/e2e:
 	make test/e2e/no-csi || RC=1; \
 	make test/e2e/istio  || RC=1; \
 	make test/e2e/release || RC=1; \
+	make test/e2e/permissions || RC=1; \
 	exit $$RC
 
 ## Run standard, no-csi, istio and release e2e tests with /publish
@@ -37,6 +38,14 @@ test/e2e-publish:
 	make test/e2e/no-csi/publish || RC=1; \
 	make test/e2e/istio/publish || RC=1; \
 	make test/e2e/release/publish || RC=1; \
+	make test/e2e/permissions/publish || RC=1; \
+	exit $$RC
+
+## Start tests that support kind
+test/e2e/kind:
+	RC=0; \
+	make test/e2e/edgeconnect/normal || RC=1; \
+	make test/e2e/permissions || RC=1; \
 	exit $$RC
 
 ## Run standard e2e test only
@@ -54,6 +63,10 @@ test/e2e/no-csi:
 ## Run release e2e test only
 test/e2e/release:
 	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/release $(SKIPCLEANUP)
+
+## Run permissions e2e test
+test/e2e/permissions:
+	$(GOTESTCMD) -timeout 10m ./test/e2e/scenarios/permissions $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:
@@ -218,6 +231,10 @@ test/e2e/usepublicregistry/dbexecutor:
 
 test/e2e/usepublicregistry/logmon:
 	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_logmon" $(SKIPCLEANUP)
+
+## Runs combined all-features test: CloudNative OA + ActiveGate + DBExecutor, each with an explicit image override, plus use-public-registry flag
+test/e2e/usepublicregistry/all-features-with-image-overrides:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_all_features_with_image_overrides" $(SKIPCLEANUP)
 
 ## Runs E2E tests related to propagation of resource attributes
 test/e2e/resourceattributes:

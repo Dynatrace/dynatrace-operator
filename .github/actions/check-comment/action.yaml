@@ -43,11 +43,12 @@ runs:
           });
           core.setOutput('pr_branch', pr.data.head.ref);
           core.setOutput('pr_sha', pr.data.head.sha);
-          const isLegitPr = process.env.AUTHOR_AUTHORIZED === 'true' && pr.data.author_association === 'MEMBER';
+          const isLegitRepo = pr.data.head.repo.full_name === pr.data.base.repo.full_name;
+          const isLegitPr = process.env.AUTHOR_AUTHORIZED === 'true' && isLegitRepo;
           core.setOutput('legit-pr', isLegitPr.toString());
 outputs:
   triggered:
-    description: 'true if an allowed command was found, commenter is authorized, and PR author is a member'
+    description: 'true if an allowed command was found, commenter is authorized, and the PR branch is from this repo'
     value: ${{ steps.get-pr.outputs.legit-pr }}
   detected-command:
     description: 'The detected command from the comment'

@@ -2,7 +2,7 @@ suite: test logmonitoring clusterrole
 templates:
   - Common/logmonitoring/clusterrole-logmonitoring.yaml
 tests:
-  - it: logmonitoring ClusterRole should exist
+  - it: logmonitoring ClusterRole should use nodes/proxy by default (no KubeletFineGrainedAuthz override)
     set:
       rbac.logMonitoring.create: true
       rbac.oneagent.create: false
@@ -22,7 +22,90 @@ tests:
               - ""
             resources:
               - nodes/proxy
+            verbs:
+              - get
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
               - nodes/pods
+            verbs:
+              - get
+  - it: logmonitoring ClusterRole should use nodes/proxy without KubeletFineGrainedAuthz
+    set:
+      rbac.logMonitoring.create: true
+      rbac.oneagent.create: false
+      rbac.kubeletFineGrainedAuthz: false
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-logmonitoring
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - nodes/proxy
+            verbs:
+              - get
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - nodes/pods
+            verbs:
+              - get
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+  - it: logmonitoring ClusterRole should use nodes/pods with KubeletFineGrainedAuthz
+    set:
+      rbac.logMonitoring.create: true
+      rbac.oneagent.create: false
+      rbac.kubeletFineGrainedAuthz: true
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-logmonitoring
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - nodes/pods
+            verbs:
+              - get
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - nodes/proxy
             verbs:
               - get
       - notContains:

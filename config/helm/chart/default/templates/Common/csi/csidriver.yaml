@@ -1,4 +1,4 @@
-{{ if eq (include "dynatrace-operator.needCSI" .) "true" }}
+{{ if (include "dynatrace-operator.needCSI" .) }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
