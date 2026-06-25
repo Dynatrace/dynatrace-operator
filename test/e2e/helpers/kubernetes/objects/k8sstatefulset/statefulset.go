@@ -7,9 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -54,6 +56,13 @@ func IsReady(name, namespace string) features.Func {
 
 		return ctx
 	}
+}
+
+func VerifyUsesImage(name, namespace, expectedImage string) features.Func {
+	var sts appsv1.StatefulSet
+
+	return objects.VerifyWorkloadUsesImage(&sts, name, namespace, expectedImage,
+		func(sts *appsv1.StatefulSet) []corev1.Container { return sts.Spec.Template.Spec.Containers })
 }
 
 // WaitFor wait until StatefulSet status replicas and readyReplicas are equal.
