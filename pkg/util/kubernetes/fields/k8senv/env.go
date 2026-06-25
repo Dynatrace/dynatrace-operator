@@ -215,5 +215,7 @@ func parseDuration(ctx context.Context, envVar string, defaultValue, minValue, m
 		return defaultValue
 	}
 
+	log.Info("using custom duration", "env", envVar, "value", duration)
+
 	return duration
 }

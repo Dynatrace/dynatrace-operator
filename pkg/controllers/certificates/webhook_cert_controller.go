@@ -67,6 +67,7 @@ func Add(mgr manager.Manager, namespace string) error {
 
 func newWebhookCertificateController(clt client.Client, apiReader client.Reader) (*WebhookCertificateController, error) {
 	ctx := context.Background()
+	_, log := logd.NewFromContext(ctx, "webhook-cert-controller")
 
 	requeueAfter := k8senv.GetWebhookCertsRequeueAfter(ctx)
 	renewalThreshold := k8senv.GetWebhookCertsRenewalThreshold(ctx)
@@ -88,6 +89,8 @@ func newWebhookCertificateController(clt client.Client, apiReader client.Reader)
 		return nil, fmt.Errorf("requeue interval (%s) must be shorter than the cert renewal window (%s - %s = %s); set %s to a value shorter than %s",
 			requeueAfter, serverDuration, renewalThreshold, renewalWindow, k8senv.WebhookCertsRequeueAfterEnvVar, renewalWindow)
 	}
+
+	log.Debug("webhook cert controller config", "requeueAfter", requeueAfter, "renewalThreshold", renewalThreshold, "serverDuration", serverDuration, "rootDuration", rootDuration)
 
 	return &WebhookCertificateController{
 		client:             clt,

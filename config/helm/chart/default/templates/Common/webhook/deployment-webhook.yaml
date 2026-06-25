@@ -93,7 +93,6 @@ spec:
               value: "true"
             {{- end }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
-            {{- include "dynatrace-operator.webhookCertsCtrl.envs" . | nindent 12 }}
           readinessProbe:
             httpGet:
               path: /readyz
