@@ -1,7 +1,6 @@
 package edgeconnect
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -18,18 +17,7 @@ const (
 )
 
 func (ec *EdgeConnect) Image() string {
-	repository := defaultEdgeConnectRepository
-	tag := api.LatestTag
-
-	if ec.Spec.ImageRef.Repository != "" {
-		repository = ec.Spec.ImageRef.Repository
-	}
-
-	if ec.Spec.ImageRef.Tag != "" {
-		tag = ec.Spec.ImageRef.Tag
-	}
-
-	return fmt.Sprintf("%s:%s", repository, tag)
+	return ec.Spec.ImageRef.StringWithDefaults(defaultEdgeConnectRepository, api.LatestTag)
 }
 
 func (ec *EdgeConnect) IsCustomImage() bool {
