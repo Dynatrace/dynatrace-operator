@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,7 @@ func TestReconcileCertificate_Create(t *testing.T) {
 	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
-	assert.Equal(t, DefaultRequeueAfter, res.RequeueAfter)
+	assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
 
 	secret := &corev1.Secret{}
 	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
@@ -74,7 +75,7 @@ func TestReconcileCertificate_Update(t *testing.T) {
 	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
-	assert.Equal(t, DefaultRequeueAfter, res.RequeueAfter)
+	assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
 
 	secret := &corev1.Secret{}
 	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
@@ -101,7 +102,7 @@ func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
 	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
-	assert.Equal(t, DefaultRequeueAfter, res.RequeueAfter)
+	assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
 
 	secret := &corev1.Secret{}
 	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
@@ -428,60 +429,60 @@ func TestNewWebhookCertificateController(t *testing.T) {
 	})
 
 	t.Run("zero renewal threshold falls back to default", func(t *testing.T) {
-		t.Setenv(EnvVarRenewalThreshold, "0s")
+		t.Setenv(k8senv.WebhookCertsRenewalThresholdEnvVar, "0s")
 		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
 		assert.Equal(t, defaultRenewalThreshold, ctrl.renewalThreshold)
 	})
 
 	t.Run("zero root cert duration falls back to default", func(t *testing.T) {
-		t.Setenv(EnvVarRootCertDuration, "0s")
+		t.Setenv(k8senv.WebhookCertsRootDurationEnvVar, "0s")
 		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
 		assert.Equal(t, defaultRootCertDuration, ctrl.rootCertDuration)
 	})
 
 	t.Run("zero server cert duration falls back to default", func(t *testing.T) {
-		t.Setenv(EnvVarServerCertDuration, "0s")
+		t.Setenv(k8senv.WebhookCertsServerDurationEnvVar, "0s")
 		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
 		assert.Equal(t, defaultServerCertDuration, ctrl.serverCertDuration)
 	})
 
 	t.Run("zero requeue interval falls back to default", func(t *testing.T) {
-		t.Setenv(EnvVarDefaultRequeueAfter, "0s")
+		t.Setenv(k8senv.WebhookCertsRequeueAfterEnvVar, "0s")
 		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
-		assert.Equal(t, DefaultRequeueAfter, ctrl.requeueAfter)
+		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), ctrl.requeueAfter)
 	})
 
 	t.Run("server cert duration shorter than renewal threshold", func(t *testing.T) {
-		t.Setenv(EnvVarServerCertDuration, "6h")
-		t.Setenv(EnvVarRenewalThreshold, "12h")
+		t.Setenv(k8senv.WebhookCertsServerDurationEnvVar, "48h")
+		t.Setenv(k8senv.WebhookCertsRenewalThresholdEnvVar, "72h")
 		_, err := newWebhookCertificateController(newClient(), newClient())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "server cert duration")
 	})
 
 	t.Run("server cert duration longer than root cert duration", func(t *testing.T) {
-		t.Setenv(EnvVarRootCertDuration, "24h")
-		t.Setenv(EnvVarServerCertDuration, "168h")
-		t.Setenv(EnvVarRenewalThreshold, "1h")
+		t.Setenv(k8senv.WebhookCertsRootDurationEnvVar, "200h")
+		t.Setenv(k8senv.WebhookCertsServerDurationEnvVar, "500h")
+		t.Setenv(k8senv.WebhookCertsRenewalThresholdEnvVar, "1h")
 		_, err := newWebhookCertificateController(newClient(), newClient())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "root cert duration")
 	})
 
-	t.Run("requeue interval below minimum is clamped to minimum", func(t *testing.T) {
-		t.Setenv(EnvVarDefaultRequeueAfter, "1ns")
+	t.Run("requeue interval below minimum falls back to default", func(t *testing.T) {
+		t.Setenv(k8senv.WebhookCertsRequeueAfterEnvVar, "1ns")
 		ctrl, err := newWebhookCertificateController(newClient(), newClient())
 		require.NoError(t, err)
-		assert.Equal(t, minRequeueAfter, ctrl.requeueAfter)
+		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), ctrl.requeueAfter)
 	})
 
 	t.Run("requeue interval exceeds cert renewal window", func(t *testing.T) {
-		t.Setenv(EnvVarServerCertDuration, "14h")
-		t.Setenv(EnvVarRenewalThreshold, "12h")
+		t.Setenv(k8senv.WebhookCertsServerDurationEnvVar, "26h")
+		t.Setenv(k8senv.WebhookCertsRenewalThresholdEnvVar, "24h")
 		_, err := newWebhookCertificateController(newClient(), newClient())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "requeue interval")

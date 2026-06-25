@@ -1,6 +1,7 @@
 package k8senv
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -225,6 +226,73 @@ func TestGetDTClientCacheCleanInterval(t *testing.T) {
 			assert.Equal(t, tt.want, GetDTClientCacheCleanInterval(t.Context()))
 		})
 	}
+}
+
+func TestGetWebhookCertDurations(t *testing.T) {
+	type testCase struct {
+		name     string
+		envValue string
+		want     time.Duration
+	}
+
+	run := func(t *testing.T, envVar string, fn func(context.Context) time.Duration, cases []testCase) {
+		t.Helper()
+
+		for _, tt := range cases {
+			t.Run(tt.name, func(t *testing.T) {
+				t.Setenv(envVar, tt.envValue)
+				assert.Equal(t, tt.want, fn(t.Context()))
+			})
+		}
+	}
+
+	t.Run("GetWebhookCertsRequeueAfter", func(t *testing.T) {
+		run(t, WebhookCertsRequeueAfterEnvVar, GetWebhookCertsRequeueAfter, []testCase{
+			{"empty env returns default", "", defaultWebhookCertsRequeueAfter},
+			{"valid duration returns parsed value", "1h", time.Hour},
+			{"invalid duration returns default", "not-a-duration", defaultWebhookCertsRequeueAfter},
+			{"below minimum returns default", "1m", defaultWebhookCertsRequeueAfter},
+			{"above maximum returns default", "24h", defaultWebhookCertsRequeueAfter},
+			{"at minimum boundary returns parsed value", "5m", minWebhookCertsRequeueAfter},
+			{"at maximum boundary returns parsed value", "12h", maxWebhookCertsRequeueAfter},
+		})
+	})
+
+	t.Run("GetWebhookCertsRenewalThreshold", func(t *testing.T) {
+		run(t, WebhookCertsRenewalThresholdEnvVar, GetWebhookCertsRenewalThreshold, []testCase{
+			{"empty env returns default", "", defaultWebhookCertsRenewalThreshold},
+			{"valid duration returns parsed value", "6h", 6 * time.Hour},
+			{"invalid duration returns default", "not-a-duration", defaultWebhookCertsRenewalThreshold},
+			{"below minimum returns default", "30m", defaultWebhookCertsRenewalThreshold},
+			{"above maximum returns default", "1000h", defaultWebhookCertsRenewalThreshold},
+			{"at minimum boundary returns parsed value", "1h", minWebhookCertsRenewalThreshold},
+			{"at maximum boundary returns parsed value", "720h", maxWebhookCertsRenewalThreshold},
+		})
+	})
+
+	t.Run("GetWebhookCertsServerDuration", func(t *testing.T) {
+		run(t, WebhookCertsServerDurationEnvVar, GetWebhookCertsServerDuration, []testCase{
+			{"empty env returns default", "", defaultWebhookCertsServerDuration},
+			{"valid duration returns parsed value", "48h", 48 * time.Hour},
+			{"invalid duration returns default", "not-a-duration", defaultWebhookCertsServerDuration},
+			{"below minimum returns default", "12h", defaultWebhookCertsServerDuration},
+			{"above maximum returns default", "100000h", defaultWebhookCertsServerDuration},
+			{"at minimum boundary returns parsed value", "24h", minWebhookCertsServerDuration},
+			{"at maximum boundary returns parsed value", "8760h", maxWebhookCertsServerDuration},
+		})
+	})
+
+	t.Run("GetWebhookCertsRootDuration", func(t *testing.T) {
+		run(t, WebhookCertsRootDurationEnvVar, GetWebhookCertsRootDuration, []testCase{
+			{"empty env returns default", "", defaultWebhookCertsRootDuration},
+			{"valid duration returns parsed value", "2000h", 2000 * time.Hour},
+			{"invalid duration returns default", "not-a-duration", defaultWebhookCertsRootDuration},
+			{"below minimum returns default", "48h", defaultWebhookCertsRootDuration},
+			{"above maximum returns default", "1000000h", defaultWebhookCertsRootDuration},
+			{"at minimum boundary returns parsed value", "168h", minWebhookCertsRootDuration},
+			{"at maximum boundary returns parsed value", "87600h", maxWebhookCertsRootDuration},
+		})
+	})
 }
 
 func TestNewRef(t *testing.T) {
