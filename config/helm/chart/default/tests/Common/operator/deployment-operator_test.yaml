@@ -1080,3 +1080,62 @@ tests:
             value: "3h"
           count: 1
           any: true
+
+  - it: should not have cert env vars in init container when certs values are empty
+    asserts:
+      - notContains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DT_WEBHOOK_CERTS_ROOT_DURATION
+          any: true
+      - notContains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DT_WEBHOOK_CERTS_SERVER_DURATION
+          any: true
+      - notContains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD
+          any: true
+      - notContains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DT_WEBHOOK_CERTS_REQUEUE_AFTER
+          any: true
+
+  - it: should have cert env vars in init container when certs values are set
+    set:
+      webhook.certs.rootDuration: "8760h"
+      webhook.certs.serverDuration: "168h"
+      webhook.certs.renewalThreshold: "12h"
+      webhook.certs.requeueAfter: "3h"
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DT_WEBHOOK_CERTS_ROOT_DURATION
+            value: "8760h"
+          count: 1
+          any: true
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DT_WEBHOOK_CERTS_SERVER_DURATION
+            value: "168h"
+          count: 1
+          any: true
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD
+            value: "12h"
+          count: 1
+          any: true
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: DT_WEBHOOK_CERTS_REQUEUE_AFTER
+            value: "3h"
+          count: 1
+          any: true
