@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,9 +17,9 @@ func TestCertsValidation(t *testing.T) {
 	firstCerts := Certs{
 		Domain:             domain,
 		Now:                now,
-		RenewalThreshold:   defaultRenewalThreshold,
-		ServerCertDuration: defaultServerCertDuration,
-		RootCertDuration:   defaultRootCertDuration,
+		RenewalThreshold:   k8senv.GetWebhookCertsRenewalThreshold(t.Context()),
+		ServerCertDuration: k8senv.GetWebhookCertsServerDuration(t.Context()),
+		RootCertDuration:   k8senv.GetWebhookCertsRootDuration(t.Context()),
 	}
 
 	require.NoError(t, firstCerts.ValidateCerts(t.Context()))
@@ -28,7 +29,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("up-to-date certs", func(t *testing.T) {
 		newTime := now.Add(5 * time.Minute)
 
-		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: defaultRenewalThreshold, ServerCertDuration: defaultServerCertDuration, RootCertDuration: defaultRootCertDuration}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: k8senv.GetWebhookCertsRenewalThreshold(t.Context()), ServerCertDuration: k8senv.GetWebhookCertsServerDuration(t.Context()), RootCertDuration: k8senv.GetWebhookCertsRootDuration(t.Context())}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
@@ -43,7 +44,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("outdated server certs", func(t *testing.T) {
 		newTime := now.Add((6*24 + 22) * time.Hour) // 6d22h
 
-		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: defaultRenewalThreshold, ServerCertDuration: defaultServerCertDuration, RootCertDuration: defaultRootCertDuration}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: k8senv.GetWebhookCertsRenewalThreshold(t.Context()), ServerCertDuration: k8senv.GetWebhookCertsServerDuration(t.Context()), RootCertDuration: k8senv.GetWebhookCertsRootDuration(t.Context())}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
@@ -58,7 +59,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("outdated root certs", func(t *testing.T) {
 		newTime := now.Add((364*24 + 22) * time.Hour) // 364d22h
 
-		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: defaultRenewalThreshold, ServerCertDuration: defaultServerCertDuration, RootCertDuration: defaultRootCertDuration}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: k8senv.GetWebhookCertsRenewalThreshold(t.Context()), ServerCertDuration: k8senv.GetWebhookCertsServerDuration(t.Context()), RootCertDuration: k8senv.GetWebhookCertsRootDuration(t.Context())}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 

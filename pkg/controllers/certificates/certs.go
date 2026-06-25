@@ -17,12 +17,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	defaultRenewalThreshold   = 12 * time.Hour
-	defaultServerCertDuration = 7 * 24 * time.Hour
-	defaultRootCertDuration   = 365 * 24 * time.Hour
-)
-
 const intSerialNumberLimit = 128
 
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), intSerialNumberLimit)
