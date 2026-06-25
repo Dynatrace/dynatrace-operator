@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	levelInfo     = iota // default
+	levelInfo     = iota // info
 	levelDebug           // debug
 	levelRequest         // request
 	levelResponse        // response
