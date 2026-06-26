@@ -18,7 +18,7 @@ const (
 	ActiveGate  ComponentType = "activegate"
 	EEC         ComponentType = "eec"
 	LogModule   ComponentType = "logmodule"
-	DBExecutor  ComponentType = "database-datasource-executor"
+	DBExecutor  ComponentType = "dynatrace-sql-extension-executor"
 )
 
 type Info struct {
