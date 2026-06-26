@@ -27,7 +27,6 @@ func Feature(t *testing.T, releaseTag string) features.Feature {
 	testDynakube := *dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
-		dynakube.WithCustomOneAgentImage("public.ecr.aws/dynatrace/dynatrace-oneagent:1.323.42.20251007-133016"),
 	)
 
 	sampleNamespace := *k8snamespace.New("upgrade-sample")
