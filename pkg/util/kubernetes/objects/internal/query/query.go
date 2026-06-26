@@ -187,14 +187,23 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 
 		if oldObject, ok := namespacesContainingSecret[namespace.Name]; ok {
 			if !c.IsEqual(oldObject, object) {
-				object.SetUID(oldObject.GetUID())
-				object.SetResourceVersion(oldObject.GetResourceVersion())
+				if c.MustRecreate(oldObject, object) {
+					err := c.Recreate(ctx, object)
+					if err != nil {
+						errs = append(errs, errors.WithMessagef(err, "failed to recreate %s %s for namespace %s", reflect.TypeOf(object), object.GetName(), namespace.Name))
 
-				err := c.Update(ctx, object)
-				if err != nil {
-					errs = append(errs, errors.WithMessagef(err, "failed to update %s %s for namespace %s", reflect.TypeOf(object), object.GetName(), namespace.Name))
+						continue
+					}
+				} else {
+					object.SetUID(oldObject.GetUID())
+					object.SetResourceVersion(oldObject.GetResourceVersion())
 
-					continue
+					err := c.Update(ctx, object)
+					if err != nil {
+						errs = append(errs, errors.WithMessagef(err, "failed to update %s %s for namespace %s", reflect.TypeOf(object), object.GetName(), namespace.Name))
+
+						continue
+					}
 				}
 
 				updateCount++

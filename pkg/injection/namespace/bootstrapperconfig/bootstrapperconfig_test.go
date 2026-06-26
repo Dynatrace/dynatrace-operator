@@ -504,6 +504,175 @@ func TestGenerateForDynakube(t *testing.T) {
 	})
 }
 
+func TestGenerateForDynakubeCustomPullSecret(t *testing.T) {
+	const (
+		testCustomPullSecret    = "test-custom-pull-secret"
+		testDockerConfigJSON    = `{"auths":{"registry.example.com":{"auth":"dGVzdDp0ZXN0"}}}`
+	)
+
+	t.Run("pull secret data and type are set in both namespace and source secrets", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:           testAPIurl,
+				CustomPullSecret: testCustomPullSecret,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			namespace,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				token.APIKey:  []byte(testAPIToken),
+				token.PaaSKey: []byte(testPaasToken),
+			}),
+			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+				"tenant-token": []byte(testTenantToken),
+			}),
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testCustomPullSecret,
+					Namespace: testNamespaceDynatrace,
+				},
+				Type: corev1.SecretTypeDockerConfigJson,
+				Data: map[string][]byte{
+					corev1.DockerConfigJsonKey: []byte(testDockerConfigJSON),
+				},
+			},
+		)
+
+		mockDTClient := oneagentclientmock.NewClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
+
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
+		require.NoError(t, err)
+
+		var secret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
+		require.NoError(t, err)
+
+		assert.Equal(t, corev1.SecretTypeDockerConfigJson, secret.Type)
+		assert.Equal(t, []byte(testDockerConfigJSON), secret.Data[corev1.DockerConfigJsonKey])
+
+		var sourceSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		require.NoError(t, err)
+
+		assert.Equal(t, corev1.SecretTypeDockerConfigJson, sourceSecret.Type)
+		assert.Equal(t, []byte(testDockerConfigJSON), sourceSecret.Data[corev1.DockerConfigJsonKey])
+	})
+
+	t.Run("error when customPullSecret does not exist", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:           testAPIurl,
+				CustomPullSecret: testCustomPullSecret,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			namespace,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				token.APIKey:  []byte(testAPIToken),
+				token.PaaSKey: []byte(testPaasToken),
+			}),
+			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+				"tenant-token": []byte(testTenantToken),
+			}),
+			// customPullSecret is intentionally absent
+		)
+
+		mockDTClient := oneagentclientmock.NewClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
+
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
+		require.Error(t, err)
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
+		require.NotNil(t, c)
+		assert.Equal(t, metav1.ConditionFalse, c.Status)
+	})
+
+	t.Run("no pull secret data added when customPullSecret has no dockerconfigjson key", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:           testAPIurl,
+				CustomPullSecret: testCustomPullSecret,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			namespace,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				token.APIKey:  []byte(testAPIToken),
+				token.PaaSKey: []byte(testPaasToken),
+			}),
+			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+				"tenant-token": []byte(testTenantToken),
+			}),
+			clientSecret(testCustomPullSecret, testNamespaceDynatrace, map[string][]byte{
+				"some-other-key": []byte("some-value"),
+			}),
+		)
+
+		mockDTClient := oneagentclientmock.NewClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
+
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
+		require.NoError(t, err)
+
+		var secret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, corev1.SecretTypeDockerConfigJson, secret.Type)
+		assert.NotContains(t, secret.Data, corev1.DockerConfigJsonKey)
+	})
+}
+
 func TestGenerateForDynakubeHostMonitoring(t *testing.T) {
 	t.Run("source secret created with declarative.cbor, no app-namespace secrets", func(t *testing.T) {
 		dk := &dynakube.DynaKube{

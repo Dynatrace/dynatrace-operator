@@ -8,6 +8,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Option is an alias for builder.Option[*corev1.Secret] to allow callers to compose option slices.
+type Option = builder.Option[*corev1.Secret]
+
 var (
 	// Mandatory fields, provided in constructor as named params
 	setName      = builder.SetName[*corev1.Secret]

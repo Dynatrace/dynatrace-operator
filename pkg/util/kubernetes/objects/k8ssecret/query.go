@@ -26,7 +26,7 @@ func Query(kubeClient client.Client, kubeReader client.Reader) QueryObject {
 				return out
 			},
 			IsEqual:      isEqual,
-			MustRecreate: func(_, _ *corev1.Secret) bool { return false },
+			MustRecreate: func(old, new *corev1.Secret) bool { return old.Type != new.Type },
 
 			KubeClient: kubeClient,
 			KubeReader: kubeReader,
@@ -35,5 +35,5 @@ func Query(kubeClient client.Client, kubeReader client.Reader) QueryObject {
 }
 
 func isEqual(secret *corev1.Secret, other *corev1.Secret) bool {
-	return reflect.DeepEqual(secret.Data, other.Data) && reflect.DeepEqual(secret.Labels, other.Labels) && reflect.DeepEqual(secret.OwnerReferences, other.OwnerReferences)
+	return secret.Type == other.Type && reflect.DeepEqual(secret.Data, other.Data) && reflect.DeepEqual(secret.Labels, other.Labels) && reflect.DeepEqual(secret.OwnerReferences, other.OwnerReferences)
 }

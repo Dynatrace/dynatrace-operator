@@ -110,7 +110,12 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
 
-	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	opts := []k8ssecret.Option{k8ssecret.SetLabels(coreLabels.BuildLabels())}
+	if _, hasPullSecret := data[corev1.DockerConfigJsonKey]; hasPullSecret {
+		opts = append(opts, k8ssecret.SetType(corev1.SecretTypeDockerConfigJson))
+	}
+
+	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, opts...)
 	if err != nil {
 		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
@@ -237,7 +242,29 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		}
 	}
 
+	if dk.Spec.CustomPullSecret != "" {
+		pullSecretData, err := s.preparePullSecret(ctx, dk)
+		if err != nil {
+			return nil, nil, errors.WithStack(err)
+		}
+
+		if len(pullSecretData) != 0 {
+			data[corev1.DockerConfigJsonKey] = pullSecretData
+		}
+	}
+
 	return data, annotations, nil
+}
+
+func (s *SecretGenerator) preparePullSecret(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
+	var pullSecret corev1.Secret
+	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Spec.CustomPullSecret, Namespace: dk.Namespace}, &pullSecret); err != nil {
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+
+		return nil, errors.WithMessage(err, "failed to query customPullSecret")
+	}
+
+	return pullSecret.Data[corev1.DockerConfigJsonKey], nil
 }
 
 func NeedsDownloadConfig(dk *dynakube.DynaKube) bool {
