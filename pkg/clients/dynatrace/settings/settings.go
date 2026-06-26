@@ -61,6 +61,10 @@ type Client interface {
 	GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error)
 	// CreateKSPMSetting returns the object ID of the created kspm settings.
 	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
+	// GetEnrichmentRuleObjects returns the list of enrichment rule settings objects (with objectIds) for the given scope.
+	GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
+	// CreateEnrichmentRule creates a new enrichment rule settings object for the given scope and returns its objectId.
+	CreateEnrichmentRule(ctx context.Context, scope string, ruleType metadataenrichment.RuleType, valueSource, target string) (string, error)
 	// DeleteSettings deletes the settings for a monitored entity.
 	DeleteSettings(ctx context.Context, settingsID string) error
 }

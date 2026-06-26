@@ -1,0 +1,53 @@
+//go:build e2e
+
+package applicationmonitoring
+
+import (
+	"testing"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
+	componentEnrichment "github.com/Dynatrace/dynatrace-operator/test/helpers/components/metadataenrichment"
+	"sigs.k8s.io/e2e-framework/pkg/features"
+)
+
+// EnrichmentRulesNewSchema verifies that enrichment rules created on the tenant using the
+// new builtin:ingest.enrichment.config schema are read and stored in dk.Status.MetadataEnrichment.Rules.
+// This covers Phase 3 tenants where the old schema is blocked and the operator falls back to the new one.
+// Currently (24.06.2026) you still need to enable this new feature on the tenant
+// Refer to the comments on ticket ICP-1164
+func EnrichmentRulesNewSchema(t *testing.T) features.Feature {
+	builder := features.New("enrichment-rules-new-schema")
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	expectedRule := metadataenrichment.Rule{
+		Type:   metadataenrichment.K8sNamespaceLabelRule,
+		Source: "e2e-test-label",
+		Target: "dt.cost.product",
+	}
+
+	// Setup: pre-create the Kubernetes Cluster MEID on the tenant so the rule can be
+	// scoped directly to the cluster without waiting for DynaKube reconciliation.
+	// Then clean any leftover rules from previous runs before creating the test rule.
+	builder.Setup(componentEnrichment.EnsureKubernetesClusterMEID(secretConfig))
+	builder.Setup(componentEnrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
+	builder.Setup(componentEnrichment.CreateEnrichmentRuleOnTenant(secretConfig,
+		expectedRule.Type, expectedRule.Source, expectedRule.Target))
+
+	testDynakube := dynakubeComponents.New(
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithMetadataEnrichment(),
+		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
+	)
+	dynakubeComponents.Install(builder, &secretConfig, *testDynakube)
+
+	builder.Assess("enrichment rule from new schema is stored in DynaKube status",
+		componentEnrichment.CheckEnrichmentRuleInDynaKubeStatus(testDynakube, expectedRule))
+
+	builder.WithTeardown("delete enrichment rules from tenant",
+		componentEnrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
+
+	return builder.Feature()
+}

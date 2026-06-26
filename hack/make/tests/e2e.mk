@@ -171,6 +171,10 @@ test/e2e/extensions/dbexecutor/scaling:
 test/e2e/applicationmonitoring/metadataenrichment:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "metadata_enrichment" $(SKIPCLEANUP)
 
+## Runs Application Monitoring enrichment-rules-new-schema e2e test only
+test/e2e/applicationmonitoring/enrichment-rules-new-schema:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "enrichment_rules_new_schema" $(SKIPCLEANUP)
+
 ## Runs Application Monitoring otlp-exporter-configuration e2e test only
 test/e2e/applicationmonitoring/otlpexporterconfiguration:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "otlp_exporter_configuration" $(SKIPCLEANUP)

@@ -2,6 +2,7 @@ package settings
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
@@ -16,6 +17,80 @@ const (
 	globalScope                      = "environment"
 	effectiveValuesPath              = "/v2/settings/effectiveValues"
 )
+
+// EnrichmentRuleObject holds the objectId of a single enrichment rule settings object,
+// used to identify rules for deletion.
+type EnrichmentRuleObject struct {
+	ObjectID string `json:"objectId"`
+}
+
+type enrichmentRulesObjectsResponse struct {
+	Items []EnrichmentRuleObject `json:"items"`
+}
+
+type enrichmentRuleCreateBody struct {
+	SchemaID string              `json:"schemaId"`
+	Scope    string              `json:"scope,omitempty"`
+	Value    enrichmentRuleValue `json:"value"`
+}
+
+type enrichmentRuleValue struct {
+	Type        metadataenrichment.RuleType `json:"type"`
+	ValueSource string                      `json:"valueSource"`
+	Target      string                      `json:"target"`
+}
+
+// GetEnrichmentRuleObjects returns all enrichment rule settings objects scoped to the given scope (e.g. a cluster MEID).
+func (c *ClientImpl) GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error) {
+	if scope == "" {
+		return nil, errors.New("no scope provided for getting enrichment rule objects")
+	}
+
+	var resp enrichmentRulesObjectsResponse
+
+	err := c.apiClient.GET(ctx, ObjectsPath).
+		WithQueryParams(map[string]string{
+			schemaIDsQueryParam: metadataEnrichmentSchemaID,
+			scopesQueryParam:    scope,
+		}).
+		Execute(&resp)
+	if err != nil {
+		return nil, fmt.Errorf("get enrichment rule objects: %w", err)
+	}
+
+	return resp.Items, nil
+}
+
+// CreateEnrichmentRule creates a new enrichment rule for the given scope and returns the created objectId.
+func (c *ClientImpl) CreateEnrichmentRule(ctx context.Context, scope string, ruleType metadataenrichment.RuleType, valueSource, target string) (string, error) {
+	if scope == "" {
+		return "", errors.New("no scope (MEID) was provided for creating the enrichment rule")
+	}
+
+	body := []enrichmentRuleCreateBody{{
+		SchemaID: metadataEnrichmentSchemaID,
+		Scope:    scope,
+		Value: enrichmentRuleValue{
+			Type:        ruleType,
+			ValueSource: valueSource,
+			Target:      target,
+		},
+	}}
+
+	var response []postObjectsResponse
+
+	err := c.apiClient.POST(ctx, ObjectsPath).
+		WithQueryParams(map[string]string{
+			validateOnlyQueryParam: "false",
+		}).
+		WithJSONBody(body).
+		Execute(&response)
+	if err != nil {
+		return "", fmt.Errorf("create enrichment rule: %w", err)
+	}
+
+	return getObjectID(response)
+}
 
 type getRulesResponse struct {
 	Items []ruleItem `json:"items"`
