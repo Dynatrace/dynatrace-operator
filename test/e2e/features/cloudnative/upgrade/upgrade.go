@@ -22,7 +22,7 @@ const withCSI = true
 func Feature(t *testing.T, releaseTag string) features.Feature {
 	builder := features.New("cloudnative-upgrade")
 
-	builder.Assess("install operator " + releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
+	builder.Assess("install operator "+releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),

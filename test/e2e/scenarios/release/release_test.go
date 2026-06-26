@@ -44,6 +44,7 @@ func TestMain(m *testing.M) {
 		if tenant.UsePlatformToken() {
 			t.Skip("skip test from platform token")
 		}
+
 		return ctx, nil
 	})
 

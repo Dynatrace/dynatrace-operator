@@ -20,7 +20,7 @@ const withCSI = true
 
 func FromAPIToPlatformToken(t *testing.T, releaseTag string) features.Feature {
 	builder := features.New("upgrade-from-api-to-platform-token")
-	builder.Assess("install operator " + releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
+	builder.Assess("install operator "+releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	testDynakube := *componentDynakube.New(
