@@ -16,8 +16,11 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func FromAPIToPlatformToken(t *testing.T) features.Feature {
+const withCSI = true
+
+func FromAPIToPlatformToken(t *testing.T, releaseTag string) features.Feature {
 	builder := features.New("upgrade-from-api-to-platform-token")
+	builder.Assess("install operator " + releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	testDynakube := *componentDynakube.New(

@@ -135,6 +135,13 @@ func WithCustomActiveGateImage(imageURI string) Option {
 	}
 }
 
+
+func WithCustomOneAgentImage(imageURI string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.OneAgent.CloudNativeFullStack.Image = imageURI
+	}
+}
+
 func WithActiveGateReplicas(replicas *int32) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.ActiveGate.Replicas = replicas

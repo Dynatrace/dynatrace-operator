@@ -17,12 +17,17 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Feature(t *testing.T) features.Feature {
+const withCSI = true
+
+func Feature(t *testing.T, releaseTag string) features.Feature {
 	builder := features.New("cloudnative-upgrade")
+
+	builder.Assess("install operator " + releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
+		dynakube.WithCustomOneAgentImage("public.ecr.aws/dynatrace/dynatrace-oneagent:1.323.42.20251007-133016"),
 	)
 
 	sampleNamespace := *k8snamespace.New("upgrade-sample")
@@ -40,7 +45,6 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// update to snapshot
-	withCSI := true
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
 	builder.Assess("restart half of sample apps", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)

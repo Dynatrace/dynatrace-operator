@@ -24,7 +24,12 @@ var (
 	cfg     *envconf.Config
 )
 
-const releaseTag = "1.9.0"
+const (
+	releaseTag16 = "1.6.3"
+	releaseTag17 = "1.7.3"
+	releaseTag18 = "1.8.1"
+	releaseTag19 = "1.9.0"
+)
 
 func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
@@ -39,9 +44,13 @@ func TestMain(m *testing.M) {
 		if tenant.UsePlatformToken() {
 			t.Skip("skip test from platform token")
 		}
-
-		return operator.Install(releaseTag, true)(ctx, envConfig) // TODO: add logic to get releaseTag in a dynamic way instead of hard coding it
+		return ctx, nil
 	})
+
+	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
+	if !cfg.FailFast() {
+		testEnv.Finish(operator.Uninstall(true))
+	}
 
 	testEnv.AfterEachTest(func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
@@ -60,14 +69,26 @@ func TestMain(m *testing.M) {
 	testEnv.Run(m)
 }
 
-func TestRelease_cloudnative_upgrade(t *testing.T) {
-	testEnv.Test(t, cloudnativeupgrade.Feature(t))
+func TestRelease_cloudnative_upgrade_19(t *testing.T) {
+	testEnv.Test(t, cloudnativeupgrade.Feature(t, releaseTag19))
+}
+
+func TestRelease_cloudnative_upgrade_18(t *testing.T) {
+	testEnv.Test(t, cloudnativeupgrade.Feature(t, releaseTag18))
+}
+
+func TestRelease_cloudnative_upgrade_17(t *testing.T) {
+	testEnv.Test(t, cloudnativeupgrade.Feature(t, releaseTag17))
+}
+
+func TestRelease_cloudnative_upgrade_16(t *testing.T) {
+	testEnv.Test(t, cloudnativeupgrade.Feature(t, releaseTag16))
 }
 
 func TestRelease_extensions_upgrade(t *testing.T) {
-	testEnv.Test(t, extensionsupgrade.Feature(t))
+	testEnv.Test(t, extensionsupgrade.Feature(t, releaseTag19))
 }
 
 func TestRelease_platform_token_upgrade(t *testing.T) {
-	testEnv.Test(t, tokenupgrade.FromAPIToPlatformToken(t))
+	testEnv.Test(t, tokenupgrade.FromAPIToPlatformToken(t, releaseTag19))
 }

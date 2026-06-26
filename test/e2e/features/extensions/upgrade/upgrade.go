@@ -14,8 +14,12 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Feature(t *testing.T) features.Feature {
+const withCSI = true
+
+func Feature(t *testing.T, releaseTag string) features.Feature {
 	builder := features.New("deprecated-secret-upgrade-operator")
+	builder.Assess("install operator " + releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
+
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []componentDynakube.Option{
