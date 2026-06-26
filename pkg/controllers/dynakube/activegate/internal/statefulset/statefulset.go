@@ -194,14 +194,14 @@ func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.Topology
 	return []corev1.TopologySpreadConstraint{
 		{
 			MaxSkew:           1,
-			TopologyKey:       "topology.kubernetes.io/zone",
-			WhenUnsatisfiable: "ScheduleAnyway",
+			TopologyKey:       corev1.LabelTopologyZone,
+			WhenUnsatisfiable: corev1.ScheduleAnyway,
 			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
 		{
 			MaxSkew:           1,
-			TopologyKey:       "kubernetes.io/hostname",
-			WhenUnsatisfiable: "DoNotSchedule",
+			TopologyKey:       corev1.LabelHostname,
+			WhenUnsatisfiable: corev1.ScheduleAnyway,
 			NodeTaintsPolicy:  &nodeInclusionPolicyHonor,
 			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
