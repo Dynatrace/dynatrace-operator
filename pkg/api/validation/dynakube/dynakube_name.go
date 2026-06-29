@@ -29,6 +29,7 @@ const (
 
 const (
 	// Maximum name length of a StatefulSet before Pods can no longer be created due to too long DNS-1035 label value.
+    // Max label len is 63, but postfix len from controller-revision-hash : 11 (10 chars + 1 -), so 63 - 11 = 52
 	maxStatefulSetNameLength = 52
 	// Maximum name length of a DaemonSet before its pod's names get truncated.
 	maxDaemonSetNameLength = 57
