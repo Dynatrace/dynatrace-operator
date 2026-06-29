@@ -37,7 +37,6 @@ func FromAPIToPlatformToken(t *testing.T, releaseTag string) features.Feature {
 		tenant.CreateTenantSecret(secretConfig.PlatformTokens(), testDynakube.Name, testDynakube.Namespace))
 
 	// update to snapshot
-	withCSI := true
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
 	componentDynakube.VerifyStartup(builder, features.LevelAssess, testDynakube)
 	componentDynakube.VerifyPlatformTokenStatus(builder, testDynakube, true)

@@ -40,7 +40,6 @@ func Feature(t *testing.T, releaseTag string) features.Feature {
 	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	// update to snapshot
-	withCSI := true
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
 
 	builder.Assess("extension execution controller started after upgrade", k8sstatefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
