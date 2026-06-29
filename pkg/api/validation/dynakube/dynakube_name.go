@@ -29,7 +29,7 @@ const (
 
 const (
 	// Maximum name length of a StatefulSet before Pods can no longer be created due to too long DNS-1035 label value.
-	maxStatefulSetNameLength = 53
+	maxStatefulSetNameLength = 52
 	// Maximum name length of a DaemonSet before its pod's names get truncated.
 	maxDaemonSetNameLength = 57
 	// Only Deployment that we deploy has a variable name length (SQL extension executor), but it would be longer than the EEC max name length (32) in all cases so we skip it.
