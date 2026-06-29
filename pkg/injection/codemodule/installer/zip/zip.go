@@ -35,7 +35,7 @@ import (
 // Note: O_NOFOLLOW only guards the final path component, not intermediate
 // directory components. Fully confining resolution would require openat2 with
 // RESOLVE_NO_SYMLINKS (or filepath-securejoin).
-const hardenedOpenFileFlags = os.O_CREATE | os.O_RDWR | os.O_TRUNC | unix.O_NOFOLLOW
+const hardenedOpenFileFlags = os.O_CREATE | os.O_WRONLY | os.O_TRUNC | unix.O_NOFOLLOW
 
 func (extractor OneAgentExtractor) ExtractZip(ctx context.Context, sourceFile *os.File, targetDir string) error {
 	ctx, log := logd.NewFromContext(ctx, "oneagent-zip")
