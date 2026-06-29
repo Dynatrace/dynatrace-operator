@@ -37,7 +37,8 @@ const (
 	maxStatefulSetNameLength = maxPodNameLen - podTemplateHashLen - hyphenLen
 	// Maximum name length of a DaemonSet before its pod's names get truncated.
 	maxDaemonSetNameLength = maxPodNameLen - podSuffixLen - hyphenLen
-	// Only Deployment that we deploy has a variable name length (SQL extension executor), but it would be longer than the EEC max name length (32) in all cases so we skip it.
+	// Only Deployment that we deploy has a variable name length (SQL extension executor), but
+	// it would be longer than the EEC max name length (31) in all cases so we skip it.
 	// Keep this value around in case this changes.
 	// Maximum name length of a Deployment before its pod's names get truncated.
 	maxDeploymentLen = maxPodNameLen - podSuffixLen - hyphenLen //nolint:unused
