@@ -103,7 +103,7 @@ func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, e
 	}
 
 	if c.IsEqual(currentObject, newObject) {
-		c.log(ctx, newObject).Info("update not needed, no changes detected")
+		c.log(ctx, newObject).Debug("update not needed, no changes detected")
 
 		return false, nil
 	}
