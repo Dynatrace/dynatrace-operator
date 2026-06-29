@@ -25,9 +25,13 @@ var (
 )
 
 const (
+	// renovate depName=dynatrace/dynatrace-operator
 	releaseTag16 = "1.6.3"
+	// renovate depName=dynatrace/dynatrace-operator
 	releaseTag17 = "1.7.3"
+	// renovate depName=dynatrace/dynatrace-operator
 	releaseTag18 = "1.8.1"
+	// renovate depName=dynatrace/dynatrace-operator
 	releaseTag19 = "1.9.0"
 )
 

@@ -64,6 +64,20 @@
         "# ?renovate datasource=(?<datasource>.*?) depName=(?<depName>[^\\s]+)[^\\n]*\\n[ \\t]*[^:]*:\\s*\"?(?<currentValue>[^\"\\s]+)\"?",
       ],
     },
+    {
+      fileMatch: [
+        "(^|/|\\.)release_test.go",
+      ],
+      matchStrings: [
+        "// renovate depName=(?<depName>[^\\n]+)\\s+\\w+\\s*=\\s*\"(?<currentValue>[^\"]+)\"",
+      ],
+      datasourceTemplate: "github-releases",
+      versioningTemplate: "semver",
+      matchUpdateTypes: [
+        "major",
+        "minor",
+      ]
+    }
   ],
   packageRules: [
     {
@@ -149,6 +163,16 @@
       commitMessagePrefix: "Dev:",
       enabled: true,
       automerge: true,
+    },
+    {
+      "matchManagers": [
+        "regex"
+      ],
+      "matchDepNames": [
+        "dynatrace/dynatrace-operator"
+      ],
+      "matchUpdateTypes": ["patch"],
+      "enabled": true,
     },
     {
       matchPackageNames: [
