@@ -28,15 +28,19 @@ const (
 )
 
 const (
+	podSuffixLen       = 5
+	podTemplateHashLen = 10
+	hyphenLen          = 1
+	maxPodNameLen      = 63
+
 	// Maximum name length of a StatefulSet before Pods can no longer be created due to too long DNS-1035 label value.
-    // Max label len is 63, but postfix len from controller-revision-hash : 11 (10 chars + 1 -), so 63 - 11 = 52
-	maxStatefulSetNameLength = 52
+	maxStatefulSetNameLength = maxPodNameLen - podTemplateHashLen - hyphenLen
 	// Maximum name length of a DaemonSet before its pod's names get truncated.
-	maxDaemonSetNameLength = 57
+	maxDaemonSetNameLength = maxPodNameLen - podSuffixLen - hyphenLen
 	// Only Deployment that we deploy has a variable name length (SQL extension executor), but it would be longer than the EEC max name length (32) in all cases so we skip it.
 	// Keep this value around in case this changes.
 	// Maximum name length of a Deployment before its pod's names get truncated.
-	maxDeploymentNameLength = 57 //nolint:unused
+	maxDeploymentLen = maxPodNameLen - podSuffixLen - hyphenLen //nolint:unused
 
 	maxNameLengthForExtensions = maxStatefulSetNameLength - len(consts.ExtensionsControllerSuffix)
 	maxNameLengthForOTELC      = maxStatefulSetNameLength - len(consts.OTELCollectorNameSuffix)
