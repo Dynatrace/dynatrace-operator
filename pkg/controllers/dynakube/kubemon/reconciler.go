@@ -19,6 +19,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -34,6 +36,10 @@ const (
 	reasonReconciling = "Reconciling"
 )
 
+type connectionInfoReconciler interface {
+	Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error
+}
+
 type statefulsetReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
@@ -41,38 +47,47 @@ type statefulsetReconciler interface {
 // Reconciler orchestrates the kubemon operand. Sub-reconciler fields are interfaces so they
 // can be mocked in tests.
 type Reconciler struct {
-	statefulsetReconciler statefulsetReconciler
+	connectionInfoReconciler connectionInfoReconciler
+	statefulsetReconciler    statefulsetReconciler
 }
 
-func NewReconciler(clt client.Client) *Reconciler {
+func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
-		statefulsetReconciler: kubemonstatefulset.NewReconciler(clt),
+		connectionInfoReconciler: kubemonconnectioninfo.NewReconciler(kubeClient),
+		statefulsetReconciler:    kubemonstatefulset.NewReconciler(kubeClient),
 	}
 }
 
 // Reconcile is the operand entry point called by the parent DynaKube controller.
 // Sub-reconcilers mutate dk.Status.KubernetesMonitoring.* and dk.Status.Conditions in-memory;
 // the parent controller persists status changes via deferred Status().Update().
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, _ *dynatrace.Client, _ token.Tokens) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, _ token.Tokens) error {
 	ctx, log := logd.NewFromContext(ctx, "dynakube-kubemon")
 
 	// Fast-path guard: never created, nothing to converge.
 	if !dk.KubernetesMonitoring().IsEnabled() && !hasCondition(dk) {
-		log.Info("kubemon not enabled, skipping")
+		log.Debug("kubemon not enabled, skipping")
 
 		return nil
 	}
 
-	log.Info("reconciling kubernetes monitoring")
+	log.Debug("reconciling kubernetes monitoring")
 
-	err := r.statefulsetReconciler.Reconcile(ctx, dk)
-	if err != nil {
+	if err := r.connectionInfoReconciler.Reconcile(ctx, dtClient.ActiveGate, dk); err != nil {
+		r.setConditionByError(dk, err)
+
+		return err
+	}
+
+	if err := r.statefulsetReconciler.Reconcile(ctx, dk); err != nil {
 		r.setConditionByError(dk, err)
 
 		return err
 	}
 
 	r.setAvailableCondition(dk)
+
+	log.Debug("reconciled kubernetes monitoring")
 
 	return nil
 }

@@ -3,22 +3,27 @@ package statefulset
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const containerName = "kubemon"
+const (
+	containerName             = "kubemon"
+	annotationTenantTokenHash = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
+)
 
 var ErrImageRequired = errors.New("kubernetes monitoring image is required")
 
@@ -37,10 +42,6 @@ func NewReconciler(clt client.Client) *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		return r.delete(ctx, dk)
-	}
-
-	if err := r.checkPrerequisites(ctx, dk); err != nil {
-		return err
 	}
 
 	desiredStatefulSet, err := r.buildDesiredStatefulSet(ctx, dk)
@@ -65,11 +66,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 // buildEnvs prepends the mandatory AG runtime env vars to any user-supplied vars.
-// Reuses the connection-info ConfigMap produced by the activegate connectioninfo reconciler.
 func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	const requiredEnvCount = 3
 
-	connInfoCM := dk.ActiveGate().GetConnectionInfoConfigMapName()
+	connInfoCM := dk.KubernetesMonitoring().GetConnectionInfoConfigMapName()
 
 	required := make([]corev1.EnvVar, 0, requiredEnvCount+len(dk.KubernetesMonitoring().Env))
 	required = append(required,
@@ -102,15 +102,14 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	return append(required, dk.KubernetesMonitoring().Env...)
 }
 
-// buildVolumes returns the pod-level volumes needed for the AG tenant token.
-// The secret is produced by the activegate connectioninfo reconciler.
+// buildVolumes returns the pod-level volume for the kubemon-owned tenant token secret.
 func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: connectioninfo.TenantSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  dk.ActiveGate().GetTenantSecretName(),
+					SecretName:  dk.KubernetesMonitoring().GetTenantSecretName(),
 					DefaultMode: new(int32(0o640)),
 				},
 			},
@@ -128,34 +127,6 @@ func buildVolumeMounts() []corev1.VolumeMount {
 			SubPath:   connectioninfo.TenantTokenKey,
 		},
 	}
-}
-
-// checkPrerequisites verifies that the AG-owned resources referenced by the kubemon StatefulSet
-// exist before creating it. Both resources are produced by the activegate connectioninfo reconciler.
-// Returns a transient error if either is missing — kubemon will retry once AG has reconciled.
-//
-// NOTE: this is a temporary coupling; long-term kubemon will own its own connectioninfo resources
-// so it can run without AG gateway enabled.
-func (r *Reconciler) checkPrerequisites(ctx context.Context, dk *dynakube.DynaKube) error {
-	cmKey := types.NamespacedName{Name: dk.ActiveGate().GetConnectionInfoConfigMapName(), Namespace: dk.Namespace}
-	if err := r.client.Get(ctx, cmKey, &corev1.ConfigMap{}); err != nil {
-		if k8serrors.IsNotFound(err) {
-			return errors.New("AG connection-info ConfigMap not found; waiting for ActiveGate connectioninfo reconciler")
-		}
-
-		return errors.WithStack(err)
-	}
-
-	secretKey := types.NamespacedName{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace}
-	if err := r.client.Get(ctx, secretKey, &corev1.Secret{}); err != nil {
-		if k8serrors.IsNotFound(err) {
-			return errors.New("AG tenant secret not found; waiting for ActiveGate connectioninfo reconciler")
-		}
-
-		return errors.WithStack(err)
-	}
-
-	return nil
 }
 
 func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {
@@ -180,6 +151,11 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	tokenHash, err := r.getTenantTokenHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
 	container := corev1.Container{
 		Name:            containerName,
 		Image:           image,
@@ -197,7 +173,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		container,
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), dk.KubernetesMonitoring().Labels),
-		k8sstatefulset.SetAllAnnotations(nil, dk.KubernetesMonitoring().Annotations),
+		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(dk.KubernetesMonitoring().Annotations, map[string]string{annotationTenantTokenHash: tokenHash})),
 		k8sstatefulset.SetServiceAccount(dk.KubernetesMonitoring().GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(dk.KubernetesMonitoring().NodeSelector),
 		k8sstatefulset.SetTolerations(dk.KubernetesMonitoring().Tolerations),
@@ -209,4 +185,18 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	}
 
 	return statefulSet, nil
+}
+
+func (r *Reconciler) getTenantTokenHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	var secret corev1.Secret
+	if err := r.client.Get(ctx, types.NamespacedName{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: dk.Namespace}, &secret); err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	hash, err := hasher.GenerateHash(string(secret.Data[connectioninfo.TenantTokenKey]))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash tenant token")
+	}
+
+	return hash, nil
 }
