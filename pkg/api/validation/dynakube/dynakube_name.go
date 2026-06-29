@@ -33,7 +33,7 @@ const (
 	hyphenLen          = 1
 	maxPodNameLen      = 63
 
-	// Maximum name length of a StatefulSet before Pods can no longer be created due to too long DNS-1035 label value.
+	// Maximum name length of a StatefulSet before Pods can no longer be created due to too long DNS-1035 label value of `controller-revision-hash` which is added automatically.
 	maxStatefulSetNameLength = maxPodNameLen - podTemplateHashLen - hyphenLen
 	// Maximum name length of a DaemonSet before its pod's names get truncated.
 	maxDaemonSetNameLength = maxPodNameLen - podSuffixLen - hyphenLen
