@@ -31,7 +31,7 @@ func New() dtwebhook.Mutator {
 }
 
 func (m Mutator) IsEnabled(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation")
+	_, log := logd.NewFromContext(ctx, "exporter")
 	otlpExporterConfiguration := request.DynaKube.OTLPExporterConfiguration()
 
 	if !otlpExporterConfiguration.IsEnabled() {
@@ -58,21 +58,21 @@ func (m Mutator) IsEnabled(ctx context.Context, request *dtwebhook.BaseRequest) 
 }
 
 func (m Mutator) IsInjected(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation")
+	_, log := logd.NewFromContext(ctx, "exporter")
 	log.Debug("checking if OTLP env vars have already been injected")
 
 	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjected, false)
 }
 
 func (m Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_, log := logd.NewFromContext(request.Context, "otlp-exporter-pod-mutation")
+	_, log := logd.NewFromContext(request.Context, "exporter")
 	_, err := m.mutate(request.BaseRequest, log)
 
 	return err
 }
 
 func (m Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	_, log := logd.NewFromContext(ctx, "otlp-exporter-pod-mutation")
+	_, log := logd.NewFromContext(ctx, "exporter")
 	log.Info("reinvocation of OTLP env vars mutator")
 
 	mutated, err := m.mutate(request.BaseRequest, log)

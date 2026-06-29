@@ -41,7 +41,7 @@ var (
 )
 
 func (r *Reconciler) Reconcile(ctx context.Context, oaClient oneagent.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "oneagent-connectioninfo")
+	ctx, log := logd.NewFromContext(ctx, "connectioninfo")
 
 	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.OneAgent().IsDaemonsetRequired() && !dk.LogMonitoring().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType) == nil {

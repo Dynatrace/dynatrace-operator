@@ -53,7 +53,7 @@ const (
 )
 
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	ctx, log := logd.NewFromContext(ctx, "csi-appvolume")
+	ctx, log := logd.NewFromContext(ctx, "appvolume")
 
 	if !pub.isCodeModuleAvailable(ctx, volumeCfg) {
 		provisionerNotDoneErr := errors.Errorf("version or digest is not yet set, csi-provisioner hasn't finished setup yet for %s DynaKube", volumeCfg.DynakubeName)

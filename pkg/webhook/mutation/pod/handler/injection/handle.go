@@ -49,7 +49,7 @@ func New( //nolint:revive
 }
 
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
-	ctx, log := logd.NewFromContext(mutationRequest.Context, "pod-mutation-injection")
+	ctx, log := logd.NewFromContext(mutationRequest.Context, "injection")
 	mutationRequest.Context = ctx
 
 	if !mutationRequest.DynaKube.OneAgent().IsAppInjectionNeeded() && !mutationRequest.DynaKube.MetadataEnrichment().IsEnabled() {

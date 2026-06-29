@@ -37,7 +37,7 @@ func AddConfigVolume(ctx context.Context, pod *corev1.Pod) {
 	if r, ok := pod.Annotations[AnnotationConfigVolumeNameResource]; ok && r != "" {
 		sizeLimit, err := resource.ParseQuantity(r)
 		if err != nil {
-			_, log := logd.NewFromContext(ctx, "volumes-mutation")
+			_, log := logd.NewFromContext(ctx, "volumes")
 			log.Error(err, "failed to parse quantity from annotation "+AnnotationConfigVolumeNameResource, "value", r)
 		} else {
 			emptyDirVS = corev1.EmptyDirVolumeSource{

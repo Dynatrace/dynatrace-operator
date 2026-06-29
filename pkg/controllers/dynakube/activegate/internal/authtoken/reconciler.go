@@ -38,7 +38,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "activegate-authtoken")
+	ctx, _ = logd.NewFromContext(ctx, "authtoken")
 
 	if !dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType) == nil {

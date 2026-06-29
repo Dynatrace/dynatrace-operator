@@ -34,7 +34,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "kspm-daemonset")
+	ctx, log := logd.NewFromContext(ctx, "daemonset")
 
 	if !dk.KSPM().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
