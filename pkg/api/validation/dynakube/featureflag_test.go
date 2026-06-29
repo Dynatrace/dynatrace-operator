@@ -209,9 +209,11 @@ func TestIsNodeImagePullWithoutCSI(t *testing.T) {
 
 func TestInvalidNoProxy(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Annotations: map[string]string{exp.NoProxyKey: "foo\nbar"}},
+		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Annotations: map[string]string{}},
 		Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
 	}
 
-	assertDenied(t, []string{errorInvalidNoProxy}, dk)
+	assertSanitizeArg(t, dk, func(dk *dynakube.DynaKube, value string) {
+		dk.Annotations[exp.NoProxyKey] = value
+	}, errorInvalidNoProxy)
 }

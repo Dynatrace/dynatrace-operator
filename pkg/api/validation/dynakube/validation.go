@@ -72,6 +72,8 @@ var (
 		invalidOneAgentHostGroup,
 		invalidNoProxy,
 		publicRegistryNotAllowedForClassic,
+		invalidOneAgentArguments,
+		invalidLogmonArguments,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

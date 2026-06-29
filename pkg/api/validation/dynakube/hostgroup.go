@@ -18,9 +18,5 @@ func invalidOneAgentHostGroup(_ context.Context, _ *Validator, dk *dynakube.Dyna
 		return errorInvalidHostGroupProperty
 	}
 
-	if strings.ContainsAny(dk.OneAgent().GetHostGroupAsParam(), sanitize.InvalidCommandLineCharset) {
-		return errorInvalidHostGroupAsParam
-	}
-
 	return ""
 }

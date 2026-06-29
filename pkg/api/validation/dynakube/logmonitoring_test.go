@@ -200,7 +200,8 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdateLogMonitoring(t *te
 			},
 		}
 		// warning amount 2: deprecated flag + conflict with rolling update
-		assertAllowedWithWarnings(t, 2, &dynakube.DynaKube{ObjectMeta: meta,
+		assertAllowedWithWarnings(t, 2, &dynakube.DynaKube{
+			ObjectMeta: meta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				Templates: dynakube.TemplatesSpec{
@@ -213,4 +214,26 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdateLogMonitoring(t *te
 			},
 		})
 	})
+}
+
+func TestInvalidLogmonArguments(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: defaultDynakubeObjectMeta,
+		Spec: dynakube.DynaKubeSpec{
+			APIURL:        testAPIURL,
+			LogMonitoring: &logmonitoring.Spec{},
+			Templates: dynakube.TemplatesSpec{
+				LogMonitoring: &logmonitoring.TemplateSpec{
+					ImageRef: image.Ref{
+						Repository: "repo/image",
+						Tag:        "version",
+					},
+				},
+			},
+		},
+	}
+
+	assertSanitizeArg(t, dk, func(dk *dynakube.DynaKube, value string) {
+		dk.Spec.Templates.LogMonitoring.Args = []string{value}
+	}, errorInvalidLogmonArgument)
 }
