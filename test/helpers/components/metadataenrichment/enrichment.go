@@ -79,8 +79,8 @@ func EnsureKubernetesClusterMEID(secretConfig tenant.Secret) features.Func {
 	}
 }
 
-// CreateEnrichmentRuleOnTenant creates a single enrichment rule scoped to the cluster MEID.
-func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, ruleType metadataenrichment.RuleType, valueSource, target string) features.Func {
+// CreateEnrichmentRuleOnTenant creates a single rule using the legacy schema scoped to the cluster MEID.
+func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rule metadataenrichment.Rule) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		settingsClient, err := BuildSettingsClient(secretConfig)
 		require.NoError(t, err)
@@ -91,7 +91,7 @@ func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, ruleType metadatae
 		require.NoError(t, err, "Could not get K8s cluster MEID")
 		require.NotEmpty(t, k8sClusterME.ID, "Kubernetes Cluster MEID must exist before creating enrichment rules")
 
-		objectID, err := settingsClient.CreateEnrichmentRule(ctx, k8sClusterME.ID, ruleType, valueSource, target)
+		objectID, err := settingsClient.CreateEnrichmentRule(ctx, dtsettings.LegacyMetadataEnrichmentSchemaID, k8sClusterME.ID, []metadataenrichment.Rule{rule})
 		require.NoError(t, err, "Could not create enrichment rule on tenant")
 		t.Logf("Created enrichment rule with objectId: %s (scope: %s)", objectID, k8sClusterME.ID)
 
@@ -99,7 +99,7 @@ func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, ruleType metadatae
 	}
 }
 
-// DeleteEnrichmentRulesFromTenant deletes all enrichment rules scoped to the cluster MEID.
+// DeleteEnrichmentRulesFromTenant deletes all legacy schema enrichment rule objects scoped to the cluster MEID.
 func DeleteEnrichmentRulesFromTenant(secretConfig tenant.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		settingsClient, err := BuildSettingsClient(secretConfig)
@@ -118,7 +118,7 @@ func DeleteEnrichmentRulesFromTenant(secretConfig tenant.Secret) features.Func {
 
 		t.Logf("Deleting enrichment rules for MEID: %s", k8sClusterME.ID)
 
-		objects, err := settingsClient.GetEnrichmentRuleObjects(ctx, k8sClusterME.ID)
+		objects, err := settingsClient.GetLegacyEnrichmentRuleObjects(ctx, k8sClusterME.ID)
 		require.NoError(t, err, "Could not list enrichment rule objects")
 
 		if len(objects) == 0 {

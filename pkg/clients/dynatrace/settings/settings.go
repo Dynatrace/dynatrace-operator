@@ -63,8 +63,10 @@ type Client interface {
 	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
 	// GetEnrichmentRuleObjects returns the list of enrichment rule settings objects (with objectIds) for the given scope.
 	GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
-	// CreateEnrichmentRule creates a new enrichment rule settings object for the given scope and returns its objectId.
-	CreateEnrichmentRule(ctx context.Context, scope string, ruleType metadataenrichment.RuleType, valueSource, target string) (string, error)
+	// GetLegacyEnrichmentRuleObjects returns enrichment rule settings objects for the legacy schema (builtin:kubernetes.generic.metadata.enrichment).
+	GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
+	// CreateEnrichmentRule creates a settings object for the given schema and scope. Use LegacyMetadataEnrichmentSchemaID or MetadataEnrichmentSchemaID as schemaID.
+	CreateEnrichmentRule(ctx context.Context, schemaID, scope string, rules []metadataenrichment.Rule) (string, error)
 	// DeleteSettings deletes the settings for a monitored entity.
 	DeleteSettings(ctx context.Context, settingsID string) error
 }
