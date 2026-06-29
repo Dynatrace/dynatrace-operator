@@ -48,11 +48,6 @@ func TestMain(m *testing.M) {
 		return ctx, nil
 	})
 
-	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
-	if !cfg.FailFast() {
-		testEnv.Finish(operator.Uninstall(true))
-	}
-
 	testEnv.AfterEachTest(func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
 			events.LogEvents(ctx, envConfig, t)
