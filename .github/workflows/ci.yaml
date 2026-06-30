@@ -33,6 +33,7 @@ jobs:
       prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed == 'true' && 'true' || '' }}
       ci_changed: ${{ steps.ci.outputs.any_changed == 'true' && 'true' || '' }}
       is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch == 'true' && 'true' || '' }}
+      is_new_branch: ${{ steps.is-new-branch.outputs.is_new_branch == 'true' && 'true' || '' }}
       is_snyk_authorized: ${{ steps.is-snyk-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       markdown_changed: ${{ steps.markdown.outputs.any_changed == 'true' && 'true' || '' }}
@@ -43,6 +44,14 @@ jobs:
           fetch-depth: ${{ github.event_name == 'merge_group' && '0' || '2' }}
           ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
           persist-credentials: false
+      - name: Check if new branch push
+        id: is-new-branch
+        run: |
+          if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+            echo "is_new_branch=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_new_branch=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Check if it is a protected branch
         id: is-protected-branch
         run: |
@@ -60,6 +69,7 @@ jobs:
         run: |
           echo "is_authorized=${{ secrets.QUAY_USERNAME != '' && secrets.QUAY_PASSWORD != '' }}" >> $GITHUB_OUTPUT
       - name: Detect CI file changes
+        if: steps.is-new-branch.outputs.is_new_branch != 'true'
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: ci
         with:
@@ -68,6 +78,7 @@ jobs:
             .github/actions/**
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Go file changes
+        if: steps.is-new-branch.outputs.is_new_branch != 'true'
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: go-files
         with:
@@ -76,6 +87,7 @@ jobs:
             go.mod
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Dockerfile changes
+        if: steps.is-new-branch.outputs.is_new_branch != 'true'
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: dockerfile
         with:
@@ -83,6 +95,7 @@ jobs:
             Dockerfile
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Helm config changes
+        if: steps.is-new-branch.outputs.is_new_branch != 'true'
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: helm
         with:
@@ -90,6 +103,7 @@ jobs:
             config/**
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect prerequisites.mk changes
+        if: steps.is-new-branch.outputs.is_new_branch != 'true'
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: prerequisites
         with:
@@ -97,6 +111,7 @@ jobs:
             hack/make/prerequisites.mk
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect markdown changes
+        if: steps.is-new-branch.outputs.is_new_branch != 'true'
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: markdown
         with:
@@ -121,7 +136,7 @@ jobs:
 
   helm-test:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run helm unit tests
     runs-on: ubuntu-24.04
     steps:
@@ -141,7 +156,7 @@ jobs:
 
   helm-lint:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run helm linting
     runs-on: ubuntu-24.04
     steps:
@@ -161,7 +176,7 @@ jobs:
 
   tests:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run unit tests
     runs-on: ubuntu-24.04
     steps:
@@ -186,7 +201,7 @@ jobs:
 
   linting:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run linting
     runs-on: ubuntu-24.04
     steps:
@@ -213,7 +228,7 @@ jobs:
   generated-files:
     name: Check generated files
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -253,7 +268,7 @@ jobs:
     needs: [detect-changes]
     if: >
       needs.detect-changes.outputs.is_snyk_authorized &&
-      (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
+      (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     name: Code security scanning alerts
     runs-on: ubuntu-24.04
     steps:
@@ -287,7 +302,7 @@ jobs:
     needs: [detect-changes]
     if: >
         !needs.detect-changes.outputs.is_snyk_authorized &&
-        (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
+        (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     name: Govulncheck
     runs-on: ubuntu-24.04
     steps:
@@ -319,7 +334,7 @@ jobs:
 
   build-push:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.helm_changed)
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.helm_changed)
     name: Build images
     runs-on: ubuntu-24.04
     permissions:
@@ -343,7 +358,7 @@ jobs:
 
   build-push-fips:
     needs: [ detect-changes ]
-    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.helm_changed)
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.helm_changed)
     name: Build FIPS images
     permissions:
       packages: write
@@ -371,7 +386,7 @@ jobs:
 
   build-push-olm-bundle:
     needs: [ detect-changes ]
-    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.ci_changed ||  needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed)
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.is_new_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.ci_changed ||  needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed)
     name: Build and push OLM bundle
     runs-on: ubuntu-24.04
     permissions:
