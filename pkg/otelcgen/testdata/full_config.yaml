@@ -18,6 +18,9 @@ processors:
         - from: pod
           key_regex: metadata.dynatrace.com/(.*)
           tag_name: $$1
+        - from: pod
+          key: metadata.dynatrace.com
+          tag_name: metadata.dynatrace.com
       metadata:
         - k8s.cluster.uid
         - k8s.node.name
@@ -50,6 +53,8 @@ processors:
     log_statements:
       - context: resource
         statements:
+          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "insert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
+          - 'delete_key(attributes, "metadata.dynatrace.com")'
           - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])
@@ -76,6 +81,8 @@ processors:
     metric_statements:
       - context: resource
         statements:
+          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "insert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
+          - 'delete_key(attributes, "metadata.dynatrace.com")'
           - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])
@@ -102,6 +109,8 @@ processors:
     trace_statements:
       - context: resource
         statements:
+          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "insert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
+          - 'delete_key(attributes, "metadata.dynatrace.com")'
           - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])

@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -41,6 +42,8 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	errorHostIDSourceArgumentInCloudNative = "Setting --set-host-id-source in CloudNativFullstack mode is not allowed."
 
 	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
+
+	errorInvalidOneAgentArgument = "The DynaKube's OneAgent specification contains invalid arguments. Make sure to remove forbidden characters (newline, tab, carriage return, null) from the value in your custom resource."
 
 	warningDeprecatedVersion = `version field is deprecated. Please use "%s" field instead to set a version.`
 
@@ -275,6 +278,17 @@ func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube
 	for key := range args {
 		if dk.OneAgent().IsCloudNativeFullstackMode() && key == "--set-host-id-source" {
 			return errorHostIDSourceArgumentInCloudNative
+		}
+	}
+
+	return ""
+}
+
+func invalidOneAgentArguments(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	args := dk.OneAgent().GetArguments()
+	for _, arg := range args {
+		if strings.ContainsAny(arg, sanitize.InvalidCommandLineCharset) {
+			return errorInvalidOneAgentArgument
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
 const (
@@ -13,12 +14,8 @@ const (
 )
 
 func invalidOneAgentHostGroup(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if strings.ContainsFunc(dk.OneAgent().HostGroup, isWhiteSpaceCharacter) {
+	if strings.ContainsAny(dk.OneAgent().HostGroup, sanitize.InvalidCommandLineCharset) {
 		return errorInvalidHostGroupProperty
-	}
-
-	if strings.ContainsFunc(dk.OneAgent().GetHostGroupAsParam(), isWhiteSpaceCharacter) {
-		return errorInvalidHostGroupAsParam
 	}
 
 	return ""

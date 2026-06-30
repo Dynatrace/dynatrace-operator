@@ -20,14 +20,15 @@ func Test_getLogLevel(t *testing.T) {
 		clientDebugEnv string
 		want           int
 	}{
-		{"", "", levelDisabled},
-		{"info", "default", levelDisabled},
-		{"info", "request", levelDisabled},
-		{"info", "response", levelDisabled},
-		{"info", "full", levelDisabled},
-
-		{"debug", "", levelDefault},
-		{"debug", "default", levelDefault},
+		{"", "", levelInfo},
+		{"", "request", levelRequest},
+		{"", "response", levelResponse},
+		{"", "full", levelFull},
+		{"info", "", levelInfo},
+		{"info", "request", levelRequest},
+		{"info", "response", levelResponse},
+		{"info", "full", levelFull},
+		{"debug", "", levelDebug},
 		{"debug", "request", levelRequest},
 		{"debug", "response", levelResponse},
 		{"debug", "full", levelFull},
@@ -66,55 +67,77 @@ func Test_loggerArgs(t *testing.T) {
 	requestBody := []byte("request " + "Bearer " + jwtBearerToken + " " + token + "rest")
 	responseBody := []byte("response " + "Bearer " + jwtBearerToken + " " + token + "rest")
 
+	sanitizedRequest := "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest"
+	sanitizedResponse := "response " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest"
+
 	tests := []struct {
 		name     string
 		logLevel int
 		want     []any
 	}{
-		{"disabled", levelDisabled, nil},
+		{"info", levelInfo, nil},
 		{
-			"default",
-			levelDefault,
+			"info/error",
+			levelInfo,
 			[]any{
-				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
+				"method", "GET", "path", "/path-foo", "status_code", http.StatusBadRequest, "duration", "1s",
+			},
+		},
+		{
+			"debug",
+			levelDebug,
+			[]any{
+				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
 				"cached", false,
+				"host", "host.test",
+				"query", `{"query-foo":"query-bar"}`,
+			},
+		},
+		{
+			"debug/cached",
+			levelDebug,
+			[]any{
+				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
+				"cached", true,
+				"host", "host.test",
+				"query", `{"query-foo":"query-bar"}`,
 			},
 		},
 		{
 			"request",
 			levelRequest,
 			[]any{
-				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"cached", false, "request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
+				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
+				"cached", false,
+				"host", "host.test",
+				"query", `{"query-foo":"query-bar"}`,
+				"request_body", sanitizedRequest,
 			},
 		},
 		{
 			"response",
 			levelResponse,
 			[]any{
-				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"cached", false, "request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
-				"response_body", "response " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
+				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
+				"cached", false,
+				"host", "host.test",
+				"query", `{"query-foo":"query-bar"}`,
+				"request_body", sanitizedRequest,
+				"response_body", sanitizedResponse,
 			},
 		},
 		{
 			"full",
 			levelFull,
 			[]any{
-				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
+				"method", "GET", "path", "/path-foo", "status_code", 200, "duration", "1s",
 				"cached", false,
+				"host", "host.test",
+				"query", `{"query-foo":"query-bar"}`,
+				"request_body", sanitizedRequest,
+				"response_body", sanitizedResponse,
 				"request_headers", `{"Authorization":"Bearer eya.eyb.***","Request-Foo":"request-` + publicPart + `.***"}`,
 				"response_headers", `{"Response-Foo":"response-` + publicPart + `.***"}`,
-				"request_body", "request " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
-				"response_body", "response " + "Bearer " + "eya.eyb.***" + " " + publicPart + ".***rest",
-			},
-		},
-		{
-			"default/cached",
-			levelDefault,
-			[]any{
-				"method", "GET", "host", "host.test", "path", "/path-foo", "query", `{"query-foo":"query-bar"}`, "status_code", 200, "duration", "1s",
-				"cached", true,
 			},
 		},
 	}
@@ -133,7 +156,12 @@ func Test_loggerArgs(t *testing.T) {
 			})
 
 			resp := response
-			if tt.name == "default/cached" {
+			switch tt.name {
+			case "info/error":
+				errResp := *response
+				errResp.StatusCode = http.StatusBadRequest
+				resp = &errResp
+			case "debug/cached":
 				cached := *response
 				cached.Header = response.Header.Clone()
 				cached.Header.Set(middleware.CacheHitHeader, "true")
