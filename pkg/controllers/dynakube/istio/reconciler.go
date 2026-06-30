@@ -65,7 +65,7 @@ func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube)
 		return nil
 	}
 
-	apiCommunicationHost, err := connectioninfo.NewCommunicationHost(dk.Spec.APIURL)
+	apiCommunicationHost, err := connectioninfo.NewCommunicationHost(dk.APIURL())
 	if err != nil {
 		return err
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtapiurl"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -40,18 +41,29 @@ func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {
 	return conversion.NewRemovedFields(dk.Annotations)
 }
 
-// APIURL is a getter for dk.Spec.APIURL.
+// APIURL returns the API URL that the operator and its components should communicate with.
+//
+// The returned value is normalized to its 2nd gen equivalent: a 3rd gen URL (*.apps.*) is
+// remapped to its 2nd gen form, while a 2nd gen URL is returned unchanged. This is required
+// because the Environment V2 API (ingest, settings, tenant registry, ...) is only served on
+// 2nd gen URLs. Use dk.Spec.APIURL directly when the raw, user-provided value is needed
+// (e.g. validation).
 func (dk *DynaKube) APIURL() string {
-	return dk.Spec.APIURL
+	return dtapiurl.ToSecondGen(dk.Spec.APIURL)
 }
 
 func (dk *DynaKube) Conditions() *[]metav1.Condition { return &dk.Status.Conditions }
 
-// APIURLHost returns the host of dk.Spec.APIURL
+// APIURLHost returns the host of the raw dk.Spec.APIURL.
 // E.g. if the APIURL is set to "https://my-tenant.dynatrace.com/api", it returns "my-tenant.dynatrace.com"
 // If the URL cannot be parsed, it returns an empty string.
+//
+// Unlike APIURL(), this intentionally uses the raw, un-normalized value: it is used to derive
+// the tenant image registry host, which is only available on 2nd gen URLs. A 3rd gen URL
+// (*.apps.*) therefore yields a non-functional registry host on purpose, instead of silently
+// pointing at a 2nd gen host that does not serve a registry for that tenant either.
 func (dk *DynaKube) APIURLHost() string {
-	parsedURL, err := url.Parse(dk.APIURL())
+	parsedURL, err := url.Parse(dk.Spec.APIURL)
 	if err != nil {
 		return ""
 	}

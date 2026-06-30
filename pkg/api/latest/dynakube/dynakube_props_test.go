@@ -47,6 +47,29 @@ func TestTokens(t *testing.T) {
 	})
 }
 
+func TestAPIURL(t *testing.T) {
+	t.Run("2nd gen URL is returned unchanged", func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: "https://tenant.live.dynatrace.com/api"}}
+		assert.Equal(t, "https://tenant.live.dynatrace.com/api", dk.APIURL())
+		assert.Equal(t, "tenant.live.dynatrace.com", dk.APIURLHost())
+	})
+
+	t.Run("3rd gen URL is mapped to its 2nd gen equivalent", func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: "https://tenant.apps.dynatrace.com"}}
+		assert.Equal(t, "https://tenant.live.dynatrace.com/api", dk.APIURL())
+	})
+
+	t.Run("APIURLHost returns the raw host so a 3rd gen registry breaks on purpose", func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: "https://tenant.apps.dynatrace.com"}}
+		assert.Equal(t, "tenant.apps.dynatrace.com", dk.APIURLHost())
+	})
+
+	t.Run("Spec.APIURL keeps the raw user-provided value", func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: "https://tenant.apps.dynatrace.com"}}
+		assert.Equal(t, "https://tenant.apps.dynatrace.com", dk.Spec.APIURL)
+	})
+}
+
 func TestImagePullSecretReferences(t *testing.T) {
 	t.Run("only tenant pull secret when no custom pull secret is set", func(t *testing.T) {
 		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
