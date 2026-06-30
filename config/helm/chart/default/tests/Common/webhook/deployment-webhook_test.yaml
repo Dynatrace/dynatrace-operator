@@ -775,6 +775,25 @@ tests:
           count: 1
           any: true
 
+  - it: should have DT_EXTRACT_CODEMODULES_IMAGE_LINKS if extractCodeModulesImageLinks is true
+    set:
+      extractCodeModulesImageLinks: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
+            value: "true"
+          count: 1
+          any: true
+
+  - it: should not have DT_EXTRACT_CODEMODULES_IMAGE_LINKS if extractCodeModulesImageLinks is false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
+
   - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0
     set:
       platform: kubernetes

@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -75,6 +76,10 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 			if flavor := maputils.GetField(mutationRequest.Pod.Annotations, AnnotationFlavor, ""); flavor != "" {
 				downloadArgs = append(downloadArgs,
 					arg.Arg{Name: bootstrapper.FlavorFlag, Value: flavor})
+			}
+
+			if k8senv.GetDTExtractCodeModulesImageLinks(mutationRequest.Context) {
+				mutationRequest.InstallContainer.Env = append(mutationRequest.InstallContainer.Env, corev1.EnvVar{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"})
 			}
 
 			mutationRequest.InstallContainer.Args = append(mutationRequest.InstallContainer.Args, arg.ConvertArgsToStrings(downloadArgs)...)

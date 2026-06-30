@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/klauspost/compress/gzip"
 	"github.com/pkg/errors"
 )
@@ -38,7 +39,9 @@ func (extractor OneAgentExtractor) ExtractGzip(ctx context.Context, sourceFilePa
 	tmpUnzipDir := extractor.pathResolver.AgentTempUnzipRootDir()
 	tarReader := tar.NewReader(gzipReader)
 
-	err = extractFilesFromGzip(ctx, tmpUnzipDir, tarReader)
+	extractLinks := k8senv.GetDTExtractCodeModulesImageLinks(ctx)
+
+	err = extractFilesFromGzip(ctx, tmpUnzipDir, tarReader, extractLinks)
 	if err != nil {
 		return err
 	}
@@ -46,7 +49,7 @@ func (extractor OneAgentExtractor) ExtractGzip(ctx context.Context, sourceFilePa
 	return extractor.moveToTargetDir(ctx, targetDir)
 }
 
-func extractFilesFromGzip(ctx context.Context, targetDir string, reader *tar.Reader) error {
+func extractFilesFromGzip(ctx context.Context, targetDir string, reader *tar.Reader, extractLinks bool) error {
 	for {
 		header, err := reader.Next()
 		if errors.Is(err, io.EOF) {
@@ -61,7 +64,7 @@ func extractFilesFromGzip(ctx context.Context, targetDir string, reader *tar.Rea
 			return err
 		}
 
-		err = extract(ctx, targetDir, reader, header, target)
+		err = extract(ctx, targetDir, reader, header, target, extractLinks)
 		if err != nil {
 			return err
 		}
@@ -94,25 +97,30 @@ func evaluateTargetPath(targetDir, name string) string {
 	return filepath.Join(targetDir, name)
 }
 
-func extract(ctx context.Context, targetDir string, reader *tar.Reader, header *tar.Header, target string) error {
+//nolint:revive
+func extract(ctx context.Context, targetDir string, reader *tar.Reader, header *tar.Header, target string, extractLinks bool) error {
 	log := logd.FromContext(ctx)
 
 	switch header.Typeflag {
+	case tar.TypeReg:
+		if err := extractFile(target, header, reader); err != nil {
+			return errors.WithStack(err)
+		}
 	case tar.TypeDir:
 		if err := os.MkdirAll(target, header.FileInfo().Mode()); err != nil {
 			return errors.WithStack(err)
 		}
 	case tar.TypeLink:
-		if err := extractLink(ctx, targetDir, target, header); err != nil {
-			return errors.WithStack(err)
+		if extractLinks {
+			if err := extractLink(ctx, targetDir, target, header); err != nil {
+				return errors.WithStack(err)
+			}
 		}
 	case tar.TypeSymlink:
-		if err := extractSymlink(ctx, targetDir, target, header); err != nil {
-			return errors.WithStack(err)
-		}
-	case tar.TypeReg:
-		if err := extractFile(target, header, reader); err != nil {
-			return errors.WithStack(err)
+		if extractLinks {
+			if err := extractSymlink(ctx, targetDir, target, header); err != nil {
+				return errors.WithStack(err)
+			}
 		}
 	default:
 		log.Info("skipping special file", "name", header.Name)
@@ -188,7 +196,7 @@ func extractFile(target string, header *tar.Header, tarReader *tar.Reader) error
 		mode = common.ReadWriteAllFileMode
 	}
 
-	destinationFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, mode)
+	destinationFile, err := os.OpenFile(target, hardenedOpenFileFlags, mode)
 
 	defer (func() { _ = destinationFile.Close() })()
 

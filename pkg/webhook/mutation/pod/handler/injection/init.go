@@ -46,10 +46,8 @@ func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube)
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		SecurityContext: securityContextForInitContainer(pod, dk, h.isOpenShift),
 		Resources:       defaultInitContainerResources(),
-		Args:            []string{bootstrapper.Use},
+		Args:            append([]string{bootstrapper.Use}, arg.ConvertArgsToStrings(args)...),
 	}
-
-	initContainer.Args = append(initContainer.Args, arg.ConvertArgsToStrings(args)...)
 
 	return initContainer
 }
