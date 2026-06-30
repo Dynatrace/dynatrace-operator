@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -42,7 +41,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = nil
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = nil
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		require.NotNil(t, initContainer)
 
@@ -79,7 +78,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = testUser
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = testUser
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -99,7 +98,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.SecurityContext.RunAsUser = testUser
 		pod.Spec.SecurityContext.RunAsGroup = testUser
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -118,7 +117,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.SecurityContext.RunAsUser = new(RootUser)
 		pod.Spec.SecurityContext.RunAsGroup = new(RootGroup)
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		assert.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -135,7 +134,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, initContainer.SecurityContext.SeccompProfile.Type)
 	})
@@ -146,7 +145,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		assert.NotContains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
@@ -157,7 +156,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"}
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		assert.NotContains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
@@ -168,7 +167,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
@@ -179,7 +178,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 
@@ -188,7 +187,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod = getTestPod()
 		pod.Annotations = map[string]string{dtwebhook.AnnotationFailurePolicy: "asd"}
 
-		initContainer = wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer = wh.createInitContainerBase(pod, *dk)
 
 		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
@@ -200,11 +199,11 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Annotations = map[string]string{}
 
 		dk := getTestDynakube()
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 		assert.Contains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 
 		dk.Spec.OneAgent = getApplicationMonitoringSpec()
-		initContainer = wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer = wh.createInitContainerBase(pod, *dk)
 		assert.Contains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 	})
 
@@ -216,11 +215,11 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Annotations = map[string]string{}
 
 		dk.Spec.OneAgent = getHostMonitoringSpec()
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 
 		dk.Spec.OneAgent = getClassicFullStackSpec()
-		initContainer = wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer = wh.createInitContainerBase(pod, *dk)
 		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 	})
 
@@ -230,7 +229,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 	})
@@ -242,29 +241,9 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
+		initContainer := wh.createInitContainerBase(pod, *dk)
 
 		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
-	})
-
-	t.Run("should not enable links extraction by default", func(t *testing.T) {
-		dk := getTestDynakube()
-		pod := getTestPod()
-
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
-
-		assert.NotContains(t, initContainer.Env, corev1.EnvVar{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"})
-	})
-
-	t.Run("should forward links extraction", func(t *testing.T) {
-		t.Setenv(k8senv.DTExtractCodeModulesImageLinksEnvVar, "true")
-
-		dk := getTestDynakube()
-		pod := getTestPod()
-
-		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
-
-		assert.Contains(t, initContainer.Env, corev1.EnvVar{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"})
 	})
 }
 
