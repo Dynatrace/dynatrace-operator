@@ -325,12 +325,12 @@ func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.He
 			return nil, fmt.Errorf("read error response body: %w", readErr)
 		}
 
-		log.Debug("API request", loggerArgs(resp, body)...)
+		logAPIRequest(log, loggerArgs(resp, body))
 
 		return nil, handleErrorResponse(resp, body)
 	}
 
-	log.Debug("API request", loggerArgs(resp, nil)...)
+	logAPIRequest(log, loggerArgs(resp, nil))
 
 	if _, err = io.Copy(writer, resp.Body); err != nil {
 		return nil, fmt.Errorf("stream response body: %w", err)
@@ -385,7 +385,7 @@ func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
 		return nil, "", fmt.Errorf("read response body: %w", err)
 	}
 
-	log.Debug("API request", loggerArgs(resp, body)...)
+	logAPIRequest(log, loggerArgs(resp, body))
 
 	if !IsSuccessResponse(resp) {
 		err = handleErrorResponse(resp, body)
@@ -474,4 +474,10 @@ func isJSONList(body []byte) bool {
 	}
 
 	return false
+}
+
+func logAPIRequest(log logd.Logger, args []any) {
+	if len(args) > 0 {
+		log.Info("API request", args...)
+	}
 }
