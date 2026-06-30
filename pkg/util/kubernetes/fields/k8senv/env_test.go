@@ -274,3 +274,23 @@ func TestGetDefaultRequeueAfter(t *testing.T) {
 		})
 	}
 }
+
+func TestGetDTExtractCodeModulesImageLinks(t *testing.T) {
+	tests := []struct {
+		name   string
+		env    string
+		expect bool
+	}{
+		{"nothing set", "", false},
+		{"invalid value", "foobar", false},
+		{"false", "false", false},
+		{"true", "true", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(DTExtractCodeModulesImageLinksEnvVar, tt.env)
+			got := GetDTExtractCodeModulesImageLinks(t.Context())
+			assert.Equal(t, tt.expect, got)
+		})
+	}
+}

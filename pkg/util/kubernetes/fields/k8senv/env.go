@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,6 +21,8 @@ const (
 	DTOperatorPullSecretEnvName = "DT_OPERATOR_PULL_SECRET"
 	OLMOperatorNamespaceEnv     = "OLM_OPERATOR_NAMESPACE"
 	AppVersion                  = "APP_VERSION"
+
+	DTExtractCodeModulesImageLinksEnvVar = "DT_EXTRACT_CODEMODULES_IMAGE_LINKS"
 
 	DTClientCacheCleanInterval        = "DT_CLIENT_CACHE_CLEAN_INTERVAL"
 	defaultDTClientCacheCleanInterval = time.Hour
@@ -158,6 +161,24 @@ func GetDTClientCacheCleanInterval(ctx context.Context) time.Duration {
 	}
 
 	return parsedDuration
+}
+
+// GetDTExtractCodeModulesImageLinks reads the value of DT_EXTRACT_CODEMODULES_IMAGE_LINKS.
+func GetDTExtractCodeModulesImageLinks(ctx context.Context) bool {
+	rawValue := os.Getenv(DTExtractCodeModulesImageLinksEnvVar)
+	if rawValue == "" {
+		return false
+	}
+
+	value, err := strconv.ParseBool(rawValue)
+	if err != nil {
+		_, log := logd.NewFromContext(ctx, "k8senv")
+		log.Info("couldn't parse bool from env", "env", DTExtractCodeModulesImageLinksEnvVar, "value", rawValue, "err", err)
+
+		return false
+	}
+
+	return value
 }
 
 func NewRef(envName string) string {
