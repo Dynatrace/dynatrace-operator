@@ -33,7 +33,7 @@ jobs:
       prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed == 'true' && 'true' || '' }}
       ci_changed: ${{ steps.ci.outputs.any_changed == 'true' && 'true' || '' }}
       is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch == 'true' && 'true' || '' }}
-      is_new_branch: ${{ github.event.before == '0000000000000000000000000000000000000000' && 'true' || '' }}
+      is_new_branch: ${{ github.event.created && 'true' || '' }}
       is_snyk_authorized: ${{ steps.is-snyk-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       markdown_changed: ${{ steps.markdown.outputs.any_changed == 'true' && 'true' || '' }}
@@ -61,7 +61,7 @@ jobs:
         run: |
           echo "is_authorized=${{ secrets.QUAY_USERNAME != '' && secrets.QUAY_PASSWORD != '' }}" >> $GITHUB_OUTPUT
       - name: Detect CI file changes
-        if: github.event.before != '0000000000000000000000000000000000000000'
+        if: ${{ !github.event.created }}
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: ci
         with:
@@ -70,7 +70,7 @@ jobs:
             .github/actions/**
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Go file changes
-        if: github.event.before != '0000000000000000000000000000000000000000'
+        if: ${{ !github.event.created }}
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: go-files
         with:
@@ -79,7 +79,7 @@ jobs:
             go.mod
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Dockerfile changes
-        if: github.event.before != '0000000000000000000000000000000000000000'
+        if: ${{ !github.event.created }}
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: dockerfile
         with:
@@ -87,7 +87,7 @@ jobs:
             Dockerfile
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Helm config changes
-        if: github.event.before != '0000000000000000000000000000000000000000'
+        if: ${{ !github.event.created }}
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: helm
         with:
@@ -95,7 +95,7 @@ jobs:
             config/**
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect prerequisites.mk changes
-        if: github.event.before != '0000000000000000000000000000000000000000'
+        if: ${{ !github.event.created }}
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: prerequisites
         with:
@@ -103,7 +103,7 @@ jobs:
             hack/make/prerequisites.mk
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect markdown changes
-        if: github.event.before != '0000000000000000000000000000000000000000'
+        if: ${{ !github.event.created }}
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: markdown
         with:
