@@ -21,6 +21,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 			WithQueryParams(map[string]string{
 				"relativeTime":   "30mins",
 				"includeDetails": "false",
+				"pageSize":       "4000",
 			}).
 			Return(req).Once()
 		req.EXPECT().
