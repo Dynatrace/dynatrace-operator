@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
@@ -165,7 +166,7 @@ type injectionReconciler interface {
 }
 
 type kubemonReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, tokens token.Tokens) error
 }
 
 // Controller reconciles a DynaKube object
@@ -401,7 +402,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	log.Info("start reconciling KubernetesMonitoring")
 
-	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient, controller.tokens); err != nil {
+	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient.ActiveGate, controller.tokens); err != nil {
 		if errors.Is(err, k8sstatefulset.ErrRolloutInProgress) {
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 

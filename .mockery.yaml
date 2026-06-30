@@ -101,6 +101,7 @@ packages:
       structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
       filename: "mock_reconcilers_test.go"
     interfaces:
+      connectionInfoReconciler:
       statefulsetReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:

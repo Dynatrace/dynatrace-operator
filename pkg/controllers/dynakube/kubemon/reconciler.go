@@ -18,7 +18,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
@@ -61,7 +60,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 // Reconcile is the operand entry point called by the parent DynaKube controller.
 // Sub-reconcilers mutate dk.Status.KubernetesMonitoring.* and dk.Status.Conditions in-memory;
 // the parent controller persists status changes via deferred Status().Update().
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, _ token.Tokens) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, _ token.Tokens) error {
 	ctx, log := logd.NewFromContext(ctx, "dynakube-kubemon")
 
 	// Fast-path guard: never created, nothing to converge.
@@ -73,7 +72,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 
 	log.Debug("reconciling kubernetes monitoring")
 
-	if err := r.connectionInfoReconciler.Reconcile(ctx, dtClient.ActiveGate, dk); err != nil {
+	if err := r.connectionInfoReconciler.Reconcile(ctx, agClient, dk); err != nil {
 		r.setConditionByError(dk, err)
 
 		return err

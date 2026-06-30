@@ -38,8 +38,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 		return err
 	}
 
-	if info.Endpoints == "" {
-		return errors.New("kubemon connection info has no endpoints yet")
+	if info.TenantUUID == "" || info.Endpoints == "" || info.TenantToken == "" {
+		return errors.New("kubemon connection info is not ready yet")
 	}
 
 	if err := r.createOrUpdateConfigMap(ctx, dk, info); err != nil {
@@ -73,13 +73,9 @@ func (r *Reconciler) cleanup(ctx context.Context, dk *dynakube.DynaKube) error {
 }
 
 func (r *Reconciler) createOrUpdateConfigMap(ctx context.Context, dk *dynakube.DynaKube, info agclient.ConnectionInfo) error {
-	data := map[string]string{}
-	if info.TenantUUID != "" {
-		data[connectioninfo.TenantUUIDKey] = info.TenantUUID
-	}
-
-	if info.Endpoints != "" {
-		data[connectioninfo.CommunicationEndpointsKey] = info.Endpoints
+	data := map[string]string{
+		connectioninfo.TenantUUIDKey:             info.TenantUUID,
+		connectioninfo.CommunicationEndpointsKey: info.Endpoints,
 	}
 
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)

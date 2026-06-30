@@ -15,27 +15,29 @@ import (
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	containerName             = "kubemon"
-	annotationTenantTokenHash = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
+	ContainerName             = "kubemon"
+	AnnotationTenantTokenHash = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
+	requiredEnvsCapacity      = 4
 )
 
 var ErrImageRequired = errors.New("kubernetes monitoring image is required")
 
 type Reconciler struct {
-	client       client.Client
-	statefulsets k8sstatefulset.QueryObject
+	kubeClient client.Client
+	sts        k8sstatefulset.QueryObject
 }
 
-func NewReconciler(clt client.Client) *Reconciler {
+func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
-		client:       clt,
-		statefulsets: k8sstatefulset.Query(clt, clt),
+		kubeClient: kubeClient,
+		sts:        k8sstatefulset.Query(kubeClient, kubeClient),
 	}
 }
 
@@ -49,29 +51,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	if _, err = r.statefulsets.WithOwner(dk).CreateOrUpdate(ctx, desiredStatefulSet); err != nil {
+	if _, err = r.sts.WithOwner(dk).CreateOrUpdate(ctx, desiredStatefulSet); err != nil {
 		return err
 	}
 
-	currentStatefulSet, err := r.statefulsets.Get(ctx, types.NamespacedName{Name: desiredStatefulSet.Name, Namespace: desiredStatefulSet.Namespace})
-	if err != nil {
-		return err
-	}
-
-	if !k8sstatefulset.IsRolloutComplete(currentStatefulSet) {
+	currentStatefulSet, err := r.sts.Get(ctx, types.NamespacedName{Name: desiredStatefulSet.Name, Namespace: desiredStatefulSet.Namespace})
+	if k8serrors.IsNotFound(err) || (err == nil && !k8sstatefulset.IsRolloutComplete(currentStatefulSet)) {
 		return k8sstatefulset.ErrRolloutInProgress
 	}
 
-	return nil
+	return err
 }
 
-// buildEnvs prepends the mandatory AG runtime env vars to any user-supplied vars.
+// buildEnvs prepends the mandatory AG runtime env vars (and optional DT_GROUP) to any user-supplied vars.
 func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
-	const requiredEnvCount = 3
-
 	connInfoCM := dk.KubernetesMonitoring().GetConnectionInfoConfigMapName()
 
-	required := make([]corev1.EnvVar, 0, requiredEnvCount+len(dk.KubernetesMonitoring().Env))
+	required := make([]corev1.EnvVar, 0, requiredEnvsCapacity+len(dk.KubernetesMonitoring().Env))
 	required = append(required,
 		corev1.EnvVar{
 			Name:  agconsts.EnvDTCapabilities,
@@ -99,10 +95,14 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 	)
 
+	if dk.Spec.KubernetesMonitoring.Group != "" {
+		required = append(required, corev1.EnvVar{Name: agconsts.EnvDTGroup, Value: dk.Spec.KubernetesMonitoring.Group})
+	}
+
 	return append(required, dk.KubernetesMonitoring().Env...)
 }
 
-// buildVolumes returns the pod-level volume for the kubemon-owned tenant token secret.
+// buildVolumes returns the pod-level volumes.
 func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	return []corev1.Volume{
 		{
@@ -117,8 +117,8 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	}
 }
 
-// buildVolumeMounts returns the container-level volume mounts for the tenant token.
-func buildVolumeMounts() []corev1.VolumeMount {
+// buildVolumeMounts returns the container-level volume mounts.
+func buildVolumeMounts(_ *dynakube.DynaKube) []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      connectioninfo.TenantSecretVolumeName,
@@ -132,7 +132,7 @@ func buildVolumeMounts() []corev1.VolumeMount {
 func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {
 	statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace}}
 
-	return r.statefulsets.Delete(ctx, statefulSet)
+	return r.sts.Delete(ctx, statefulSet)
 }
 
 func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube) (*appsv1.StatefulSet, error) {
@@ -141,9 +141,10 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, ErrImageRequired
 	}
 
+	// no .replicas means the field is controlled by HPA, so we read it from live object
 	replicas, err := k8sstatefulset.ResolveReplicas(
 		ctx,
-		r.client,
+		r.kubeClient,
 		types.NamespacedName{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace},
 		dk.KubernetesMonitoring().Replicas,
 	)
@@ -157,12 +158,12 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	}
 
 	container := corev1.Container{
-		Name:            containerName,
+		Name:            ContainerName,
 		Image:           image,
 		ImagePullPolicy: dk.KubernetesMonitoring().GetPullPolicy(),
 		Resources:       dk.KubernetesMonitoring().Resources,
 		Env:             buildEnvs(dk),
-		VolumeMounts:    buildVolumeMounts(),
+		VolumeMounts:    buildVolumeMounts(dk),
 	}
 
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
@@ -173,7 +174,9 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		container,
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), dk.KubernetesMonitoring().Labels),
-		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(dk.KubernetesMonitoring().Annotations, map[string]string{annotationTenantTokenHash: tokenHash})),
+		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(dk.KubernetesMonitoring().Annotations, map[string]string{
+			AnnotationTenantTokenHash: tokenHash,
+		})),
 		k8sstatefulset.SetServiceAccount(dk.KubernetesMonitoring().GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(dk.KubernetesMonitoring().NodeSelector),
 		k8sstatefulset.SetTolerations(dk.KubernetesMonitoring().Tolerations),
@@ -189,7 +192,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 
 func (r *Reconciler) getTenantTokenHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
 	var secret corev1.Secret
-	if err := r.client.Get(ctx, types.NamespacedName{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: dk.Namespace}, &secret); err != nil {
+	if err := r.kubeClient.Get(ctx, types.NamespacedName{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: dk.Namespace}, &secret); err != nil {
 		return "", errors.WithStack(err)
 	}
 
