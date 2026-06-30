@@ -71,6 +71,9 @@ processors:
         - from: pod
           key_regex: metadata.dynatrace.com/(.*)
           tag_name: $$1
+        - from: pod
+          key: metadata.dynatrace.com
+          tag_name: metadata.dynatrace.com
     pod_association:
       - sources:
           - from: resource_attribute
@@ -90,6 +93,8 @@ processors:
     trace_statements: &dynatrace_transformations
       - context: resource
         statements:
+          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "insert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
+          - 'delete_key(attributes, "metadata.dynatrace.com")'
           - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])
           - set(attributes["k8s.workload.kind"], "cronjob") where IsString(attributes["k8s.cronjob.name"])
