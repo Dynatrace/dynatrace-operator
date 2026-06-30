@@ -95,7 +95,7 @@ func validateInstallPath(installPath string) error {
 }
 
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_, log := logd.NewFromContext(request.Context, "oneagent-mutation")
+	_, log := logd.NewFromContext(request.Context, "oneagent")
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 
 	if err := validateInstallPath(installPath); err != nil {
@@ -116,7 +116,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 }
 
 func (mut *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	_, log := logd.NewFromContext(ctx, "oneagent-mutation")
+	_, log := logd.NewFromContext(ctx, "oneagent")
 
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 	if err := validateInstallPath(installPath); err != nil {
