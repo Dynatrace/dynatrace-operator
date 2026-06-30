@@ -1111,7 +1111,10 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 			oaspec: oneagent.Spec{
 				ClassicFullStack: &oneagent.HostInjectSpec{
 					RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-						MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}}},
+						MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2},
+					},
+				},
+			},
 			expectedWarnings: 0,
 		},
 		{
@@ -1155,4 +1158,20 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestInvalidOneAgentArguments(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: defaultDynakubeObjectMeta,
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+			},
+		},
+	}
+
+	assertSanitizeArg(t, dk, func(dk *dynakube.DynaKube, value string) {
+		dk.Spec.OneAgent.CloudNativeFullStack.Args = []string{value}
+	}, errorInvalidOneAgentArgument)
 }

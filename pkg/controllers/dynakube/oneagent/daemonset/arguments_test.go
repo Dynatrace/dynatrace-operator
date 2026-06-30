@@ -321,6 +321,45 @@ func TestArguments(t *testing.T) {
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
+
+	t.Run("sanitize args", func(t *testing.T) {
+		custArgs := []string{
+			"--1\nfoo",
+		}
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						exp.NoProxyKey: "4\x00qux",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					Proxy: &value.Source{Value: "test"},
+					OneAgent: oneagent.Spec{
+						ClassicFullStack: &oneagent.HostInjectSpec{},
+						HostGroup:        "2\tbar",
+					},
+					NetworkZone: "3\rbaz",
+				},
+			},
+			hostInjectSpec: &oneagent.HostInjectSpec{Args: custArgs},
+			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
+		}
+
+		arguments, _ := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--1foo",
+			"--set-host-group=2bar",
+			"--set-host-id-source=auto",
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-network-zone=3baz",
+			"--set-no-proxy=4qux",
+			"--set-server={$(DT_SERVER)}",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
 }
 
 func TestPodSpec_Arguments(t *testing.T) {
