@@ -39,7 +39,6 @@ jobs:
             tenantPhase: 3
           - version: 1-31
             platform: k8s
-            tenantPhase: 3
           - version: 1-32
             platform: k8s
             token: platform
@@ -51,7 +50,6 @@ jobs:
             tenantPhase: 3
           - version: 1-35
             platform: k8s
-            tenantPhase: 3
           - version: 1-36
             platform: k8s
             token: platform
@@ -63,7 +61,6 @@ jobs:
             tenantPhase: 3
           - version: 4-16
             platform: ocp
-            tenantPhase: 3
           - version: 4-17
             platform: ocp
             token: platform
@@ -75,7 +72,6 @@ jobs:
             tenantPhase: 3
           - version: 4-20
             platform: ocp
-            tenantPhase: 3
           - version: 4-20-olm
             platform: ocp
           - version: 4-21
@@ -114,15 +110,13 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          tenant-name-phase3: ${{ secrets.TENANT_NAME_PHASE3 }}
-          tenant-apitoken-phase3: ${{ secrets.TENANT_APITOKEN_PHASE3 }}
-          tenant-apitoken-nosettings-phase3: ${{ secrets.TENANT_APITOKEN_NOSETTINGS_PHASE3 }}
-          tenant-dataingesttoken-phase3: ${{ secrets.TENANT_DATAINGESTTOKEN_PHASE3 }}
-          tenant-oauth-client-id-phase3: ${{ secrets.TENANT_OAUTH_CLIENT_ID_PHASE3 }}
-          tenant-oauth-secret-phase3: ${{ secrets.TENANT_OAUTH_SECRET_PHASE3 }}
-          tenant-oauth-urn-phase3: ${{ secrets.TENANT_OAUTH_URN_PHASE3 }}
-          tenant-platform-token-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_PHASE3 }}
-          tenant-platform-token-nosettings-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3 }}
+          tenant-phase3-name: ${{ secrets.TENANT_PHASE3_NAME }}
+          tenant-phase3-dataingesttoken: ${{ secrets.TENANT_PHASE3_DATAINGESTTOKEN }}
+          tenant-phase3-oauth-client-id: ${{ secrets.TENANT_PHASE3_OAUTH_CLIENT_ID }}
+          tenant-phase3-oauth-secret: ${{ secrets.TENANT_PHASE3_OAUTH_SECRET }}
+          tenant-phase3-oauth-urn: ${{ secrets.TENANT_PHASE3_OAUTH_URN }}
+          tenant-phase3-platform-token: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN }}
+          tenant-phase3-platform-token-nosettings: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           use-platform-token: ${{ matrix.token == 'platform' }}
           use-phase3-tenant: ${{ matrix.tenantPhase == '3' }}

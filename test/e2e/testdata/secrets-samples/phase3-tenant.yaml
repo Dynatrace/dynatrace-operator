@@ -1,7 +1,5 @@
 tenantUid: abc1234
 apiUrl: https://abc1234.dev.dynatracelabs.com/api
-apiToken: <apiToken>
-apiTokenNoSettings: <apiToken without settings scopes>
 dataIngestToken: <apiToken>
 platformToken: <platformToken>
 platformTokenNoSettings: <platformToken without settings scopes>

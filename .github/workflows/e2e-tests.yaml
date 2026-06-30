@@ -29,6 +29,11 @@ on:
         default: true
         required: false
         type: boolean
+      run-e2e-in-k8s-phase3:
+        description: 'Run E2E tests in Kubernetes cluster with phase 3 tenant'
+        default: true
+        required: false
+        type: boolean
       run-e2e-in-ocp:
         description: 'Run E2E tests in OpenShift cluster'
         default: true
@@ -98,15 +103,13 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          tenant-name-phase3: ${{ secrets.TENANT_NAME_PHASE3 }}
-          tenant-apitoken-phase3: ${{ secrets.TENANT_APITOKEN_PHASE3 }}
-          tenant-apitoken-nosettings-phase3: ${{ secrets.TENANT_APITOKEN_NOSETTINGS_PHASE3 }}
-          tenant-dataingesttoken-phase3: ${{ secrets.TENANT_DATAINGESTTOKEN_PHASE3 }}
-          tenant-oauth-client-id-phase3: ${{ secrets.TENANT_OAUTH_CLIENT_ID_PHASE3 }}
-          tenant-oauth-secret-phase3: ${{ secrets.TENANT_OAUTH_SECRET_PHASE3 }}
-          tenant-oauth-urn-phase3: ${{ secrets.TENANT_OAUTH_URN_PHASE3 }}
-          tenant-platform-token-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_PHASE3 }}
-          tenant-platform-token-nosettings-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3 }}
+          tenant-phase3-name: ${{ secrets.TENANT_PHASE3_NAME }}
+          tenant-phase3-dataingesttoken: ${{ secrets.TENANT_PHASE3_DATAINGESTTOKEN }}
+          tenant-phase3-oauth-client-id: ${{ secrets.TENANT_PHASE3_OAUTH_CLIENT_ID }}
+          tenant-phase3-oauth-secret: ${{ secrets.TENANT_PHASE3_OAUTH_SECRET }}
+          tenant-phase3-oauth-urn: ${{ secrets.TENANT_PHASE3_OAUTH_URN }}
+          tenant-phase3-platform-token: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN }}
+          tenant-phase3-platform-token-nosettings: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
@@ -157,15 +160,13 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          tenant-name-phase3: ${{ secrets.TENANT_NAME_PHASE3 }}
-          tenant-apitoken-phase3: ${{ secrets.TENANT_APITOKEN_PHASE3 }}
-          tenant-apitoken-nosettings-phase3: ${{ secrets.TENANT_APITOKEN_NOSETTINGS_PHASE3 }}
-          tenant-dataingesttoken-phase3: ${{ secrets.TENANT_DATAINGESTTOKEN_PHASE3 }}
-          tenant-oauth-client-id-phase3: ${{ secrets.TENANT_OAUTH_CLIENT_ID_PHASE3 }}
-          tenant-oauth-secret-phase3: ${{ secrets.TENANT_OAUTH_SECRET_PHASE3 }}
-          tenant-oauth-urn-phase3: ${{ secrets.TENANT_OAUTH_URN_PHASE3 }}
-          tenant-platform-token-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_PHASE3 }}
-          tenant-platform-token-nosettings-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3 }}
+          tenant-phase3-name: ${{ secrets.TENANT_PHASE3_NAME }}
+          tenant-phase3-dataingesttoken: ${{ secrets.TENANT_PHASE3_DATAINGESTTOKEN }}
+          tenant-phase3-oauth-client-id: ${{ secrets.TENANT_PHASE3_OAUTH_CLIENT_ID }}
+          tenant-phase3-oauth-secret: ${{ secrets.TENANT_PHASE3_OAUTH_SECRET }}
+          tenant-phase3-oauth-urn: ${{ secrets.TENANT_PHASE3_OAUTH_URN }}
+          tenant-phase3-platform-token: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN }}
+          tenant-phase3-platform-token-nosettings: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           use-platform-token: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
@@ -178,7 +179,7 @@ jobs:
             exit 1
           fi
   run-in-k8s-phase3:
-    if: ${{ github.event.inputs.run-e2e-in-k8s-platform-token != 'false' }}
+    if: ${{ github.event.inputs.run-e2e-in-k8s-phase3 != 'false' }}
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (phase 3)
     permissions:
       checks: write
@@ -199,7 +200,7 @@ jobs:
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto
-          flc-environment: dto-k8s-latest-pt-flc
+          flc-environment: dto-k8s-latest-p3-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
@@ -215,15 +216,13 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          tenant-name-phase3: ${{ secrets.TENANT_NAME_PHASE3 }}
-          tenant-apitoken-phase3: ${{ secrets.TENANT_APITOKEN_PHASE3 }}
-          tenant-apitoken-nosettings-phase3: ${{ secrets.TENANT_APITOKEN_NOSETTINGS_PHASE3 }}
-          tenant-dataingesttoken-phase3: ${{ secrets.TENANT_DATAINGESTTOKEN_PHASE3 }}
-          tenant-oauth-client-id-phase3: ${{ secrets.TENANT_OAUTH_CLIENT_ID_PHASE3 }}
-          tenant-oauth-secret-phase3: ${{ secrets.TENANT_OAUTH_SECRET_PHASE3 }}
-          tenant-oauth-urn-phase3: ${{ secrets.TENANT_OAUTH_URN_PHASE3 }}
-          tenant-platform-token-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_PHASE3 }}
-          tenant-platform-token-nosettings-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3 }}
+          tenant-phase3-name: ${{ secrets.TENANT_PHASE3_NAME }}
+          tenant-phase3-dataingesttoken: ${{ secrets.TENANT_PHASE3_DATAINGESTTOKEN }}
+          tenant-phase3-oauth-client-id: ${{ secrets.TENANT_PHASE3_OAUTH_CLIENT_ID }}
+          tenant-phase3-oauth-secret: ${{ secrets.TENANT_PHASE3_OAUTH_SECRET }}
+          tenant-phase3-oauth-urn: ${{ secrets.TENANT_PHASE3_OAUTH_URN }}
+          tenant-phase3-platform-token: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN }}
+          tenant-phase3-platform-token-nosettings: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           use-platform-token: "true"
           use-phase3-tenant: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
@@ -275,15 +274,13 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          tenant-name-phase3: ${{ secrets.TENANT_NAME_PHASE3 }}
-          tenant-apitoken-phase3: ${{ secrets.TENANT_APITOKEN_PHASE3 }}
-          tenant-apitoken-nosettings-phase3: ${{ secrets.TENANT_APITOKEN_NOSETTINGS_PHASE3 }}
-          tenant-dataingesttoken-phase3: ${{ secrets.TENANT_DATAINGESTTOKEN_PHASE3 }}
-          tenant-oauth-client-id-phase3: ${{ secrets.TENANT_OAUTH_CLIENT_ID_PHASE3 }}
-          tenant-oauth-secret-phase3: ${{ secrets.TENANT_OAUTH_SECRET_PHASE3 }}
-          tenant-oauth-urn-phase3: ${{ secrets.TENANT_OAUTH_URN_PHASE3 }}
-          tenant-platform-token-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_PHASE3 }}
-          tenant-platform-token-nosettings-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3 }}
+          tenant-phase3-name: ${{ secrets.TENANT_PHASE3_NAME }}
+          tenant-phase3-dataingesttoken: ${{ secrets.TENANT_PHASE3_DATAINGESTTOKEN }}
+          tenant-phase3-oauth-client-id: ${{ secrets.TENANT_PHASE3_OAUTH_CLIENT_ID }}
+          tenant-phase3-oauth-secret: ${{ secrets.TENANT_PHASE3_OAUTH_SECRET }}
+          tenant-phase3-oauth-urn: ${{ secrets.TENANT_PHASE3_OAUTH_URN }}
+          tenant-phase3-platform-token: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN }}
+          tenant-phase3-platform-token-nosettings: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
@@ -333,15 +330,13 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          tenant-name-phase3: ${{ secrets.TENANT_NAME_PHASE3 }}
-          tenant-apitoken-phase3: ${{ secrets.TENANT_APITOKEN_PHASE3 }}
-          tenant-apitoken-nosettings-phase3: ${{ secrets.TENANT_APITOKEN_NOSETTINGS_PHASE3 }}
-          tenant-dataingesttoken-phase3: ${{ secrets.TENANT_DATAINGESTTOKEN_PHASE3 }}
-          tenant-oauth-client-id-phase3: ${{ secrets.TENANT_OAUTH_CLIENT_ID_PHASE3 }}
-          tenant-oauth-secret-phase3: ${{ secrets.TENANT_OAUTH_SECRET_PHASE3 }}
-          tenant-oauth-urn-phase3: ${{ secrets.TENANT_OAUTH_URN_PHASE3 }}
-          tenant-platform-token-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_PHASE3 }}
-          tenant-platform-token-nosettings-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3 }}
+          tenant-phase3-name: ${{ secrets.TENANT_PHASE3_NAME }}
+          tenant-phase3-dataingesttoken: ${{ secrets.TENANT_PHASE3_DATAINGESTTOKEN }}
+          tenant-phase3-oauth-client-id: ${{ secrets.TENANT_PHASE3_OAUTH_CLIENT_ID }}
+          tenant-phase3-oauth-secret: ${{ secrets.TENANT_PHASE3_OAUTH_SECRET }}
+          tenant-phase3-oauth-urn: ${{ secrets.TENANT_PHASE3_OAUTH_URN }}
+          tenant-phase3-platform-token: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN }}
+          tenant-phase3-platform-token-nosettings: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           use-platform-token: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
@@ -392,15 +387,13 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          tenant-name-phase3: ${{ secrets.TENANT_NAME_PHASE3 }}
-          tenant-apitoken-phase3: ${{ secrets.TENANT_APITOKEN_PHASE3 }}
-          tenant-apitoken-nosettings-phase3: ${{ secrets.TENANT_APITOKEN_NOSETTINGS_PHASE3 }}
-          tenant-dataingesttoken-phase3: ${{ secrets.TENANT_DATAINGESTTOKEN_PHASE3 }}
-          tenant-oauth-client-id-phase3: ${{ secrets.TENANT_OAUTH_CLIENT_ID_PHASE3 }}
-          tenant-oauth-secret-phase3: ${{ secrets.TENANT_OAUTH_SECRET_PHASE3 }}
-          tenant-oauth-urn-phase3: ${{ secrets.TENANT_OAUTH_URN_PHASE3 }}
-          tenant-platform-token-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_PHASE3 }}
-          tenant-platform-token-nosettings-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3 }}
+          tenant-phase3-name: ${{ secrets.TENANT_PHASE3_NAME }}
+          tenant-phase3-dataingesttoken: ${{ secrets.TENANT_PHASE3_DATAINGESTTOKEN }}
+          tenant-phase3-oauth-client-id: ${{ secrets.TENANT_PHASE3_OAUTH_CLIENT_ID }}
+          tenant-phase3-oauth-secret: ${{ secrets.TENANT_PHASE3_OAUTH_SECRET }}
+          tenant-phase3-oauth-urn: ${{ secrets.TENANT_PHASE3_OAUTH_URN }}
+          tenant-phase3-platform-token: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN }}
+          tenant-phase3-platform-token-nosettings: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
@@ -450,15 +443,13 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          tenant-name-phase3: ${{ secrets.TENANT_NAME_PHASE3 }}
-          tenant-apitoken-phase3: ${{ secrets.TENANT_APITOKEN_PHASE3 }}
-          tenant-apitoken-nosettings-phase3: ${{ secrets.TENANT_APITOKEN_NOSETTINGS_PHASE3 }}
-          tenant-dataingesttoken-phase3: ${{ secrets.TENANT_DATAINGESTTOKEN_PHASE3 }}
-          tenant-oauth-client-id-phase3: ${{ secrets.TENANT_OAUTH_CLIENT_ID_PHASE3 }}
-          tenant-oauth-secret-phase3: ${{ secrets.TENANT_OAUTH_SECRET_PHASE3 }}
-          tenant-oauth-urn-phase3: ${{ secrets.TENANT_OAUTH_URN_PHASE3 }}
-          tenant-platform-token-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_PHASE3 }}
-          tenant-platform-token-nosettings-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3 }}
+          tenant-phase3-name: ${{ secrets.TENANT_PHASE3_NAME }}
+          tenant-phase3-dataingesttoken: ${{ secrets.TENANT_PHASE3_DATAINGESTTOKEN }}
+          tenant-phase3-oauth-client-id: ${{ secrets.TENANT_PHASE3_OAUTH_CLIENT_ID }}
+          tenant-phase3-oauth-secret: ${{ secrets.TENANT_PHASE3_OAUTH_SECRET }}
+          tenant-phase3-oauth-urn: ${{ secrets.TENANT_PHASE3_OAUTH_URN }}
+          tenant-phase3-platform-token: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN }}
+          tenant-phase3-platform-token-nosettings: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           use-platform-token: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
@@ -508,15 +499,13 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
-          tenant-name-phase3: ${{ secrets.TENANT_NAME_PHASE3 }}
-          tenant-apitoken-phase3: ${{ secrets.TENANT_APITOKEN_PHASE3 }}
-          tenant-apitoken-nosettings-phase3: ${{ secrets.TENANT_APITOKEN_NOSETTINGS_PHASE3 }}
-          tenant-dataingesttoken-phase3: ${{ secrets.TENANT_DATAINGESTTOKEN_PHASE3 }}
-          tenant-oauth-client-id-phase3: ${{ secrets.TENANT_OAUTH_CLIENT_ID_PHASE3 }}
-          tenant-oauth-secret-phase3: ${{ secrets.TENANT_OAUTH_SECRET_PHASE3 }}
-          tenant-oauth-urn-phase3: ${{ secrets.TENANT_OAUTH_URN_PHASE3 }}
-          tenant-platform-token-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_PHASE3 }}
-          tenant-platform-token-nosettings-phase3: ${{ secrets.TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3 }}
+          tenant-phase3-name: ${{ secrets.TENANT_PHASE3_NAME }}
+          tenant-phase3-dataingesttoken: ${{ secrets.TENANT_PHASE3_DATAINGESTTOKEN }}
+          tenant-phase3-oauth-client-id: ${{ secrets.TENANT_PHASE3_OAUTH_CLIENT_ID }}
+          tenant-phase3-oauth-secret: ${{ secrets.TENANT_PHASE3_OAUTH_SECRET }}
+          tenant-phase3-oauth-urn: ${{ secrets.TENANT_PHASE3_OAUTH_URN }}
+          tenant-phase3-platform-token: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN }}
+          tenant-phase3-platform-token-nosettings: ${{ secrets.TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
