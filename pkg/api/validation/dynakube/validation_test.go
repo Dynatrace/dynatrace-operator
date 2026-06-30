@@ -11,6 +11,7 @@ import (
 	v1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -110,7 +111,8 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				errorNoAPIURL,
 				errorConflictingNamespaceSelector,
 				fmt.Sprintf(errorInvalidActiveGateCapability, "me dumb"),
-				fmt.Sprintf(errorNodeSelectorConflict, "conflict2")},
+				fmt.Sprintf(errorNodeSelectorConflict, "conflict2"),
+			},
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -320,4 +322,14 @@ func runUpdateValidators(t *testing.T, oldDK *dynakube.DynaKube, newDK *dynakube
 	}
 
 	return validator.ValidateUpdate(t.Context(), oldDK, newDK)
+}
+
+func assertSanitizeArg(t *testing.T, baseDK *dynakube.DynaKube, modify func(*dynakube.DynaKube, string), expectError string) {
+	t.Helper()
+	for _, c := range sanitize.InvalidCommandLineCharset {
+		value := "foo" + string(c) + "bar"
+		dk := baseDK.DeepCopy()
+		modify(dk, value)
+		assertDenied(t, []string{expectError}, dk)
+	}
 }

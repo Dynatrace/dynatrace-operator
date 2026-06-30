@@ -21,6 +21,7 @@ func (b *builder) arguments() ([]string, error) {
 		prioritymap.WithAvoidDuplicates(),
 		prioritymap.WithAllowDuplicatesFor("--set-host-property"),
 		prioritymap.WithAllowDuplicatesFor("--set-host-tag"),
+		prioritymap.WithSanitizeCommandLineArg(),
 	)
 
 	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgent().GetVersion())
