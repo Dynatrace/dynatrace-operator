@@ -521,7 +521,7 @@ jobs:
   notify-slack:
     name: Notify test results in Slack
     environment: E2E
-    needs: [ "run-in-k8s", "run-in-k8s-platform-token", "run-in-ocp", "run-in-ocp-platform-token", "run-in-ocp-fips", "run-in-ocp-olm", "run-in-ocp-olm-platform-token"]
+    needs: [ "run-in-k8s", "run-in-k8s-platform-token", "run-in-k8s-phase3", "run-in-ocp", "run-in-ocp-platform-token", "run-in-ocp-fips", "run-in-ocp-olm", "run-in-ocp-olm-platform-token"]
     runs-on: ubuntu-24.04
     if: ${{ always() }}
     steps:
@@ -540,6 +540,9 @@ jobs:
           K8S_PLATFORM_TOKEN_CLUSTER_STATUS: ${{ needs.run-in-k8s-platform-token.outputs.cluster_status }}
           K8S_PLATFORM_TOKEN_JOB_ID: ${{ needs.run-in-k8s-platform-token.outputs.job_id }}
           K8S_PLATFORM_TOKEN_RESULT: ${{ needs.run-in-k8s-platform-token.result }}
+          K8S_PHASE3_CLUSTER_STATUS: ${{ needs.run-in-k8s-phase3.outputs.cluster_status }}
+          K8S_PHASE3_JOB_ID: ${{ needs.run-in-k8s-phase3.outputs.job_id }}
+          K8S_PHASE3_RESULT: ${{ needs.run-in-k8s-phase3.result }}
           OCP_CLUSTER_STATUS: ${{ needs.run-in-ocp.outputs.cluster_status }}
           OCP_JOB_ID: ${{ needs.run-in-ocp.outputs.job_id }}
           OCP_RESULT: ${{ needs.run-in-ocp.result }}
@@ -567,6 +570,7 @@ jobs:
           }
           K8S_STATUS=$(get_emoji "${K8S_CLUSTER_STATUS}" "${K8S_RESULT}")
           K8S_PLATFORM_TOKEN_STATUS=$(get_emoji "${K8S_PLATFORM_TOKEN_CLUSTER_STATUS}" "${K8S_PLATFORM_TOKEN_RESULT}")
+          K8S_PHASE3_STATUS=$(get_emoji "${K8S_PHASE3_CLUSTER_STATUS}" "${K8S_PHASE3_RESULT}")
           OCP_STATUS=$(get_emoji "${OCP_CLUSTER_STATUS}" "${OCP_RESULT}")
           OCP_PLATFORM_TOKEN_STATUS=$(get_emoji "${OCP_PLATFORM_TOKEN_CLUSTER_STATUS}" "${OCP_PLATFORM_TOKEN_RESULT}")
           OCP_FIPS_STATUS=$(get_emoji "${OCP_FIPS_CLUSTER_STATUS}" "${OCP_FIPS_RESULT}")
@@ -578,6 +582,9 @@ jobs:
 
           echo "K8S_PLATFORM_TOKEN_STATUS=$K8S_PLATFORM_TOKEN_STATUS" >> $GITHUB_ENV
           echo "K8S_PLATFORM_TOKEN_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${K8S_PLATFORM_TOKEN_JOB_ID}" >> $GITHUB_ENV
+
+          echo "K8S_PHASE3_STATUS=$K8S_PHASE3_STATUS" >> $GITHUB_ENV
+          echo "K8S_PHASE3_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${K8S_PHASE3_JOB_ID}" >> $GITHUB_ENV
 
           echo "OCP_STATUS=$OCP_STATUS" >> $GITHUB_ENV
           echo "OCP_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_JOB_ID}" >> $GITHUB_ENV
