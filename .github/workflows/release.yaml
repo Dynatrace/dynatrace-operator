@@ -67,7 +67,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
@@ -140,7 +140,7 @@ jobs:
           password: ${{ secrets[matrix.password] }}
       - name: Configure aws credentials
         if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
@@ -300,7 +300,7 @@ jobs:
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
           registry-url: docker.io
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
