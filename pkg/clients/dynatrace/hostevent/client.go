@@ -84,6 +84,7 @@ func (c *ClientImpl) GetEntityIDForIP(ctx context.Context, ip string) (string, e
 		WithQueryParams(map[string]string{
 			"relativeTime":   "30mins",
 			"includeDetails": "false",
+			"pageSize":       "4000",
 		}).Execute(&hosts)
 	if err != nil {
 		return "", setEndpointNotAvailable(err, hostsPath)
