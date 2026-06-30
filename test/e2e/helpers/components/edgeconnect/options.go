@@ -135,22 +135,13 @@ func GetLatestImageDigestURI(t *testing.T) string {
 	return registry.GetLatestImageDigestURI(t, defaultECRepo, ecImageEnvVar)
 }
 
-func WithImageRefTag(t *testing.T, imageURI string) Option {
-	repo, tag, _ := strings.Cut(imageURI, ":")
-
+func WithImageRef(t *testing.T, imageURI string) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
-		ec.Spec.ImageRef.Repository = repo
-		ec.Spec.ImageRef.Tag = tag
-		setCustomPullSecretIfNeeded(t, ec)
-	}
-}
-
-func WithImageRefDigest(t *testing.T, imageURI string) Option {
-	repo, digest, _ := strings.Cut(imageURI, "@")
-
-	return func(ec *edgeconnect.EdgeConnect) {
-		ec.Spec.ImageRef.Repository = repo
-		ec.Spec.ImageRef.Digest = digest
+		if strings.Contains(imageURI, "@") {
+			ec.Spec.ImageRef.Repository, ec.Spec.ImageRef.Digest, _ = strings.Cut(imageURI, "@")
+		} else {
+			ec.Spec.ImageRef.Repository, ec.Spec.ImageRef.Tag, _ = strings.Cut(imageURI, ":")
+		}
 		setCustomPullSecretIfNeeded(t, ec)
 	}
 }

@@ -78,13 +78,13 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 func ProvisionerModeFeatureWithTag(t *testing.T) features.Feature {
 	expectedImage := ecComponents.GetLatestImageTagURI(t)
 
-	return provisionerModeFeature(t, "edgeconnect-install-tag", expectedImage, ecComponents.WithImageRefTag(t, expectedImage))
+	return provisionerModeFeature(t, "edgeconnect-install-tag", expectedImage, ecComponents.WithImageRef(t, expectedImage))
 }
 
 func ProvisionerModeFeatureWithDigest(t *testing.T) features.Feature {
 	expectedImage := ecComponents.GetLatestImageDigestURI(t)
 
-	return provisionerModeFeature(t, "edgeconnect-install-digest", expectedImage, ecComponents.WithImageRefDigest(t, expectedImage))
+	return provisionerModeFeature(t, "edgeconnect-install-digest", expectedImage, ecComponents.WithImageRef(t, expectedImage))
 }
 
 func provisionerModeFeature(t *testing.T, featureName, expectedImage string, opts ...ecComponents.Option) features.Feature {
