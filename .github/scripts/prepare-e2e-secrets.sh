@@ -18,6 +18,17 @@ platformTokenNoSettings: $TENANT1_PLATFORM_TOKEN_NOSETTINGS
 dataIngestPlatformToken: $TENANT1_DATAINGEST_PLATFORM_TOKEN
 EOF
 
+
+  cat << EOF > single-tenant-phase3.yaml
+tenantUid: $TENANT_NAME_PHASE3
+apiUrl: https://$TENANT_NAME_PHASE3.dev.dynatracelabs.com/api
+apiToken: $TENANT_APITOKEN_PHASE3
+apiTokenNoSettings: $TENANT_APITOKEN_NOSETTINGS_PHASE3
+dataIngestToken: $TENANT_DATAINGESTTOKEN_PHASE3
+platformToken: $TENANT_PLATFORM_TOKEN_PHASE3
+platformTokenNoSettings: $TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3
+EOF
+
   cat << EOF > multi-tenant.yaml
 tenants:
   - tenantUid: $TENANT1_NAME

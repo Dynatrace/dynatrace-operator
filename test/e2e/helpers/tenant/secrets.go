@@ -21,9 +21,10 @@ import (
 )
 
 var (
-	defaultSingleTenant      = filepath.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
-	defaultMultiTenant       = filepath.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
-	defaultEdgeConnectTenant = filepath.Join(project.TestDataDir(), "secrets/edgeconnect-tenant.yaml")
+	defaultSingleTenant       = filepath.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
+	defaultMultiTenant        = filepath.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
+	defaultEdgeConnectTenant  = filepath.Join(project.TestDataDir(), "secrets/edgeconnect-tenant.yaml")
+	defaultSingleTenantPhase3 = filepath.Join(project.TestDataDir(), "secrets/single-tenant-phase3.yaml")
 )
 
 type Secrets struct {
@@ -106,7 +107,13 @@ func newFromConfig(path string) (Secret, error) {
 }
 
 func GetSingleTenantSecret(t *testing.T) Secret {
-	secret, err := newFromConfig(defaultSingleTenant)
+	var tenant = defaultSingleTenant
+
+	if UsePhase3Tenant() {
+		tenant = defaultSingleTenantPhase3
+	}
+
+	secret, err := newFromConfig(tenant)
 	if err != nil {
 		t.Fatal("Couldn't read tenant secret from filesystem", err)
 	}
@@ -115,6 +122,10 @@ func GetSingleTenantSecret(t *testing.T) Secret {
 }
 
 func GetMultiTenantSecret(t *testing.T) []Secret {
+	if UsePhase3Tenant() {
+		t.Skip("multi-tenant secrets are not supported with phase3 tenant")
+	}
+
 	secrets, err := manyFromConfig(defaultMultiTenant)
 	if err != nil {
 		t.Fatal("Couldn't read tenant secret from filesystem", err)
@@ -142,6 +153,10 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 
 func UsePlatformToken() bool {
 	return os.Getenv("USE_PLATFORM_TOKEN") == "true"
+}
+
+func UsePhase3Tenant() bool {
+	return os.Getenv("USE_PHASE3_TENANT") == "true"
 }
 
 func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {

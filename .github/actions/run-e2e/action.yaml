@@ -56,11 +56,41 @@ inputs:
   tenant2-platform-token:
     description: The platform token of Tenant 2
     required: true
+  tenant-name-phase3:
+    description: The name of Tenant 1 Phase 3
+    required: true
+  tenant-apitoken-phase3:
+    description: The API token of Tenant 1 Phase 3
+    required: true
+  tenant-apitoken-nosettings-phase3:
+    description: The API token of Tenant 1 Phase 3 without settings scope
+    required: true
+  tenant-dataingesttoken-phase3:
+    description: The data ingest token of Tenant 1 Phase 3
+    required: true
+  tenant-oauth-client-id-phase3:
+    description: The OAuth client ID of Tenant 1 Phase 3
+    required: true
+  tenant-oauth-secret-phase3:
+    description: The OAuth secret of Tenant 1 Phase 3
+    required: true
+  tenant-oauth-urn-phase3:
+    description: The OAuth urn of Tenant 1 Phase 3
+    required: true
+  tenant-platform-token-phase3:
+    description: The platform token of Tenant 1 Phase 3
+    required: true
+  tenant-platform-token-nosettings-phase3:
+    description: The platform token of Tenant 1 without settings scope Phase 3
+    required: true
   e2e-public-registry-override:
     description: Override for the public registry used in E2E tests
     required: false
   use-platform-token:
     description: If true runs the test suite with platform token
+    required: false
+  use-phase3-tenant:
+    description: If true runs the test suite with phase 3 tenant
     required: false
   e2e-make-target:
     description: Make target path under test/e2e/ to run instead of the default suite (e.g. "cloudnative/codemodules"). Leave empty to run the full default suite.
@@ -144,8 +174,18 @@ runs:
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
         TENANT2_PLATFORM_TOKEN: ${{ inputs.tenant2-platform-token }}
+        TENANT_NAME_PHASE3: ${{ inputs.tenant-name-phase3 }}
+        TENANT_APITOKEN_PHASE3: ${{ inputs.tenant-apitoken-phase3 }}
+        TENANT_APITOKEN_NOSETTINGS_PHASE3: ${{ inputs.tenant-apitoken-nosettings-phase3 }}
+        TENANT_DATAINGESTTOKEN_PHASE3: ${{ inputs.tenant-dataingesttoken-phase3 }}
+        TENANT_OAUTH_CLIENT_ID_PHASE3: ${{ inputs.tenant-oauth-client-id-phase3 }}
+        TENANT_OAUTH_SECRET_PHASE3: ${{ inputs.tenant-oauth-secret-phase3 }}
+        TENANT_OAUTH_URN_PHASE3: ${{ inputs.tenant-oauth-urn-phase3 }}
+        TENANT_PLATFORM_TOKEN_PHASE3: ${{ inputs.tenant-platform-token-phase3 }}
+        TENANT_PLATFORM_TOKEN_NOSETTINGS_PHASE3: ${{ inputs.tenant-platform-token-nosettings-phase3 }}
         E2E_PUBLIC_REGISTRY_OVERRIDE: ${{ inputs.e2e-public-registry-override }}
         USE_PLATFORM_TOKEN: ${{ inputs.use-platform-token }}
+        USE_PHASE3_TENANT: ${{ inputs.use-phase3-tenant }}
         E2E_MAKE_TARGET: ${{ inputs.e2e-make-target }}
       if: steps.check_cluster_status.outputs.skip_tests != 'true'
     - name: Destroy cluster
