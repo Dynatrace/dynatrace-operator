@@ -352,7 +352,7 @@ func GetLatestOTelCollectorImageDigestURI(t *testing.T) string {
 
 func WithExtensionsEECImageRef(t *testing.T, imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
-		if applyImageRefTag(t, dk, &dk.Spec.Templates.ExtensionExecutionController.ImageRef, imageURI, defaultEECRepo) {
+		if applyImageRef(t, dk, &dk.Spec.Templates.ExtensionExecutionController.ImageRef, imageURI, defaultEECRepo) {
 			// Disable legacy mounts when using a non-default image
 			dk.Annotations["feature.dynatrace.com/use-eec-legacy-mounts"] = "false"
 		}
@@ -368,7 +368,7 @@ func WithLogMonitoring() Option {
 func WithLogMonitoringImageRef(t *testing.T, imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{}
-		applyImageRefTag(t, dk, &dk.Spec.Templates.LogMonitoring.ImageRef, imageURI, defaultLogMonitoringRepo)
+		applyImageRef(t, dk, &dk.Spec.Templates.LogMonitoring.ImageRef, imageURI, defaultLogMonitoringRepo)
 	}
 }
 
@@ -380,7 +380,7 @@ func WithKSPM() Option {
 
 func WithKSPMImageRef(t *testing.T, imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
-		applyImageRefTag(t, dk, &dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef, imageURI, defaultKSPMRepo)
+		applyImageRef(t, dk, &dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef, imageURI, defaultKSPMRepo)
 	}
 }
 
@@ -406,7 +406,7 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 
 func WithOTelCollectorImageRef(t *testing.T, imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
-		applyImageRefTag(t, dk, &dk.Spec.Templates.OpenTelemetryCollector.ImageRef, imageURI, defaultOtelCollectorRepo)
+		applyImageRef(t, dk, &dk.Spec.Templates.OpenTelemetryCollector.ImageRef, imageURI, defaultOtelCollectorRepo)
 	}
 }
 
@@ -433,22 +433,18 @@ func GetLatestDBExecutorImageTagURI(t *testing.T) string {
 
 func WithExtensionsDBExecutorImageRef(t *testing.T, imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
-		applyImageRefTag(t, dk, &dk.Spec.Templates.SQLExtensionExecutor.ImageRef, imageURI, defaultDBExecutorRepo)
+		applyImageRef(t, dk, &dk.Spec.Templates.SQLExtensionExecutor.ImageRef, imageURI, defaultDBExecutorRepo)
 	}
 }
 
-func applyImageRefTag(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, imageURI, defaultRepo string) bool {
+func applyImageRef(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, imageURI, defaultRepo string) bool {
 	t.Helper()
 
-	imageRef.Repository, imageRef.Tag, _ = strings.Cut(imageURI, ":")
-
-	return applyCustomPullSecretIfNeeded(t, dk, imageRef.Repository, defaultRepo)
-}
-
-func applyImageRefDigest(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, imageURI, defaultRepo string) bool {
-	t.Helper()
-
-	imageRef.Repository, imageRef.Digest, _ = strings.Cut(imageURI, "@")
+	if strings.Contains(imageURI, "@") {
+		imageRef.Repository, imageRef.Digest, _ = strings.Cut(imageURI, "@")
+	} else {
+		imageRef.Repository, imageRef.Tag, _ = strings.Cut(imageURI, ":")
+	}
 
 	return applyCustomPullSecretIfNeeded(t, dk, imageRef.Repository, defaultRepo)
 }
@@ -465,24 +461,4 @@ func applyCustomPullSecretIfNeeded(t *testing.T, dk *dynakube.DynaKube, reposito
 	}
 
 	return false
-}
-
-func WithExtensionsEECImageRefDigest(t *testing.T, imageURI string) Option {
-	return func(dk *dynakube.DynaKube) {
-		if applyImageRefDigest(t, dk, &dk.Spec.Templates.ExtensionExecutionController.ImageRef, imageURI, defaultEECRepo) {
-			dk.Annotations["feature.dynatrace.com/use-eec-legacy-mounts"] = "false"
-		}
-	}
-}
-
-func WithKSPMImageRefDigest(t *testing.T, imageURI string) Option {
-	return func(dk *dynakube.DynaKube) {
-		applyImageRefDigest(t, dk, &dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef, imageURI, defaultKSPMRepo)
-	}
-}
-
-func WithOTelCollectorImageRefDigest(t *testing.T, imageURI string) Option {
-	return func(dk *dynakube.DynaKube) {
-		applyImageRefDigest(t, dk, &dk.Spec.Templates.OpenTelemetryCollector.ImageRef, imageURI, defaultOtelCollectorRepo)
-	}
 }

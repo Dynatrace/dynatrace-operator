@@ -64,9 +64,9 @@ func FeatureWithDigest(t *testing.T) features.Feature {
 		dynakube.WithCustomOneAgentImage(images.oneAgent),
 		dynakube.WithCodeModulesImage(images.codeModules),
 		dynakube.WithCustomActiveGateImage(images.activeGate),
-		dynakube.WithExtensionsEECImageRefDigest(t, images.eec),
-		dynakube.WithKSPMImageRefDigest(t, images.kspm),
-		dynakube.WithOTelCollectorImageRefDigest(t, images.otel),
+		dynakube.WithExtensionsEECImageRef(t, images.eec),
+		dynakube.WithKSPMImageRef(t, images.kspm),
+		dynakube.WithOTelCollectorImageRef(t, images.otel),
 	}, images)
 }
 
