@@ -1,6 +1,6 @@
-name: name-of-your-edge-connect
+name: <edgeConnectName>
 tenantUid: abc12345
 apiServer: abc12345.dev.apps.dynatracelabs.com
-oAuthClientId: test
-oAuthClientSecret: test
-resource: test
+oAuthClientId: <oAuthClientId>
+oAuthClientSecret: <oAuthClientSecret>
+resource: <oAuthUrn>
