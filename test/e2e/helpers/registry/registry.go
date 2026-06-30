@@ -74,9 +74,16 @@ func GetLatestImageURI(t *testing.T, repoURI string, envVar string) string {
 
 // GetLatestImageDigestURI resolves the content digest of the latest image for the given repository
 // and returns it in "image@algorithm:hex" form (e.g. "public.ecr.aws/...@sha256:abc123").
-// If the envVar is set its value is used as the source tag to resolve the digest from.
+// If the envVar is set, its value is returned directly without hitting the registry.
 func GetLatestImageDigestURI(t *testing.T, repoURI string, envVar string) string {
 	t.Helper()
+
+	val := os.Getenv(envVar)
+	if val != "" {
+		t.Logf("using image from env %s: %s", envVar, val)
+
+		return val
+	}
 
 	if uri, ok := latestDigestURIs[repoURI]; ok {
 		t.Logf("using cached resolved digest image: %s", uri)
