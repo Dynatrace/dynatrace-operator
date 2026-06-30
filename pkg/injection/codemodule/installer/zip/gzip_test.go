@@ -31,9 +31,65 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader, false)
 		require.NoError(t, err)
 		testUnpackedArchive(t, tmpDir)
+	})
+
+	t.Run("unzip test gzip file with symlinks", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		gzipFile := SetupTestArchive(t, TestRawGzip)
+
+		defer func() { _ = gzipFile.Close() }()
+
+		reader, err := gzip.NewReader(gzipFile)
+		require.NoError(t, err)
+
+		tarReader := tar.NewReader(reader)
+
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader, true)
+		require.NoError(t, err)
+		testUnpackedArchive(t, tmpDir)
+	})
+
+	t.Run("extract gzip block symlinks", func(t *testing.T) {
+		// testRawGzipWithSymlinks is a gzip archive containing:
+		// - test.txt (regular file with content "you found the easter egg\n")
+		// - testdir/ (directory)
+		// - testdir/file2.txt (regular file with content "another test file\n")
+		// - link_to_test.txt (symlink to test.txt)
+		// - link_to_dir (symlink to testdir)
+		const testRawGzipWithSymlinks = `H4sIAAMnF2kC/+3ZzWrCQBiF4ax7FXMFcX4zuih02WXvQIJObKgaSMZi774TLLRVpLhICuZ9NkoIBDTfOX4mn+Wzp5fy+BzKdWizQciTa69SGvv9vj+upFY6E8dsBIculm26fDZNei52sd6FR+ULo7RdLFzulVlYVzxkuHsxdDGPxzjkNfqhLuxpxn3hTrOuf8y8UZlySrpCGyvTcWWKNJBCjjn/u7Jdhe0278L7qqvfLs5Lp1XV/X3/H81BVM1hvxbxNYhQdjG0Imw2DP805PQ//X/R/1Z5PScCJtL/67qdDd3/3rnr/Z+m76z/Xfq5IBz9T/6T//+R/+nzt+T/hPK/qrdBD7QI/rn/aX2W/86w/42j3Ddp8WtFfx+I/iZg6tn/6H/6n/6n/+l/+h/0P/0/tf43ynmSYAK29f5tGZvlkM+Bb///10tTZEKP8XCa/3/Jf/L/PP+tNJr8n1D+px1wsGvcnv/O9/uf/lpO2f8AAAAAAAAAAAAAAAAAAPjtEyBMCpgAUAAA`
+
+		tmpDir := t.TempDir()
+
+		gzipFile := SetupTestArchive(t, testRawGzipWithSymlinks)
+
+		defer func() { _ = gzipFile.Close() }()
+
+		reader, err := gzip.NewReader(gzipFile)
+		require.NoError(t, err)
+
+		tarReader := tar.NewReader(reader)
+
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader, false)
+		require.NoError(t, err)
+
+		testFile := filepath.Join(tmpDir, "test.txt")
+		require.FileExists(t, testFile)
+
+		testDir := filepath.Join(tmpDir, "testdir")
+
+		file2 := filepath.Join(testDir, "file2.txt")
+		require.FileExists(t, file2)
+
+		symlinkToFile := filepath.Join(tmpDir, "link_to_test.txt")
+		require.NoFileExists(t, symlinkToFile)
+
+		// Verify directory symlink
+		symlinkToDir := filepath.Join(tmpDir, "link_to_dir")
+		require.NoDirExists(t, symlinkToDir)
 	})
 
 	t.Run("extract gzip with symlinks", func(t *testing.T) {
@@ -56,7 +112,7 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader, true)
 		require.NoError(t, err)
 
 		// Verify regular files exist
@@ -120,7 +176,7 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader, true)
 		require.NoError(t, err)
 
 		// Verify root file
@@ -203,7 +259,7 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader, true)
 		require.NoError(t, err)
 
 		// Verify safe files were extracted
@@ -263,7 +319,7 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), tmpDir, tarReader, true)
 		require.NoError(t, err)
 
 		// Verify safe symlink was created
@@ -285,11 +341,11 @@ func TestExtractGzip(t *testing.T) {
 
 		// create a file that is dst file of the hardlink that is part ot the layer.tar
 		// to avoid "No such file" error if hardlink is created
-		err := os.WriteFile(filepath.Join(tmpDir, "outside.txt"), []byte("outside"), 0600)
+		err := os.WriteFile(filepath.Join(tmpDir, "outside.txt"), []byte("outside"), 0o600)
 		require.NoError(t, err)
 
 		layerTmpDir := filepath.Join(tmpDir, "deeper-tmp")
-		err = os.MkdirAll(layerTmpDir, 0755)
+		err = os.MkdirAll(layerTmpDir, 0o755)
 		require.NoError(t, err)
 
 		gzipFile := SetupTestArchive(t, testRawGzipWithMaliciousSymlinkAndFile)
@@ -301,7 +357,7 @@ func TestExtractGzip(t *testing.T) {
 
 		tarReader := tar.NewReader(reader)
 
-		err = extractFilesFromGzip(t.Context(), layerTmpDir, tarReader)
+		err = extractFilesFromGzip(t.Context(), layerTmpDir, tarReader, true)
 		require.NoError(t, err)
 
 		// Verify safe symlink was created

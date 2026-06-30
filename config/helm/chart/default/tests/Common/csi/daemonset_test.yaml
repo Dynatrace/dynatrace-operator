@@ -519,6 +519,28 @@ tests:
           count: 1
           any: true
 
+  - it: should have DT_EXTRACT_CODEMODULES_IMAGE_LINKS in provisioner if extractCodeModulesImageLinks is true
+    set:
+      extractCodeModulesImageLinks: true
+      csidriver.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].env
+          content:
+            name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
+            value: "true"
+          count: 1
+          any: true
+
+  - it: should not have DT_EXTRACT_CODEMODULES_IMAGE_LINKS in provisioner if extractCodeModulesImageLinks is false
+    set:
+      csidriver.enabled: true
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[1].env
+          content:
+            name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
+
   - it: should always use builtIn livenessprobe and csi-node-driver-registrar even if the (deprecated) flags are set to false
     set:
       platform: kubernetes
