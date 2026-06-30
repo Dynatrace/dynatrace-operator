@@ -46,7 +46,7 @@ func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.
 }
 
 func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ admission.Warnings, err error) {
-	ctx, _ = logd.NewFromContext(ctx, "edgeconnect")
+	ctx, _ = logd.NewFromContext(ctx, "validation")
 
 	ec, err := getEdgeConnect(obj)
 	if err != nil {
@@ -63,7 +63,7 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ a
 }
 
 func (v *Validator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (warnings admission.Warnings, err error) {
-	ctx, _ = logd.NewFromContext(ctx, "edgeconnect")
+	ctx, _ = logd.NewFromContext(ctx, "validation")
 
 	ec, err := getEdgeConnect(newObj)
 	if err != nil {
