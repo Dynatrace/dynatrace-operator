@@ -110,6 +110,22 @@ func Test_getInitArgs(t *testing.T) {
 				"-p team=platform",
 			},
 		},
+		{
+			name:        "sanitize args",
+			expectedLen: expectedBaseInitArgsLen,
+			resourceAttrs: map[string]string{
+				"foo": "a\ntest",
+			},
+			templateArgs: []string{
+				"-p bar=b\ntest",
+			},
+			mustContain: []string{
+				"-p bar=btest",
+			},
+			expectedAttrArgs: []string{
+				"-p foo=atest",
+			},
+		},
 	}
 
 	for _, tt := range tests {
