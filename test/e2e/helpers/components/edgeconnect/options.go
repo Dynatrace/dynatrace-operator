@@ -18,7 +18,7 @@ const (
 	defaultName      = "edgeconnect"
 	defaultNamespace = "dynatrace"
 
-	defaultECRepo = "docker.io/dynatrace/edgeconnect"
+	defaultECRepo = "public.ecr.aws/dynatrace/edgeconnect"
 	ecImageEnvVar = "E2E_EDGECONNECT_IMAGE"
 )
 
