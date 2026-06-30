@@ -201,6 +201,10 @@ spec:
           - name: CLEANUP_PERIOD
             value: "{{ .Values.csidriver.cleanupPeriod}}"
           {{- end }}
+          {{- if .Values.extractCodeModulesImageLinks }}
+          - name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
+            value: "true"
+          {{- end }}
           {{- include "dynatrace-operator.modules-json-env" . | nindent 10 }}
           {{- include "dynatrace-operator.helm-json-env" . | nindent 10 }}
           {{- include "dynatrace-operator.gomemlimit" .Values.csidriver.provisioner.resources | nindent 10 }}
