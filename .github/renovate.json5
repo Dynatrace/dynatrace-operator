@@ -151,16 +151,6 @@
       automerge: true,
     },
     {
-      "matchManagers": [
-        "regex"
-      ],
-      "matchDepNames": [
-        "dynatrace/dynatrace-operator"
-      ],
-      "matchUpdateTypes": ["patch"],
-      "enabled": true,
-    },
-    {
       matchPackageNames: [
         "markdownlint-cli",
       ],
