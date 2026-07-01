@@ -122,7 +122,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s-latest (phase 3)"
+                    "text": "k8s-latest (platform token) (phase 3)"
                   }
                 ]
               }
