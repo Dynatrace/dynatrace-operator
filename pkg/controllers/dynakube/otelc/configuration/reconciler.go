@@ -31,7 +31,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "otelc-config")
+	ctx, log := logd.NewFromContext(ctx, "config")
 
 	if !dk.TelemetryIngest().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {

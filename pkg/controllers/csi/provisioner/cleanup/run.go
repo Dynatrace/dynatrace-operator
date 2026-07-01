@@ -37,7 +37,7 @@ func New(apiReader client.Reader, path metadata.PathResolver, mounter mount.Inte
 
 // Run will only execute the cleanup logic if enough time has passed from the previous run, to not overload the IO of the node
 func (c *Cleaner) Run(ctx context.Context) error {
-	ctx, _ = logd.NewFromContext(ctx, "csi-cleanup")
+	ctx, _ = logd.NewFromContext(ctx, "cleanup")
 
 	tickerResetFunc := checkTicker(ctx)
 	if tickerResetFunc == nil {
@@ -50,7 +50,7 @@ func (c *Cleaner) Run(ctx context.Context) error {
 
 // InstantRun will always execute the cleanup logic ignoring the time passed from previous run
 func (c *Cleaner) InstantRun(ctx context.Context) error {
-	ctx, _ = logd.NewFromContext(ctx, "csi-cleanup")
+	ctx, _ = logd.NewFromContext(ctx, "cleanup")
 
 	defer resetTickerAfterDelete(ctx)
 

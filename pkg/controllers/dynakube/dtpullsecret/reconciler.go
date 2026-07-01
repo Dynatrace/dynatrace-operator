@@ -31,7 +31,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-pullsecret")
+	ctx, log := logd.NewFromContext(ctx, "pullsecret")
 
 	if dk.FF().IsPublicRegistry() || (!dk.OneAgent().IsDaemonsetRequired() && !dk.ActiveGate().IsEnabled()) {
 		if meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType) == nil {

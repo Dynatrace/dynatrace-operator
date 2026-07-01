@@ -42,7 +42,7 @@ type Publisher struct {
 }
 
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	ctx, _ = logd.NewFromContext(ctx, "csi-hostvolume")
+	ctx, _ = logd.NewFromContext(ctx, "hostvolume")
 
 	if err := pub.mountStorageVolume(ctx, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, "failed to mount osagent volume: "+err.Error())

@@ -29,7 +29,7 @@ func NewReconciler() *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "logmonitoring-settings")
+	ctx, log := logd.NewFromContext(ctx, "settings")
 
 	if !dk.LogMonitoring().IsEnabled() {
 		_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)

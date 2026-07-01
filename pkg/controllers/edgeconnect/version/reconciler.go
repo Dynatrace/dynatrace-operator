@@ -28,7 +28,7 @@ func NewReconciler(apiReader client.Reader, registryClient registry.ImageGetter,
 }
 
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
-	ctx, log := logd.NewFromContext(ctx, "edgeconnect-version")
+	ctx, log := logd.NewFromContext(ctx, "version")
 
 	updaters := []versionStatusUpdater{
 		newUpdater(reconciler.apiReader, reconciler.timeProvider, reconciler.registryClient, reconciler.edgeConnect),

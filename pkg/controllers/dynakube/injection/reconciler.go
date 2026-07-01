@@ -66,7 +66,7 @@ func NewReconciler(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-injection")
+	ctx, log := logd.NewFromContext(ctx, "injection")
 
 	err := r.reconcileSubReconcilers(ctx, dtClient, dk)
 	if err != nil {

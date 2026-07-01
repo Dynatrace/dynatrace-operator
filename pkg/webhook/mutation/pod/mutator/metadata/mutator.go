@@ -65,7 +65,7 @@ func initResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 }
 
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_, log := logd.NewFromContext(request.Context, "metadata-enrichment-pod-common")
+	_, log := logd.NewFromContext(request.Context, "metadata-enrichment")
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
 	request.InstallContainer.Resources = initResources(request.DynaKube)

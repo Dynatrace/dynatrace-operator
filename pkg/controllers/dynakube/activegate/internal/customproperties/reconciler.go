@@ -39,7 +39,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) error {
-	ctx, log := logd.NewFromContext(ctx, "activegate-customproperties")
+	ctx, log := logd.NewFromContext(ctx, "customproperties")
 
 	if customPropertiesSource == nil && !dk.NeedsCustomNoProxy() {
 		if meta.FindStatusCondition(*dk.Conditions(), customPropertiesConditionType) == nil {
