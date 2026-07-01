@@ -50,6 +50,7 @@ var knownFeatureFlags = []string{
 	exp.InjectionAutomaticKey,
 	exp.InjectionLabelVersionDetectionKey,
 	exp.InjectionFailurePolicyKey,
+	exp.InjectionPullSecretKey,
 	exp.InjectionSeccompKey, //nolint:staticcheck
 	// oneagent.go
 	exp.OAProxyIgnoredKey,   //nolint:staticcheck

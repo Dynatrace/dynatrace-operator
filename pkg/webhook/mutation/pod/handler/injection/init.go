@@ -56,6 +56,16 @@ func areErrorsSuppressed(pod *corev1.Pod, dk dynakube.DynaKube) bool {
 	return maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FF().GetInjectionFailurePolicy()) != "fail" // safer than == silent
 }
 
+func addCustomPullSecretToPod(pod *corev1.Pod, secretName string) {
+	for _, ref := range pod.Spec.ImagePullSecrets {
+		if ref.Name == secretName {
+			return
+		}
+	}
+
+	pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secretName})
+}
+
 func addInitContainerToPod(ctx context.Context, pod *corev1.Pod, initContainer *corev1.Container) error {
 	volumes.AddInitConfigVolumeMount(initContainer)
 	volumes.AddInitInputVolumeMount(initContainer)

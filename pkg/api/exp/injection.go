@@ -10,6 +10,7 @@ const (
 	InjectionAutomaticKey             = FFPrefix + "automatic-injection"
 	InjectionLabelVersionDetectionKey = FFPrefix + "label-version-detection"
 	InjectionFailurePolicyKey         = FFPrefix + "injection-failure-policy"
+	InjectionPullSecretKey            = FFPrefix + "inject-pull-secret"
 
 	// Deprecated: This field will be removed in a future release.
 	InjectionSeccompKey = FFPrefix + "init-container-seccomp-profile"
@@ -66,4 +67,9 @@ func (ff *FeatureFlags) GetInjectionFailurePolicy() string {
 
 func (ff *FeatureFlags) HasInitSeccomp() bool {
 	return ff.getBoolWithDefault(InjectionSeccompKey, true)
+}
+
+// InjectPullSecret controls whether the DynaKube's customPullSecret is added to the imagePullSecrets of injected pods.
+func (ff *FeatureFlags) InjectPullSecret() bool {
+	return ff.getBoolWithDefault(InjectionPullSecretKey, false)
 }

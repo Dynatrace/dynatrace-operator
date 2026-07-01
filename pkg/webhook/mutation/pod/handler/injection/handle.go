@@ -152,6 +152,10 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 			return false, err
 		}
 
+		if mutationRequest.DynaKube.FF().InjectPullSecret() && mutationRequest.DynaKube.Spec.CustomPullSecret != "" {
+			addCustomPullSecretToPod(mutationRequest.Pod, mutationRequest.DynaKube.Spec.CustomPullSecret)
+		}
+
 		events.SendPodInjectEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
 	}
 
