@@ -263,6 +263,43 @@ func createTestHandler(oaMut, metaMut dtwebhook.Mutator, objects ...client.Objec
 	return handler
 }
 
+func TestAddCustomPullSecretToPod(t *testing.T) {
+	t.Run("adds secret when pod has no imagePullSecrets", func(t *testing.T) {
+		pod := corev1.Pod{}
+
+		addCustomPullSecretToPod(&pod, "my-pull-secret")
+
+		require.Len(t, pod.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, "my-pull-secret", pod.Spec.ImagePullSecrets[0].Name)
+	})
+
+	t.Run("adds secret when pod already has different imagePullSecrets", func(t *testing.T) {
+		pod := corev1.Pod{
+			Spec: corev1.PodSpec{
+				ImagePullSecrets: []corev1.LocalObjectReference{{Name: "existing-secret"}},
+			},
+		}
+
+		addCustomPullSecretToPod(&pod, "my-pull-secret")
+
+		require.Len(t, pod.Spec.ImagePullSecrets, 2)
+		assert.Equal(t, "existing-secret", pod.Spec.ImagePullSecrets[0].Name)
+		assert.Equal(t, "my-pull-secret", pod.Spec.ImagePullSecrets[1].Name)
+	})
+
+	t.Run("does not add duplicate if secret already present", func(t *testing.T) {
+		pod := corev1.Pod{
+			Spec: corev1.PodSpec{
+				ImagePullSecrets: []corev1.LocalObjectReference{{Name: "my-pull-secret"}},
+			},
+		}
+
+		addCustomPullSecretToPod(&pod, "my-pull-secret")
+
+		require.Len(t, pod.Spec.ImagePullSecrets, 1)
+	})
+}
+
 func TestAddInitContainerToPod(t *testing.T) {
 	t.Run("adds common volumes/mounts", func(t *testing.T) {
 		pod := corev1.Pod{}

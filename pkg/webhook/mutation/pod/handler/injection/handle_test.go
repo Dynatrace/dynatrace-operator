@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
@@ -242,6 +243,74 @@ func TestHandleImpl(t *testing.T) {
 
 		err := h.Handle(request)
 		require.NoError(t, err)
+	})
+
+	t.Run("inject-pull-secret FF enabled with customPullSecret => adds secret to pod", func(t *testing.T) {
+		oaMutator := webhookmock.NewMutator(t)
+		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		oaMutator.On("Mutate", mock.Anything).Return(nil)
+
+		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
+		metaMutator.On("Mutate", mock.Anything).Return(nil)
+
+		h := createTestHandler(oaMutator, metaMutator, &initSecret)
+
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.InjectionPullSecretKey: "true"}
+		dk.Spec.CustomPullSecret = "my-pull-secret"
+
+		request := createTestMutationRequest(t, dk)
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+
+		require.Len(t, request.Pod.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, "my-pull-secret", request.Pod.Spec.ImagePullSecrets[0].Name)
+	})
+
+	t.Run("inject-pull-secret FF enabled without customPullSecret => no pull secret added", func(t *testing.T) {
+		oaMutator := webhookmock.NewMutator(t)
+		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		oaMutator.On("Mutate", mock.Anything).Return(nil)
+
+		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
+		metaMutator.On("Mutate", mock.Anything).Return(nil)
+
+		h := createTestHandler(oaMutator, metaMutator, &initSecret)
+
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.InjectionPullSecretKey: "true"}
+
+		request := createTestMutationRequest(t, dk)
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+
+		assert.Empty(t, request.Pod.Spec.ImagePullSecrets)
+	})
+
+	t.Run("inject-pull-secret FF disabled with customPullSecret => no pull secret added", func(t *testing.T) {
+		oaMutator := webhookmock.NewMutator(t)
+		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		oaMutator.On("Mutate", mock.Anything).Return(nil)
+
+		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
+		metaMutator.On("Mutate", mock.Anything).Return(nil)
+
+		h := createTestHandler(oaMutator, metaMutator, &initSecret)
+
+		dk := getTestDynakube()
+		dk.Spec.CustomPullSecret = "my-pull-secret"
+
+		request := createTestMutationRequest(t, dk)
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+
+		assert.Empty(t, request.Pod.Spec.ImagePullSecrets)
 	})
 }
 
