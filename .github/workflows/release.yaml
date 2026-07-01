@@ -155,7 +155,8 @@ jobs:
     name: Create image artifacts
     environment: Release
     needs: [prepare, build-push]
-    permissions: {}
+    permissions:
+      id-token: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
