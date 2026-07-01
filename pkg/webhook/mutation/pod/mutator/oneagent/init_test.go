@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
@@ -21,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestMutateInitContainer(t *testing.T) {
@@ -334,6 +336,49 @@ func TestMutateInitContainer(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
+	})
+
+	t.Run("should not enable links extraction by default", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{})
+
+		dk := dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: "dynakube"},
+			Spec:       dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
+		}
+		dk.Status.CodeModules.Version = "latest"
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      &corev1.Pod{},
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		require.NoError(t, mutateInitContainer(request, installPath))
+		assert.NotContains(t, request.InstallContainer.Env, corev1.EnvVar{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"})
+	})
+
+	t.Run("should forward links extraction", func(t *testing.T) {
+		t.Setenv(k8senv.DTExtractCodeModulesImageLinksEnvVar, "true")
+		installconfig.SetModulesOverride(t, installconfig.Modules{})
+
+		dk := dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: "dynakube"},
+			Spec:       dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
+		}
+		dk.Status.CodeModules.Version = "latest"
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      &corev1.Pod{},
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		require.NoError(t, mutateInitContainer(request, installPath))
+		assert.Contains(t, request.InstallContainer.Env, corev1.EnvVar{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"})
 	})
 }
 

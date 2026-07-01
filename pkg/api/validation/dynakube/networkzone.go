@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
 const (
@@ -12,18 +13,9 @@ const (
 )
 
 func invalidNetworkZone(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if strings.ContainsFunc(dk.Spec.NetworkZone, isWhiteSpaceCharacter) {
+	if strings.ContainsAny(dk.Spec.NetworkZone, sanitize.InvalidCommandLineCharset) {
 		return errorInvalidNetworkZone
 	}
 
 	return ""
-}
-
-func isWhiteSpaceCharacter(r rune) bool {
-	switch r {
-	case '\n', '\t', '\r', '\x00':
-		return true
-	}
-
-	return false
 }

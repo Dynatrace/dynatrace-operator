@@ -20,31 +20,14 @@ func TestInvalidNetworkZone(t *testing.T) {
 		})
 	})
 
-	t.Run("network zone with newline is denied", func(t *testing.T) {
-		assertDenied(t, []string{errorInvalidNetworkZone}, &dynakube.DynaKube{
+	t.Run("network zone with invalid characters is denied", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL, NetworkZone: "network\nzone"},
-		})
-	})
+			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
+		}
 
-	t.Run("network zone with tab is denied", func(t *testing.T) {
-		assertDenied(t, []string{errorInvalidNetworkZone}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL, NetworkZone: "network\tzone"},
-		})
-	})
-
-	t.Run("network zone with carriage return is denied", func(t *testing.T) {
-		assertDenied(t, []string{errorInvalidNetworkZone}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL, NetworkZone: "network\rzone"},
-		})
-	})
-
-	t.Run("network zone with null byte is denied", func(t *testing.T) {
-		assertDenied(t, []string{errorInvalidNetworkZone}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL, NetworkZone: "network\x00zone"},
-		})
+		assertSanitizeArg(t, dk, func(dk *dynakube.DynaKube, value string) {
+			dk.Spec.NetworkZone = value
+		}, errorInvalidNetworkZone)
 	})
 }
