@@ -253,7 +253,6 @@ jobs:
             repository: RHCC_REPOSITORY
     uses: ./.github/workflows/create-sbom.yaml
     with:
-      image: ${{ matrix.url }}/${{ vars[matrix.repository] }}-fips:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.fips-digest }}
       sbom-artifact-name: release-fips-sbom-${{ matrix.registry }}
       image-artifact-name: release-fips-image-${{ matrix.registry }}
 
