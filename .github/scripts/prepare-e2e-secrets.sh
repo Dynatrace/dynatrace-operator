@@ -22,6 +22,7 @@ EOF
   cat << EOF > phase3-tenant.yaml
 tenantUid: $TENANT_PHASE3_NAME
 apiUrl: https://$TENANT_PHASE3_NAME.dev.dynatracelabs.com/api
+apiToken: $TENANT_PHASE3_APITOKEN
 dataIngestToken: $TENANT_PHASE3_DATAINGESTTOKEN
 platformToken: $TENANT_PHASE3_PLATFORM_TOKEN
 platformTokenNoSettings: $TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS
