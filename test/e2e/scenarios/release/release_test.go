@@ -35,9 +35,6 @@ func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(helpers.SetScheme)
-	if !cfg.FailFast() {
-		testEnv.Finish(operator.Uninstall(true))
-	}
 
 	testEnv.BeforeEachTest(func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		// TODO Remove this after 1.10 release
