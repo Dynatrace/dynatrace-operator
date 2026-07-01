@@ -84,6 +84,10 @@ spec:
             - name: PPROF_BIND_ADDRESS
               value: ":6060"
             {{- end }}
+            {{- if .Values.extractCodeModulesImageLinks }}
+            - name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
+              value: "true"
+            {{- end }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
           readinessProbe:
             httpGet:
