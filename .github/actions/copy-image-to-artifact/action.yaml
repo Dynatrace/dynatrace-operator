@@ -51,9 +51,7 @@ runs:
         docker save -o /tmp/${ARTIFACT_NAME}.tar ${IMAGE}
     - name: Upload image artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      env:
-        ARTIFACT_NAME: ${{ inputs.artifact-name }}
       with:
-        name: ${ARTIFACT_NAME}
-        path: /tmp/${ARTIFACT_NAME}.tar
+        name: ${{ inputs.artifact-name }}
+        path: /tmp/${{ inputs.artifact-name }}.tar
         retention-days: 1
