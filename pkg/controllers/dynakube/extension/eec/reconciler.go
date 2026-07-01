@@ -28,7 +28,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "extension-eec")
+	ctx, log := logd.NewFromContext(ctx, "eec")
 
 	// TODO: Remove as part of ICP-1086
 	meta.RemoveStatusCondition(dk.Conditions(), "ExtensionsControllerStatefulSet")

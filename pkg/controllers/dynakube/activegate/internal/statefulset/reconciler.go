@@ -37,7 +37,7 @@ func NewReconciler(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) error {
-	ctx, log := logd.NewFromContext(ctx, "activegate-statefulset")
+	ctx, log := logd.NewFromContext(ctx, "statefulset")
 
 	err := r.manageStatefulSet(ctx, dk, agCapability)
 	if err != nil {

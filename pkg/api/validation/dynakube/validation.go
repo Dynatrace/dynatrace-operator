@@ -118,7 +118,7 @@ func New(apiReader client.Reader) admission.Validator[runtime.Object] {
 }
 
 func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-validation")
+	ctx, _ = logd.NewFromContext(ctx, "validation")
 
 	dk, err := getDynakube(obj)
 	if err != nil {
@@ -136,7 +136,7 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (war
 }
 
 func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-validation")
+	ctx, _ = logd.NewFromContext(ctx, "validation")
 
 	oldDK, err := getDynakube(oldObj)
 	if err != nil {

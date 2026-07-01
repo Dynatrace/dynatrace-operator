@@ -49,7 +49,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "otelc-service")
+	ctx, _ = logd.NewFromContext(ctx, "service")
 	if !dk.TelemetryIngest().IsEnabled() {
 		r.removeServiceOnce(ctx, dk)
 
