@@ -181,7 +181,7 @@ runs:
         TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS: ${{ inputs.tenant-phase3-platform-token-nosettings }}
         E2E_PUBLIC_REGISTRY_OVERRIDE: ${{ inputs.e2e-public-registry-override }}
         USE_PLATFORM_TOKEN: ${{ inputs.use-platform-token }}
-        USE_TENANT_PHASE3: ${{ inputs.use-phase3-tenant }}
+        USE_TENANT_PHASE3: ${{ inputs.use-tenant-phase3 }}
         E2E_MAKE_TARGET: ${{ inputs.e2e-make-target }}
       if: steps.check_cluster_status.outputs.skip_tests != 'true'
     - name: Destroy cluster
