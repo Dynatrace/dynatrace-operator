@@ -56,28 +56,28 @@ inputs:
   tenant2-platform-token:
     description: The platform token of Tenant 2
     required: true
-  tenant-phase3-name:
+  tenant3-phase3-name:
     description: The name of Tenant 1 Phase 3
     required: true
-  tenant-phase3-apitoken:
+  tenant3-phase3-apitoken:
     description: The API token of Tenant Phase 3
     required: true
-  tenant-phase3-dataingesttoken:
+  tenant3-phase3-dataingesttoken:
     description: The data ingest token of Tenant 1 Phase 3
     required: true
-  tenant-phase3-oauth-client-id:
+  tenant3-phase3-oauth-client-id:
     description: The OAuth client ID of Tenant 1 Phase 3
     required: true
-  tenant-phase3-oauth-secret:
+  tenant3-phase3-oauth-secret:
     description: The OAuth secret of Tenant 1 Phase 3
     required: true
-  tenant-phase3-oauth-urn:
+  tenant3-phase3-oauth-urn:
     description: The OAuth urn of Tenant 1 Phase 3
     required: true
-  tenant-phase3-platform-token:
+  tenant3-phase3-platform-token:
     description: The platform token of Tenant 1 Phase 3
     required: true
-  tenant-phase3-platform-token-nosettings:
+  tenant3-phase3-platform-token-nosettings:
     description: The platform token of Tenant 1 without settings scope Phase 3
     required: true
   e2e-public-registry-override:
@@ -171,14 +171,14 @@ runs:
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
         TENANT2_PLATFORM_TOKEN: ${{ inputs.tenant2-platform-token }}
-        TENANT_PHASE3_NAME: ${{ inputs.tenant-phase3-name }}
-        TENANT_PHASE3_APITOKEN: ${{ inputs.tenant-phase3-apitoken }}
-        TENANT_PHASE3_DATAINGESTTOKEN: ${{ inputs.tenant-phase3-dataingesttoken }}
-        TENANT_PHASE3_OAUTH_CLIENT_ID: ${{ inputs.tenant-phase3-oauth-client-id }}
-        TENANT_PHASE3_OAUTH_SECRET: ${{ inputs.tenant-phase3-oauth-secret }}
-        TENANT_PHASE3_OAUTH_URN: ${{ inputs.tenant-phase3-oauth-urn }}
-        TENANT_PHASE3_PLATFORM_TOKEN: ${{ inputs.tenant-phase3-platform-token }}
-        TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS: ${{ inputs.tenant-phase3-platform-token-nosettings }}
+        TENANT3_PHASE3_NAME: ${{ inputs.tenant3-phase3-name }}
+        TENANT3_PHASE3_APITOKEN: ${{ inputs.tenant3-phase3-apitoken }}
+        TENANT3_PHASE3_DATAINGESTTOKEN: ${{ inputs.tenant3-phase3-dataingesttoken }}
+        TENANT3_PHASE3_OAUTH_CLIENT_ID: ${{ inputs.tenant3-phase3-oauth-client-id }}
+        TENANT3_PHASE3_OAUTH_SECRET: ${{ inputs.tenant3-phase3-oauth-secret }}
+        TENANT3_PHASE3_OAUTH_URN: ${{ inputs.tenant3-phase3-oauth-urn }}
+        TENANT3_PHASE3_PLATFORM_TOKEN: ${{ inputs.tenant3-phase3-platform-token }}
+        TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS: ${{ inputs.tenant3-phase3-platform-token-nosettings }}
         E2E_PUBLIC_REGISTRY_OVERRIDE: ${{ inputs.e2e-public-registry-override }}
         USE_PLATFORM_TOKEN: ${{ inputs.use-platform-token }}
         USE_TENANT_PHASE3: ${{ inputs.use-tenant-phase3 }}

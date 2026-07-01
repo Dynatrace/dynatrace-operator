@@ -20,12 +20,12 @@ EOF
 
 
   cat << EOF > phase3-tenant.yaml
-tenantUid: $TENANT_PHASE3_NAME
-apiUrl: https://$TENANT_PHASE3_NAME.dev.dynatracelabs.com/api
-apiToken: $TENANT_PHASE3_APITOKEN
-dataIngestToken: $TENANT_PHASE3_DATAINGESTTOKEN
-platformToken: $TENANT_PHASE3_PLATFORM_TOKEN
-platformTokenNoSettings: $TENANT_PHASE3_PLATFORM_TOKEN_NOSETTINGS
+tenantUid: $TENANT3_PHASE3_NAME
+apiUrl: https://$TENANT3_PHASE3_NAME.dev.dynatracelabs.com/api
+apiToken: $TENANT3_PHASE3_APITOKEN
+dataIngestToken: $TENANT3_PHASE3_DATAINGESTTOKEN
+platformToken: $TENANT3_PHASE3_PLATFORM_TOKEN
+platformTokenNoSettings: $TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS
 EOF
 
   cat << EOF > multi-tenant.yaml
@@ -53,11 +53,11 @@ EOF
 
   cat << EOF > edgeconnect-phase3-tenant.yaml
 name: e2e-test-phase3
-tenantUid: $TENANT_PHASE3_NAME
-apiServer: $TENANT_PHASE3_NAME.dev.apps.dynatracelabs.com
-oAuthClientId: $TENANT_PHASE3_OAUTH_CLIENT_ID
-oAuthClientSecret: $TENANT_PHASE3_OAUTH_SECRET
-resource: $TENANT_PHASE3_OAUTH_URN
+tenantUid: $TENANT3_PHASE3_NAME
+apiServer: $TENANT3_PHASE3_NAME.dev.apps.dynatracelabs.com
+oAuthClientId: $TENANT3_PHASE3_OAUTH_CLIENT_ID
+oAuthClientSecret: $TENANT3_PHASE3_OAUTH_SECRET
+resource: $TENANT3_PHASE3_OAUTH_URN
 EOF
 
   popd
