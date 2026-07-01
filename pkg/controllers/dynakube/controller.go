@@ -43,10 +43,14 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -126,6 +130,35 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		// It is not worth the risk.
 		// Owns(&istiov1beta1.ServiceEntry{}).
 		// Owns(&istiov1beta1.VirtualService{}).
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
+			log := logf.FromContext(ctx)
+			pullSecret := obj.(*corev1.Secret)
+
+			var dkList dynakube.DynaKubeList
+			err := controller.client.List(ctx, &dkList,
+				client.InNamespace(pullSecret.Namespace),
+				client.MatchingFieldsSelector{
+					Selector: fields.OneTermEqualSelector("spec.customPullSecret", pullSecret.Name),
+				})
+
+			if err != nil {
+				log.Error(err, "BOOM")
+			}
+
+			requests := []reconcile.Request{}
+			for _, dk := range dkList.Items {
+				request := reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Name:      dk.Name,
+						Namespace: obj.GetNamespace(),
+					},
+				}
+
+				requests = append(requests, request)
+			}
+
+			return requests
+		})).
 		Complete(controller)
 }
 
