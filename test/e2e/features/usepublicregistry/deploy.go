@@ -219,6 +219,7 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("install sample app", sampleApp.Install())
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Assess("CodeModules status reports public-registry source",
 		statusSourceIsPublicRegistry(testDynakube, image.CodeModules))
 

@@ -3,6 +3,7 @@
 package publicregistry
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
@@ -14,6 +15,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -112,6 +116,13 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 		k8sdaemonset.VerifyUsesImage(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace, images.kspm))
 	builder.Assess("OTelCollector StatefulSet uses expected image",
 		k8sstatefulset.VerifyUsesImage(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, images.otel))
+	builder.Assess("CodeModules status reports expected image",
+		func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+			require.NoError(t, envConfig.Client().Resources().Get(ctx, testDynakube.Name, testDynakube.Namespace, &testDynakube))
+			assert.Equal(t, images.codeModules, testDynakube.Status.CodeModules.ImageID)
+
+			return ctx
+		})
 
 	builder.Teardown(sampleApp.Uninstall())
 
