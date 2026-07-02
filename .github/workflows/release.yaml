@@ -222,11 +222,6 @@ jobs:
     strategy:
       matrix:
         registry: [gcr, dockerhub, amazon-ecr, rhcc]
-        include:
-          - registry: gcr
-          - registry: dockerhub
-          - registry: amazon-ecr
-          - registry: rhcc
     uses: ./.github/workflows/create-sbom.yaml
     with:
       sbom-artifact-name: release-sbom-${{ matrix.registry }}
@@ -240,11 +235,6 @@ jobs:
     strategy:
       matrix:
         registry: [gcr, dockerhub, amazon-ecr, rhcc]
-        include:
-          - registry: gcr
-          - registry: dockerhub
-          - registry: amazon-ecr
-          - registry: rhcc
     uses: ./.github/workflows/create-sbom.yaml
     with:
       sbom-artifact-name: release-fips-sbom-${{ matrix.registry }}
