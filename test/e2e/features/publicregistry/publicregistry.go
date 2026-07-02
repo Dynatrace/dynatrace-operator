@@ -99,8 +99,8 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
 	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(agStatefulSetName, testDynakube.Namespace))
 	builder.Assess("EEC started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
-	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
-	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("KSPM node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("OTelCollector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	builder.Assess("OneAgent DaemonSet uses expected image",
 		k8sdaemonset.VerifyUsesImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, images.oneAgent))
@@ -110,7 +110,7 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 		k8sstatefulset.VerifyUsesImage(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace, images.eec))
 	builder.Assess("KSPM DaemonSet uses expected image",
 		k8sdaemonset.VerifyUsesImage(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace, images.kspm))
-	builder.Assess("OTel Collector StatefulSet uses expected image",
+	builder.Assess("OTelCollector StatefulSet uses expected image",
 		k8sstatefulset.VerifyUsesImage(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, images.otel))
 
 	builder.Teardown(sampleApp.Uninstall())
