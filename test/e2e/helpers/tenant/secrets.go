@@ -24,6 +24,8 @@ var (
 	defaultSingleTenant      = filepath.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
 	defaultMultiTenant       = filepath.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
 	defaultEdgeConnectTenant = filepath.Join(project.TestDataDir(), "secrets/edgeconnect-tenant.yaml")
+	phase3Tenant             = filepath.Join(project.TestDataDir(), "secrets/phase3-tenant.yaml")
+	edgeConnectPhase3Tenant  = filepath.Join(project.TestDataDir(), "secrets/edgeconnect-phase3-tenant.yaml")
 )
 
 type Secrets struct {
@@ -106,7 +108,13 @@ func newFromConfig(path string) (Secret, error) {
 }
 
 func GetSingleTenantSecret(t *testing.T) Secret {
-	secret, err := newFromConfig(defaultSingleTenant)
+	var tenant = defaultSingleTenant
+
+	if UsePhase3Tenant() {
+		tenant = phase3Tenant
+	}
+
+	secret, err := newFromConfig(tenant)
 	if err != nil {
 		t.Fatal("Couldn't read tenant secret from filesystem", err)
 	}
@@ -115,6 +123,10 @@ func GetSingleTenantSecret(t *testing.T) Secret {
 }
 
 func GetMultiTenantSecret(t *testing.T) []Secret {
+	if UsePhase3Tenant() {
+		t.Skip("multi-tenant secrets are not supported with phase3 tenant")
+	}
+
 	secrets, err := manyFromConfig(defaultMultiTenant)
 	if err != nil {
 		t.Fatal("Couldn't read tenant secret from filesystem", err)
@@ -124,7 +136,13 @@ func GetMultiTenantSecret(t *testing.T) []Secret {
 }
 
 func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
-	secretConfigFile, err := os.ReadFile(defaultEdgeConnectTenant)
+	var tenant = defaultEdgeConnectTenant
+
+	if UsePhase3Tenant() {
+		tenant = edgeConnectPhase3Tenant
+	}
+
+	secretConfigFile, err := os.ReadFile(tenant)
 
 	if err != nil {
 		t.Fatal("Couldn't read edgeconnect tenant secret from filesystem", err)
@@ -140,8 +158,12 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	return result
 }
 
+func UsePhase3Tenant() bool {
+	return os.Getenv("USE_TENANT_PHASE3") == "true"
+}
+
 func UsePlatformToken() bool {
-	return os.Getenv("USE_PLATFORM_TOKEN") == "true"
+	return os.Getenv("USE_PLATFORM_TOKEN") == "true" || UsePhase3Tenant()
 }
 
 func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
