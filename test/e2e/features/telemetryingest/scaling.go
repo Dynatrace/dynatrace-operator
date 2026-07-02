@@ -28,7 +28,7 @@ func WithHPA(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
-		componentDynakube.WithOTelCollectorImageRef(t),
+		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
@@ -67,7 +67,7 @@ func EnforceReplicas(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
-		componentDynakube.WithOTelCollectorImageRef(t),
+		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
 		componentDynakube.WithOTelCollectorReplicas(baseReplicas),
 	}
 

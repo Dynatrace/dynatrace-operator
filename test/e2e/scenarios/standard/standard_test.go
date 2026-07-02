@@ -75,6 +75,18 @@ func TestStandard_public_registry_images(t *testing.T) {
 	testEnv.Test(t, publicregistry.Feature(t))
 }
 
+func TestStandard_public_registry_images_digest(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureWithDigest(t))
+}
+
+func TestStandard_public_registry_images_logmonitoring(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureLogMonitoring(t))
+}
+
+func TestStandard_public_registry_images_digest_logmonitoring(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureLogMonitoringWithDigest(t))
+}
+
 func TestStandard_use_public_registry_oneagent(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.OneAgent(t))
 }

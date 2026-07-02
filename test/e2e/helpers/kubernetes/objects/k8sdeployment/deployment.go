@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -89,6 +90,13 @@ func IsReady(name, namespace string) features.Func {
 
 		return ctx
 	}
+}
+
+func VerifyUsesImage(name, namespace, expectedImage string) features.Func {
+	var deploy appsv1.Deployment
+
+	return objects.VerifyWorkloadUsesImage(&deploy, name, namespace, expectedImage,
+		func(deploy *appsv1.Deployment) []corev1.Container { return deploy.Spec.Template.Spec.Containers })
 }
 
 func WaitFor(name string, namespace string) env.Func {
