@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
+	imageclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	installerclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
@@ -60,6 +61,34 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 	case dk.OneAgent().GetCustomCodeModulesImage() != "":
 		props := &image.Properties{
 			ImageURI:     dk.OneAgent().GetCodeModulesImage(),
+			APIReader:    provisioner.apiReader,
+			Dynakube:     dk,
+			PathResolver: provisioner.path,
+		}
+
+		imageInstaller, err := provisioner.imageInstallerBuilder(ctx, props)
+		if err != nil {
+			return nil, err
+		}
+
+		return imageInstaller, nil
+	case dk.FF().IsPublicRegistry():
+		dtClient, err := buildDtc(provisioner, ctx, dk)
+		if err != nil {
+			return nil, err
+		}
+
+		imageInfo, err := dtClient.Images.GetComponentLatestInfo(ctx, imageclient.CodeModules, dk.PublicRegistryOverride())
+		if err != nil {
+			return nil, err
+		}
+
+		if imageInfo.URI == "" {
+			return nil, errors.New("codemodules public image not available")
+		}
+
+		props := &image.Properties{
+			ImageURI:     imageInfo.URI,
 			APIReader:    provisioner.apiReader,
 			Dynakube:     dk,
 			PathResolver: provisioner.path,
