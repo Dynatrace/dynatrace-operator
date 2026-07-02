@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -23,8 +24,6 @@ import (
 )
 
 const (
-	SuccessDuration = 3 * time.Hour
-
 	initReconcileInterval = 5 * time.Second
 
 	secretPostfix = "-certs"
@@ -34,7 +33,12 @@ var errCertificatesSecretEmpty = errors.New("certificates secret is empty")
 
 func InitReconcile(ctx context.Context, clt client.Client, namespace string) error {
 	ctx, log := logd.NewFromContext(ctx, "init-reconcile")
-	controller := newWebhookCertificateController(clt, clt)
+
+	controller, err := newWebhookCertificateController(clt, clt)
+	if err != nil {
+		return err
+	}
+
 	request := ctrl.Request{NamespacedName: types.NamespacedName{Name: webhook.DeploymentName, Namespace: namespace}}
 
 	return wait.PollUntilContextCancel(ctx, initReconcileInterval, true, func(ctx context.Context) (bool, error) {
@@ -49,23 +53,63 @@ func InitReconcile(ctx context.Context, clt client.Client, namespace string) err
 }
 
 func Add(mgr manager.Manager, namespace string) error {
+	controller, err := newWebhookCertificateController(mgr.GetClient(), mgr.GetAPIReader())
+	if err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		Named("webhook-cert-controller").
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, namespace)).
-		Complete(newWebhookCertificateController(mgr.GetClient(), mgr.GetAPIReader()))
+		Complete(controller)
 }
 
-func newWebhookCertificateController(clt client.Client, apiReader client.Reader) *WebhookCertificateController {
-	return &WebhookCertificateController{
-		client:    clt,
-		apiReader: apiReader,
+func newWebhookCertificateController(clt client.Client, apiReader client.Reader) (*WebhookCertificateController, error) {
+	ctx := context.Background()
+	_, log := logd.NewFromContext(ctx, "webhook-cert-controller")
+
+	requeueAfter := k8senv.GetWebhookCertsRequeueAfter(ctx)
+	renewalThreshold := k8senv.GetWebhookCertsRenewalThreshold(ctx)
+	rootDuration := k8senv.GetWebhookCertsRootDuration(ctx)
+	serverDuration := k8senv.GetWebhookCertsServerDuration(ctx)
+
+	if serverDuration <= renewalThreshold {
+		return nil, fmt.Errorf("server cert duration (%s) must exceed renewal threshold (%s); set %s to a value greater than %s",
+			serverDuration, renewalThreshold, k8senv.WebhookCertsServerDurationEnvVar, renewalThreshold)
 	}
+
+	if rootDuration <= serverDuration {
+		return nil, fmt.Errorf("root cert duration (%s) must exceed server cert duration (%s); set %s to a value greater than %s",
+			rootDuration, serverDuration, k8senv.WebhookCertsRootDurationEnvVar, serverDuration)
+	}
+
+	renewalWindow := serverDuration - renewalThreshold
+	if requeueAfter >= renewalWindow {
+		return nil, fmt.Errorf("requeue interval (%s) must be shorter than the cert renewal window (%s - %s = %s); set %s to a value shorter than %s",
+			requeueAfter, serverDuration, renewalThreshold, renewalWindow, k8senv.WebhookCertsRequeueAfterEnvVar, renewalWindow)
+	}
+
+	log.Debug("webhook cert controller config", "requeueAfter", requeueAfter, "renewalThreshold", renewalThreshold, "serverDuration", serverDuration, "rootDuration", rootDuration)
+
+	return &WebhookCertificateController{
+		client:             clt,
+		apiReader:          apiReader,
+		requeueAfter:       requeueAfter,
+		renewalThreshold:   renewalThreshold,
+		serverCertDuration: serverDuration,
+		rootCertDuration:   rootDuration,
+	}, nil
 }
 
 type WebhookCertificateController struct {
 	client    client.Client
 	apiReader client.Reader
+
+	requeueAfter       time.Duration
+	renewalThreshold   time.Duration
+	serverCertDuration time.Duration
+	rootCertDuration   time.Duration
 }
 
 func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
@@ -97,7 +141,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return ctrl.Result{}, err
 	}
 
-	if err := certSecret.validateCertificates(ctx, webhookDeployment.Namespace); err != nil {
+	if err := certSecret.validateCertificates(ctx, webhookDeployment.Namespace, controller.renewalThreshold, controller.serverCertDuration, controller.rootCertDuration); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -107,7 +151,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	if controller.isUpToDate(certSecret, mutatingWebhookClientConfigs, validatingWebhookConfigConfigs, crd) {
 		log.Info("secret for certificates up to date, skipping update")
 
-		return ctrl.Result{RequeueAfter: SuccessDuration}, nil
+		return ctrl.Result{RequeueAfter: controller.requeueAfter}, nil
 	}
 
 	if err = certSecret.createOrUpdateIfNecessary(ctx, controller.client); err != nil {
@@ -137,7 +181,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: SuccessDuration}, nil
+	return ctrl.Result{RequeueAfter: controller.requeueAfter}, nil
 }
 
 func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crd *apiextensionsv1.CustomResourceDefinition) bool {
