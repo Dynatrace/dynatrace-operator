@@ -110,7 +110,7 @@ func newFromConfig(path string) (Secret, error) {
 func GetSingleTenantSecret(t *testing.T) Secret {
 	var tenant = defaultSingleTenant
 
-	if usePhase3Tenant() {
+	if UsePhase3Tenant() {
 		tenant = phase3Tenant
 	}
 
@@ -123,7 +123,7 @@ func GetSingleTenantSecret(t *testing.T) Secret {
 }
 
 func GetMultiTenantSecret(t *testing.T) []Secret {
-	if usePhase3Tenant() {
+	if UsePhase3Tenant() {
 		t.Skip("multi-tenant secrets are not supported with phase3 tenant")
 	}
 
@@ -138,7 +138,7 @@ func GetMultiTenantSecret(t *testing.T) []Secret {
 func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	var tenant = defaultEdgeConnectTenant
 
-	if usePhase3Tenant() {
+	if UsePhase3Tenant() {
 		tenant = edgeConnectPhase3Tenant
 	}
 
@@ -158,12 +158,12 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	return result
 }
 
-func usePhase3Tenant() bool {
+func UsePhase3Tenant() bool {
 	return os.Getenv("USE_TENANT_PHASE3") == "true"
 }
 
 func UsePlatformToken() bool {
-	return os.Getenv("USE_PLATFORM_TOKEN") == "true" || usePhase3Tenant()
+	return os.Getenv("USE_PLATFORM_TOKEN") == "true" || UsePhase3Tenant()
 }
 
 func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
