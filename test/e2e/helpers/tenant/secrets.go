@@ -38,6 +38,7 @@ type Secret struct {
 	APITokenNoSettings      string `yaml:"apiTokenNoSettings"`
 	PlatformToken           string `yaml:"platformToken"`
 	PlatformTokenNoSettings string `yaml:"platformTokenNoSettings"`
+	DataIngestPlatformToken string `yaml:"dataIngestPlatformToken"`
 }
 
 type Tokens struct {
@@ -56,7 +57,7 @@ type EdgeConnectSecret struct {
 
 func (s Secret) TokensWithSettingsScope() Tokens {
 	if UsePlatformToken() {
-		return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestToken}
+		return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestPlatformToken}
 	}
 
 	return Tokens{APIToken: s.APIToken, DataIngestToken: s.DataIngestToken}
@@ -64,14 +65,14 @@ func (s Secret) TokensWithSettingsScope() Tokens {
 
 func (s Secret) TokensWithoutSettingsScope() Tokens {
 	if UsePlatformToken() {
-		return Tokens{APIToken: s.PlatformTokenNoSettings, DataIngestToken: s.DataIngestToken}
+		return Tokens{APIToken: s.PlatformTokenNoSettings, DataIngestToken: s.DataIngestPlatformToken}
 	}
 
 	return Tokens{APIToken: s.APITokenNoSettings, DataIngestToken: s.DataIngestToken}
 }
 
 func (s Secret) PlatformTokens() Tokens {
-	return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestToken}
+	return Tokens{APIToken: s.PlatformToken, DataIngestToken: s.DataIngestPlatformToken}
 }
 
 func (s Secret) ClassicTokens() Tokens {
