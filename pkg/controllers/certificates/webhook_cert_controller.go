@@ -87,7 +87,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 
 	mutatingWebhookConfiguration, validatingWebhookConfiguration := controller.getWebhooksConfigurations(ctx)
 
-	crd, err := controller.getCRD(ctx)
+	crds, err := controller.getCRDs(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -104,7 +104,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	mutatingWebhookClientConfigs := getClientConfigsFromMutatingWebhook(mutatingWebhookConfiguration)
 	validatingWebhookConfigConfigs := getClientConfigsFromValidatingWebhook(validatingWebhookConfiguration)
 
-	if controller.isUpToDate(certSecret, mutatingWebhookClientConfigs, validatingWebhookConfigConfigs, crd) {
+	if controller.isUpToDate(certSecret, mutatingWebhookClientConfigs, validatingWebhookConfigConfigs, crds) {
 		log.Info("secret for certificates up to date, skipping update")
 
 		return ctrl.Result{RequeueAfter: SuccessDuration}, nil
@@ -140,15 +140,24 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	return ctrl.Result{RequeueAfter: SuccessDuration}, nil
 }
 
-func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crd *apiextensionsv1.CustomResourceDefinition) bool {
+func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crds []*apiextensionsv1.CustomResourceDefinition) bool {
 	areMutatingWebhookConfigsValid := certSecret.areWebhookConfigsValid(mutatingWebhookClientConfigs)
 	areValidatingWebhookConfigsValid := certSecret.areWebhookConfigsValid(validatingWebhookConfigConfigs)
-	isCRDConversionConfigValid := certSecret.isCRDConversionValid(crd)
+
+	areCRDConversionConfigsValid := true
+
+	for _, crd := range crds {
+		if !certSecret.isCRDConversionValid(crd) {
+			areCRDConversionConfigsValid = false
+
+			break
+		}
+	}
 
 	isUpToDate := certSecret.isRecent() &&
 		areMutatingWebhookConfigsValid &&
 		areValidatingWebhookConfigsValid &&
-		isCRDConversionConfigValid
+		areCRDConversionConfigsValid
 
 	return isUpToDate
 }
@@ -207,13 +216,20 @@ func (controller *WebhookCertificateController) getValidatingWebhookConfiguratio
 	return &mutatingWebhook, nil
 }
 
-func (controller *WebhookCertificateController) getCRD(ctx context.Context) (*apiextensionsv1.CustomResourceDefinition, error) {
-	var crd apiextensionsv1.CustomResourceDefinition
-	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd); err != nil {
-		return nil, fmt.Errorf("get CRD: %w", err)
+func (controller *WebhookCertificateController) getCRDs(ctx context.Context) ([]*apiextensionsv1.CustomResourceDefinition, error) {
+	crdNames := []string{k8scrd.DynaKubeName, k8scrd.EdgeConnectName}
+	crds := make([]*apiextensionsv1.CustomResourceDefinition, 0, len(crdNames))
+
+	for _, name := range crdNames {
+		var crd apiextensionsv1.CustomResourceDefinition
+		if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: name}, &crd); err != nil {
+			return nil, fmt.Errorf("get CRD %s: %w", name, err)
+		}
+
+		crds = append(crds, &crd)
 	}
 
-	return &crd, nil
+	return crds, nil
 }
 
 func (controller *WebhookCertificateController) updateClientConfigurations(ctx context.Context, bundle []byte,
