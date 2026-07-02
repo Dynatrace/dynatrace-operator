@@ -3,7 +3,6 @@
 package edgeconnect
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
@@ -137,11 +136,7 @@ func GetLatestImageDigestURI(t *testing.T) string {
 
 func WithImageRef(t *testing.T, imageURI string) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
-		if strings.Contains(imageURI, "@") {
-			ec.Spec.ImageRef.Repository, ec.Spec.ImageRef.Digest, _ = strings.Cut(imageURI, "@")
-		} else {
-			ec.Spec.ImageRef.Repository, ec.Spec.ImageRef.Tag, _ = strings.Cut(imageURI, ":")
-		}
+		ec.Spec.ImageRef.Repository, ec.Spec.ImageRef.Tag, ec.Spec.ImageRef.Digest = registry.ParseImageURI(imageURI)
 		setCustomPullSecretIfNeeded(t, ec)
 	}
 }

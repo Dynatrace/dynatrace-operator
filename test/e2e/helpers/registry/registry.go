@@ -154,6 +154,16 @@ func GetLatestCodeModulesImageDigestURI(t *testing.T) string {
 	return GetLatestImageURI(t, cmPublicECR, cmImageEnv, true)
 }
 
+func ParseImageURI(imageURI string) (repository, tag, digest string) {
+	if strings.Contains(imageURI, "@") {
+		repository, digest, _ = strings.Cut(imageURI, "@")
+	} else {
+		repository, tag, _ = strings.Cut(imageURI, ":")
+	}
+
+	return repository, tag, digest
+}
+
 func isRateLimited(err error) bool {
 	var transportErr *transport.Error
 

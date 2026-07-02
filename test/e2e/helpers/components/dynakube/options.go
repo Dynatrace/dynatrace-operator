@@ -4,7 +4,6 @@ package dynakube
 
 import (
 	"maps"
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -440,11 +439,7 @@ func WithExtensionsDBExecutorImageRef(t *testing.T, imageURI string) Option {
 func applyImageRef(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, imageURI, defaultRepo string) bool {
 	t.Helper()
 
-	if strings.Contains(imageURI, "@") {
-		imageRef.Repository, imageRef.Digest, _ = strings.Cut(imageURI, "@")
-	} else {
-		imageRef.Repository, imageRef.Tag, _ = strings.Cut(imageURI, ":")
-	}
+	imageRef.Repository, imageRef.Tag, imageRef.Digest = registry.ParseImageURI(imageURI)
 
 	return applyCustomPullSecretIfNeeded(t, dk, imageRef.Repository, defaultRepo)
 }
