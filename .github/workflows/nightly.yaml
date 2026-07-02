@@ -57,11 +57,45 @@ jobs:
     outputs:
       digest: ${{ steps.build-image.outputs.digest }}
 
+  copy-image-to-artifact:
+    if: github.repository_owner == 'Dynatrace'
+    name: Create image artifacts
+    environment: Release
+    needs: [prepare, build-push]
+    permissions:
+      contents: read
+      actions: write
+      packages: read
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Copy image to artifact
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          artifact-name: nightly-image
+          registry: ${{ env.IMAGE_REGISTRY }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-username: ${{ github.repository_owner }}
+
+  create-sbom:
+    if: github.repository_owner == 'Dynatrace'
+    needs: [copy-image-to-artifact]
+    permissions:
+      actions: write
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      sbom-artifact-name:  nightly-sbom
+      image-artifact-name: nightly-image
+
   signing:
     if: github.repository_owner == 'Dynatrace'
     name: Sign the image index/manifests + Add SBOM
     environment: Release
-    needs: [prepare, build-push]
+    needs: [prepare, build-push, create-sbom]
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -85,15 +119,10 @@ jobs:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Create SBOM
-        id: sbom
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-          format: 'cyclonedx'
-          output: 'result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-          skip-files: '/usr/local/bin/dynatrace-operator'
+          name: nightly-sbom
       - name: Upload SBOM
         uses: ./.github/actions/upload-sbom
         with:
