@@ -57,28 +57,28 @@ inputs:
     description: The platform token of Tenant 2
     required: true
   tenant3-phase3-name:
-    description: The name of Tenant 1 Phase 3
+    description: The name of Tenant 3 Phase 3
     required: true
   tenant3-phase3-apitoken:
-    description: The API token of Tenant Phase 3
+    description: The API token of Tenant 3 Phase 3
     required: true
   tenant3-phase3-dataingesttoken:
-    description: The data ingest token of Tenant 1 Phase 3
+    description: The data ingest token of Tenant 3 Phase 3
     required: true
   tenant3-phase3-oauth-client-id:
-    description: The OAuth client ID of Tenant 1 Phase 3
+    description: The OAuth client ID of Tenant 3 Phase 3
     required: true
   tenant3-phase3-oauth-secret:
-    description: The OAuth secret of Tenant 1 Phase 3
+    description: The OAuth secret of Tenant 3 Phase 3
     required: true
   tenant3-phase3-oauth-urn:
-    description: The OAuth urn of Tenant 1 Phase 3
+    description: The OAuth urn of Tenant 3 Phase 3
     required: true
   tenant3-phase3-platform-token:
-    description: The platform token of Tenant 1 Phase 3
+    description: The platform token of Tenant 3 Phase 3
     required: true
   tenant3-phase3-platform-token-nosettings:
-    description: The platform token of Tenant 1 without settings scope Phase 3
+    description: The platform token of Tenant 3 without settings scope Phase 3
     required: true
   e2e-public-registry-override:
     description: Override for the public registry used in E2E tests
