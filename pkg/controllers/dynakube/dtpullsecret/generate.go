@@ -40,7 +40,7 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 func (r *Reconciler) generateData(dk *dynakube.DynaKube, tokens token.Tokens) (map[string][]byte, error) {
 	var registryToken string
 
-	registry, err := getImageRegistryFromAPIURL(dk.Spec.APIURL)
+	registry, err := getImageRegistryFromAPIURL(dk.APIURL())
 	if err != nil {
 		return nil, err
 	}

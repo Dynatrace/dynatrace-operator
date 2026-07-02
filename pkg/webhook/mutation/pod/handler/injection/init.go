@@ -32,7 +32,7 @@ func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube)
 	if bootstrapperconfig.NeedsDownloadConfig(&dk) {
 		args = append(args, arg.Arg{
 			Name:  bootstrapper.BaseURL,
-			Value: dk.Spec.APIURL,
+			Value: dk.APIURL(),
 		})
 	}
 
