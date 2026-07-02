@@ -65,6 +65,7 @@ jobs:
     permissions:
       contents: read
       actions: write
+      packages: read
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
