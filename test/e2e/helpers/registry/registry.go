@@ -100,7 +100,7 @@ func resolveLatestDigestURI(t *testing.T, repoURI string, tagURI string) string 
 	err = retry.OnError(registryBackoff, isRateLimited, func() error {
 		desc, headErr := remote.Head(ref)
 		if headErr != nil {
-			t.Logf("rate limited fetching digest for %s, retrying...", tagURI)
+			t.Logf("error fetching digest for %s: %v", tagURI, headErr)
 
 			return headErr
 		}
@@ -172,7 +172,7 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 		var listErr error
 		tags, listErr = remote.List(repo)
 		if listErr != nil {
-			t.Logf("rate limited listing tags for %s, retrying...", repoURI)
+			t.Logf("error listing tags for %s: %v", repoURI, listErr)
 		}
 
 		return listErr
