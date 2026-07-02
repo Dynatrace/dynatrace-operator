@@ -337,6 +337,12 @@ func GetLatestLogMonitoringImageTagURI(t *testing.T) string {
 	return registry.GetLatestImageURI(t, defaultLogMonitoringRepo, logMonitoringImageEnvVar, false)
 }
 
+func GetLatestLogMonitoringImageDigestURI(t *testing.T) string {
+	t.Helper()
+
+	return registry.GetLatestImageURI(t, defaultLogMonitoringRepo, logMonitoringImageEnvVar, true)
+}
+
 func GetLatestKSPMImageTagURI(t *testing.T) string {
 	t.Helper()
 

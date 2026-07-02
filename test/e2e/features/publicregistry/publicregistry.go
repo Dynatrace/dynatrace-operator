@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
@@ -14,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -138,6 +140,52 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 		})
 
 	builder.Teardown(sampleApp.Uninstall())
+
+	return builder.Feature()
+}
+
+// FeatureLogMonitoring verifies that a logmonitoring-only DynaKube deploys with
+// the expected tag-based image reference.
+func FeatureLogMonitoring(t *testing.T) features.Feature {
+	imageURI := dynakube.GetLatestLogMonitoringImageTagURI(t)
+
+	return featureLogMonitoring(t, "public-registry-images-logmonitoring", imageURI)
+}
+
+// FeatureLogMonitoringWithDigest is the same as FeatureLogMonitoring but uses a
+// digest-based image reference ("repo@sha256:hash").
+func FeatureLogMonitoringWithDigest(t *testing.T) features.Feature {
+	imageURI := dynakube.GetLatestLogMonitoringImageDigestURI(t)
+
+	return featureLogMonitoring(t, "public-registry-images-digest-logmonitoring", imageURI)
+}
+
+func featureLogMonitoring(t *testing.T, featureName, imageURI string) features.Feature {
+	builder := features.New(featureName)
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	options := []dynakube.Option{
+		dynakube.WithAPIURL(secretConfig.APIURL),
+		dynakube.WithLogMonitoring(),
+		dynakube.WithLogMonitoringImageRef(t, imageURI),
+	}
+
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err)
+
+	if isOpenshift {
+		options = append(options, dynakube.WithAnnotations(map[string]string{
+			exp.OAPrivilegedKey: "true",
+		}))
+	}
+
+	testDynakube := *dynakube.New(options...)
+
+	dynakube.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("LogMonitoring DaemonSet started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("LogMonitoring DaemonSet uses expected image",
+		k8sdaemonset.VerifyUsesImage(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace, imageURI))
 
 	return builder.Feature()
 }
