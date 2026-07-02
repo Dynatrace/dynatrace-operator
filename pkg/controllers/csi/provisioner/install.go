@@ -71,6 +71,26 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 		}
 
 		return imageInstaller, nil
+	case dk.FF().IsPublicRegistry():
+		imageURI := dk.OneAgent().GetCodeModulesImage()
+
+		if imageURI == "" {
+			imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
+		}
+
+		props := &image.Properties{
+			ImageURI:     imageURI,
+			APIReader:    provisioner.apiReader,
+			Dynakube:     dk,
+			PathResolver: provisioner.path,
+		}
+
+		imageInstaller, err := provisioner.imageInstallerBuilder(ctx, props)
+		if err != nil {
+			return nil, err
+		}
+
+		return imageInstaller, nil
 	default:
 		dtClient, err := buildDtc(provisioner, ctx, dk)
 		if err != nil {
