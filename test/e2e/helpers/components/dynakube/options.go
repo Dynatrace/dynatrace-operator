@@ -311,43 +311,43 @@ func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 func GetLatestEECImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultEECRepo, eecImageEnvVar)
+	return registry.GetLatestImageURI(t, defaultEECRepo, eecImageEnvVar, false)
 }
 
 func GetLatestEECImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageDigestURI(t, defaultEECRepo, eecImageEnvVar)
+	return registry.GetLatestImageURI(t, defaultEECRepo, eecImageEnvVar, true)
 }
 
 func GetLatestLogMonitoringImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultLogMonitoringRepo, logMonitoringImageEnvVar)
+	return registry.GetLatestImageURI(t, defaultLogMonitoringRepo, logMonitoringImageEnvVar, false)
 }
 
 func GetLatestKSPMImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultKSPMRepo, kspmImageEnvVar)
+	return registry.GetLatestImageURI(t, defaultKSPMRepo, kspmImageEnvVar, false)
 }
 
 func GetLatestKSPMImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageDigestURI(t, defaultKSPMRepo, kspmImageEnvVar)
+	return registry.GetLatestImageURI(t, defaultKSPMRepo, kspmImageEnvVar, true)
 }
 
 func GetLatestOTelCollectorImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultOtelCollectorRepo, otelCollectorImageEnvVar)
+	return registry.GetLatestImageURI(t, defaultOtelCollectorRepo, otelCollectorImageEnvVar, false)
 }
 
 func GetLatestOTelCollectorImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageDigestURI(t, defaultOtelCollectorRepo, otelCollectorImageEnvVar)
+	return registry.GetLatestImageURI(t, defaultOtelCollectorRepo, otelCollectorImageEnvVar, true)
 }
 
 func WithExtensionsEECImageRef(t *testing.T, imageURI string) Option {
@@ -428,7 +428,7 @@ func WithExtensionsDatabases(databases ...extensions.DatabaseSpec) Option {
 func GetLatestDBExecutorImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultDBExecutorRepo, dbExecutorImageEnvVar)
+	return registry.GetLatestImageURI(t, defaultDBExecutorRepo, dbExecutorImageEnvVar, false)
 }
 
 func WithExtensionsDBExecutorImageRef(t *testing.T, imageURI string) Option {
