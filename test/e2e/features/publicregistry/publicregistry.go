@@ -30,9 +30,9 @@ type componentImages struct {
 // Covers: OneAgent DaemonSet, CodeModules, ActiveGate, EEC, KSPM, and OTelCollector.
 func Feature(t *testing.T) features.Feature {
 	images := componentImages{
-		oneAgent:    registry.GetLatestOneAgentImageURI(t),
-		activeGate:  registry.GetLatestActiveGateImageURI(t),
-		codeModules: registry.GetLatestCodeModulesImageURI(t),
+		oneAgent:    registry.GetLatestOneAgentImageTagURI(t),
+		activeGate:  registry.GetLatestActiveGateImageTagURI(t),
+		codeModules: registry.GetLatestCodeModulesImageTagURI(t),
 		eec:         dynakube.GetLatestEECImageTagURI(t),
 		kspm:        dynakube.GetLatestKSPMImageTagURI(t),
 		otel:        dynakube.GetLatestOTelCollectorImageTagURI(t),

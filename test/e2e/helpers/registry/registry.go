@@ -124,19 +124,19 @@ func resolveDigestURI(t *testing.T, tagURI string) string {
 	return ref.Context().String() + "@" + digestStr
 }
 
-func GetLatestActiveGateImageURI(t *testing.T) string {
+func GetLatestActiveGateImageTagURI(t *testing.T) string {
 	t.Helper()
 
 	return GetLatestImageURI(t, agPublicECR, agImageEnv)
 }
 
-func GetLatestOneAgentImageURI(t *testing.T) string {
+func GetLatestOneAgentImageTagURI(t *testing.T) string {
 	t.Helper()
 
 	return GetLatestImageURI(t, oaPublicECR, oaImageEnv)
 }
 
-func GetLatestCodeModulesImageURI(t *testing.T) string {
+func GetLatestCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
 	return GetLatestImageURI(t, cmPublicECR, cmImageEnv)

@@ -333,8 +333,8 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	oaExpectedImage := registry.GetLatestOneAgentImageURI(t)
-	agExpectedImage := registry.GetLatestActiveGateImageURI(t)
+	oaExpectedImage := registry.GetLatestOneAgentImageTagURI(t)
+	agExpectedImage := registry.GetLatestActiveGateImageTagURI(t)
 	dbExecutorExpectedImage := dynakubeComponents.GetLatestDBExecutorImageTagURI(t)
 
 	const dbID = "mysql"
