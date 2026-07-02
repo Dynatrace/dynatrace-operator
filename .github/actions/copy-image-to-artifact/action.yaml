@@ -7,12 +7,9 @@ inputs:
   artifact-name:
     description: Artifact name to upload the image to
     required: true
-    type: string
-    default: ''
   registry:
     description: registry to authenticate against before scanning (optional)
     required: false
-    type: string
     default: ''
   registry-token:
     description: token for registry authentication

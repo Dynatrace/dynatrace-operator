@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Copy image to artifact for gcr
@@ -131,7 +131,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Copy image to artifact for dockerhub
@@ -160,7 +160,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Copy image to artifact for amazon-ecr
@@ -186,7 +186,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Copy image to artifact for rhcc
@@ -215,17 +215,9 @@ jobs:
         registry: [gcr, dockerhub, amazon-ecr, rhcc]
         include:
           - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
           - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
           - registry: amazon-ecr
-            url: public.ecr.aws
-            repository: ECR_REPOSITORY
           - registry: rhcc
-            url: quay.io
-            repository: RHCC_REPOSITORY
     uses: ./.github/workflows/create-sbom.yaml
     with:
       sbom-artifact-name: release-sbom-${{ matrix.registry }}
@@ -234,24 +226,15 @@ jobs:
   create-sbom-fips:
     name: Create SBOM
     needs: [copy-image-to-artifact-gcr,copy-image-to-artifact-dockerhub,copy-image-to-artifact-amazon-ecr,copy-image-to-artifact-rhcc]
-    permissions:
-      id-token: write
+    permissions: {}
     strategy:
       matrix:
         registry: [gcr, dockerhub, amazon-ecr, rhcc]
         include:
           - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
           - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-          - registry: amazon-ecr
-            url: public.ecr.aws
-            repository: ECR_REPOSITORY
+          - registry: amazon-ecrY
           - registry: rhcc
-            url: quay.io
-            repository: RHCC_REPOSITORY
     uses: ./.github/workflows/create-sbom.yaml
     with:
       sbom-artifact-name: release-fips-sbom-${{ matrix.registry }}
