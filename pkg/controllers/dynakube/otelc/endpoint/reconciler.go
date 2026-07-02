@@ -112,6 +112,8 @@ func (r *Reconciler) generateData(dk *dynakube.DynaKube) (map[string]string, err
 }
 
 func BuildOTLPEndpoint(dk dynakube.DynaKube) (string, error) {
+	// dk.APIURL() returns the 2nd gen URL, which is required because OTLP endpoints are
+	// served through the Environment V2 API that is only available on 2nd gen URLs.
 	dtEndpoint := dk.APIURL() + "/v2/otlp"
 
 	if dk.ActiveGate().IsEnabled() {

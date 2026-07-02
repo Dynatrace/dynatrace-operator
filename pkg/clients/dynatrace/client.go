@@ -6,8 +6,6 @@ import (
 	"crypto/x509"
 	"net/http"
 	"net/url"
-	"path"
-	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
@@ -75,12 +73,6 @@ func NewClient(options ...Option) (*Client, error) {
 
 	if dttoken.IsPlatform(config.APIToken) || config.PaasToken == "" {
 		config.PaasToken = config.APIToken
-	}
-
-	if strings.Contains(config.BaseURL.Hostname(), ".apps.") {
-		mapThirdGenAPIURL(config.BaseURL)
-	} else if path.Base(config.BaseURL.Path) != "api" {
-		config.BaseURL = config.BaseURL.JoinPath("api")
 	}
 
 	apiClient := core.NewClient(core.Config{
@@ -312,34 +304,4 @@ func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.UR
 	proxyFunc := proxyConfig.ProxyFunc()
 
 	return func(req *http.Request) (*url.URL, error) { return proxyFunc(req.URL) }
-}
-
-const thirdGenAPPSHostParts = 2
-
-// mapThirdGenAPIURL remaps a 3rd gen URL (*.apps.*) to its 2nd gen equivalent.
-func mapThirdGenAPIURL(u *url.URL) {
-	hostname := u.Hostname()
-
-	parts := strings.SplitN(hostname, ".apps.", thirdGenAPPSHostParts)
-	if len(parts) != thirdGenAPPSHostParts {
-		return
-	}
-
-	prefix, suffix := parts[0], parts[1]
-
-	var newHostname string
-
-	if !strings.Contains(prefix, ".") {
-		newHostname = prefix + ".live." + suffix
-	} else {
-		newHostname = prefix + "." + suffix
-	}
-
-	if port := u.Port(); port != "" {
-		u.Host = newHostname + ":" + port
-	} else {
-		u.Host = newHostname
-	}
-
-	u.Path = "/api"
 }
