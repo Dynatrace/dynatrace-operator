@@ -108,6 +108,12 @@ func Test_generateData(t *testing.T) {
 			inClusterAg:  false,
 			expectedData: map[string]string{"DT_ENDPOINT": "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api/v2/otlp"},
 		},
+		{
+			name:         "3rd gen API URL is mapped to 2nd gen",
+			apiURL:       fmt.Sprintf("https://%s.apps.dynatracelabs.com", testTenantUUID),
+			inClusterAg:  false,
+			expectedData: map[string]string{"DT_ENDPOINT": fmt.Sprintf("https://%s.live.dynatracelabs.com/api/v2/otlp", testTenantUUID)},
+		},
 	}
 
 	for _, tt := range tests {

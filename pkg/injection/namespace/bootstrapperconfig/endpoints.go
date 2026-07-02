@@ -81,7 +81,7 @@ func ingestURLFor(dk *dynakube.DynaKube) (string, error) {
 }
 
 func metricsIngestURLForDynatraceActiveGate(dk *dynakube.DynaKube) (string, error) {
-	return dk.Spec.APIURL + "/v2/metrics/ingest", nil
+	return dk.APIURL() + "/v2/metrics/ingest", nil
 }
 
 func metricsIngestURLForClusterActiveGate(dk *dynakube.DynaKube) (string, error) {

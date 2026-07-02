@@ -288,6 +288,32 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 		// verify DT_API_TOKEN secret ref env var
 		assertTokenEnvVarIsSet(t, containerEnvVars)
 	})
+	t.Run("3rd gen API URL is mapped to 2nd gen for OTLP exporter endpoints", func(t *testing.T) {
+		m := Mutator{}
+
+		request := createTestMutationRequest(t, getTestDynakube())
+
+		request.DynaKube.Spec.APIURL = "https://tenant.apps.dynatrace.com"
+
+		err := m.Mutate(request)
+
+		require.NoError(t, err)
+
+		containerEnvVars := request.Pod.Spec.Containers[0].Env
+
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPTraceEndpointEnv,
+			Value: "https://tenant.live.dynatrace.com/api/v2/otlp/v1/traces",
+		})
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPMetricsEndpointEnv,
+			Value: "https://tenant.live.dynatrace.com/api/v2/otlp/v1/metrics",
+		})
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPLogsEndpointEnv,
+			Value: "https://tenant.live.dynatrace.com/api/v2/otlp/v1/logs",
+		})
+	})
 	t.Run("no user defined env vars present, only metrics configured, add only metrics OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
 
