@@ -118,6 +118,7 @@ jobs:
           tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
           tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
           tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           use-platform-token: ${{ matrix.token == 'platform' }}
           use-tenant-phase3: ${{ matrix.tenantPhase == '3' }}

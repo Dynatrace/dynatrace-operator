@@ -80,6 +80,9 @@ inputs:
   tenant3-phase3-platform-token-nosettings:
     description: The platform token of Tenant 3 without settings scope Phase 3
     required: true
+  tenant3-phase3-dataingest-platform-token:
+    description: The data ingest platform token of Tenant 3 Phase 3
+    required: true
   e2e-public-registry-override:
     description: Override for the public registry used in E2E tests
     required: false
@@ -179,6 +182,7 @@ runs:
         TENANT3_PHASE3_OAUTH_URN: ${{ inputs.tenant3-phase3-oauth-urn }}
         TENANT3_PHASE3_PLATFORM_TOKEN: ${{ inputs.tenant3-phase3-platform-token }}
         TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS: ${{ inputs.tenant3-phase3-platform-token-nosettings }}
+        TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN: ${{ inputs.tenant3-phase3-dataingest-platform-token }}
         E2E_PUBLIC_REGISTRY_OVERRIDE: ${{ inputs.e2e-public-registry-override }}
         USE_PLATFORM_TOKEN: ${{ inputs.use-platform-token }}
         USE_TENANT_PHASE3: ${{ inputs.use-tenant-phase3 }}
