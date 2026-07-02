@@ -6,10 +6,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
@@ -28,6 +30,7 @@ type componentImages struct {
 	eec         string
 	kspm        string
 	otel        string
+	dbExecutor  string
 }
 
 // Feature verifies that public-registry images can be deployed by the operator using tag-based references.
@@ -40,6 +43,7 @@ func Feature(t *testing.T) features.Feature {
 		eec:         dynakube.GetLatestEECImageTagURI(t),
 		kspm:        dynakube.GetLatestKSPMImageTagURI(t),
 		otel:        dynakube.GetLatestOTelCollectorImageTagURI(t),
+		dbExecutor:  dynakube.GetLatestDBExecutorImageTagURI(t),
 	}
 
 	return feature(t, "public-registry-images", "public-registry-sample", []dynakube.Option{
@@ -49,6 +53,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakube.WithExtensionsEECImageRef(t, images.eec),
 		dynakube.WithKSPMImageRef(t, images.kspm),
 		dynakube.WithOTelCollectorImageRef(t, images.otel),
+		dynakube.WithExtensionsDBExecutorImageRef(t, images.dbExecutor),
 	}, images)
 }
 
@@ -62,6 +67,7 @@ func FeatureWithDigest(t *testing.T) features.Feature {
 		eec:         dynakube.GetLatestEECImageDigestURI(t),
 		kspm:        dynakube.GetLatestKSPMImageDigestURI(t),
 		otel:        dynakube.GetLatestOTelCollectorImageDigestURI(t),
+		dbExecutor:  dynakube.GetLatestDBExecutorImageDigestURI(t),
 	}
 
 	return feature(t, "public-registry-images-digest", "public-registry-digest-sample", []dynakube.Option{
@@ -71,6 +77,7 @@ func FeatureWithDigest(t *testing.T) features.Feature {
 		dynakube.WithExtensionsEECImageRef(t, images.eec),
 		dynakube.WithKSPMImageRef(t, images.kspm),
 		dynakube.WithOTelCollectorImageRef(t, images.otel),
+		dynakube.WithExtensionsDBExecutorImageRef(t, images.dbExecutor),
 	}, images)
 }
 
@@ -85,6 +92,7 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 		dynakube.WithExtensionsPrometheusEnabledSpec(true),
 		dynakube.WithKSPM(),
 		dynakube.WithTelemetryIngestEnabled(true),
+		dynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: "mysql"}),
 	}, imageOpts...,
 	)
 
@@ -105,6 +113,8 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 	builder.Assess("EEC started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("KSPM node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 	builder.Assess("OTelCollector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	dbExecutorDeployName := testDynakube.Extensions().GetDatabaseDatasourceName("mysql")
+	builder.Assess("DB executor deployment started", k8sdeployment.IsReady(dbExecutorDeployName, testDynakube.Namespace))
 
 	builder.Assess("OneAgent DaemonSet uses expected image",
 		k8sdaemonset.VerifyUsesImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, images.oneAgent))
@@ -116,6 +126,9 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 		k8sdaemonset.VerifyUsesImage(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace, images.kspm))
 	builder.Assess("OTelCollector StatefulSet uses expected image",
 		k8sstatefulset.VerifyUsesImage(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, images.otel))
+	builder.Assess("DB executor deployment uses expected image",
+		k8sdeployment.VerifyUsesImage(dbExecutorDeployName, testDynakube.Namespace, images.dbExecutor))
+
 	builder.Assess("CodeModules status reports expected image",
 		func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 			require.NoError(t, envConfig.Client().Resources().Get(ctx, testDynakube.Name, testDynakube.Namespace, &testDynakube))

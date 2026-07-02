@@ -307,6 +307,18 @@ func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 	}
 }
 
+func GetLatestDBExecutorImageTagURI(t *testing.T) string {
+	t.Helper()
+
+	return registry.GetLatestImageURI(t, defaultDBExecutorRepo, dbExecutorImageEnvVar, false)
+}
+
+func GetLatestDBExecutorImageDigestURI(t *testing.T) string {
+	t.Helper()
+
+	return registry.GetLatestImageURI(t, defaultDBExecutorRepo, dbExecutorImageEnvVar, true)
+}
+
 func GetLatestEECImageTagURI(t *testing.T) string {
 	t.Helper()
 
@@ -422,12 +434,6 @@ func WithExtensionsDatabases(databases ...extensions.DatabaseSpec) Option {
 		}
 		dk.Spec.Extensions.Databases = databases
 	}
-}
-
-func GetLatestDBExecutorImageTagURI(t *testing.T) string {
-	t.Helper()
-
-	return registry.GetLatestImageURI(t, defaultDBExecutorRepo, dbExecutorImageEnvVar, false)
 }
 
 func WithExtensionsDBExecutorImageRef(t *testing.T, imageURI string) Option {
