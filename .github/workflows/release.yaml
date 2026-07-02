@@ -99,7 +99,9 @@ jobs:
     name: Create image artifacts for gcr
     environment: Release
     needs: [prepare, build-push]
-    permissions: {}
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -127,7 +129,9 @@ jobs:
     name: Create image artifacts for dockerhub
     environment: Release
     needs: [prepare, build-push]
-    permissions: {}
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -157,6 +161,8 @@ jobs:
     needs: [prepare, build-push]
     permissions:
       id-token: write
+      contents: read
+      actions: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -182,7 +188,9 @@ jobs:
     name: Create image artifacts
     environment: Release
     needs: [prepare, build-push]
-    permissions: {}
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -209,7 +217,8 @@ jobs:
   create-sbom:
     name: Create SBOM
     needs: [copy-image-to-artifact-gcr,copy-image-to-artifact-dockerhub,copy-image-to-artifact-amazon-ecr,copy-image-to-artifact-rhcc]
-    permissions: {}
+    permissions:
+      actions: write
     strategy:
       matrix:
         registry: [gcr, dockerhub, amazon-ecr, rhcc]
@@ -226,14 +235,15 @@ jobs:
   create-sbom-fips:
     name: Create SBOM
     needs: [copy-image-to-artifact-gcr,copy-image-to-artifact-dockerhub,copy-image-to-artifact-amazon-ecr,copy-image-to-artifact-rhcc]
-    permissions: {}
+    permissions:
+      actions: write
     strategy:
       matrix:
         registry: [gcr, dockerhub, amazon-ecr, rhcc]
         include:
           - registry: gcr
           - registry: dockerhub
-          - registry: amazon-ecrY
+          - registry: amazon-ecr
           - registry: rhcc
     uses: ./.github/workflows/create-sbom.yaml
     with:

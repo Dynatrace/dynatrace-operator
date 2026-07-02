@@ -10,7 +10,8 @@ on:
         description: name of the uploaded image artifact to scan locally
         required: true
         type: string
-permissions: {}
+permissions:
+  actions: write
 jobs:
   create-sbom:
     runs-on: ubuntu-24.04
