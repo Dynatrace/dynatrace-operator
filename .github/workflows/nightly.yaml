@@ -63,7 +63,8 @@ jobs:
     environment: Release
     needs: [prepare, build-push]
     permissions:
-      packages: read
+      contents: read
+      actions: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -82,7 +83,8 @@ jobs:
   create-sbom:
     if: github.repository_owner == 'Dynatrace'
     needs: [copy-image-to-artifact]
-    permissions: {}
+    permissions:
+      actions: write
     uses: ./.github/workflows/create-sbom.yaml
     with:
       sbom-artifact-name:  nightly-sbom
