@@ -2,7 +2,7 @@ name: Copy an image to artifact
 description: Copy an image to artifact
 inputs:
   image:
-    description: Base name of the image tag
+    description: Full image reference to pull (e.g. registry/repo:tag@sha256:...)
     required: true
   artifact-name:
     description: Artifact name to upload the image to
@@ -12,7 +12,7 @@ inputs:
     required: false
     default: ''
   registry-token:
-    description: token for registry authentication
+    description: Password/token for registry auth; for public.ecr.aws provide the role ARN to assume
     required: false
   registry-username:
     description: username for registry authentication
