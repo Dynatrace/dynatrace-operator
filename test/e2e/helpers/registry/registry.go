@@ -50,25 +50,25 @@ var (
 	}
 )
 
-// GetLatestImageURI returns the image URI for the given repository.
-// If the relevant env var is set (tagEnvVar when digest=false, digestEnvVar when digest=true), its value is returned directly.
-// Otherwise, the latest tag is resolved from the registry and cached per repo for the lifetime of the test binary.
-// If digest is true, the URI is returned in "image@algorithm:hex" form (e.g. "public.ecr.aws/...@sha256:abc123").
-func GetLatestImageURI(t *testing.T, repoURI, tagEnvVar, digestEnvVar string, digest bool) string {
+func GetLatestImageTagURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	if digest {
-		if val := os.Getenv(digestEnvVar); val != "" {
-			t.Logf("using digest image from env %s: %s", digestEnvVar, val)
+	return getLatestImageURI(t, repoURI, envVar, false)
+}
 
-			return val
-		}
-	} else {
-		if val := os.Getenv(tagEnvVar); val != "" {
-			t.Logf("using image from env %s: %s", tagEnvVar, val)
+func GetLatestImageDigestURI(t *testing.T, repoURI, envVar string) string {
+	t.Helper()
 
-			return val
-		}
+	return getLatestImageURI(t, repoURI, envVar, true)
+}
+
+func getLatestImageURI(t *testing.T, repoURI, envVar string, digest bool) string {
+	t.Helper()
+
+	if val := os.Getenv(envVar); val != "" {
+		t.Logf("using image from env %s: %s", envVar, val)
+
+		return val
 	}
 
 	tagURI := resolveLatestTagURI(t, repoURI)
@@ -88,7 +88,7 @@ func resolveLatestTagURI(t *testing.T, repoURI string) string {
 		return uri
 	}
 
-	uri := getLatestImageURI(t, repoURI)
+	uri := fetchLatestURIFromRegistry(t, repoURI)
 	latestImageURIs[repoURI] = uri
 	t.Logf("resolved newest image: %s", uri)
 
@@ -133,37 +133,37 @@ func resolveLatestDigestURI(t *testing.T, repoURI string, tagURI string) string 
 func GetLatestActiveGateImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, agPublicECR, agImageEnv, agDigestImageEnv, false)
+	return GetLatestImageTagURI(t, agPublicECR, agImageEnv)
 }
 
 func GetLatestOneAgentImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, oaPublicECR, oaImageEnv, oaDigestImageEnv, false)
+	return GetLatestImageTagURI(t, oaPublicECR, oaImageEnv)
 }
 
 func GetLatestCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, cmPublicECR, cmImageEnv, cmDigestImageEnv, false)
+	return GetLatestImageTagURI(t, cmPublicECR, cmImageEnv)
 }
 
 func GetLatestActiveGateImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, agPublicECR, agImageEnv, agDigestImageEnv, true)
+	return GetLatestImageDigestURI(t, agPublicECR, agDigestImageEnv)
 }
 
 func GetLatestOneAgentImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, oaPublicECR, oaImageEnv, oaDigestImageEnv, true)
+	return GetLatestImageDigestURI(t, oaPublicECR, oaDigestImageEnv)
 }
 
 func GetLatestCodeModulesImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, cmPublicECR, cmImageEnv, cmDigestImageEnv, true)
+	return GetLatestImageDigestURI(t, cmPublicECR, cmDigestImageEnv)
 }
 
 func ParseImageURI(imageURI string) (repository, tag, digest string) {
@@ -182,7 +182,7 @@ func isRateLimited(err error) bool {
 	return errors.As(err, &transportErr) && transportErr.StatusCode == http.StatusTooManyRequests
 }
 
-func getLatestImageURI(t *testing.T, repoURI string) string {
+func fetchLatestURIFromRegistry(t *testing.T, repoURI string) string {
 	t.Helper()
 
 	repo, err := name.NewRepository(repoURI)

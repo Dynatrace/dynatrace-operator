@@ -126,13 +126,13 @@ func WithReplicas(replicas *int32) Option {
 func GetLatestImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultECRepo, ecImageEnvVar, ecDigestImageEnvVar, false)
+	return registry.GetLatestImageTagURI(t, defaultECRepo, ecImageEnvVar)
 }
 
 func GetLatestImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultECRepo, ecImageEnvVar, ecDigestImageEnvVar, true)
+	return registry.GetLatestImageDigestURI(t, defaultECRepo, ecDigestImageEnvVar)
 }
 
 func WithImageRef(t *testing.T, imageURI string) Option {

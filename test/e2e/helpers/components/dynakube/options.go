@@ -315,61 +315,61 @@ func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 func GetLatestDBExecutorImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultDBExecutorRepo, dbExecutorImageEnvVar, dbExecutorDigestImageEnvVar, false)
+	return registry.GetLatestImageTagURI(t, defaultDBExecutorRepo, dbExecutorImageEnvVar)
 }
 
 func GetLatestDBExecutorImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultDBExecutorRepo, dbExecutorImageEnvVar, dbExecutorDigestImageEnvVar, true)
+	return registry.GetLatestImageDigestURI(t, defaultDBExecutorRepo, dbExecutorDigestImageEnvVar)
 }
 
 func GetLatestEECImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultEECRepo, eecImageEnvVar, eecDigestImageEnvVar, false)
+	return registry.GetLatestImageTagURI(t, defaultEECRepo, eecImageEnvVar)
 }
 
 func GetLatestEECImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultEECRepo, eecImageEnvVar, eecDigestImageEnvVar, true)
+	return registry.GetLatestImageDigestURI(t, defaultEECRepo, eecDigestImageEnvVar)
 }
 
 func GetLatestLogMonitoringImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultLogMonitoringRepo, logMonitoringImageEnvVar, logMonitoringDigestImageEnvVar, false)
+	return registry.GetLatestImageTagURI(t, defaultLogMonitoringRepo, logMonitoringImageEnvVar)
 }
 
 func GetLatestLogMonitoringImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultLogMonitoringRepo, logMonitoringImageEnvVar, logMonitoringDigestImageEnvVar, true)
+	return registry.GetLatestImageDigestURI(t, defaultLogMonitoringRepo, logMonitoringDigestImageEnvVar)
 }
 
 func GetLatestKSPMImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultKSPMRepo, kspmImageEnvVar, kspmDigestImageEnvVar, false)
+	return registry.GetLatestImageTagURI(t, defaultKSPMRepo, kspmImageEnvVar)
 }
 
 func GetLatestKSPMImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultKSPMRepo, kspmImageEnvVar, kspmDigestImageEnvVar, true)
+	return registry.GetLatestImageDigestURI(t, defaultKSPMRepo, kspmDigestImageEnvVar)
 }
 
 func GetLatestOTelCollectorImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultOtelCollectorRepo, otelCollectorImageEnvVar, otelCollectorDigestImageEnvVar, false)
+	return registry.GetLatestImageTagURI(t, defaultOtelCollectorRepo, otelCollectorImageEnvVar)
 }
 
 func GetLatestOTelCollectorImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultOtelCollectorRepo, otelCollectorImageEnvVar, otelCollectorDigestImageEnvVar, true)
+	return registry.GetLatestImageDigestURI(t, defaultOtelCollectorRepo, otelCollectorDigestImageEnvVar)
 }
 
 func WithExtensionsEECImageRef(t *testing.T, imageURI string) Option {
