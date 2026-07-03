@@ -50,7 +50,7 @@ func Feature(t *testing.T) features.Feature {
 		dbExecutor:  dynakube.GetLatestDBExecutorImageTagURI(t),
 	}
 
-	return feature(t, "public-registry-images", "public-registry-sample", []dynakube.Option{
+	return feature(t, "public-registry-images-tag", "public-registry-sample", []dynakube.Option{
 		dynakube.WithCustomOneAgentImage(images.oneAgent),
 		dynakube.WithCodeModulesImage(images.codeModules),
 		dynakube.WithCustomActiveGateImage(images.activeGate),

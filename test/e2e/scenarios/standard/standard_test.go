@@ -71,7 +71,7 @@ func TestStandard_cloudnative_codemodules_migrate_to_node_image_pull(t *testing.
 	testEnv.Test(t, codemodules.MigrateToNodeImagePull(t))
 }
 
-func TestStandard_public_registry_images(t *testing.T) {
+func TestStandard_public_registry_images_tag(t *testing.T) {
 	testEnv.Test(t, publicregistry.Feature(t))
 }
 

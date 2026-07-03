@@ -202,9 +202,13 @@ test/e2e/pgc:
 	$(MAKE) test/e2e/cloudnative/pgc-hostagent
 	$(MAKE) test/e2e/hostmonitoring/pgc
 
-## Runs public registry images e2e test only
+## Runs all public registry images e2e tests
 test/e2e/publicregistry:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images" $(SKIPCLEANUP)
+
+## Runs public registry images e2e test with tag-based image references only
+test/e2e/publicregistry/tag:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_tag$$" $(SKIPCLEANUP)
 
 ## Runs public registry images e2e test with digest-based image references only
 test/e2e/publicregistry/digest:
