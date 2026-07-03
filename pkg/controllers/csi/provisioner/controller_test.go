@@ -3,7 +3,9 @@ package csiprovisioner
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -170,9 +172,16 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with public registry => image installer used, dtClient not created, no error", func(t *testing.T) {
-		dk := createDynaKubeWithPublicRegistryFF(t)
-		prov := createProvisioner(t, dk)
+	t.Run("dynakube with public registry => image installer used, no error", func(t *testing.T) {
+		imageURI := "public.ecr.aws/dynatrace/codemodules:1.0.0"
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `{"components":[{"type":"codemodules","imageUri":%q}]}`, imageURI)
+		}))
+		t.Cleanup(server.Close)
+
+		dk := createDynaKubeWithPublicRegistryFF(t, server.URL)
+		prov := createProvisioner(t, dk, createToken(t, dk))
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
@@ -341,10 +350,11 @@ func createDynaKubeWithJobFF(t *testing.T) *dynakube.DynaKube {
 	return dk
 }
 
-func createDynaKubeWithPublicRegistryFF(t *testing.T) *dynakube.DynaKube {
+func createDynaKubeWithPublicRegistryFF(t *testing.T, apiURL string) *dynakube.DynaKube {
 	t.Helper()
 
 	dk := createDynaKubeBase(t)
+	dk.Spec.APIURL = apiURL
 	imageID := "test-image"
 	dk.Spec.OneAgent = oneagent.Spec{
 		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},

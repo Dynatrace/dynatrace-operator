@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
+	imageclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	installerclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
@@ -72,14 +73,22 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 
 		return imageInstaller, nil
 	case dk.FF().IsPublicRegistry():
-		imageURI := dk.OneAgent().GetCodeModulesImage()
+		dtClient, err := buildDtc(provisioner, ctx, dk)
+		if err != nil {
+			return nil, err
+		}
 
-		if imageURI == "" {
-			imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
+		imageInfo, err := dtClient.Images.GetComponentLatestInfo(ctx, imageclient.CodeModules, dk.PublicRegistryOverride())
+		if err != nil {
+			return nil, err
+		}
+
+		if imageInfo.URI == "" {
+			return nil, errors.New("codemodules public image not available")
 		}
 
 		props := &image.Properties{
-			ImageURI:     imageURI,
+			ImageURI:     imageInfo.URI,
 			APIReader:    provisioner.apiReader,
 			Dynakube:     dk,
 			PathResolver: provisioner.path,
