@@ -389,6 +389,23 @@ func WithLogMonitoringImageRef(t *testing.T, imageURI string) Option {
 	}
 }
 
+// WithLogMonitoringTagAndDigestRef sets the logmonitoring imageRef with both a tag (from tagURI)
+// and a digest (from digestURI). The rendered container image will use the digest, but the
+// app.kubernetes.io/version label should still use the tag.
+func WithLogMonitoringTagAndDigestRef(t *testing.T, tagURI, digestURI string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{}
+		repo, tag, _ := registry.ParseImageURI(tagURI)
+		_, _, digest := registry.ParseImageURI(digestURI)
+		dk.Spec.Templates.LogMonitoring.ImageRef = image.Ref{
+			Repository: repo,
+			Tag:        tag,
+			Digest:     digest,
+		}
+		applyCustomPullSecretIfNeeded(t, dk, repo, defaultLogMonitoringRepo)
+	}
+}
+
 func WithKSPM() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.KSPM = &kspm.Spec{}

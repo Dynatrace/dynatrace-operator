@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
@@ -21,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -186,6 +188,52 @@ func featureLogMonitoring(t *testing.T, featureName, imageURI string) features.F
 	builder.Assess("LogMonitoring DaemonSet started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 	builder.Assess("LogMonitoring DaemonSet uses expected image",
 		k8sdaemonset.VerifyUsesImage(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace, imageURI))
+
+	return builder.Feature()
+}
+
+// FeatureWithTagAndDigest verifies that when an imageRef has both a tag and a digest set,
+// the image tag is still used as the app.kubernetes.io/version label (not the digest).
+func FeatureWithTagAndDigest(t *testing.T) features.Feature {
+	tagURI := dynakube.GetLatestLogMonitoringImageTagURI(t)
+	digestURI := dynakube.GetLatestLogMonitoringImageDigestURI(t)
+	_, expectedTag, _ := registry.ParseImageURI(tagURI)
+
+	return featureTagAndDigest(t, "public-registry-images-tag-and-digest-logmonitoring", tagURI, digestURI, expectedTag)
+}
+
+func featureTagAndDigest(t *testing.T, featureName, tagURI, digestURI, expectedTag string) features.Feature {
+	builder := features.New(featureName)
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	options := []dynakube.Option{
+		dynakube.WithAPIURL(secretConfig.APIURL),
+		dynakube.WithLogMonitoring(),
+		dynakube.WithLogMonitoringTagAndDigestRef(t, tagURI, digestURI),
+	}
+
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err)
+
+	if isOpenshift {
+		options = append(options, dynakube.WithAnnotations(map[string]string{
+			exp.OAPrivilegedKey: "true",
+		}))
+	}
+
+	testDynakube := *dynakube.New(options...)
+
+	dynakube.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("LogMonitoring DaemonSet started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("LogMonitoring DaemonSet version label uses image tag even when digest is also set",
+		func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+			var ds appsv1.DaemonSet
+			require.NoError(t, envConfig.Client().Resources().Get(ctx, testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace, &ds))
+			assert.Equal(t, expectedTag, ds.Labels[k8slabel.AppVersionLabel])
+
+			return ctx
+		})
 
 	return builder.Feature()
 }

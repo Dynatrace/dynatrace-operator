@@ -210,6 +210,10 @@ test/e2e/publicregistry:
 test/e2e/publicregistry/digest:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_digest" $(SKIPCLEANUP)
 
+## Runs public registry images e2e test with both tag and digest set, verifying tag is used as version label
+test/e2e/publicregistry/tag-and-digest:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_tag_and_digest" $(SKIPCLEANUP)
+
 ## Runs all use-public-registry e2e scenarios — OneAgent / ActiveGate / CodeModules,
 ## each with and without publicRegistryOverride (OA + AG on standard, CodeModules on nocsi)
 test/e2e/usepublicregistry:
