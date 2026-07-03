@@ -259,7 +259,7 @@ Each component has a **tag** env var (tag-based reference, e.g. `repo:1.283.132`
 When neither is set, the latest tag is resolved automatically from the public registry.
 
 | Component | Tag env var | Digest env var |
-|---|---|---|
+| --- | --- | --- |
 | OneAgent | `E2E_OA_IMAGE` | `E2E_OA_IMAGE_DIGEST` |
 | ActiveGate | `E2E_AG_IMAGE` | `E2E_AG_IMAGE_DIGEST` |
 | CodeModules | `E2E_ECR_CODEMODULES_IMAGE` | `E2E_ECR_CODEMODULES_IMAGE_DIGEST` |
