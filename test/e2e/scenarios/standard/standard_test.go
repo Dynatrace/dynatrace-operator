@@ -10,6 +10,7 @@ import (
 	classicToCloud "github.com/Dynatrace/dynatrace-operator/test/e2e/features/classic/switchmodes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/codemodules"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/csimigration"
 	noInjection "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/noinjection"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/standard"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/switchmodes"
@@ -125,4 +126,8 @@ func TestStandard_host_agent_pgc_host_monitoring(t *testing.T) {
 
 func TestStandard_host_agent_pgc_cloudnative(t *testing.T) {
 	testEnv.Test(t, cloudnative.HostAgentPGC(t))
+}
+
+func TestStandard_cloudnative_csi_migration(t *testing.T) {
+	testEnv.Test(t, csimigration.Feature(t))
 }
