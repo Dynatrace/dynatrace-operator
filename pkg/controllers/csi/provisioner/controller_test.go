@@ -3,9 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -14,7 +12,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	imageclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
@@ -24,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -173,15 +174,20 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("dynakube with public registry => image installer used, no error", func(t *testing.T) {
-		imageURI := "public.ecr.aws/dynatrace/codemodules:1.0.0"
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, `{"components":[{"type":"codemodules","imageUri":%q}]}`, imageURI)
-		}))
-		t.Cleanup(server.Close)
-
-		dk := createDynaKubeWithPublicRegistryFF(t, server.URL)
+		dk := createDynaKubeWithPublicRegistryFF(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
+
+		prov.buildDTClientFunc = func(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
+			mockImageClient := imageclientmock.NewClient(t)
+			mockImageClient.EXPECT().GetComponentLatestInfo(ctx, imageclient.CodeModules, "").Return(
+				&imageclient.Info{URI: "public.ecr.aws/dynatrace/codemodules:1.0.0@sha256:0123"}, nil,
+			).Once()
+
+			return &dynatrace.Client{
+				Images: mockImageClient,
+			}, nil
+		}
+
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
@@ -296,9 +302,10 @@ func createProvisioner(t *testing.T, objs ...client.Object) OneAgentProvisioner 
 	apiReader := fake.NewClient(objs...)
 
 	return OneAgentProvisioner{
-		path:      path,
-		apiReader: apiReader,
-		cleaner:   cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
+		path:              path,
+		apiReader:         apiReader,
+		cleaner:           cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
+		buildDTClientFunc: buildDtc,
 	}
 }
 
@@ -350,11 +357,10 @@ func createDynaKubeWithJobFF(t *testing.T) *dynakube.DynaKube {
 	return dk
 }
 
-func createDynaKubeWithPublicRegistryFF(t *testing.T, apiURL string) *dynakube.DynaKube {
+func createDynaKubeWithPublicRegistryFF(t *testing.T) *dynakube.DynaKube {
 	t.Helper()
 
 	dk := createDynaKubeBase(t)
-	dk.Spec.APIURL = apiURL
 	imageID := "test-image"
 	dk.Spec.OneAgent = oneagent.Spec{
 		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},

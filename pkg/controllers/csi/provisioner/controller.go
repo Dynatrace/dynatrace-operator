@@ -57,8 +57,9 @@ type jobInstallerBuilder func(context.Context, *job.Properties) installer.Instal
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
-	apiReader  client.Reader
-	kubeClient client.Client
+	apiReader         client.Reader
+	kubeClient        client.Client
+	buildDTClientFunc func(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error)
 
 	urlInstallerBuilder   binaryInstallerBuilder
 	imageInstallerBuilder imageInstallerBuilder
@@ -74,6 +75,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 	return &OneAgentProvisioner{
 		apiReader:             mgr.GetAPIReader(),
 		kubeClient:            mgr.GetClient(),
+		buildDTClientFunc:     buildDtc,
 		path:                  path,
 		urlInstallerBuilder:   binary.NewInstaller,
 		imageInstallerBuilder: image.NewImageInstaller,

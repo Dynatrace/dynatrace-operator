@@ -297,7 +297,7 @@ func isProvisionerUsingPublicRegistry(namespace string, imageID *string) feature
 		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
-		}).ForEachPod(checkProvisionerLog(ctx, t, envConfig, imageID))
+		}).ForEachPod(checkProvisionerLog(ctx, t, envConfig, *imageID))
 
 		assert.NoError(t, err)
 
@@ -305,7 +305,7 @@ func isProvisionerUsingPublicRegistry(namespace string, imageID *string) feature
 	}
 }
 
-func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, imageID *string) k8sdaemonset.PodConsumer {
+func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, imageID string) k8sdaemonset.PodConsumer {
 	return func(pod corev1.Pod) {
 		provisionerLog := logs.ReadLog(ctx, t, envConfig, pod.Namespace, pod.Name, "provisioner")
 
@@ -318,7 +318,7 @@ func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.C
 			String string `json:"ref.String"`
 		}
 		require.NoError(t, json.Unmarshal([]byte(msg), &ref))
-		assert.Equal(t, *imageID, ref.String)
+		assert.Equal(t, imageID, ref.String)
 	}
 }
 

@@ -73,7 +73,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 
 		return imageInstaller, nil
 	case dk.FF().IsPublicRegistry():
-		dtClient, err := buildDtc(provisioner, ctx, dk)
+		dtClient, err := provisioner.buildDTClientFunc(provisioner, ctx, dk)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +101,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 
 		return imageInstaller, nil
 	default:
-		dtClient, err := buildDtc(provisioner, ctx, dk)
+		dtClient, err := provisioner.buildDTClientFunc(provisioner, ctx, dk)
 		if err != nil {
 			return nil, err
 		}
