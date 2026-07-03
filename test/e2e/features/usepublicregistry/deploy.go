@@ -281,7 +281,7 @@ func codeModulesWithCSIFeature(t *testing.T, featureName, dkName, sampleNamespac
 
 	var imageID string
 
-	builder.Assess("get CodeModules imageID", getStatusImageID(testDynakube, image.CodeModules, &imageID))
+	builder.Assess("get CodeModules imageID", getStatusCodeModulesImageID(testDynakube, &imageID))
 
 	builder.Assess("verify if CSI provisioner uses public-registry image", isProvisionerUsingPublicRegistry(testDynakube.Namespace, &imageID))
 
@@ -518,24 +518,15 @@ func statusSourceIs(dk dynakube.DynaKube, component image.ComponentType, expecte
 	}
 }
 
-func getStatusImageID(dk dynakube.DynaKube, component image.ComponentType, imageID *string) features.Func {
+func getStatusCodeModulesImageID(dk dynakube.DynaKube, imageID *string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var current dynakube.DynaKube
 		require.NoError(t,
 			envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
 
-		switch component {
-		case image.OneAgent:
-			*imageID = current.Status.OneAgent.ImageID
-		case image.ActiveGate:
-			*imageID = current.Status.ActiveGate.ImageID
-		case image.CodeModules:
-			*imageID = current.Status.CodeModules.ImageID
-		default:
-			require.Failf(t, "unknown component", "unknown component %q", component)
+		*imageID = current.Status.CodeModules.ImageID
 
-			return ctx
-		}
+		assert.NotEmpty(t, *imageID)
 
 		return ctx
 	}
