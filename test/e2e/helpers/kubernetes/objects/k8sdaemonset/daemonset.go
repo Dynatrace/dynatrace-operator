@@ -91,10 +91,13 @@ func IsReady(name, namespace string) features.Func {
 }
 
 func VerifyUsesImage(name, namespace, expectedImage string) features.Func {
-	var ds appsv1.DaemonSet
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var ds appsv1.DaemonSet
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, name, namespace, &ds))
+		objects.VerifyWorkloadUsesImage(t, ds.Spec.Template.Spec.Containers, expectedImage, name)
 
-	return objects.VerifyWorkloadUsesImage(&ds, name, namespace, expectedImage,
-		func(ds *appsv1.DaemonSet) []corev1.Container { return ds.Spec.Template.Spec.Containers })
+		return ctx
+	}
 }
 
 func WaitFor(name string, namespace string) env.Func {

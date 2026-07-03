@@ -93,10 +93,13 @@ func IsReady(name, namespace string) features.Func {
 }
 
 func VerifyUsesImage(name, namespace, expectedImage string) features.Func {
-	var deploy appsv1.Deployment
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var deploy appsv1.Deployment
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, name, namespace, &deploy))
+		objects.VerifyWorkloadUsesImage(t, deploy.Spec.Template.Spec.Containers, expectedImage, name)
 
-	return objects.VerifyWorkloadUsesImage(&deploy, name, namespace, expectedImage,
-		func(deploy *appsv1.Deployment) []corev1.Container { return deploy.Spec.Template.Spec.Containers })
+		return ctx
+	}
 }
 
 func WaitFor(name string, namespace string) env.Func {
