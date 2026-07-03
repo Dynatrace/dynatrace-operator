@@ -226,6 +226,8 @@ func featureTagAndDigest(t *testing.T, featureName, tagURI, digestURI, expectedT
 	dynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("LogMonitoring DaemonSet started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("LogMonitoring DaemonSet uses expected image",
+		k8sdaemonset.VerifyUsesImage(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace, digestURI))
 	builder.Assess("LogMonitoring DaemonSet version label uses image tag even when digest is also set",
 		func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 			var ds appsv1.DaemonSet

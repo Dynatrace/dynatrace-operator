@@ -33,6 +33,10 @@ const (
 	agImageEnv = "E2E_AG_IMAGE"
 	oaImageEnv = "E2E_OA_IMAGE"
 	cmImageEnv = "E2E_ECR_CODEMODULES_IMAGE"
+
+	agDigestImageEnv = "E2E_AG_IMAGE_DIGEST"
+	oaDigestImageEnv = "E2E_OA_IMAGE_DIGEST"
+	cmDigestImageEnv = "E2E_ECR_CODEMODULES_IMAGE_DIGEST"
 )
 
 var (
@@ -47,16 +51,24 @@ var (
 )
 
 // GetLatestImageURI returns the image URI for the given repository.
-// If the envVar is set, its value is returned directly.
+// If the relevant env var is set (tagEnvVar when digest=false, digestEnvVar when digest=true), its value is returned directly.
 // Otherwise, the latest tag is resolved from the registry and cached per repo for the lifetime of the test binary.
 // If digest is true, the URI is returned in "image@algorithm:hex" form (e.g. "public.ecr.aws/...@sha256:abc123").
-func GetLatestImageURI(t *testing.T, repoURI string, envVar string, digest bool) string {
+func GetLatestImageURI(t *testing.T, repoURI, tagEnvVar, digestEnvVar string, digest bool) string {
 	t.Helper()
 
-	if val := os.Getenv(envVar); val != "" {
-		t.Logf("using image from env %s: %s", envVar, val)
+	if digest {
+		if val := os.Getenv(digestEnvVar); val != "" {
+			t.Logf("using digest image from env %s: %s", digestEnvVar, val)
 
-		return val
+			return val
+		}
+	} else {
+		if val := os.Getenv(tagEnvVar); val != "" {
+			t.Logf("using image from env %s: %s", tagEnvVar, val)
+
+			return val
+		}
 	}
 
 	tagURI := resolveLatestTagURI(t, repoURI)
@@ -121,37 +133,37 @@ func resolveLatestDigestURI(t *testing.T, repoURI string, tagURI string) string 
 func GetLatestActiveGateImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, agPublicECR, agImageEnv, false)
+	return GetLatestImageURI(t, agPublicECR, agImageEnv, agDigestImageEnv, false)
 }
 
 func GetLatestOneAgentImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, oaPublicECR, oaImageEnv, false)
+	return GetLatestImageURI(t, oaPublicECR, oaImageEnv, oaDigestImageEnv, false)
 }
 
 func GetLatestCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, cmPublicECR, cmImageEnv, false)
+	return GetLatestImageURI(t, cmPublicECR, cmImageEnv, cmDigestImageEnv, false)
 }
 
 func GetLatestActiveGateImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, agPublicECR, agImageEnv, true)
+	return GetLatestImageURI(t, agPublicECR, agImageEnv, agDigestImageEnv, true)
 }
 
 func GetLatestOneAgentImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, oaPublicECR, oaImageEnv, true)
+	return GetLatestImageURI(t, oaPublicECR, oaImageEnv, oaDigestImageEnv, true)
 }
 
 func GetLatestCodeModulesImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageURI(t, cmPublicECR, cmImageEnv, true)
+	return GetLatestImageURI(t, cmPublicECR, cmImageEnv, cmDigestImageEnv, true)
 }
 
 func ParseImageURI(imageURI string) (repository, tag, digest string) {

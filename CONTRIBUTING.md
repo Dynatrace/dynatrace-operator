@@ -254,17 +254,21 @@ make help | grep 'e2e'
 
 We recommend only executing the ones related to the changes as each one can take some minutes to finish.
 
-The images of components that are deployed by the operator can be configured using the following environment variables:
+The images of components that are deployed by the operator can be configured using environment variables.
+Each component has a **tag** env var (tag-based reference, e.g. `repo:1.283.132`) and a **digest** env var (digest-based reference, e.g. `repo@sha256:abc…`).
+When neither is set, the latest tag is resolved automatically from the public registry.
 
-- `E2E_EEC_IMAGE`
-- `E2E_LOGMON_IMAGE`
-- `E2E_KSPM_IMAGE`
-- `E2E_OTELC_IMAGE`
-- `E2E_DB_EXECUTOR_IMAGE`
-- `E2E_CODEMODULES_IMAGE`
-- `E2E_AG_IMAGE`
-- `E2E_OA_IMAGE`
-- `E2E_ECR_CODEMODULES_IMAGE`
+| Component | Tag env var | Digest env var |
+|---|---|---|
+| OneAgent | `E2E_OA_IMAGE` | `E2E_OA_IMAGE_DIGEST` |
+| ActiveGate | `E2E_AG_IMAGE` | `E2E_AG_IMAGE_DIGEST` |
+| CodeModules | `E2E_ECR_CODEMODULES_IMAGE` | `E2E_ECR_CODEMODULES_IMAGE_DIGEST` |
+| EEC | `E2E_EEC_IMAGE` | `E2E_EEC_IMAGE_DIGEST` |
+| LogMonitoring | `E2E_LOGMON_IMAGE` | `E2E_LOGMON_IMAGE_DIGEST` |
+| KSPM | `E2E_KSPM_IMAGE` | `E2E_KSPM_IMAGE_DIGEST` |
+| OTelCollector | `E2E_OTELC_IMAGE` | `E2E_OTELC_IMAGE_DIGEST` |
+| DBExecutor | `E2E_DB_EXECUTOR_IMAGE` | `E2E_DB_EXECUTOR_IMAGE_DIGEST` |
+| EdgeConnect | `E2E_EDGECONNECT_IMAGE` | `E2E_EDGECONNECT_IMAGE_DIGEST` |
 
 If an image value is set to a different repository than the default, `devregistry` will be used as the image pull secret. Make sure it contains the proper authentication.
 

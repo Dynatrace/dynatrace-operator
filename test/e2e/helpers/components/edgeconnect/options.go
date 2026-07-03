@@ -17,8 +17,9 @@ const (
 	defaultName      = "edgeconnect"
 	defaultNamespace = "dynatrace"
 
-	defaultECRepo = "public.ecr.aws/dynatrace/edgeconnect"
-	ecImageEnvVar = "E2E_EDGECONNECT_IMAGE"
+	defaultECRepo       = "public.ecr.aws/dynatrace/edgeconnect"
+	ecImageEnvVar       = "E2E_EDGECONNECT_IMAGE"
+	ecDigestImageEnvVar = "E2E_EDGECONNECT_IMAGE_DIGEST"
 )
 
 type Option func(ec *edgeconnect.EdgeConnect)
@@ -125,13 +126,13 @@ func WithReplicas(replicas *int32) Option {
 func GetLatestImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultECRepo, ecImageEnvVar, false)
+	return registry.GetLatestImageURI(t, defaultECRepo, ecImageEnvVar, ecDigestImageEnvVar, false)
 }
 
 func GetLatestImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageURI(t, defaultECRepo, ecImageEnvVar, true)
+	return registry.GetLatestImageURI(t, defaultECRepo, ecImageEnvVar, ecDigestImageEnvVar, true)
 }
 
 func WithImageRef(t *testing.T, imageURI string) Option {
