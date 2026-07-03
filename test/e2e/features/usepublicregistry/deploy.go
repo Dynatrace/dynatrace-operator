@@ -4,6 +4,7 @@ package usepublicregistry
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
@@ -24,6 +26,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
@@ -33,6 +36,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -97,6 +101,14 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 		"use-public-registry-cm-ovrd",
 		"use-public-registry-cm-sample-ovrd",
 		publicRegistryOverride(t))
+}
+
+func CodeModulesWithCSI(t *testing.T) features.Feature {
+	return codeModulesWithCSIFeature(t,
+		"use-public-registry-codemodules-with-csi",
+		"use-public-registry-cm",
+		"use-public-registry-cm-sample",
+		"")
 }
 
 func DBExecutor(t *testing.T) features.Feature {
@@ -228,6 +240,86 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
+}
+
+func codeModulesWithCSIFeature(t *testing.T, featureName, dkName, sampleNamespaceName, override string) features.Feature {
+	builder := features.New(featureName)
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithName(dkName),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
+	}
+	if override != "" {
+		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
+	}
+
+	testDynakube := *dynakubeComponents.New(options...)
+
+	sampleNamespace := *k8snamespace.New(sampleNamespaceName)
+	sampleApp := sample.NewApp(t, &testDynakube,
+		sample.AsDeployment(),
+		sample.WithNamespace(sampleNamespace),
+		// The injected init container image is pulled by kubelet from the user's
+		// namespace, so the user's pod must reference the registry pull secret.
+		sample.WithImagePullSecret(consts.DevRegistryPullSecretName),
+	)
+
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
+
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("install sample app", sampleApp.Install())
+	builder.Assess("CodeModules status reports public-registry source",
+		statusSourceIsPublicRegistry(testDynakube, image.CodeModules))
+
+	var imageID string
+
+	builder.Assess("get CodeModules imageID", getStatusImageID(testDynakube, image.CodeModules, &imageID))
+
+	builder.Assess("verify if CSI provisioner uses public-registry image", isProvisionerUsingPublicRegistry(testDynakube.Namespace, &imageID))
+
+	builder.Teardown(sampleApp.Uninstall())
+
+	return builder.Feature()
+}
+
+func isProvisionerUsingPublicRegistry(namespace string, imageID *string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+
+		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      csi.DaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(checkProvisionerLog(ctx, t, envConfig, imageID))
+
+		assert.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, imageID *string) k8sdaemonset.PodConsumer {
+	return func(pod corev1.Pod) {
+		provisionerLog := logs.ReadLog(ctx, t, envConfig, pod.Namespace, pod.Name, "provisioner")
+
+		// expected message: `{"level":"info",...,"msg":"pullOciImage",...,"ref.String":"<registry>:<version>@sha256:<sha256>"}`
+
+		msg := logs.FindLineContainingText(provisionerLog, "pullOciImage")
+		require.NotEmpty(t, msg, "pullOciImage message not found in the provisioner log for %s", pod.Name)
+
+		var ref struct {
+			String string `json:"ref.String"`
+		}
+		require.NoError(t, json.Unmarshal([]byte(msg), &ref))
+		assert.Equal(t, *imageID, ref.String)
+	}
 }
 
 func dbExecutorFeature(t *testing.T, featureName, dkName, override string) features.Feature {
@@ -421,6 +513,29 @@ func statusSourceIs(dk dynakube.DynaKube, component image.ComponentType, expecte
 
 		assert.Equalf(t, expected, actual,
 			"expected %s status.source == %q, got %q", component, expected, actual)
+
+		return ctx
+	}
+}
+
+func getStatusImageID(dk dynakube.DynaKube, component image.ComponentType, imageID *string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var current dynakube.DynaKube
+		require.NoError(t,
+			envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
+
+		switch component {
+		case image.OneAgent:
+			*imageID = current.Status.OneAgent.ImageID
+		case image.ActiveGate:
+			*imageID = current.Status.ActiveGate.ImageID
+		case image.CodeModules:
+			*imageID = current.Status.CodeModules.ImageID
+		default:
+			require.Failf(t, "unknown component", "unknown component %q", component)
+
+			return ctx
+		}
 
 		return ctx
 	}
