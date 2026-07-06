@@ -216,6 +216,7 @@ jobs:
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
           tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
