@@ -127,15 +127,23 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 }
 
 // buildVolumeMounts returns the container-level volume mounts.
-func buildVolumeMounts(_ *dynakube.DynaKube) []corev1.VolumeMount {
-	return []corev1.VolumeMount{
-		{
-			Name:      connectioninfo.TenantSecretVolumeName,
-			ReadOnly:  true,
-			MountPath: connectioninfo.TenantTokenMountPoint,
-			SubPath:   connectioninfo.TenantTokenKey,
-		},
+func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
+	km := dk.KubernetesMonitoring()
+	mounts := []corev1.VolumeMount{{
+		Name:      connectioninfo.TenantSecretVolumeName,
+		ReadOnly:  true,
+		MountPath: connectioninfo.TenantTokenMountPoint,
+		SubPath:   connectioninfo.TenantTokenKey,
+	}}
+
+	if km.UseEphemeralVolume || km.VolumeClaimTemplate != nil {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      storageVolumeName,
+			MountPath: agconsts.GatewayTmpMountPoint,
+		})
 	}
+
+	return mounts
 }
 
 func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {

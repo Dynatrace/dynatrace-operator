@@ -405,7 +405,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 		componentErrors = append(componentErrors, err)
 	}
 
-	log.Info("start reconciling KubernetesMonitoring")
+	log.Debug("start reconciling KubernetesMonitoring")
 
 	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient.ActiveGate, controller.tokens); err != nil {
 		if errors.Is(err, k8sstatefulset.ErrRolloutInProgress) {
