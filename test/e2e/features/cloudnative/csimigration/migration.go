@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
@@ -49,7 +48,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("sample app has CSI volume", assertHasCSIVolume(sampleApp))
 
 	// Phase 2: switch operator to migration mode.
-	builder.Assess("redeploy operator with migration mode", helpers.ToFeatureFunc(enableMigrationMode(), true))
+	builder.Assess("redeploy operator with migration mode", helpers.ToFeatureFunc(enableMigrationMode, true))
 	builder.Assess("CSI DaemonSet still present after migration mode enabled", k8sdaemonset.IsReady(csipkg.DaemonSetName, operator.DefaultNamespace))
 
 	// Phase 3: restart sample app — old CSI-mounted pods must terminate cleanly.
@@ -59,30 +58,26 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Assess("sample app injected without CSI volume after migration", assertHasNoCSIVolume(sampleApp))
 
-	builder.WithTeardown("restore operator without migration mode", helpers.ToFeatureFunc(disableMigrationMode(), true))
+	builder.WithTeardown("restore operator without migration mode", helpers.ToFeatureFunc(disableMigrationMode, true))
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
 }
 
-func enableMigrationMode() env.Func {
-	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		if err := operator.InstallViaHelm("", true, helm.WithArgs("--set", "csidriver.migrationMode=true")); err != nil {
-			return ctx, err
-		}
-
-		return operator.VerifyInstall(ctx, envConfig, true)
+func enableMigrationMode(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+	if err := operator.InstallViaHelm("", true, helm.WithArgs("--set", "csidriver.migrationMode=true")); err != nil {
+		return ctx, err
 	}
+
+	return operator.VerifyInstall(ctx, envConfig, true)
 }
 
-func disableMigrationMode() env.Func {
-	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		if err := operator.InstallViaHelm("", true); err != nil {
-			return ctx, err
-		}
-
-		return operator.VerifyInstall(ctx, envConfig, true)
+func disableMigrationMode(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+	if err := operator.InstallViaHelm("", true); err != nil {
+		return ctx, err
 	}
+
+	return operator.VerifyInstall(ctx, envConfig, true)
 }
 
 func assertHasCSIVolume(sampleApp *sample.App) features.Func {
