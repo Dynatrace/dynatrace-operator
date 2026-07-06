@@ -55,7 +55,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-logmonitoring")
+	ctx, _ = logd.NewFromContext(ctx, "logmonitoring")
 
 	err := r.oneAgentConnectionInfoReconciler.Reconcile(ctx, dtClient.OneAgent, dk)
 	if err != nil {

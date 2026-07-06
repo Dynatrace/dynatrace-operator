@@ -28,7 +28,7 @@ func NewReconciler() *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "kspm-settings")
+	ctx, log := logd.NewFromContext(ctx, "settings")
 	// Kubernetes Monitoring is REQUIRED for KSPM, so it is ok to just check for this.
 	if !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
 		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)

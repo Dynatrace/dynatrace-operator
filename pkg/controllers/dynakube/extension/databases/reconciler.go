@@ -27,7 +27,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "extension-databases")
+	ctx, log := logd.NewFromContext(ctx, "databases")
 
 	log.Debug("reconciling deployments")
 

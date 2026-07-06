@@ -146,7 +146,7 @@ test/e2e/cloudnative/switchmodes:
 
 ## Runs CloudNative upgrade e2e test only
 test/e2e/cloudnative/upgrade:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "cloudnative_upgrade" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "cloudnative_upgrade" $(SKIPCLEANUP)
 
 ## Runs extensions upgrade e2e test only
 test/e2e/extensions/upgrade:

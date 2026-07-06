@@ -85,7 +85,7 @@ type Config struct {
 
 func Get(ctx context.Context) Config {
 	once.Do(func() {
-		_, log := logd.NewFromContext(ctx, "csi-job")
+		_, log := logd.NewFromContext(ctx, "helmconfig")
 
 		confJSON := os.Getenv(JSONEnv)
 		if confJSON == "" {

@@ -57,7 +57,7 @@ type Installer struct {
 }
 
 func (installer *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
-	ctx, log := logd.NewFromContext(ctx, "oneagent-image")
+	ctx, log := logd.NewFromContext(ctx, "image")
 	log.Info("installing agent from image")
 
 	if installer.isAlreadyPresent(targetDir) {

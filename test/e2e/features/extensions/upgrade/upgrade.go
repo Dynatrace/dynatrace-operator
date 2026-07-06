@@ -14,8 +14,12 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Feature(t *testing.T) features.Feature {
+const withCSI = true
+
+func Feature(t *testing.T, releaseTag string) features.Feature {
 	builder := features.New("deprecated-secret-upgrade-operator")
+	builder.Assess("install operator "+releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
+
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []componentDynakube.Option{
@@ -36,7 +40,6 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	// update to snapshot
-	withCSI := true
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
 
 	builder.Assess("extension execution controller started after upgrade", k8sstatefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))

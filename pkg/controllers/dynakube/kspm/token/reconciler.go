@@ -30,7 +30,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "kspm-token-secret")
+	ctx, _ = logd.NewFromContext(ctx, "token-secret")
 
 	if dk.KSPM().IsEnabled() {
 		return r.ensureKSPMSecret(ctx, dk)

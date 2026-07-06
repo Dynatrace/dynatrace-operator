@@ -23,7 +23,7 @@ func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dyn
 
 func optionsFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string) ([]Option, error) {
 	options := []Option{
-		WithBaseURL(dk.Spec.APIURL),
+		WithBaseURL(dk.APIURL()),
 		WithAPIToken(apiToken),
 		WithPaasToken(paasToken),
 		WithSkipCertificateValidation(dk.Spec.SkipCertCheck),

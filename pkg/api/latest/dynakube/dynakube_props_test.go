@@ -19,6 +19,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,6 +45,29 @@ func TestTokens(t *testing.T) {
 	t.Run("GetTokensName uses instance name as default value", func(t *testing.T) {
 		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testName}}
 		assert.Equal(t, dk.Tokens(), testName)
+	})
+}
+
+func TestAPIURL(t *testing.T) {
+	t.Run("2nd gen URL is returned unchanged", func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: "https://tenant.live.dynatrace.com/api"}}
+		assert.Equal(t, "https://tenant.live.dynatrace.com/api", dk.APIURL())
+		assert.Equal(t, "tenant.live.dynatrace.com", dk.APIURLHost())
+	})
+
+	t.Run("3rd gen URL is mapped to its 2nd gen equivalent", func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: "https://tenant.apps.dynatrace.com"}}
+		assert.Equal(t, "https://tenant.live.dynatrace.com/api", dk.APIURL())
+	})
+
+	t.Run("APIURLHost returns the raw host so a 3rd gen registry breaks on purpose", func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: "https://tenant.apps.dynatrace.com"}}
+		assert.Equal(t, "tenant.apps.dynatrace.com", dk.APIURLHost())
+	})
+
+	t.Run("Spec.APIURL keeps the raw user-provided value", func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: "https://tenant.apps.dynatrace.com"}}
+		assert.Equal(t, "https://tenant.apps.dynatrace.com", dk.Spec.APIURL)
 	})
 }
 
@@ -120,6 +144,18 @@ func TestImagePullSecretReferences(t *testing.T) {
 		refs := dk.ImagePullSecretReferences()
 		assert.Len(t, refs, 1)
 		assert.Equal(t, testCustomPullSecret, refs[0].Name)
+	})
+	t.Run("don't return tenant pull secret if use-public-registry annotation with platform token", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        testDKName,
+				Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
+			},
+			Status: DynaKubeStatus{APIToken: APITokenStatus{Platform: new(true)}},
+		}
+		refs := dk.ImagePullSecretReferences()
+		assert.Empty(t, refs)
 	})
 }
 
