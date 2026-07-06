@@ -25,6 +25,7 @@ var (
 	defaultMultiTenant       = filepath.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
 	defaultEdgeConnectTenant = filepath.Join(project.TestDataDir(), "secrets/edgeconnect-tenant.yaml")
 	phase3Tenant             = filepath.Join(project.TestDataDir(), "secrets/phase3-tenant.yaml")
+	phase3MultiTenant        = filepath.Join(project.TestDataDir(), "secrets/multi-phase3-tenant.yaml")
 	edgeConnectPhase3Tenant  = filepath.Join(project.TestDataDir(), "secrets/edgeconnect-phase3-tenant.yaml")
 )
 
@@ -123,11 +124,13 @@ func GetSingleTenantSecret(t *testing.T) Secret {
 }
 
 func GetMultiTenantSecret(t *testing.T) []Secret {
+	var tenant = defaultMultiTenant
+
 	if UsePhase3Tenant() {
-		t.Skip("multi-tenant secrets are not supported with phase3 tenant")
+		tenant = phase3MultiTenant
 	}
 
-	secrets, err := manyFromConfig(defaultMultiTenant)
+	secrets, err := manyFromConfig(tenant)
 	if err != nil {
 		t.Fatal("Couldn't read tenant secret from filesystem", err)
 	}

@@ -43,6 +43,16 @@ tenants:
     platformToken: $TENANT2_PLATFORM_TOKEN
 EOF
 
+  cat << EOF > multi-phase3-tenant.yaml
+tenants:
+  - tenantUid: $TENANT3_PHASE3_NAME
+    apiUrl: https://$TENANT3_PHASE3_NAME.dev.dynatracelabs.com/api
+    platformToken: $TENANT3_PHASE3_PLATFORM_TOKEN
+  - tenantUid: $TENANT4_PHASE3_NAME
+    apiUrl: https://$TENANT4_PHASE3_NAME.dev.dynatracelabs.com/api
+    platformToken: $TENANT4_PHASE3_PLATFORM_TOKEN
+EOF
+
   cat << EOF > edgeconnect-tenant.yaml
 name: e2e-test
 tenantUid: $TENANT1_NAME

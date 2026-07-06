@@ -112,6 +112,8 @@ jobs:
           tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
           tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
@@ -171,6 +173,8 @@ jobs:
           tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
           tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
           use-platform-token: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
@@ -230,8 +234,10 @@ jobs:
           tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
           tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
           use-platform-token: "true"
-          use-tenant-phase3: true
+          use-tenant-phase3: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
@@ -290,6 +296,8 @@ jobs:
           tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
           tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
@@ -348,6 +356,8 @@ jobs:
           tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
           tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
           use-platform-token: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
@@ -407,6 +417,8 @@ jobs:
           tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
           tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
@@ -465,6 +477,8 @@ jobs:
           tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
           tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
           use-platform-token: "true"
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
@@ -523,6 +537,8 @@ jobs:
           tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
           tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
           tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
