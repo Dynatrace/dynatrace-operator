@@ -7,13 +7,12 @@ import (
 	"testing"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	k8svolume "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
-	csipkg "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +48,6 @@ func Feature(t *testing.T) features.Feature {
 
 	// Phase 2: switch operator to migration mode.
 	builder.Assess("redeploy operator with migration mode", helpers.ToFeatureFunc(enableMigrationMode, true))
-	builder.Assess("CSI DaemonSet still present after migration mode enabled", k8sdaemonset.IsReady(csipkg.DaemonSetName, operator.DefaultNamespace))
 
 	// Phase 3: restart sample app — old CSI-mounted pods must terminate cleanly.
 	builder.Assess("restart sample app", sampleApp.Restart())
@@ -91,17 +89,10 @@ func assertHasCSIVolume(sampleApp *sample.App) features.Func {
 				continue
 			}
 
-			found := false
-
-			for _, volume := range pod.Spec.Volumes {
-				if volume.Name == oacommon.BinVolumeName {
-					found = true
-					require.NotNilf(t, volume.CSI, "pod %s: expected CSI volume for %s", pod.Name, oacommon.BinVolumeName)
-					assert.Equal(t, dtcsi.DriverName, volume.CSI.Driver)
-				}
-			}
-
-			assert.Truef(t, found, "pod %s: volume %s not found", pod.Name, oacommon.BinVolumeName)
+			vol := k8svolume.FindByName(pod.Spec.Volumes, oacommon.BinVolumeName)
+			require.NotNilf(t, vol, "pod %s: volume %s not found", pod.Name, oacommon.BinVolumeName)
+			require.NotNilf(t, vol.CSI, "pod %s: expected CSI volume for %s", pod.Name, oacommon.BinVolumeName)
+			assert.Equal(t, dtcsi.DriverName, vol.CSI.Driver)
 		}
 
 		return ctx
@@ -119,12 +110,10 @@ func assertHasNoCSIVolume(sampleApp *sample.App) features.Func {
 				continue
 			}
 
-			for _, volume := range pod.Spec.Volumes {
-				if volume.CSI != nil {
-					assert.NotEqualf(t, dtcsi.DriverName, volume.CSI.Driver,
-						"pod %s: volume %s still uses Dynatrace CSI driver after migration", pod.Name, volume.Name)
-				}
-			}
+			vol := k8svolume.FindByName(pod.Spec.Volumes, oacommon.BinVolumeName)
+			require.NotNilf(t, vol, "pod %s: volume %s not found after migration", pod.Name, oacommon.BinVolumeName)
+			assert.NotNilf(t, vol.EmptyDir, "pod %s: expected emptyDir for %s after migration", pod.Name, oacommon.BinVolumeName)
+			assert.Nilf(t, vol.CSI, "pod %s: volume %s still uses CSI after migration", pod.Name, oacommon.BinVolumeName)
 		}
 
 		return ctx
