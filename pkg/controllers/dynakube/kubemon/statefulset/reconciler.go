@@ -25,6 +25,7 @@ const (
 	ContainerName             = "kubemon"
 	AnnotationTenantTokenHash = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
 	requiredEnvsCapacity      = 4
+	storageVolumeName         = "kubemon-storage"
 )
 
 var ErrImageRequired = errors.New("kubernetes monitoring image is required")
@@ -104,17 +105,25 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 
 // buildVolumes returns the pod-level volumes.
 func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
-	return []corev1.Volume{
-		{
-			Name: connectioninfo.TenantSecretVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  dk.KubernetesMonitoring().GetTenantSecretName(),
-					DefaultMode: new(int32(0o640)),
-				},
+	km := dk.KubernetesMonitoring()
+	volumes := []corev1.Volume{{
+		Name: connectioninfo.TenantSecretVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  km.GetTenantSecretName(),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
+	}}
+
+	if km.UseEphemeralVolume {
+		volumes = append(volumes, corev1.Volume{
+			Name:         storageVolumeName,
+			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+		})
 	}
+
+	return volumes
 }
 
 // buildVolumeMounts returns the container-level volume mounts.
@@ -166,28 +175,43 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		VolumeMounts:    buildVolumeMounts(dk),
 	}
 
+	km := dk.KubernetesMonitoring()
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
 
-	statefulSet, err := k8sstatefulset.Build(
-		dk,
-		dk.KubernetesMonitoring().GetStatefulSetName(),
-		container,
+	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
-		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), dk.KubernetesMonitoring().Labels),
-		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(dk.KubernetesMonitoring().Annotations, map[string]string{
+		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), km.Labels),
+		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, map[string]string{
 			AnnotationTenantTokenHash: tokenHash,
 		})),
-		k8sstatefulset.SetServiceAccount(dk.KubernetesMonitoring().GetServiceAccountName()),
-		k8sstatefulset.SetNodeSelector(dk.KubernetesMonitoring().NodeSelector),
-		k8sstatefulset.SetTolerations(dk.KubernetesMonitoring().Tolerations),
-		k8sstatefulset.SetTopologySpreadConstraints(dk.KubernetesMonitoring().TopologySpreadConstraints),
+		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
+		k8sstatefulset.SetNodeSelector(km.NodeSelector),
+		k8sstatefulset.SetTolerations(km.Tolerations),
+		k8sstatefulset.SetTopologySpreadConstraints(km.TopologySpreadConstraints),
 		k8sstatefulset.SetVolumes(buildVolumes(dk)),
-	)
-	if err != nil {
-		return nil, err
 	}
 
-	return statefulSet, nil
+	if km.RollingUpdate != nil {
+		opts = append(opts, k8sstatefulset.SetRollingUpdateStrategy(km.RollingUpdate))
+	}
+
+	if km.DNSPolicy != "" {
+		opts = append(opts, k8sstatefulset.SetDNSPolicy(km.DNSPolicy))
+	}
+
+	if km.PriorityClassName != "" {
+		opts = append(opts, k8sstatefulset.SetPriorityClassName(km.PriorityClassName))
+	}
+
+	if km.TerminationGracePeriodSeconds != nil {
+		opts = append(opts, k8sstatefulset.SetTerminationGracePeriodSeconds(km.TerminationGracePeriodSeconds))
+	}
+
+	if km.VolumeClaimTemplate != nil {
+		opts = append(opts, k8sstatefulset.SetVolumeClaimTemplate(storageVolumeName, *km.VolumeClaimTemplate))
+	}
+
+	return k8sstatefulset.Build(dk, km.GetStatefulSetName(), container, opts...)
 }
 
 func (r *Reconciler) getTenantTokenHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
