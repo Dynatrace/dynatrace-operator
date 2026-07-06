@@ -1175,3 +1175,101 @@ func TestInvalidOneAgentArguments(t *testing.T) {
 		dk.Spec.OneAgent.CloudNativeFullStack.Args = []string{value}
 	}, errorInvalidOneAgentArgument)
 }
+
+func TestMissingCodeModulesImage(t *testing.T) {
+	baseDK := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+		},
+	}
+
+	testcases := []struct {
+		name        string
+		oaSpec      oneagent.Spec
+		annotations map[string]string
+		isValid     bool
+	}{
+		{
+			"node-image-pull + application monitoring",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
+			map[string]string{
+				exp.OANodeImagePullKey: "true",
+			},
+			false,
+		},
+		{
+			"node-image-pull + application monitoring + codemodules image",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{
+					CodeModulesImage: "test-image",
+				},
+			}},
+			map[string]string{
+				exp.OANodeImagePullKey: "true",
+			},
+			true,
+		},
+		{
+			"node-image-pull + application monitoring + public registry",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{},
+			}},
+			map[string]string{
+				exp.OANodeImagePullKey:   "true",
+				exp.UsePublicRegistryKey: "true",
+			},
+			true,
+		},
+		{
+			"node-image-pull + cloud native full stack",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
+			map[string]string{
+				exp.OANodeImagePullKey: "true",
+			},
+			false,
+		},
+		{
+			"node-image-pull + cloud native full stack + codemodules image",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{
+					CodeModulesImage: "test-image",
+				},
+			}},
+			map[string]string{
+				exp.OANodeImagePullKey: "true",
+			},
+			true,
+		},
+		{
+			"node-image-pull + cloud native full stack + public registry",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{},
+			}},
+			map[string]string{
+				exp.OANodeImagePullKey:   "true",
+				exp.UsePublicRegistryKey: "true",
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := baseDK.DeepCopy()
+			dk.Annotations = tc.annotations
+			dk.Spec.OneAgent = tc.oaSpec
+
+			if tc.isValid {
+				warnings, err := assertAllowed(t, dk)
+				require.NoError(t, err)
+				assert.Empty(t, warnings)
+			} else {
+				assertDenied(t, []string{errorImagePullRequiresCodeModulesImage}, dk)
+			}
+		})
+	}
+}

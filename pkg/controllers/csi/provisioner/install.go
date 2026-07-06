@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
-	imageclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	installerclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
@@ -58,7 +57,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 	switch {
 	case dk.FF().IsNodeImagePull():
 		return provisioner.getJobInstaller(ctx, dk), nil
-	case dk.OneAgent().GetCustomCodeModulesImage() != "":
+	case dk.OneAgent().GetCodeModulesImage() != "":
 		props := &image.Properties{
 			ImageURI:     dk.OneAgent().GetCodeModulesImage(),
 			APIReader:    provisioner.apiReader,
@@ -72,36 +71,8 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 		}
 
 		return imageInstaller, nil
-	case dk.FF().IsPublicRegistry():
-		dtClient, err := provisioner.buildDTClientFunc(provisioner, ctx, dk)
-		if err != nil {
-			return nil, err
-		}
-
-		imageInfo, err := dtClient.Images.GetComponentLatestInfo(ctx, imageclient.CodeModules, dk.PublicRegistryOverride())
-		if err != nil {
-			return nil, err
-		}
-
-		if imageInfo.URI == "" {
-			return nil, errors.New("codemodules public image not available")
-		}
-
-		props := &image.Properties{
-			ImageURI:     imageInfo.URI,
-			APIReader:    provisioner.apiReader,
-			Dynakube:     dk,
-			PathResolver: provisioner.path,
-		}
-
-		imageInstaller, err := provisioner.imageInstallerBuilder(ctx, props)
-		if err != nil {
-			return nil, err
-		}
-
-		return imageInstaller, nil
 	default:
-		dtClient, err := provisioner.buildDTClientFunc(provisioner, ctx, dk)
+		dtClient, err := buildDtc(provisioner, ctx, dk)
 		if err != nil {
 			return nil, err
 		}
@@ -124,19 +95,8 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 }
 
 func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk *dynakube.DynaKube) installer.Installer {
-	imageURI := dk.OneAgent().GetCustomCodeModulesImage()
-
-	if imageURI == "" && dk.FF().IsPublicRegistry() {
-		// Resolved by the version updater; respects PublicRegistryOverride
-		imageURI = dk.OneAgent().GetCodeModulesImage()
-	}
-
-	if imageURI == "" {
-		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
-	}
-
 	props := &job.Properties{
-		ImageURI:        imageURI,
+		ImageURI:        dk.OneAgent().GetCodeModulesImage(),
 		ImagePullPolicy: dk.OneAgent().GetCodeModulesImagePullPolicy(),
 		Owner:           dk,
 		PullSecrets:     dk.PullSecretNames(),

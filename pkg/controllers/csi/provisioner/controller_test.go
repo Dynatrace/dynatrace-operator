@@ -12,9 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
-	imageclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
@@ -24,7 +22,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -173,21 +170,9 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with public registry => image installer used, no error", func(t *testing.T) {
+	t.Run("dynakube with public registry => image installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithPublicRegistryFF(t)
-		prov := createProvisioner(t, dk, createToken(t, dk))
-
-		prov.buildDTClientFunc = func(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
-			mockImageClient := imageclientmock.NewClient(t)
-			mockImageClient.EXPECT().GetComponentLatestInfo(ctx, imageclient.CodeModules, "").Return(
-				&imageclient.Info{URI: "public.ecr.aws/dynatrace/codemodules:1.0.0@sha256:0123"}, nil,
-			).Once()
-
-			return &dynatrace.Client{
-				Images: mockImageClient,
-			}, nil
-		}
-
+		prov := createProvisioner(t, dk)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
@@ -302,10 +287,9 @@ func createProvisioner(t *testing.T, objs ...client.Object) OneAgentProvisioner 
 	apiReader := fake.NewClient(objs...)
 
 	return OneAgentProvisioner{
-		path:              path,
-		apiReader:         apiReader,
-		cleaner:           cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
-		buildDTClientFunc: buildDtc,
+		path:      path,
+		apiReader: apiReader,
+		cleaner:   cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
 	}
 }
 
