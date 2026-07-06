@@ -19,6 +19,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -143,6 +144,18 @@ func TestImagePullSecretReferences(t *testing.T) {
 		refs := dk.ImagePullSecretReferences()
 		assert.Len(t, refs, 1)
 		assert.Equal(t, testCustomPullSecret, refs[0].Name)
+	})
+	t.Run("don't return tenant pull secret if use-public-registry annotation with platform token", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        testDKName,
+				Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
+			},
+			Status: DynaKubeStatus{APIToken: APITokenStatus{Platform: new(true)}},
+		}
+		refs := dk.ImagePullSecretReferences()
+		assert.Empty(t, refs)
 	})
 }
 
