@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
@@ -33,12 +32,6 @@ func missingLogMonitoringImage(ctx context.Context, dv *Validator, dk *dynakube.
 	}
 
 	if dk.FF().IsPublicRegistry() {
-		return ""
-	}
-
-	// For new DynaKubes (status not yet set), check the token secret directly.
-	hasPlatformToken, err := token.NewReader(dv.apiReader, dk).HasPlatformToken(ctx)
-	if err == nil && hasPlatformToken {
 		return ""
 	}
 

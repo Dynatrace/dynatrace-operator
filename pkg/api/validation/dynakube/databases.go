@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -32,12 +31,6 @@ func missingDatabaseExecutorImage(ctx context.Context, dv *Validator, dk *dynaku
 	}
 
 	if dk.FF().IsPublicRegistry() {
-		return ""
-	}
-
-	// For new DynaKubes (status not yet set), check the token secret directly.
-	hasPlatformToken, err := token.NewReader(dv.apiReader, dk).HasPlatformToken(ctx)
-	if err == nil && hasPlatformToken {
 		return ""
 	}
 
