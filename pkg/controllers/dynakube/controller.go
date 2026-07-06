@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
@@ -140,6 +141,10 @@ type dynakubeReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
+type extensionReconciler interface {
+	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
+}
+
 // dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
 type dtSettingReconciler interface {
 	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
@@ -177,7 +182,7 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder events.EventRecorder
 
-	extensionReconciler          dynakubeReconciler
+	extensionReconciler          extensionReconciler
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               kspmReconciler
 	kubemonReconciler            kubemonReconciler
@@ -210,13 +215,13 @@ type Controller struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	ctx, log := logd.NewFromContext(ctx, "dynakube")
-	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
+	log.Info("reconciling DynaKube")
 
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
 	} else if dk == nil {
-		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
+		log.Info("reconciling DynaKube finished, no dynakube available", "result", "empty")
 
 		return reconcile.Result{}, nil
 	}
@@ -291,7 +296,7 @@ func (controller *Controller) handleError(
 			errors.WithMessagef(hashErr, "failed to generate a hash for the DynaKube's status %s/%s", dk.Namespace, dk.Name),
 		)
 	} else if isStatusDifferent {
-		log.Info("status changed, updating the DynaKube", "namespace", dk.Namespace, "name", dk.Name)
+		log.Info("status changed, updating the DynaKube")
 
 		if updateErr := dk.UpdateStatus(ctx, controller.client); updateErr != nil {
 			reconcileErr = goerrors.Join(
@@ -306,7 +311,7 @@ func (controller *Controller) handleError(
 		return reconcile.Result{}, reconcileErr
 	}
 
-	log.Info("finished DynaKube reconcile", "namespace", dk.Namespace, "name", dk.Name, "requeueAfter", controller.requeueAfter.String())
+	log.Info("finished DynaKube reconcile", "requeueAfter", controller.requeueAfter.String())
 
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }
@@ -414,7 +419,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 		componentErrors = append(componentErrors, err)
 	}
 
-	if err := controller.extensionReconciler.Reconcile(ctx, dk); err != nil {
+	if err := controller.extensionReconciler.Reconcile(ctx, dtClient.Images, dk); err != nil {
 		log.Info("could not reconcile Extensions")
 
 		componentErrors = append(componentErrors, err)

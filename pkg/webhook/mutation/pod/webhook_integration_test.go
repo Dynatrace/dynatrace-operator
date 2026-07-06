@@ -33,6 +33,7 @@ import (
 	oneagentmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -73,7 +74,7 @@ var (
 		testSecContextLabel:     "high",
 		testCustomMetadataLabel: "custom-label",
 	}
-	metadataEnrichmentStatus = metadataenrichment.Status{
+	metadataEnrichmentRules = metadataenrichment.Status{
 		Rules: []metadataenrichment.Rule{
 			{
 				Type:   "LABEL",
@@ -156,7 +157,7 @@ func TestWebhook(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: testMEID,
 				KubernetesClusterName: testClusterName,
-				MetadataEnrichment:    metadataEnrichmentStatus,
+				MetadataEnrichment:    metadataEnrichmentRules,
 				KubeSystemUUID:        testClusterUUID,
 				OneAgent: oneagent.Status{
 					ConnectionInfo: communication.ConnectionInfo{
@@ -309,7 +310,7 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 		Status: dynakube.DynaKubeStatus{
 			KubernetesClusterMEID: testMEID,
 			KubernetesClusterName: testClusterName,
-			MetadataEnrichment:    metadataEnrichmentStatus,
+			MetadataEnrichment:    metadataEnrichmentRules,
 			KubeSystemUUID:        testClusterUUID,
 			OneAgent: oneagent.Status{
 				ConnectionInfo: communication.ConnectionInfo{
@@ -340,9 +341,13 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 	require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
 	require.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
 	require.True(t, maputils.GetFieldBool(pod.Annotations, oneagentmutator.AnnotationInjected, false))
-	assert.Equal(t, "sales", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.cost.costcenter", ""))
-	assert.Equal(t, "high", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.security_context", ""))
-	assert.Equal(t, "custom-ns-meta-value", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/custom.ns-meta", ""))
+	jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
+	require.NotEmpty(t, jsonAnnotation, "metadata.dynatrace.com JSON annotation must be set")
+	var jsonAttrs map[string]string
+	require.NoError(t, json.Unmarshal([]byte(jsonAnnotation), &jsonAttrs))
+	assert.Equal(t, "sales", jsonAttrs["dt.cost.costcenter"])
+	assert.Equal(t, "high", jsonAttrs["dt.security_context"])
+	assert.Equal(t, "custom-ns-meta-value", jsonAttrs["custom.ns-meta"])
 	require.Len(t, pod.Spec.InitContainers, 1)
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.kind", strings.ToLower(pod.OwnerReferences[0].Kind)))
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.name", strings.ToLower(pod.OwnerReferences[0].Name)))
@@ -371,6 +376,163 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 	}
 
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
+}
+
+// TestConflictingVolumeType verifies that the webhook refuses to inject when a pod pre-defines one of the
+// operator-managed volumes with a source that conflicts with the one the mutators would add, and that the
+// corresponding not-injected reason is exposed on the pod. See ICP-6182.
+func TestConflictingVolumeType(t *testing.T) {
+	clt := integrationtests.SetupWebhookTestEnvironment(t,
+		getWebhookInstallOptions(),
+
+		func(mgr ctrl.Manager) error {
+			require.NoError(t, mgr.GetClient().Create(t.Context(), getNamespace(testNamespace)))
+
+			dummyWebhookPod := getDummyWebhookPod()
+			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
+			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
+			t.Setenv(k8senv.DTOperatorImageEnvName, dummyWebhookPod.Spec.Containers[0].Image)
+
+			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
+		},
+	)
+
+	// shared between test cases
+	createObject(t, clt, getBoostrapperSecret(testNamespace))
+	createObject(t, clt, getOTLPExporterSecret(testNamespace))
+	createObject(t, clt, getOTLPExporterCertsSecret(testNamespace))
+
+	// a volume with a source the mutators would never produce
+	hostPathVolume := func(name string) corev1.Volume {
+		return corev1.Volume{
+			Name:         name,
+			VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}},
+		}
+	}
+
+	// a fully ready cloud-native DynaKube so injection proceeds up to the conflicting volume
+	oneAgentDynaKube := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: oneagent.Status{
+					ConnectionInfo: communication.ConnectionInfo{
+						TenantUUID: uuid.NewString(),
+					},
+				},
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.2.3",
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("config volume", func(t *testing.T) {
+		createDynaKube(t, clt, oneAgentDynaKube())
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.ConfigVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[volumes.AnnotationReason])
+	})
+
+	t.Run("input volume", func(t *testing.T) {
+		createDynaKube(t, clt, oneAgentDynaKube())
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.InputVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[volumes.AnnotationReason])
+	})
+
+	t.Run("oneagent-bin emptyDir volume", func(t *testing.T) {
+		dk := oneAgentDynaKube()
+		// a code modules image lets the pod-level volume-type annotation force the emptyDir bin volume path
+		dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.EphemeralVolumeType
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(oneagentmutator.BinVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[oneagentmutator.AnnotationReason])
+	})
+
+	t.Run("oneagent-bin CSI volume", func(t *testing.T) {
+		dk := oneAgentDynaKube()
+		// a code modules image lets the pod-level volume-type annotation force the CSI bin volume path
+		dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.CSIVolumeType
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(oneagentmutator.BinVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[oneagentmutator.AnnotationReason])
+	})
+
+	t.Run("otlp activegate cert volume", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: "https://example.live.dynatrace.com",
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
+					},
+				},
+				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
+					NamespaceSelector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
+						},
+					},
+					Signals: otlpspec.SignalConfiguration{
+						Metrics: &otlpspec.MetricsSignal{},
+						Logs:    &otlpspec.LogsSignal{},
+						Traces:  &otlpspec.TracesSignal{},
+					},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: oneagent.Status{
+					ConnectionInfo: communication.ConnectionInfo{
+						TenantUUID: uuid.NewString(),
+					},
+				},
+			},
+		}
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(exporter.ActiveGateTrustedCertVolumeName))
+		})
+
+		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[podmutator.AnnotationOTLPReason])
+	})
 }
 
 func TestOTLPWebhook(t *testing.T) { //nolint:revive
@@ -448,7 +610,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 					Status: dynakube.DynaKubeStatus{
 						KubernetesClusterMEID: testMEID,
 						KubernetesClusterName: testClusterName,
-						MetadataEnrichment:    metadataEnrichmentStatus,
+						MetadataEnrichment:    metadataEnrichmentRules,
 					},
 				}
 
@@ -588,7 +750,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: testMEID,
 				KubernetesClusterName: testClusterName,
-				MetadataEnrichment:    metadataEnrichmentStatus,
+				MetadataEnrichment:    metadataEnrichmentRules,
 			},
 		}
 
@@ -638,16 +800,15 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 
 	t.Run("resource attribute full precedence chain", func(t *testing.T) {
 		// Precedence order low→high for OTEL_RESOURCE_ATTRIBUTES:
-		//   dynakube (resourceAttributes, with additionalResourceAttributes winning on collision)
+		//   enrichment rules
+		//   < dynakube.resourceAttributes
+		//   < dynakube.otlpExporterConfiguration.additionalResourceAttributes
 		//   < namespace metadata.dynatrace.com/ annotations
 		//   < pod metadata.dynatrace.com/ annotations
 		//   < existing OTEL_RESOURCE_ATTRIBUTES
 		//
-		// For metadata.dynatrace.com/<key> pod annotations (caseMetadataAnnotations):
-		//   dynakube < namespaceAnnotations (pod annotations not in this set)
-		//
 		// For the JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation):
-		//   dynakube < namespaceAnnotations < podAnnotations (existing OTEL_RA not included)
+		//   enrichment rules < dynakube < namespaceAnnotations < podAnnotations (existing OTEL_RA not included)
 		const raPrecedenceNs = "ra-precedence-ns"
 
 		raNS := getNamespace(raPrecedenceNs)
@@ -657,6 +818,8 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			// will be overridden by pod annotation in OTEL_RA and JSON, but preserved via SetAnnotationIfNotExists
 			"metadata.dynatrace.com/conflict.pod.vs.ns": "from-ns",
 		}
+		// label picked up by the enrichment rule below; dynakube layer must win over the rule result
+		raNS.Labels["conflict-rule-label"] = "from-rule"
 		createObject(t, clt, raNS)
 		createObject(t, clt, getOTLPExporterSecret(raPrecedenceNs))
 
@@ -675,6 +838,8 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 					"conflict.additional.vs.global": "from-global",
 					// overridden by namespace annotation in every combine case
 					"conflict.ns.vs.dynakube": "from-dynakube",
+					// wins over enrichment-rule result for the same key (dynakube layer 7 > rules layer 6)
+					"conflict.dynakube.vs.rules": "from-dynakube",
 				},
 				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
 					NamespaceSelector: metav1.LabelSelector{
@@ -694,6 +859,15 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: testMEID,
 				KubernetesClusterName: testClusterName,
+				MetadataEnrichment: metadataenrichment.Status{
+					Rules: []metadataenrichment.Rule{
+						{
+							Type:   "LABEL",
+							Source: "conflict-rule-label",
+							Target: "conflict.dynakube.vs.rules",
+						},
+					},
+				},
 			},
 		}
 		createDynaKube(t, clt, dk)
@@ -719,6 +893,8 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 
 		// additionalResourceAttributes wins over resourceAttributes (both merged into dynakube layer)
 		assert.Equal(t, "from-additional", gotRA["conflict.additional.vs.global"], "additionalResourceAttributes must win over resourceAttributes")
+		// dynakube.resourceAttributes wins over enrichment-rule result (dynakube layer 7 > rules layer 6)
+		assert.Equal(t, "from-dynakube", gotRA["conflict.dynakube.vs.rules"], "dynakube must win over enrichment rules")
 		// namespace metadata.dynatrace.com/ annotation wins over dynakube layer
 		assert.Equal(t, "from-ns", gotRA["conflict.ns.vs.dynakube"], "namespace annotation must win over dynakube layer")
 		// pod metadata.dynatrace.com/ annotation wins over namespace annotation
@@ -726,15 +902,11 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		// existing OTEL_RESOURCE_ATTRIBUTES wins over pod annotation
 		assert.Equal(t, "from-existing", gotRA["conflict.existing.vs.pod"], "existing OTEL_RESOURCE_ATTRIBUTES must win over pod annotation")
 
-		// SetAnnotationIfNotExists preserves the pre-existing pod annotation over the caseMetadataAnnotations result
+		// pre-seeded pod annotations are preserved
 		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.pod.vs.ns"],
-			"pre-existing pod annotation must be preserved in metadata annotation")
+			"pre-existing pod annotation must be preserved")
 		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.existing.vs.pod"],
-			"pre-existing pod annotation must be preserved in metadata annotation")
-		assert.Equal(t, "from-ns", pod.Annotations["metadata.dynatrace.com/conflict.ns.vs.dynakube"],
-			"namespace metadata annotation must be preserved in pod annotations")
-		assert.NotContains(t, pod.Annotations, "metadata.dynatrace.com/conflict.additional.vs.global",
-			"dynakube resource attributes must not be written as individual metadata annotations")
+			"pre-existing pod annotation must be preserved")
 
 		// JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation: dynakube + namespaceAnnotations + podAnnotations, no custom/existing OTEL_RA)
 		jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
@@ -745,6 +917,9 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 
 		assert.Equal(t, "from-additional", jsonAttrs["conflict.additional.vs.global"],
 			"dynakube value must appear in JSON annotation")
+		// dynakube wins over enrichment rules in the JSON annotation too (caseJSONAnnotation includes both layers)
+		assert.Equal(t, "from-dynakube", jsonAttrs["conflict.dynakube.vs.rules"],
+			"dynakube must win over enrichment rules in JSON annotation")
 		assert.Equal(t, "from-ns", jsonAttrs["conflict.ns.vs.dynakube"],
 			"namespace annotation must win over dynakube in JSON annotation")
 		assert.Equal(t, "from-pod", jsonAttrs["conflict.pod.vs.ns"],
@@ -1267,6 +1442,18 @@ func getOTLPExporterSecret(namespace string) *corev1.Secret {
 		Data: map[string][]byte{
 			token.APIKey:        []byte(dataIngestToken),
 			token.DataIngestKey: []byte(dataIngestToken),
+		},
+	}
+}
+
+func getOTLPExporterCertsSecret(namespace string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OTLPExporterCertsSecretName,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			dynakube.TLSCertKey: []byte("ag-cert-data"),
 		},
 	}
 }

@@ -87,10 +87,10 @@ func buildServiceAccountName(dbSpec extensions.DatabaseSpec) string {
 	return defaultServiceAccount
 }
 
-func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev1.Container {
+func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec, imageURI string) corev1.Container {
 	container := corev1.Container{
 		Name:            containerName,
-		Image:           dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String(),
+		Image:           imageURI,
 		ImagePullPolicy: dk.Spec.Templates.SQLExtensionExecutor.ImageRef.GetPullPolicy(),
 		Args:            buildContainerArgs(dk),
 		Env:             buildContainerEnvs(),
@@ -312,7 +312,7 @@ func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.Dyna
 			return nil
 		}
 
-		log.Info("deleted deployment", "name", deploy.Name)
+		log.Info("deleted deployment", "deploymentName", deploy.Name)
 	}
 
 	return nil

@@ -1,0 +1,16 @@
+name: Block merge
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+jobs:
+  check-label:
+    name: Block merge if 'do-not-merge' label exists
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail if labeled 'do-not-merge'
+        if: contains(github.event.pull_request.labels.*.name, 'do-not-merge')
+        run: |
+          echo "This PR is labeled 'do-not-merge' and cannot be merged."
+          exit 1

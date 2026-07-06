@@ -63,6 +63,11 @@ func (c *Config) buildProcessors() map[component.ID]component.Config {
 						"key_regex": "metadata.dynatrace.com/(.*)",
 						"tag_name":  "$$1",
 					},
+					{
+						"from":     "pod",
+						"key":      "metadata.dynatrace.com",
+						"tag_name": "metadata.dynatrace.com",
+					},
 				},
 			},
 			"pod_association": []map[string]any{
@@ -140,6 +145,8 @@ func (c *Config) dynatraceTransformations() []map[string]any {
 		{
 			"context": "resource",
 			"statements": []string{
+				`merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "insert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")`,
+				`delete_key(attributes, "metadata.dynatrace.com")`,
 				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.statefulset.name\"]) where IsString(attributes[\"k8s.statefulset.name\"])",
 				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.replicaset.name\"]) where IsString(attributes[\"k8s.replicaset.name\"])",
 				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.job.name\"]) where IsString(attributes[\"k8s.job.name\"])",

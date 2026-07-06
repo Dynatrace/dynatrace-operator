@@ -26,7 +26,7 @@ func NewReconciler(apiReader client.Reader, timeProvider *timeprovider.Provider)
 }
 
 func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-version")
+	ctx, _ = logd.NewFromContext(ctx, "version")
 
 	updater := newCodeModulesUpdater(dk, imageClient, versionClient)
 	if r.needsUpdate(ctx, updater, dk) {
@@ -37,7 +37,7 @@ func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-version")
+	ctx, _ = logd.NewFromContext(ctx, "version")
 
 	updater := newOneAgentUpdater(dk, r.apiReader, imageClient, versionClient)
 	if r.needsUpdate(ctx, updater, dk) {
@@ -48,7 +48,7 @@ func (r *Reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-version")
+	ctx, _ = logd.NewFromContext(ctx, "version")
 
 	updater := newActiveGateUpdater(dk, r.apiReader, imageClient, versionClient)
 	if r.needsUpdate(ctx, updater, dk) {

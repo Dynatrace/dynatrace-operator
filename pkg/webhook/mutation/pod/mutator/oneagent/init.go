@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -36,10 +37,13 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 
 	if isCSIVolume(mutationRequest.BaseRequest) {
 		log.Info("configuring init-container with CSI bin volume", "name", mutationRequest.PodName())
-		addCSIBinVolume(
+
+		if err := addCSIBinVolume(
 			mutationRequest.Pod,
 			mutationRequest.DynaKube.Name,
-			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String())
+			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String()); err != nil {
+			return err
+		}
 		// in case of CSI, the CSI volume itself is already always readonly, so the mount should always be readonly, the init-container should just read from it
 		addInitBinMount(mutationRequest.InstallContainer, true)
 
@@ -49,7 +53,10 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	} else {
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
-		addEmptyDirBinVolume(mutationRequest.Pod, log)
+
+		if err := addEmptyDirBinVolume(mutationRequest.Pod, log); err != nil {
+			return err
+		}
 		// in case of no CSI, the the emptyDir can't be readonly for the init-container, as it first has to download/move the agent into it
 		addInitBinMount(mutationRequest.InstallContainer, false)
 
@@ -69,6 +76,10 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 			if flavor := maputils.GetField(mutationRequest.Pod.Annotations, AnnotationFlavor, ""); flavor != "" {
 				downloadArgs = append(downloadArgs,
 					arg.Arg{Name: bootstrapper.FlavorFlag, Value: flavor})
+			}
+
+			if k8senv.GetDTExtractCodeModulesImageLinks(mutationRequest.Context) {
+				mutationRequest.InstallContainer.Env = append(mutationRequest.InstallContainer.Env, corev1.EnvVar{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"})
 			}
 
 			mutationRequest.InstallContainer.Args = append(mutationRequest.InstallContainer.Args, arg.ConvertArgsToStrings(downloadArgs)...)

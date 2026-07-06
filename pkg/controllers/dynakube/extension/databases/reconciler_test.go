@@ -3,17 +3,22 @@ package databases
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -302,7 +307,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		dk.Spec.Extensions.Databases[0].Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 		clt := fakeClient()
 
-		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), nil, dk))
 		deployments := &appsv1.DeploymentList{}
 		require.NoError(t, clt.List(t.Context(), deployments))
 		require.Len(t, deployments.Items, 1)
@@ -331,6 +336,64 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 	})
 }
 
+func TestPublicRegistryImage(t *testing.T) {
+	t.Run("imageURI from public registry", func(t *testing.T) {
+		expectedImageURI := "my-public-registry:5000/my-test-repo:my-test-tag"
+		getReconciledDeployment := func(t *testing.T) *appsv1.Deployment {
+			t.Helper()
+
+			dk := getTestDynakube()
+			dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+			dk.Spec.Templates = dynakube.TemplatesSpec{}
+			clt := fakeClient()
+
+			imageClient := imageclientmock.NewClient(t)
+			imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.DBExecutor, "").Return(&dtimage.Info{URI: expectedImageURI}, nil)
+
+			require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
+			deployments := &appsv1.DeploymentList{}
+			require.NoError(t, clt.List(t.Context(), deployments))
+			require.Len(t, deployments.Items, 1)
+
+			return &deployments.Items[0]
+		}
+
+		deployment := getReconciledDeployment(t)
+		require.Equal(t, expectedImageURI, deployment.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("no call to api when extensions are not used", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.Extensions.Databases = nil
+		clt := fakeClient()
+
+		imageClient := imageclientmock.NewClient(t)
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
+		deployments := &appsv1.DeploymentList{}
+		require.NoError(t, clt.List(t.Context(), deployments))
+		require.Empty(t, deployments.Items)
+	})
+
+	t.Run("template image takes precedence over public registry", func(t *testing.T) {
+		templateImage := "my-custom-template-registry:5000/my-custom-template-repo"
+		tempateTag := "my-custom-template-tag"
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.Templates.SQLExtensionExecutor.ImageRef = image.Ref{Repository: templateImage, Tag: tempateTag}
+		clt := fakeClient()
+
+		imageClient := imageclientmock.NewClient(t)
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
+		deployments := &appsv1.DeploymentList{}
+		require.NoError(t, clt.List(t.Context(), deployments))
+		require.Len(t, deployments.Items, 1)
+		require.Equal(t, fmt.Sprintf("%s:%s", templateImage, tempateTag), deployments.Items[0].Spec.Template.Spec.Containers[0].Image)
+	})
+}
+
 func fakeClient() client.Client {
 	return fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
@@ -347,7 +410,7 @@ func requireReconcileFails(t *testing.T, dk *dynakube.DynaKube, builder *fake.Cl
 		Build()
 	reconciler := NewReconciler(mockK8sClient, mockK8sClient)
 
-	err := reconciler.Reconcile(t.Context(), dk)
+	err := reconciler.Reconcile(t.Context(), nil, dk)
 	require.Error(t, err)
 	require.True(t, k8serrors.IsInternalError(err))
 	require.True(t, meta.IsStatusConditionFalse(dk.Status.Conditions, conditionType), meta.FindStatusCondition(dk.Status.Conditions, conditionType))
@@ -357,7 +420,7 @@ func getReconciledDeployment(t *testing.T, clt client.Client, dk *dynakube.DynaK
 	t.Cleanup(version.DisableCacheForTest(123))
 	t.Helper()
 
-	require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+	require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), nil, dk))
 	deployments := &appsv1.DeploymentList{}
 	require.NoError(t, clt.List(t.Context(), deployments))
 	if len(deployments.Items) == 0 {
@@ -423,7 +486,7 @@ func getMatchingDeployment(dk *dynakube.DynaKube) *appsv1.Deployment {
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						buildContainer(dk, db),
+						buildContainer(dk, db, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String()),
 					},
 					Volumes: buildVolumes(dk, db),
 				},

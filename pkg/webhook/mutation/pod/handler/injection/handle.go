@@ -49,7 +49,7 @@ func New( //nolint:revive
 }
 
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
-	ctx, log := logd.NewFromContext(mutationRequest.Context, "pod-mutation-injection")
+	ctx, log := logd.NewFromContext(mutationRequest.Context, "injection")
 	mutationRequest.Context = ctx
 
 	if !mutationRequest.DynaKube.OneAgent().IsAppInjectionNeeded() && !mutationRequest.DynaKube.MetadataEnrichment().IsEnabled() {
@@ -148,7 +148,10 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 	}
 
 	if mutated {
-		addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer)
+		if err := addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer); err != nil {
+			return false, err
+		}
+
 		events.SendPodInjectEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
 	}
 

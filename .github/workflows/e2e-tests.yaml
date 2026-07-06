@@ -62,6 +62,9 @@ jobs:
   run-in-k8s:
     if: ${{ github.event.inputs.run-e2e-in-k8s != 'false' }}
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -90,6 +93,7 @@ jobs:
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
           tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
@@ -108,6 +112,9 @@ jobs:
   run-in-k8s-platform-token:
     if: ${{ github.event.inputs.run-e2e-in-k8s-platform-token != 'false' }}
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (platform token)
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -136,6 +143,7 @@ jobs:
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
           tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
@@ -154,6 +162,9 @@ jobs:
   run-in-ocp:
     if: ${{ github.event.inputs.run-e2e-in-ocp != 'false' }}
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -182,6 +193,7 @@ jobs:
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
           tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
@@ -199,6 +211,9 @@ jobs:
   run-in-ocp-platform-token:
     if: ${{ github.event.inputs.run-e2e-in-ocp-platform-token != 'false' }}
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform token)
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -227,6 +242,7 @@ jobs:
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
           tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
@@ -245,6 +261,9 @@ jobs:
   run-in-ocp-olm:
     if: ${{ github.event.inputs.run-e2e-in-ocp-olm != 'false' }}
     name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }})
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -273,6 +292,7 @@ jobs:
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
           tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
@@ -290,6 +310,9 @@ jobs:
   run-in-ocp-olm-platform-token:
     if: ${{ github.event.inputs.run-e2e-in-ocp-olm-platform-token != 'false' }}
     name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform token)
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -318,6 +341,7 @@ jobs:
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
           tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
@@ -336,6 +360,9 @@ jobs:
   run-in-ocp-fips:
     if: ${{ github.event.inputs.run-e2e-in-ocp-fips != 'false' }}
     name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -363,6 +390,7 @@ jobs:
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
           tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
@@ -394,6 +422,7 @@ jobs:
         id: set_slack_message
         env:
           TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
+          E2E_MAKE_TARGET: ${{ github.event.inputs.e2e-make-target }}
           K8S_CLUSTER_STATUS: ${{ needs.run-in-k8s.outputs.cluster_status }}
           K8S_JOB_ID: ${{ needs.run-in-k8s.outputs.job_id }}
           K8S_RESULT: ${{ needs.run-in-k8s.result }}
@@ -455,6 +484,12 @@ jobs:
           echo "OCP_OLM_PLATFORM_TOKEN_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_PLATFORM_TOKEN_JOB_ID}" >> $GITHUB_ENV
 
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
+
+          if [ -n "$E2E_MAKE_TARGET" ]; then
+            echo "MAKE_TARGET_INFO=run via \`make test/e2e/$E2E_MAKE_TARGET/publish\`" >> $GITHUB_ENV
+          else
+            echo "MAKE_TARGET_INFO=" >> $GITHUB_ENV
+          fi
       - name: Notify in Slack
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:

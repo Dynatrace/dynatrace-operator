@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	oaClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -17,6 +18,10 @@ import (
 
 type subReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
+type imageAwareSubReconciler interface {
+	Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error
 }
 
 type logmonsettingsSubReconciler interface {
@@ -32,7 +37,7 @@ type Reconciler struct {
 	apiReader client.Reader
 
 	configSecretReconciler           subReconciler
-	daemonsetReconciler              subReconciler
+	daemonsetReconciler              imageAwareSubReconciler
 	oneAgentConnectionInfoReconciler oaConnectionInfoReconciler
 	logmonsettingsReconciler         logmonsettingsSubReconciler
 }
@@ -50,7 +55,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-logmonitoring")
+	ctx, _ = logd.NewFromContext(ctx, "logmonitoring")
 
 	err := r.oneAgentConnectionInfoReconciler.Reconcile(ctx, dtClient.OneAgent, dk)
 	if err != nil {
@@ -62,7 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, 
 		return err
 	}
 
-	err = r.daemonsetReconciler.Reconcile(ctx, dk)
+	err = r.daemonsetReconciler.Reconcile(ctx, dtClient.Images, dk)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -25,8 +27,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "extension-eec")
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "eec")
 
 	// TODO: Remove as part of ICP-1086
 	meta.RemoveStatusCondition(dk.Conditions(), "ExtensionsControllerStatefulSet")
@@ -64,5 +66,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return errors.New("kubeSystemUUID unknown")
 	}
 
-	return r.createOrUpdateStatefulset(ctx, dk)
+	// templates section takes precedence over public registry
+	var imageURI string
+
+	templateImageRef := dk.Spec.Templates.ExtensionExecutionController.ImageRef
+	if templateImageRef.HasImage() {
+		imageURI = templateImageRef.String()
+	} else {
+		var err error
+
+		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), image.EEC)
+		if err != nil {
+			return err
+		}
+	}
+
+	return r.createOrUpdateStatefulset(ctx, dk, imageURI)
 }

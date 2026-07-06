@@ -66,7 +66,7 @@ func NewReconciler(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-injection")
+	ctx, log := logd.NewFromContext(ctx, "injection")
 
 	err := r.reconcileSubReconcilers(ctx, dtClient, dk)
 	if err != nil {
@@ -153,12 +153,12 @@ func (r *Reconciler) unmap(ctx context.Context, dk *dynakube.DynaKube) {
 
 	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
 	if err != nil {
-		log.Error(err, "failed to list namespaces for dynakube", "dkName", dk.Name)
+		log.Error(err, "failed to list namespaces for dynakube")
 	}
 
 	dkMapper := r.createDynakubeMapper(ctx, dk)
 	if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
-		log.Error(err, "could not unmap dynakube from namespace", "dkName", dk.Name)
+		log.Error(err, "could not unmap dynakube from namespace")
 	}
 }
 

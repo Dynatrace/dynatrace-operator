@@ -28,6 +28,7 @@ test/e2e:
 	make test/e2e/no-csi || RC=1; \
 	make test/e2e/istio  || RC=1; \
 	make test/e2e/release || RC=1; \
+	make test/e2e/permissions || RC=1; \
 	exit $$RC
 
 ## Run standard, no-csi, istio and release e2e tests with /publish
@@ -37,6 +38,14 @@ test/e2e-publish:
 	make test/e2e/no-csi/publish || RC=1; \
 	make test/e2e/istio/publish || RC=1; \
 	make test/e2e/release/publish || RC=1; \
+	make test/e2e/permissions/publish || RC=1; \
+	exit $$RC
+
+## Start tests that support kind
+test/e2e/kind:
+	RC=0; \
+	make test/e2e/edgeconnect/normal || RC=1; \
+	make test/e2e/permissions || RC=1; \
 	exit $$RC
 
 ## Run standard e2e test only
@@ -54,6 +63,10 @@ test/e2e/no-csi:
 ## Run release e2e test only
 test/e2e/release:
 	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/release $(SKIPCLEANUP)
+
+## Run permissions e2e test
+test/e2e/permissions:
+	$(GOTESTCMD) -timeout 10m ./test/e2e/scenarios/permissions $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:
@@ -133,7 +146,7 @@ test/e2e/cloudnative/switchmodes:
 
 ## Runs CloudNative upgrade e2e test only
 test/e2e/cloudnative/upgrade:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "cloudnative_upgrade" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "cloudnative_upgrade" $(SKIPCLEANUP)
 
 ## Runs extensions upgrade e2e test only
 test/e2e/extensions/upgrade:
@@ -213,22 +226,37 @@ test/e2e/usepublicregistry/activegate:
 test/e2e/usepublicregistry/codemodules:
 	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_codemodules" $(SKIPCLEANUP)
 
+test/e2e/usepublicregistry/dbexecutor:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_db_executor" $(SKIPCLEANUP)
 
+test/e2e/usepublicregistry/logmon:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_logmon" $(SKIPCLEANUP)
+
+## Runs combined all-features test: CloudNative OA + ActiveGate + DBExecutor, each with an explicit image override, plus use-public-registry flag
+test/e2e/usepublicregistry/all-features-with-image-overrides:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_all_features_with_image_overrides" $(SKIPCLEANUP)
+
+## Runs E2E tests related to propagation of resource attributes
 test/e2e/resourceattributes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (logmon)
 test/e2e/resourceattributes/logmononly:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_logmon_only" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (metadata enrichment only)
 test/e2e/resourceattributes/metadataonly:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_metadata_only" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (oneagent)
 test/e2e/resourceattributes/oneagent:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_oneagent" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (otlp)
 test/e2e/resourceattributes/otlp:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_otlp" $(SKIPCLEANUP)
 
+## Runs E2E tests related to propagation of resource attributes (combined)
 test/e2e/resourceattributes/combined:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_combined" $(SKIPCLEANUP)
 

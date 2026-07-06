@@ -34,7 +34,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "activegate-connectioninfo")
+	ctx, log := logd.NewFromContext(ctx, "connectioninfo")
 
 	if !dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), activeGateConnectionInfoConditionType) == nil {
@@ -127,7 +127,7 @@ func (r *Reconciler) createTenantTokenSecret(ctx context.Context, dk *dynakube.D
 
 	_, err = r.secrets.CreateOrUpdate(ctx, secret)
 	if err != nil {
-		log.Info("could not create or update secret for connection info", "name", secret.Name)
+		log.Info("could not create or update secret for connection info", "secretName", secret.Name)
 		k8sconditions.SetKubeAPIError(dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
 		return err

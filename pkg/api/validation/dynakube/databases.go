@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -23,15 +24,25 @@ const (
 	warningHostPathDatabaseVolumeDetected = `Host path database volume detected. If you're on OpenShift, mounting host path volumes will be prohibited by the SCC and cause silent failures. If you still want to do this, make sure to create and bind corresponding roles.`
 )
 
-func missingDatabaseExecutorImage(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func missingDatabaseExecutorImage(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	log := logd.FromContext(ctx)
 
 	if !dk.Extensions().IsDatabasesEnabled() {
 		return ""
 	}
 
+	if dk.FF().IsPublicRegistry() {
+		return ""
+	}
+
+	// For new DynaKubes (status not yet set), check the token secret directly.
+	hasPlatformToken, err := token.NewReader(dv.apiReader, dk).HasPlatformToken(ctx)
+	if err == nil && hasPlatformToken {
+		return ""
+	}
+
 	if !dk.Spec.Templates.SQLExtensionExecutor.ImageRef.HasImage() {
-		log.Info("requested dynakube doesn't specify the sqlExtensionExecutor image.", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube doesn't specify the sqlExtensionExecutor image.")
 
 		return errorExtensionDatabaseExecutorImageNotSpecified
 	}

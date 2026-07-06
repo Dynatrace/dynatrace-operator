@@ -53,7 +53,7 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "logmonitoring-config-secret")
+	ctx, log := logd.NewFromContext(ctx, "config-secret")
 
 	if !dk.LogMonitoring().IsStandalone() {
 		if meta.FindStatusCondition(*dk.Conditions(), LmcConditionType) == nil {

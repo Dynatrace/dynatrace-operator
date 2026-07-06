@@ -29,9 +29,11 @@ runs:
         fi
         echo "triggered=$triggered" >> $GITHUB_OUTPUT
         echo "detected-command=$detected_command" >> $GITHUB_OUTPUT
-    - name: Get PR details
+    - name: Get PR details (and make sure it was created by one of us)
       id: get-pr
       uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        AUTHOR_AUTHORIZED: ${{ steps.check.outputs.triggered }}
       with:
         script: |
           const pr = await github.rest.pulls.get({
@@ -41,10 +43,13 @@ runs:
           });
           core.setOutput('pr_branch', pr.data.head.ref);
           core.setOutput('pr_sha', pr.data.head.sha);
+          const isLegitRepo = pr.data.head.repo.full_name === pr.data.base.repo.full_name;
+          const isLegitPr = process.env.AUTHOR_AUTHORIZED === 'true' && isLegitRepo;
+          core.setOutput('legit-pr', isLegitPr.toString());
 outputs:
   triggered:
-    description: 'true if an allowed command was found and author is allowed'
-    value: ${{ steps.check.outputs.triggered }}
+    description: 'true if an allowed command was found, commenter is authorized, and the PR branch is from this repo'
+    value: ${{ steps.get-pr.outputs.legit-pr }}
   detected-command:
     description: 'The detected command from the comment'
     value: ${{ steps.check.outputs.detected-command }}

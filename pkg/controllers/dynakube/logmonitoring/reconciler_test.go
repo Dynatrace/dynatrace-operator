@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/mock"
@@ -61,7 +62,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		dtClient := &dynatrace.Client{Settings: settings.NewClient(nil)}
+		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
 		oaClientMock := oneagentclientmock.NewClient(t)
 		dtClient.OneAgent = oaClientMock
 
@@ -71,8 +72,8 @@ func TestReconcile(t *testing.T) {
 		passConfigSecret := newMockSubReconciler(t)
 		passConfigSecret.EXPECT().Reconcile(anyCtx, dk).Return(nil).Once()
 
-		passDaemonSet := newMockSubReconciler(t)
-		passDaemonSet.EXPECT().Reconcile(anyCtx, dk).Return(nil).Once()
+		passDaemonSet := newMockImageAwareSubReconciler(t)
+		passDaemonSet.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
 
 		passLogMonSetting := newMockLogmonsettingsSubReconciler(t)
 		passLogMonSetting.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()

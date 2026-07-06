@@ -33,6 +33,8 @@ installCRD: true
 debugLogs: false
 # creates a Job to migrate CRD storage during upgrade from old versions to the new one
 crdStorageMigrationJob: true
+# opt-in to extracting links from codemodules images. default behavior is to only handle regular files
+extractCodeModulesImageLinks: false
 
 operator:
   nodeSelector: {}
@@ -273,6 +275,7 @@ csidriver:
         memory: 30Mi
 
 rbac:
+  kubeletFineGrainedAuthz: ""
   activeGate:
     create: true
     annotations: {}

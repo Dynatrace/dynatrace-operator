@@ -43,7 +43,7 @@ func NewReconciler(kubeClient client.Client, apiReader client.Reader) *Reconcile
 	}
 }
 func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-istio")
+	ctx, log := logd.NewFromContext(ctx, "istio")
 
 	log.Info("reconciling istio components for the Dynatrace API url")
 
@@ -65,7 +65,7 @@ func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube)
 		return nil
 	}
 
-	apiCommunicationHost, err := connectioninfo.NewCommunicationHost(dk.Spec.APIURL)
+	apiCommunicationHost, err := connectioninfo.NewCommunicationHost(dk.APIURL())
 	if err != nil {
 		return err
 	}

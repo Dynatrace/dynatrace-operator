@@ -15,8 +15,7 @@ import (
 type Pod struct {
 
 	// built from customer defined metadata enrichment rules
-	rules          map[string]string
-	rulesPropagate map[string]string
+	rules map[string]string
 
 	// read from metadata.dynatrace.com annotations on the namespace
 	namespaceAnnotations map[string]string
@@ -49,7 +48,6 @@ func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client c
 	attrs := &Pod{
 		podAnnotations:       make(map[string]string),
 		namespaceAnnotations: make(map[string]string),
-		rulesPropagate:       make(map[string]string),
 		rules:                make(map[string]string),
 		workloadInfo:         make(map[string]string),
 		podInfo:              make(map[string]string),

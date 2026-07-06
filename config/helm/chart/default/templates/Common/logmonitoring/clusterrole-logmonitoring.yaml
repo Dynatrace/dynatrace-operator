@@ -22,11 +22,14 @@ rules:
 - apiGroups:
     - ""
   resources:
-    - nodes/proxy
+{{- if (include "dynatrace-operator.kubeletFineGrainedAuthz" .) }}
     - nodes/pods
+{{- else }}
+    - nodes/proxy
+{{- end }}
   verbs:
     - get
-{{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+{{- if (include "dynatrace-operator.openshiftOrOlm" .) }}
 - apiGroups:
     - security.openshift.io
   resourceNames:

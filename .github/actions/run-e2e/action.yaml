@@ -41,6 +41,9 @@ inputs:
   tenant1-platform-token-nosettings:
     description: The platform token of Tenant 1 without settings scope
     required: true
+  tenant1-dataingest-platform-token:
+    description: The data ingest platform token of Tenant 1
+    required: true
   tenant2-name:
     description: The name of Tenant 2
     required: true
@@ -96,7 +99,7 @@ runs:
       uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
       with:
         # renovate datasource=github-releases depName=helm/helm
-        version: v4.2.1
+        version: v4.2.2
         token: ${{ github.token }}
     - name: Install gotestsum
       shell: bash
@@ -136,6 +139,7 @@ runs:
         TENANT1_OAUTH_URN: ${{ inputs.tenant1-oauth-urn }}
         TENANT1_PLATFORM_TOKEN: ${{ inputs.tenant1-platform-token }}
         TENANT1_PLATFORM_TOKEN_NOSETTINGS: ${{ inputs.tenant1-platform-token-nosettings }}
+        TENANT1_DATAINGEST_PLATFORM_TOKEN: ${{ inputs.tenant1-dataingest-platform-token }}
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
@@ -152,12 +156,8 @@ runs:
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
       if: always()
     - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
-      with:
-        files: target/results/*.xml
       if: always()
-    - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
+      uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
       with:
         files: target/results/*.xml
     - name: Upload logs

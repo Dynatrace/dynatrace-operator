@@ -7,9 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,14 +27,24 @@ func LogmonOnly(t *testing.T) features.Feature {
 	builder := features.New("static-resource-logmon-only")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *dynakubeComponents.New(
-		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithLogMonitoring(),
-		dynakubeComponents.WithLogMonitoringImageRef(t),
-		dynakubeComponents.WithResourceAttributes(globalAttrs),
-	)
+	options := []componentDynakube.Option{
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
+		componentDynakube.WithLogMonitoring(),
+		componentDynakube.WithLogMonitoringImageRef(t),
+		componentDynakube.WithResourceAttributes(globalAttrs),
+	}
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err)
+	if isOpenshift {
+		options = append(options, componentDynakube.WithAnnotations(map[string]string{
+			exp.OAPrivilegedKey: "true",
+		}))
+	}
+
+	testDynakube := *componentDynakube.New(options...)
+
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
 	builder.Assess("LogMonitoring DaemonSet is ready", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("LogMonitoring init container args contain global resource attributes", assessLogMonitoringInitArgs(testDynakube, globalAttrs))

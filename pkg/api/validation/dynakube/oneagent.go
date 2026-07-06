@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -42,6 +43,8 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
 
+	errorInvalidOneAgentArgument = "The DynaKube's OneAgent specification contains invalid arguments. Make sure to remove forbidden characters (newline, tab, carriage return, null) from the value in your custom resource."
+
 	warningDeprecatedVersion = `version field is deprecated. Please use "%s" field instead to set a version.`
 
 	warningDeprecatedVersionIgnored = `version field is deprecated and ignored. Please remove the version field from the DynaKube specification.`
@@ -68,7 +71,7 @@ func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dyn
 	}
 
 	if counter > 1 {
-		log.Info("requested dynakube has conflicting one agent configuration", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube has conflicting one agent configuration")
 
 		return errorConflictingOneagentMode
 	}
@@ -100,7 +103,7 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 
 		if hasLogMonitoringSelectorConflict(dk, &item) || hasOneAgentSelectorConflict(dk, &item) {
 			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgent().GetNodeSelector(dk.LogMonitoring().GetNodeSelector())) {
-				log.Info("requested dynakube has conflicting OneAgent nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
+				log.Info("requested dynakube has conflicting OneAgent nodeSelector")
 
 				conflictingDynakubes[item.Name] = true
 			}
@@ -275,6 +278,17 @@ func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube
 	for key := range args {
 		if dk.OneAgent().IsCloudNativeFullstackMode() && key == "--set-host-id-source" {
 			return errorHostIDSourceArgumentInCloudNative
+		}
+	}
+
+	return ""
+}
+
+func invalidOneAgentArguments(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	args := dk.OneAgent().GetArguments()
+	for _, arg := range args {
+		if strings.ContainsAny(arg, sanitize.InvalidCommandLineCharset) {
+			return errorInvalidOneAgentArgument
 		}
 	}
 

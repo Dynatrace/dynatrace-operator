@@ -35,7 +35,7 @@ func Install(releaseTag string, withCSI bool) env.Func {
 		if releaseTag == "" {
 			return ctx, errors.New("missing release tag")
 		}
-		err := installViaHelm(releaseTag, withCSI)
+		err := InstallViaHelm(releaseTag, withCSI)
 		if err != nil {
 			return ctx, err
 		}
@@ -59,7 +59,7 @@ func InstallLocal(withCSI bool) env.Func {
 				return ctx, err
 			}
 		} else {
-			err := installViaHelm("", withCSI)
+			err := InstallViaHelm("", withCSI)
 			if err != nil {
 				return ctx, err
 			}
@@ -158,7 +158,7 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	return err
 }
 
-func installViaHelm(releaseTag string, withCSI bool) error {
+func InstallViaHelm(releaseTag string, withCSI bool, extraOpts ...helm.Option) error {
 	manager := helm.New("''")
 
 	_platform, err := platform.NewResolver().GetPlatform()
@@ -180,7 +180,14 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 		_ = klogLevel.Set("0")
 	}()
 
-	return manager.RunUpgrade(opts...)
+	return manager.RunUpgrade(append(opts, extraOpts...)...)
+}
+
+func UninstallViaHelm(releaseName, namespace string, extraOpts ...helm.Option) error {
+	return helm.New("''").RunUninstall(append([]helm.Option{
+		helm.WithReleaseName(releaseName),
+		helm.WithNamespace(namespace),
+	}, extraOpts...)...)
 }
 
 func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {

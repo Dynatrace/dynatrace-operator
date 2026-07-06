@@ -8,6 +8,7 @@ on:
 env:
   GOOGLE_MARKETPLACE_ANNOTATION: com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+  FIPS_PLATFORMS: linux/amd64,linux/arm64
   DEPLOYER_PLATFORMS: linux/amd64
 
 jobs:
@@ -81,8 +82,18 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           images: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
           annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
+      - name: Build fips image
+        id: build-fips-image
+        uses: ./.github/actions/build-push-image
+        with:
+          platforms: ${{ env.FIPS_PLATFORMS }}
+          images: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
+          annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
+          fips: true
+          suffix: fips
     outputs:
       digest: ${{steps.build-image.outputs.digest}}
+      fips-digest: ${{steps.build-fips-image.outputs.digest}}
 
   signing:
     name: Sign the image index/manifests + Add SBOM
@@ -165,6 +176,33 @@ jobs:
         with:
           subject-name: ${{ matrix.url }}/${{ vars[matrix.repository] }}
           subject-digest: ${{ needs.build-push.outputs.digest }}
+      - name: Sign fips images for ${{matrix.registry}}
+        uses: ./.github/actions/sign-image
+        with:
+          image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Create sbom for ${{matrix.registry}} fips
+        id: sbom-fips
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
+          format: 'cyclonedx'
+          output: 'fips-result.json'
+          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
+          skip-files: '/usr/local/bin/dynatrace-operator'
+      - name: Upload sbom to ${{matrix.registry}} fips
+        uses: ./.github/actions/upload-sbom
+        with:
+          image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
+          sbom: 'fips-result.json'
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Add build provenance attestation for ${{ matrix.registry }} fips
+        uses: ./.github/actions/attest-artifact
+        with:
+          subject-name: ${{ matrix.url }}/${{ vars[matrix.repository] }}
+          subject-digest: ${{ needs.build-push.outputs.fips-digest }}
 
   run-preflight-rhcc:
     name: Run preflight for rhcc
@@ -286,7 +324,7 @@ jobs:
           mkdir -p tmp
           echo ${COSIGN_PUBLIC_KEY} | base64 -d > tmp/cosign.pub
       - name: Create pre-release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         if: ${{ contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md
@@ -302,7 +340,7 @@ jobs:
           draft: true
           fail_on_unmatched_files: true
       - name: Create release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         if: ${{ !contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md

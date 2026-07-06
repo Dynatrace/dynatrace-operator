@@ -38,7 +38,7 @@ spec:
       annotations:
         dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: webhook
-        {{- if and (.Values.webhook.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
+        {{- if and (.Values.webhook.apparmor) (not (include "kubernetes.appArmorSecurityContextSupported" .)) }}
         container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
         {{- end }}
         {{- if .Values.webhook.annotations}}
@@ -83,6 +83,10 @@ spec:
             {{- if .Values.enableInsecurePprofEndpoint }}
             - name: PPROF_BIND_ADDRESS
               value: ":6060"
+            {{- end }}
+            {{- if .Values.extractCodeModulesImageLinks }}
+            - name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
+              value: "true"
             {{- end }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
           readinessProbe:

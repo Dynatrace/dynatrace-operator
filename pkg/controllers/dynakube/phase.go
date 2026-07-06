@@ -19,12 +19,11 @@ func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dy
 		controller.determineActiveGatePhase,
 		controller.determineKubernetesMonitoringPhase,
 		controller.determineExtensionsExecutionControllerPhase,
-		controller.determineExtensionsCollectorPhase,
 		controller.determineExtensionsDatabasesPhase,
 		controller.determineOneAgentPhase,
 		controller.determineLogAgentPhase,
 		controller.determineKSPMPhase,
-		controller.determineTelemetryIngestPhase,
+		controller.determineOTELCollectorPhase,
 	}
 	for _, component := range components {
 		if phase := component(ctx, dk); phase != status.Running {
@@ -49,19 +48,19 @@ func (controller *Controller) determineActiveGatePhase(ctx context.Context, dk *
 	if dk.ActiveGate().IsEnabled() {
 		activeGatePods, err := controller.numberOfMissingActiveGatePods(ctx, dk)
 		if err != nil {
-			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dk.Name)
+			log.Error(err, "activegate statefulset could not be accessed")
 
 			return status.Error
 		}
 
 		if activeGatePods > 0 {
-			log.Info("activegate statefulset is still deploying", "dynakube", dk.Name)
+			log.Info("activegate statefulset is still deploying")
 
 			return status.Deploying
 		}
 
 		if activeGatePods < 0 {
-			log.Info("activegate statefulset not yet available", "dynakube", dk.Name)
+			log.Info("activegate statefulset not yet available")
 
 			return status.Deploying
 		}
@@ -71,24 +70,16 @@ func (controller *Controller) determineActiveGatePhase(ctx context.Context, dk *
 }
 
 func (controller *Controller) determineExtensionsExecutionControllerPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(ctx, dk, dk.Extensions().GetExecutionControllerStatefulsetName())
-}
-
-func (controller *Controller) determineExtensionsCollectorPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
-}
-
-func (controller *Controller) determineTelemetryIngestPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
-	if dk.TelemetryIngest().IsEnabled() {
-		return controller.determineStatefulSetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
+	if dk.Extensions().IsAnyEnabled() {
+		return controller.determineStatefulSetPhase(ctx, dk, dk.Extensions().GetExecutionControllerStatefulsetName())
 	}
 
 	return status.Running
 }
 
-func (controller *Controller) determinePrometheusStatefulsetPhase(ctx context.Context, dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
-	if dk.Extensions().IsPrometheusEnabled() {
-		return controller.determineStatefulSetPhase(ctx, dk, statefulsetName)
+func (controller *Controller) determineOTELCollectorPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
+		return controller.determineStatefulSetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
 	}
 
 	return status.Running
@@ -101,13 +92,13 @@ func (controller *Controller) determineStatefulSetPhase(ctx context.Context, dk 
 
 	err := controller.client.Get(ctx, types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
 	if k8serrors.IsNotFound(err) {
-		log.Info("statefulset to be deployed", "dynakube", dk.Name, "statefulset", statefulsetName)
+		log.Info("statefulset to be deployed", "statefulset", statefulsetName)
 
 		return status.Deploying
 	}
 
 	if err != nil {
-		log.Error(err, "statefulset could not be accessed", "dynakube", dk.Name, "statefulset", statefulsetName)
+		log.Error(err, "statefulset could not be accessed", "statefulset", statefulsetName)
 
 		return status.Error
 	}
@@ -127,7 +118,7 @@ func (controller *Controller) determineExtensionsDatabasesPhase(ctx context.Cont
 	if dk.Extensions().IsDatabasesEnabled() {
 		deployments, err := databases.ListDeployments(ctx, controller.client, dk)
 		if err != nil {
-			log.Error(err, "deployments could not be accessed", "dynakube", dk.Name)
+			log.Error(err, "deployments could not be accessed")
 
 			return status.Error
 		}
@@ -144,7 +135,7 @@ func (controller *Controller) determineExtensionsDatabasesPhase(ctx context.Cont
 			// Check the generation to ensure that the reported readyReplicas match the latest desired state.
 			if deployment.Generation != deployment.Status.ObservedGeneration ||
 				*deployment.Spec.Replicas != deployment.Status.ReadyReplicas {
-				log.Info("deployment is still deploying", "dynakube", dk.Name, "deployment", deployment.Name)
+				log.Info("deployment is still deploying", "deployment", deployment.Name)
 
 				return status.Deploying
 			}
@@ -160,19 +151,19 @@ func (controller *Controller) determineOneAgentPhase(ctx context.Context, dk *dy
 	if dk.OneAgent().IsCloudNativeFullstackMode() || dk.OneAgent().IsClassicFullStackMode() || dk.OneAgent().IsHostMonitoringMode() {
 		oneAgentPods, err := controller.numberOfMissingDaemonSetPods(ctx, dk, dk.OneAgent().GetDaemonsetName())
 		if k8serrors.IsNotFound(err) {
-			log.Info("oneagent daemonset not yet available", "dynakube", dk.Name)
+			log.Info("oneagent daemonset not yet available")
 
 			return status.Deploying
 		}
 
 		if err != nil {
-			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", dk.Name)
+			log.Error(err, "oneagent daemonset could not be accessed")
 
 			return status.Error
 		}
 
 		if oneAgentPods > 0 {
-			log.Info("oneagent daemonset is still deploying", "dynakube", dk.Name)
+			log.Info("oneagent daemonset is still deploying")
 
 			return status.Deploying
 		}
@@ -187,19 +178,19 @@ func (controller *Controller) determineLogAgentPhase(ctx context.Context, dk *dy
 	if dk.LogMonitoring().IsStandalone() {
 		logAgentPods, err := controller.numberOfMissingDaemonSetPods(ctx, dk, dk.LogMonitoring().GetDaemonSetName())
 		if k8serrors.IsNotFound(err) {
-			log.Info("logagent daemonset not yet available", "dynakube", dk.Name)
+			log.Info("logagent daemonset not yet available")
 
 			return status.Deploying
 		}
 
 		if err != nil {
-			log.Error(err, "logagent daemonset could not be accessed", "dynakube", dk.Name)
+			log.Error(err, "logagent daemonset could not be accessed")
 
 			return status.Error
 		}
 
 		if logAgentPods > 0 {
-			log.Info("logagent daemonset is still deploying", "dynakube", dk.Name)
+			log.Info("logagent daemonset is still deploying")
 
 			return status.Deploying
 		}
@@ -214,19 +205,19 @@ func (controller *Controller) determineKSPMPhase(ctx context.Context, dk *dynaku
 	if dk.KSPM().IsEnabled() {
 		kspmPods, err := controller.numberOfMissingDaemonSetPods(ctx, dk, dk.KSPM().GetDaemonSetName())
 		if k8serrors.IsNotFound(err) {
-			log.Info("kspm daemonset not yet available", "dynakube", dk.Name)
+			log.Info("kspm daemonset not yet available")
 
 			return status.Deploying
 		}
 
 		if err != nil {
-			log.Error(err, "kspm daemonset could not be accessed", "dynakube", dk.Name)
+			log.Error(err, "kspm daemonset could not be accessed")
 
 			return status.Error
 		}
 
 		if kspmPods > 0 {
-			log.Info("kspm daemonset is still deploying", "dynakube", dk.Name)
+			log.Info("kspm daemonset is still deploying")
 
 			return status.Deploying
 		}

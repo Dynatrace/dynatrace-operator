@@ -8,12 +8,14 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
 const (
 	warningFeatureFlagDeprecated   = `Using deprecated feature flags: `
 	warningFeatureFlagUnknown      = `Using unknown feature flags: %s. Please remove them from Dynakube specification.`
 	warningNodeImagePullWithoutCSI = "The `" + exp.OANodeImagePullKey + "` annotation is set, but the CSI driver is not available on this cluster. This feature flag only affects the behavior of the CSI driver, so it will have no effect. Other previous `node-image-pull` related behavior has been defaulted."
+	errorInvalidNoProxy            = "The DynaKube's specification has an invalid value set using the " + exp.NoProxyKey + " annotation. Make sure to remove forbidden characters (newline, tab, carriage return, null) from the value in your custom resource."
 )
 
 var deprecatedFeatureFlags = []string{
@@ -106,6 +108,14 @@ func unknownFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) 
 func isNodeImagePullWithoutCSI(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if !dk.OneAgent().IsCSIAvailable() && dk.FF().IsSet(exp.OANodeImagePullKey) {
 		return warningNodeImagePullWithoutCSI
+	}
+
+	return ""
+}
+
+func invalidNoProxy(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if strings.ContainsAny(dk.FF().GetNoProxy(), sanitize.InvalidCommandLineCharset) {
+		return errorInvalidNoProxy
 	}
 
 	return ""

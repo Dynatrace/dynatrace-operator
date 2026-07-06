@@ -92,7 +92,7 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	ctx, log := logd.NewFromContext(ctx, "csi-provisioner")
-	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
+	log.Info("reconciling DynaKube")
 
 	var dk dynakube.DynaKube
 
@@ -128,7 +128,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 
 	if !dk.OneAgent().IsAppInjectionNeeded() {
-		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
+		log.Info("app injection not necessary, skip agent codemodule download")
 
 		_ = provisioner.cleaner.Run(ctx)
 
@@ -136,7 +136,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 
 	if !dk.IsCodeModulesStatusReady() {
-		log.Info("dynakube's codemodule version status is not yet ready, requeuing", "dynakube", dk.Name)
+		log.Info("dynakube's codemodule version status is not yet ready, requeuing")
 
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
@@ -145,7 +145,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 
 	switch {
 	case errors.Is(err, errNotReady):
-		log.Info(err.Error(), "dynakube", dk.Name)
+		log.Info(err.Error())
 
 		return reconcile.Result{RequeueAfter: notReadyRequeueDuration}, nil
 	case core.IsUnreachable(err):
