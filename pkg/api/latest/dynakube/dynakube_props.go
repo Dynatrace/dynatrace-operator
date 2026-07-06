@@ -132,7 +132,7 @@ func (dk *DynaKube) CustomPullSecretReferences() []corev1.LocalObjectReference {
 func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
 	var refs []corev1.LocalObjectReference
 
-	if !ptr.Deref(dk.Status.APIToken.Platform, false) {
+	if !ptr.Deref(dk.Status.APIToken.Platform, false) || !dk.FF().IsPublicRegistry() {
 		refs = append(refs, dk.TenantRegistryPullSecretReferences()...)
 	}
 
