@@ -212,6 +212,7 @@ test/e2e/usepublicregistry/activegate:
 ## Runs only use-public-registry CodeModules scenarios (with and without publicRegistryOverride, requires no-csi)
 test/e2e/usepublicregistry/codemodules:
 	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_codemodules" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_codemodules_with_csi" $(SKIPCLEANUP)
 
 test/e2e/usepublicregistry/dbexecutor:
 	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_db_executor" $(SKIPCLEANUP)

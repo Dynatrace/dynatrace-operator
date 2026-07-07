@@ -75,6 +75,7 @@ var (
 		publicRegistryNotAllowedForClassic,
 		invalidOneAgentArguments,
 		invalidLogmonArguments,
+		missingCodeModulesImage,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
