@@ -107,6 +107,10 @@ func TestStandard_use_public_registry_activegate_with_override(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.ActiveGateWithOverride(t))
 }
 
+func TestStandard_use_public_registry_codemodules_with_csi(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.CodeModulesWithCSI(t))
+}
+
 func TestStandard_cloudnative_disabled_auto_inject(t *testing.T) {
 	testEnv.Test(t, noInjection.Feature(t))
 }
