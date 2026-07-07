@@ -170,6 +170,19 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
+	t.Run("dynakube with public registry => image installer used, dtClient not created, no error", func(t *testing.T) {
+		dk := createDynaKubeWithPublicRegistryFF(t)
+		prov := createProvisioner(t, dk)
+		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
+
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+	})
+
 	t.Run("dynakube with job => job installer used, dtClient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
@@ -323,6 +336,22 @@ func createDynaKubeWithJobFF(t *testing.T) *dynakube.DynaKube {
 	dk.Status.CodeModules.ImageID = imageID
 	dk.Annotations = map[string]string{
 		exp.OANodeImagePullKey: "true",
+	}
+
+	return dk
+}
+
+func createDynaKubeWithPublicRegistryFF(t *testing.T) *dynakube.DynaKube {
+	t.Helper()
+
+	dk := createDynaKubeBase(t)
+	imageID := "test-image"
+	dk.Spec.OneAgent = oneagent.Spec{
+		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+	}
+	dk.Status.CodeModules.ImageID = imageID
+	dk.Annotations = map[string]string{
+		exp.UsePublicRegistryKey: "true",
 	}
 
 	return dk

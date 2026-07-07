@@ -47,6 +47,8 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	warningDeprecatedVersion = `version field is deprecated. Please use "%s" field instead to set a version.`
 
 	warningDeprecatedVersionIgnored = `version field is deprecated and ignored. Please remove the version field from the DynaKube specification.`
+
+	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but neither a code modules image is set nor a public registry is used.`
 )
 
 func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -330,4 +332,14 @@ func findDuplicates[S ~[]E, E comparable](s S) []E {
 	}
 
 	return duplicates
+}
+
+func missingCodeModulesImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() {
+		if dk.OneAgent().GetCustomCodeModulesImage() == "" && !dk.FF().IsPublicRegistry() {
+			return errorImagePullRequiresCodeModulesImage
+		}
+	}
+
+	return ""
 }
