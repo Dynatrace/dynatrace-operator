@@ -1264,9 +1264,7 @@ func TestMissingCodeModulesImage(t *testing.T) {
 			dk.Spec.OneAgent = tc.oaSpec
 
 			if tc.isValid {
-				warnings, err := assertAllowed(t, dk)
-				require.NoError(t, err)
-				assert.Empty(t, warnings)
+				assertAllowedWithoutWarnings(t, dk)
 			} else {
 				assertDenied(t, []string{errorImagePullRequiresCodeModulesImage}, dk)
 			}
