@@ -57,7 +57,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 	switch {
 	case dk.FF().IsNodeImagePull():
 		return provisioner.getJobInstaller(ctx, dk), nil
-	case dk.OneAgent().GetCustomCodeModulesImage() != "":
+	case dk.OneAgent().GetCodeModulesImage() != "":
 		props := &image.Properties{
 			ImageURI:     dk.OneAgent().GetCodeModulesImage(),
 			APIReader:    provisioner.apiReader,
@@ -95,19 +95,8 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 }
 
 func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk *dynakube.DynaKube) installer.Installer {
-	imageURI := dk.OneAgent().GetCustomCodeModulesImage()
-
-	if imageURI == "" && dk.FF().IsPublicRegistry() {
-		// Resolved by the version updater; respects PublicRegistryOverride
-		imageURI = dk.OneAgent().GetCodeModulesImage()
-	}
-
-	if imageURI == "" {
-		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
-	}
-
 	props := &job.Properties{
-		ImageURI:        imageURI,
+		ImageURI:        dk.OneAgent().GetCodeModulesImage(),
 		ImagePullPolicy: dk.OneAgent().GetCodeModulesImagePullPolicy(),
 		Owner:           dk,
 		PullSecrets:     dk.PullSecretNames(),
