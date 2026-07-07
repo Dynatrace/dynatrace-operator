@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -21,6 +22,7 @@ import (
 // TestReconcileDisabled covers the disabled paths: an early exit when no condition was ever set,
 // and removal of an existing condition once cleanup succeeds.
 func TestReconcileDisabled(t *testing.T) {
+	t.Setenv(k8senv.KubemonOperandEnabled, "true") // remove with gate
 	t.Run("returns early when disabled and condition is not set", func(t *testing.T) {
 		reconciler := &Reconciler{}
 		dk := newTestDynaKube(false)
@@ -52,6 +54,7 @@ func TestReconcileDisabled(t *testing.T) {
 // TestReconcileConditionMapping maps each sub-reconciler outcome to a condition: nil → Available,
 // rollout sentinel → Reconciling, persistent sentinel → Error.
 func TestReconcileConditionMapping(t *testing.T) {
+	t.Setenv(k8senv.KubemonOperandEnabled, "true") // remove with gate
 	tests := map[string]struct {
 		connInfoErr    error
 		statefulSetErr error

@@ -794,6 +794,26 @@ tests:
           content:
             name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
 
+  - it: should have KUBEMON_OPERAND_ENABLED if operator.kubemonOperandEnabled is true
+    set:
+      operator.kubemonOperandEnabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KUBEMON_OPERAND_ENABLED
+            value: "true"
+          count: 1
+          any: true
+
+  - it: should not have KUBEMON_OPERAND_ENABLED by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KUBEMON_OPERAND_ENABLED
+          any: true
+
   - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0
     set:
       platform: kubernetes

@@ -23,6 +23,7 @@ import (
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,6 +63,13 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 // the parent controller persists status changes via deferred Status().Update().
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, _ token.Tokens) error {
 	ctx, log := logd.NewFromContext(ctx, "dynakube-kubemon")
+
+	// Temporary gate, to be removed once kubemon is complete
+	if !k8senv.IsKubemonOperandEnabled() {
+		log.Debug("kubemon gate not enabled, skipping")
+
+		return nil
+	}
 
 	// Fast-path guard: never created, nothing to converge.
 	if !dk.KubernetesMonitoring().IsEnabled() && !hasCondition(dk) {
