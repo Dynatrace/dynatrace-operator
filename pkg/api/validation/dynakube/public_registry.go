@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -20,12 +20,6 @@ func publicRegistryOverrideWithoutPublicRegistry(ctx context.Context, dv *Valida
 		return ""
 	}
 
-	// For new DynaKubes (status not yet set), check the token secret directly.
-	hasPlatformToken, err := token.NewReader(dv.apiReader, dk).HasPlatformToken(ctx)
-	if err == nil && hasPlatformToken {
-		return ""
-	}
-
 	return fmt.Sprintf(errorPublicRegistryOverrideWithoutPublicRegistry, exp.UsePublicRegistryKey)
 }
 
@@ -34,8 +28,7 @@ func publicRegistryFlagIgnoredForPlatformToken(ctx context.Context, dv *Validato
 		return ""
 	}
 
-	hasPlatformToken, err := token.NewReader(dv.apiReader, dk).HasPlatformToken(ctx)
-	if err != nil || !hasPlatformToken {
+	if !ptr.Deref(dk.Status.APIToken.Platform, false) {
 		return ""
 	}
 
@@ -48,12 +41,6 @@ func publicRegistryNotAllowedForClassic(ctx context.Context, dv *Validator, dk *
 	}
 
 	if dk.PublicRegistryOverride() != "" || dk.FF().IsPublicRegistry() {
-		return errorClassicFullStackIncompatibleWithPublicRegistry
-	}
-
-	// For new DynaKubes (status not yet set), check the token secret directly.
-	hasPlatformToken, err := token.NewReader(dv.apiReader, dk).HasPlatformToken(ctx)
-	if err == nil && hasPlatformToken {
 		return errorClassicFullStackIncompatibleWithPublicRegistry
 	}
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -300,12 +299,6 @@ func deprecatedOneAgentVersionField(ctx context.Context, dv *Validator, dk *dyna
 
 	if oa.GetCustomVersion() != "" {
 		if dk.FF().IsPublicRegistry() {
-			return warningDeprecatedVersionIgnored
-		}
-
-		// For new DynaKubes (status not yet set), check the token secret directly.
-		hasPlatformToken, err := token.NewReader(dv.apiReader, dk).HasPlatformToken(ctx)
-		if err == nil && hasPlatformToken {
 			return warningDeprecatedVersionIgnored
 		}
 
