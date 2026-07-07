@@ -9,6 +9,7 @@ import (
 	v1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -125,6 +126,9 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (war
 		return
 	}
 
+	hasPlatformToken, _ := token.NewReader(v.apiReader, dk).HasPlatformToken(ctx)
+	dk.Status.APIToken.Platform = new(hasPlatformToken)
+
 	errMessages := v.runValidators(ctx, validatorErrorFuncs, dk)
 	warnings = v.runValidators(ctx, validatorWarningFuncs, dk)
 
@@ -147,6 +151,9 @@ func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	if err != nil {
 		return
 	}
+
+	hasPlatformToken, _ := token.NewReader(v.apiReader, newDK).HasPlatformToken(ctx)
+	newDK.Status.APIToken.Platform = new(hasPlatformToken)
 
 	errMessages := v.runValidators(ctx, validatorErrorFuncs, newDK)
 	warnings = v.runValidators(ctx, validatorWarningFuncs, newDK)
