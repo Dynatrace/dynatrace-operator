@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	oneagentComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -49,9 +50,15 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Assess("sample app has CSI volume", assertHasCSIVolume(sampleApp))
 
-	// Phase 2: switch operator to migration mode.
+	// Phase 2: switch operator to migration mode — operator removes osagent-storage CSI volume from OneAgent DaemonSet.
 	builder.Assess("redeploy operator with migration mode", helpers.ToFeatureFunc(enableMigrationMode, true))
+	// Force a reconcile so the operator processes migrationMode=true and triggers a DaemonSet rollout before we wait for it.
+	// VerifyInstall (inside enableMigrationMode) only confirms the operator pod is ready, not that it has reconciled.
+	dynakubeComponents.TriggerReconciliation(builder, testDynakube)
 	builder.Assess("dynakube reconciled after migration mode enabled", dynakubeComponents.WaitForPhase(testDynakube, status.Running))
+	// Must wait for DaemonSet rollout: ensures all OneAgent pods have dropped their CSI volumes before
+	// Phase 5 removes the CSI DaemonSet entirely (avoids stuck Terminating pods on unmount).
+	builder.Assess("oneagent daemonset rolled out after migration mode enabled", oneagentComponents.WaitForDaemonset(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 
 	// Phase 3: restart sample app — old CSI-mounted pods must terminate cleanly.
 	builder.Assess("restart sample app", sampleApp.Restart())
@@ -63,8 +70,8 @@ func Feature(t *testing.T) features.Feature {
 	// Phase 5: disable CSI driver entirely — operator reconciles OneAgent DaemonSet from CSI to HostPath volumes.
 	builder.Assess("redeploy operator with CSI disabled", helpers.ToFeatureFunc(disableCSIDriver, true))
 	builder.Assess("dynakube reconciled after CSI disabled", dynakubeComponents.WaitForPhase(testDynakube, status.Running))
+	builder.Assess("oneagent daemonset ready after CSI disabled", oneagentComponents.WaitForDaemonset(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 
-	builder.WithTeardown("restore operator without migration mode", helpers.ToFeatureFunc(disableMigrationMode, true))
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
@@ -72,14 +79,6 @@ func Feature(t *testing.T) features.Feature {
 
 func enableMigrationMode(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 	if err := operator.InstallViaHelm("", true, helm.WithArgs("--set", "csidriver.migrationMode=true")); err != nil {
-		return ctx, err
-	}
-
-	return operator.VerifyInstall(ctx, envConfig, true)
-}
-
-func disableMigrationMode(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-	if err := operator.InstallViaHelm("", true); err != nil {
 		return ctx, err
 	}
 
