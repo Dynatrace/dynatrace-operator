@@ -13,3 +13,7 @@ type Status struct {
 	// Information about KubernetesMonitoring's connections.
 	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitempty"`
 }
+
+func (s *Status) IsZero() bool {
+	return s.VersionStatus.IsZero() && s.ConnectionInfo == communication.ConnectionInfo{}
+}
