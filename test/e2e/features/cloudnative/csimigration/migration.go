@@ -9,6 +9,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
@@ -50,6 +51,7 @@ func Feature(t *testing.T) features.Feature {
 
 	// Phase 2: switch operator to migration mode.
 	builder.Assess("redeploy operator with migration mode", helpers.ToFeatureFunc(enableMigrationMode, true))
+	builder.Assess("dynakube reconciled after migration mode enabled", dynakubeComponents.WaitForPhase(testDynakube, status.Running))
 
 	// Phase 3: restart sample app — old CSI-mounted pods must terminate cleanly.
 	builder.Assess("restart sample app", sampleApp.Restart())
@@ -58,8 +60,9 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Assess("sample app injected without CSI volume after migration", assertHasNoCSIVolume(sampleApp))
 
-	// Phase 5: disable CSI driver entirely.
+	// Phase 5: disable CSI driver entirely — operator reconciles OneAgent DaemonSet from CSI to HostPath volumes.
 	builder.Assess("redeploy operator with CSI disabled", helpers.ToFeatureFunc(disableCSIDriver, true))
+	builder.Assess("dynakube reconciled after CSI disabled", dynakubeComponents.WaitForPhase(testDynakube, status.Running))
 
 	builder.WithTeardown("restore operator without migration mode", helpers.ToFeatureFunc(disableMigrationMode, true))
 	builder.Teardown(sampleApp.Uninstall())

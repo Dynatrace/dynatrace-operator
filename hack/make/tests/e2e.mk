@@ -146,7 +146,7 @@ test/e2e/cloudnative/switchmodes:
 
 ## Runs CloudNative CSI migration e2e test only
 test/e2e/cloudnative/csi-migration:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "cloudnative_csi_migration" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/standard -run "cloudnative_csi_migration" $(SKIPCLEANUP)
 
 ## Runs CloudNative upgrade e2e test only
 test/e2e/cloudnative/upgrade:
