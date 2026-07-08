@@ -24,9 +24,11 @@ import (
 
 // Feature verifies the CSI migration path:
 //  1. Install with CSI active → sample app pods have CSI-mounted oneagent-bin volume.
-//  2. Redeploy operator with csidriver.migrationMode=true → CSI DaemonSet stays running,
+//  2. Redeploy operator with csidriver.migrationMode=true → CSI DaemonSet stays running.
 //  3. Restart sample app → existing CSI-mounted pods terminate cleanly (DaemonSet still present
 //     to serve unmount requests), new pods are injected via emptyDir instead.
+//  4. Verify new pods use emptyDir injection.
+//  5. Redeploy operator with csidriver.enabled=false → operator comes up healthy without CSI.
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("cloudnative-csi-migration")
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -56,6 +58,9 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Assess("sample app injected without CSI volume after migration", assertHasNoCSIVolume(sampleApp))
 
+	// Phase 5: disable CSI driver entirely.
+	builder.Assess("redeploy operator with CSI disabled", helpers.ToFeatureFunc(disableCSIDriver, true))
+
 	builder.WithTeardown("restore operator without migration mode", helpers.ToFeatureFunc(disableMigrationMode, true))
 	builder.Teardown(sampleApp.Uninstall())
 
@@ -76,6 +81,14 @@ func disableMigrationMode(ctx context.Context, envConfig *envconf.Config) (conte
 	}
 
 	return operator.VerifyInstall(ctx, envConfig, true)
+}
+
+func disableCSIDriver(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+	if err := operator.InstallViaHelm("", false); err != nil {
+		return ctx, err
+	}
+
+	return operator.VerifyInstall(ctx, envConfig, false)
 }
 
 func assertHasCSIVolume(sampleApp *sample.App) features.Func {
