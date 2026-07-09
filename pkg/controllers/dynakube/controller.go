@@ -409,14 +409,13 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient.ActiveGate, controller.tokens); err != nil {
 		if errors.Is(err, k8sstatefulset.ErrRolloutInProgress) {
+			// rollout in progress is transient and shouldn't be reported as a component error
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
+		} else {
+			log.Info("could not reconcile KubernetesMonitoring")
 
-			return goerrors.Join(componentErrors...)
+			componentErrors = append(componentErrors, err)
 		}
-
-		log.Info("could not reconcile KubernetesMonitoring")
-
-		componentErrors = append(componentErrors, err)
 	}
 
 	if err := controller.extensionReconciler.Reconcile(ctx, dtClient.Images, dk); err != nil {
