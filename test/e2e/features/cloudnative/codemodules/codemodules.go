@@ -472,7 +472,7 @@ func codeModulesCloudNativeSpec(t *testing.T) *oneagent.CloudNativeFullStackSpec
 
 func codeModulesAppInjectSpec(t *testing.T) *oneagent.AppInjectionSpec {
 	return &oneagent.AppInjectionSpec{
-		CodeModulesImage: registry.GetLatestCodeModulesImageURI(t),
+		CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t),
 	}
 }
 

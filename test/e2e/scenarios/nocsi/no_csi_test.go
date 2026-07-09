@@ -127,6 +127,14 @@ func TestNoCSI_edgeconnect_install_provisioner(t *testing.T) {
 	testEnv.Test(t, edgeconnect.ProvisionerModeFeature(t))
 }
 
+func TestNoCSI_edgeconnect_install_tag(t *testing.T) {
+	testEnv.Test(t, edgeconnect.ProvisionerModeFeatureWithTag(t))
+}
+
+func TestNoCSI_edgeconnect_install_digest(t *testing.T) {
+	testEnv.Test(t, edgeconnect.ProvisionerModeFeatureWithDigest(t))
+}
+
 func TestNoCSI_edgeconnect_proxy_http(t *testing.T) {
 	testEnv.Test(t, edgeconnect.WithHTTPProxy(t))
 }

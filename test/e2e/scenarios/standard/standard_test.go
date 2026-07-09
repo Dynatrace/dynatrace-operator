@@ -71,8 +71,24 @@ func TestStandard_cloudnative_codemodules_migrate_to_node_image_pull(t *testing.
 	testEnv.Test(t, codemodules.MigrateToNodeImagePull(t))
 }
 
-func TestStandard_public_registry_images(t *testing.T) {
+func TestStandard_public_registry_images_tag(t *testing.T) {
 	testEnv.Test(t, publicregistry.Feature(t))
+}
+
+func TestStandard_public_registry_images_digest(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureWithDigest(t))
+}
+
+func TestStandard_public_registry_images_logmonitoring(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureLogMonitoring(t))
+}
+
+func TestStandard_public_registry_images_digest_logmonitoring(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureLogMonitoringWithDigest(t))
+}
+
+func TestStandard_public_registry_images_tag_and_digest(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureWithTagAndDigest(t))
 }
 
 func TestStandard_use_public_registry_oneagent(t *testing.T) {
