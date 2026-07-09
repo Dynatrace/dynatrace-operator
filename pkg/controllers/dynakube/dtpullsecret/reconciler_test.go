@@ -302,8 +302,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Don't create if platform token", func(t *testing.T) {
 		dk := createTestDynakube()
-		platformTrue := true
-		dk.Status.APIToken.Platform = &platformTrue
+		dk.Status.APIToken.Platform = new(true)
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{
 			token.APIKey: &token.Token{Value: testPlatformToken},
