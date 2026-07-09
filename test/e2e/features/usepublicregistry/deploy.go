@@ -4,9 +4,9 @@ package usepublicregistry
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -106,7 +106,7 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 func CodeModulesWithCSI(t *testing.T) features.Feature {
 	return codeModulesWithCSIFeature(t,
 		"use-public-registry-codemodules-with-csi",
-		"use-public-registry-cm",
+		"use-public-registry-cm-with-csi",
 		"use-public-registry-cm-sample",
 		"")
 }
@@ -283,21 +283,21 @@ func codeModulesWithCSIFeature(t *testing.T, featureName, dkName, sampleNamespac
 
 	builder.Assess("get CodeModules imageID", getStatusCodeModulesImageID(testDynakube, &imageID))
 
-	builder.Assess("verify if CSI provisioner uses public-registry image", isProvisionerUsingPublicRegistry(testDynakube.Namespace, &imageID))
+	builder.Assess("verify if CSI provisioner uses public-registry image", isProvisionerUsingPublicRegistry(testDynakube.Name, testDynakube.Namespace, &imageID))
 
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
 }
 
-func isProvisionerUsingPublicRegistry(namespace string, imageID *string) features.Func {
+func isProvisionerUsingPublicRegistry(dkName string, namespace string, imageID *string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 
 		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
-		}).ForEachPod(checkProvisionerLog(ctx, t, envConfig, *imageID))
+		}).ForEachPod(checkProvisionerLog(ctx, t, envConfig, dkName, *imageID))
 
 		assert.NoError(t, err)
 
@@ -305,20 +305,23 @@ func isProvisionerUsingPublicRegistry(namespace string, imageID *string) feature
 	}
 }
 
-func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, imageID string) k8sdaemonset.PodConsumer {
+func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, dkName string, imageID string) k8sdaemonset.PodConsumer {
 	return func(pod corev1.Pod) {
 		provisionerLog := logs.ReadLog(ctx, t, envConfig, pod.Namespace, pod.Name, "provisioner")
 
-		// expected message: `{"level":"info",...,"msg":"pullOciImage",...,"ref.String":"<registry>:<version>@sha256:<sha256>"}`
+		// expected message: `{"level":"info",...,"msg":"pullOciImage",...,"name":"use-public-registry-cm-with-csi",..."ref.String":"<registry>:<version>@sha256:<sha256>"}`
 
-		msg := logs.FindLineContainingText(provisionerLog, "pullOciImage")
-		require.NotEmpty(t, msg, "pullOciImage message not found in the provisioner log for %s", pod.Name)
-
-		var ref struct {
-			String string `json:"ref.String"`
+		msg := ""
+		for line := range strings.SplitSeq(provisionerLog, "\n") {
+			if strings.Contains(line, "pullOciImage") {
+				msg = line
+			}
 		}
-		require.NoError(t, json.Unmarshal([]byte(msg), &ref))
-		assert.Equal(t, imageID, ref.String)
+		require.NotEmpty(t, msg, "pullOciImage message not found in the provisioner log for %s POD", pod.Name)
+
+		require.Contains(t, msg, dkName, "the latest pullOciImage message is not related to the current %s dynakube instance for %s POD", dkName, pod.Name)
+
+		assert.Contains(t, msg, imageID, "the latest pullOciImage message does not contain the expected imageID for %s POD", pod.Name)
 	}
 }
 
