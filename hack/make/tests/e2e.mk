@@ -21,6 +21,10 @@ test/e2e/%/fips:
 test/e2e/%/platform-token:
 	@make USE_PLATFORM_TOKEN=true $(@D)
 
+## Run any e2e test with phase 3 tenant
+test/e2e/%/phase3:
+	@make USE_TENANT_PHASE3=true USE_PLATFORM_TOKEN=true $(@D)
+
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \
