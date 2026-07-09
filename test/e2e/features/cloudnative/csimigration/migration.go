@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	oneagentComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
@@ -19,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
@@ -48,52 +48,49 @@ func Feature(t *testing.T) features.Feature {
 
 	// Phase 1: verify CSI injection is active before migration.
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
-	builder.Assess("sample app has CSI volume", assertHasCSIVolume(sampleApp))
+	builder.Assess("sample app has CSI volume", assertCSIVolume(sampleApp, assertHasCSIVolume))
 
 	// Phase 2: switch operator to migration mode — operator removes osagent-storage CSI volume from OneAgent DaemonSet.
-	builder.Assess("redeploy operator with migration mode", helpers.ToFeatureFunc(enableMigrationMode, true))
-	// Force a reconcile so the operator processes migrationMode=true and triggers a DaemonSet rollout before we wait for it.
-	// VerifyInstall (inside enableMigrationMode) only confirms the operator pod is ready, not that it has reconciled.
-	dynakubeComponents.TriggerReconciliation(builder, testDynakube)
-	builder.Assess("dynakube reconciled after migration mode enabled", dynakubeComponents.WaitForPhase(testDynakube, status.Running))
+	builder.Assess("redeploy operator with migration mode", enableMigrationMode)
 	// Must wait for DaemonSet rollout: ensures all OneAgent pods have dropped their CSI volumes before
 	// Phase 5 removes the CSI DaemonSet entirely (avoids stuck Terminating pods on unmount).
 	builder.Assess("oneagent daemonset rolled out after migration mode enabled", oneagentComponents.WaitForDaemonset(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
+	builder.Assess("dynakube reconciled after migration mode enabled", dynakubeComponents.WaitForPhase(testDynakube, status.Running))
 
 	// Phase 3: restart sample app — old CSI-mounted pods must terminate cleanly.
 	builder.Assess("restart sample app", sampleApp.Restart())
 
 	// Phase 4: verify new pods are injected but no longer use CSI volumes.
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
-	builder.Assess("sample app injected without CSI volume after migration", assertHasNoCSIVolume(sampleApp))
+	builder.Assess("sample app injected without CSI volume after migration", assertCSIVolume(sampleApp, assertHasNoCSIVolume))
 
 	// Phase 5: disable CSI driver entirely — operator reconciles OneAgent DaemonSet from CSI to HostPath volumes.
-	builder.Assess("redeploy operator with CSI disabled", helpers.ToFeatureFunc(disableCSIDriver, true))
-	builder.Assess("dynakube reconciled after CSI disabled", dynakubeComponents.WaitForPhase(testDynakube, status.Running))
+	builder.Assess("redeploy operator with CSI disabled", disableCSIDriver)
 	builder.Assess("oneagent daemonset ready after CSI disabled", oneagentComponents.WaitForDaemonset(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
+	builder.Assess("dynakube reconciled after CSI disabled", dynakubeComponents.WaitForPhase(testDynakube, status.Running))
 
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
 }
 
-func enableMigrationMode(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-	if err := operator.InstallViaHelm("", true, helm.WithArgs("--set", "csidriver.migrationMode=true")); err != nil {
-		return ctx, err
-	}
+func enableMigrationMode(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+	require.NoError(t, operator.InstallViaHelm("", true, helm.WithArgs("--set", "csidriver.migrationMode=true")))
+	ctx, err := operator.VerifyInstall(ctx, cfg, true)
+	require.NoError(t, err)
 
-	return operator.VerifyInstall(ctx, envConfig, true)
+	return ctx
 }
 
-func disableCSIDriver(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-	if err := operator.InstallViaHelm("", false); err != nil {
-		return ctx, err
-	}
+func disableCSIDriver(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+	require.NoError(t, operator.InstallViaHelm("", false))
+	ctx, err := operator.VerifyInstall(ctx, cfg, false)
+	require.NoError(t, err)
 
-	return operator.VerifyInstall(ctx, envConfig, false)
+	return ctx
 }
 
-func assertHasCSIVolume(sampleApp *sample.App) features.Func {
+func assertCSIVolume(sampleApp *sample.App, check func(t *testing.T, vol *corev1.Volume, name string)) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		pods := sampleApp.ListPods(ctx, t, resources)
@@ -105,32 +102,21 @@ func assertHasCSIVolume(sampleApp *sample.App) features.Func {
 			}
 
 			vol := k8svolume.FindByName(pod.Spec.Volumes, oacommon.BinVolumeName)
-			require.NotNilf(t, vol, "pod %s: volume %s not found", pod.Name, oacommon.BinVolumeName)
-			require.NotNilf(t, vol.CSI, "pod %s: expected CSI volume for %s", pod.Name, oacommon.BinVolumeName)
-			assert.Equal(t, dtcsi.DriverName, vol.CSI.Driver)
+			check(t, vol, pod.Name)
 		}
 
 		return ctx
 	}
 }
 
-func assertHasNoCSIVolume(sampleApp *sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		pods := sampleApp.ListPods(ctx, t, resources)
-		require.NotEmpty(t, pods.Items)
+func assertHasCSIVolume(t *testing.T, vol *corev1.Volume, name string) {
+	require.NotNilf(t, vol, "pod %s: volume %s not found", name, oacommon.BinVolumeName)
+	require.NotNilf(t, vol.CSI, "pod %s: expected CSI volume for %s", name, oacommon.BinVolumeName)
+	assert.Equal(t, dtcsi.DriverName, vol.CSI.Driver)
+}
 
-		for _, pod := range pods.Items {
-			if pod.DeletionTimestamp != nil {
-				continue
-			}
-
-			vol := k8svolume.FindByName(pod.Spec.Volumes, oacommon.BinVolumeName)
-			require.NotNilf(t, vol, "pod %s: volume %s not found after migration", pod.Name, oacommon.BinVolumeName)
-			assert.NotNilf(t, vol.EmptyDir, "pod %s: expected emptyDir for %s after migration", pod.Name, oacommon.BinVolumeName)
-			assert.Nilf(t, vol.CSI, "pod %s: volume %s still uses CSI after migration", pod.Name, oacommon.BinVolumeName)
-		}
-
-		return ctx
-	}
+func assertHasNoCSIVolume(t *testing.T, vol *corev1.Volume, name string) {
+	require.NotNilf(t, vol, "pod %s: volume %s not found after migration", name, oacommon.BinVolumeName)
+	assert.NotNilf(t, vol.EmptyDir, "pod %s: expected emptyDir for %s after migration", name, oacommon.BinVolumeName)
+	assert.Nilf(t, vol.CSI, "pod %s: volume %s still uses CSI after migration", name, oacommon.BinVolumeName)
 }
