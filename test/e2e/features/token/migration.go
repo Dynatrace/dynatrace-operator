@@ -20,10 +20,16 @@ func FromPlatformToAPIToken(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *componentDynakube.New(
+	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithHostMonitoringSpec(&oneagent.HostInjectSpec{}),
-	)
+	}
+
+	if tenant.UsePhase3Tenant() {
+		options = append(options, componentDynakube.WithUsePublicRegistryFF())
+	}
+
+	testDynakube := *componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 

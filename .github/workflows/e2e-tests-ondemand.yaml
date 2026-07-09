@@ -36,6 +36,7 @@ jobs:
           - version: 1-30
             platform: k8s
             token: platform
+            tenantPhase: 3
           - version: 1-31
             platform: k8s
           - version: 1-32
@@ -46,6 +47,7 @@ jobs:
           - version: 1-34
             platform: k8s
             token: platform
+            tenantPhase: 3
           - version: 1-35
             platform: k8s
           - version: 1-36
@@ -56,6 +58,7 @@ jobs:
           - version: 4-15
             platform: ocp
             token: platform
+            tenantPhase: 3
           - version: 4-16
             platform: ocp
           - version: 4-17
@@ -66,6 +69,7 @@ jobs:
           - version: 4-19
             platform: ocp
             token: platform
+            tenantPhase: 3
           - version: 4-20
             platform: ocp
           - version: 4-20-olm
@@ -102,8 +106,20 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          tenant3-phase3-name: ${{ secrets.TENANT3_PHASE3_NAME }}
+          tenant3-phase3-apitoken: ${{ secrets.TENANT3_PHASE3_APITOKEN }}
+          tenant3-phase3-dataingesttoken: ${{ secrets.TENANT3_PHASE3_DATAINGESTTOKEN }}
+          tenant3-phase3-oauth-client-id: ${{ secrets.TENANT3_PHASE3_OAUTH_CLIENT_ID }}
+          tenant3-phase3-oauth-secret: ${{ secrets.TENANT3_PHASE3_OAUTH_SECRET }}
+          tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
+          tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
+          tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
           e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
           use-platform-token: ${{ matrix.token == 'platform' }}
+          use-tenant-phase3: ${{ matrix.tenantPhase == '3' }}
       - name: Prepare outputs
         id: prepare_outputs
         if: always()
