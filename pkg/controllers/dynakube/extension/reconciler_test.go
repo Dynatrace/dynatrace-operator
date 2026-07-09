@@ -120,7 +120,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		})
 		r := NewReconciler(fake.NewClient(), errorReader)
 		err := r.Reconcile(t.Context(), nil, dk)
-		require.Error(t, err)
+		require.ErrorIs(t, err, expectedErr)
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())

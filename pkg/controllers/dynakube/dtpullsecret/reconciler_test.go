@@ -225,8 +225,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		require.NoError(t, err)
 
-		platformTrue := true
-		dk.Status.APIToken.Platform = &platformTrue
+		dk.Status.APIToken.Platform = new(true)
 		err = r.Reconcile(t.Context(), dk, token.Tokens{
 			token.APIKey: &token.Token{Value: testPlatformToken},
 		})
