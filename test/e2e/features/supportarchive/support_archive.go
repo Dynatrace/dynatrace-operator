@@ -68,9 +68,9 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithCloudNativeSpec(&oneagent.CloudNativeFullStackSpec{}),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
-		dynakubeComponents.WithOTelCollectorImageRef(t),
+		dynakubeComponents.WithOTelCollectorImageRef(t, dynakubeComponents.GetLatestOTelCollectorImageTagURI(t)),
 		dynakubeComponents.WithExtensionsPrometheusEnabledSpec(true),
-		dynakubeComponents.WithExtensionsEECImageRef(t),
+		dynakubeComponents.WithExtensionsEECImageRef(t, dynakubeComponents.GetLatestEECImageTagURI(t)),
 	)
 
 	testECname := uuid.NewString()

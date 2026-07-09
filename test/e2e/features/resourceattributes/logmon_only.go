@@ -30,7 +30,7 @@ func LogmonOnly(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithLogMonitoring(),
-		componentDynakube.WithLogMonitoringImageRef(t),
+		componentDynakube.WithLogMonitoringImageRef(t, componentDynakube.GetLatestLogMonitoringImageTagURI(t)),
 		componentDynakube.WithResourceAttributes(globalAttrs),
 	}
 
