@@ -109,9 +109,15 @@ rows = [table_header]
 def format_platform_version(platform_version):
     for item in matrix:
         token = item.get("token")
+        tenant_phase = item.get("tenantPhase")
         pv = f"{item['platform']}_{item['version']}"
-        if pv == platform_version and token:
-            return f"{platform_version} ({token} token)"
+        if pv == platform_version:
+            result = platform_version
+            if token:
+                result = f"{result} ({token} token)"
+            if tenant_phase:
+                result = f"{result} (phase {tenant_phase})"
+            return result
     return platform_version
 
 

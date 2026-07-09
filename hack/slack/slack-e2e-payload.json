@@ -122,6 +122,41 @@
                 "elements": [
                   {
                     "type": "text",
+                    "text": "k8s-latest (platform token) (phase 3)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "${{ env.K8S_PHASE3_JOB_ID }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.K8S_PHASE3_STATUS }}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
                     "text": "ocp-latest"
                   }
                 ]

@@ -21,6 +21,10 @@ test/e2e/%/fips:
 test/e2e/%/platform-token:
 	@make USE_PLATFORM_TOKEN=true $(@D)
 
+## Run any e2e test with phase 3 tenant
+test/e2e/%/phase3:
+	@make USE_TENANT_PHASE3=true USE_PLATFORM_TOKEN=true $(@D)
+
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \
@@ -202,9 +206,21 @@ test/e2e/pgc:
 	$(MAKE) test/e2e/cloudnative/pgc-hostagent
 	$(MAKE) test/e2e/hostmonitoring/pgc
 
-## Runs public registry images e2e test only
+## Runs all public registry images e2e tests
 test/e2e/publicregistry:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images" $(SKIPCLEANUP)
+
+## Runs public registry images e2e test with tag-based image references only
+test/e2e/publicregistry/tag:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_tag$$" $(SKIPCLEANUP)
+
+## Runs public registry images e2e test with digest-based image references only
+test/e2e/publicregistry/digest:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_digest" $(SKIPCLEANUP)
+
+## Runs public registry images e2e test with both tag and digest set, verifying tag is used as version label
+test/e2e/publicregistry/tag-and-digest:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_tag_and_digest" $(SKIPCLEANUP)
 
 ## Runs all use-public-registry e2e scenarios — OneAgent / ActiveGate / CodeModules,
 ## each with and without publicRegistryOverride (OA + AG on standard, CodeModules on nocsi)
@@ -273,6 +289,14 @@ test/e2e/edgeconnect:
 ## Runs Edgeconnect e2e base test cases
 test/e2e/edgeconnect/normal:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install" $(SKIPCLEANUP)
+
+## Runs EdgeConnect e2e test with tag-based image reference
+test/e2e/edgeconnect/tag:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_tag" $(SKIPCLEANUP)
+
+## Runs EdgeConnect e2e test with digest-pinned image reference
+test/e2e/edgeconnect/digest:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_digest" $(SKIPCLEANUP)
 
 ## Runs Edgeconnect e2e proxy test cases
 test/e2e/edgeconnect/proxy:

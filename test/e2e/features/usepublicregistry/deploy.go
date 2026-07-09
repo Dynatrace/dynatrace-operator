@@ -4,9 +4,9 @@ package usepublicregistry
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -34,10 +34,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -106,7 +104,7 @@ func CodeModulesWithOverride(t *testing.T) features.Feature {
 func CodeModulesWithCSI(t *testing.T) features.Feature {
 	return codeModulesWithCSIFeature(t,
 		"use-public-registry-codemodules-with-csi",
-		"use-public-registry-cm",
+		"use-public-registry-cm-with-csi",
 		"use-public-registry-cm-sample",
 		"")
 }
@@ -234,6 +232,7 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("install sample app", sampleApp.Install())
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Assess("CodeModules status reports public-registry source",
 		statusSourceIsPublicRegistry(testDynakube, image.CodeModules))
 
@@ -283,21 +282,21 @@ func codeModulesWithCSIFeature(t *testing.T, featureName, dkName, sampleNamespac
 
 	builder.Assess("get CodeModules imageID", getStatusCodeModulesImageID(testDynakube, &imageID))
 
-	builder.Assess("verify if CSI provisioner uses public-registry image", isProvisionerUsingPublicRegistry(testDynakube.Namespace, &imageID))
+	builder.Assess("verify if CSI provisioner uses public-registry image", isProvisionerUsingPublicRegistry(testDynakube.Name, testDynakube.Namespace, &imageID))
 
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
 }
 
-func isProvisionerUsingPublicRegistry(namespace string, imageID *string) features.Func {
+func isProvisionerUsingPublicRegistry(dkName string, namespace string, imageID *string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 
 		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
-		}).ForEachPod(checkProvisionerLog(ctx, t, envConfig, *imageID))
+		}).ForEachPod(checkProvisionerLog(ctx, t, envConfig, dkName, *imageID))
 
 		assert.NoError(t, err)
 
@@ -305,20 +304,23 @@ func isProvisionerUsingPublicRegistry(namespace string, imageID *string) feature
 	}
 }
 
-func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, imageID string) k8sdaemonset.PodConsumer {
+func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, dkName string, imageID string) k8sdaemonset.PodConsumer {
 	return func(pod corev1.Pod) {
 		provisionerLog := logs.ReadLog(ctx, t, envConfig, pod.Namespace, pod.Name, "provisioner")
 
-		// expected message: `{"level":"info",...,"msg":"pullOciImage",...,"ref.String":"<registry>:<version>@sha256:<sha256>"}`
+		// expected message: `{"level":"info",...,"msg":"pullOciImage",...,"name":"use-public-registry-cm-with-csi",..."ref.String":"<registry>:<version>@sha256:<sha256>"}`
 
-		msg := logs.FindLineContainingText(provisionerLog, "pullOciImage")
-		require.NotEmpty(t, msg, "pullOciImage message not found in the provisioner log for %s", pod.Name)
-
-		var ref struct {
-			String string `json:"ref.String"`
+		msg := ""
+		for line := range strings.SplitSeq(provisionerLog, "\n") {
+			if strings.Contains(line, "pullOciImage") {
+				msg = line
+			}
 		}
-		require.NoError(t, json.Unmarshal([]byte(msg), &ref))
-		assert.Equal(t, imageID, ref.String)
+		require.NotEmpty(t, msg, "pullOciImage message not found in the provisioner log for %s POD", pod.Name)
+
+		require.Contains(t, msg, dkName, "the latest pullOciImage message is not related to the current %s dynakube instance for %s POD", dkName, pod.Name)
+
+		assert.Contains(t, msg, imageID, "the latest pullOciImage message does not contain the expected imageID for %s POD", pod.Name)
 	}
 }
 
@@ -428,32 +430,27 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	// Override the OneAgent image in the oneagent spec section.
-	oaSpec := cloudnative.DefaultCloudNativeSpec()
-	oaSpec.Image = registry.GetLatestOneAgentImageURI(t)
-
-	// Override the ActiveGate image in the activeGate spec section.
-	agExpectedImage := registry.GetLatestActiveGateImageURI(t)
+	oaExpectedImage := registry.GetLatestOneAgentImageTagURI(t)
+	agExpectedImage := registry.GetLatestActiveGateImageTagURI(t)
+	dbExecutorExpectedImage := dynakubeComponents.GetLatestDBExecutorImageTagURI(t)
 
 	const dbID = "mysql"
 
 	options := []dynakubeComponents.Option{
 		dynakubeComponents.WithName(dkName),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithCloudNativeSpec(oaSpec),
+		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
+		dynakubeComponents.WithCustomOneAgentImage(oaExpectedImage),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithCustomActiveGateImage(agExpectedImage),
 		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: dbID}),
-		dynakubeComponents.WithExtensionsDBExecutorImageRef(t),
+		dynakubeComponents.WithExtensionsDBExecutorImageRef(t, dbExecutorExpectedImage),
 	}
 	if !tenant.UsePlatformToken() {
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
 	testDynakube := *dynakubeComponents.New(options...)
-
-	dbExecutorRef := testDynakube.Spec.Templates.SQLExtensionExecutor.ImageRef
-	dbExecutorExpectedImage := dbExecutorRef.Repository + ":" + dbExecutorRef.Tag
 
 	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
 
@@ -474,11 +471,11 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 		statusSourceIsCustomImage(testDynakube, image.ActiveGate))
 
 	builder.Assess("OneAgent DaemonSet uses overridden image",
-		verifyDaemonSetUsesExpectedImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, oaSpec.Image))
+		k8sdaemonset.VerifyUsesImage(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace, oaExpectedImage))
 	builder.Assess("ActiveGate StatefulSet uses overridden image",
-		verifyStatefulSetUsesExpectedImage(agStatefulSetName, testDynakube.Namespace, agExpectedImage))
+		k8sstatefulset.VerifyUsesImage(agStatefulSetName, testDynakube.Namespace, agExpectedImage))
 	builder.Assess("DBExecutor deployment uses overridden image",
-		verifyDeploymentUsesExpectedImage(testDynakube.Extensions().GetDatabaseDatasourceName(dbID), testDynakube.Namespace, dbExecutorExpectedImage))
+		k8sdeployment.VerifyUsesImage(testDynakube.Extensions().GetDatabaseDatasourceName(dbID), testDynakube.Namespace, dbExecutorExpectedImage))
 
 	return builder.Feature()
 }
@@ -530,54 +527,4 @@ func getStatusCodeModulesImageID(dk dynakube.DynaKube, imageID *string) features
 
 		return ctx
 	}
-}
-
-func workloadUsesImage[PT k8s.Object](obj PT, name, namespace, expectedImage string, getContainers func(PT) []corev1.Container) features.Func {
-	var kind string
-	switch any(obj).(type) {
-	case *appsv1.DaemonSet:
-		kind = "DaemonSet"
-	case *appsv1.StatefulSet:
-		kind = "StatefulSet"
-	case *appsv1.Deployment:
-		kind = "Deployment"
-	default:
-		kind = "Unknown"
-	}
-
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, name, namespace, obj))
-
-		for _, c := range getContainers(obj) {
-			if c.Image == expectedImage {
-				return ctx
-			}
-		}
-
-		assert.Failf(t, "image not used",
-			"expected image %q not found in %s %q containers", expectedImage, kind, name)
-
-		return ctx
-	}
-}
-
-func verifyDaemonSetUsesExpectedImage(dsName, namespace, expectedImage string) features.Func {
-	var ds appsv1.DaemonSet
-
-	return workloadUsesImage(&ds, dsName, namespace, expectedImage,
-		func(ds *appsv1.DaemonSet) []corev1.Container { return ds.Spec.Template.Spec.Containers })
-}
-
-func verifyStatefulSetUsesExpectedImage(stsName, namespace, expectedImage string) features.Func {
-	var sts appsv1.StatefulSet
-
-	return workloadUsesImage(&sts, stsName, namespace, expectedImage,
-		func(sts *appsv1.StatefulSet) []corev1.Container { return sts.Spec.Template.Spec.Containers })
-}
-
-func verifyDeploymentUsesExpectedImage(deployName, namespace, expectedImage string) features.Func {
-	var deploy appsv1.Deployment
-
-	return workloadUsesImage(&deploy, deployName, namespace, expectedImage,
-		func(deploy *appsv1.Deployment) []corev1.Container { return deploy.Spec.Template.Spec.Containers })
 }
