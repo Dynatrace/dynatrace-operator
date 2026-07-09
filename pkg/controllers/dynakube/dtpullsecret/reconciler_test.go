@@ -225,6 +225,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		require.NoError(t, err)
 
+		platformTrue := true
+		dk.Status.APIToken.Platform = &platformTrue
 		err = r.Reconcile(t.Context(), dk, token.Tokens{
 			token.APIKey: &token.Token{Value: testPlatformToken},
 		})
@@ -301,6 +303,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Don't create if platform token", func(t *testing.T) {
 		dk := createTestDynakube()
+		platformTrue := true
+		dk.Status.APIToken.Platform = &platformTrue
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{
 			token.APIKey: &token.Token{Value: testPlatformToken},

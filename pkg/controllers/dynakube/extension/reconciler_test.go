@@ -1,6 +1,8 @@
 package extension
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -20,8 +22,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 const (
@@ -110,8 +112,13 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		dk := createDynakube()
 		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 
-		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
-		r := NewReconciler(fake.NewClient(), misconfiguredReader)
+		expectedErr := errors.New("get error")
+		errorReader := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				return expectedErr
+			},
+		})
+		r := NewReconciler(fake.NewClient(), errorReader)
 		err := r.Reconcile(t.Context(), nil, dk)
 		require.Error(t, err)
 
