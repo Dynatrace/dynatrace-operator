@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -25,7 +24,6 @@ type Properties struct {
 	APIReader    client.Reader
 	Dynakube     *dynakube.DynaKube
 	PathResolver metadata.PathResolver
-	ImageDigest  string
 }
 
 func NewImageInstaller(ctx context.Context, props *Properties) (installer.Installer, error) {
@@ -107,18 +105,17 @@ func (installer *Installer) installAgentFromImage(ctx context.Context, targetDir
 	}
 
 	image := installer.props.ImageURI
-	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
 
 	err = installer.extractAgentBinariesFromImage(
 		ctx,
 		imagePullInfo{
-			imageCacheDir: imageCacheDir,
+			imageCacheDir: CacheDir,
 			targetDir:     targetDir,
 		},
 		installer.props.ImageURI,
 	)
 	if err != nil {
-		log.Info("failed to extract agent binaries from image via proxy", "image", image, "imageCacheDir", imageCacheDir, "err", err)
+		log.Info("failed to extract agent binaries from image via proxy", "image", image, "err", err)
 	}
 
 	return nil
@@ -128,8 +125,4 @@ func (installer *Installer) isAlreadyPresent(targetDir string) bool {
 	_, err := os.Stat(targetDir)
 
 	return !os.IsNotExist(err)
-}
-
-func getCacheDirPath(digest string) string {
-	return filepath.Join(CacheDir, digest)
 }
