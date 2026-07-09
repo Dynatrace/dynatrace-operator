@@ -83,7 +83,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-30 (platform token)"
+                    "text": "k8s_1-30 (platform token) (phase 3)"
                   }
                 ]
               }
@@ -184,7 +184,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-15 (platform token)"
+                    "text": "ocp_4-15 (platform token) (phase 3)"
                   }
                 ]
               }
@@ -355,7 +355,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-34 (platform token)"
+                    "text": "k8s_1-34 (platform token) (phase 3)"
                   }
                 ]
               }
@@ -456,7 +456,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-19 (platform token)"
+                    "text": "ocp_4-19 (platform token) (phase 3)"
                   }
                 ]
               }
