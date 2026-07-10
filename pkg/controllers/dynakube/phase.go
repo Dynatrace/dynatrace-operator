@@ -104,7 +104,7 @@ func (controller *Controller) determineStatefulSetPhase(ctx context.Context, dk 
 	}
 
 	if !k8sstatefulset.IsRolloutComplete(statefulSet) {
-		log.Info("statefulset is still deploying", "dynakube", dk.Name, "statefulset", statefulsetName)
+		log.Info("statefulset is still deploying", "statefulset", statefulsetName)
 
 		return status.Deploying
 	}
