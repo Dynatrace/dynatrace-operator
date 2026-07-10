@@ -85,14 +85,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 		return err
 	}
 
-	r.setAvailableCondition(dk)
+	r.reconcileAvailableCondition(dk)
 
 	log.Debug("reconciled kubernetes monitoring")
 
 	return nil
 }
 
-func (r *Reconciler) setAvailableCondition(dk *dynakube.DynaKube) {
+func (r *Reconciler) reconcileAvailableCondition(dk *dynakube.DynaKube) {
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		meta.RemoveStatusCondition(dk.Conditions(), kubemonapi.KubeMonAvailableConditionType)
 
