@@ -24,7 +24,6 @@ import (
 const (
 	ContainerName             = "kubemon"
 	AnnotationTenantTokenHash = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
-	requiredEnvsCapacity      = 4
 	storageVolumeName         = "kubemon-storage"
 )
 
@@ -68,13 +67,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	connInfoCM := dk.KubernetesMonitoring().GetConnectionInfoConfigMapName()
 
-	required := make([]corev1.EnvVar, 0, requiredEnvsCapacity+len(dk.KubernetesMonitoring().Env))
-	required = append(required,
-		corev1.EnvVar{
+	envs := []corev1.EnvVar{
+		{
 			Name:  agconsts.EnvDTCapabilities,
 			Value: activegate.KubeMonCapability.ArgumentName,
 		},
-		corev1.EnvVar{
+		{
 			Name: connectioninfo.EnvDTTenant,
 			ValueFrom: &corev1.EnvVarSource{
 				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
@@ -84,7 +82,7 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 				},
 			},
 		},
-		corev1.EnvVar{
+		{
 			Name: connectioninfo.EnvDTServer,
 			ValueFrom: &corev1.EnvVarSource{
 				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
@@ -94,13 +92,13 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 				},
 			},
 		},
-	)
-
-	if dk.Spec.KubernetesMonitoring.Group != "" {
-		required = append(required, corev1.EnvVar{Name: agconsts.EnvDTGroup, Value: dk.Spec.KubernetesMonitoring.Group})
 	}
 
-	return append(required, dk.KubernetesMonitoring().Env...)
+	if dk.Spec.KubernetesMonitoring.Group != "" {
+		envs = append(envs, corev1.EnvVar{Name: agconsts.EnvDTGroup, Value: dk.Spec.KubernetesMonitoring.Group})
+	}
+
+	return append(envs, dk.KubernetesMonitoring().Env...)
 }
 
 // buildVolumes returns the pod-level volumes.
