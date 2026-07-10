@@ -19,19 +19,9 @@ import (
 // Unit tests for the kubemon orchestrator. All sub-reconcilers are mocked, so these tests own only
 // the orchestration logic; sub-reconciler internals are covered in their own packages.
 
-// TestReconcileDisabled covers the disabled paths: an early exit when no condition was ever set,
-// and removal of an existing condition once cleanup succeeds.
+// TestReconcileDisabled covers removal of an existing condition once cleanup succeeds.
 func TestReconcileDisabled(t *testing.T) {
 	t.Setenv(k8senv.KubemonOperandEnabled, "true") // remove with gate
-	t.Run("returns early when disabled and condition is not set", func(t *testing.T) {
-		reconciler := &Reconciler{}
-		dk := newTestDynaKube(false)
-
-		err := reconciler.Reconcile(t.Context(), dk, nil, nil)
-		require.NoError(t, err)
-		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), kubemonapi.KubeMonAvailableConditionType))
-	})
-
 	t.Run("removes condition when disabled and cleanup succeeds", func(t *testing.T) {
 		connInfoReconciler := newMockConnectionInfoReconciler(t)
 		statefulSetReconciler := newMockStatefulsetReconciler(t)

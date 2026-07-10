@@ -71,13 +71,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 		return nil
 	}
 
-	// Fast-path guard: never created, nothing to converge.
-	if !dk.KubernetesMonitoring().IsEnabled() && !hasCondition(dk) {
-		log.Debug("kubemon not enabled, skipping")
-
-		return nil
-	}
-
 	log.Debug("reconciling kubernetes monitoring")
 
 	if err := r.connectionInfoReconciler.Reconcile(ctx, agClient, dk); err != nil {
@@ -97,10 +90,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 	log.Debug("reconciled kubernetes monitoring")
 
 	return nil
-}
-
-func hasCondition(dk *dynakube.DynaKube) bool {
-	return meta.FindStatusCondition(*dk.Conditions(), kubemonapi.KubeMonAvailableConditionType) != nil
 }
 
 func (r *Reconciler) setAvailableCondition(dk *dynakube.DynaKube) {
