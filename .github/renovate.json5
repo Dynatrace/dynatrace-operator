@@ -192,6 +192,12 @@
       enabled: true,
     },
     {
+      matchPackageNames: [
+        "github.com/golangci/golangci-lint/v2",
+      ],
+      sourceUrl: "https://github.com/golangci/golangci-lint",
+    },
+    {
       matchDatasources: [
         "github-runners",
       ],
