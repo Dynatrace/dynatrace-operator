@@ -24,6 +24,11 @@ func EnrichmentRules(t *testing.T) features.Feature {
 		Target: "dt.cost.product",
 	}
 
+	// on phase 3 only the new schema is supported, which uses the "K8S_NAMESPACE_LABEL" rule type
+	if tenant.UsePhase3Tenant() {
+		expectedRule.Type = metadataenrichment.K8sNamespaceLabelRule
+	}
+
 	// Setup: pre-create the Kubernetes Cluster MEID on the tenant so the rule can be
 	// scoped directly to the cluster without waiting for DynaKube reconciliation.
 	// Then clean any leftover rules from previous runs before creating the test rule.
