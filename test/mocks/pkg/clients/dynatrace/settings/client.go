@@ -40,6 +40,84 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
+// CreateEnrichmentRule provides a mock function for the type Client
+func (_mock *Client) CreateEnrichmentRule(ctx context.Context, schemaID string, scope string, rule metadataenrichment.Rule) (string, error) {
+	ret := _mock.Called(ctx, schemaID, scope, rule)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateEnrichmentRule")
+	}
+
+	var r0 string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, metadataenrichment.Rule) (string, error)); ok {
+		return returnFunc(ctx, schemaID, scope, rule)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, metadataenrichment.Rule) string); ok {
+		r0 = returnFunc(ctx, schemaID, scope, rule)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, metadataenrichment.Rule) error); ok {
+		r1 = returnFunc(ctx, schemaID, scope, rule)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Client_CreateEnrichmentRule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateEnrichmentRule'
+type Client_CreateEnrichmentRule_Call struct {
+	*mock.Call
+}
+
+// CreateEnrichmentRule is a helper method to define mock.On call
+//   - ctx context.Context
+//   - schemaID string
+//   - scope string
+//   - rule metadataenrichment.Rule
+func (_e *Client_Expecter) CreateEnrichmentRule(ctx any, schemaID any, scope any, rule any) *Client_CreateEnrichmentRule_Call {
+	return &Client_CreateEnrichmentRule_Call{Call: _e.mock.On("CreateEnrichmentRule", ctx, schemaID, scope, rule)}
+}
+
+func (_c *Client_CreateEnrichmentRule_Call) Run(run func(ctx context.Context, schemaID string, scope string, rule metadataenrichment.Rule)) *Client_CreateEnrichmentRule_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 metadataenrichment.Rule
+		if args[3] != nil {
+			arg3 = args[3].(metadataenrichment.Rule)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *Client_CreateEnrichmentRule_Call) Return(s string, err error) *Client_CreateEnrichmentRule_Call {
+	_c.Call.Return(s, err)
+	return _c
+}
+
+func (_c *Client_CreateEnrichmentRule_Call) RunAndReturn(run func(ctx context.Context, schemaID string, scope string, rule metadataenrichment.Rule) (string, error)) *Client_CreateEnrichmentRule_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateKSPMSetting provides a mock function for the type Client
 func (_mock *Client) CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error) {
 	ret := _mock.Called(ctx, monitoredEntity, datasetPipelineEnabled)
@@ -391,6 +469,74 @@ func (_c *Client_DeleteSettings_Call) RunAndReturn(run func(ctx context.Context,
 	return _c
 }
 
+// GetEnrichmentRuleObjects provides a mock function for the type Client
+func (_mock *Client) GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]settings.EnrichmentRuleObject, error) {
+	ret := _mock.Called(ctx, scope)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEnrichmentRuleObjects")
+	}
+
+	var r0 []settings.EnrichmentRuleObject
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]settings.EnrichmentRuleObject, error)); ok {
+		return returnFunc(ctx, scope)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []settings.EnrichmentRuleObject); ok {
+		r0 = returnFunc(ctx, scope)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]settings.EnrichmentRuleObject)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, scope)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Client_GetEnrichmentRuleObjects_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEnrichmentRuleObjects'
+type Client_GetEnrichmentRuleObjects_Call struct {
+	*mock.Call
+}
+
+// GetEnrichmentRuleObjects is a helper method to define mock.On call
+//   - ctx context.Context
+//   - scope string
+func (_e *Client_Expecter) GetEnrichmentRuleObjects(ctx any, scope any) *Client_GetEnrichmentRuleObjects_Call {
+	return &Client_GetEnrichmentRuleObjects_Call{Call: _e.mock.On("GetEnrichmentRuleObjects", ctx, scope)}
+}
+
+func (_c *Client_GetEnrichmentRuleObjects_Call) Run(run func(ctx context.Context, scope string)) *Client_GetEnrichmentRuleObjects_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Client_GetEnrichmentRuleObjects_Call) Return(enrichmentRuleObjects []settings.EnrichmentRuleObject, err error) *Client_GetEnrichmentRuleObjects_Call {
+	_c.Call.Return(enrichmentRuleObjects, err)
+	return _c
+}
+
+func (_c *Client_GetEnrichmentRuleObjects_Call) RunAndReturn(run func(ctx context.Context, scope string) ([]settings.EnrichmentRuleObject, error)) *Client_GetEnrichmentRuleObjects_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetK8sClusterME provides a mock function for the type Client
 func (_mock *Client) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (settings.K8sClusterME, error) {
 	ret := _mock.Called(ctx, kubeSystemUUID)
@@ -519,6 +665,74 @@ func (_c *Client_GetKSPMSettings_Call) Return(kSPMSettingsResponse settings.KSPM
 }
 
 func (_c *Client_GetKSPMSettings_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (settings.KSPMSettingsResponse, error)) *Client_GetKSPMSettings_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetLegacyEnrichmentRuleObjects provides a mock function for the type Client
+func (_mock *Client) GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]settings.EnrichmentRuleObject, error) {
+	ret := _mock.Called(ctx, scope)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLegacyEnrichmentRuleObjects")
+	}
+
+	var r0 []settings.EnrichmentRuleObject
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]settings.EnrichmentRuleObject, error)); ok {
+		return returnFunc(ctx, scope)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []settings.EnrichmentRuleObject); ok {
+		r0 = returnFunc(ctx, scope)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]settings.EnrichmentRuleObject)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, scope)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Client_GetLegacyEnrichmentRuleObjects_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLegacyEnrichmentRuleObjects'
+type Client_GetLegacyEnrichmentRuleObjects_Call struct {
+	*mock.Call
+}
+
+// GetLegacyEnrichmentRuleObjects is a helper method to define mock.On call
+//   - ctx context.Context
+//   - scope string
+func (_e *Client_Expecter) GetLegacyEnrichmentRuleObjects(ctx any, scope any) *Client_GetLegacyEnrichmentRuleObjects_Call {
+	return &Client_GetLegacyEnrichmentRuleObjects_Call{Call: _e.mock.On("GetLegacyEnrichmentRuleObjects", ctx, scope)}
+}
+
+func (_c *Client_GetLegacyEnrichmentRuleObjects_Call) Run(run func(ctx context.Context, scope string)) *Client_GetLegacyEnrichmentRuleObjects_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Client_GetLegacyEnrichmentRuleObjects_Call) Return(enrichmentRuleObjects []settings.EnrichmentRuleObject, err error) *Client_GetLegacyEnrichmentRuleObjects_Call {
+	_c.Call.Return(enrichmentRuleObjects, err)
+	return _c
+}
+
+func (_c *Client_GetLegacyEnrichmentRuleObjects_Call) RunAndReturn(run func(ctx context.Context, scope string) ([]settings.EnrichmentRuleObject, error)) *Client_GetLegacyEnrichmentRuleObjects_Call {
 	_c.Call.Return(run)
 	return _c
 }
