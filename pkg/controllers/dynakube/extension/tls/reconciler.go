@@ -37,7 +37,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "extension-tls")
+	ctx, _ = logd.NewFromContext(ctx, "tls")
 
 	if ext := dk.Extensions(); ext.IsAnyEnabled() && ext.NeedsSelfSignedTLS() {
 		return r.reconcileSelfSignedTLSSecret(ctx, dk)

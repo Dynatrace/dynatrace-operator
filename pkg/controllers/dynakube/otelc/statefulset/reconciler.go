@@ -48,7 +48,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "otelc-statefulset")
+	ctx, log := logd.NewFromContext(ctx, "statefulset")
 	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
 		return r.createOrUpdateStatefulset(ctx, dk)
 	} else { // do cleanup or

@@ -36,7 +36,7 @@ func New(
 }
 
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
-	ctx, log := logd.NewFromContext(mutationRequest.Context, "pod-mutation-otlp")
+	ctx, log := logd.NewFromContext(mutationRequest.Context, "otlp")
 	mutationRequest.Context = ctx
 
 	if !mutationRequest.DynaKube.OTLPExporterConfiguration().IsEnabled() {

@@ -90,7 +90,7 @@ type Reconciler struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-oneagent")
+	ctx, log := logd.NewFromContext(ctx, "oneagent")
 	log.Info("reconciling OneAgent")
 
 	err := r.versionReconciler.ReconcileOneAgent(ctx, dk, dtClient.Images, dtClient.Version)
