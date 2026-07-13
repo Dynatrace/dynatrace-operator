@@ -117,14 +117,12 @@ func (c *ClientImpl) GetLegacyEnrichmentRuleObjects(ctx context.Context, scope s
 }
 
 // CreateEnrichmentRule creates a settings object for the given schema and scope.
-// For MetadataEnrichmentSchemaID (new schema) each rule becomes its own object; exactly one rule must be provided.
-// For LegacyMetadataEnrichmentSchemaID all rules are bundled into a single object.
-func (c *ClientImpl) CreateEnrichmentRule(ctx context.Context, schemaID, scope string, rules []metadataenrichment.Rule) (string, error) {
+func (c *ClientImpl) CreateEnrichmentRule(ctx context.Context, schemaID, scope string, rule metadataenrichment.Rule) (string, error) {
 	if scope == "" {
 		return "", errors.New("no scope (MEID) was provided for creating the enrichment rule")
 	}
 
-	body := buildEnrichmentBody(schemaID, scope, rules)
+	body := buildEnrichmentBody(schemaID, scope, rule)
 
 	objectID, err := c.postEnrichmentObject(ctx, body)
 	if err != nil {
@@ -134,15 +132,15 @@ func (c *ClientImpl) CreateEnrichmentRule(ctx context.Context, schemaID, scope s
 	return objectID, nil
 }
 
-func buildEnrichmentBody(schemaID, scope string, rules []metadataenrichment.Rule) any {
-	if schemaID == MetadataEnrichmentSchemaID && len(rules) == 1 {
+func buildEnrichmentBody(schemaID, scope string, rule metadataenrichment.Rule) any {
+	if schemaID == MetadataEnrichmentSchemaID {
 		return []enrichmentObjectBody[enrichmentRuleValue]{{
 			SchemaID: schemaID,
 			Scope:    scope,
 			Value: enrichmentRuleValue{
-				Type:        rules[0].Type,
-				ValueSource: rules[0].Source,
-				Target:      rules[0].Target,
+				Type:        rule.Type,
+				ValueSource: rule.Source,
+				Target:      rule.Target,
 			},
 		}}
 	}
@@ -150,7 +148,7 @@ func buildEnrichmentBody(schemaID, scope string, rules []metadataenrichment.Rule
 	return []enrichmentObjectBody[legacyEnrichmentValue]{{
 		SchemaID: schemaID,
 		Scope:    scope,
-		Value:    legacyEnrichmentValue{Rules: rules},
+		Value:    legacyEnrichmentValue{Rules: []metadataenrichment.Rule{rule}},
 	}}
 }
 
