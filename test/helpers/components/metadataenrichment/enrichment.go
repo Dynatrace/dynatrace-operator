@@ -45,7 +45,6 @@ func getKubeSystemUUID(ctx context.Context, t *testing.T, envConfig *envconf.Con
 
 // EnsureKubernetesClusterMEID creates the builtin:cloud.kubernetes setting if not present,
 // triggering the creation of the Kubernetes Cluster Monitored Entity on the tenant.
-// It retries until the MEID is visible via the API.
 func EnsureKubernetesClusterMEID(secretConfig tenant.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		settingsClient, err := BuildSettingsClient(secretConfig)

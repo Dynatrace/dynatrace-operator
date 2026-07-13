@@ -34,6 +34,9 @@ func EnrichmentRules(t *testing.T) features.Feature {
 	// Then clean any leftover rules from previous runs before creating the test rule.
 	builder.Setup(componentEnrichment.EnsureKubernetesClusterMEID(secretConfig))
 	builder.Setup(componentEnrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
+
+	// Be aware that this requires additional permissions on the service user group if platform token is used
+	// Add a new policy to your service user group that allows write access to 'ingest.enrichment.config'
 	builder.Setup(componentEnrichment.CreateEnrichmentRuleOnTenant(secretConfig, expectedRule))
 
 	testDynakube := dynakubeComponents.New(
