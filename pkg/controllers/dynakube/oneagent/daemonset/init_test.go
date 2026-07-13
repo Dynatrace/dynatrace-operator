@@ -183,14 +183,14 @@ func TestInitContainerArguments_ResourceAttributes(t *testing.T) {
 }
 
 func TestInitContainerResources(t *testing.T) {
-	t.Run("returns defaults when hostInjectSpec has no initResources", func(t *testing.T) {
+	t.Run("returns defaults when hostInjectSpec has no initResources, no limits", func(t *testing.T) {
 		dsBuilder := builder{
 			hostInjectSpec: &oneagent.HostInjectSpec{},
 		}
 		resources := dsBuilder.initContainerResources()
 
 		assert.Equal(t, k8sresource.NewResourceList("20m", "20Mi"), resources.Requests)
-		assert.Equal(t, k8sresource.NewResourceList("20m", "20Mi"), resources.Limits)
+		assert.Empty(t, resources.Limits)
 	})
 
 	t.Run("returns custom resources when OneAgentInitResources is set", func(t *testing.T) {

@@ -45,7 +45,6 @@ func (b *builder) initContainerResources() corev1.ResourceRequirements {
 	if b.hostInjectSpec.OneAgentInitResources == nil {
 		return corev1.ResourceRequirements{
 			Requests: k8sresource.NewResourceList("20m", "20Mi"),
-			Limits:   k8sresource.NewResourceList("20m", "20Mi"),
 		}
 	}
 
