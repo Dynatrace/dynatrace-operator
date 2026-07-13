@@ -558,7 +558,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 			},
-			hostInjectSpec: new(oneagent.HostInjectSpec{}),
+			hostInjectSpec: &oneagent.HostInjectSpec{},
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -592,7 +592,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 			},
-			hostInjectSpec: new(oneagent.HostInjectSpec{}),
+			hostInjectSpec: &oneagent.HostInjectSpec{},
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -607,7 +607,7 @@ func TestPodSpecProbes(t *testing.T) {
 	t.Run("nil probes when dynakube oneagent status has no healthcheck", func(t *testing.T) {
 		builder := builder{
 			dk:             &dynakube.DynaKube{},
-			hostInjectSpec: new(oneagent.HostInjectSpec{}),
+			hostInjectSpec: &oneagent.HostInjectSpec{},
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -628,7 +628,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 			},
-			hostInjectSpec: new(oneagent.HostInjectSpec{}),
+			hostInjectSpec: &oneagent.HostInjectSpec{},
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 

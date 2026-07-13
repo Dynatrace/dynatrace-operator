@@ -29,7 +29,7 @@ func TestInitContainerSpec(t *testing.T) {
 
 	dsBuilder := builder{
 		dk:             dk,
-		hostInjectSpec: new(oneagent.HostInjectSpec{}),
+		hostInjectSpec: &oneagent.HostInjectSpec{},
 	}
 
 	require.NoError(t, os.Setenv(k8senv.DTOperatorImageEnvName, testOperatorImageName))
