@@ -38,7 +38,7 @@ func NewReconciler(clt client.Client,
 var KubernetesSettingsNotAvailableError = errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment until it is ready")
 
 func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "logmonitoring-daemonset")
+	ctx, log := logd.NewFromContext(ctx, "daemonset")
 
 	if !dk.LogMonitoring().IsStandalone() {
 		if meta.FindStatusCondition(*dk.Conditions(), ConditionType) == nil {

@@ -38,7 +38,7 @@ import (
 const hardenedOpenFileFlags = os.O_CREATE | os.O_WRONLY | os.O_TRUNC | unix.O_NOFOLLOW
 
 func (extractor OneAgentExtractor) ExtractZip(ctx context.Context, sourceFile *os.File, targetDir string) error {
-	ctx, log := logd.NewFromContext(ctx, "oneagent-zip")
+	ctx, log := logd.NewFromContext(ctx, "zip")
 
 	extractor.cleanTempZipDir()
 

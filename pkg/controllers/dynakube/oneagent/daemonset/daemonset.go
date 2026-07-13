@@ -153,7 +153,7 @@ func (classic *classicFullStack) BuildDaemonSet(ctx context.Context) (*appsv1.Da
 }
 
 func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
-	ctx, _ = logd.NewFromContext(ctx, "oneagent-daemonset")
+	ctx, _ = logd.NewFromContext(ctx, "daemonset")
 	dk := b.dk
 
 	podSpec, err := b.podSpec(ctx)
