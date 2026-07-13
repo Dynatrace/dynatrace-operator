@@ -29,10 +29,10 @@ const (
 	testTokenHash = "test-token-hash"
 )
 
-func TestUseImmutableImage(t *testing.T) {
+func TestBuildDaemonSet(t *testing.T) {
 	t.Cleanup(k8sversion.DisableCacheForTest(123))
 
-	t.Run("use image from status", func(t *testing.T) {
+	t.Run("use image from status, serviceAccountName set", func(t *testing.T) {
 		imageID := "my.repo.com/image:my-tag"
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -56,6 +56,7 @@ func TestUseImmutableImage(t *testing.T) {
 		podSpecs := ds.Spec.Template.Spec
 		assert.NotNil(t, podSpecs)
 		assert.Equal(t, imageID, podSpecs.Containers[0].Image)
+		assert.Equal(t, serviceAccountName, podSpecs.ServiceAccountName)
 	})
 }
 
@@ -539,46 +540,6 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 }
 
-func TestPodSpecServiceAccountName(t *testing.T) {
-	t.Run("service account name is unprivileged + readonly by default", func(t *testing.T) {
-		builder := builder{
-			dk: &dynakube.DynaKube{},
-		}
-		podSpec, _ := builder.podSpec(t.Context())
-
-		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
-	})
-	t.Run("privileged and readonly is recognized", func(t *testing.T) {
-		builder := builder{
-			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						exp.OAPrivilegedKey: "true",
-					},
-				},
-			},
-		}
-		podSpec, _ := builder.podSpec(t.Context())
-
-		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
-	})
-	t.Run("service account name is unprivileged if run as unprivileged", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.OAPrivilegedKey: "false",
-				},
-			},
-		}
-		builder := builder{
-			dk: dk,
-		}
-		podSpec, _ := builder.podSpec(t.Context())
-
-		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
-	})
-}
-
 func TestPodSpecProbes(t *testing.T) {
 	expectedHealthcheck := containerv1.HealthConfig{
 		Test:        []string{"echo", "super pod"},
@@ -597,6 +558,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 			},
+			hostInjectSpec: new(oneagent.HostInjectSpec{}),
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -630,6 +592,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 			},
+			hostInjectSpec: new(oneagent.HostInjectSpec{}),
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -643,7 +606,8 @@ func TestPodSpecProbes(t *testing.T) {
 	})
 	t.Run("nil probes when dynakube oneagent status has no healthcheck", func(t *testing.T) {
 		builder := builder{
-			dk: &dynakube.DynaKube{},
+			dk:             &dynakube.DynaKube{},
+			hostInjectSpec: new(oneagent.HostInjectSpec{}),
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -664,6 +628,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 			},
+			hostInjectSpec: new(oneagent.HostInjectSpec{}),
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 

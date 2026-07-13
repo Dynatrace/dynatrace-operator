@@ -28,7 +28,8 @@ func TestInitContainerSpec(t *testing.T) {
 	}
 
 	dsBuilder := builder{
-		dk: dk,
+		dk:             dk,
+		hostInjectSpec: new(oneagent.HostInjectSpec{}),
 	}
 
 	require.NoError(t, os.Setenv(k8senv.DTOperatorImageEnvName, testOperatorImageName))
@@ -42,6 +43,7 @@ func TestInitContainerSpec(t *testing.T) {
 	assert.NotEmpty(t, spec.Args)
 	assert.NotEmpty(t, spec.VolumeMounts)
 	assert.NotNil(t, spec.SecurityContext)
+	assert.NotNil(t, spec.Resources)
 }
 
 func TestInitContainerEnvVars(t *testing.T) {
