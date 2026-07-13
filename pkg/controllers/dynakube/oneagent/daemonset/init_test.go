@@ -61,38 +61,27 @@ func TestInitContainerEnvVars(t *testing.T) {
 }
 
 func TestInitContainerArguments(t *testing.T) {
-	dk := &dynakube.DynaKube{
-		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID:        testKubernetesClusterUID,
-			KubernetesClusterMEID: testKubernetesClusterMEID,
-			KubernetesClusterName: testKubernetesClusterName,
-		},
-	}
-
-	dsBuilder := builder{
-		dk: dk,
-	}
-
-	arguments := dsBuilder.initContainerArguments()
-	assert.Equal(t, "generate-metadata", arguments[0])
-	assert.Equal(t, "--file", arguments[1])
-	assert.Equal(t, nodeMetadataFilePath, arguments[2])
-	assert.Equal(t, "--attributes", arguments[3])
-
-	attributes := strings.Split(arguments[4], ",")
-
-	assert.Equal(t, "k8s.cluster.name="+testKubernetesClusterName, attributes[0])
-	assert.Equal(t, "k8s.cluster.uid="+testKubernetesClusterUID, attributes[1])
-	assert.Equal(t, "k8s.node.name=$(DT_K8S_NODE_NAME)", attributes[2])
-	assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
-}
-
-func TestInitContainerArguments_ResourceAttributes(t *testing.T) {
 	baseStatus := dynakube.DynaKubeStatus{
 		KubeSystemUUID:        testKubernetesClusterUID,
 		KubernetesClusterMEID: testKubernetesClusterMEID,
 		KubernetesClusterName: testKubernetesClusterName,
 	}
+
+	t.Run("baseline args structure", func(t *testing.T) {
+		dsBuilder := builder{dk: &dynakube.DynaKube{Status: baseStatus}}
+
+		arguments := dsBuilder.initContainerArguments()
+		assert.Equal(t, "generate-metadata", arguments[0])
+		assert.Equal(t, "--file", arguments[1])
+		assert.Equal(t, nodeMetadataFilePath, arguments[2])
+		assert.Equal(t, "--attributes", arguments[3])
+
+		attributes := strings.Split(arguments[4], ",")
+		assert.Equal(t, "k8s.cluster.name="+testKubernetesClusterName, attributes[0])
+		assert.Equal(t, "k8s.cluster.uid="+testKubernetesClusterUID, attributes[1])
+		assert.Equal(t, "k8s.node.name=$(DT_K8S_NODE_NAME)", attributes[2])
+		assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
+	})
 
 	t.Run("global resource attributes are sorted and appended", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -179,6 +168,60 @@ func TestInitContainerArguments_ResourceAttributes(t *testing.T) {
 		dsBuilder := builder{dk: dk}
 		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
 		assert.Len(t, attributes, 4)
+	})
+
+	t.Run("sanitizes newline in value", func(t *testing.T) {
+		dsBuilder := builder{dk: &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{KubernetesClusterName: "cluster\nname"},
+		}}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Equal(t, "k8s.cluster.name=clustername", attributes[0])
+	})
+
+	t.Run("sanitizes tab in value", func(t *testing.T) {
+		dsBuilder := builder{dk: &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{KubeSystemUUID: "uid\t123"},
+		}}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Equal(t, "k8s.cluster.uid=uid123", attributes[1])
+	})
+
+	t.Run("sanitizes carriage return in value", func(t *testing.T) {
+		dsBuilder := builder{dk: &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterName: testKubernetesClusterName,
+				KubeSystemUUID:        testKubernetesClusterUID,
+				KubernetesClusterMEID: "meid\r123",
+			},
+		}}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Equal(t, "dt.entity.kubernetes_cluster=meid123", attributes[3])
+	})
+
+	t.Run("sanitizes null byte in value", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"env": "prod\x00uction"},
+				OneAgent:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}},
+			},
+			Status: baseStatus,
+		}
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Contains(t, attributes, "env=production")
+	})
+
+	t.Run("sanitizes newline in key", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ResourceAttributes: map[string]string{"ke\ny": "value"},
+				OneAgent:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}},
+			},
+			Status: baseStatus,
+		}
+		dsBuilder := builder{dk: dk}
+		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
+		assert.Contains(t, attributes, "key=value")
 	})
 }
 

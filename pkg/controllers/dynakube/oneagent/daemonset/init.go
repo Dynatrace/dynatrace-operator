@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -67,13 +68,15 @@ func (b *builder) initContainerArguments() []string {
 		attributes = append(attributes, k+"="+resourceAttrs[k])
 	}
 
-	return []string{
+	initArgs := []string{
 		"generate-metadata",
 		"--file",
 		nodeMetadataFilePath,
 		"--attributes",
 		strings.Join(attributes, ","),
 	}
+
+	return sanitize.CommandLineArgs(initArgs)
 }
 
 func (b *builder) initContainerVolumeMounts() []corev1.VolumeMount {
