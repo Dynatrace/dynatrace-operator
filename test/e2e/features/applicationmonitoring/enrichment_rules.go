@@ -3,17 +3,25 @@
 package applicationmonitoring
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	e2eEnrichment "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	componentEnrichment "github.com/Dynatrace/dynatrace-operator/test/helpers/components/metadataenrichment"
+	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-// EnrichmentRules verifies that enrichment rules created on the tenant are read and stored in dk.Status.MetadataEnrichment.Rules.
+const enrichmentLabelValue = "e2e-enrichment-test"
+
+// EnrichmentRules verifies that enrichment rules created on the tenant are read and stored in dk.Status.MetadataEnrichment.Rules,
+// and that the mapped attribute appears in dt_metadata.json inside an injected pod.
 func EnrichmentRules(t *testing.T) features.Feature {
 	builder := features.New("enrichment-rules")
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -42,15 +50,39 @@ func EnrichmentRules(t *testing.T) features.Feature {
 	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithMetadataEnrichment(),
-		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
+		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 	)
 	dynakubeComponents.Install(builder, &secretConfig, *testDynakube)
 
 	builder.Assess("enrichment rule is stored in DynaKube status",
 		componentEnrichment.CheckEnrichmentRuleInDynaKubeStatus(testDynakube, expectedRule))
 
+	sampleApp := sample.NewApp(t, testDynakube,
+		sample.WithName("enrichment-rule-app"),
+		sample.WithNamespaceLabels(maputil.MergeMap(
+			testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels,
+			map[string]string{expectedRule.Source: enrichmentLabelValue},
+		)),
+	)
+
+	builder.Assess("install sample app", sampleApp.Install())
+	builder.Assess("enrichment rule attribute is present in dt_metadata.json",
+		checkEnrichmentAttributeInMetadataFile(sampleApp, expectedRule.Target, enrichmentLabelValue))
+
+	builder.WithTeardown("uninstall sample app", sampleApp.Uninstall())
 	builder.WithTeardown("delete enrichment rules from tenant",
 		componentEnrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
 
 	return builder.Feature()
+}
+
+func checkEnrichmentAttributeInMetadataFile(app *sample.App, key, value string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		pod := app.GetPod(ctx, t, envConfig.Client().Resources())
+		metadata := e2eEnrichment.GetMetadataMapFromPod(ctx, t, envConfig.Client().Resources(), pod)
+
+		assert.Equal(t, value, metadata[key])
+
+		return ctx
+	}
 }
