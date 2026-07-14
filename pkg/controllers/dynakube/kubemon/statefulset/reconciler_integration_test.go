@@ -234,7 +234,7 @@ func assertStatefulSetShape(t *testing.T, sts *appsv1.StatefulSet, dk *dynakube.
 func markRolloutComplete(t *testing.T, ctx context.Context, clt client.Client, dk *dynakube.DynaKube) {
 	t.Helper()
 
-	sts := requireIntegrationStatefulSet(t, clt, dk)
+	sts := getStatefulSet(t, clt, dk)
 
 	var desired int32 = 1
 	if sts.Spec.Replicas != nil {
@@ -245,12 +245,6 @@ func markRolloutComplete(t *testing.T, ctx context.Context, clt client.Client, d
 	sts.Status.Replicas = desired
 	sts.Status.ReadyReplicas = desired
 	require.NoError(t, clt.Status().Update(ctx, sts))
-}
-
-func requireIntegrationStatefulSet(t *testing.T, clt client.Client, dk *dynakube.DynaKube) *appsv1.StatefulSet {
-	t.Helper()
-
-	return getStatefulSet(t, clt, dk)
 }
 
 func statefulSetKey(dk *dynakube.DynaKube) types.NamespacedName {
