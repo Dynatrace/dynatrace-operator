@@ -91,8 +91,7 @@ func startManager(tb testing.TB, cfg *rest.Config, setup func(ctrl.Manager) erro
 		}
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	tb.Cleanup(cancel)
+	ctx := tb.Context()
 
 	go func() {
 		if err := mgr.Start(ctx); err != nil {
