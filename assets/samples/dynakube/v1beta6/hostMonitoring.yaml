@@ -111,6 +111,16 @@ spec:
       #     cpu: 300m
       #     memory: 1.5Gi
 
+      # Optional: Resource settings for OneAgent DaemonSet's init-container.
+      #
+      # oneAgentInitResources:
+      #   requests:
+      #     cpu: 20m
+      #     memory: 20Mi
+      #   limits:
+      #     cpu: 20m
+      #     memory: 20Mi
+
       # Optional: Set additional arguments to the OneAgent installer.
       #
       # args: []
