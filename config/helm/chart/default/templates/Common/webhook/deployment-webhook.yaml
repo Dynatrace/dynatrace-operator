@@ -88,7 +88,7 @@ spec:
             - name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
               value: "true"
             {{- end }}
-            {{- if .Values.operator.kubemonOperandEnabled }}
+            {{- if .Values.operator.kubemonEnableOperand }}
             - name: KUBEMON_ENABLE_OPERAND
               value: "true"
             {{- end }}

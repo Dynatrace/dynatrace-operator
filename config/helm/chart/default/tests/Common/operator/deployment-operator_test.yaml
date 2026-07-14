@@ -1022,10 +1022,10 @@ tests:
             name: DT_DEFAULT_REQUEUE_AFTER
           any: true
 
-  - it: should have KUBEMON_ENABLE_OPERAND if operator.kubemonOperandEnabled is true
+  - it: should have KUBEMON_ENABLE_OPERAND if operator.kubemonEnableOperand is true
     set:
       platform: kubernetes
-      operator.kubemonOperandEnabled: true
+      operator.kubemonEnableOperand: true
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env

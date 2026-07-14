@@ -794,9 +794,9 @@ tests:
           content:
             name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
 
-  - it: should have KUBEMON_ENABLE_OPERAND if operator.kubemonOperandEnabled is true
+  - it: should have KUBEMON_ENABLE_OPERAND if operator.kubemonEnableOperand is true
     set:
-      operator.kubemonOperandEnabled: true
+      operator.kubemonEnableOperand: true
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env

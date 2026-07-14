@@ -68,7 +68,7 @@ operator:
   startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
   requeueAfter: "" # requeue period for the controller, defaults to 15m
   clientCacheCleanupInterval: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 1h
-  kubemonOperandEnabled: false # temporary gate; set to true to enable kubemon in dev/test. Remove when kubemon is complete.
+  kubemonEnableOperand: false # temporary gate; set to true to enable kubemon in dev/test. Remove when kubemon is complete.
 
 webhook:
   hostNetwork: false
