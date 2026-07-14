@@ -120,6 +120,12 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitempty"`
 
+	// Define resources requests and limits for the initContainer of the OneAgent DaemonSet. For details, see Managing resources for containers
+	// (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
+	OneAgentInitResources *corev1.ResourceRequirements `json:"oneAgentInitResources,omitempty"`
+
 	// Rolling update settings for the OneAgent DaemonSet.
 	// +kubebuilder:validation:Optional
 	RollingUpdate *appsv1.RollingUpdateDaemonSet `json:"rollingUpdate,omitempty"`
@@ -168,7 +174,7 @@ type ApplicationMonitoringSpec struct {
 // +kubebuilder:object:generate=true
 
 type AppInjectionSpec struct {
-	// Define resources requests and limits for the initContainer. For details, see Managing resources for containers
+	// Define resources requests and limits for the injected initContainer. For details, see Managing resources for containers
 	// (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}

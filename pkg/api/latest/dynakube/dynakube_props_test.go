@@ -157,6 +157,17 @@ func TestImagePullSecretReferences(t *testing.T) {
 		refs := dk.ImagePullSecretReferences()
 		assert.Empty(t, refs)
 	})
+	t.Run("don't return tenant pull secret if use-public-registry annotation without platform token", func(t *testing.T) {
+		t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        testDKName,
+				Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
+			},
+		}
+		refs := dk.ImagePullSecretReferences()
+		assert.Empty(t, refs)
+	})
 }
 
 func TestPullSecretNames(t *testing.T) {

@@ -33,7 +33,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
 	ctx, log := logd.NewFromContext(ctx, "pullsecret")
 
-	if tokens.HasPlatformToken() || dk.FF().IsPublicRegistry() || (!dk.OneAgent().IsDaemonsetRequired() && !dk.ActiveGate().IsEnabled()) {
+	if dk.FF().IsPublicRegistry() || (!dk.OneAgent().IsDaemonsetRequired() && !dk.ActiveGate().IsEnabled()) {
 		if meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
