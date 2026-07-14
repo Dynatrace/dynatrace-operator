@@ -21,9 +21,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Integration tests for the statefulset reconciler against a real API server. These tests use a
-// cached client and assert convergence via require.Eventually-retry loops while driving one DynaKube
-// through ordered, state-sharing phases; branch and error logic is covered by the unit test.
+// Integration tests for the statefulset reconciler against a real API server. Drives one DynaKube
+// through ordered, state-sharing phases; most phases assert with a single reconcile call and apiReader.
+// Branch and error logic is covered by the unit test.
 
 const (
 	integrationNamespace = "dynatrace"
@@ -97,17 +97,9 @@ func TestReconcileLifecycle(t *testing.T) {
 func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	// Simulate the controller retry loop: keep reconciling until creation converges and rollout
-	// is reported as in progress.
-	require.Eventually(t, func() bool {
-		if !errors.Is(deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress) {
-			return false
-		}
+	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
 
-		return deps.clt.Get(t.Context(), statefulSetKey(deps.dk), &appsv1.StatefulSet{}) == nil
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
-
-	sts := getStatefulSet(t, deps.clt, deps.dk)
+	sts := getStatefulSet(t, deps.apiReader, deps.dk)
 
 	assertStatefulSetShape(t, sts, deps.dk)
 
@@ -151,24 +143,13 @@ func runRotatePhase(t *testing.T, deps *lifecycleDeps) {
 func runStabilizePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	// Cached reads can lag writes, so this no-op assertion compares uncached APIReader
-	// resourceVersions across two reconciles with identical input. If the StatefulSet
-	// is rewritten, the API server bumps resourceVersion and this condition will fail.
-	require.Eventually(t, func() bool {
-		if !errors.Is(deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress) {
-			return false
-		}
+	stsRV := getStatefulSet(t, deps.apiReader, deps.dk).ResourceVersion
 
-		before := getStatefulSet(t, deps.apiReader, deps.dk).ResourceVersion
-
-		if !errors.Is(deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress) {
-			return false
-		}
-
-		after := getStatefulSet(t, deps.apiReader, deps.dk).ResourceVersion
-
-		return before == after
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	// Repeated reconciles with identical input must not rewrite the StatefulSet.
+	for range 3 {
+		require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
+		assert.Equal(t, stsRV, getStatefulSet(t, deps.apiReader, deps.dk).ResourceVersion)
+	}
 }
 
 func runDisablePhase(t *testing.T, deps *lifecycleDeps) {
@@ -177,15 +158,10 @@ func runDisablePhase(t *testing.T, deps *lifecycleDeps) {
 	name := deps.dk.KubernetesMonitoring().GetStatefulSetName()
 	deps.dk.Spec.KubernetesMonitoring = nil
 
-	require.Eventually(t, func() bool {
-		if err := deps.reconciler.Reconcile(t.Context(), deps.dk); err != nil {
-			return false
-		}
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dk))
 
-		err := deps.clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: integrationNamespace}, &appsv1.StatefulSet{})
-
-		return k8serrors.IsNotFound(err)
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	err := deps.apiReader.Get(t.Context(), client.ObjectKey{Name: name, Namespace: integrationNamespace}, &appsv1.StatefulSet{})
+	require.True(t, k8serrors.IsNotFound(err))
 }
 
 func runReEnablePhase(t *testing.T, deps *lifecycleDeps) {
@@ -194,15 +170,9 @@ func runReEnablePhase(t *testing.T, deps *lifecycleDeps) {
 	deps.dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 	deps.dk.Spec.KubernetesMonitoring.Image = "registry.example.com/linux/activegate:1.2.3"
 
-	require.Eventually(t, func() bool {
-		if !errors.Is(deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress) {
-			return false
-		}
+	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
 
-		return deps.clt.Get(t.Context(), statefulSetKey(deps.dk), &appsv1.StatefulSet{}) == nil
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
-
-	sts := getStatefulSet(t, deps.clt, deps.dk)
+	sts := getStatefulSet(t, deps.apiReader, deps.dk)
 
 	assertStatefulSetShape(t, sts, deps.dk)
 	assert.Equal(t, deps.rotatedTenantTokenHash, sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash])

@@ -3,7 +3,6 @@ package connectioninfo_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
@@ -22,18 +21,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Integration tests for the connectioninfo reconciler against a real API server. Drive one DynaKube
-// through ordered, state-sharing phases and reconcile until each phase converges to its expected
-// outcome; branch and error logic is covered by the unit test.
+// Integration tests for the connectioninfo reconciler against a real API server. Drives one DynaKube
+// through ordered, state-sharing phases; most phases assert with a single reconcile call and apiReader.
+// Branch and error logic is covered by the unit test.
 
 const (
 	integrationNamespace   = "dynatrace"
 	integrationTenantUUID  = "test-uuid"
 	integrationEndpoints   = "https://tenant.live.dynatrace.com/communication"
 	integrationTenantToken = "test-token"
-
-	integrationEventuallyTimeout = 5 * time.Second
-	integrationEventuallyTick    = 50 * time.Millisecond
 )
 
 var anyContext = mock.MatchedBy(func(context.Context) bool { return true })
@@ -102,20 +98,15 @@ func runProvisionPhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.baselineConnectionInfo, nil)
 
-	require.Eventually(t, func() bool {
-		if err := deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk); err != nil {
-			return false
-		}
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
+	require.True(t, isConnectionInfoApplied(t.Context(), deps.apiReader, deps.dk, deps.baselineConnectionInfo))
 
-		return isConnectionInfoApplied(t.Context(), deps.clt, deps.dk, deps.baselineConnectionInfo)
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
-
-	cm := getConfigMap(t, deps.clt, deps.dk)
+	cm := getConfigMap(t, deps.apiReader, deps.dk)
 	assert.Len(t, cm.Data, 2)
 	assertManagedLabels(t, cm.Labels, deps.dk)
 	assertOwnedBy(t, cm.OwnerReferences, deps.dk)
 
-	secret := getSecret(t, deps.clt, deps.dk)
+	secret := getSecret(t, deps.apiReader, deps.dk)
 	assert.Len(t, secret.Data, 1)
 	assertManagedLabels(t, secret.Labels, deps.dk)
 	assertOwnedBy(t, secret.OwnerReferences, deps.dk)
@@ -127,13 +118,8 @@ func runRotatePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.rotatedConnectionInfo, nil)
 
-	require.Eventually(t, func() bool {
-		if err := deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk); err != nil {
-			return false
-		}
-
-		return isConnectionInfoApplied(t.Context(), deps.clt, deps.dk, deps.rotatedConnectionInfo)
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
+	require.True(t, isConnectionInfoApplied(t.Context(), deps.apiReader, deps.dk, deps.rotatedConnectionInfo))
 }
 
 func runStabilizePhase(t *testing.T, deps lifecycleDeps) {
@@ -142,26 +128,15 @@ func runStabilizePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.rotatedConnectionInfo, nil)
 
-	// Cached reads can lag writes, so this no-op assertion compares uncached APIReader
-	// resourceVersions across two reconciles with identical input. If either object is
-	// rewritten, the API server bumps its resourceVersion and this condition will fail.
-	require.Eventually(t, func() bool {
-		if err := deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk); err != nil {
-			return false
-		}
+	cmRV := getConfigMap(t, deps.apiReader, deps.dk).ResourceVersion
+	secretRV := getSecret(t, deps.apiReader, deps.dk).ResourceVersion
 
-		beforeConfigMapRV := getConfigMap(t, deps.apiReader, deps.dk).ResourceVersion
-		beforeSecretRV := getSecret(t, deps.apiReader, deps.dk).ResourceVersion
-
-		if err := deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk); err != nil {
-			return false
-		}
-
-		afterConfigMapRV := getConfigMap(t, deps.apiReader, deps.dk).ResourceVersion
-		afterSecretRV := getSecret(t, deps.apiReader, deps.dk).ResourceVersion
-
-		return beforeConfigMapRV == afterConfigMapRV && beforeSecretRV == afterSecretRV
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	// Repeated reconciles with identical input must not rewrite resources.
+	for range 3 {
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
+		assert.Equal(t, cmRV, getConfigMap(t, deps.apiReader, deps.dk).ResourceVersion)
+		assert.Equal(t, secretRV, getSecret(t, deps.apiReader, deps.dk).ResourceVersion)
+	}
 }
 
 func runDisablePhase(t *testing.T, deps lifecycleDeps) {
@@ -169,19 +144,14 @@ func runDisablePhase(t *testing.T, deps lifecycleDeps) {
 
 	deps.dk.Spec.KubernetesMonitoring = nil
 
-	require.Eventually(t, func() bool {
-		if err := deps.reconciler.Reconcile(t.Context(), nil, deps.dk); err != nil {
-			return false
-		}
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), nil, deps.dk))
 
-		cmErr := deps.clt.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: deps.dk.Namespace}, &corev1.ConfigMap{})
-		secretErr := deps.clt.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: deps.dk.Namespace}, &corev1.Secret{})
-
-		return k8serrors.IsNotFound(cmErr) &&
-			k8serrors.IsNotFound(secretErr) &&
-			deps.dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID == "" &&
-			deps.dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints == ""
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	cmErr := deps.apiReader.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: deps.dk.Namespace}, &corev1.ConfigMap{})
+	secretErr := deps.apiReader.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: deps.dk.Namespace}, &corev1.Secret{})
+	require.True(t, k8serrors.IsNotFound(cmErr))
+	require.True(t, k8serrors.IsNotFound(secretErr))
+	assert.Empty(t, deps.dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID)
+	assert.Empty(t, deps.dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints)
 }
 
 func runReEnablePhase(t *testing.T, deps lifecycleDeps) {
@@ -191,13 +161,8 @@ func runReEnablePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.baselineConnectionInfo, nil)
 
-	require.Eventually(t, func() bool {
-		if err := deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk); err != nil {
-			return false
-		}
-
-		return isConnectionInfoApplied(t.Context(), deps.clt, deps.dk, deps.baselineConnectionInfo)
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
+	require.True(t, isConnectionInfoApplied(t.Context(), deps.apiReader, deps.dk, deps.baselineConnectionInfo))
 }
 
 func getConfigMap(t *testing.T, reader client.Reader, dk *dynakube.DynaKube) *corev1.ConfigMap {
