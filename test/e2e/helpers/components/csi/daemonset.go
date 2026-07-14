@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -23,10 +24,15 @@ func CleanUpEachPod(namespace string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		resource := envConfig.Client().Resources()
 
-		return ctx, k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
+		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(cleanUpPodConsumer(ctx, resource))
+		if k8serrors.IsNotFound(err) {
+			return ctx, nil
+		}
+
+		return ctx, err
 	}
 }
 
