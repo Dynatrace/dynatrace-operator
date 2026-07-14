@@ -89,7 +89,7 @@ spec:
               value: "true"
             {{- end }}
             {{- if .Values.operator.kubemonOperandEnabled }}
-            - name: KUBEMON_OPERAND_ENABLED
+            - name: KUBEMON_ENABLE_OPERAND
               value: "true"
             {{- end }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}

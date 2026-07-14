@@ -21,7 +21,7 @@ import (
 
 // TestReconcileDisabled covers removal of an existing condition once cleanup succeeds.
 func TestReconcileDisabled(t *testing.T) {
-	t.Setenv(k8senv.KubemonOperandEnabled, "true") // remove with gate
+	t.Setenv(k8senv.KubemonEnableOperand, "true") // remove with gate
 	t.Run("removes condition when disabled and cleanup succeeds", func(t *testing.T) {
 		connInfoReconciler := newMockConnectionInfoReconciler(t)
 		statefulSetReconciler := newMockStatefulsetReconciler(t)
@@ -44,7 +44,7 @@ func TestReconcileDisabled(t *testing.T) {
 // TestReconcileConditionMapping maps each sub-reconciler outcome to a condition: nil → Available,
 // rollout sentinel → Reconciling, persistent sentinel → Error.
 func TestReconcileConditionMapping(t *testing.T) {
-	t.Setenv(k8senv.KubemonOperandEnabled, "true") // remove with gate
+	t.Setenv(k8senv.KubemonEnableOperand, "true") // remove with gate
 	tests := map[string]struct {
 		connInfoErr    error
 		statefulSetErr error
