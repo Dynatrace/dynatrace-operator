@@ -2,6 +2,7 @@ package connectioninfo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
@@ -10,11 +11,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var ErrConnectionInfoNotReady = errors.New("kubemon connection info is not ready yet")
 
 type Reconciler struct {
 	secrets    k8ssecret.QueryObject
@@ -39,7 +42,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 	}
 
 	if info.TenantUUID == "" || info.Endpoints == "" || info.TenantToken == "" {
-		return errors.New("kubemon connection info is not ready yet")
+		return ErrConnectionInfoNotReady
 	}
 
 	if err := r.createOrUpdateConfigMap(ctx, dk, info); err != nil {
@@ -86,7 +89,7 @@ func (r *Reconciler) createOrUpdateConfigMap(ctx context.Context, dk *dynakube.D
 		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
 	)
 	if err != nil {
-		return errors.WithStack(err)
+		return pkgerrors.WithStack(err)
 	}
 
 	_, err = r.configMaps.CreateOrUpdate(ctx, cm)
@@ -100,7 +103,7 @@ func (r *Reconciler) createOrUpdateConfigMap(ctx context.Context, dk *dynakube.D
 func (r *Reconciler) createOrUpdateSecret(ctx context.Context, dk *dynakube.DynaKube, tenantToken string) error {
 	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.ActiveGateComponentLabel, dk.KubernetesMonitoring().GetTenantSecretName(), tenantToken)
 	if err != nil {
-		return errors.WithStack(err)
+		return pkgerrors.WithStack(err)
 	}
 
 	_, err = r.secrets.CreateOrUpdate(ctx, secret)

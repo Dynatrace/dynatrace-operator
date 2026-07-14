@@ -2,6 +2,7 @@ package connectioninfo_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -10,7 +11,6 @@ import (
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -42,11 +42,12 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 		fakeClient := fake.NewClient(dk)
 		r := connectioninfo.NewReconciler(fakeClient)
 
+		dtErr := errors.New("dt api error")
 		dtClient := agclientmock.NewClient(t)
-		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(agclient.ConnectionInfo{}, errors.New("dt api error")).Once()
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(agclient.ConnectionInfo{}, dtErr).Once()
 
 		err := r.Reconcile(t.Context(), dtClient, dk)
-		require.Error(t, err)
+		require.ErrorIs(t, err, dtErr)
 
 		assert.Empty(t, dk.Status.KubernetesMonitoring.ConnectionInfo)
 
@@ -71,7 +72,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 				dtClient := newDTClientMock(t, info)
 
 				err := r.Reconcile(t.Context(), dtClient, dk)
-				require.Error(t, err)
+				require.ErrorIs(t, err, connectioninfo.ErrConnectionInfoNotReady)
 
 				assertResources(t, fakeClient, dk, false, false)
 			})
