@@ -24,7 +24,7 @@ func (b *builder) initContainerSpec() corev1.Container {
 		Args:            b.initContainerArguments(),
 		VolumeMounts:    b.initContainerVolumeMounts(),
 		SecurityContext: b.initContainerSecurityContext(),
-		Resources:       b.hostInjectSpec.OneAgentResources,
+		Resources:       b.resources(),
 	}
 }
 

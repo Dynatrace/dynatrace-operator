@@ -43,16 +43,8 @@ func TestInitContainerSpec(t *testing.T) {
 		assert.NotEmpty(t, spec.Args)
 		assert.NotEmpty(t, spec.VolumeMounts)
 		assert.NotNil(t, spec.SecurityContext)
-	})
-
-	t.Run("empty resources when OneAgentResources is not set", func(t *testing.T) {
-		dsBuilder := builder{
-			dk:             &dynakube.DynaKube{},
-			hostInjectSpec: &oneagent.HostInjectSpec{},
-		}
-		spec := dsBuilder.initContainerSpec()
-
-		assert.Empty(t, spec.Resources.Requests)
+		require.NotEmpty(t, spec.Resources)
+		assert.NotEmpty(t, spec.Resources.Requests)
 		assert.Empty(t, spec.Resources.Limits)
 	})
 
