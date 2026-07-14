@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -25,7 +24,7 @@ func (b *builder) initContainerSpec() corev1.Container {
 		Args:            b.initContainerArguments(),
 		VolumeMounts:    b.initContainerVolumeMounts(),
 		SecurityContext: b.initContainerSecurityContext(),
-		Resources:       b.initContainerResources(),
+		Resources:       b.hostInjectSpec.OneAgentResources,
 	}
 }
 
@@ -40,16 +39,6 @@ func (b *builder) initContainerEnvVars() []corev1.EnvVar {
 			},
 		},
 	}
-}
-
-func (b *builder) initContainerResources() corev1.ResourceRequirements {
-	if b.hostInjectSpec.OneAgentInitResources == nil {
-		return corev1.ResourceRequirements{
-			Requests: k8sresource.NewResourceList("20m", "20Mi"),
-		}
-	}
-
-	return *b.hostInjectSpec.OneAgentInitResources
 }
 
 func (b *builder) initContainerArguments() []string {
