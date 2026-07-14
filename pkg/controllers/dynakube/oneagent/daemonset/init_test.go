@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -23,27 +22,60 @@ const (
 )
 
 func TestInitContainerSpec(t *testing.T) {
-	dk := &dynakube.DynaKube{
-		Status: dynakube.DynaKubeStatus{},
-	}
+	t.Run("baseline spec fields", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{},
+		}
 
-	dsBuilder := builder{
-		dk:             dk,
-		hostInjectSpec: &oneagent.HostInjectSpec{},
-	}
+		dsBuilder := builder{
+			dk:             dk,
+			hostInjectSpec: &oneagent.HostInjectSpec{},
+		}
 
-	require.NoError(t, os.Setenv(k8senv.DTOperatorImageEnvName, testOperatorImageName))
-	spec := dsBuilder.initContainerSpec()
-	require.NoError(t, os.Unsetenv(k8senv.DTOperatorImageEnvName))
+		require.NoError(t, os.Setenv(k8senv.DTOperatorImageEnvName, testOperatorImageName))
+		spec := dsBuilder.initContainerSpec()
+		require.NoError(t, os.Unsetenv(k8senv.DTOperatorImageEnvName))
 
-	assert.Equal(t, testOperatorImageName, spec.Image)
-	assert.Equal(t, initContainerName, spec.Name)
-	assert.Empty(t, spec.ImagePullPolicy)
-	assert.NotEmpty(t, spec.Env)
-	assert.NotEmpty(t, spec.Args)
-	assert.NotEmpty(t, spec.VolumeMounts)
-	assert.NotNil(t, spec.SecurityContext)
-	assert.NotNil(t, spec.Resources)
+		assert.Equal(t, testOperatorImageName, spec.Image)
+		assert.Equal(t, initContainerName, spec.Name)
+		assert.Empty(t, spec.ImagePullPolicy)
+		assert.NotEmpty(t, spec.Env)
+		assert.NotEmpty(t, spec.Args)
+		assert.NotEmpty(t, spec.VolumeMounts)
+		assert.NotNil(t, spec.SecurityContext)
+		require.NotEmpty(t, spec.Resources)
+		assert.NotEmpty(t, spec.Resources.Requests)
+		assert.Empty(t, spec.Resources.Limits)
+	})
+
+	t.Run("uses OneAgentResources when set", func(t *testing.T) {
+		cpuRequest := resource.MustParse("100m")
+		memRequest := resource.MustParse("64Mi")
+		cpuLimit := resource.MustParse("200m")
+		memLimit := resource.MustParse("128Mi")
+
+		dsBuilder := builder{
+			dk: &dynakube.DynaKube{},
+			hostInjectSpec: &oneagent.HostInjectSpec{
+				OneAgentResources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    cpuRequest,
+						corev1.ResourceMemory: memRequest,
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    cpuLimit,
+						corev1.ResourceMemory: memLimit,
+					},
+				},
+			},
+		}
+		spec := dsBuilder.initContainerSpec()
+
+		assert.True(t, cpuRequest.Equal(*spec.Resources.Requests.Cpu()))
+		assert.True(t, memRequest.Equal(*spec.Resources.Requests.Memory()))
+		assert.True(t, cpuLimit.Equal(*spec.Resources.Limits.Cpu()))
+		assert.True(t, memLimit.Equal(*spec.Resources.Limits.Memory()))
+	})
 }
 
 func TestInitContainerEnvVars(t *testing.T) {
@@ -222,46 +254,6 @@ func TestInitContainerArguments(t *testing.T) {
 		dsBuilder := builder{dk: dk}
 		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
 		assert.Contains(t, attributes, "key=value")
-	})
-}
-
-func TestInitContainerResources(t *testing.T) {
-	t.Run("returns defaults when hostInjectSpec has no initResources, no limits", func(t *testing.T) {
-		dsBuilder := builder{
-			hostInjectSpec: &oneagent.HostInjectSpec{},
-		}
-		resources := dsBuilder.initContainerResources()
-
-		assert.Equal(t, k8sresource.NewResourceList("20m", "20Mi"), resources.Requests)
-		assert.Empty(t, resources.Limits)
-	})
-
-	t.Run("returns custom resources when OneAgentInitResources is set", func(t *testing.T) {
-		cpuRequest := resource.MustParse("100m")
-		memRequest := resource.MustParse("64Mi")
-		cpuLimit := resource.MustParse("200m")
-		memLimit := resource.MustParse("128Mi")
-
-		dsBuilder := builder{
-			hostInjectSpec: &oneagent.HostInjectSpec{
-				OneAgentInitResources: &corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    cpuRequest,
-						corev1.ResourceMemory: memRequest,
-					},
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    cpuLimit,
-						corev1.ResourceMemory: memLimit,
-					},
-				},
-			},
-		}
-		resources := dsBuilder.initContainerResources()
-
-		assert.True(t, cpuRequest.Equal(*resources.Requests.Cpu()))
-		assert.True(t, memRequest.Equal(*resources.Requests.Memory()))
-		assert.True(t, cpuLimit.Equal(*resources.Limits.Cpu()))
-		assert.True(t, memLimit.Equal(*resources.Limits.Memory()))
 	})
 }
 

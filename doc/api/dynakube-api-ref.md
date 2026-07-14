@@ -93,7 +93,6 @@
 |`imagePullPolicy`||-|string|
 |`labels`||-|object|
 |`nodeSelector`||-|object|
-|`oneAgentInitResources`||-|object|
 |`oneAgentResources`||-|object|
 |`priorityClassName`||-|string|
 |`secCompProfile`||-|string|
@@ -148,7 +147,6 @@
 |`imagePullPolicy`||-|string|
 |`labels`||-|object|
 |`nodeSelector`||-|object|
-|`oneAgentInitResources`||-|object|
 |`oneAgentResources`||-|object|
 |`priorityClassName`||-|string|
 |`secCompProfile`||-|string|
@@ -181,7 +179,6 @@
 |`labels`||-|object|
 |`namespaceSelector`||-|object|
 |`nodeSelector`||-|object|
-|`oneAgentInitResources`||-|object|
 |`oneAgentResources`||-|object|
 |`priorityClassName`||-|string|
 |`secCompProfile`||-|string|
