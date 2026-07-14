@@ -126,32 +126,48 @@ func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
 	}
 }
 
-func SetVolumes(volumes []corev1.Volume) builder.Option[*appsv1.StatefulSet] {
+func SetVolumes(volumes []corev1.Volume) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.Volumes = append(s.Spec.Template.Spec.Volumes, volumes...)
 	}
 }
 
-func SetDNSPolicy(policy corev1.DNSPolicy) builder.Option[*appsv1.StatefulSet] {
+func SetDNSPolicy(policy corev1.DNSPolicy) Option {
 	return func(s *appsv1.StatefulSet) {
+		if policy == "" {
+			return
+		}
+
 		s.Spec.Template.Spec.DNSPolicy = policy
 	}
 }
 
-func SetPriorityClassName(name string) builder.Option[*appsv1.StatefulSet] {
+func SetPriorityClassName(name string) Option {
 	return func(s *appsv1.StatefulSet) {
+		if name == "" {
+			return
+		}
+
 		s.Spec.Template.Spec.PriorityClassName = name
 	}
 }
 
-func SetTerminationGracePeriodSeconds(seconds *int64) builder.Option[*appsv1.StatefulSet] {
+func SetTerminationGracePeriodSeconds(seconds *int64) Option {
 	return func(s *appsv1.StatefulSet) {
+		if seconds == nil {
+			return
+		}
+
 		s.Spec.Template.Spec.TerminationGracePeriodSeconds = seconds
 	}
 }
 
-func SetRollingUpdateStrategy(strategy *appsv1.RollingUpdateStatefulSetStrategy) builder.Option[*appsv1.StatefulSet] {
+func SetRollingUpdateStrategy(strategy *appsv1.RollingUpdateStatefulSetStrategy) Option {
 	return func(s *appsv1.StatefulSet) {
+		if strategy == nil {
+			return
+		}
+
 		s.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 			Type:          appsv1.RollingUpdateStatefulSetStrategyType,
 			RollingUpdate: strategy,
@@ -159,11 +175,15 @@ func SetRollingUpdateStrategy(strategy *appsv1.RollingUpdateStatefulSetStrategy)
 	}
 }
 
-func SetVolumeClaimTemplate(name string, spec corev1.PersistentVolumeClaimSpec) builder.Option[*appsv1.StatefulSet] {
+func SetVolumeClaimTemplate(name string, spec *corev1.PersistentVolumeClaimSpec) Option {
 	return func(s *appsv1.StatefulSet) {
+		if spec == nil {
+			return
+		}
+
 		s.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{{
 			ObjectMeta: metav1.ObjectMeta{Name: name},
-			Spec:       spec,
+			Spec:       *spec,
 		}}
 	}
 }

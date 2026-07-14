@@ -194,26 +194,11 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		k8sstatefulset.SetTolerations(km.Tolerations),
 		k8sstatefulset.SetTopologySpreadConstraints(km.TopologySpreadConstraints),
 		k8sstatefulset.SetVolumes(buildVolumes(dk)),
-	}
-
-	if km.RollingUpdate != nil {
-		opts = append(opts, k8sstatefulset.SetRollingUpdateStrategy(km.RollingUpdate))
-	}
-
-	if km.DNSPolicy != "" {
-		opts = append(opts, k8sstatefulset.SetDNSPolicy(km.DNSPolicy))
-	}
-
-	if km.PriorityClassName != "" {
-		opts = append(opts, k8sstatefulset.SetPriorityClassName(km.PriorityClassName))
-	}
-
-	if km.TerminationGracePeriodSeconds != nil {
-		opts = append(opts, k8sstatefulset.SetTerminationGracePeriodSeconds(km.TerminationGracePeriodSeconds))
-	}
-
-	if km.VolumeClaimTemplate != nil {
-		opts = append(opts, k8sstatefulset.SetVolumeClaimTemplate(storageVolumeName, *km.VolumeClaimTemplate))
+		k8sstatefulset.SetRollingUpdateStrategy(km.RollingUpdate),
+		k8sstatefulset.SetDNSPolicy(km.DNSPolicy),
+		k8sstatefulset.SetPriorityClassName(km.PriorityClassName),
+		k8sstatefulset.SetTerminationGracePeriodSeconds(km.TerminationGracePeriodSeconds),
+		k8sstatefulset.SetVolumeClaimTemplate(storageVolumeName, km.VolumeClaimTemplate),
 	}
 
 	return k8sstatefulset.Build(dk, km.GetStatefulSetName(), container, opts...)
