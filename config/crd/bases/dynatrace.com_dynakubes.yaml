@@ -7915,7 +7915,7 @@ spec:
                 type: string
               kubernetesMonitoring:
                 properties:
-                  connectionInfoStatus:
+                  connectionInfo:
                     properties:
                       endpoints:
                         type: string
