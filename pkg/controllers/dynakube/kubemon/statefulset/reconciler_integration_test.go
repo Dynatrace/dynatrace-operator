@@ -182,8 +182,7 @@ func assertStatefulSetShape(t *testing.T, sts *appsv1.StatefulSet, dk *dynakube.
 	t.Helper()
 
 	assert.Equal(t, dk.KubernetesMonitoring().GetStatefulSetName(), sts.Name)
-	require.Len(t, sts.OwnerReferences, 1)
-	assert.Equal(t, dk.Name, sts.OwnerReferences[0].Name)
+	assert.True(t, metav1.IsControlledBy(sts, dk))
 
 	require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 	container := sts.Spec.Template.Spec.Containers[0]

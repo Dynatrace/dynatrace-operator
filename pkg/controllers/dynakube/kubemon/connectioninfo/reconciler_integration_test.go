@@ -104,12 +104,12 @@ func runProvisionPhase(t *testing.T, deps lifecycleDeps) {
 	cm := getConfigMap(t, deps.apiReader, deps.dk)
 	assert.Len(t, cm.Data, 2)
 	assertManagedLabels(t, cm.Labels, deps.dk)
-	assertOwnedBy(t, cm.OwnerReferences, deps.dk)
+	assert.True(t, metav1.IsControlledBy(cm, deps.dk))
 
 	secret := getSecret(t, deps.apiReader, deps.dk)
 	assert.Len(t, secret.Data, 1)
 	assertManagedLabels(t, secret.Labels, deps.dk)
-	assertOwnedBy(t, secret.OwnerReferences, deps.dk)
+	assert.True(t, metav1.IsControlledBy(secret, deps.dk))
 }
 
 func runRotatePhase(t *testing.T, deps lifecycleDeps) {
@@ -212,11 +212,4 @@ func assertManagedLabels(t *testing.T, labels map[string]string, dk *dynakube.Dy
 
 	assert.Equal(t, k8slabel.ActiveGateComponentLabel, labels[k8slabel.AppComponentLabel])
 	assert.Equal(t, dk.Name, labels[k8slabel.AppCreatedByLabel])
-}
-
-func assertOwnedBy(t *testing.T, refs []metav1.OwnerReference, dk *dynakube.DynaKube) {
-	t.Helper()
-
-	require.Len(t, refs, 1)
-	assert.Equal(t, dk.Name, refs[0].Name)
 }
