@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -291,7 +290,7 @@ func isType[T client.Object](obj client.Object) bool {
 func assertExists(t *testing.T, c client.Client, into client.Object, name string, wantExists bool) {
 	t.Helper()
 
-	err := c.Get(t.Context(), types.NamespacedName{Name: name, Namespace: testNamespace}, into)
+	err := c.Get(t.Context(), client.ObjectKey{Name: name, Namespace: testNamespace}, into)
 	if wantExists {
 		require.NoError(t, err)
 	} else {

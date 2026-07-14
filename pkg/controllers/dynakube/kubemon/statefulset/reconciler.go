@@ -17,7 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -55,7 +54,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	currentStatefulSet, err := r.sts.Get(ctx, types.NamespacedName{Name: desiredStatefulSet.Name, Namespace: desiredStatefulSet.Namespace})
+	currentStatefulSet, err := r.sts.Get(ctx, client.ObjectKey{Name: desiredStatefulSet.Name, Namespace: desiredStatefulSet.Namespace})
 	if k8serrors.IsNotFound(err) || (err == nil && !k8sstatefulset.IsRolloutComplete(currentStatefulSet)) {
 		return k8sstatefulset.ErrRolloutInProgress
 	}
@@ -160,7 +159,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	replicas, err := k8sstatefulset.ResolveReplicas(
 		ctx,
 		r.kubeClient,
-		types.NamespacedName{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace},
+		client.ObjectKey{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace},
 		dk.KubernetesMonitoring().Replicas,
 	)
 	if err != nil {
@@ -222,7 +221,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 
 func (r *Reconciler) getTenantTokenHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
 	var secret corev1.Secret
-	if err := r.kubeClient.Get(ctx, types.NamespacedName{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: dk.Namespace}, &secret); err != nil {
+	if err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: dk.Namespace}, &secret); err != nil {
 		return "", errors.WithStack(err)
 	}
 

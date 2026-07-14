@@ -21,7 +21,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -304,7 +303,7 @@ func requireTestStatefulSet(t *testing.T, ctx context.Context, clt client.Client
 	t.Helper()
 
 	sts := &appsv1.StatefulSet{}
-	require.NoError(t, clt.Get(ctx, types.NamespacedName{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace}, sts))
+	require.NoError(t, clt.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace}, sts))
 
 	return sts
 }

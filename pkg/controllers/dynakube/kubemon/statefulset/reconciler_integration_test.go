@@ -18,7 +18,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -183,7 +182,7 @@ func runDisablePhase(t *testing.T, deps *lifecycleDeps) {
 			return false
 		}
 
-		err := deps.clt.Get(t.Context(), types.NamespacedName{Name: name, Namespace: integrationNamespace}, &appsv1.StatefulSet{})
+		err := deps.clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: integrationNamespace}, &appsv1.StatefulSet{})
 
 		return k8serrors.IsNotFound(err)
 	}, integrationEventuallyTimeout, integrationEventuallyTick)
@@ -247,8 +246,8 @@ func markRolloutComplete(t *testing.T, ctx context.Context, clt client.Client, d
 	require.NoError(t, clt.Status().Update(ctx, sts))
 }
 
-func statefulSetKey(dk *dynakube.DynaKube) types.NamespacedName {
-	return types.NamespacedName{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace}
+func statefulSetKey(dk *dynakube.DynaKube) client.ObjectKey {
+	return client.ObjectKey{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace}
 }
 
 func getStatefulSet(t *testing.T, reader client.Reader, dk *dynakube.DynaKube) *appsv1.StatefulSet {

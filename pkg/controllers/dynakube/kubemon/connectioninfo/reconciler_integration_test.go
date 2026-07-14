@@ -19,7 +19,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -175,8 +174,8 @@ func runDisablePhase(t *testing.T, deps lifecycleDeps) {
 			return false
 		}
 
-		cmErr := deps.clt.Get(t.Context(), types.NamespacedName{Name: deps.dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: deps.dk.Namespace}, &corev1.ConfigMap{})
-		secretErr := deps.clt.Get(t.Context(), types.NamespacedName{Name: deps.dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: deps.dk.Namespace}, &corev1.Secret{})
+		cmErr := deps.clt.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: deps.dk.Namespace}, &corev1.ConfigMap{})
+		secretErr := deps.clt.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: deps.dk.Namespace}, &corev1.Secret{})
 
 		return k8serrors.IsNotFound(cmErr) &&
 			k8serrors.IsNotFound(secretErr) &&
@@ -205,7 +204,7 @@ func getConfigMap(t *testing.T, reader client.Reader, dk *dynakube.DynaKube) *co
 	t.Helper()
 
 	cm := &corev1.ConfigMap{}
-	require.NoError(t, reader.Get(t.Context(), types.NamespacedName{Name: dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: dk.Namespace}, cm))
+	require.NoError(t, reader.Get(t.Context(), client.ObjectKey{Name: dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: dk.Namespace}, cm))
 
 	return cm
 }
@@ -214,7 +213,7 @@ func getSecret(t *testing.T, reader client.Reader, dk *dynakube.DynaKube) *corev
 	t.Helper()
 
 	secret := &corev1.Secret{}
-	require.NoError(t, reader.Get(t.Context(), types.NamespacedName{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: dk.Namespace}, secret))
+	require.NoError(t, reader.Get(t.Context(), client.ObjectKey{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: dk.Namespace}, secret))
 
 	return secret
 }
@@ -226,7 +225,7 @@ func isConnectionInfoApplied(ctx context.Context, reader client.Reader, dk *dyna
 	}
 
 	cm := &corev1.ConfigMap{}
-	if err := reader.Get(ctx, types.NamespacedName{Name: dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: dk.Namespace}, cm); err != nil {
+	if err := reader.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: dk.Namespace}, cm); err != nil {
 		return false
 	}
 
@@ -236,7 +235,7 @@ func isConnectionInfoApplied(ctx context.Context, reader client.Reader, dk *dyna
 	}
 
 	secret := &corev1.Secret{}
-	if err := reader.Get(ctx, types.NamespacedName{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: dk.Namespace}, secret); err != nil {
+	if err := reader.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: dk.Namespace}, secret); err != nil {
 		return false
 	}
 
