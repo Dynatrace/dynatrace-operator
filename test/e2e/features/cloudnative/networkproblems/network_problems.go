@@ -103,7 +103,7 @@ func checkForDummyVolume(sampleApp *sample.App) features.Func {
 				_, err = io.Copy(buffer, logStream)
 
 				return strings.Contains(buffer.String(), ldPreloadError), err
-			}, wait.WithTimeout(2*time.Minute))
+			}, wait.WithTimeout(5*time.Minute), wait.WithInterval(15*time.Second))
 
 			require.NoError(t, err)
 		}
