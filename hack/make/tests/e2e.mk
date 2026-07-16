@@ -391,3 +391,7 @@ test/e2e/kspm/optionalscopes:
 
 test/e2e/token/migration:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "token_migration" $(SKIPCLEANUP)
+
+test/e2e/cloudnative/migration_and_resilience:
+	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/standard -run "cloudnative_csi_migration" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/istio -run "cloudnative_csi_resilience" $(SKIPCLEANUP)
