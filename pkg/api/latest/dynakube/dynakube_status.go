@@ -26,29 +26,29 @@ import (
 type DynaKubeStatus struct { //nolint:revive
 
 	// Observed state of OneAgent
-	OneAgent oneagent.Status `json:"oneAgent,omitempty"`
+	OneAgent oneagent.Status `json:"oneAgent,omitempty,omitzero"`
 
 	// Observed state of ActiveGate
-	ActiveGate activegate.Status `json:"activeGate,omitempty"`
+	ActiveGate activegate.Status `json:"activeGate,omitempty,omitzero"`
 
 	// Observed state of KubernetesMonitoring
 	// +optional
 	KubernetesMonitoring kubemon.Status `json:"kubernetesMonitoring,omitzero"`
 
 	// Observed state of Code Modules
-	CodeModules oneagent.CodeModulesStatus `json:"codeModules,omitempty"`
+	CodeModules oneagent.CodeModulesStatus `json:"codeModules,omitempty,omitzero"`
 
 	// Observed state of Metadata-Enrichment
-	MetadataEnrichment metadataenrichment.Status `json:"metadataEnrichment,omitempty"`
+	MetadataEnrichment metadataenrichment.Status `json:"metadataEnrichment,omitempty,omitzero"`
 
 	// Observed state of KSPM
-	KSPM kspm.Status `json:"kspm,omitempty"`
+	KSPM kspm.Status `json:"kspm,omitempty,omitzero"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Last Updated"
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
-	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
+	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty,omitzero"`
 
 	// ProxyURLHash is the hashed value of what is in spec.proxy.
 	// Used for setting it as an annotation value for components that use the proxy.
@@ -72,11 +72,11 @@ type DynaKubeStatus struct { //nolint:revive
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	APIToken APITokenStatus `json:"apiToken,omitempty"`
+	APIToken APITokenStatus `json:"apiToken,omitempty,omitzero"`
 }
 
 type APITokenStatus struct {
-	AvailableOptionalScopes AvailableOptionalScopes `json:"availableOptionalScopes,omitempty"`
+	AvailableOptionalScopes AvailableOptionalScopes `json:"availableOptionalScopes,omitempty,omitzero"`
 
 	// Platform indicates whether the provided apiToken is a platform token.
 	Platform *bool `json:"platform,omitempty"`

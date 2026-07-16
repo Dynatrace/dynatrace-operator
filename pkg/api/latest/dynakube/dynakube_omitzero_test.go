@@ -25,16 +25,18 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TestOmitzero verifies that the struct-typed fields tagged with `omitzero`
-// (see dynakube_types.go) are dropped from the marshaled JSON when they hold a
-// zero value, and are still rendered when they carry a value. `omitempty` has
-// no effect on non-pointer struct fields, which is why these fields need
-// `omitzero` (Go 1.24+).
+// (see dynakube_types.go and dynakube_status.go) are dropped from the marshaled
+// JSON when they hold a zero value, and are still rendered when they carry a
+// value. `omitempty` has no effect on non-pointer struct fields, which is why
+// these fields need `omitzero` (Go 1.24+).
 func TestOmitzero(t *testing.T) {
 	// mustMarshal marshals v and returns the JSON as a string.
 	mustMarshal := func(t *testing.T, v any) string {
@@ -54,6 +56,8 @@ func TestOmitzero(t *testing.T) {
 		dkJSON := mustMarshal(t, DynaKube{})
 		specJSON := mustMarshal(t, DynaKubeSpec{})
 		templatesJSON := mustMarshal(t, TemplatesSpec{})
+		statusJSON := mustMarshal(t, DynaKubeStatus{})
+		apiTokenJSON := mustMarshal(t, APITokenStatus{})
 		listJSON := mustMarshal(t, DynaKubeList{})
 
 		// Assert: DynaKube
@@ -69,7 +73,20 @@ func TestOmitzero(t *testing.T) {
 		// Assert: TemplatesSpec
 		assert.NotContains(t, templatesJSON, `"kspmNodeConfigurationCollector"`)
 		assert.NotContains(t, templatesJSON, `"otelCollector"`)
+		assert.NotContains(t, templatesJSON, `"sqlExtensionExecutor"`)
 		assert.NotContains(t, templatesJSON, `"extensionExecutionController"`)
+
+		// Assert: DynaKubeStatus
+		assert.NotContains(t, statusJSON, `"oneAgent"`)
+		assert.NotContains(t, statusJSON, `"activeGate"`)
+		assert.NotContains(t, statusJSON, `"codeModules"`)
+		assert.NotContains(t, statusJSON, `"metadataEnrichment"`)
+		assert.NotContains(t, statusJSON, `"kspm"`)
+		assert.NotContains(t, statusJSON, `"updatedTimestamp"`)
+		assert.NotContains(t, statusJSON, `"apiToken"`)
+
+		// Assert: APITokenStatus
+		assert.NotContains(t, apiTokenJSON, `"availableOptionalScopes"`)
 
 		// Assert: DynaKubeList
 		assert.NotContains(t, listJSON, `"metadata"`)
@@ -79,7 +96,15 @@ func TestOmitzero(t *testing.T) {
 		// Arrange: give every omitzero-tagged struct field a non-zero value.
 		enabled := true
 		dk := DynaKube{
-			Status: DynaKubeStatus{KubeSystemUUID: "some-uuid"},
+			Status: DynaKubeStatus{
+				OneAgent:           oneagent.Status{VersionStatus: status.VersionStatus{Version: "1.0.0"}},
+				ActiveGate:         activegate.Status{VersionStatus: status.VersionStatus{Version: "1.0.0"}},
+				CodeModules:        oneagent.CodeModulesStatus{VersionStatus: status.VersionStatus{Version: "1.0.0"}},
+				MetadataEnrichment: metadataenrichment.Status{Rules: []metadataenrichment.Rule{{}}},
+				KSPM:               kspm.Status{TokenSecretHash: "some-hash"},
+				UpdatedTimestamp:   metav1.Now(),
+				APIToken:           APITokenStatus{AvailableOptionalScopes: AvailableOptionalScopes{SettingsRead: &enabled}},
+			},
 			Spec: DynaKubeSpec{
 				APIURL:             "https://test.dev.dynatracelabs.com/api",
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: &enabled},
@@ -88,6 +113,7 @@ func TestOmitzero(t *testing.T) {
 				Templates: TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{Labels: map[string]string{"key": "value"}},
 					OpenTelemetryCollector:         OpenTelemetryCollectorSpec{Labels: map[string]string{"key": "value"}},
+					SQLExtensionExecutor:           extensions.DatabaseExecutorSpec{Tolerations: []corev1.Toleration{{}}},
 					ExtensionExecutionController:   extensions.ExecutionControllerSpec{Labels: map[string]string{"key": "value"}},
 				},
 			},
@@ -111,7 +137,15 @@ func TestOmitzero(t *testing.T) {
 		// Assert: TemplatesSpec
 		assert.Contains(t, dkJSON, `"kspmNodeConfigurationCollector"`)
 		assert.Contains(t, dkJSON, `"otelCollector"`)
+		assert.Contains(t, dkJSON, `"sqlExtensionExecutor"`)
 		assert.Contains(t, dkJSON, `"extensionExecutionController"`)
+
+		// Assert: DynaKubeStatus
+		assert.Contains(t, dkJSON, `"codeModules"`)
+		assert.Contains(t, dkJSON, `"kspm"`)
+		assert.Contains(t, dkJSON, `"updatedTimestamp"`)
+		assert.Contains(t, dkJSON, `"apiToken"`)
+		assert.Contains(t, dkJSON, `"availableOptionalScopes"`)
 
 		// Assert: DynaKubeList
 		assert.Contains(t, listJSON, `"metadata"`)
