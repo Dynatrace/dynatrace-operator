@@ -42,7 +42,7 @@ const (
 
 	WebhookCertsRenewalThresholdEnvVar  = "DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD"
 	defaultWebhookCertsRenewalThreshold = 12 * time.Hour
-	minWebhookCertsRenewalThreshold     = time.Hour
+	minWebhookCertsRenewalThreshold     = 12 * time.Hour // must be >= minCertificateRenewalThreshold (pkg/controllers/certificates)
 	maxWebhookCertsRenewalThreshold     = 720 * time.Hour
 
 	WebhookCertsServerDurationEnvVar  = "DT_WEBHOOK_CERTS_SERVER_DURATION"

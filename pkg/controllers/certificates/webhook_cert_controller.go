@@ -27,6 +27,9 @@ const (
 	initReconcileInterval = 5 * time.Second
 
 	secretPostfix = "-certs"
+
+	CertificateWatcherPollInterval = 6 * time.Hour
+	minCertificateRenewalThreshold = 2 * CertificateWatcherPollInterval
 )
 
 var errCertificatesSecretEmpty = errors.New("certificates secret is empty")
@@ -84,10 +87,14 @@ func newWebhookCertificateController(clt client.Client, apiReader client.Reader)
 			rootDuration, serverDuration, k8senv.WebhookCertsRootDurationEnvVar, serverDuration)
 	}
 
-	renewalWindow := serverDuration - renewalThreshold
-	if requeueAfter >= renewalWindow {
-		return nil, fmt.Errorf("requeue interval (%s) must be shorter than the cert renewal window (%s - %s = %s); set %s to a value shorter than %s",
-			requeueAfter, serverDuration, renewalThreshold, renewalWindow, k8senv.WebhookCertsRequeueAfterEnvVar, renewalWindow)
+	if renewalThreshold < minCertificateRenewalThreshold {
+		return nil, fmt.Errorf("renewal threshold (%s) must exceed twice the cert watcher poll interval (%s); set %s to a value greater than %s",
+			renewalThreshold, minCertificateRenewalThreshold, k8senv.WebhookCertsRenewalThresholdEnvVar, minCertificateRenewalThreshold)
+	}
+
+	if requeueAfter >= renewalThreshold {
+		return nil, fmt.Errorf("requeue interval (%s) must be shorter than the renewal threshold (%s); set %s to a value shorter than %s",
+			requeueAfter, renewalThreshold, k8senv.WebhookCertsRequeueAfterEnvVar, renewalThreshold)
 	}
 
 	log.Debug("webhook cert controller config", "requeueAfter", requeueAfter, "renewalThreshold", renewalThreshold, "serverDuration", serverDuration, "rootDuration", rootDuration)

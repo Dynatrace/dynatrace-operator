@@ -261,11 +261,11 @@ func TestGetWebhookCertDurations(t *testing.T) {
 	t.Run("GetWebhookCertsRenewalThreshold", func(t *testing.T) {
 		run(t, WebhookCertsRenewalThresholdEnvVar, GetWebhookCertsRenewalThreshold, []testCase{
 			{"empty env returns default", "", defaultWebhookCertsRenewalThreshold},
-			{"valid duration returns parsed value", "6h", 6 * time.Hour},
+			{"valid duration returns parsed value", "24h", 24 * time.Hour},
 			{"invalid duration returns default", "not-a-duration", defaultWebhookCertsRenewalThreshold},
-			{"below minimum returns default", "30m", defaultWebhookCertsRenewalThreshold},
+			{"below minimum returns default", "11h", defaultWebhookCertsRenewalThreshold},
 			{"above maximum returns default", "1000h", defaultWebhookCertsRenewalThreshold},
-			{"at minimum boundary returns parsed value", "1h", minWebhookCertsRenewalThreshold},
+			{"at minimum boundary returns parsed value", "12h", minWebhookCertsRenewalThreshold},
 			{"at maximum boundary returns parsed value", "720h", maxWebhookCertsRenewalThreshold},
 		})
 	})
