@@ -55,20 +55,23 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 	})
 
 	t.Run("returns transient error when connection info is incomplete, creates no resources", func(t *testing.T) {
-		tests := map[string]func(*agclient.ConnectionInfo){
-			"empty tenant UUID":  func(info *agclient.ConnectionInfo) { info.TenantUUID = "" },
-			"empty endpoints":    func(info *agclient.ConnectionInfo) { info.Endpoints = "" },
-			"empty tenant token": func(info *agclient.ConnectionInfo) { info.TenantToken = "" },
+		tests := []struct {
+			name   string
+			mutate func(*agclient.ConnectionInfo)
+		}{
+			{"empty tenant UUID", func(info *agclient.ConnectionInfo) { info.TenantUUID = "" }},
+			{"empty endpoints", func(info *agclient.ConnectionInfo) { info.Endpoints = "" }},
+			{"empty tenant token", func(info *agclient.ConnectionInfo) { info.TenantToken = "" }},
 		}
 
-		for name, mutate := range tests {
-			t.Run(name, func(t *testing.T) {
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
 				dk := newTestDynaKube(true)
 				fakeClient := fake.NewClient(dk)
 				r := connectioninfo.NewReconciler(fakeClient)
 
 				info := testConnectionInfo()
-				mutate(&info)
+				test.mutate(&info)
 				dtClient := newDTClientMock(t, info)
 
 				err := r.Reconcile(t.Context(), dtClient, dk)
@@ -86,30 +89,24 @@ func TestReconcileWriteFailures(t *testing.T) {
 	// In both cases status must stay empty and the failing write is never persisted. They differ
 	// only in whether the ConfigMap survives: a ConfigMap failure aborts before either object is
 	// written, while a Secret failure happens after the ConfigMap was already created.
-	tests := map[string]struct {
+	tests := []struct {
+		name            string
 		failOn          func(client.Object) bool
 		configMapExists bool
 		secretExists    bool
 	}{
-		"configmap write fails": {
-			failOn:          isType[*corev1.ConfigMap],
-			configMapExists: false,
-			secretExists:    false,
-		},
-		"secret write fails": {
-			failOn:          isType[*corev1.Secret],
-			configMapExists: true,
-			secretExists:    false,
-		},
+		{"configmap write fails", isType[*corev1.ConfigMap], false, false},
+		{"secret write fails", isType[*corev1.Secret], true, false},
 	}
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			dk := newTestDynaKube(true)
+			errCreate := errors.New("kube api error")
 			fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 				Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 					if test.failOn(obj) {
-						return errors.New("kube api error")
+						return errCreate
 					}
 
 					return c.Create(ctx, obj, opts...)
@@ -119,7 +116,7 @@ func TestReconcileWriteFailures(t *testing.T) {
 			dtClient := newDTClientMock(t, testConnectionInfo())
 
 			err := r.Reconcile(t.Context(), dtClient, dk)
-			require.Error(t, err)
+			require.ErrorIs(t, err, errCreate)
 
 			assert.Empty(t, dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID)
 			assert.Empty(t, dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints)
@@ -150,18 +147,22 @@ func TestReconcileRotationFailures(t *testing.T) {
 		}
 	}
 
-	tests := map[string]func(client.Object) bool{
-		"configmap update fails": isType[*corev1.ConfigMap],
-		"secret update fails":    isType[*corev1.Secret],
+	tests := []struct {
+		name   string
+		failOn func(client.Object) bool
+	}{
+		{"configmap update fails", isType[*corev1.ConfigMap]},
+		{"secret update fails", isType[*corev1.Secret]},
 	}
 
-	for name, failOn := range tests {
-		t.Run(name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			dk := newTestDynaKube(true)
+			errUpdate := errors.New("kube api error")
 			fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 				Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-					if failOn(obj) {
-						return errors.New("kube api error")
+					if test.failOn(obj) {
+						return errUpdate
 					}
 
 					return c.Update(ctx, obj, opts...)
@@ -171,7 +172,7 @@ func TestReconcileRotationFailures(t *testing.T) {
 			dtClient := newDTClientMock(t, testConnectionInfo())
 
 			err := r.Reconcile(t.Context(), dtClient, dk)
-			require.Error(t, err)
+			require.ErrorIs(t, err, errUpdate)
 
 			assert.Equal(t, oldUUID, dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID)
 			assert.Equal(t, oldEndpoints, dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints)
@@ -181,18 +182,22 @@ func TestReconcileRotationFailures(t *testing.T) {
 
 // TestReconcileCleanupDeleteFailures covers delete failures per resource on the cleanup path.
 func TestReconcileCleanupDeleteFailures(t *testing.T) {
-	tests := map[string]func(client.Object) bool{
-		"configmap delete fails": isType[*corev1.ConfigMap],
-		"secret delete fails":    isType[*corev1.Secret],
+	tests := []struct {
+		name   string
+		failOn func(client.Object) bool
+	}{
+		{"configmap delete fails", isType[*corev1.ConfigMap]},
+		{"secret delete fails", isType[*corev1.Secret]},
 	}
 
-	for name, failOn := range tests {
-		t.Run(name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			dk := newTestDynaKube(false)
+			errDelete := errors.New("kube api error")
 			fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 				Delete: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
-					if failOn(obj) {
-						return errors.New("kube api error")
+					if test.failOn(obj) {
+						return errDelete
 					}
 
 					return c.Delete(ctx, obj, opts...)
@@ -201,7 +206,7 @@ func TestReconcileCleanupDeleteFailures(t *testing.T) {
 			r := connectioninfo.NewReconciler(fakeClient)
 
 			err := r.Reconcile(t.Context(), nil, dk)
-			require.Error(t, err)
+			require.ErrorIs(t, err, errDelete)
 		})
 	}
 }
@@ -211,18 +216,19 @@ func TestReconcileCleanupDeleteFailures(t *testing.T) {
 func TestReconcileCleanup(t *testing.T) {
 	// Delete is IgnoreNotFound, so cleanup must succeed regardless of which subset of
 	// resources exists and must always leave neither object and an empty status.
-	tests := map[string]struct {
+	tests := []struct {
+		name          string
 		seedConfigMap bool
 		seedSecret    bool
 	}{
-		"both present":           {seedConfigMap: true, seedSecret: true},
-		"only configmap present": {seedConfigMap: true, seedSecret: false},
-		"only secret present":    {seedConfigMap: false, seedSecret: true},
-		"nothing present":        {seedConfigMap: false, seedSecret: false},
+		{"both present", true, true},
+		{"only configmap present", true, false},
+		{"only secret present", false, true},
+		{"nothing present", false, false},
 	}
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			dk := newTestDynaKube(false)
 			dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID = testTenantUUID
 			dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints = testEndpoints
