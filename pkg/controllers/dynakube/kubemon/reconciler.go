@@ -76,7 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 
 	log.Debug("reconciling kubernetes monitoring")
 
-	defer r.reconcileCondition(dk, &err)
+	defer func() { r.reconcileCondition(dk, err) }()
 
 	if err = r.connectionInfoReconciler.Reconcile(ctx, agClient, dk); err != nil {
 		return err
@@ -91,7 +91,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 	return nil
 }
 
-func (r *Reconciler) reconcileCondition(dk *dynakube.DynaKube, err *error) {
+func (r *Reconciler) reconcileCondition(dk *dynakube.DynaKube, err error) {
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		meta.RemoveStatusCondition(dk.Conditions(), kubemonapi.KubeMonAvailableConditionType)
 
@@ -103,19 +103,19 @@ func (r *Reconciler) reconcileCondition(dk *dynakube.DynaKube, err *error) {
 	}
 
 	switch {
-	case *err == nil:
+	case err == nil:
 		condition.Status = metav1.ConditionTrue
 		condition.Reason = reasonAvailable
 		condition.Message = messageAvailable
-	case errors.Is(*err, k8sstatefulset.ErrRolloutInProgress),
-		errors.Is(*err, kubemonconnectioninfo.ErrConnectionInfoNotReady):
+	case errors.Is(err, k8sstatefulset.ErrRolloutInProgress),
+		errors.Is(err, kubemonconnectioninfo.ErrConnectionInfoNotReady):
 		condition.Status = metav1.ConditionFalse
 		condition.Reason = reasonReconciling
-		condition.Message = pkgerrors.Cause(*err).Error()
+		condition.Message = pkgerrors.Cause(err).Error()
 	default:
 		condition.Status = metav1.ConditionFalse
 		condition.Reason = reasonError
-		condition.Message = pkgerrors.Cause(*err).Error()
+		condition.Message = pkgerrors.Cause(err).Error()
 	}
 
 	_ = meta.SetStatusCondition(dk.Conditions(), condition)
