@@ -6,9 +6,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -41,39 +43,58 @@ func TestReconcileDisabled(t *testing.T) {
 	})
 }
 
-// TestReconcileConditionMapping maps each sub-reconciler outcome to a condition: nil → Available,
-// rollout sentinel → Reconciling, persistent sentinel → Error.
+// TestReconcileConditionMapping maps each sub-reconciler outcome to the resulting condition
+// (status/reason/message) and asserts the error is propagated. Only the "coming up" sentinels
+// (rollout, connection info) map to Reconciling; any other error surfaces as Error with the
+// root-cause message.
 func TestReconcileConditionMapping(t *testing.T) {
 	t.Setenv(k8senv.KubemonEnableOperand, "true") // remove with gate
-	tests := map[string]struct {
+	tests := []struct {
+		name           string
 		connInfoErr    error
 		statefulSetErr error
 		wantStatus     metav1.ConditionStatus
 		wantReason     string
+		wantMessage    string
 	}{
-		"both succeed -> available": {
-			wantStatus: metav1.ConditionTrue,
-			wantReason: reasonAvailable,
+		{
+			name:        "both succeed -> available",
+			wantStatus:  metav1.ConditionTrue,
+			wantReason:  reasonAvailable,
+			wantMessage: messageAvailable,
 		},
-		"connection info error -> reconciling": {
-			connInfoErr: errors.New("no endpoints yet"),
-			wantStatus:  metav1.ConditionUnknown,
+		{
+			name:        "connection info not ready -> reconciling",
+			connInfoErr: kubemonconnectioninfo.ErrConnectionInfoNotReady,
+			wantStatus:  metav1.ConditionFalse,
 			wantReason:  reasonReconciling,
+			wantMessage: kubemonconnectioninfo.ErrConnectionInfoNotReady.Error(),
 		},
-		"rollout in progress -> reconciling": {
+		{
+			name:           "rollout in progress -> reconciling",
 			statefulSetErr: k8sstatefulset.ErrRolloutInProgress,
-			wantStatus:     metav1.ConditionUnknown,
+			wantStatus:     metav1.ConditionFalse,
 			wantReason:     reasonReconciling,
+			wantMessage:    k8sstatefulset.ErrRolloutInProgress.Error(),
 		},
-		"persistent error -> error": {
-			statefulSetErr: kubemonstatefulset.ErrImageRequired,
+		{
+			name:           "unexpected error -> error",
+			statefulSetErr: errors.New("boom"),
 			wantStatus:     metav1.ConditionFalse,
 			wantReason:     reasonError,
+			wantMessage:    "boom",
+		},
+		{
+			name:           "stack-wrapped error -> error without stack trace in message",
+			statefulSetErr: pkgerrors.WithStack(kubemonstatefulset.ErrImageRequired),
+			wantStatus:     metav1.ConditionFalse,
+			wantReason:     reasonError,
+			wantMessage:    kubemonstatefulset.ErrImageRequired.Error(),
 		},
 	}
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			connInfoReconciler := newMockConnectionInfoReconciler(t)
 			statefulSetReconciler := newMockStatefulsetReconciler(t)
 			reconciler := &Reconciler{
@@ -83,22 +104,25 @@ func TestReconcileConditionMapping(t *testing.T) {
 			dk := newTestDynaKube(true)
 
 			connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(test.connInfoErr).Once()
-			statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk).Maybe().Return(test.statefulSetErr)
+			if test.connInfoErr == nil {
+				statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(test.statefulSetErr).Once()
+			}
 
-			_ = reconciler.Reconcile(t.Context(), dk, nil, nil)
+			err := reconciler.Reconcile(t.Context(), dk, nil, nil)
 
-			assertCondition(t, dk, test.wantStatus, test.wantReason)
+			wantErr := test.connInfoErr
+			if wantErr == nil {
+				wantErr = test.statefulSetErr
+			}
+			require.ErrorIs(t, err, wantErr)
+
+			condition := meta.FindStatusCondition(*dk.Conditions(), kubemonapi.KubeMonAvailableConditionType)
+			require.NotNil(t, condition)
+			assert.Equal(t, test.wantStatus, condition.Status)
+			assert.Equal(t, test.wantReason, condition.Reason)
+			assert.Equal(t, test.wantMessage, condition.Message)
 		})
 	}
-}
-
-func assertCondition(t *testing.T, dk *dynakube.DynaKube, wantStatus metav1.ConditionStatus, wantReason string) {
-	t.Helper()
-
-	condition := meta.FindStatusCondition(*dk.Conditions(), kubemonapi.KubeMonAvailableConditionType)
-	require.NotNil(t, condition)
-	assert.Equal(t, wantStatus, condition.Status)
-	assert.Equal(t, wantReason, condition.Reason)
 }
 
 func newTestDynaKube(enabled bool) *dynakube.DynaKube {

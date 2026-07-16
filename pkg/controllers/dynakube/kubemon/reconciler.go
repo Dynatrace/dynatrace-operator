@@ -6,8 +6,8 @@
 //     implementation (cached or direct)
 //   - Condition mapping is based on sub-reconciler errors:
 //   - nil => True/Available
-//   - persistent sentinels => False/Error
-//   - all other errors => Unknown/Reconciling
+//   - converging sentinels (rollout, connection info) => False/Reconciling
+//   - all other errors => False/Error
 //   - Cleanup keeps running while disabled until all owned resources are deleted; only then
 //     the condition is removed.
 package kubemon
@@ -25,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	pkgerrors "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,6 +35,8 @@ const (
 	reasonAvailable   = "Available"
 	reasonError       = "Error"
 	reasonReconciling = "Reconciling"
+
+	messageAvailable = "kubernetes monitoring resources are ready"
 )
 
 type connectionInfoReconciler interface {
@@ -61,7 +64,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 // Reconcile is the operand entry point called by the parent DynaKube controller.
 // Sub-reconcilers mutate dk.Status.KubernetesMonitoring.* and dk.Status.Conditions in-memory;
 // the parent controller persists status changes via deferred Status().Update().
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, _ token.Tokens) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, _ token.Tokens) (err error) {
 	ctx, log := logd.NewFromContext(ctx, "dynakube-kubemon")
 
 	// Temporary gate, to be removed once kubemon is complete
@@ -73,65 +76,47 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 
 	log.Debug("reconciling kubernetes monitoring")
 
-	if err := r.connectionInfoReconciler.Reconcile(ctx, agClient, dk); err != nil {
-		r.setConditionByError(dk, err)
+	defer r.reconcileCondition(dk, &err)
 
+	if err = r.connectionInfoReconciler.Reconcile(ctx, agClient, dk); err != nil {
 		return err
 	}
 
-	if err := r.statefulsetReconciler.Reconcile(ctx, dk); err != nil {
-		r.setConditionByError(dk, err)
-
+	if err = r.statefulsetReconciler.Reconcile(ctx, dk); err != nil {
 		return err
 	}
-
-	r.reconcileAvailableCondition(dk)
 
 	log.Debug("reconciled kubernetes monitoring")
 
 	return nil
 }
 
-func (r *Reconciler) reconcileAvailableCondition(dk *dynakube.DynaKube) {
+func (r *Reconciler) reconcileCondition(dk *dynakube.DynaKube, err *error) {
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		meta.RemoveStatusCondition(dk.Conditions(), kubemonapi.KubeMonAvailableConditionType)
 
 		return
 	}
 
-	cond := metav1.Condition{
-		Type:    kubemonapi.KubeMonAvailableConditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  reasonAvailable,
-		Message: "kubernetes monitoring resources are ready",
-	}
-
-	_ = meta.SetStatusCondition(dk.Conditions(), cond)
-}
-
-func (r *Reconciler) setConditionByError(dk *dynakube.DynaKube, err error) {
 	condition := metav1.Condition{
 		Type: kubemonapi.KubeMonAvailableConditionType,
 	}
 
 	switch {
-	case isPersistent(err):
+	case *err == nil:
+		condition.Status = metav1.ConditionTrue
+		condition.Reason = reasonAvailable
+		condition.Message = messageAvailable
+	case errors.Is(*err, k8sstatefulset.ErrRolloutInProgress),
+		errors.Is(*err, kubemonconnectioninfo.ErrConnectionInfoNotReady):
+		condition.Status = metav1.ConditionFalse
+		condition.Reason = reasonReconciling
+		condition.Message = pkgerrors.Cause(*err).Error()
+	default:
 		condition.Status = metav1.ConditionFalse
 		condition.Reason = reasonError
-		condition.Message = err.Error()
-	case errors.Is(err, k8sstatefulset.ErrRolloutInProgress):
-		condition.Status = metav1.ConditionUnknown
-		condition.Reason = reasonReconciling
-		condition.Message = "kubernetes monitoring rollout is still in progress"
-	default:
-		condition.Status = metav1.ConditionUnknown
-		condition.Reason = reasonReconciling
-		condition.Message = "kubernetes monitoring reconciliation is in progress"
+		condition.Message = pkgerrors.Cause(*err).Error()
 	}
 
 	_ = meta.SetStatusCondition(dk.Conditions(), condition)
-}
-
-func isPersistent(err error) bool {
-	return errors.Is(err, kubemonstatefulset.ErrImageRequired)
 }
