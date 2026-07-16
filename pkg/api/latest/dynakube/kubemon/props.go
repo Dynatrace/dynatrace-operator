@@ -36,11 +36,11 @@ func (km *KubeMon) GetStatefulSetName() string {
 }
 
 func (km *KubeMon) GetConnectionInfoConfigMapName() string {
-	return km.name + "-kubemon-connection-info"
+	return km.name + OperandNameSuffix +"-connection-info"
 }
 
 func (km *KubeMon) GetTenantSecretName() string {
-	return km.name + "-kubemon-tenant-secret"
+	return km.name + OperandNameSuffix +"-tenant-secret"
 }
 
 func (km *Spec) GetPullPolicy() corev1.PullPolicy {
