@@ -58,9 +58,9 @@ const (
 type DynaKube struct {
 	metav1.TypeMeta `json:",inline"`
 
-	Status            DynaKubeStatus `json:"status,omitempty,omitzero"`
+	Status            DynaKubeStatus `json:"status,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              DynaKubeSpec `json:"spec,omitempty,omitzero"`
+	Spec              DynaKubeSpec `json:"spec,omitempty"`
 }
 
 // +k8s:openapi-gen=true
@@ -72,7 +72,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Configuration for Metadata Enrichment.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	MetadataEnrichment MetadataEnrichment `json:"metadataEnrichment,omitempty,omitzero"`
+	MetadataEnrichment MetadataEnrichment `json:"metadataEnrichment,omitempty"`
 
 	// Set custom proxy settings either directly or from a secret with the field proxy.
 	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
@@ -105,7 +105,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	OneAgent oneagent.Spec `json:"oneAgent,omitempty,omitzero"`
+	OneAgent oneagent.Spec `json:"oneAgent,omitempty"`
 
 	// Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
 	// For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
@@ -138,11 +138,11 @@ type DynaKubeSpec struct { //nolint:revive
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Templates TemplatesSpec `json:"templates,omitempty,omitzero"`
+	Templates TemplatesSpec `json:"templates,omitempty"`
 
 	// General configuration about ActiveGate instances.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	ActiveGate activegate.Spec `json:"activeGate,omitempty,omitzero"`
+	ActiveGate activegate.Spec `json:"activeGate,omitempty"`
 
 	// Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
 	// Set to true if you want to skip certification validation checks.
@@ -163,11 +163,11 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	LogMonitoring *logmonitoring.TemplateSpec `json:"logMonitoring,omitempty"`
 	// +kubebuilder:validation:Optional
-	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty,omitzero"`
+	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
 	// +kubebuilder:validation:Optional
-	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty,omitzero"`
+	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
 	// +kubebuilder:validation:Optional
-	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitempty,omitzero"`
+	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -176,6 +176,6 @@ type TemplatesSpec struct {
 // DynaKubeList contains a list of DynaKube
 type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DynaKube `json:"items"`
 }

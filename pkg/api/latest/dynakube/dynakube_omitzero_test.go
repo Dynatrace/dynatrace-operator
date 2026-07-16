@@ -20,10 +20,11 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,11 +82,11 @@ func TestOmitzero(t *testing.T) {
 			Status: DynaKubeStatus{KubeSystemUUID: "some-uuid"},
 			Spec: DynaKubeSpec{
 				APIURL:             "https://test.dev.dynatracelabs.com/api",
-				MetadataEnrichment: MetadataEnrichment{Enabled: &enabled},
+				MetadataEnrichment: metadataenrichment.Spec{Enabled: &enabled},
 				OneAgent:           oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}},
 				ActiveGate:         activegate.Spec{Annotations: map[string]string{"key": "value"}},
 				Templates: TemplatesSpec{
-					KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{Labels: map[string]string{"key": "value"}},
+					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{Labels: map[string]string{"key": "value"}},
 					OpenTelemetryCollector:         OpenTelemetryCollectorSpec{Labels: map[string]string{"key": "value"}},
 					ExtensionExecutionController:   extensions.ExecutionControllerSpec{Labels: map[string]string{"key": "value"}},
 				},
