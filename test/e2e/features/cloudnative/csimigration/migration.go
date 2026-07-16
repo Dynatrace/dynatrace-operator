@@ -73,6 +73,8 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("dynakube reconciled after CSI disabled", dynakubeComponents.WaitForPhase(testDynakube, status.Running))
 
 	builder.Teardown(sampleApp.Uninstall())
+	// Restore operator with CSI enabled so subsequent tests don't inherit the disabled-CSI state.
+	builder.Teardown(restoreCSIDriver)
 
 	return builder.Feature()
 }
@@ -88,6 +90,14 @@ func enableMigrationMode(ctx context.Context, t *testing.T, cfg *envconf.Config)
 func disableCSIDriver(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	require.NoError(t, operator.InstallViaHelm("", false))
 	ctx, err := operator.VerifyInstall(ctx, cfg, false)
+	require.NoError(t, err)
+
+	return ctx
+}
+
+func restoreCSIDriver(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+	require.NoError(t, operator.InstallViaHelm("", true))
+	ctx, err := operator.VerifyInstall(ctx, cfg, true)
 	require.NoError(t, err)
 
 	return ctx
