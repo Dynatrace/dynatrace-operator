@@ -116,55 +116,41 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 	dk.Spec.KubernetesMonitoring.TerminationGracePeriodSeconds = &grace
 	sts := reconcileAndGetSTS(t, dk)
 
-	t.Run("container and envs", func(t *testing.T) {
-		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
-		container := sts.Spec.Template.Spec.Containers[0]
-		assert.Equal(t, statefulset.ContainerName, container.Name)
-		assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), container.Image)
-		assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
+	require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+	container := sts.Spec.Template.Spec.Containers[0]
 
-		// buildEnvs prepends the three runtime vars, then appends user-supplied vars. No DT_GROUP when group is unset.
-		require.Len(t, container.Env, 4)
-		assert.Equal(t, agconsts.EnvDTCapabilities, container.Env[0].Name)
-		assert.Equal(t, activegate.KubeMonCapability.ArgumentName, container.Env[0].Value)
-		assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[1].Name)
-		assert.Equal(t, connectioninfo.EnvDTServer, container.Env[2].Name)
-		assert.Equal(t, "CUSTOM", container.Env[3].Name)
-	})
+	// container identity
+	assert.Equal(t, statefulset.ContainerName, container.Name)
+	assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), container.Image)
+	assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
 
-	t.Run("tenant secret volume and mount", func(t *testing.T) {
-		container := sts.Spec.Template.Spec.Containers[0]
-		require.Len(t, container.VolumeMounts, 1)
-		assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
-		assert.Equal(t, connectioninfo.TenantTokenMountPoint, container.VolumeMounts[0].MountPath)
-		assert.Equal(t, connectioninfo.TenantTokenKey, container.VolumeMounts[0].SubPath)
-		assert.True(t, container.VolumeMounts[0].ReadOnly)
-		assert.True(t, hasTenantSecretVolume(sts, dk))
-	})
+	// env vars: capabilities first, then connection info injected envs, then custom
+	require.Len(t, container.Env, 4)
+	assert.Equal(t, agconsts.EnvDTCapabilities, container.Env[0].Name)
+	assert.Equal(t, activegate.KubeMonCapability.ArgumentName, container.Env[0].Value)
+	assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[1].Name)
+	assert.Equal(t, connectioninfo.EnvDTServer, container.Env[2].Name)
+	assert.Equal(t, "CUSTOM", container.Env[3].Name)
 
-	t.Run("tenant token hash annotation", func(t *testing.T) {
-		assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash])
-	})
+	// tenant token volume mount
+	require.Len(t, container.VolumeMounts, 1)
+	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
+	assert.Equal(t, connectioninfo.TenantTokenMountPoint, container.VolumeMounts[0].MountPath)
+	assert.Equal(t, connectioninfo.TenantTokenKey, container.VolumeMounts[0].SubPath)
+	assert.True(t, container.VolumeMounts[0].ReadOnly)
+	assert.True(t, hasTenantSecretVolume(sts, dk))
+	assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash])
 
-	t.Run("rolling update strategy", func(t *testing.T) {
-		require.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
-		require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
-		require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate.Partition)
-		assert.Equal(t, partition, *sts.Spec.UpdateStrategy.RollingUpdate.Partition)
-	})
+	// update strategy
+	require.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
+	require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
+	require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate.Partition)
+	assert.Equal(t, partition, *sts.Spec.UpdateStrategy.RollingUpdate.Partition)
 
-	t.Run("DNS policy", func(t *testing.T) {
-		assert.Equal(t, corev1.DNSNone, sts.Spec.Template.Spec.DNSPolicy)
-	})
-
-	t.Run("priority class name", func(t *testing.T) {
-		assert.Equal(t, "high-priority", sts.Spec.Template.Spec.PriorityClassName)
-	})
-
-	t.Run("termination grace period", func(t *testing.T) {
-		require.NotNil(t, sts.Spec.Template.Spec.TerminationGracePeriodSeconds)
-		assert.Equal(t, grace, *sts.Spec.Template.Spec.TerminationGracePeriodSeconds)
-	})
+	// pod scheduling
+	assert.Equal(t, corev1.DNSNone, sts.Spec.Template.Spec.DNSPolicy)
+	assert.Equal(t, "high-priority", sts.Spec.Template.Spec.PriorityClassName)
+	assert.Equal(t, grace, *sts.Spec.Template.Spec.TerminationGracePeriodSeconds)
 
 	t.Run("storage: PVC volume claim template", func(t *testing.T) {
 		dk := newTestDynaKube(true)
@@ -199,10 +185,11 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 func TestReconcileWriteFailures(t *testing.T) {
 	t.Run("returns error when statefulset create fails", func(t *testing.T) {
 		dk := newTestDynaKube(true)
+		errCreate := errors.New("kube api error")
 		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 				if isStatefulSet(obj) {
-					return errors.New("kube api error")
+					return errCreate
 				}
 
 				return c.Create(ctx, obj, opts...)
@@ -210,13 +197,13 @@ func TestReconcileWriteFailures(t *testing.T) {
 		}, dk, newTestTenantSecret(dk))
 
 		err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
-		require.Error(t, err)
-		require.NotErrorIs(t, err, k8sstatefulset.ErrRolloutInProgress)
+		require.ErrorIs(t, err, errCreate)
 	})
 
 	t.Run("returns error when re-getting the statefulset fails", func(t *testing.T) {
 		dk := newTestDynaKube(true)
 		created := false
+		errGet := errors.New("kube api error")
 		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 				if isStatefulSet(obj) {
@@ -227,7 +214,7 @@ func TestReconcileWriteFailures(t *testing.T) {
 			},
 			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 				if created && isStatefulSet(obj) {
-					return errors.New("kube api error")
+					return errGet
 				}
 
 				return c.Get(ctx, key, obj, opts...)
@@ -235,8 +222,7 @@ func TestReconcileWriteFailures(t *testing.T) {
 		}, dk, newTestTenantSecret(dk))
 
 		err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
-		require.Error(t, err)
-		require.NotErrorIs(t, err, k8sstatefulset.ErrRolloutInProgress)
+		require.ErrorIs(t, err, errGet)
 	})
 }
 
