@@ -19,7 +19,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -133,7 +132,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 	assert.Equal(t, "CUSTOM", container.Env[3].Name)
 
 	// tenant token volume mount
-	require.Len(t, container.VolumeMounts, 1)
+	require.Len(t, container.VolumeMounts, 2)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
 	assert.Equal(t, connectioninfo.TenantTokenMountPoint, container.VolumeMounts[0].MountPath)
 	assert.Equal(t, connectioninfo.TenantTokenKey, container.VolumeMounts[0].SubPath)
@@ -152,32 +151,11 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 	assert.Equal(t, "high-priority", sts.Spec.Template.Spec.PriorityClassName)
 	assert.Equal(t, grace, *sts.Spec.Template.Spec.TerminationGracePeriodSeconds)
 
-	t.Run("storage: PVC volume claim template", func(t *testing.T) {
-		dk := newTestDynaKube(true)
-		dk.Spec.KubernetesMonitoring.VolumeClaimTemplate = &corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			Resources: corev1.VolumeResourceRequirements{
-				Requests: corev1.ResourceList{corev1.ResourceStorage: resource.MustParse("2Gi")},
-			},
-		}
-		sts := reconcileAndGetSTS(t, dk)
-
-		require.Len(t, sts.Spec.VolumeClaimTemplates, 1)
-		assert.Equal(t, "kubemon-storage", sts.Spec.VolumeClaimTemplates[0].Name)
-		assert.Equal(t, corev1.ReadWriteOnce, sts.Spec.VolumeClaimTemplates[0].Spec.AccessModes[0])
-		assert.NotEmpty(t, sts.Annotations[k8sstatefulset.AnnotationPVCHash])
-	})
-
-	t.Run("storage: ephemeral volume", func(t *testing.T) {
-		dk := newTestDynaKube(true)
-		dk.Spec.KubernetesMonitoring.UseEphemeralVolume = true
-		sts := reconcileAndGetSTS(t, dk)
-
-		assert.Empty(t, sts.Spec.VolumeClaimTemplates)
-		require.Len(t, sts.Spec.Template.Spec.Volumes, 2)
-		assert.Equal(t, "kubemon-storage", sts.Spec.Template.Spec.Volumes[1].Name)
-		assert.NotNil(t, sts.Spec.Template.Spec.Volumes[1].EmptyDir)
-	})
+	// storage
+	assert.Empty(t, sts.Spec.VolumeClaimTemplates)
+	require.Len(t, sts.Spec.Template.Spec.Volumes, 2)
+	assert.Equal(t, "kubemon-storage", sts.Spec.Template.Spec.Volumes[1].Name)
+	assert.NotNil(t, sts.Spec.Template.Spec.Volumes[1].EmptyDir)
 }
 
 // TestReconcileWriteFailures covers the two write/read error paths after the StatefulSet is built:

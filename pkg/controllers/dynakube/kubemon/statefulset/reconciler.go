@@ -23,7 +23,7 @@ import (
 const (
 	ContainerName             = "kubemon"
 	AnnotationTenantTokenHash = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
-	storageVolumeName         = "kubemon-storage"
+	StorageVolumeName         = "kubemon-storage"
 )
 
 var ErrImageRequired = errors.New("kubernetes monitoring image is required")
@@ -111,34 +111,27 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 				DefaultMode: new(int32(0o640)),
 			},
 		},
-	}}
-
-	if km.UseEphemeralVolume {
-		volumes = append(volumes, corev1.Volume{
-			Name:         storageVolumeName,
+	},
+		{
+			Name:         StorageVolumeName,
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
-		})
+		},
 	}
 
 	return volumes
 }
 
 // buildVolumeMounts returns the container-level volume mounts.
-func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
-	km := dk.KubernetesMonitoring()
+func buildVolumeMounts(_ *dynakube.DynaKube) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{{
 		Name:      connectioninfo.TenantSecretVolumeName,
 		ReadOnly:  true,
 		MountPath: connectioninfo.TenantTokenMountPoint,
 		SubPath:   connectioninfo.TenantTokenKey,
+	}, {
+		Name:      StorageVolumeName,
+		MountPath: agconsts.GatewayTmpMountPoint,
 	}}
-
-	if km.UseEphemeralVolume || km.VolumeClaimTemplate != nil {
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      storageVolumeName,
-			MountPath: agconsts.GatewayTmpMountPoint,
-		})
-	}
 
 	return mounts
 }
@@ -198,7 +191,6 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		k8sstatefulset.SetDNSPolicy(km.DNSPolicy),
 		k8sstatefulset.SetPriorityClassName(km.PriorityClassName),
 		k8sstatefulset.SetTerminationGracePeriodSeconds(km.TerminationGracePeriodSeconds),
-		k8sstatefulset.SetVolumeClaimTemplate(storageVolumeName, km.VolumeClaimTemplate),
 	}
 
 	return k8sstatefulset.Build(dk, km.GetStatefulSetName(), container, opts...)

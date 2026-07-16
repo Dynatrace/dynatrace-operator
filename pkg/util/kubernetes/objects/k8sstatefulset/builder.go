@@ -175,19 +175,6 @@ func SetRollingUpdateStrategy(strategy *appsv1.RollingUpdateStatefulSetStrategy)
 	}
 }
 
-func SetVolumeClaimTemplate(name string, spec *corev1.PersistentVolumeClaimSpec) Option {
-	return func(s *appsv1.StatefulSet) {
-		if spec == nil {
-			return
-		}
-
-		s.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{{
-			ObjectMeta: metav1.ObjectMeta{Name: name},
-			Spec:       *spec,
-		}}
-	}
-}
-
 func SetPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		if s.Spec.VolumeClaimTemplates != nil {

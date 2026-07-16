@@ -111,11 +111,6 @@ func (in *StatefulSetProperties) DeepCopyInto(out *StatefulSetProperties) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.VolumeClaimTemplate != nil {
-		in, out := &in.VolumeClaimTemplate, &out.VolumeClaimTemplate
-		*out = new(corev1.PersistentVolumeClaimSpec)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.TerminationGracePeriodSeconds != nil {
 		in, out := &in.TerminationGracePeriodSeconds, &out.TerminationGracePeriodSeconds
 		*out = new(int64)

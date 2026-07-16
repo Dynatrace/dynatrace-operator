@@ -56,10 +56,6 @@ type StatefulSetProperties struct {
 	// +kubebuilder:validation:Optional
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
-	// Defines storage device.
-	// +kubebuilder:validation:Optional
-	VolumeClaimTemplate *corev1.PersistentVolumeClaimSpec `json:"volumeClaimTemplate,omitempty"`
-
 	// Sets DNS Policy for the KubernetesMonitoring pods.
 	// +kubebuilder:validation:Optional
 	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
@@ -71,11 +67,6 @@ type StatefulSetProperties struct {
 	// Configures the terminationGracePeriodSeconds parameter of the KubernetesMonitoring pod.
 	// +kubebuilder:validation:Optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
-
-	// Use an emptyDir volume instead of the PersistentVolumeClaim defined in volumeClaimTemplate.
-	// Cached state is lost on pod restart; only enable for transient environments.
-	// +kubebuilder:validation:Optional
-	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

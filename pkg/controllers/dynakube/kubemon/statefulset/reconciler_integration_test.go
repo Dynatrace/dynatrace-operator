@@ -193,10 +193,14 @@ func assertStatefulSetShape(t *testing.T, sts *appsv1.StatefulSet, dk *dynakube.
 	assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[1].Name)
 	assert.Equal(t, connectioninfo.EnvDTServer, container.Env[2].Name)
 
-	require.Len(t, container.VolumeMounts, 1)
+	require.Len(t, container.VolumeMounts, 2)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
-
+	assert.Equal(t, statefulset.StorageVolumeName, container.VolumeMounts[1].Name)
 	assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
+
+	require.Len(t, sts.Spec.Template.Spec.Volumes, 2)
+	assert.Equal(t, connectioninfo.TenantSecretVolumeName, sts.Spec.Template.Spec.Volumes[0].Name)
+	assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[1].Name)
 }
 
 func markRolloutComplete(t *testing.T, ctx context.Context, clt client.Client, dk *dynakube.DynaKube) {
