@@ -346,11 +346,11 @@ properties:
   webhook.certs.renewalThreshold:
     type: string
     title: Webhook certificate renewal threshold
-    description: Certificates are renewed when their remaining validity falls below this threshold. Accepts Go duration strings (e.g. 12h). Defaults to 12h, min 1h, max 720h (30 days).
+    description: Certificates are renewed when their remaining validity falls below this threshold. Accepts Go duration strings (e.g. 12h). Defaults to 12h, min 12h, max 720h (30 days).
   webhook.certs.requeueAfter:
     type: string
     title: Webhook certificate controller requeueAfter
-    description: Requeue interval for the webhook certificate controller when certificates are up to date. Accepts Go duration strings (e.g. 3h). Defaults to 3h, min 5m, max 12h.
+    description: Requeue interval for the webhook certificate controller when certificates are up to date. Accepts Go duration strings (e.g. 3h). Defaults to 3h, min 5m, max 11h.
 
   csidriver.enabled:
     type: boolean

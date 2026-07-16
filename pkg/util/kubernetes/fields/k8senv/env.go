@@ -38,7 +38,7 @@ const (
 	WebhookCertsRequeueAfterEnvVar  = "DT_WEBHOOK_CERTS_REQUEUE_AFTER"
 	defaultWebhookCertsRequeueAfter = 3 * time.Hour
 	minWebhookCertsRequeueAfter     = 5 * time.Minute
-	maxWebhookCertsRequeueAfter     = 12 * time.Hour
+	maxWebhookCertsRequeueAfter     = 11 * time.Hour
 
 	WebhookCertsRenewalThresholdEnvVar  = "DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD"
 	defaultWebhookCertsRenewalThreshold = 12 * time.Hour
@@ -204,7 +204,7 @@ func parseDuration(ctx context.Context, envVar string, defaultValue, minValue, m
 
 	duration, err := time.ParseDuration(rawDuration)
 	if err != nil {
-		log.Info("invalid duration value, using default", "env", envVar, "value", rawDuration, "default", defaultValue)
+		log.Error(err, "invalid duration value, using default", "env", envVar, "value", rawDuration, "default", defaultValue)
 
 		return defaultValue
 	}

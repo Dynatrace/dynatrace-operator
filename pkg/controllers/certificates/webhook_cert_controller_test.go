@@ -481,11 +481,4 @@ func TestNewWebhookCertificateController(t *testing.T) {
 		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), ctrl.requeueAfter)
 	})
 
-	t.Run("requeue interval exceeds renewal threshold", func(t *testing.T) {
-		t.Setenv(k8senv.WebhookCertsRenewalThresholdEnvVar, "12h")
-		t.Setenv(k8senv.WebhookCertsRequeueAfterEnvVar, "12h")
-		_, err := newWebhookCertificateController(newClient(), newClient())
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "requeue interval")
-	})
 }

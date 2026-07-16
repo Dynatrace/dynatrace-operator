@@ -252,9 +252,9 @@ func TestGetWebhookCertDurations(t *testing.T) {
 			{"valid duration returns parsed value", "1h", time.Hour},
 			{"invalid duration returns default", "not-a-duration", defaultWebhookCertsRequeueAfter},
 			{"below minimum returns default", "1m", defaultWebhookCertsRequeueAfter},
-			{"above maximum returns default", "24h", defaultWebhookCertsRequeueAfter},
+			{"above maximum returns default", "12h", defaultWebhookCertsRequeueAfter},
 			{"at minimum boundary returns parsed value", "5m", minWebhookCertsRequeueAfter},
-			{"at maximum boundary returns parsed value", "12h", maxWebhookCertsRequeueAfter},
+			{"at maximum boundary returns parsed value", "11h", maxWebhookCertsRequeueAfter},
 		})
 	})
 
