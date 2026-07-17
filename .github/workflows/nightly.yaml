@@ -4,15 +4,17 @@ on:
   schedule:
     # every work day at 00:00 UTC
     - cron: 0 0 * * 1-5
+  workflow_dispatch:
 
 env:
   IMAGE_REGISTRY: ghcr.io
   IMAGE_NAME: dynatrace/dynatrace-operator
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+  FIPS_PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   prepare:
-    if: github.repository_owner == 'Dynatrace'
+    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
     name: Prepare properties
@@ -31,7 +33,7 @@ jobs:
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
   build-push:
-    if: github.repository_owner == 'Dynatrace'
+    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
     name: Build images
     needs: [prepare]
     runs-on: ubuntu-24.04
@@ -57,11 +59,40 @@ jobs:
     outputs:
       digest: ${{ steps.build-image.outputs.digest }}
 
+  build-push-fips:
+    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
+    name: Build FIPS image
+    needs: [prepare]
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Login to Registry
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build FIPS image
+        id: build-fips-image
+        uses: ./.github/actions/build-push-image
+        with:
+          platforms: ${{ env.FIPS_PLATFORMS }}
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          fips: true
+          suffix: fips
+    outputs:
+      fips-digest: ${{ steps.build-fips-image.outputs.digest }}
+
   signing:
-    if: github.repository_owner == 'Dynatrace'
+    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
     name: Sign the image index/manifests + Add SBOM
     environment: Release
-    needs: [prepare, build-push]
+    needs: [prepare, build-push, build-push-fips]
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -106,9 +137,36 @@ jobs:
         with:
           subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ needs.build-push.outputs.digest }}
+      - name: Sign FIPS image
+        uses: ./.github/actions/sign-image
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Create FIPS SBOM
+        id: sbom-fips
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
+          format: 'cyclonedx'
+          output: 'fips-result.json'
+          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
+          skip-files: '/usr/local/bin/dynatrace-operator'
+      - name: Upload FIPS SBOM
+        uses: ./.github/actions/upload-sbom
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
+          sbom: 'fips-result.json'
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Add FIPS build provenance attestation
+        uses: ./.github/actions/attest-artifact
+        with:
+          subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ needs.build-push-fips.outputs.fips-digest }}
 
   release:
-    if: github.repository_owner == 'Dynatrace'
+    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
     name: Create release
     needs: [prepare, build-push, signing]
     environment: Release
@@ -157,5 +215,28 @@ jobs:
           registry-url: ghcr.io
           registry-namespace: dynatrace
           helm-repository-name: dynatrace-operator
+          image-tag-prefix: "0.0.0-"
+          mutable-nightly-tag: "nightly-chart"
+      - name: Build FIPS helm package
+        shell: bash
+        env:
+          OUTPUT_DIR: "./helm-pkg"
+          PASSPHRASE: ${{ secrets.HELM_PASSPHRASE }}
+          SECRING: ${{ secrets.HELM_SECRING }}
+          VERSION_WITHOUT_PREFIX: ${{ env.HELM_PACKAGE_VERSION }}
+        run: |
+          yq -i '.name = "dynatrace-operator-fips"' config/helm/chart/default/Chart.yaml
+          yq -i '.imageRef.tag = "${{ needs.prepare.outputs.version }}-fips"' config/helm/chart/default/values.yaml
+          hack/build/ci/generate-helm-package.sh
+      - name: Upload and sign FIPS helm package
+        uses: ./.github/actions/upload-nightly-helm
+        with:
+          version: ${{ needs.prepare.outputs.version }}
+          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+          registry-url: ghcr.io
+          registry-namespace: dynatrace
+          helm-repository-name: dynatrace-operator-fips
+          chart-name: dynatrace-operator-fips
           image-tag-prefix: "0.0.0-"
           mutable-nightly-tag: "nightly-chart"
