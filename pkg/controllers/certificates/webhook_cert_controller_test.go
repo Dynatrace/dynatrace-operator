@@ -480,5 +480,4 @@ func TestNewWebhookCertificateController(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), ctrl.requeueAfter)
 	})
-
 }
