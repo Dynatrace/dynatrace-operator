@@ -302,7 +302,7 @@ func TestCreateEnrichmentRule_NewSchema(t *testing.T) {
 	rule := metadataenrichment.Rule{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "my-label", Target: "dt.cost.product"}
 
 	matchBody := mock.MatchedBy(func(arg any) bool {
-		body, ok := arg.([]enrichmentObjectBody[enrichmentRuleValue])
+		body, ok := arg.([]postObjectsBody[enrichmentRuleValue])
 
 		return ok &&
 			len(body) == 1 &&
@@ -365,7 +365,7 @@ func TestCreateEnrichmentRule_LegacySchema(t *testing.T) {
 	rule := metadataenrichment.Rule{Type: metadataenrichment.LabelRule, Source: "my-label", Target: "dt.cost.product"}
 
 	matchBody := mock.MatchedBy(func(arg any) bool {
-		body, ok := arg.([]enrichmentObjectBody[legacyEnrichmentValue])
+		body, ok := arg.([]postObjectsBody[legacyEnrichmentValue])
 
 		return ok &&
 			len(body) == 1 &&

@@ -5,6 +5,7 @@ package metadataenrichment
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -12,11 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -37,10 +37,10 @@ func BuildSettingsClient(secretConfig tenant.Secret) (dtsettings.Client, error) 
 func getKubeSystemUUID(ctx context.Context, t *testing.T, envConfig *envconf.Config) string {
 	t.Helper()
 
-	var kubeSystemNS corev1.Namespace
-	require.NoError(t, envConfig.Client().Resources().Get(ctx, metav1.NamespaceSystem, "", &kubeSystemNS))
+	uid, err := system.GetUID(ctx, envConfig.Client().Resources().GetControllerRuntimeClient())
+	require.NoError(t, err)
 
-	return string(kubeSystemNS.UID)
+	return string(uid)
 }
 
 // EnsureKubernetesClusterMEID creates the builtin:cloud.kubernetes setting if not present,
@@ -53,8 +53,13 @@ func EnsureKubernetesClusterMEID(secretConfig tenant.Secret) features.Func {
 		kubeSystemUUID := getKubeSystemUUID(ctx, t, envConfig)
 		t.Logf("kube-system UUID: %s", kubeSystemUUID)
 
-		_, err = settingsClient.CreateOrUpdateKubernetesSetting(ctx, "e2e-enrichment-test", kubeSystemUUID, "")
-		require.NoError(t, err, "Could not create Kubernetes connection setting")
+		existingME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
+		require.NoError(t, err)
+
+		if existingME.ID == "" {
+			_, err = settingsClient.CreateOrUpdateKubernetesSetting(ctx, "e2e-enrichment-test", kubeSystemUUID, "")
+			require.NoError(t, err, "Could not create Kubernetes connection setting")
+		}
 
 		var meid string
 
@@ -164,13 +169,9 @@ func CheckEnrichmentRuleInDynaKubeStatus(dk *dynakube.DynaKube, expected metadat
 		rules := dk.Status.MetadataEnrichment.Rules
 		assert.NotEmpty(t, rules, "expected enrichment rules in DynaKube status, got none")
 
-		for _, rule := range rules {
-			if rule.Type == expected.Type && rule.Source == expected.Source && rule.Target == expected.Target {
-				return ctx
-			}
+		if !slices.Contains(rules, expected) {
+			t.Errorf("enrichment rule not found in DynaKube status: want %+v, got %+v", expected, rules)
 		}
-
-		t.Errorf("enrichment rule not found in DynaKube status: want %+v, got %+v", expected, rules)
 
 		return ctx
 	}

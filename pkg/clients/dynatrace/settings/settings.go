@@ -109,7 +109,7 @@ type postObjectsResponse struct {
 
 type postObjectsBody[T any] struct {
 	SchemaID      string `json:"schemaId"`
-	SchemaVersion string `json:"schemaVersion"`
+	SchemaVersion string `json:"schemaVersion,omitempty"`
 	Scope         string `json:"scope,omitempty"`
 	Value         T      `json:"value"`
 }

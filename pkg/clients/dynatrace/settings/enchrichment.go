@@ -28,12 +28,6 @@ type enrichmentRulesObjectsResponse struct {
 	Items []EnrichmentRuleObject `json:"items"`
 }
 
-type enrichmentObjectBody[V any] struct {
-	SchemaID string `json:"schemaId"`
-	Scope    string `json:"scope,omitempty"`
-	Value    V      `json:"value"`
-}
-
 type enrichmentRuleValue struct {
 	Type        metadataenrichment.RuleType `json:"type"`
 	ValueSource string                      `json:"valueSource"`
@@ -134,22 +128,14 @@ func (c *ClientImpl) CreateEnrichmentRule(ctx context.Context, schemaID, scope s
 
 func buildEnrichmentBody(schemaID, scope string, rule metadataenrichment.Rule) any {
 	if schemaID == MetadataEnrichmentSchemaID {
-		return []enrichmentObjectBody[enrichmentRuleValue]{{
-			SchemaID: schemaID,
-			Scope:    scope,
-			Value: enrichmentRuleValue{
-				Type:        rule.Type,
-				ValueSource: rule.Source,
-				Target:      rule.Target,
-			},
-		}}
+		return newPostObjectsBody(schemaID, "", scope, enrichmentRuleValue{
+			Type:        rule.Type,
+			ValueSource: rule.Source,
+			Target:      rule.Target,
+		})
 	}
 
-	return []enrichmentObjectBody[legacyEnrichmentValue]{{
-		SchemaID: schemaID,
-		Scope:    scope,
-		Value:    legacyEnrichmentValue{Rules: []metadataenrichment.Rule{rule}},
-	}}
+	return newPostObjectsBody(schemaID, "", scope, legacyEnrichmentValue{Rules: []metadataenrichment.Rule{rule}})
 }
 
 // GetRules returns metadata enrichment rules.
