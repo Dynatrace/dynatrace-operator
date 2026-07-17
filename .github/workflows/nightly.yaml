@@ -5,6 +5,11 @@ on:
     # every work day at 00:00 UTC
     - cron: 0 0 * * 1-5
   workflow_dispatch:
+    inputs:
+      tag_override:
+        description: 'Override image tag (e.g. nightly-test). Leave empty to use nightly-<date>.'
+        required: false
+        default: ''
 
 env:
   IMAGE_REGISTRY: ghcr.io
@@ -26,6 +31,8 @@ jobs:
           persist-credentials: false
       - name: Prepare build parameters
         id: prep
+        env:
+          TAG_OVERRIDE: ${{ inputs.tag_override }}
         run: |
           hack/build/ci/prepare-build-variables.sh
     outputs:
