@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -26,6 +27,10 @@ type DynaKubeStatus struct { //nolint:revive
 
 	// Observed state of ActiveGate
 	ActiveGate activegate.Status `json:"activeGate,omitempty"`
+
+	// Observed state of KubernetesMonitoring
+	// +optional
+	KubernetesMonitoring kubemon.Status `json:"kubernetesMonitoring,omitzero"`
 
 	// Observed state of Code Modules
 	CodeModules oneagent.CodeModulesStatus `json:"codeModules,omitempty"`

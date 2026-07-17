@@ -11,6 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type Option = builder.Option[*appsv1.StatefulSet]
+
 var (
 	// Mandatory fields, provided in constructor as named params
 	setName      = builder.SetName[*appsv1.StatefulSet]
@@ -120,6 +122,55 @@ func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
 				Partition: new(int32(0)),
 			},
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
+		}
+	}
+}
+
+func SetVolumes(volumes []corev1.Volume) Option {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.Volumes = append(s.Spec.Template.Spec.Volumes, volumes...)
+	}
+}
+
+func SetDNSPolicy(policy corev1.DNSPolicy) Option {
+	return func(s *appsv1.StatefulSet) {
+		if policy == "" {
+			return
+		}
+
+		s.Spec.Template.Spec.DNSPolicy = policy
+	}
+}
+
+func SetPriorityClassName(name string) Option {
+	return func(s *appsv1.StatefulSet) {
+		if name == "" {
+			return
+		}
+
+		s.Spec.Template.Spec.PriorityClassName = name
+	}
+}
+
+func SetTerminationGracePeriodSeconds(seconds *int64) Option {
+	return func(s *appsv1.StatefulSet) {
+		if seconds == nil {
+			return
+		}
+
+		s.Spec.Template.Spec.TerminationGracePeriodSeconds = seconds
+	}
+}
+
+func SetRollingUpdateStrategy(strategy *appsv1.RollingUpdateStatefulSetStrategy) Option {
+	return func(s *appsv1.StatefulSet) {
+		if strategy == nil {
+			return
+		}
+
+		s.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+			Type:          appsv1.RollingUpdateStatefulSetStrategyType,
+			RollingUpdate: strategy,
 		}
 	}
 }
