@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type StatusUpdater interface {
@@ -37,7 +38,7 @@ func (r *Reconciler) run(ctx context.Context, updater StatusUpdater) error {
 
 	defer func() {
 		if err == nil {
-			updater.Target().LastProbeTimestamp = r.timeProvider.Now()
+			updater.Target().LastProbeTimestamp = new(metav1.Now())
 			updater.Target().Source = currentSource
 		}
 	}()

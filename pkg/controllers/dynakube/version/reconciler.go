@@ -10,18 +10,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Reconciler struct {
-	timeProvider *timeprovider.Provider
-	apiReader    client.Reader
+	apiReader client.Reader
 }
 
-func NewReconciler(apiReader client.Reader, timeProvider *timeprovider.Provider) *Reconciler {
+func NewReconciler(apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		apiReader:    apiReader,
-		timeProvider: timeProvider,
+		apiReader: apiReader,
 	}
 }
 
@@ -106,7 +105,8 @@ func (r *Reconciler) needsUpdate(ctx context.Context, updater StatusUpdater, dk 
 		return true
 	}
 
-	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dk.APIRequestThreshold()) {
+	// TODO: move this helper somewhere else
+	if !timeprovider.TimeoutReached(updater.Target().LastProbeTimestamp, new(metav1.Now()), dk.APIRequestThreshold()) {
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 
 		return false

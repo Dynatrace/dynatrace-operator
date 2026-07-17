@@ -67,7 +67,7 @@ func NewReconciler(
 		configmap:                k8sconfigmap.Query(client, apiReader),
 		daemonset:                k8sdaemonset.Query(client, apiReader),
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader),
-		versionReconciler:        version.NewReconciler(apiReader, timeprovider.New().Freeze()),
+		versionReconciler:        version.NewReconciler(apiReader),
 	}
 }
 
