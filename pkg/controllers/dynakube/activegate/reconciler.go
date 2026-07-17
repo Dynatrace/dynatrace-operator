@@ -85,7 +85,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		authTokenReconciler:        authtoken.NewReconciler(clt, apiReader),
 		istioReconciler:            istio.NewReconciler(clt, apiReader),
 		connectionReconciler:       agconnectioninfo.NewReconciler(clt, apiReader),
-		versionReconciler:          version.NewReconciler(apiReader, timeprovider.New().Freeze()),
+		versionReconciler:          version.NewReconciler(apiReader, timeprovider.New()),
 		pullSecretReconciler:       dtpullsecret.NewReconciler(clt, apiReader),
 		customPropertiesReconciler: customproperties.NewReconciler(clt, apiReader),
 		statefulsetReconciler:      statefulset.NewReconciler(clt, apiReader),
