@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
@@ -21,15 +20,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Integration tests for the statefulset reconciler against a real API server. Drives one DynaKube
-// through ordered, state-sharing phases; most phases assert with a single reconcile call and apiReader.
-// Branch and error logic is covered by the unit test.
+// Integration tests for the statefulset reconciler against a real API server (cached client). Each
+// phase ensures the cache reflects a setup write before reconciling; see test/integrationtests/cache.go.
+// Drives one DynaKube through ordered, state-sharing phases. Branch and error logic is covered by
+// the unit test.
 
-const (
-	integrationNamespace         = "dynatrace"
-	integrationEventuallyTimeout = 5 * time.Second
-	integrationEventuallyTick    = 50 * time.Millisecond
-)
+const integrationNamespace = "dynatrace"
 
 type lifecycleDeps struct {
 	clt                    client.Client
@@ -110,11 +106,9 @@ func runRolloutCompletePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
 	markRolloutComplete(t, t.Context(), deps.clt, deps.dk)
+	integrationtests.WaitForCachedMatch(t, deps.clt, statefulSetKey(deps.dk), &appsv1.StatefulSet{}, k8sstatefulset.IsRolloutComplete)
 
-	// Retry until the cache reflects the completed status and reconcile reports no error.
-	require.Eventually(t, func() bool {
-		return deps.reconciler.Reconcile(t.Context(), deps.dk) == nil
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dk))
 }
 
 func runRotatePhase(t *testing.T, deps *lifecycleDeps) {
@@ -122,25 +116,27 @@ func runRotatePhase(t *testing.T, deps *lifecycleDeps) {
 
 	deps.secret.Data[connectioninfo.TenantTokenKey] = []byte("rotated-tenant-token")
 	require.NoError(t, deps.clt.Update(t.Context(), deps.secret))
+	integrationtests.WaitForCachedMatch(t, deps.clt, client.ObjectKeyFromObject(deps.secret), &corev1.Secret{}, func(secret *corev1.Secret) bool {
+		return string(secret.Data[connectioninfo.TenantTokenKey]) == "rotated-tenant-token"
+	})
 
-	require.Eventually(t, func() bool {
-		if !errors.Is(deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress) {
-			return false
-		}
-		sts := &appsv1.StatefulSet{}
-		if err := deps.clt.Get(t.Context(), statefulSetKey(deps.dk), sts); err != nil {
-			return false
-		}
-		deps.rotatedTenantTokenHash = sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash]
+	// the reconcile reads its own StatefulSet update back from the lagging cache, so its return is
+	// racy (old=complete, new=in-progress); assert the outcome via apiReader
+	err := deps.reconciler.Reconcile(t.Context(), deps.dk)
+	require.True(t, err == nil || errors.Is(err, k8sstatefulset.ErrRolloutInProgress))
 
-		return deps.rotatedTenantTokenHash != deps.initialTenantTokenHash
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
-
+	sts := getStatefulSet(t, deps.apiReader, deps.dk)
+	deps.rotatedTenantTokenHash = sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash]
 	assert.NotEqual(t, deps.initialTenantTokenHash, deps.rotatedTenantTokenHash)
 }
 
 func runStabilizePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
+
+	// sync the cache to the rotated StatefulSet so the reconciles below are true no-ops
+	integrationtests.WaitForCachedMatch(t, deps.clt, statefulSetKey(deps.dk), &appsv1.StatefulSet{}, func(sts *appsv1.StatefulSet) bool {
+		return sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash] == deps.rotatedTenantTokenHash
+	})
 
 	stsRV := getStatefulSet(t, deps.apiReader, deps.dk).ResourceVersion
 
@@ -169,17 +165,11 @@ func runReEnablePhase(t *testing.T, deps *lifecycleDeps) {
 	deps.dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 	deps.dk.Spec.KubernetesMonitoring.Image = "registry.example.com/linux/activegate:1.2.3"
 
-	// The cache backing the reconciler may still hold the StatefulSet deleted by the disable phase,
-	// so retry until the deletion has propagated, reconcile recreates it, and apiReader observes it.
-	sts := &appsv1.StatefulSet{}
-	require.Eventually(t, func() bool {
-		if !errors.Is(deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress) {
-			return false
-		}
+	integrationtests.WaitForCachedGone(t, deps.clt, statefulSetKey(deps.dk), &appsv1.StatefulSet{})
 
-		return deps.apiReader.Get(t.Context(), statefulSetKey(deps.dk), sts) == nil
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
 
+	sts := getStatefulSet(t, deps.apiReader, deps.dk)
 	assertStatefulSetShape(t, sts, deps.dk)
 	assert.Equal(t, deps.rotatedTenantTokenHash, sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash])
 }

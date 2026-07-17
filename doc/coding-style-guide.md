@@ -681,6 +681,14 @@ func TestMyFunction(t *testing.T) {
 
 - **Inline single-use timeouts.** Do not define a package-level `const` for a timeout that is only used in one test. Specify it inline to keep the test self-contained and consistent with the rest of the codebase.
 
+### Integration tests (envtest) with a cached client
+
+When a reconciler reads owned/watched resources through the manager's cached client, its integration
+test must handle the cache's eventual consistency: ensure the cache reflects a setup write before
+reconciling, using the `WaitForCached*` helpers documented in
+[`test/integrationtests/cache.go`](../test/integrationtests/cache.go); the reference examples are
+`pkg/controllers/dynakube/kubemon/statefulset` and `.../kubemon/connectioninfo`.
+
 ## E2E testing guide
 
 We are using the [e2e-framework](https://github.com/kubernetes-sigs/e2e-framework) package to write our E2E tests.

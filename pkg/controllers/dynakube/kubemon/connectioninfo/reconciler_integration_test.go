@@ -3,7 +3,6 @@ package connectioninfo_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
@@ -22,17 +21,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Integration tests for the connectioninfo reconciler against a real API server. Drives one DynaKube
-// through ordered, state-sharing phases; most phases assert with a single reconcile call and apiReader.
-// Branch and error logic is covered by the unit test.
+// Integration tests for the connectioninfo reconciler against a real API server (cached client). Each
+// phase ensures the cache reflects a setup write before reconciling; see test/integrationtests/cache.go.
+// This reconciler returns nil on success (no in-loop rollout read), so phases are a single reconcile
+// once preconditions are cache-visible. Branch and error logic is covered by the unit test.
 
 const (
-	integrationNamespace         = "dynatrace"
-	integrationTenantUUID        = "test-uuid"
-	integrationEndpoints         = "https://tenant.live.dynatrace.com/communication"
-	integrationTenantToken       = "test-token"
-	integrationEventuallyTimeout = 5 * time.Second
-	integrationEventuallyTick    = 50 * time.Millisecond
+	integrationNamespace   = "dynatrace"
+	integrationTenantUUID  = "test-uuid"
+	integrationEndpoints   = "https://tenant.live.dynatrace.com/communication"
+	integrationTenantToken = "test-token"
 )
 
 var anyContext = mock.MatchedBy(func(context.Context) bool { return true })
@@ -131,6 +129,16 @@ func runStabilizePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.rotatedConnectionInfo, nil)
 
+	// sync the cache to the rotated config map/secret so the reconciles below are true no-ops
+	cmKey := client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: deps.dk.Namespace}
+	secretKey := client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: deps.dk.Namespace}
+	integrationtests.WaitForCachedMatch(t, deps.clt, cmKey, &corev1.ConfigMap{}, func(cm *corev1.ConfigMap) bool {
+		return cm.Data[sharedconnectioninfo.CommunicationEndpointsKey] == deps.rotatedConnectionInfo.Endpoints
+	})
+	integrationtests.WaitForCachedMatch(t, deps.clt, secretKey, &corev1.Secret{}, func(secret *corev1.Secret) bool {
+		return string(secret.Data[sharedconnectioninfo.TenantTokenKey]) == deps.rotatedConnectionInfo.TenantToken
+	})
+
 	cmRV := getConfigMap(t, deps.apiReader, deps.dk).ResourceVersion
 	secretRV := getSecret(t, deps.apiReader, deps.dk).ResourceVersion
 
@@ -164,11 +172,10 @@ func runReEnablePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.baselineConnectionInfo, nil)
 
-	// The cache backing the reconciler may still hold the config map/secret deleted by the disable
-	// phase, so retry until the deletion has propagated and the reconcile re-creates them.
-	require.Eventually(t, func() bool {
-		return deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk) == nil
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	integrationtests.WaitForCachedGone(t, deps.clt, client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: deps.dk.Namespace}, &corev1.ConfigMap{})
+	integrationtests.WaitForCachedGone(t, deps.clt, client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: deps.dk.Namespace}, &corev1.Secret{})
+
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
 	require.True(t, isConnectionInfoApplied(t.Context(), deps.apiReader, deps.dk, deps.baselineConnectionInfo))
 }
 
