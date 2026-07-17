@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -43,6 +44,10 @@ type connectionInfoReconciler interface {
 	Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error
 }
 
+type authTokenReconciler interface {
+	Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error
+}
+
 type statefulsetReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
@@ -51,12 +56,14 @@ type statefulsetReconciler interface {
 // can be mocked in tests.
 type Reconciler struct {
 	connectionInfoReconciler connectionInfoReconciler
+	authTokenReconciler      authTokenReconciler
 	statefulsetReconciler    statefulsetReconciler
 }
 
 func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
 		connectionInfoReconciler: kubemonconnectioninfo.NewReconciler(kubeClient),
+		authTokenReconciler:      kubemonauthtoken.NewReconciler(kubeClient),
 		statefulsetReconciler:    kubemonstatefulset.NewReconciler(kubeClient),
 	}
 }
@@ -79,6 +86,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 	defer func() { r.reconcileCondition(dk, err) }()
 
 	if err = r.connectionInfoReconciler.Reconcile(ctx, agClient, dk); err != nil {
+		return err
+	}
+
+	if err = r.authTokenReconciler.Reconcile(ctx, agClient, dk); err != nil {
 		return err
 	}
 

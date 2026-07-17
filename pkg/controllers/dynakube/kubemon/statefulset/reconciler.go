@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -23,7 +24,9 @@ import (
 const (
 	ContainerName             = "kubemon"
 	AnnotationTenantTokenHash = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
+	AnnotationAuthTokenHash   = api.InternalFlagPrefix + "kubemon-authtoken-hash"
 	StorageVolumeName         = "kubemon-storage"
+	AuthTokenVolumeName       = "kubemon-authtoken-secret"
 )
 
 var ErrImageRequired = errors.New("kubernetes monitoring image is required")
@@ -109,9 +112,20 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  km.GetTenantSecretName(),
 				DefaultMode: new(int32(0o640)),
+				Optional:    new(false),
 			},
 		},
 	},
+		{
+			Name: AuthTokenVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  km.GetAuthTokenSecretName(),
+					DefaultMode: new(int32(0o640)),
+					Optional:    new(false),
+				},
+			},
+		},
 		{
 			Name:         StorageVolumeName,
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
@@ -128,6 +142,11 @@ func buildVolumeMounts(_ *dynakube.DynaKube) []corev1.VolumeMount {
 		ReadOnly:  true,
 		MountPath: connectioninfo.TenantTokenMountPoint,
 		SubPath:   connectioninfo.TenantTokenKey,
+	}, {
+		Name:      AuthTokenVolumeName,
+		ReadOnly:  true,
+		MountPath: agconsts.AuthTokenMountPoint,
+		SubPath:   kubemonauthtoken.AuthTokenName,
 	}, {
 		Name:      StorageVolumeName,
 		MountPath: agconsts.GatewayTmpMountPoint,
@@ -164,6 +183,11 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	authTokenHash, err := r.getAuthTokenHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
 	container := corev1.Container{
 		Name:            ContainerName,
 		Image:           image,
@@ -181,6 +205,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), km.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, map[string]string{
 			AnnotationTenantTokenHash: tokenHash,
+			AnnotationAuthTokenHash:   authTokenHash,
 		})),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
@@ -205,6 +230,20 @@ func (r *Reconciler) getTenantTokenHash(ctx context.Context, dk *dynakube.DynaKu
 	hash, err := hasher.GenerateHash(string(secret.Data[connectioninfo.TenantTokenKey]))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to hash tenant token")
+	}
+
+	return hash, nil
+}
+
+func (r *Reconciler) getAuthTokenHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	var secret corev1.Secret
+	if err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetAuthTokenSecretName(), Namespace: dk.Namespace}, &secret); err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	hash, err := hasher.GenerateHash(string(secret.Data[kubemonauthtoken.AuthTokenName]))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash auth token")
 	}
 
 	return hash, nil

@@ -26,15 +26,18 @@ func TestReconcileDisabled(t *testing.T) {
 	t.Setenv(k8senv.KubemonEnableOperand, "true") // remove with gate
 	t.Run("removes condition when disabled and cleanup succeeds", func(t *testing.T) {
 		connInfoReconciler := newMockConnectionInfoReconciler(t)
+		authTokenReconciler := newMockAuthTokenReconciler(t)
 		statefulSetReconciler := newMockStatefulsetReconciler(t)
 		reconciler := &Reconciler{
 			connectionInfoReconciler: connInfoReconciler,
+			authTokenReconciler:      authTokenReconciler,
 			statefulsetReconciler:    statefulSetReconciler,
 		}
 		dk := newTestDynaKube(false)
 
 		meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: kubemonapi.KubeMonAvailableConditionType, Status: metav1.ConditionTrue, Reason: reasonAvailable})
 		connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 
 		err := reconciler.Reconcile(t.Context(), dk, nil, nil)
@@ -52,13 +55,14 @@ func TestReconcileConditionMapping(t *testing.T) {
 	tests := []struct {
 		name           string
 		connInfoErr    error
+		authTokenErr   error
 		statefulSetErr error
 		wantStatus     metav1.ConditionStatus
 		wantReason     string
 		wantMessage    string
 	}{
 		{
-			name:        "both succeed -> available",
+			name:        "all succeed -> available",
 			wantStatus:  metav1.ConditionTrue,
 			wantReason:  reasonAvailable,
 			wantMessage: messageAvailable,
@@ -69,6 +73,13 @@ func TestReconcileConditionMapping(t *testing.T) {
 			wantStatus:  metav1.ConditionFalse,
 			wantReason:  reasonReconciling,
 			wantMessage: kubemonconnectioninfo.ErrConnectionInfoNotReady.Error(),
+		},
+		{
+			name:         "auth token error -> error",
+			authTokenErr: errors.New("api error"),
+			wantStatus:   metav1.ConditionFalse,
+			wantReason:   reasonError,
+			wantMessage:  "api error",
 		},
 		{
 			name:           "rollout in progress -> reconciling",
@@ -96,21 +107,29 @@ func TestReconcileConditionMapping(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			connInfoReconciler := newMockConnectionInfoReconciler(t)
+			authTokenReconciler := newMockAuthTokenReconciler(t)
 			statefulSetReconciler := newMockStatefulsetReconciler(t)
 			reconciler := &Reconciler{
 				connectionInfoReconciler: connInfoReconciler,
+				authTokenReconciler:      authTokenReconciler,
 				statefulsetReconciler:    statefulSetReconciler,
 			}
 			dk := newTestDynaKube(true)
 
 			connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(test.connInfoErr).Once()
 			if test.connInfoErr == nil {
+				authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(test.authTokenErr).Once()
+			}
+			if test.connInfoErr == nil && test.authTokenErr == nil {
 				statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(test.statefulSetErr).Once()
 			}
 
 			err := reconciler.Reconcile(t.Context(), dk, nil, nil)
 
 			wantErr := test.connInfoErr
+			if wantErr == nil {
+				wantErr = test.authTokenErr
+			}
 			if wantErr == nil {
 				wantErr = test.statefulSetErr
 			}

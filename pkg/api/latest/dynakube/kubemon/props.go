@@ -43,6 +43,10 @@ func (km *KubeMon) GetTenantSecretName() string {
 	return km.name + OperandNameSuffix + "-tenant-secret"
 }
 
+func (km *KubeMon) GetAuthTokenSecretName() string {
+	return km.name + OperandNameSuffix + "-authtoken-secret"
+}
+
 func (km *Spec) GetPullPolicy() corev1.PullPolicy {
 	if km == nil {
 		return ""

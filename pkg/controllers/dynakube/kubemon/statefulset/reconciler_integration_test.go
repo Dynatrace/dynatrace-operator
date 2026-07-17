@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
@@ -36,7 +37,8 @@ type lifecycleDeps struct {
 	apiReader              client.Reader
 	reconciler             *statefulset.Reconciler
 	dk                     *dynakube.DynaKube
-	secret                 *corev1.Secret
+	tenantTokenSecret      *corev1.Secret
+	authTokenSecret        *corev1.Secret
 	initialTenantTokenHash string
 	rotatedTenantTokenHash string
 }
@@ -65,7 +67,7 @@ func TestReconcileLifecycle(t *testing.T) {
 	}
 	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
 
-	secret := &corev1.Secret{
+	tenantTokenSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
 			Namespace: dk.Namespace,
@@ -74,15 +76,27 @@ func TestReconcileLifecycle(t *testing.T) {
 			connectioninfo.TenantTokenKey: []byte("test-tenant-token"),
 		},
 	}
-	integrationtests.CreateKubernetesObject(t, t.Context(), clt, secret)
+	integrationtests.CreateKubernetesObject(t, t.Context(), clt, tenantTokenSecret)
+
+	authTokenSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
+		},
+		Data: map[string][]byte{
+			kubemonauthtoken.AuthTokenName: []byte("test-auth-token"),
+		},
+	}
+	integrationtests.CreateKubernetesObject(t, t.Context(), clt, authTokenSecret)
 
 	// The subtests below share dk and run in order: each builds on the state left by the previous one.
 	deps := &lifecycleDeps{
-		clt:        clt,
-		apiReader:  apiReader,
-		reconciler: reconciler,
-		dk:         dk,
-		secret:     secret,
+		clt:               clt,
+		apiReader:         apiReader,
+		reconciler:        reconciler,
+		dk:                dk,
+		tenantTokenSecret: tenantTokenSecret,
+		authTokenSecret:   authTokenSecret,
 	}
 
 	t.Run("provision", func(t *testing.T) { runProvisionPhase(t, deps) })
@@ -120,8 +134,8 @@ func runRolloutCompletePhase(t *testing.T, deps *lifecycleDeps) {
 func runRotatePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	deps.secret.Data[connectioninfo.TenantTokenKey] = []byte("rotated-tenant-token")
-	require.NoError(t, deps.clt.Update(t.Context(), deps.secret))
+	deps.tenantTokenSecret.Data[connectioninfo.TenantTokenKey] = []byte("rotated-tenant-token")
+	require.NoError(t, deps.clt.Update(t.Context(), deps.tenantTokenSecret))
 
 	require.Eventually(t, func() bool {
 		if !errors.Is(deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress) {
@@ -199,14 +213,17 @@ func assertStatefulSetShape(t *testing.T, sts *appsv1.StatefulSet, dk *dynakube.
 	assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[1].Name)
 	assert.Equal(t, connectioninfo.EnvDTServer, container.Env[2].Name)
 
-	require.Len(t, container.VolumeMounts, 2)
+	require.Len(t, container.VolumeMounts, 3)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
-	assert.Equal(t, statefulset.StorageVolumeName, container.VolumeMounts[1].Name)
+	assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
+	assert.Equal(t, kubemonauthtoken.AuthTokenName, container.VolumeMounts[1].SubPath)
+	assert.Equal(t, statefulset.StorageVolumeName, container.VolumeMounts[2].Name)
 	assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
 
-	require.Len(t, sts.Spec.Template.Spec.Volumes, 2)
+	require.Len(t, sts.Spec.Template.Spec.Volumes, 3)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, sts.Spec.Template.Spec.Volumes[0].Name)
-	assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[1].Name)
+	assert.Equal(t, statefulset.AuthTokenVolumeName, sts.Spec.Template.Spec.Volumes[1].Name)
+	assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
 }
 
 func markRolloutComplete(t *testing.T, ctx context.Context, clt client.Client, dk *dynakube.DynaKube) {

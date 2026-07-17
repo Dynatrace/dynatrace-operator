@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/pkg/errors"
@@ -44,7 +45,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 			},
 		},
 		"missing tenant secret": {
-			// secret not seeded — k8s Get error, not ErrImageRequired
+			// Only auth token secret seeded — tenant secret Get returns NotFound first.
 			assertError: func(t *testing.T, err error) {
 				require.True(t, k8serrors.IsNotFound(err))
 			},
@@ -58,7 +59,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 				test.mutate(dk)
 			}
 
-			err := statefulset.NewReconciler(fake.NewClient(dk)).Reconcile(t.Context(), dk)
+			err := statefulset.NewReconciler(fake.NewClient(dk, newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk)
 			require.Error(t, err)
 			require.NotErrorIs(t, err, k8sstatefulset.ErrRolloutInProgress)
 			test.assertError(t, err)
@@ -132,13 +133,21 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 	assert.Equal(t, "CUSTOM", container.Env[3].Name)
 
 	// tenant token volume mount
-	require.Len(t, container.VolumeMounts, 2)
+	require.Len(t, container.VolumeMounts, 3)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
 	assert.Equal(t, connectioninfo.TenantTokenMountPoint, container.VolumeMounts[0].MountPath)
 	assert.Equal(t, connectioninfo.TenantTokenKey, container.VolumeMounts[0].SubPath)
 	assert.True(t, container.VolumeMounts[0].ReadOnly)
 	assert.True(t, hasTenantSecretVolume(sts, dk))
 	assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash])
+
+	// auth token volume mount
+	assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
+	assert.Equal(t, agconsts.AuthTokenMountPoint, container.VolumeMounts[1].MountPath)
+	assert.Equal(t, kubemonauthtoken.AuthTokenName, container.VolumeMounts[1].SubPath)
+	assert.True(t, container.VolumeMounts[1].ReadOnly)
+	assert.True(t, hasAuthTokenVolume(sts, dk))
+	assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationAuthTokenHash])
 
 	// update strategy
 	require.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
@@ -153,9 +162,9 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 
 	// storage
 	assert.Empty(t, sts.Spec.VolumeClaimTemplates)
-	require.Len(t, sts.Spec.Template.Spec.Volumes, 2)
-	assert.Equal(t, "kubemon-storage", sts.Spec.Template.Spec.Volumes[1].Name)
-	assert.NotNil(t, sts.Spec.Template.Spec.Volumes[1].EmptyDir)
+	require.Len(t, sts.Spec.Template.Spec.Volumes, 3)
+	assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
+	assert.NotNil(t, sts.Spec.Template.Spec.Volumes[2].EmptyDir)
 }
 
 // TestReconcileWriteFailures covers the two write/read error paths after the StatefulSet is built:
@@ -172,7 +181,7 @@ func TestReconcileWriteFailures(t *testing.T) {
 
 				return c.Create(ctx, obj, opts...)
 			},
-		}, dk, newTestTenantSecret(dk))
+		}, dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 
 		err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
 		require.ErrorIs(t, err, errCreate)
@@ -197,7 +206,7 @@ func TestReconcileWriteFailures(t *testing.T) {
 
 				return c.Get(ctx, key, obj, opts...)
 			},
-		}, dk, newTestTenantSecret(dk))
+		}, dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 
 		err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
 		require.ErrorIs(t, err, errGet)
@@ -226,7 +235,7 @@ func TestReconcileCleanupDeleteFailure(t *testing.T) {
 
 func reconcileAndGetSTS(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	t.Helper()
-	fakeClient := fake.NewClient(dk, newTestTenantSecret(dk))
+	fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 	require.ErrorIs(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk), k8sstatefulset.ErrRolloutInProgress)
 
 	return requireTestStatefulSet(t, t.Context(), fakeClient, dk)
@@ -278,10 +287,30 @@ func isStatefulSet(obj client.Object) bool {
 	return ok
 }
 
+func newTestAuthTokenSecret(dk *dynakube.DynaKube) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
+		},
+		Data: map[string][]byte{
+			kubemonauthtoken.AuthTokenName: []byte("test-auth-token"),
+		},
+	}
+}
+
 func hasTenantSecretVolume(sts *appsv1.StatefulSet, dk *dynakube.DynaKube) bool {
 	return slices.ContainsFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
 		return v.Name == connectioninfo.TenantSecretVolumeName &&
 			v.Secret != nil &&
 			v.Secret.SecretName == dk.KubernetesMonitoring().GetTenantSecretName()
+	})
+}
+
+func hasAuthTokenVolume(sts *appsv1.StatefulSet, dk *dynakube.DynaKube) bool {
+	return slices.ContainsFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
+		return v.Name == statefulset.AuthTokenVolumeName &&
+			v.Secret != nil &&
+			v.Secret.SecretName == dk.KubernetesMonitoring().GetAuthTokenSecretName()
 	})
 }
