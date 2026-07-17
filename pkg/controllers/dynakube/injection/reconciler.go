@@ -59,7 +59,7 @@ func NewReconciler(
 		client:                    client,
 		apiReader:                 apiReader,
 		istioReconciler:           istio.NewReconciler(client, apiReader),
-		versionReconciler:         version.NewReconciler(apiReader, timeprovider.New().Freeze()),
+		versionReconciler:         version.NewReconciler(apiReader, timeprovider.New()),
 		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader),
 		enrichmentRulesReconciler: rules.NewReconciler(),
 	}
