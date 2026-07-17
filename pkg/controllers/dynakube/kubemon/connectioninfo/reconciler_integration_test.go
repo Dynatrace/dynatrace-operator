@@ -3,6 +3,7 @@ package connectioninfo_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
@@ -26,10 +27,12 @@ import (
 // Branch and error logic is covered by the unit test.
 
 const (
-	integrationNamespace   = "dynatrace"
-	integrationTenantUUID  = "test-uuid"
-	integrationEndpoints   = "https://tenant.live.dynatrace.com/communication"
-	integrationTenantToken = "test-token"
+	integrationNamespace         = "dynatrace"
+	integrationTenantUUID        = "test-uuid"
+	integrationEndpoints         = "https://tenant.live.dynatrace.com/communication"
+	integrationTenantToken       = "test-token"
+	integrationEventuallyTimeout = 5 * time.Second
+	integrationEventuallyTick    = 50 * time.Millisecond
 )
 
 var anyContext = mock.MatchedBy(func(context.Context) bool { return true })
@@ -161,7 +164,11 @@ func runReEnablePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.baselineConnectionInfo, nil)
 
-	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
+	// The cache backing the reconciler may still hold the config map/secret deleted by the disable
+	// phase, so retry until the deletion has propagated and the reconcile re-creates them.
+	require.Eventually(t, func() bool {
+		return deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk) == nil
+	}, integrationEventuallyTimeout, integrationEventuallyTick)
 	require.True(t, isConnectionInfoApplied(t.Context(), deps.apiReader, deps.dk, deps.baselineConnectionInfo))
 }
 

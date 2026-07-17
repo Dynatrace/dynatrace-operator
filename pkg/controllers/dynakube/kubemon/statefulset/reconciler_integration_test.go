@@ -26,8 +26,7 @@ import (
 // Branch and error logic is covered by the unit test.
 
 const (
-	integrationNamespace = "dynatrace"
-
+	integrationNamespace         = "dynatrace"
 	integrationEventuallyTimeout = 5 * time.Second
 	integrationEventuallyTick    = 50 * time.Millisecond
 )
@@ -170,9 +169,16 @@ func runReEnablePhase(t *testing.T, deps *lifecycleDeps) {
 	deps.dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 	deps.dk.Spec.KubernetesMonitoring.Image = "registry.example.com/linux/activegate:1.2.3"
 
-	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
+	// The cache backing the reconciler may still hold the StatefulSet deleted by the disable phase,
+	// so retry until the deletion has propagated, reconcile recreates it, and apiReader observes it.
+	sts := &appsv1.StatefulSet{}
+	require.Eventually(t, func() bool {
+		if !errors.Is(deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress) {
+			return false
+		}
 
-	sts := getStatefulSet(t, deps.apiReader, deps.dk)
+		return deps.apiReader.Get(t.Context(), statefulSetKey(deps.dk), sts) == nil
+	}, integrationEventuallyTimeout, integrationEventuallyTick)
 
 	assertStatefulSetShape(t, sts, deps.dk)
 	assert.Equal(t, deps.rotatedTenantTokenHash, sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash])
