@@ -224,26 +224,3 @@ jobs:
           helm-repository-name: dynatrace-operator
           image-tag-prefix: "0.0.0-"
           mutable-nightly-tag: "nightly-chart"
-      - name: Build FIPS helm package
-        shell: bash
-        env:
-          OUTPUT_DIR: "./helm-pkg"
-          PASSPHRASE: ${{ secrets.HELM_PASSPHRASE }}
-          SECRING: ${{ secrets.HELM_SECRING }}
-          VERSION_WITHOUT_PREFIX: ${{ env.HELM_PACKAGE_VERSION }}
-          CHART_NAME_OVERRIDE: dynatrace-operator-fips
-          IMAGE_TAG_OVERRIDE: ${{ needs.prepare.outputs.version }}-fips
-        run: |
-          hack/build/ci/generate-helm-package.sh
-      - name: Upload and sign FIPS helm package
-        uses: ./.github/actions/upload-nightly-helm
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-          registry-url: ghcr.io
-          registry-namespace: dynatrace
-          helm-repository-name: dynatrace-operator-fips
-          chart-name: dynatrace-operator-fips
-          image-tag-prefix: "0.0.0-"
-          mutable-nightly-tag: "nightly-chart"
