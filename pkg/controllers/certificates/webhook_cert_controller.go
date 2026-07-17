@@ -69,8 +69,7 @@ func Add(mgr manager.Manager, namespace string) error {
 }
 
 func newWebhookCertificateController(clt client.Client, apiReader client.Reader) (*WebhookCertificateController, error) {
-	ctx := context.Background()
-	_, log := logd.NewFromContext(ctx, "webhook-cert-controller")
+	ctx, log := logd.NewFromContext(context.Background(), "webhook-cert-controller")
 
 	requeueAfter := k8senv.GetWebhookCertsRequeueAfter(ctx)
 	renewalThreshold := k8senv.GetWebhookCertsRenewalThreshold(ctx)
