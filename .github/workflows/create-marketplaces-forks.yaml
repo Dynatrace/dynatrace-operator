@@ -177,10 +177,7 @@ jobs:
 
           csv_file="${operator_dir}/manifests/dynatrace-operator.clusterserviceversion.yaml"
 
-          # community-prod never sets spec.replaces; all others set it to the previous version when one exists
-          if [ "${MARKETPLACE}" = "community-prod" ]; then
-            yq e -i 'del(.spec.replaces)' "${csv_file}"
-          elif [ -n "${last_version}" ]; then
+          if [ -n "${last_version}" ]; then
             if [ "${MARKETPLACE}" = "redhat" ]; then
               yq -i ".spec.replaces = \"dynatrace-operator-rhmp.v${last_version}\"" "${csv_file}"
             else
