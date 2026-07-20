@@ -122,6 +122,10 @@ jobs:
           fi
           git checkout -B "${branch_name}" "upstream/main"
 
+          # Remove upstream workflow files so the push does not require the workflows permission.
+          git rm -rf --cached .github/workflows/ 2>/dev/null || true
+          rm -rf .github/workflows/
+
           echo "FORK_REPO_DIR=$(pwd)" >> "$GITHUB_ENV"
           echo "BRANCH_NAME=${branch_name}" >> "$GITHUB_ENV"
       - name: Prepare bundle files for ${{ env.MARKETPLACE }}
@@ -145,17 +149,27 @@ jobs:
             operator_dir="operators/dynatrace-operator/${VERSION}"
           fi
 
+          # Detect previous version BEFORE creating the new directory so the current version is not included in the scan
+          if [ "${MARKETPLACE}" = "redhat" ]; then
+            operator_versions_dirs="$(ls -d operators/dynatrace-operator-rhmp/*/ 2>/dev/null || true)"
+          else
+            operator_versions_dirs="$(ls -d operators/dynatrace-operator/*/ 2>/dev/null || true)"
+          fi
+          # strip trailing slash and path prefix from each dir, filter out non-version strings, then pick the highest semver
+          last_version="$(echo "${operator_versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | grep -E '^[vV]?[0-9]' | sort -V | tail -1)"
+
           mkdir -p "${operator_dir}"
 
           # Copy bundle files
           cp -rf "${GITHUB_WORKSPACE}/release-src/config/olm/${bundle_source}/${VERSION}/manifests" "${operator_dir}/"
           cp -rf "${GITHUB_WORKSPACE}/release-src/config/olm/${bundle_source}/${VERSION}/metadata" "${operator_dir}/"
 
-          # Create Dockerfile for community marketplaces
+          # Create Dockerfile for community marketplaces using the platform-appropriate source
           if [ "${MARKETPLACE}" = "community" ] || [ "${MARKETPLACE}" = "community-prod" ]; then
             echo "Creating Dockerfile for ${MARKETPLACE}"
-            origin_dockerfile="${GITHUB_WORKSPACE}/release-src/config/olm/kubernetes/${VERSION}/bundle.Dockerfile"
+            origin_dockerfile="${GITHUB_WORKSPACE}/release-src/config/olm/${bundle_source}/${VERSION}/bundle.Dockerfile"
             target_dockerfile="${operator_dir}/Dockerfile"
+            cp "${origin_dockerfile}" "${target_dockerfile}"
           fi
 
           # Update package annotation for redhat
@@ -165,18 +179,12 @@ jobs:
               "${operator_dir}/metadata/annotations.yaml"
           fi
 
-          # Determine last existing version and set spec.replaces
-          if [ "${MARKETPLACE}" = "redhat" ]; then
-            operator_versions_dirs="$(ls -d operators/dynatrace-operator-rhmp/*/ 2>/dev/null || true)"
-          else
-            operator_versions_dirs="$(ls -d operators/dynatrace-operator/*/ 2>/dev/null || true)"
-          fi
-          # strip trailing slash and path prefix from each dir, filter out non-version strings, then pick the highest semver
-          last_version="$(echo "${operator_versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | grep -E '^[vV]?[0-9]' | sort -V | tail -1)"
-
           csv_file="${operator_dir}/manifests/dynatrace-operator.clusterserviceversion.yaml"
 
-          if [ -n "${last_version}" ]; then
+          # community-prod never sets spec.replaces; all others set it to the previous version when one exists
+          if [ "${MARKETPLACE}" = "community-prod" ]; then
+            yq e -i 'del(.spec.replaces)' "${csv_file}"
+          elif [ -n "${last_version}" ]; then
             if [ "${MARKETPLACE}" = "redhat" ]; then
               yq -i ".spec.replaces = \"dynatrace-operator-rhmp.v${last_version}\"" "${csv_file}"
             else
