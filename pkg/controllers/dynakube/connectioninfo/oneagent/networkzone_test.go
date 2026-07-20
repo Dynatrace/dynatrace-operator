@@ -117,7 +117,7 @@ func TestHasStaleNetworkZoneEndpoints(t *testing.T) {
 
 	t.Run("unparseable endpoint string → not stale (best effort skip)", func(t *testing.T) {
 		dk := newDynaKubeWithAG([]string{"10.0.0.1"})
-		// "garbage" makes NewOACommunicationHosts return an error; the function defers
+		// "garbage" makes ParseOACommunicationHosts return an error; the function defers
 		// rather than blocking deployment on an input shape it cannot reason about.
 		endpoints := "garbage;https://10.0.0.1:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.False(t, hasStaleNetworkZoneEndpoints(dk, endpoints))

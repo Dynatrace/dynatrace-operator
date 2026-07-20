@@ -91,7 +91,7 @@ func TestNewCommunicationHost(t *testing.T) {
 	}
 }
 
-func TestNewOACommunicationHosts(t *testing.T) {
+func TestParseOACommunicationHosts(t *testing.T) {
 	testCases := []struct {
 		name        string
 		input       string
@@ -162,7 +162,7 @@ func TestNewOACommunicationHosts(t *testing.T) {
 	}
 }
 
-func TestNewAGCommunicationHosts(t *testing.T) {
+func TestParseAGCommunicationHosts(t *testing.T) {
 	testCases := []struct {
 		name        string
 		input       string
