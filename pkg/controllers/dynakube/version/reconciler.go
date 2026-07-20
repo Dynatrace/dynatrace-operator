@@ -9,8 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -103,13 +101,6 @@ func (r *Reconciler) needsUpdate(ctx context.Context, updater StatusUpdater, dk 
 
 	if hasCustomFieldChanged(ctx, updater) {
 		return true
-	}
-
-	// TODO: move this helper somewhere else
-	if !timeprovider.TimeoutReached(updater.Target().LastProbeTimestamp, new(metav1.Now()), dk.APIRequestThreshold()) {
-		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
-
-		return false
 	}
 
 	return true

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 	"testing/synctest"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -100,19 +99,6 @@ func TestReconcile(t *testing.T) {
 			assertStatusBasedOnTenantRegistry(t, dk.ActiveGate().GetDefaultImage(latestActiveGateVersion), latestActiveGateVersion, dkStatus.ActiveGate.VersionStatus)
 			assertStatusBasedOnTenantRegistry(t, dk.OneAgent().GetDefaultImage(latestOneAgentVersion), latestOneAgentVersion, dkStatus.OneAgent.VersionStatus)
 			assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.Version)
-
-			// no change if probe not old enough
-			previousProbe := *dkStatus.CodeModules.LastProbeTimestamp
-			err = versionReconciler.ReconcileCodeModules(ctx, dk, nil, versionClient)
-			require.NoError(t, err)
-			assert.Equal(t, previousProbe, *dkStatus.CodeModules.LastProbeTimestamp)
-
-			// change if probe old enough
-			time.Sleep(15*time.Minute + 1*time.Second)
-
-			err = versionReconciler.ReconcileCodeModules(ctx, dk, nil, versionClient)
-			require.NoError(t, err)
-			assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.LastProbeTimestamp)
 		})
 	})
 }
@@ -175,17 +161,6 @@ func TestNeedsUpdate(t *testing.T) {
 	t.Run("does not need", func(t *testing.T) {
 		r := Reconciler{}
 		assert.False(t, r.needsUpdate(t.Context(), newOneAgentUpdater(&dynakube.DynaKube{}, fake.NewClient(), nil, nil), &dynakube.DynaKube{}))
-	})
-	t.Run("does not need, because not old enough", func(t *testing.T) {
-		oldImage := "repo.com:tag@sha256:123"
-		newImage := "repo.com:tag"
-		updatedDynakube := dk.DeepCopy()
-		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
-		now := metav1.Now()
-		updatedDynakube.Status.OneAgent.LastProbeTimestamp = &now
-		r := Reconciler{}
-		assert.False(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil), updatedDynakube))
 	})
 
 	t.Run("needs, because source changed", func(t *testing.T) {
