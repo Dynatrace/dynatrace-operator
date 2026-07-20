@@ -5,17 +5,15 @@ on:
     # every work day at 00:00 UTC
     - cron: 0 0 * * 1-5
   workflow_dispatch:
-    inputs:
-      tag_override:
-        description: 'Override image tag (e.g. nightly-test). Leave empty to use nightly-<date>.'
-        required: false
-        default: ''
 
 env:
   IMAGE_REGISTRY: ghcr.io
-  IMAGE_NAME: dynatrace/dynatrace-operator
+  # TODO(testing-only): revert to hardcoded 'dynatrace/dynatrace-operator' before merge — github.repository used to push to fork registry during testing
+  IMAGE_NAME: ${{ github.repository }}
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
   FIPS_PLATFORMS: linux/amd64,linux/arm64
+  # TODO(testing-only): remove before merge — only needed to simulate nightly tag when triggering via workflow_dispatch in fork
+  NIGHTLY: "true"
 
 jobs:
   prepare:
@@ -31,8 +29,6 @@ jobs:
           persist-credentials: false
       - name: Prepare build parameters
         id: prep
-        env:
-          TAG_OVERRIDE: ${{ inputs.tag_override }}
         run: |
           hack/build/ci/prepare-build-variables.sh
     outputs:

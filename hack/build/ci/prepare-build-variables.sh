@@ -4,8 +4,9 @@ create_docker_image_tag() {
   if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
     head_ref=$(hack/build/ci/sanitize-branch-name.sh "${GITHUB_HEAD_REF}")
     echo "snapshot-${head_ref}"; return
-  elif [[ "${GITHUB_EVENT_NAME}" == "schedule" || "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then # nightly builds
-    if [[ -n "${TAG_OVERRIDE}" ]]; then echo "${TAG_OVERRIDE}"; else echo "nightly-$(date --iso-8601)"; fi; return
+  # TODO(testing-only): remove workflow_dispatch branch before merge — only for fork testing via manual dispatch
+  elif [[ "${GITHUB_EVENT_NAME}" == "schedule" || ("${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${NIGHTLY}" == "true") ]]; then # nightly builds
+    echo "nightly-$(date --iso-8601)"; return
   fi
 
   if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
