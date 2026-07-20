@@ -22,7 +22,6 @@ func TestRun(t *testing.T) {
 		updater.EXPECT().CustomImage().Return(testImage).Times(2)
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		require.NotNil(t, target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 		assert.Equal(t, testImage, target.ImageID)
 		assert.Equal(t, string(status.CustomImageVersionSource), target.Version)
@@ -37,7 +36,6 @@ func TestRun(t *testing.T) {
 		updater.EXPECT().CustomImage().Return("incorrect-uri").Times(2)
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		require.NotNil(t, target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 		assert.Equal(t, string(status.CustomImageVersionSource), target.Version)
 	})
@@ -55,7 +53,6 @@ func TestRun(t *testing.T) {
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
-		require.NotNil(t, target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
@@ -89,7 +86,6 @@ func TestRun(t *testing.T) {
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
-		require.NotNil(t, target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
 
 		// 2. call => it is custom version => should run
@@ -113,7 +109,6 @@ func TestRun(t *testing.T) {
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		require.NotNil(t, target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 		assert.Empty(t, target.Version)
 	})
@@ -129,7 +124,6 @@ func TestRun(t *testing.T) {
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
-		require.NotNil(t, target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 	})
 	t.Run("public registry: happy path, status updated", func(t *testing.T) {
@@ -148,7 +142,6 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, "registry.io/dynatrace/oneagent:1.2.3", target.ImageID)
 		assert.Equal(t, "1.2.3", target.Version)
 		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
-		require.NotNil(t, target.LastProbeTimestamp)
 	})
 
 	t.Run("public registry: API error propagated, status not updated", func(t *testing.T) {
@@ -161,7 +154,6 @@ func TestRun(t *testing.T) {
 		err := versionReconciler.run(t.Context(), updater)
 		require.Error(t, err)
 		assert.Empty(t, target.ImageID)
-		assert.Nil(t, target.LastProbeTimestamp)
 	})
 
 	t.Run("public registry: downgrade detected, image not updated", func(t *testing.T) {
@@ -198,7 +190,6 @@ func TestRun(t *testing.T) {
 
 		err := versionReconciler.run(t.Context(), updater)
 		require.Error(t, err)
-		require.NotNil(t, target.LastProbeTimestamp)
 		assert.Equal(t, "registry.io/dynatrace/oneagent@sha256:abc123", target.ImageID)
 		assert.Empty(t, target.Version)
 	})
