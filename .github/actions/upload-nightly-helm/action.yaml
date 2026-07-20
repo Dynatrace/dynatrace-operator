@@ -13,10 +13,6 @@ inputs:
     description: Repository used in the OCI registry
     required: false
     default: dynatrace-operator
-  chart-name:
-    description: Name of the helm chart (controls the package filename)
-    required: false
-    default: dynatrace-operator
   version:
     description: The version of the helm package to upload
     required: true
@@ -45,7 +41,7 @@ runs:
     env:
       HELM_CONFIG_FILE: ${{ runner.temp }}/config.json
       IMAGE_VERSION: ${{ inputs.version }}
-      PATH_TO_HELM_CHART: helm-pkg/${{ inputs.chart-name }}-${{ inputs.image-tag-prefix }}${{ inputs.version }}.tgz
+      PATH_TO_HELM_CHART: helm-pkg/dynatrace-operator-${{ inputs.image-tag-prefix }}${{ inputs.version }}.tgz
       REGISTRY_URL: ${{ inputs.registry-url }}/${{ inputs.registry-namespace }}
       REPOSITORY_NAME: ${{ inputs.helm-repository-name }}
     shell: bash

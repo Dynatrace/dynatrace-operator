@@ -20,5 +20,3 @@ helm package \
     --key "Dynatrace LLC" \
     --keyring ~/.gnupg/secring.gpg \
     --passphrase-file ~/.gnupg/passphrase
-
-cleanup
