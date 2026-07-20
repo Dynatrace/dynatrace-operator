@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -54,6 +55,11 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(dk *dynakube.DynaKube, conf
 }
 
 func (r *Reconciler) addKubemonDeploymentMetadata(dk *dynakube.DynaKube, configMapData map[string]string) {
+	// Temporary gate, to be removed once kubemon is complete
+	if !k8senv.IsKubemonOperandEnabled() {
+		return
+	}
+
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		return
 	}
