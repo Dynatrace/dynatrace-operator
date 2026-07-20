@@ -22,8 +22,6 @@ const intSerialNumberLimit = 128
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), intSerialNumberLimit)
 
 const (
-	renewalThreshold = 12 * time.Hour
-
 	RootKey     = "ca.key"
 	RootCert    = "ca.crt"
 	RootCertOld = "ca.crt.old"
@@ -34,6 +32,10 @@ const (
 // Certs handles creation and renewal of CA and SSL/TLS server certificates.
 type Certs struct {
 	Now time.Time
+
+	RenewalThreshold   time.Duration
+	ServerCertDuration time.Duration
+	RootCertDuration   time.Duration
 
 	SrcData map[string][]byte
 	Data    map[string][]byte
@@ -86,7 +88,7 @@ func (cs *Certs) validateRootCerts(ctx context.Context, now time.Time) bool {
 		log.Info("failed to parse root certificates, renewing", "error", err)
 
 		return true
-	} else if now.After(cs.rootPublicCert.NotAfter.Add(-renewalThreshold)) {
+	} else if now.After(cs.rootPublicCert.NotAfter.Add(-cs.RenewalThreshold)) {
 		log.Info("root certificates are about to expire, renewing", "current", now, "expiration", cs.rootPublicCert.NotAfter)
 
 		return true
@@ -114,7 +116,7 @@ func (cs *Certs) validateServerCerts(ctx context.Context, now time.Time) bool {
 		return true
 	}
 
-	isValid, err := certificates.ValidateCertificateExpiration(ctx, cs.Data[ServerCert], renewalThreshold, now)
+	isValid, err := certificates.ValidateCertificateExpiration(ctx, cs.Data[ServerCert], cs.RenewalThreshold, now)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
 
@@ -158,7 +160,7 @@ func (cs *Certs) generateRootCerts(ctx context.Context, domain string, now time.
 		DNSNames: buildSANs(domain),
 
 		NotBefore: now,
-		NotAfter:  now.Add(365 * 24 * time.Hour),
+		NotAfter:  now.Add(cs.RootCertDuration),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
@@ -214,7 +216,7 @@ func (cs *Certs) generateServerCerts(ctx context.Context, domain string, now tim
 		DNSNames: buildSANs(domain),
 
 		NotBefore: now,
-		NotAfter:  now.Add(7 * 24 * time.Hour),
+		NotAfter:  now.Add(cs.ServerCertDuration),
 
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},

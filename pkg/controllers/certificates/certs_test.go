@@ -10,12 +10,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testRenewalThreshold   = 12 * time.Hour
+	testServerCertDuration = 7 * 24 * time.Hour
+	testRootCertDuration   = 365 * 24 * time.Hour
+)
+
 func TestCertsValidation(t *testing.T) {
 	now, _ := time.Parse(time.RFC3339, "2018-01-10T00:00:00Z")
 	domain := "dynatrace-oneagent-webhook.webhook.svc"
 	firstCerts := Certs{
-		Domain: domain,
-		Now:    now,
+		Domain:             domain,
+		Now:                now,
+		RenewalThreshold:   testRenewalThreshold,
+		ServerCertDuration: testServerCertDuration,
+		RootCertDuration:   testRootCertDuration,
 	}
 
 	require.NoError(t, firstCerts.ValidateCerts(t.Context()))
@@ -25,7 +34,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("up-to-date certs", func(t *testing.T) {
 		newTime := now.Add(5 * time.Minute)
 
-		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: testRenewalThreshold, ServerCertDuration: testServerCertDuration, RootCertDuration: testRootCertDuration}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
@@ -38,9 +47,9 @@ func TestCertsValidation(t *testing.T) {
 	})
 
 	t.Run("outdated server certs", func(t *testing.T) {
-		newTime := now.Add((6*24 + 22) * time.Hour) // 6d22h
+		newTime := now.Add((6*24 + 22) * time.Hour) // 6d22h — within renewal threshold of 7d server cert
 
-		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: testRenewalThreshold, ServerCertDuration: testServerCertDuration, RootCertDuration: testRootCertDuration}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
@@ -53,9 +62,9 @@ func TestCertsValidation(t *testing.T) {
 	})
 
 	t.Run("outdated root certs", func(t *testing.T) {
-		newTime := now.Add((364*24 + 22) * time.Hour) // 364d22h
+		newTime := now.Add((364*24 + 22) * time.Hour) // 364d22h — within renewal threshold of 365d root cert
 
-		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: testRenewalThreshold, ServerCertDuration: testServerCertDuration, RootCertDuration: testRootCertDuration}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
