@@ -1,25 +1,23 @@
-# TEMPORARY — smoke/stress the kubemon cached-client integration tests for informer-cache
-# races. Defaults to a single run; tune parallel/count via manual dispatch. Revert before merge.
+# TEMPORARY — stress the kubemon cached-client integration tests for informer-cache races.
+# Tune by editing PARALLEL/COUNT below and pushing (workflow_dispatch needs the file on main,
+# so this is push-driven). Revert before merge.
 name: TEMP stress integration tests
 
 on:
   push:
     branches: [integration-test-cache]
-  workflow_dispatch:
-    inputs:
-      parallel:
-        description: concurrent test processes (raise to induce CPU contention)
-        default: "1"
-      count:
-        description: iterations per process
-        default: "1"
 
 permissions:
   contents: read
 
+env:
+  PARALLEL: "1"   # concurrent test processes — raise (e.g. 4) to induce CPU contention
+  COUNT: "50"      # iterations per process — raise (e.g. 50) to hunt the race
+
 jobs:
   stress:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -27,12 +25,9 @@ jobs:
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: 'stable'
-          cache: false
+          cache: true
       - run: make prerequisites/setup-envtest
-      - env:
-          PARALLEL: ${{ github.event.inputs.parallel || '1' }}
-          COUNT: ${{ github.event.inputs.count || '1' }}
-        run: |
+      - run: |
           set -u
           rc=0
           pids=()
