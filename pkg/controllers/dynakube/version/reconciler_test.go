@@ -153,11 +153,11 @@ func TestNeedsUpdate(t *testing.T) {
 	t.Run("needs", func(t *testing.T) {
 		dkCopy := dk.DeepCopy()
 		reconciler := Reconciler{}
-		assert.True(t, reconciler.needsUpdate(t.Context(), newOneAgentUpdater(dkCopy, fake.NewClient(), nil, nil), dkCopy))
+		assert.True(t, reconciler.needsUpdate(t.Context(), newOneAgentUpdater(dkCopy, fake.NewClient(), nil, nil)))
 	})
 	t.Run("does not need", func(t *testing.T) {
 		r := Reconciler{}
-		assert.False(t, r.needsUpdate(t.Context(), newOneAgentUpdater(&dynakube.DynaKube{}, fake.NewClient(), nil, nil), &dynakube.DynaKube{}))
+		assert.False(t, r.needsUpdate(t.Context(), newOneAgentUpdater(&dynakube.DynaKube{}, fake.NewClient(), nil, nil)))
 	})
 
 	t.Run("needs, because source changed", func(t *testing.T) {
@@ -165,7 +165,7 @@ func TestNeedsUpdate(t *testing.T) {
 		setOneAgentCustomImageStatus(updatedDynakube, "")
 
 		r := Reconciler{}
-		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil), updatedDynakube))
+		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
 	})
 
 	t.Run("needs, because custom image changed", func(t *testing.T) {
@@ -176,7 +176,7 @@ func TestNeedsUpdate(t *testing.T) {
 		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
 
 		r := Reconciler{}
-		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil), updatedDynakube))
+		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
 	})
 
 	t.Run("needs, because custom version changed", func(t *testing.T) {
@@ -187,7 +187,7 @@ func TestNeedsUpdate(t *testing.T) {
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
 
 		r := Reconciler{}
-		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil), updatedDynakube))
+		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
 	})
 }
 

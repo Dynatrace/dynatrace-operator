@@ -26,7 +26,7 @@ func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 	ctx, _ = logd.NewFromContext(ctx, "version")
 
 	updater := newCodeModulesUpdater(dk, imageClient, versionClient)
-	if r.needsUpdate(ctx, updater, dk) {
+	if r.needsUpdate(ctx, updater) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
 
@@ -37,7 +37,7 @@ func (r *Reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKub
 	ctx, _ = logd.NewFromContext(ctx, "version")
 
 	updater := newOneAgentUpdater(dk, r.apiReader, imageClient, versionClient)
-	if r.needsUpdate(ctx, updater, dk) {
+	if r.needsUpdate(ctx, updater) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
 
@@ -48,7 +48,7 @@ func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 	ctx, _ = logd.NewFromContext(ctx, "version")
 
 	updater := newActiveGateUpdater(dk, r.apiReader, imageClient, versionClient)
-	if r.needsUpdate(ctx, updater, dk) {
+	if r.needsUpdate(ctx, updater) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
 
 		return err
@@ -85,7 +85,7 @@ func (r *Reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 	return nil
 }
 
-func (r *Reconciler) needsUpdate(ctx context.Context, updater StatusUpdater, dk *dynakube.DynaKube) bool {
+func (r *Reconciler) needsUpdate(ctx context.Context, updater StatusUpdater) bool {
 	log := logd.FromContext(ctx)
 	if !updater.IsEnabled() {
 		log.Info("skipping version status update for disabled section", "updater", updater.Name())
