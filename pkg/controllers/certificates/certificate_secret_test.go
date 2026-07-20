@@ -3,8 +3,10 @@ package certificates
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -315,4 +317,22 @@ func getCRDFromConversionSpec(conversionSpec *apiextensionsv1.CustomResourceConv
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Conversion: conversionSpec,
 		}}
+}
+
+func TestValidateCertificates_DurationValidation(t *testing.T) {
+	newCertSecret := func() *certificateSecret {
+		return &certificateSecret{
+			secret: &corev1.Secret{Data: map[string][]byte{}},
+		}
+	}
+
+	t.Run("valid defaults", func(t *testing.T) {
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace, k8senv.GetWebhookCertsRenewalThreshold(t.Context()), k8senv.GetWebhookCertsServerDuration(t.Context()), k8senv.GetWebhookCertsRootDuration(t.Context()))
+		require.NoError(t, err)
+	})
+
+	t.Run("custom valid durations", func(t *testing.T) {
+		err := newCertSecret().validateCertificates(t.Context(), testNamespace, time.Hour, 24*time.Hour, 48*time.Hour)
+		require.NoError(t, err)
+	})
 }

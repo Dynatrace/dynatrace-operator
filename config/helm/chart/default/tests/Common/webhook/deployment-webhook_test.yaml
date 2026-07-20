@@ -953,3 +953,4 @@ tests:
           path: spec.template.spec.hostNetwork
       - isNull:
           path: spec.template.spec.dnsPolicy
+

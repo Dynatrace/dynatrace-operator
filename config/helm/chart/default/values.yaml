@@ -131,6 +131,11 @@ webhook:
   mutatingWebhook:
     failurePolicy: Ignore
     timeoutSeconds: 10
+  certs:
+    rootDuration: "" # CA root certificate validity duration, defaults to 8760h (365 days), min: 168h (7 days), max: 87600h (10 years); must be greater than serverDuration
+    serverDuration: "" # server certificate validity duration, defaults to 168h (7 days), min: 24h, max: 8760h (365 days); must be greater than renewalThreshold
+    renewalThreshold: "" # certificate renewal threshold, defaults to 12h, min: 12h, max: 720h (30 days); must be greater than requeueAfter
+    requeueAfter: "" # requeue interval when certificates are up to date, defaults to 3h, min: 5m, max: 11h; must be less than renewalThreshold
   volumes:
     certsDir:
       sizeLimit: 10Mi

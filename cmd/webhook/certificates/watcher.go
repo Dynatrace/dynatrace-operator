@@ -20,7 +20,7 @@ import (
 
 // TODO: refactor code below to be testable and also tested.
 const (
-	certificateRenewalInterval = 6 * time.Hour
+	certificateRenewalInterval = certificates.CertificateWatcherPollInterval
 	// The folders will be readable and executed by others, but writable by the user only.
 	permDirUser = 0775
 	// Grants read and write permission to everyone.
