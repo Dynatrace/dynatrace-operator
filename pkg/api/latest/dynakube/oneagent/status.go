@@ -31,6 +31,18 @@ type Status struct {
 	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitempty"` // Left the "Status" suffix for compatibility
 }
 
+// IsZero reports whether every field is zero. It is required for the `omitzero`
+// JSON tag: the promoted status.VersionStatus.IsZero() only inspects the version
+// fields, so without this method omitzero would drop the whole status (including
+// connection info) whenever the version happens to be unset.
+func (s *Status) IsZero() bool {
+	return s.VersionStatus.IsZero() &&
+		len(s.Instances) == 0 &&
+		s.LastInstanceStatusUpdate == nil &&
+		s.Healthcheck == nil &&
+		s.ConnectionInfo == communication.ConnectionInfo{}
+}
+
 // +kubebuilder:object:generate=true
 
 type Instance struct {

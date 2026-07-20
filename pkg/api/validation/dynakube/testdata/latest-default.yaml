@@ -266,17 +266,7 @@ spec:
       - maxSkew: 1
         topologyKey: kubernetes.io/hostname
         whenUnsatisfiable: ScheduleAnyway
-    sqlExtensionExecutor:
-      imageRef: {}
   tokens: token
   trustedCAs: trusted-ca
 status:
-  activeGate:
-    connectionInfoStatus: {}
-  apiToken:
-    availableOptionalScopes: {}
-  codeModules: {}
-  kspm: {}
   metadataEnrichment: {}
-  oneAgent:
-    connectionInfoStatus: {}

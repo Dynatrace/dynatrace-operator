@@ -20,6 +20,16 @@ type Status struct {
 	ServiceIPs []string `json:"serviceIPs,omitempty"`
 }
 
+// IsZero reports whether every field is zero. It is required for the `omitzero`
+// JSON tag: the promoted status.VersionStatus.IsZero() only inspects the version
+// fields, so without this method omitzero would drop the whole status (including
+// connection info) whenever the version happens to be unset.
+func (ag *Status) IsZero() bool {
+	return ag.VersionStatus.IsZero() &&
+		ag.ConnectionInfo == communication.ConnectionInfo{} &&
+		len(ag.ServiceIPs) == 0
+}
+
 // GetImage provides the image reference set in Status for the ActiveGate.
 // Format: repo@sha256:digest.
 func (ag *Status) GetImage() string {

@@ -23,8 +23,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,6 +39,12 @@ import (
 // JSON when they hold a zero value, and are still rendered when they carry a
 // value. `omitempty` has no effect on non-pointer struct fields, which is why
 // these fields need `omitzero` (Go 1.24+).
+//
+// Status types that embed status.VersionStatus (oneagent.Status,
+// activegate.Status, kubemon.Status) each define a complete IsZero() so that
+// omitzero considers ALL fields, not just the promoted version fields. Without
+// it, omitzero would drop the whole status object (losing connection info) when
+// the version happens to be unset — see the round-trip subtest below.
 func TestOmitzero(t *testing.T) {
 	// mustMarshal marshals v and returns the JSON as a string.
 	mustMarshal := func(t *testing.T, v any) string {
@@ -79,6 +87,7 @@ func TestOmitzero(t *testing.T) {
 		// Assert: DynaKubeStatus
 		assert.NotContains(t, statusJSON, `"oneAgent"`)
 		assert.NotContains(t, statusJSON, `"activeGate"`)
+		assert.NotContains(t, statusJSON, `"kubernetesMonitoring"`)
 		assert.NotContains(t, statusJSON, `"codeModules"`)
 		assert.NotContains(t, statusJSON, `"metadataEnrichment"`)
 		assert.NotContains(t, statusJSON, `"kspm"`)
@@ -97,13 +106,14 @@ func TestOmitzero(t *testing.T) {
 		enabled := true
 		dk := DynaKube{
 			Status: DynaKubeStatus{
-				OneAgent:           oneagent.Status{VersionStatus: status.VersionStatus{Version: "1.0.0"}},
-				ActiveGate:         activegate.Status{VersionStatus: status.VersionStatus{Version: "1.0.0"}},
-				CodeModules:        oneagent.CodeModulesStatus{VersionStatus: status.VersionStatus{Version: "1.0.0"}},
-				MetadataEnrichment: metadataenrichment.Status{Rules: []metadataenrichment.Rule{{}}},
-				KSPM:               kspm.Status{TokenSecretHash: "some-hash"},
-				UpdatedTimestamp:   metav1.Now(),
-				APIToken:           APITokenStatus{AvailableOptionalScopes: AvailableOptionalScopes{SettingsRead: &enabled}},
+				OneAgent:             oneagent.Status{ConnectionInfo: communication.ConnectionInfo{TenantUUID: "test-uuid"}},
+				ActiveGate:           activegate.Status{ConnectionInfo: communication.ConnectionInfo{TenantUUID: "test-uuid"}},
+				KubernetesMonitoring: kubemon.Status{ConnectionInfo: communication.ConnectionInfo{TenantUUID: "test-uuid"}},
+				CodeModules:          oneagent.CodeModulesStatus{VersionStatus: status.VersionStatus{Version: "1.0.0"}},
+				MetadataEnrichment:   metadataenrichment.Status{Rules: []metadataenrichment.Rule{{}}},
+				KSPM:                 kspm.Status{TokenSecretHash: "some-hash"},
+				UpdatedTimestamp:     metav1.Now(),
+				APIToken:             APITokenStatus{AvailableOptionalScopes: AvailableOptionalScopes{SettingsRead: &enabled}},
 			},
 			Spec: DynaKubeSpec{
 				APIURL:             "https://test.dev.dynatracelabs.com/api",
@@ -141,6 +151,7 @@ func TestOmitzero(t *testing.T) {
 		assert.Contains(t, dkJSON, `"extensionExecutionController"`)
 
 		// Assert: DynaKubeStatus
+		assert.Contains(t, dkJSON, `"kubernetesMonitoring"`)
 		assert.Contains(t, dkJSON, `"codeModules"`)
 		assert.Contains(t, dkJSON, `"kspm"`)
 		assert.Contains(t, dkJSON, `"updatedTimestamp"`)
@@ -149,5 +160,34 @@ func TestOmitzero(t *testing.T) {
 
 		// Assert: DynaKubeList
 		assert.Contains(t, listJSON, `"metadata"`)
+	})
+
+	// Regression guard for ICP-973: status is JSON round-tripped on every
+	// status update (client.Status().Update). A status carrying connection info
+	// but no version must survive that round-trip; a fully empty status must be
+	// dropped. This is exactly the data-loss bug that a partial promoted
+	// IsZero() would reintroduce.
+	t.Run("status survives marshal/unmarshal round-trip", func(t *testing.T) {
+		// Arrange: connection info set, version deliberately left unset.
+		dk := DynaKube{}
+		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{TenantUUID: "test-uuid", Endpoints: "test-endpoints"}
+		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{TenantUUID: "test-uuid", Endpoints: "test-endpoints"}
+
+		// Act
+		data, err := json.Marshal(dk)
+		require.NoError(t, err)
+
+		var back DynaKube
+		require.NoError(t, json.Unmarshal(data, &back))
+
+		// Assert: connection info preserved through the round-trip.
+		assert.Equal(t, "test-uuid", back.Status.OneAgent.ConnectionInfo.TenantUUID)
+		assert.Equal(t, "test-endpoints", back.Status.OneAgent.ConnectionInfo.Endpoints)
+		assert.Equal(t, "test-uuid", back.Status.ActiveGate.ConnectionInfo.TenantUUID)
+		assert.Equal(t, "test-endpoints", back.Status.ActiveGate.ConnectionInfo.Endpoints)
+
+		// Assert: a fully empty status is dropped entirely.
+		emptyJSON := mustMarshal(t, DynaKube{})
+		assert.NotContains(t, emptyJSON, `"status"`)
 	})
 }
