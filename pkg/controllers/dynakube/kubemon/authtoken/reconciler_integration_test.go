@@ -34,26 +34,22 @@ const (
 	integrationNamespace = "dynatrace"
 
 	// integrationRotationInterval must stay comfortably longer than a couple of back-to-back
-	// reconciles (see the stabilize phase) so it doesn't trigger a spurious rotation there, and
-	// comfortably shorter than integrationEventuallyTimeout so the rotate phase can wait it out.
+	// reconciles (see the stabilize phase) so it doesn't trigger a spurious rotation there, while
+	// staying short enough that the rotate phase can wait it out on real elapsed time.
 	integrationRotationInterval = time.Second
-
-	integrationEventuallyTimeout = 5 * time.Second
-	integrationEventuallyTick    = 50 * time.Millisecond
 )
 
 var anyContext = mock.MatchedBy(func(context.Context) bool { return true })
 
 type lifecycleDeps struct {
 	clt        client.Client
-	apiReader  client.Reader
 	reconciler *authtoken.Reconciler
 	dk         *dynakube.DynaKube
 }
 
 // TestReconcileLifecycle walks the phases in order: provision → stabilize → rotate → disable → re-enable.
 func TestReconcileLifecycle(t *testing.T) {
-	clt, apiReader := integrationtests.SetupCachedTestEnvironment(t)
+	clt := integrationtests.SetupTestEnvironment(t)
 	ctx := t.Context()
 	reconciler := authtoken.NewReconciler(clt, authtoken.WithRotationInterval(integrationRotationInterval))
 
@@ -73,7 +69,6 @@ func TestReconcileLifecycle(t *testing.T) {
 
 	deps := lifecycleDeps{
 		clt:        clt,
-		apiReader:  apiReader,
 		reconciler: reconciler,
 		dk:         dk,
 	}
@@ -91,12 +86,12 @@ func runProvisionPhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetAuthToken(anyContext, deps.dk.Name).Return(&agclient.AuthTokenInfo{TokenID: "id", Token: "initial-token"}, nil)
 
-	// Create path is deterministic: the reconciler's cached Get of a never-created secret returns
-	// NotFound, so a single reconcile creates it and apiReader observes it immediately.
+	// Create path is deterministic: the reconciler's Get of a never-created secret returns NotFound,
+	// so a single reconcile creates it and the read-back observes it immediately.
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
-	require.True(t, isAuthTokenApplied(t.Context(), deps.apiReader, deps.dk, "initial-token"))
+	require.True(t, isAuthTokenApplied(t.Context(), deps.clt, deps.dk, "initial-token"))
 
-	secret := getSecret(t, deps.apiReader, deps.dk)
+	secret := getSecret(t, deps.clt, deps.dk)
 	assert.Len(t, secret.Data, 1)
 	assertManagedLabels(t, secret.Labels, deps.dk)
 	assertOwnedBy(t, secret.OwnerReferences, deps.dk)
@@ -106,24 +101,14 @@ func runStabilizePhase(t *testing.T, deps lifecycleDeps) {
 	t.Helper()
 
 	dtClient := agclientmock.NewClient(t)
-	// No GetAuthToken expectation — a stable, fresh secret must not trigger a rotation. This holds
-	// only once the reconciler's cache reflects the provisioned secret; a cold cache would drive the
-	// (re)create path, fetch a new token, and panic this mock.
+	// No GetAuthToken expectation — a stable, fresh secret must not trigger a rotation.
 
-	// Gate on cache readiness (a read, not a reconcile) so the no-op reconciles below observe the
-	// provisioned secret. The sibling tests get this warming implicitly from a preceding Eventually
-	// phase; replace with WaitForCachedMatch once https://github.com/Dynatrace/dynatrace-operator/pull/6972 lands.
-	secretKey := types.NamespacedName{Name: deps.dk.KubernetesMonitoring().GetAuthTokenSecretName(), Namespace: deps.dk.Namespace}
-	require.Eventually(t, func() bool {
-		return deps.clt.Get(t.Context(), secretKey, &corev1.Secret{}) == nil
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
-
-	secretRV := getSecret(t, deps.apiReader, deps.dk).ResourceVersion
+	secretRV := getSecret(t, deps.clt, deps.dk).ResourceVersion
 
 	// Repeated reconciles with identical input must not rewrite the secret.
 	for range 3 {
 		require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
-		assert.Equal(t, secretRV, getSecret(t, deps.apiReader, deps.dk).ResourceVersion)
+		assert.Equal(t, secretRV, getSecret(t, deps.clt, deps.dk).ResourceVersion)
 	}
 }
 
@@ -133,17 +118,17 @@ func runRotatePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetAuthToken(anyContext, deps.dk.Name).Return(&agclient.AuthTokenInfo{TokenID: "id", Token: "rotated-token"}, nil)
 
-	oldSecret := getSecret(t, deps.apiReader, deps.dk)
+	oldSecret := getSecret(t, deps.clt, deps.dk)
 
 	// Wait out the real rotationInterval configured on the shared reconciler; the creationTimestamp
-	// is server-managed and can't be backdated through the client. The cache is warm after stabilize,
-	// so a single reconcile observes the now-outdated secret and rotates it.
+	// is server-managed and can't be backdated through the client. A single reconcile then observes
+	// the now-outdated secret and rotates it.
 	time.Sleep(integrationRotationInterval + 200*time.Millisecond)
 
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
-	require.True(t, isAuthTokenApplied(t.Context(), deps.apiReader, deps.dk, "rotated-token"))
+	require.True(t, isAuthTokenApplied(t.Context(), deps.clt, deps.dk, "rotated-token"))
 
-	rotated := getSecret(t, deps.apiReader, deps.dk)
+	rotated := getSecret(t, deps.clt, deps.dk)
 	assert.NotEqual(t, oldSecret.UID, rotated.UID, "rotation must delete and recreate the secret")
 }
 
@@ -154,7 +139,7 @@ func runDisablePhase(t *testing.T, deps lifecycleDeps) {
 
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), nil, deps.dk))
 
-	err := deps.apiReader.Get(t.Context(), types.NamespacedName{Name: deps.dk.KubernetesMonitoring().GetAuthTokenSecretName(), Namespace: deps.dk.Namespace}, &corev1.Secret{})
+	err := deps.clt.Get(t.Context(), types.NamespacedName{Name: deps.dk.KubernetesMonitoring().GetAuthTokenSecretName(), Namespace: deps.dk.Namespace}, &corev1.Secret{})
 	require.True(t, k8serrors.IsNotFound(err), "secret should be deleted when kubemon is disabled")
 }
 
@@ -165,15 +150,8 @@ func runReEnablePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetAuthToken(anyContext, deps.dk.Name).Return(&agclient.AuthTokenInfo{TokenID: "id", Token: "re-enabled-token"}, nil)
 
-	// The cache backing the reconciler may still hold the secret deleted by the disable phase, so
-	// retry until the deletion has propagated, reconcile recreates it, and apiReader observes it.
-	require.Eventually(t, func() bool {
-		if err := deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk); err != nil {
-			return false
-		}
-
-		return isAuthTokenApplied(t.Context(), deps.apiReader, deps.dk, "re-enabled-token")
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
+	require.True(t, isAuthTokenApplied(t.Context(), deps.clt, deps.dk, "re-enabled-token"))
 }
 
 func getSecret(t *testing.T, reader client.Reader, dk *dynakube.DynaKube) *corev1.Secret {
@@ -191,7 +169,7 @@ func isAuthTokenApplied(ctx context.Context, reader client.Reader, dk *dynakube.
 		return false
 	}
 
-	return string(secret.Data[authtoken.AuthTokenName]) == token
+	return string(secret.Data[authtoken.SecretKey]) == token
 }
 
 func assertManagedLabels(t *testing.T, labels map[string]string, dk *dynakube.DynaKube) {

@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	// AuthTokenName is the key used inside the auth token Secret, matching the AG convention.
-	AuthTokenName = "auth-token"
+	// SecretKey is the key used inside the auth token Secret, matching the AG convention.
+	SecretKey = "auth-token"
 
 	// DefaultRotationInterval mirrors the AG value: rotate at 29 days against a 60-day token
 	// validity to avoid expiry warnings in the Dynatrace UI.
@@ -95,7 +95,7 @@ func (r *Reconciler) createSecret(ctx context.Context, agClient agclient.Client,
 
 	secret, err := k8ssecret.Build(dk,
 		dk.KubernetesMonitoring().GetAuthTokenSecretName(),
-		map[string][]byte{AuthTokenName: []byte(authTokenInfo.Token)},
+		map[string][]byte{SecretKey: []byte(authTokenInfo.Token)},
 		k8ssecret.SetLabels(coreLabels.BuildLabels()),
 	)
 	if err != nil {

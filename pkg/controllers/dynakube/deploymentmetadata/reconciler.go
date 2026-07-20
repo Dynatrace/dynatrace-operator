@@ -31,6 +31,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 	r.addOneAgentDeploymentMetadata(dk, configMapData)
 	r.addActiveGateDeploymentMetadata(dk, configMapData)
+	r.addKubemonDeploymentMetadata(dk, configMapData)
 	r.addOperatorVersionInfo(dk, configMapData)
 
 	return r.maintainMetadataConfigMap(ctx, dk, configMapData)
@@ -50,6 +51,14 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(dk *dynakube.DynaKube, conf
 	}
 
 	configMapData[ActiveGateMetadataKey] = NewDeploymentMetadata(r.clusterID, ActiveGateMetadataKey).AsString()
+}
+
+func (r *Reconciler) addKubemonDeploymentMetadata(dk *dynakube.DynaKube, configMapData map[string]string) {
+	if !dk.KubernetesMonitoring().IsEnabled() {
+		return
+	}
+
+	configMapData[KubemonMetadataKey] = NewDeploymentMetadata(r.clusterID, KubemonMetadataKey).AsString()
 }
 
 func (r *Reconciler) addOperatorVersionInfo(dk *dynakube.DynaKube, configMapData map[string]string) {

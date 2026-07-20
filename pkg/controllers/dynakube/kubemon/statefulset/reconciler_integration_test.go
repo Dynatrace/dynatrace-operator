@@ -64,6 +64,9 @@ func TestReconcileLifecycle(t *testing.T) {
 				},
 			},
 		},
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID: "test-cluster-uuid",
+		},
 	}
 	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
 
@@ -84,7 +87,7 @@ func TestReconcileLifecycle(t *testing.T) {
 			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{
-			kubemonauthtoken.AuthTokenName: []byte("test-auth-token"),
+			kubemonauthtoken.SecretKey: []byte("test-auth-token"),
 		},
 	}
 	integrationtests.CreateKubernetesObject(t, t.Context(), clt, authTokenSecret)
@@ -209,14 +212,14 @@ func assertStatefulSetShape(t *testing.T, sts *appsv1.StatefulSet, dk *dynakube.
 	assert.Equal(t, statefulset.ContainerName, container.Name)
 	assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), container.Image)
 
-	require.GreaterOrEqual(t, len(container.Env), 3)
-	assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[1].Name)
-	assert.Equal(t, connectioninfo.EnvDTServer, container.Env[2].Name)
+	require.GreaterOrEqual(t, len(container.Env), 6)
+	assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[4].Name)
+	assert.Equal(t, connectioninfo.EnvDTServer, container.Env[5].Name)
 
 	require.Len(t, container.VolumeMounts, 3)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
 	assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
-	assert.Equal(t, kubemonauthtoken.AuthTokenName, container.VolumeMounts[1].SubPath)
+	assert.Equal(t, kubemonauthtoken.SecretKey, container.VolumeMounts[1].SubPath)
 	assert.Equal(t, statefulset.StorageVolumeName, container.VolumeMounts[2].Name)
 	assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
 

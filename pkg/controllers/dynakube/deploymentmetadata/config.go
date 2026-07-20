@@ -17,5 +17,6 @@ const (
 
 	OneAgentMetadataKey   = "oneagent"
 	ActiveGateMetadataKey = "activegate"
+	KubemonMetadataKey    = "kubemon"
 	OperatorVersionKey    = "operator"
 )

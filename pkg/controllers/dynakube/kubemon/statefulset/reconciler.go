@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -29,7 +30,10 @@ const (
 	AuthTokenVolumeName       = "kubemon-authtoken-secret"
 )
 
-var ErrImageRequired = errors.New("kubernetes monitoring image is required")
+var (
+	ErrImageRequired        = errors.New("kubernetes monitoring image is required")
+	ErrMissingKubeSystemUID = errors.New("kube-system UUID not yet available")
+)
 
 type Reconciler struct {
 	kubeClient client.Client
@@ -66,13 +70,37 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 // buildEnvs prepends the mandatory AG runtime env vars (and optional DT_GROUP) to any user-supplied vars.
-func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
+func buildEnvs(dk *dynakube.DynaKube) ([]corev1.EnvVar, error) {
+	if dk.Status.KubeSystemUUID == "" {
+		return nil, ErrMissingKubeSystemUID
+	}
+
 	connInfoCM := dk.KubernetesMonitoring().GetConnectionInfoConfigMapName()
 
 	envs := []corev1.EnvVar{
 		{
 			Name:  agconsts.EnvDTCapabilities,
 			Value: activegate.KubeMonCapability.ArgumentName,
+		},
+		{
+			Name:  agconsts.EnvDTIDSeedNamespace,
+			Value: dk.Namespace,
+		},
+		{
+			Name:  agconsts.EnvDTIDSeedClusterID,
+			Value: dk.Status.KubeSystemUUID,
+		},
+		{
+			Name: deploymentmetadata.EnvDTDeploymentMetadata,
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dk.Name),
+					},
+					Key:      deploymentmetadata.KubemonMetadataKey,
+					Optional: new(false),
+				},
+			},
 		},
 		{
 			Name: connectioninfo.EnvDTTenant,
@@ -100,7 +128,7 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: agconsts.EnvDTGroup, Value: dk.Spec.KubernetesMonitoring.Group})
 	}
 
-	return append(envs, dk.KubernetesMonitoring().Env...)
+	return append(envs, dk.KubernetesMonitoring().Env...), nil
 }
 
 // buildVolumes returns the pod-level volumes.
@@ -146,7 +174,7 @@ func buildVolumeMounts(_ *dynakube.DynaKube) []corev1.VolumeMount {
 		Name:      AuthTokenVolumeName,
 		ReadOnly:  true,
 		MountPath: agconsts.AuthTokenMountPoint,
-		SubPath:   kubemonauthtoken.AuthTokenName,
+		SubPath:   kubemonauthtoken.SecretKey,
 	}, {
 		Name:      StorageVolumeName,
 		MountPath: agconsts.GatewayTmpMountPoint,
@@ -188,12 +216,17 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	envs, err := buildEnvs(dk)
+	if err != nil {
+		return nil, err
+	}
+
 	container := corev1.Container{
 		Name:            ContainerName,
 		Image:           image,
 		ImagePullPolicy: dk.KubernetesMonitoring().GetPullPolicy(),
 		Resources:       dk.KubernetesMonitoring().Resources,
-		Env:             buildEnvs(dk),
+		Env:             envs,
 		VolumeMounts:    buildVolumeMounts(dk),
 	}
 
@@ -242,7 +275,7 @@ func (r *Reconciler) getAuthTokenHash(ctx context.Context, dk *dynakube.DynaKube
 		return "", errors.WithStack(err)
 	}
 
-	hash, err := hasher.GenerateHash(string(secret.Data[kubemonauthtoken.AuthTokenName]))
+	hash, err := hasher.GenerateHash(string(secret.Data[kubemonauthtoken.SecretKey]))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to hash auth token")
 	}

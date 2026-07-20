@@ -59,7 +59,7 @@ func newFreshSecret(dk *dynakube.DynaKube, token string) *corev1.Secret {
 			// updates, so this value is meaningless in production.
 			CreationTimestamp: metav1.Now(),
 		},
-		Data: map[string][]byte{authtoken.AuthTokenName: []byte(token)},
+		Data: map[string][]byte{authtoken.SecretKey: []byte(token)},
 	}
 }
 
@@ -87,7 +87,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, r.Reconcile(t.Context(), agCl, dk))
 
 		secret := getAuthTokenSecret(t, clt, dk)
-		assert.Equal(t, []byte("first-token"), secret.Data[authtoken.AuthTokenName])
+		assert.Equal(t, []byte("first-token"), secret.Data[authtoken.SecretKey])
 	})
 
 	t.Run("no-op when secret is fresh", func(t *testing.T) {
@@ -118,7 +118,7 @@ func TestReconcile(t *testing.T) {
 			require.NoError(t, r.Reconcile(t.Context(), agCl, dk))
 
 			rotated := getAuthTokenSecret(t, clt, dk)
-			assert.Equal(t, []byte("new-token"), rotated.Data[authtoken.AuthTokenName])
+			assert.Equal(t, []byte("new-token"), rotated.Data[authtoken.SecretKey])
 
 			// Simulate what the real API server does on Create: it sets CreationTimestamp to
 			// the current time. The fake client does not do this, so we set it manually here
@@ -230,7 +230,7 @@ func TestReconcileRotationFailures(t *testing.T) {
 			require.Error(t, r.Reconcile(t.Context(), agCl, dk))
 
 			secret := getAuthTokenSecret(t, clt, dk)
-			assert.Equal(t, []byte("old-token"), secret.Data[authtoken.AuthTokenName])
+			assert.Equal(t, []byte("old-token"), secret.Data[authtoken.SecretKey])
 		})
 	})
 }

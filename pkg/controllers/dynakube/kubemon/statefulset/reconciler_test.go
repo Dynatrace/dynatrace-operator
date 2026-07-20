@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -65,6 +66,13 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 			test.assertError(t, err)
 		})
 	}
+}
+
+func TestReconcileMissingKubeSystemUID(t *testing.T) {
+	dk := newTestDynaKube(true)
+	dk.Status.KubeSystemUUID = ""
+	err := statefulset.NewReconciler(fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk)
+	require.ErrorIs(t, err, statefulset.ErrMissingKubeSystemUID)
 }
 
 // TestReconcileResolveReplicasReadFailure verifies that a non-NotFound StatefulSet read error
@@ -124,13 +132,21 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 	assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), container.Image)
 	assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
 
-	// env vars: capabilities first, then connection info injected envs, then custom
-	require.Len(t, container.Env, 4)
+	// env vars: capabilities, seed envs, deployment metadata, connection info, then custom
+	require.Len(t, container.Env, 7)
 	assert.Equal(t, agconsts.EnvDTCapabilities, container.Env[0].Name)
 	assert.Equal(t, activegate.KubeMonCapability.ArgumentName, container.Env[0].Value)
-	assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[1].Name)
-	assert.Equal(t, connectioninfo.EnvDTServer, container.Env[2].Name)
-	assert.Equal(t, "CUSTOM", container.Env[3].Name)
+	assert.Equal(t, agconsts.EnvDTIDSeedNamespace, container.Env[1].Name)
+	assert.Equal(t, dk.Namespace, container.Env[1].Value)
+	assert.Equal(t, agconsts.EnvDTIDSeedClusterID, container.Env[2].Name)
+	assert.Equal(t, dk.Status.KubeSystemUUID, container.Env[2].Value)
+	assert.Equal(t, deploymentmetadata.EnvDTDeploymentMetadata, container.Env[3].Name)
+	require.NotNil(t, container.Env[3].ValueFrom)
+	require.NotNil(t, container.Env[3].ValueFrom.ConfigMapKeyRef)
+	assert.Equal(t, deploymentmetadata.KubemonMetadataKey, container.Env[3].ValueFrom.ConfigMapKeyRef.Key)
+	assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[4].Name)
+	assert.Equal(t, connectioninfo.EnvDTServer, container.Env[5].Name)
+	assert.Equal(t, "CUSTOM", container.Env[6].Name)
 
 	// tenant token volume mount
 	require.Len(t, container.VolumeMounts, 3)
@@ -144,7 +160,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 	// auth token volume mount
 	assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
 	assert.Equal(t, agconsts.AuthTokenMountPoint, container.VolumeMounts[1].MountPath)
-	assert.Equal(t, kubemonauthtoken.AuthTokenName, container.VolumeMounts[1].SubPath)
+	assert.Equal(t, kubemonauthtoken.SecretKey, container.VolumeMounts[1].SubPath)
 	assert.True(t, container.VolumeMounts[1].ReadOnly)
 	assert.True(t, hasAuthTokenVolume(sts, dk))
 	assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationAuthTokenHash])
@@ -252,6 +268,8 @@ func newTestDynaKube(enabled bool) *dynakube.DynaKube {
 		},
 	}
 
+	dk.Status.KubeSystemUUID = "test-cluster-uuid"
+
 	if enabled {
 		dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 		dk.Spec.KubernetesMonitoring.Image = "registry.example.com/linux/activegate:1.2.3"
@@ -294,7 +312,7 @@ func newTestAuthTokenSecret(dk *dynakube.DynaKube) *corev1.Secret {
 			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{
-			kubemonauthtoken.AuthTokenName: []byte("test-auth-token"),
+			kubemonauthtoken.SecretKey: []byte("test-auth-token"),
 		},
 	}
 }
