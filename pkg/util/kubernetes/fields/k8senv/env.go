@@ -23,6 +23,7 @@ const (
 	AppVersion                  = "APP_VERSION"
 
 	DTExtractCodeModulesImageLinksEnvVar = "DT_EXTRACT_CODEMODULES_IMAGE_LINKS"
+	KubemonEnableOperand                 = "KUBEMON_ENABLE_OPERAND"
 
 	DTClientCacheCleanInterval        = "DT_CLIENT_CACHE_CLEAN_INTERVAL"
 	defaultDTClientCacheCleanInterval = time.Hour
@@ -175,6 +176,20 @@ func GetDTExtractCodeModulesImageLinks(ctx context.Context) bool {
 		_, log := logd.NewFromContext(ctx, "k8senv")
 		log.Info("couldn't parse bool from env", "env", DTExtractCodeModulesImageLinksEnvVar, "value", rawValue, "err", err)
 
+		return false
+	}
+
+	return value
+}
+
+func IsKubemonOperandEnabled() bool {
+	rawValue := os.Getenv(KubemonEnableOperand)
+	if rawValue == "" {
+		return false
+	}
+
+	value, err := strconv.ParseBool(rawValue)
+	if err != nil {
 		return false
 	}
 

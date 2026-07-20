@@ -88,6 +88,10 @@ spec:
             - name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
               value: "true"
             {{- end }}
+            {{- if .Values.operator.kubemonEnableOperand }}
+            - name: KUBEMON_ENABLE_OPERAND
+              value: "true"
+            {{- end }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
           readinessProbe:
             httpGet:

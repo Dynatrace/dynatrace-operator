@@ -42,7 +42,8 @@ func (mod ProxyModifier) getVolumes() []corev1.Volume {
 			Name: proxy.SecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: proxy.BuildSecretName(mod.dk.Name),
+					SecretName:  proxy.BuildSecretName(mod.dk.Name),
+					DefaultMode: new(int32(0o640)),
 				},
 			},
 		},

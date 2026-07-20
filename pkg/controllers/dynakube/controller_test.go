@@ -23,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
@@ -349,6 +350,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		mockOneAgentReconciler := newMockOneAgentReconciler(t)
 		mockActiveGateReconciler := newMockActiveGateReconciler(t)
+		mockKubemonReconciler := newMockKubemonReconciler(t)
 		mockInjectionReconciler := newMockInjectionReconciler(t)
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 
@@ -370,6 +372,7 @@ func TestReconcileComponents(t *testing.T) {
 			k8sEntityReconciler:     mockK8sEntityReconciler,
 			oneAgentReconciler:      mockOneAgentReconciler,
 			activeGateReconciler:    mockActiveGateReconciler,
+			kubemonReconciler:       mockKubemonReconciler,
 			injectionReconciler:     mockInjectionReconciler,
 		}
 		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
@@ -378,6 +381,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		expectReconcileError(t, mockOneAgentReconciler, &err, dk, dtClient, token.Tokens(nil))
 		expectReconcileError(t, mockActiveGateReconciler, &err, dk, dtClient, token.Tokens(nil))
+		expectReconcileError(t, mockKubemonReconciler, &err, dk, dtClient.ActiveGate, token.Tokens(nil))
 		expectReconcileError(t, mockInjectionReconciler, &err, dtClient, dk)
 		expectReconcileError(t, mockLogMonitoringReconciler, &err, dtClient, dk)
 		expectReconcileError(t, mockExtensionReconciler, &err, dtClient.Images, dk)
@@ -395,6 +399,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		mockActiveGateReconciler := newMockActiveGateReconciler(t)
 		mockExtensionReconciler := newMockExtensionReconciler(t)
+		mockKubemonReconciler := newMockKubemonReconciler(t)
 		mockOtelcReconciler := newMockDynakubeReconciler(t)
 		k8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
@@ -409,6 +414,7 @@ func TestReconcileComponents(t *testing.T) {
 			client:                  fakeClient,
 			apiReader:               fakeClient,
 			activeGateReconciler:    mockActiveGateReconciler,
+			kubemonReconciler:       mockKubemonReconciler,
 			logMonitoringReconciler: mockLogMonitoringReconciler,
 			extensionReconciler:     mockExtensionReconciler,
 			otelcReconciler:         mockOtelcReconciler,
@@ -419,6 +425,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		var err error
 		expectReconcileError(t, mockActiveGateReconciler, &err, dk, dtClient, token.Tokens(nil))
+		expectReconcileError(t, mockKubemonReconciler, &err, dk, dtClient.ActiveGate, token.Tokens(nil))
 		expectReconcileError(t, mockExtensionReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, mockOtelcReconciler, &err, dk)
 		expectReconcileError(t, k8sEntityReconciler, &err, dtClient.Settings, dk)
@@ -426,6 +433,53 @@ func TestReconcileComponents(t *testing.T) {
 
 		err = controller.reconcileComponents(ctx, dtClient, dk)
 		require.Error(t, err)
+	})
+
+	t.Run("kubemon rollout in progress does not block other components", func(t *testing.T) {
+		dk := dkBaser.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk)
+
+		mockOneAgentReconciler := newMockOneAgentReconciler(t)
+		mockActiveGateReconciler := newMockActiveGateReconciler(t)
+		mockKubemonReconciler := newMockKubemonReconciler(t)
+		mockInjectionReconciler := newMockInjectionReconciler(t)
+		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
+		mockExtensionReconciler := newMockExtensionReconciler(t)
+		mockKSPMReconciler := newMockDtSettingReconciler(t)
+		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
+		mockOtelcReconciler := newMockDynakubeReconciler(t)
+
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+
+			logMonitoringReconciler: mockLogMonitoringReconciler,
+			extensionReconciler:     mockExtensionReconciler,
+			otelcReconciler:         mockOtelcReconciler,
+			kspmReconciler:          mockKSPMReconciler,
+			k8sEntityReconciler:     mockK8sEntityReconciler,
+			oneAgentReconciler:      mockOneAgentReconciler,
+			activeGateReconciler:    mockActiveGateReconciler,
+			kubemonReconciler:       mockKubemonReconciler,
+			injectionReconciler:     mockInjectionReconciler,
+
+			requeueAfter: 10 * time.Minute,
+		}
+		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
+
+		mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(nil).Once()
+		mockKubemonReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient.ActiveGate, token.Tokens(nil)).Return(k8sstatefulset.ErrRolloutInProgress).Once()
+		mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
+		mockOtelcReconciler.EXPECT().Reconcile(anyCtx, dk).Return(nil).Once()
+		mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()
+		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
+		mockInjectionReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
+		mockOneAgentReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(nil).Once()
+
+		err := controller.reconcileComponents(ctx, dtClient, dk)
+		require.NoError(t, err)
+		assert.Equal(t, fastRequeueInterval, controller.requeueAfter)
 	})
 }
 
@@ -488,6 +542,9 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, anyDynaKube).Return(nil)
 
+	mockKubemonReconciler := newMockKubemonReconciler(t)
+	mockKubemonReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube, mock.Anything, mock.Anything).Return(nil)
+
 	baseController := &Controller{
 		apiReader:                    fakeClient,
 		client:                       fakeClient,
@@ -500,6 +557,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		otelcReconciler:              mockOtelcReconciler,
 		proxyReconciler:              mockProxyReconciler,
 		kspmReconciler:               mockKSPMReconciler,
+		kubemonReconciler:            mockKubemonReconciler,
 		k8sEntityReconciler:          mockK8sEntityReconciler,
 		oneAgentReconciler:           mockOneAgentReconciler,
 		activeGateReconciler:         mockActiveGateReconciler,

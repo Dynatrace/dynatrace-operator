@@ -127,6 +127,10 @@ spec:
             - name: DT_CLIENT_CACHE_CLEAN_INTERVAL
               value: "{{ .Values.operator.clientCacheCleanupInterval }}"
             {{- end }}
+            {{- if .Values.operator.kubemonEnableOperand }}
+            - name: KUBEMON_ENABLE_OPERAND
+              value: "true"
+            {{- end }}
             {{- if .Values.enableInsecurePprofEndpoint }}
             - name: PPROF_BIND_ADDRESS
               value: ":6060"

@@ -168,7 +168,7 @@ type ApplicationMonitoringSpec struct {
 // +kubebuilder:object:generate=true
 
 type AppInjectionSpec struct {
-	// Define resources requests and limits for the initContainer. For details, see Managing resources for containers
+	// Define resources requests and limits for the injected initContainer. For details, see Managing resources for containers
 	// (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
