@@ -104,6 +104,8 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 
 func runRolloutCompletePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
+	// Sync cache to the StatefulSet created during the provision phase before reading it.
+	integrationtests.WaitForCachedMatch(t, deps.clt, statefulSetKey(deps.dk), &appsv1.StatefulSet{}, func(*appsv1.StatefulSet) bool { return true })
 
 	markRolloutComplete(t, t.Context(), deps.clt, deps.dk)
 	integrationtests.WaitForCachedMatch(t, deps.clt, statefulSetKey(deps.dk), &appsv1.StatefulSet{}, k8sstatefulset.IsRolloutComplete)
