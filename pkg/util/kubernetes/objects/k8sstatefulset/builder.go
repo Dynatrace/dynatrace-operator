@@ -109,6 +109,12 @@ func SetServiceAccount(serviceAccountName string) builder.Option[*appsv1.Statefu
 	}
 }
 
+func SetAutomountServiceAccountToken(isEnabled bool) Option {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.AutomountServiceAccountToken = &isEnabled
+	}
+}
+
 func SetSecurityContext(securityContext *corev1.PodSecurityContext) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.SecurityContext = securityContext

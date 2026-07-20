@@ -216,6 +216,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		k8sstatefulset.SetDNSPolicy(km.DNSPolicy),
 		k8sstatefulset.SetPriorityClassName(km.PriorityClassName),
 		k8sstatefulset.SetTerminationGracePeriodSeconds(km.TerminationGracePeriodSeconds),
+		k8sstatefulset.SetAutomountServiceAccountToken(true),
 	}
 
 	return k8sstatefulset.Build(dk, km.GetStatefulSetName(), container, opts...)
