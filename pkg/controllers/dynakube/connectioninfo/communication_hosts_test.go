@@ -150,7 +150,7 @@ func TestNewOACommunicationHosts(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			hosts, err := NewOACommunicationHosts(tc.input)
+			hosts, err := ParseOACommunicationHosts(tc.input)
 
 			if tc.expectError {
 				require.Error(t, err)
@@ -242,7 +242,7 @@ func TestNewAGCommunicationHosts(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			hosts, err := NewAGCommunicationHosts(tc.input)
+			hosts, err := ParseAGCommunicationHosts(tc.input)
 
 			if tc.expectError {
 				require.Error(t, err)
