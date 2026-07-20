@@ -11,13 +11,13 @@ permissions:
   contents: read
 
 env:
-  PARALLEL: "1"   # concurrent test processes — raise (e.g. 4) to induce CPU contention
-  COUNT: "50"      # iterations per process — raise (e.g. 50) to hunt the race
+  PARALLEL: "6"   # concurrent test processes — raise to induce CPU contention (runner ~4 vCPU)
+  COUNT: "40"     # iterations per process — race needs contention more than raw count
 
 jobs:
   stress:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
