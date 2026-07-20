@@ -24,9 +24,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -189,5 +192,49 @@ func TestOmitzero(t *testing.T) {
 		// Assert: a fully empty status is dropped entirely.
 		emptyJSON := mustMarshal(t, DynaKube{})
 		assert.NotContains(t, emptyJSON, `"status"`)
+	})
+
+	// Covers the struct-typed fields converted from omitempty to omitzero across
+	// pkg/api/latest sub-packages. For each: the zero value is dropped, and a
+	// populated value both renders and survives a marshal/unmarshal round-trip.
+	t.Run("newly tagged sub-package struct fields", func(t *testing.T) {
+		connInfo := communication.ConnectionInfo{TenantUUID: "test-uuid"}
+		resources := corev1.ResourceRequirements{Claims: []corev1.ResourceClaim{{Name: "test"}}}
+		selector := metav1.LabelSelector{MatchLabels: map[string]string{"key": "value"}}
+
+		cases := []struct {
+			name      string
+			key       string
+			empty     any
+			populated any
+			target    any // pointer to a fresh instance, for the round-trip
+		}{
+			{"activegate.Status.ConnectionInfo", `"connectionInfoStatus"`, activegate.Status{}, activegate.Status{ConnectionInfo: connInfo}, &activegate.Status{}},
+			{"oneagent.Status.ConnectionInfo", `"connectionInfoStatus"`, oneagent.Status{}, oneagent.Status{ConnectionInfo: connInfo}, &oneagent.Status{}},
+			{"kubemon.Status.ConnectionInfo", `"connectionInfo"`, kubemon.Status{}, kubemon.Status{ConnectionInfo: connInfo}, &kubemon.Status{}},
+			{"oneagent.HostInjectSpec.OneAgentResources", `"oneAgentResources"`, oneagent.HostInjectSpec{}, oneagent.HostInjectSpec{OneAgentResources: resources}, &oneagent.HostInjectSpec{}},
+			{"oneagent.AppInjectionSpec.NamespaceSelector", `"namespaceSelector"`, oneagent.AppInjectionSpec{}, oneagent.AppInjectionSpec{NamespaceSelector: selector}, &oneagent.AppInjectionSpec{}},
+			{"kubemon.StatefulSetProperties.Resources", `"resources"`, kubemon.StatefulSetProperties{}, kubemon.StatefulSetProperties{Resources: resources}, &kubemon.StatefulSetProperties{}},
+			{"logmonitoring.TemplateSpec.ImageRef", `"imageRef"`, logmonitoring.TemplateSpec{}, logmonitoring.TemplateSpec{ImageRef: image.Ref{Repository: "repo"}}, &logmonitoring.TemplateSpec{}},
+			{"logmonitoring.TemplateSpec.Resources", `"resources"`, logmonitoring.TemplateSpec{}, logmonitoring.TemplateSpec{Resources: resources}, &logmonitoring.TemplateSpec{}},
+			{"metadataenrichment.Spec.NamespaceSelector", `"namespaceSelector"`, metadataenrichment.Spec{}, metadataenrichment.Spec{NamespaceSelector: selector}, &metadataenrichment.Spec{}},
+			{"otlp.ExporterConfigurationSpec.Signals", `"signals"`, otlp.ExporterConfigurationSpec{}, otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}, &otlp.ExporterConfigurationSpec{}},
+			{"otlp.ExporterConfigurationSpec.NamespaceSelector", `"namespaceSelector"`, otlp.ExporterConfigurationSpec{}, otlp.ExporterConfigurationSpec{NamespaceSelector: selector}, &otlp.ExporterConfigurationSpec{}},
+		}
+
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				// Empty: field is dropped.
+				assert.NotContains(t, mustMarshal(t, tc.empty), tc.key)
+
+				// Populated: field is rendered.
+				populatedJSON := mustMarshal(t, tc.populated)
+				assert.Contains(t, populatedJSON, tc.key)
+
+				// Round-trip: the value survives marshal/unmarshal.
+				require.NoError(t, json.Unmarshal([]byte(populatedJSON), tc.target))
+				assert.Contains(t, mustMarshal(t, tc.target), tc.key)
+			})
+		}
 	})
 }

@@ -80,7 +80,6 @@ spec:
       - matcher3
   metadataEnrichment:
     enabled: false
-    namespaceSelector: {}
   networkZone: network-zone
   oneAgent:
     hostGroup: hostgroup-value

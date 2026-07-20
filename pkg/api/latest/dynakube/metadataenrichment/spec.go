@@ -38,7 +38,7 @@ type Spec struct {
 
 	// The namespaces where you want Dynatrace Operator to inject enrichment.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty,omitzero"`
 
 	// Define resources' requests and limits for the initContainer used for standalone metadata-enrichment.
 	// Only respected when no OneAgent is injected.
