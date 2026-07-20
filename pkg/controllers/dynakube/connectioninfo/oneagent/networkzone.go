@@ -37,7 +37,7 @@ func hasStaleNetworkZoneEndpoints(dk *dynakube.DynaKube, endpoints string) bool 
 		return false
 	}
 
-	hosts, err := connectioninfo.NewCommunicationHosts(endpoints)
+	hosts, err := connectioninfo.ParseOACommunicationHosts(endpoints)
 	if err != nil {
 		return false
 	}
