@@ -2,10 +2,8 @@ package version
 
 import (
 	"context"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -93,43 +91,5 @@ func (r *Reconciler) needsUpdate(ctx context.Context, updater StatusUpdater) boo
 		return false
 	}
 
-	if updater.Target().Source != determineSource(updater) {
-		log.Info("source changed, update for version status is needed", "updater", updater.Name())
-
-		return true
-	}
-
-	if hasCustomFieldChanged(ctx, updater) {
-		return true
-	}
-
 	return true
-}
-
-func hasCustomFieldChanged(ctx context.Context, updater StatusUpdater) bool {
-	log := logd.FromContext(ctx)
-
-	if updater.Target().Source == status.CustomImageVersionSource {
-		oldImage := updater.Target().ImageID
-		newImage := updater.CustomImage()
-		// The old image is can be the same as the new image (if only digest was given, or a tag was given but couldn't get the digest)
-		// or the old image is the same as the new image but with the digest added to the end of it (if a tag was provide, and we could append the digest to the end)
-		// or the 2 images are different
-		if !strings.HasPrefix(oldImage, newImage) {
-			log.Info("custom image value changed, update for version status is needed", "updater", updater.Name(), "oldImage", oldImage, "newImage", newImage)
-
-			return true
-		}
-	} else if updater.Target().Source == status.CustomVersionVersionSource {
-		oldVersion := updater.Target().Version
-		newVersion := updater.CustomVersion()
-
-		if oldVersion != newVersion {
-			log.Info("custom version value changed, update for version status is needed", "updater", updater.Name(), "oldVersion", oldVersion, "newVersion", newVersion)
-
-			return true
-		}
-	}
-
-	return false
 }

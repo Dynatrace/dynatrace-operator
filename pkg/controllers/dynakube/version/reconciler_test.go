@@ -135,104 +135,20 @@ func TestUpdateVersionStatuses(t *testing.T) {
 }
 
 func TestNeedsUpdate(t *testing.T) {
-	dk := dynakube.DynaKube{
-		Spec: dynakube.DynaKubeSpec{
-			OneAgent: oneagent.Spec{
-				ClassicFullStack: &oneagent.HostInjectSpec{},
-			},
-		},
-		Status: dynakube.DynaKubeStatus{
-			OneAgent: oneagent.Status{
-				VersionStatus: status.VersionStatus{
-					Source: status.TenantRegistryVersionSource,
+	t.Run("needs", func(t *testing.T) {
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 			},
-		},
-	}
-
-	t.Run("needs", func(t *testing.T) {
-		dkCopy := dk.DeepCopy()
+		}
 		reconciler := Reconciler{}
-		assert.True(t, reconciler.needsUpdate(t.Context(), newOneAgentUpdater(dkCopy, fake.NewClient(), nil, nil)))
+		assert.True(t, reconciler.needsUpdate(t.Context(), newOneAgentUpdater(&dk, fake.NewClient(), nil, nil)))
 	})
 	t.Run("does not need", func(t *testing.T) {
 		r := Reconciler{}
 		assert.False(t, r.needsUpdate(t.Context(), newOneAgentUpdater(&dynakube.DynaKube{}, fake.NewClient(), nil, nil)))
-	})
-
-	t.Run("needs, because source changed", func(t *testing.T) {
-		updatedDynakube := dk.DeepCopy()
-		setOneAgentCustomImageStatus(updatedDynakube, "")
-
-		r := Reconciler{}
-		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
-	})
-
-	t.Run("needs, because custom image changed", func(t *testing.T) {
-		oldImage := "repo.com:tag@sha256:123"
-		newImage := "repo.com:newTag"
-		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
-		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
-
-		r := Reconciler{}
-		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
-	})
-
-	t.Run("needs, because custom version changed", func(t *testing.T) {
-		oldVersion := "1.2.3.4-5"
-		newVersion := "2.4.5.6-7"
-		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion //nolint:staticcheck
-		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
-
-		r := Reconciler{}
-		assert.True(t, r.needsUpdate(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
-	})
-}
-
-func TestHasCustomFieldChanged(t *testing.T) {
-	dk := dynakube.DynaKube{
-		Spec: dynakube.DynaKubeSpec{
-			OneAgent: oneagent.Spec{
-				ClassicFullStack: &oneagent.HostInjectSpec{},
-			},
-		},
-	}
-
-	t.Run("version changed", func(t *testing.T) {
-		oldVersion := "1.2.3.4-5"
-		newVersion := "2.4.5.6-7"
-		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion //nolint:staticcheck
-		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
-		assert.True(t, hasCustomFieldChanged(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
-	})
-
-	t.Run("no change; version", func(t *testing.T) {
-		version := "1.2.3.4-5"
-		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = version //nolint:staticcheck
-		setOneAgentCustomVersionStatus(updatedDynakube, version)
-		assert.False(t, hasCustomFieldChanged(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
-	})
-
-	t.Run("image changed", func(t *testing.T) {
-		oldImage := "repo.com:tag@sha256:123"
-		newImage := "repo.com:Tag"
-		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
-		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
-		assert.True(t, hasCustomFieldChanged(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
-	})
-
-	t.Run("no change; image", func(t *testing.T) {
-		oldImage := "repo.com:tag@sha256:123"
-		newImage := "repo.com:tag"
-		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newImage //nolint:staticcheck
-		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
-		assert.False(t, hasCustomFieldChanged(t.Context(), newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
 	})
 }
 
@@ -252,16 +168,6 @@ func createTestPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.Dy
 			".dockerconfigjson": []byte("{}"),
 		},
 	})
-}
-
-func setOneAgentCustomVersionStatus(dk *dynakube.DynaKube, version string) {
-	dk.Status.OneAgent.Source = status.CustomVersionVersionSource
-	dk.Status.OneAgent.Version = version
-}
-
-func setOneAgentCustomImageStatus(dk *dynakube.DynaKube, image string) {
-	dk.Status.OneAgent.Source = status.CustomImageVersionSource
-	dk.Status.OneAgent.ImageID = image
 }
 
 func mockLatestAgentVersion(mockClient *versionclientmock.Client, latestVersion string, expectedCalls int) {
