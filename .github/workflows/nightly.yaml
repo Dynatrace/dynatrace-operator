@@ -4,20 +4,16 @@ on:
   schedule:
     # every work day at 00:00 UTC
     - cron: 0 0 * * 1-5
-  workflow_dispatch:
 
 env:
   IMAGE_REGISTRY: ghcr.io
-  # TODO(testing-only): revert to hardcoded 'dynatrace/dynatrace-operator' before merge — github.repository used to push to fork registry during testing
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: dynatrace/dynatrace-operator
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
   FIPS_PLATFORMS: linux/amd64,linux/arm64
-  # TODO(testing-only): remove before merge — only needed to simulate nightly tag when triggering via workflow_dispatch in fork
-  NIGHTLY: "true"
 
 jobs:
   prepare:
-    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
+    if: github.repository_owner == 'Dynatrace'
     permissions:
       contents: read
     name: Prepare properties
@@ -36,7 +32,7 @@ jobs:
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
   build-push:
-    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
+    if: github.repository_owner == 'Dynatrace'
     name: Build images
     needs: [prepare]
     runs-on: ubuntu-24.04
@@ -63,7 +59,7 @@ jobs:
       digest: ${{ steps.build-image.outputs.digest }}
 
   build-push-fips:
-    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
+    if: github.repository_owner == 'Dynatrace'
     name: Build FIPS image
     needs: [prepare]
     runs-on: ubuntu-24.04
@@ -92,7 +88,7 @@ jobs:
       fips-digest: ${{ steps.build-fips-image.outputs.digest }}
 
   signing:
-    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
+    if: github.repository_owner == 'Dynatrace'
     name: Sign the image index/manifests + Add SBOM
     environment: Release
     needs: [prepare, build-push, build-push-fips]
@@ -169,7 +165,7 @@ jobs:
           subject-digest: ${{ needs.build-push-fips.outputs.fips-digest }}
 
   release:
-    if: github.repository_owner == 'Dynatrace' || github.event_name == 'workflow_dispatch'
+    if: github.repository_owner == 'Dynatrace'
     name: Create release
     needs: [prepare, build-push, signing]
     environment: Release
