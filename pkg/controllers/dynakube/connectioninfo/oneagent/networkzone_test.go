@@ -47,7 +47,7 @@ func TestHasStaleNetworkZoneEndpoints(t *testing.T) {
 			},
 		}
 
-		endpoints := "https://10.0.0.1:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://10.0.0.1:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.False(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
@@ -57,13 +57,13 @@ func TestHasStaleNetworkZoneEndpoints(t *testing.T) {
 
 		// Stale IP that would normally trigger; gate must suppress it because no
 		// network zone is configured.
-		endpoints := "https://10.0.0.1:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://10.0.0.1:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.False(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
 	t.Run("no AG ServiceIPs → not stale (best effort skip)", func(t *testing.T) {
 		dk := newDynaKubeWithAG(nil)
-		endpoints := "https://10.0.0.1:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://10.0.0.1:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.False(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
@@ -74,52 +74,52 @@ func TestHasStaleNetworkZoneEndpoints(t *testing.T) {
 
 	t.Run("ServiceIP present alongside local AG DNS endpoint → not stale", func(t *testing.T) {
 		dk := newDynaKubeWithAG([]string{"10.0.0.1"})
-		endpoints := "https://10.0.0.1:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://10.0.0.1:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.False(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
 	t.Run("ServiceIP present alongside unrelated endpoints → not stale", func(t *testing.T) {
 		dk := newDynaKubeWithAG([]string{"10.0.0.1"})
-		endpoints := "https://1.2.3.4:443/communication,https://10.0.0.1:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://1.2.3.4:443/communication;https://10.0.0.1:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.False(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
 	t.Run("IPv6 ServiceIP present (bracketed in endpoint URL) → not stale", func(t *testing.T) {
 		dk := newDynaKubeWithAG([]string{"2001:db8::1"})
-		endpoints := "https://[2001:db8::1]:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://[2001:db8::1]:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.False(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
 	t.Run("ServiceIP missing from endpoints → stale", func(t *testing.T) {
 		dk := newDynaKubeWithAG([]string{"10.0.0.2"})
-		endpoints := "https://10.0.0.1:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://10.0.0.1:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.True(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
 	t.Run("endpoints contain no IP-based entries at all → stale", func(t *testing.T) {
 		dk := newDynaKubeWithAG([]string{"10.0.0.1"})
-		endpoints := "https://other-activegate.dynatrace:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://other-activegate.dynatrace:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.True(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
 	t.Run("dual-stack: all ServiceIPs present → not stale", func(t *testing.T) {
 		dk := newDynaKubeWithAG([]string{"10.0.0.1", "2001:db8::1"})
-		endpoints := "https://10.0.0.1:443/communication,https://[2001:db8::1]:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://10.0.0.1:443/communication;https://[2001:db8::1]:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.False(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
 	t.Run("dual-stack: one ServiceIP missing → stale", func(t *testing.T) {
 		dk := newDynaKubeWithAG([]string{"10.0.0.1", "2001:db8::1"})
 		// Cluster still advertises the previous IPv6 address.
-		endpoints := "https://10.0.0.1:443/communication,https://[2001:db8::2]:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "https://10.0.0.1:443/communication;https://[2001:db8::2]:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.True(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 
 	t.Run("unparseable endpoint string → not stale (best effort skip)", func(t *testing.T) {
 		dk := newDynaKubeWithAG([]string{"10.0.0.1"})
-		// "garbage" makes NewCommunicationHosts return an error; the function defers
+		// "garbage" makes NewOACommunicationHosts return an error; the function defers
 		// rather than blocking deployment on an input shape it cannot reason about.
-		endpoints := "garbage,https://10.0.0.1:443/communication,https://" + localServiceHost + ":443/communication"
+		endpoints := "garbage;https://10.0.0.1:443/communication;https://" + localServiceHost + ":443/communication"
 		assert.False(t, hasStaleNetworkZoneEndpoints(dk, endpoints))
 	})
 }

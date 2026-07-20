@@ -528,7 +528,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
 				ConnectionInfo: communication.ConnectionInfo{
-					Endpoints: fqdnHost.String() + "," + ipHost.String(),
+					Endpoints: fqdnHost.String() + ";" + ipHost.String(),
 				},
 			},
 			ActiveGate: activegate.Status{

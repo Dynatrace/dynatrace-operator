@@ -91,7 +91,7 @@ func TestNewCommunicationHost(t *testing.T) {
 	}
 }
 
-func TestNewCommunicationHosts(t *testing.T) {
+func TestNewOACommunicationHosts(t *testing.T) {
 	testCases := []struct {
 		name        string
 		input       string
@@ -115,7 +115,78 @@ func TestNewCommunicationHosts(t *testing.T) {
 			},
 		},
 		{
-			name:  "multiple endpoints",
+			name:  "multiple endpoints separated by semicolons",
+			input: "https://example.live.dynatrace.com/communication;https://managedhost.com:9999/here/communication",
+			expected: []CommunicationHost{
+				{
+					Protocol: "https",
+					Host:     "example.live.dynatrace.com",
+					Port:     443,
+				},
+				{
+					Protocol: "https",
+					Host:     "managedhost.com",
+					Port:     9999,
+				},
+			},
+		},
+		{
+			name:  "duplicate endpoints are deduplicated",
+			input: "https://example.live.dynatrace.com/communication;https://example.live.dynatrace.com/communication",
+			expected: []CommunicationHost{
+				{
+					Protocol: "https",
+					Host:     "example.live.dynatrace.com",
+					Port:     443,
+				},
+			},
+		},
+		{
+			name:        "invalid endpoint in list",
+			input:       "https://valid.com/communication;invalidendpoint",
+			expectError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			hosts, err := NewOACommunicationHosts(tc.input)
+
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, hosts)
+			}
+		})
+	}
+}
+
+func TestNewAGCommunicationHosts(t *testing.T) {
+	testCases := []struct {
+		name        string
+		input       string
+		expected    []CommunicationHost
+		expectError bool
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: []CommunicationHost{},
+		},
+		{
+			name:  "single endpoint",
+			input: "https://example.live.dynatrace.com/communication",
+			expected: []CommunicationHost{
+				{
+					Protocol: "https",
+					Host:     "example.live.dynatrace.com",
+					Port:     443,
+				},
+			},
+		},
+		{
+			name:  "multiple endpoints separated by commas",
 			input: "https://example.live.dynatrace.com/communication,https://managedhost.com:9999/here/communication",
 			expected: []CommunicationHost{
 				{
@@ -171,7 +242,7 @@ func TestNewCommunicationHosts(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			hosts, err := NewCommunicationHosts(tc.input)
+			hosts, err := NewAGCommunicationHosts(tc.input)
 
 			if tc.expectError {
 				require.Error(t, err)

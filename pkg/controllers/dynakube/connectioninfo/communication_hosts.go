@@ -61,9 +61,19 @@ func NewCommunicationHost(endpoint string) (CommunicationHost, error) {
 	}, nil
 }
 
-// NewCommunicationHosts creates CommunicationHost slice from comma separated endpoints.
+// NewOACommunicationHosts creates CommunicationHost slice from `;` separated endpoints.
 // It removes duplicates and sorts the result for deterministic output.
-func NewCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
+func NewOACommunicationHosts(endpoints string) ([]CommunicationHost, error) {
+	return newCommunicationHosts(endpoints, ";")
+}
+
+// NewAGCommunicationHosts creates CommunicationHost slice from `,` separated endpoints.
+// It removes duplicates and sorts the result for deterministic output.
+func NewAGCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
+	return newCommunicationHosts(endpoints, ",")
+}
+
+func newCommunicationHosts(endpoints string, sep string) ([]CommunicationHost, error) {
 	// we want to avoid duplicates, because they cause problems with the istio "integration", as you should not have duplicate hosts in the ServiceEntries
 	comHosts := map[string]CommunicationHost{}
 
@@ -71,7 +81,7 @@ func NewCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
 		return []CommunicationHost{}, nil
 	}
 
-	for endpoint := range strings.SplitSeq(endpoints, ",") {
+	for endpoint := range strings.SplitSeq(endpoints, sep) {
 		ch, err := NewCommunicationHost(endpoint)
 		if err != nil {
 			return nil, err
