@@ -18,7 +18,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{}
 		updater := NewMockStatusUpdater(t)
 		updater.EXPECT().Name().Return("mock").Once()
-		updater.EXPECT().Target().Return(target).Times(3)
+		updater.EXPECT().Target().Return(target).Times(2)
 		updater.EXPECT().CustomImage().Return(testImage).Times(2)
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
@@ -32,7 +32,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{}
 		updater := NewMockStatusUpdater(t)
 		updater.EXPECT().Name().Return("mock").Once()
-		updater.EXPECT().Target().Return(target).Times(3)
+		updater.EXPECT().Target().Return(target).Times(2)
 		updater.EXPECT().CustomImage().Return("incorrect-uri").Times(2)
 		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{}
 		updater := newDefaultUpdater(t, false)
 		updater.EXPECT().Name().Return("mock").Times(5)
-		updater.EXPECT().Target().Return(target).Times(16)
+		updater.EXPECT().Target().Return(target).Times(12)
 		updater.EXPECT().CustomImage().Return("").Times(4)
 		updater.EXPECT().CustomVersion().Return("").Times(4)
 		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Times(6)
@@ -76,10 +76,10 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{}
 		versionReconciler := Reconciler{}
 		updater := newCustomVersionUpdater(t, false)
-		updater.EXPECT().Name().Return("mock").Times(2)
-		updater.EXPECT().Target().Return(target).Times(4)
-		updater.EXPECT().CustomImage().Return("").Times(2)
-		updater.EXPECT().CustomVersion().Return("123").Times(2)
+		updater.EXPECT().Name().Return("mock").Twice()
+		updater.EXPECT().Target().Return(target).Twice()
+		updater.EXPECT().CustomImage().Return("").Twice()
+		updater.EXPECT().CustomVersion().Return("123").Twice()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Times(4)
 
 		// 1. call => status empty => should run
@@ -101,7 +101,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{}
 		updater := NewMockStatusUpdater(t)
 		updater.EXPECT().Name().Return("mock").Once()
-		updater.EXPECT().Target().Return(target).Times(4)
+		updater.EXPECT().Target().Return(target).Times(3)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().CustomVersion().Return("").Once()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(false).Once()
@@ -119,7 +119,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{}
 		updater := NewMockStatusUpdater(t)
 		updater.EXPECT().Name().Return("mock").Once()
-		updater.EXPECT().Target().Return(target).Times(3)
+		updater.EXPECT().Target().Return(target).Twice()
 		updater.EXPECT().CustomImage().Return(testImage).Twice()
 
 		err := versionReconciler.run(t.Context(), updater)
@@ -132,7 +132,7 @@ func TestRun(t *testing.T) {
 		imageInfo := &image.Info{URI: "registry.io/dynatrace/oneagent:1.2.3", Tag: "1.2.3"}
 		updater := newPublicRegistryUpdater(t, true)
 		updater.EXPECT().Name().Return("mock").Once()
-		updater.EXPECT().Target().Return(target).Times(3)
+		updater.EXPECT().Target().Return(target).Twice()
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
 		updater.EXPECT().CheckForDowngrade(anyCtx, "1.2.3").Return(false, nil).Once()
 		updater.EXPECT().ValidateStatus(anyCtx).Return(nil).Once()
@@ -148,7 +148,7 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{}
 		versionReconciler := Reconciler{}
 		updater := newPublicRegistryUpdater(t, true)
-		updater.EXPECT().Name().Return("mock").Times(2)
+		updater.EXPECT().Name().Return("mock").Twice()
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(nil, errors.New("API error")).Once()
 
 		err := versionReconciler.run(t.Context(), updater)
@@ -162,7 +162,7 @@ func TestRun(t *testing.T) {
 		imageInfo := &image.Info{URI: "registry.io/dynatrace/oneagent:1.2.0", Tag: "1.2.0"}
 		updater := newPublicRegistryUpdater(t, true)
 		updater.EXPECT().Name().Return("mock").Once()
-		updater.EXPECT().Target().Return(target).Times(2)
+		updater.EXPECT().Target().Return(target).Once()
 		updater.EXPECT().LatestImageInfo(anyCtx).Return(imageInfo, nil).Once()
 		updater.EXPECT().CheckForDowngrade(anyCtx, "1.2.0").Return(true, nil).Once()
 		updater.EXPECT().ValidateStatus(anyCtx).Return(nil).Once()
@@ -180,7 +180,7 @@ func TestRun(t *testing.T) {
 
 		updater := NewMockStatusUpdater(t)
 		updater.EXPECT().Name().Return("mock")
-		updater.EXPECT().Target().Return(target).Times(3)
+		updater.EXPECT().Target().Return(target).Twice()
 		updater.EXPECT().IsAutoUpdateEnabled().Return(true)
 		updater.EXPECT().CustomImage().Return("").Once()
 		updater.EXPECT().IsPublicRegistryEnabled().Return(true)

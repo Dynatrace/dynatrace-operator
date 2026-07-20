@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"testing/synctest"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -73,33 +72,31 @@ func TestReconcile(t *testing.T) {
 
 		setupPullSecret(t, fakeClient, *dk)
 
-		synctest.Test(t, func(t *testing.T) {
-			ctx := t.Context()
-			dkStatus := &dk.Status
-			versionClient := versionclientmock.NewClient(t)
+		ctx := t.Context()
+		dkStatus := &dk.Status
+		versionClient := versionclientmock.NewClient(t)
 
-			mockLatestAgentVersion(versionClient, latestAgentVersion, 3)
-			mockLatestActiveGateVersion(versionClient, latestActiveGateVersion)
+		mockLatestAgentVersion(versionClient, latestAgentVersion, 2)
+		mockLatestActiveGateVersion(versionClient, latestActiveGateVersion)
 
-			versionReconciler := Reconciler{
-				apiReader: fakeClient,
-			}
-			err := versionReconciler.ReconcileCodeModules(ctx, dk, nil, versionClient)
-			require.NoError(t, err)
-			err = versionReconciler.ReconcileActiveGate(ctx, dk, nil, versionClient)
-			require.NoError(t, err)
-			err = versionReconciler.ReconcileOneAgent(ctx, dk, nil, versionClient)
-			require.NoError(t, err)
+		versionReconciler := Reconciler{
+			apiReader: fakeClient,
+		}
+		err := versionReconciler.ReconcileCodeModules(ctx, dk, nil, versionClient)
+		require.NoError(t, err)
+		err = versionReconciler.ReconcileActiveGate(ctx, dk, nil, versionClient)
+		require.NoError(t, err)
+		err = versionReconciler.ReconcileOneAgent(ctx, dk, nil, versionClient)
+		require.NoError(t, err)
 
-			condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
-			assert.Equal(t, metav1.ConditionTrue, condition.Status)
-			assert.Equal(t, verifiedReason, condition.Reason)
-			assert.Equal(t, "Version verified for component.", condition.Message)
+		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, verifiedReason, condition.Reason)
+		assert.Equal(t, "Version verified for component.", condition.Message)
 
-			assertStatusBasedOnTenantRegistry(t, dk.ActiveGate().GetDefaultImage(latestActiveGateVersion), latestActiveGateVersion, dkStatus.ActiveGate.VersionStatus)
-			assertStatusBasedOnTenantRegistry(t, dk.OneAgent().GetDefaultImage(latestOneAgentVersion), latestOneAgentVersion, dkStatus.OneAgent.VersionStatus)
-			assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.Version)
-		})
+		assertStatusBasedOnTenantRegistry(t, dk.ActiveGate().GetDefaultImage(latestActiveGateVersion), latestActiveGateVersion, dkStatus.ActiveGate.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dk.OneAgent().GetDefaultImage(latestOneAgentVersion), latestOneAgentVersion, dkStatus.OneAgent.VersionStatus)
+		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.Version)
 	})
 }
 
