@@ -122,10 +122,6 @@ jobs:
           fi
           git checkout -B "${branch_name}" "upstream/main"
 
-          # Remove upstream workflow files so the push does not require the workflows permission.
-          git rm -rf --cached .github/workflows/ 2>/dev/null || true
-          rm -rf .github/workflows/
-
           echo "FORK_REPO_DIR=$(pwd)" >> "$GITHUB_ENV"
           echo "BRANCH_NAME=${branch_name}" >> "$GITHUB_ENV"
       - name: Prepare bundle files for ${{ env.MARKETPLACE }}
@@ -218,7 +214,11 @@ jobs:
         run: |
           cd "${FORK_REPO_DIR}"
 
-          git add -A
+          if [ "${MARKETPLACE}" = "redhat" ]; then
+            git add "operators/dynatrace-operator-rhmp/${VERSION}/"
+          else
+            git add "operators/dynatrace-operator/${VERSION}/"
+          fi
           if git diff-index --quiet HEAD; then
             echo "No changes to commit; nothing to push for ${MARKETPLACE}."
             exit 0
