@@ -45,6 +45,11 @@ func Feature(t *testing.T, releaseTag string) features.Feature {
 
 	// update to snapshot
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
+
+	// Guarantees the dynatrace-bootstrapper-config secret exists in the
+	// sample namespace, without it the webhook-injected init-container volume mount fails.
+	dynakube.TriggerReconciliation(builder, testDynakube)
+
 	builder.Assess("restart half of sample apps", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
