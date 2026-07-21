@@ -97,11 +97,11 @@ func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rule metadataenric
 		require.NoError(t, err, "Could not get K8s cluster MEID")
 		require.NotEmpty(t, k8sClusterME.ID, "Kubernetes Cluster MEID must exist before creating enrichment rules")
 
-		objectID, err := settingsClient.CreateEnrichmentRule(ctx, dtsettings.LegacyMetadataEnrichmentSchemaID, k8sClusterME.ID, rule)
+		objectID, err := settingsClient.CreateLegacyEnrichmentRuleObject(ctx, k8sClusterME.ID, rule)
 		if core.IsNotFound(err) {
-			t.Logf("Legacy schema (%s) not available, falling back to new schema (%s)", dtsettings.LegacyMetadataEnrichmentSchemaID, dtsettings.MetadataEnrichmentSchemaID)
+			t.Logf("Legacy schema not available, falling back to new schema")
 
-			objectID, err = settingsClient.CreateEnrichmentRule(ctx, dtsettings.MetadataEnrichmentSchemaID, k8sClusterME.ID, rule)
+			objectID, err = settingsClient.CreateEnrichmentRuleObject(ctx, k8sClusterME.ID, rule)
 			require.NoError(t, err, "Could not create enrichment rule on tenant with new schema either. Please follow comment on ICP-1164 how to enable on tenant.")
 		}
 
@@ -134,7 +134,7 @@ func DeleteEnrichmentRulesFromTenant(secretConfig tenant.Secret) features.Func {
 
 		objects, err := settingsClient.GetLegacyEnrichmentRuleObjects(ctx, k8sClusterME.ID)
 		if core.IsNotFound(err) {
-			t.Logf("Legacy schema (%s) not available, falling back to new schema (%s)", dtsettings.LegacyMetadataEnrichmentSchemaID, dtsettings.MetadataEnrichmentSchemaID)
+			t.Logf("Legacy schema not available, falling back to new schema")
 
 			objects, err = settingsClient.GetEnrichmentRuleObjects(ctx, k8sClusterME.ID)
 		}

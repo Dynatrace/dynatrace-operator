@@ -177,7 +177,7 @@ test/e2e/applicationmonitoring/metadataenrichment:
 
 ## Runs Application Monitoring enrichment-rules e2e test only
 test/e2e/applicationmonitoring/enrichment-rules:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "^TestNoCSI_enrichment_rules$$" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "enrichment_rules" $(SKIPCLEANUP)
 
 ## Runs Application Monitoring otlp-exporter-configuration e2e test only
 test/e2e/applicationmonitoring/otlpexporterconfiguration:

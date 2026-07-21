@@ -65,8 +65,10 @@ type Client interface {
 	GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
 	// GetLegacyEnrichmentRuleObjects returns enrichment rule settings objects for the legacy schema (builtin:kubernetes.generic.metadata.enrichment).
 	GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
-	// CreateEnrichmentRule creates a settings object for the given schema and scope. Use LegacyMetadataEnrichmentSchemaID or MetadataEnrichmentSchemaID as schemaID.
-	CreateEnrichmentRule(ctx context.Context, schemaID, scope string, rule metadataenrichment.Rule) (string, error)
+	// CreateEnrichmentRuleObject creates a settings object for the builtin:ingest.enrichment.config schema.
+	CreateEnrichmentRuleObject(ctx context.Context, scope string, rule metadataenrichment.Rule) (string, error)
+	// CreateLegacyEnrichmentRuleObject creates a settings object for the builtin:kubernetes.generic.metadata.enrichment schema.
+	CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rule metadataenrichment.Rule) (string, error)
 	// DeleteSettings deletes the settings for a monitored entity.
 	DeleteSettings(ctx context.Context, settingsID string) error
 }
