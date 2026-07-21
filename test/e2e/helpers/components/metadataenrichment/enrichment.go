@@ -10,9 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
-	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -21,18 +19,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
-
-func BuildSettingsClient(secretConfig tenant.Secret) (dtsettings.Client, error) {
-	dtClient, err := dynatrace.NewClient(
-		dynatrace.WithBaseURL(secretConfig.APIURL),
-		dynatrace.WithAPIToken(secretConfig.TokensWithSettingsScope().APIToken),
-		dynatrace.WithSkipCertificateValidation(false))
-	if err != nil {
-		return nil, err
-	}
-
-	return dtClient.Settings, nil
-}
 
 func getKubeSystemUUID(ctx context.Context, t *testing.T, envConfig *envconf.Config) string {
 	t.Helper()
@@ -47,7 +33,7 @@ func getKubeSystemUUID(ctx context.Context, t *testing.T, envConfig *envconf.Con
 // triggering the creation of the Kubernetes Cluster Monitored Entity on the tenant.
 func EnsureKubernetesClusterMEID(secretConfig tenant.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		settingsClient, err := BuildSettingsClient(secretConfig)
+		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err)
 
 		kubeSystemUUID := getKubeSystemUUID(ctx, t, envConfig)
@@ -88,7 +74,7 @@ func EnsureKubernetesClusterMEID(secretConfig tenant.Secret) features.Func {
 // It tries the legacy schema first; if that schema is unavailable (404) it falls back to the new schema.
 func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rule metadataenrichment.Rule) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		settingsClient, err := BuildSettingsClient(secretConfig)
+		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err)
 
 		kubeSystemUUID := getKubeSystemUUID(ctx, t, envConfig)
@@ -116,7 +102,7 @@ func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rule metadataenric
 // It tries the legacy schema first; if that schema is unavailable (404) it falls back to the new schema.
 func DeleteEnrichmentRulesFromTenant(secretConfig tenant.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		settingsClient, err := BuildSettingsClient(secretConfig)
+		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err)
 
 		kubeSystemUUID := getKubeSystemUUID(ctx, t, envConfig)
