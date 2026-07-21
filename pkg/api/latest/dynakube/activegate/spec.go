@@ -164,7 +164,7 @@ type CapabilityProperties struct {
 	// Define resources requests and limits for single ActiveGate pods
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=34,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
-	Resources corev1.ResourceRequirements `json:"resources,omitempty,omitzero"`
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 
 	// Define the rolling update strategy for the ActiveGate StatefulSet
 	// +kubebuilder:validation:Optional

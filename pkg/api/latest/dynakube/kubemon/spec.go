@@ -41,7 +41,7 @@ type StatefulSetProperties struct {
 
 	// Define resources requests and limits for single KubernetesMonitoring pods.
 	// +kubebuilder:validation:Optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty,omitzero"`
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 
 	// Define the rolling update strategy for the KubernetesMonitoring StatefulSet.
 	// +kubebuilder:validation:Optional

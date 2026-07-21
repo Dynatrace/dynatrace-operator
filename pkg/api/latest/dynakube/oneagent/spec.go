@@ -121,7 +121,7 @@ type HostInjectSpec struct {
 	// Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
-	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitempty,omitzero"`
+	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitzero"`
 
 	// Rolling update settings for the OneAgent DaemonSet.
 	// +kubebuilder:validation:Optional

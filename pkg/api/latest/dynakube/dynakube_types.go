@@ -75,7 +75,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Configuration for Metadata Enrichment.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	MetadataEnrichment metadataenrichment.Spec `json:"metadataEnrichment,omitempty,omitzero"`
+	MetadataEnrichment metadataenrichment.Spec `json:"metadataEnrichment,omitzero"`
 
 	// Set custom proxy settings either directly or from a secret with the field proxy.
 	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
@@ -151,7 +151,7 @@ type DynaKubeSpec struct { //nolint:revive
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Templates TemplatesSpec `json:"templates,omitempty,omitzero"`
+	Templates TemplatesSpec `json:"templates,omitzero"`
 
 	// General configuration about ActiveGate instances.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
@@ -186,13 +186,13 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	LogMonitoring *logmonitoring.TemplateSpec `json:"logMonitoring,omitempty"`
 	// +kubebuilder:validation:Optional
-	KSPMNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty,omitzero"`
+	KSPMNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitzero"`
 	// +kubebuilder:validation:Optional
-	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty,omitzero"`
+	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitzero"`
 	// +kubebuilder:validation:Optional
-	SQLExtensionExecutor extensions.DatabaseExecutorSpec `json:"sqlExtensionExecutor,omitempty,omitzero"`
+	SQLExtensionExecutor extensions.DatabaseExecutorSpec `json:"sqlExtensionExecutor,omitzero"`
 	// +kubebuilder:validation:Optional
-	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitempty,omitzero"`
+	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitzero"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -201,6 +201,6 @@ type TemplatesSpec struct {
 // DynaKubeList contains a list of DynaKube.
 type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty,omitzero"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []DynaKube `json:"items"`
 }
