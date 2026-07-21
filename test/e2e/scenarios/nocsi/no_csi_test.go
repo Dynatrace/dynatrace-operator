@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/applicationmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/classic"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/standard"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/extensions"
@@ -17,7 +18,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kspm"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/token"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
@@ -47,7 +51,7 @@ func TestMain(m *testing.M) {
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
 			events.LogEvents(ctx, c, t)
-			logs.WriteOperatorLog(ctx, c, t)
+			logs.WriteOperatorLogToFile(ctx, c, t)
 		}
 
 		return ctx, nil
@@ -83,6 +87,26 @@ func TestNoCSI_otlp_exporter_configuration(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.OTLPExporterConfiguration(t))
 }
 
+func TestNoCSI_resource_attributes_logmon_only(t *testing.T) {
+	testEnv.Test(t, resourceattributes.LogmonOnly(t))
+}
+
+func TestNoCSI_resource_attributes_metadata_only(t *testing.T) {
+	testEnv.Test(t, resourceattributes.MetadataOnly(t))
+}
+
+func TestNoCSI_resource_attributes_oneagent(t *testing.T) {
+	testEnv.Test(t, resourceattributes.OneAgent(t))
+}
+
+func TestNoCSI_resource_attributes_otlp(t *testing.T) {
+	testEnv.Test(t, resourceattributes.OTLPExporterConfig(t))
+}
+
+func TestNoCSI_resource_attributes_combined(t *testing.T) {
+	testEnv.Test(t, resourceattributes.Combined(t))
+}
+
 func TestNoCSI_labelversion(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.LabelVersionDetection(t))
 }
@@ -101,6 +125,14 @@ func TestNoCSI_edgeconnect_install(t *testing.T) {
 
 func TestNoCSI_edgeconnect_install_provisioner(t *testing.T) {
 	testEnv.Test(t, edgeconnect.ProvisionerModeFeature(t))
+}
+
+func TestNoCSI_edgeconnect_install_tag(t *testing.T) {
+	testEnv.Test(t, edgeconnect.ProvisionerModeFeatureWithTag(t))
+}
+
+func TestNoCSI_edgeconnect_install_digest(t *testing.T) {
+	testEnv.Test(t, edgeconnect.ProvisionerModeFeatureWithDigest(t))
 }
 
 func TestNoCSI_edgeconnect_proxy_http(t *testing.T) {
@@ -137,6 +169,34 @@ func TestNoCSI_classic(t *testing.T) {
 
 func TestNoCSI_node_image_pull_with_no_csi(t *testing.T) {
 	testEnv.Test(t, bootstrapper.NoCSI(t))
+}
+
+func TestNoCSI_use_public_registry_codemodules(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.CodeModules(t))
+}
+
+func TestNoCSI_use_public_registry_codemodules_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.CodeModulesWithOverride(t))
+}
+
+func TestNoCSI_use_public_registry_db_executor(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.DBExecutor(t))
+}
+
+func TestNoCSI_use_public_registry_db_executor_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.DBExecutorOverride(t))
+}
+
+func TestNoCSI_use_public_registry_logmon(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.LogMon(t))
+}
+
+func TestNoCSI_use_public_registry_logmon_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.LogMonWithOverride(t))
+}
+
+func TestNoCSI_use_public_registry_all_features_with_image_overrides(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.AllFeaturesWithImageOverrides(t))
 }
 
 func TestNoCSI_logmonitoring(t *testing.T) {
@@ -188,7 +248,7 @@ func TestNoCSI_kspm(t *testing.T) {
 	testEnv.Test(t, kspm.Feature(t))
 }
 
-func TestNoCSI_kspm_optional_scopes(t *testing.T) {
+func TestNoCSI_kspm_with_optional_scopes(t *testing.T) {
 	testEnv.Test(t, kspm.OptionalScopes(t))
 }
 
@@ -202,4 +262,24 @@ func TestNoCSI_extensions_db_executor_scaling_hpa(t *testing.T) {
 
 func TestNoCSI_extensions_db_executor_scaling_enforce_replicas(t *testing.T) {
 	testEnv.Test(t, dbexecutor.EnforceReplicas(t))
+}
+
+func TestNoCSI_pgc_with_fullstack(t *testing.T) {
+	testEnv.Test(t, bootstrapper.PGCWithCloudNativeFullStack(t))
+}
+
+func TestNoCSI_token_migration_to_platform(t *testing.T) {
+	testEnv.Test(t, token.FromAPIToPlatformToken(t))
+}
+
+func TestNoCSI_token_migration_revert_platform(t *testing.T) {
+	testEnv.Test(t, token.FromPlatformToAPIToken(t))
+}
+
+func TestNoCSI_host_agent_pgc_host_monitoring(t *testing.T) {
+	testEnv.Test(t, hostmonitoring.HostAgentPGC(t))
+}
+
+func TestNoCSI_host_agent_pgc_cloudnative(t *testing.T) {
+	testEnv.Test(t, cloudnative.HostAgentPGC(t))
 }

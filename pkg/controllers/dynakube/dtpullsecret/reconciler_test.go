@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -146,78 +146,34 @@ func TestReconciler_Reconcile(t *testing.T) {
 		expectedJSON := `{"auths":{"test-api-url":{"username":"test-tenant","password":"test-value","auth":"dGVzdC10ZW5hbnQ6dGVzdC12YWx1ZQ=="}}}`
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
-		tokens := token.Tokens{
-			token.APIKey: &token.Token{Value: testValue},
-		}
 
 		r := NewReconciler(fakeClient, fakeClient)
-		err := r.Reconcile(t.Context(), dk, tokens)
-
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
+			token.APIKey: &token.Token{Value: "old-token"},
+		})
 		require.NoError(t, err)
 
 		var pullSecret corev1.Secret
 		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
-
 		require.NoError(t, err)
 
-		pullSecret.Data = nil
-		err = fakeClient.Update(t.Context(), &pullSecret)
+		initialDockerConfig := string(pullSecret.Data[".dockerconfigjson"])
 
-		require.NoError(t, err)
-
-		r.timeprovider.Set(r.timeprovider.Now().Add(1 * time.Hour))
-		err = r.Reconcile(t.Context(), dk, tokens)
-
+		err = r.Reconcile(t.Context(), dk, token.Tokens{
+			token.APIKey: &token.Token{Value: testValue},
+		})
 		require.NoError(t, err)
 
 		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
-
 		require.NoError(t, err)
-		assert.NotNil(t, pullSecret)
-		assert.NotEmpty(t, pullSecret.Data)
-		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
-		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
+		require.NotEmpty(t, pullSecret.Data)
+		require.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.JSONEq(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
-	})
-	t.Run("Reconciliation only runs every 15 min", func(t *testing.T) {
-		dk := createTestDynakube()
-		fakeClient := fake.NewClient()
-		tokens := token.Tokens{
-			token.APIKey: &token.Token{Value: testValue},
-		}
-
-		r := NewReconciler(fakeClient, fakeClient)
-		err := r.Reconcile(t.Context(), dk, tokens)
-
-		require.NoError(t, err)
-
-		var pullSecret corev1.Secret
-		err = fakeClient.Get(t.Context(),
-			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
-			&pullSecret)
-
-		require.NoError(t, err)
-
-		pullSecret.Data = nil
-		err = fakeClient.Update(t.Context(), &pullSecret)
-
-		require.NoError(t, err)
-
-		err = r.Reconcile(t.Context(), dk, tokens)
-
-		require.NoError(t, err)
-
-		err = fakeClient.Get(t.Context(),
-			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
-			&pullSecret)
-
-		require.NoError(t, err)
-		assert.NotNil(t, pullSecret)
-		assert.Empty(t, pullSecret.Data)
+		assert.NotEqual(t, initialDockerConfig, string(pullSecret.Data[".dockerconfigjson"]))
 	})
 	t.Run("Cleanup works", func(t *testing.T) {
 		dk := createTestDynakube()
@@ -249,6 +205,121 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		assert.True(t, k8serrors.IsNotFound(err))
 		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+	})
+	t.Run("Cleanup if platform token works", func(t *testing.T) {
+		dk := createTestDynakube()
+		fakeClient := fake.NewClient()
+
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
+			token.APIKey: &token.Token{Value: testValue},
+		})
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		require.NoError(t, err)
+
+		dk.Status.APIToken.Platform = new(true)
+		err = r.Reconcile(t.Context(), dk, token.Tokens{
+			token.APIKey: &token.Token{Value: testPlatformToken},
+		})
+		require.NoError(t, err)
+
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		assert.True(t, k8serrors.IsNotFound(err))
+		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+	})
+	t.Run("Don't create if use-public-registry annotation", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   testNamespace,
+				Name:        testName,
+				Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:   testAPIURL,
+				OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
+			},
+		}
+		fakeClient := fake.NewClient()
+		tokens := token.Tokens{
+			token.APIKey: &token.Token{Value: testValue},
+		}
+
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, tokens)
+		require.NoError(t, err)
+
+		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+	t.Run("Cleanup if use-public-registry annotation works", func(t *testing.T) {
+		dk := createTestDynakube()
+		fakeClient := fake.NewClient()
+
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
+			token.APIKey: &token.Token{Value: testValue},
+		})
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		require.NoError(t, err)
+
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		err = r.Reconcile(t.Context(), dk, token.Tokens{
+			token.APIKey: &token.Token{Value: testValue},
+		})
+		require.NoError(t, err)
+
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		assert.True(t, k8serrors.IsNotFound(err))
+		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+	})
+	t.Run("Don't create if platform token", func(t *testing.T) {
+		dk := createTestDynakube()
+		dk.Status.APIToken.Platform = new(true)
+		fakeClient := fake.NewClient()
+		tokens := token.Tokens{
+			token.APIKey: &token.Token{Value: testPlatformToken},
+		}
+
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, tokens)
+		require.NoError(t, err)
+
+		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }
 

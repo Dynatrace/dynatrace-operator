@@ -21,7 +21,6 @@ import (
 
 const (
 	testImageURL      = "test:5000/repo@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-	testImageDigest   = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 	emptyDockerConfig = "{\"auths\":{}}"
 )
 
@@ -40,7 +39,7 @@ func TestIsAlreadyPresent(t *testing.T) {
 	})
 	t.Run("returns true if path present", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
-		_ = os.MkdirAll(path.AgentSharedBinaryDirForAgent(imageDigest), 0777)
+		_ = os.MkdirAll(path.AgentSharedBinaryDirForAgent(imageDigest), 0o777)
 		installer := Installer{
 			props: &Properties{
 				PathResolver: path,
@@ -76,7 +75,6 @@ func TestNewImageInstaller(t *testing.T) {
 		PathResolver: path,
 		ImageURI:     testImageURL,
 		Dynakube:     dk,
-		ImageDigest:  testImageDigest,
 		APIReader:    fakeClient,
 	}
 	in, err := NewImageInstaller(ctx, props)
@@ -132,7 +130,6 @@ func TestInstaller_InstallAgent(t *testing.T) {
 						},
 						Spec: dynakube.DynaKubeSpec{},
 					},
-					ImageDigest: testImageDigest,
 				},
 				transport: transport,
 			},

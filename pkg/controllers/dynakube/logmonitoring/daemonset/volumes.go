@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -48,7 +47,7 @@ func getConfigVolume(dkName string) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  configsecret.GetSecretName(dkName),
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}
@@ -82,7 +81,7 @@ func getDTVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: dtLibVolumeHostPath,
-					Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+					Type: new(corev1.HostPathDirectoryOrCreate),
 				},
 			},
 		},
@@ -117,7 +116,7 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: dockerLogsVolumePath,
-					Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+					Type: new(corev1.HostPathDirectoryOrCreate),
 				},
 			},
 		},
@@ -126,7 +125,7 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: logsVolumeHostPath,
-					Type: ptr.To(corev1.HostPathDirectory),
+					Type: new(corev1.HostPathDirectory),
 				},
 			},
 		},

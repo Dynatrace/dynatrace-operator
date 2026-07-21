@@ -1,6 +1,7 @@
 package eec
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -22,14 +24,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -41,6 +44,7 @@ const (
 	testEECImageTag               = "1.289.0"
 	testTenantUUID                = "abc12345"
 	testKubeSystemUUID            = "12345"
+	testKubernetesClusterName     = "test-cluster"
 	testCustomConfigConfigMapName = "eec-custom-config"
 )
 
@@ -70,7 +74,8 @@ func getTestDynakube() *dynakube.DynaKube {
 				},
 				VersionStatus: status.VersionStatus{},
 			},
-			KubeSystemUUID: testKubeSystemUUID,
+			KubeSystemUUID:        testKubeSystemUUID,
+			KubernetesClusterName: testKubernetesClusterName,
 		},
 	}
 }
@@ -81,7 +86,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	mockK8sClient := fake.NewClient(dk)
 	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+	err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), nil, dk)
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
@@ -131,7 +136,7 @@ func TestConditions(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), nil, dk)
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -147,7 +152,7 @@ func TestConditions(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), nil, dk)
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -164,7 +169,7 @@ func TestConditions(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -218,8 +223,8 @@ func TestSecretHashAnnotation(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := reconciler.Reconcile(t.Context())
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
+		err := reconciler.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
@@ -232,7 +237,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Update(t.Context(), &updatedTLSSecret)
 		require.NoError(t, err)
 
-		err = reconciler.Reconcile(t.Context())
+		err = reconciler.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
@@ -289,10 +294,11 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceURL, Value: "https://" + dk.Name + eecConsts.ExtensionControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: runtimeMountPath + eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: runtimeMountPath + envEECHTTPSCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: runtimeMountPath + envEECHTTPSPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Status.KubernetesClusterName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceURL, Value: "https://" + dk.Name + eecConsts.ExtensionControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: runtimeMountPath + eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: runtimeMountPath + envEECHTTPSCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: runtimeMountPath + envEECHTTPSPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: runtimeMountPath + customConfigMountPath + "/" + runtimeConfigurationFilename})
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: runtimeMountPath + customCertificateMountPath})
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
@@ -308,10 +314,11 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceURL, Value: "https://" + dk.Name + eecConsts.ExtensionControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: envEECHTTPSCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: envEECHTTPSPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Status.KubernetesClusterName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceURL, Value: "https://" + dk.Name + eecConsts.ExtensionControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: envEECHTTPSCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: envEECHTTPSPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: runtimeMountPath + customConfigMountPath + "/" + runtimeConfigurationFilename})
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: runtimeMountPath + customCertificateMountPath})
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
@@ -1754,7 +1761,7 @@ func TestVolumes(t *testing.T) {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  "custom-tls",
-					DefaultMode: ptr.To(int32(0o640)),
+					DefaultMode: new(int32(0o640)),
 				},
 			},
 		}
@@ -1776,7 +1783,7 @@ func TestVolumes(t *testing.T) {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  "custom-certs",
-					DefaultMode: ptr.To(int32(0o640)),
+					DefaultMode: new(int32(0o640)),
 				},
 			},
 		}
@@ -1914,7 +1921,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 		require.NoError(t, clt.Create(t.Context(), &tlsSecret))
 
-		require.NoError(t, NewReconciler(clt, clt, dk).Reconcile(t.Context()))
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), nil, dk))
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, sts))
 
@@ -1939,5 +1946,55 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
 		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
 		assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+	})
+}
+
+func TestPublicRegistryImage(t *testing.T) {
+	expectedImageURI := "my-public-registry:5000/my-test-repo:my-test-tag"
+	getStatefulset := func(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+		t.Cleanup(version.DisableCacheForTest(123))
+		t.Helper()
+		mockK8sClient := fake.NewClient(dk)
+		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+		imageClient := imageclientmock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.EEC, "").Return(&dtimage.Info{URI: expectedImageURI}, nil)
+
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), imageClient, dk)
+		require.NoError(t, err)
+
+		statefulSet := &appsv1.StatefulSet{}
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		return statefulSet
+	}
+	dk := getTestDynakube()
+	dk.Spec.Templates = dynakube.TemplatesSpec{}
+	dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+	sts := getStatefulset(t, dk)
+
+	require.Equal(t, expectedImageURI, sts.Spec.Template.Spec.Containers[0].Image)
+
+	t.Run("template image takes precedence over public registry", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+		templateImageURI := "my-custom-registry:5000/my-custom-repo:my-custom-tag"
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.Templates.ExtensionExecutionController.ImageRef = image.Ref{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"}
+
+		mockK8sClient := fake.NewClient(dk)
+		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+		imageClient := imageclientmock.NewClient(t)
+
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), imageClient, dk)
+		require.NoError(t, err)
+
+		statefulSet := &appsv1.StatefulSet{}
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		require.Equal(t, templateImageURI, statefulSet.Spec.Template.Spec.Containers[0].Image)
 	})
 }

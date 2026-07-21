@@ -117,28 +117,28 @@ func (c *ClientImpl) newRequest(ctx context.Context) *RequestImpl {
 
 // GET creates a GET request builder
 func (c *ClientImpl) GET(ctx context.Context, path string) Request {
-	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodGet)
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 
 	return c.newRequest(ctx).withMethod(http.MethodGet).WithPath(path)
 }
 
 // POST creates a POST request builder
 func (c *ClientImpl) POST(ctx context.Context, path string) Request {
-	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodPost)
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 
 	return c.newRequest(ctx).withMethod(http.MethodPost).WithPath(path)
 }
 
 // PUT creates a PUT request builder
 func (c *ClientImpl) PUT(ctx context.Context, path string) Request {
-	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodPut)
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 
 	return c.newRequest(ctx).withMethod(http.MethodPut).WithPath(path)
 }
 
 // DELETE creates a DELETE request builder
 func (c *ClientImpl) DELETE(ctx context.Context, path string) Request {
-	ctx, _ = logd.NewFromContext(ctx, loggerName, "httpMethod", http.MethodDelete)
+	ctx, _ = logd.NewFromContext(ctx, loggerName)
 
 	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
 }
@@ -325,12 +325,12 @@ func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.He
 			return nil, fmt.Errorf("read error response body: %w", readErr)
 		}
 
-		log.Debug("API request", loggerArgs(resp, body)...)
+		logAPIRequest(log, loggerArgs(resp, body))
 
 		return nil, handleErrorResponse(resp, body)
 	}
 
-	log.Debug("API request", loggerArgs(resp, nil)...)
+	logAPIRequest(log, loggerArgs(resp, nil))
 
 	if _, err = io.Copy(writer, resp.Body); err != nil {
 		return nil, fmt.Errorf("stream response body: %w", err)
@@ -385,7 +385,7 @@ func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
 		return nil, "", fmt.Errorf("read response body: %w", err)
 	}
 
-	log.Debug("API request", loggerArgs(resp, body)...)
+	logAPIRequest(log, loggerArgs(resp, body))
 
 	if !IsSuccessResponse(resp) {
 		err = handleErrorResponse(resp, body)
@@ -474,4 +474,10 @@ func isJSONList(body []byte) bool {
 	}
 
 	return false
+}
+
+func logAPIRequest(log logd.Logger, args []any) {
+	if len(args) > 0 {
+		log.Info("API request", args...)
+	}
 }

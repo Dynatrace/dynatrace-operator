@@ -72,7 +72,7 @@ type Client_CreateEdgeConnect_Call struct {
 // CreateEdgeConnect is a helper method to define mock.On call
 //   - ctx context.Context
 //   - request *edgeconnect.Request
-func (_e *Client_Expecter) CreateEdgeConnect(ctx interface{}, request interface{}) *Client_CreateEdgeConnect_Call {
+func (_e *Client_Expecter) CreateEdgeConnect(ctx any, request any) *Client_CreateEdgeConnect_Call {
 	return &Client_CreateEdgeConnect_Call{Call: _e.mock.On("CreateEdgeConnect", ctx, request)}
 }
 
@@ -129,7 +129,7 @@ type Client_CreateEnvironmentSetting_Call struct {
 // CreateEnvironmentSetting is a helper method to define mock.On call
 //   - ctx context.Context
 //   - es edgeconnect.EnvironmentSetting
-func (_e *Client_Expecter) CreateEnvironmentSetting(ctx interface{}, es interface{}) *Client_CreateEnvironmentSetting_Call {
+func (_e *Client_Expecter) CreateEnvironmentSetting(ctx any, es any) *Client_CreateEnvironmentSetting_Call {
 	return &Client_CreateEnvironmentSetting_Call{Call: _e.mock.On("CreateEnvironmentSetting", ctx, es)}
 }
 
@@ -186,7 +186,7 @@ type Client_DeleteEdgeConnect_Call struct {
 // DeleteEdgeConnect is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id string
-func (_e *Client_Expecter) DeleteEdgeConnect(ctx interface{}, id interface{}) *Client_DeleteEdgeConnect_Call {
+func (_e *Client_Expecter) DeleteEdgeConnect(ctx any, id any) *Client_DeleteEdgeConnect_Call {
 	return &Client_DeleteEdgeConnect_Call{Call: _e.mock.On("DeleteEdgeConnect", ctx, id)}
 }
 
@@ -243,7 +243,7 @@ type Client_DeleteEnvironmentSetting_Call struct {
 // DeleteEnvironmentSetting is a helper method to define mock.On call
 //   - ctx context.Context
 //   - objectID string
-func (_e *Client_Expecter) DeleteEnvironmentSetting(ctx interface{}, objectID interface{}) *Client_DeleteEnvironmentSetting_Call {
+func (_e *Client_Expecter) DeleteEnvironmentSetting(ctx any, objectID any) *Client_DeleteEnvironmentSetting_Call {
 	return &Client_DeleteEnvironmentSetting_Call{Call: _e.mock.On("DeleteEnvironmentSetting", ctx, objectID)}
 }
 
@@ -309,7 +309,7 @@ type Client_GetEdgeConnect_Call struct {
 // GetEdgeConnect is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id string
-func (_e *Client_Expecter) GetEdgeConnect(ctx interface{}, id interface{}) *Client_GetEdgeConnect_Call {
+func (_e *Client_Expecter) GetEdgeConnect(ctx any, id any) *Client_GetEdgeConnect_Call {
 	return &Client_GetEdgeConnect_Call{Call: _e.mock.On("GetEdgeConnect", ctx, id)}
 }
 
@@ -377,7 +377,7 @@ type Client_ListEdgeConnects_Call struct {
 // ListEdgeConnects is a helper method to define mock.On call
 //   - ctx context.Context
 //   - name string
-func (_e *Client_Expecter) ListEdgeConnects(ctx interface{}, name interface{}) *Client_ListEdgeConnects_Call {
+func (_e *Client_Expecter) ListEdgeConnects(ctx any, name any) *Client_ListEdgeConnects_Call {
 	return &Client_ListEdgeConnects_Call{Call: _e.mock.On("ListEdgeConnects", ctx, name)}
 }
 
@@ -444,7 +444,7 @@ type Client_ListEnvironmentSettings_Call struct {
 
 // ListEnvironmentSettings is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Client_Expecter) ListEnvironmentSettings(ctx interface{}) *Client_ListEnvironmentSettings_Call {
+func (_e *Client_Expecter) ListEnvironmentSettings(ctx any) *Client_ListEnvironmentSettings_Call {
 	return &Client_ListEnvironmentSettings_Call{Call: _e.mock.On("ListEnvironmentSettings", ctx)}
 }
 
@@ -497,7 +497,7 @@ type Client_UpdateEdgeConnect_Call struct {
 //   - ctx context.Context
 //   - id string
 //   - request *edgeconnect.Request
-func (_e *Client_Expecter) UpdateEdgeConnect(ctx interface{}, id interface{}, request interface{}) *Client_UpdateEdgeConnect_Call {
+func (_e *Client_Expecter) UpdateEdgeConnect(ctx any, id any, request any) *Client_UpdateEdgeConnect_Call {
 	return &Client_UpdateEdgeConnect_Call{Call: _e.mock.On("UpdateEdgeConnect", ctx, id, request)}
 }
 
@@ -559,7 +559,7 @@ type Client_UpdateEnvironmentSetting_Call struct {
 // UpdateEnvironmentSetting is a helper method to define mock.On call
 //   - ctx context.Context
 //   - es edgeconnect.EnvironmentSetting
-func (_e *Client_Expecter) UpdateEnvironmentSetting(ctx interface{}, es interface{}) *Client_UpdateEnvironmentSetting_Call {
+func (_e *Client_Expecter) UpdateEnvironmentSetting(ctx any, es any) *Client_UpdateEnvironmentSetting_Call {
 	return &Client_UpdateEnvironmentSetting_Call{Call: _e.mock.On("UpdateEnvironmentSetting", ctx, es)}
 }
 

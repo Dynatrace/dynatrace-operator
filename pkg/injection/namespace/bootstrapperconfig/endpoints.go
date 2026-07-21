@@ -57,7 +57,7 @@ func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dyn
 	if dataIngestToken, ok := tokens.Data[token.DataIngestKey]; ok {
 		fields[MetricsTokenSecretField] = string(dataIngestToken)
 	} else {
-		log.Info("data ingest token not found in secret", "dk", dk.Name)
+		log.Info("data ingest token not found in secret")
 	}
 
 	if ingestURL, err := ingestURLFor(dk); err != nil {
@@ -81,7 +81,7 @@ func ingestURLFor(dk *dynakube.DynaKube) (string, error) {
 }
 
 func metricsIngestURLForDynatraceActiveGate(dk *dynakube.DynaKube) (string, error) {
-	return dk.Spec.APIURL + "/v2/metrics/ingest", nil
+	return dk.APIURL() + "/v2/metrics/ingest", nil
 }
 
 func metricsIngestURLForClusterActiveGate(dk *dynakube.DynaKube) (string, error) {

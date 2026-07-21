@@ -16,6 +16,7 @@ import (
 	lmdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/logmonsettings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
@@ -28,7 +29,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -44,7 +44,7 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithLogMonitoring(),
-		componentDynakube.WithLogMonitoringImageRef(t),
+		componentDynakube.WithLogMonitoringImageRef(t, componentDynakube.GetLatestLogMonitoringImageTagURI(t)),
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
@@ -89,14 +89,15 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	builder := features.New("logmonitoring-with-optional-scopes")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	if secretConfig.APITokenNoSettings == "" {
+
+	if secretConfig.APITokenNoSettings == "" && secretConfig.PlatformTokenNoSettings == "" {
 		t.Skip("skipping test. no token with missing settings scopes provided")
 	}
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithLogMonitoring(),
-		componentDynakube.WithLogMonitoringImageRef(t),
+		componentDynakube.WithLogMonitoringImageRef(t, componentDynakube.GetLatestLogMonitoringImageTagURI(t)),
 		componentDynakube.WithActiveGate(),
 	}
 
@@ -118,7 +119,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	builder.Assess("log monitoring conditions with disabled scopes", checkConditions(testDynakube.Name, testDynakube.Namespace, false))
 
-	builder.Assess("update token secret", tenant.CreateTenantSecret(secretConfig.APIToken, secretConfig.DataIngestToken, testDynakube.Name, testDynakube.Namespace))
+	builder.Assess("update token secret", tenant.CreateTenantSecret(secretConfig.TokensWithSettingsScope(), testDynakube.Name, testDynakube.Namespace))
 
 	builder.Assess("trigger reconcile", triggerDaemonSetReconcile(testDynakube))
 
@@ -151,9 +152,13 @@ func checkConditions(name string, namespace string, scopesEnabled bool) features
 			assert.True(t, meta.IsStatusConditionFalse(dk.Status.Conditions, logmonsettings.ConditionType))
 		}
 
-		for _, conditionType := range token.OptionalScopes {
-			hasScope := k8sconditions.IsOptionalScopeAvailable(dk, conditionType)
-			assert.Equalf(t, scopesEnabled, hasScope, "expected %s condition to be %t", conditionType, scopesEnabled)
+		// Platform tokens do not populate AvailableOptionalScopes,
+		// scope availability is inferred from 403 responses at runtime.
+		if !tenant.UsePlatformToken() {
+			for _, scope := range token.OptionalScopes {
+				hasScope := optionalscope.IsAvailable(dk, scope)
+				assert.Equalf(t, scopesEnabled, hasScope, "expected %s condition to be %t", scope, scopesEnabled)
+			}
 		}
 
 		return ctx
@@ -175,7 +180,7 @@ func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
 		expireLastTransitionTime(&dk, logmonsettings.ConditionType)
 		require.NoError(t, resources.UpdateStatus(ctx, &dk))
 
-		dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
+		dk.Spec.DynatraceAPIRequestThreshold = new(uint16(0))
 		require.NoError(t, resources.Update(ctx, &dk))
 
 		// Verify that the operator picked up the update

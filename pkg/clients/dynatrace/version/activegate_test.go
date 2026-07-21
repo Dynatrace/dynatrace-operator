@@ -16,13 +16,9 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 		req.EXPECT().WithPath([]string{os, "latest/metainfo"}).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().
-			Execute(new(struct {
-				LatestGatewayVersion string `json:"latestGatewayVersion"`
-			})).
+			Execute(new(latestActiveGateVersionResponse)).
 			Run(func(model any) {
-				resp := model.(*struct {
-					LatestGatewayVersion string `json:"latestGatewayVersion"`
-				})
+				resp := model.(*latestActiveGateVersionResponse)
 				resp.LatestGatewayVersion = "1.2.3"
 			}).
 			Return(err).Once()

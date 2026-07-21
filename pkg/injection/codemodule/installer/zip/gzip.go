@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/klauspost/compress/gzip"
 	"github.com/pkg/errors"
 )
@@ -38,7 +39,9 @@ func (extractor OneAgentExtractor) ExtractGzip(ctx context.Context, sourceFilePa
 	tmpUnzipDir := extractor.pathResolver.AgentTempUnzipRootDir()
 	tarReader := tar.NewReader(gzipReader)
 
-	err = extractFilesFromGzip(ctx, tmpUnzipDir, tarReader)
+	extractLinks := k8senv.GetDTExtractCodeModulesImageLinks(ctx)
+
+	err = extractFilesFromGzip(ctx, tmpUnzipDir, tarReader, extractLinks)
 	if err != nil {
 		return err
 	}
@@ -46,7 +49,7 @@ func (extractor OneAgentExtractor) ExtractGzip(ctx context.Context, sourceFilePa
 	return extractor.moveToTargetDir(ctx, targetDir)
 }
 
-func extractFilesFromGzip(ctx context.Context, targetDir string, reader *tar.Reader) error {
+func extractFilesFromGzip(ctx context.Context, targetDir string, reader *tar.Reader, extractLinks bool) error {
 	for {
 		header, err := reader.Next()
 		if errors.Is(err, io.EOF) {
@@ -55,48 +58,69 @@ func extractFilesFromGzip(ctx context.Context, targetDir string, reader *tar.Rea
 			return errors.WithStack(err)
 		}
 
-		target := filepath.Join(targetDir, header.Name)
+		target := evaluateTargetPath(targetDir, header.Name)
 
-		// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
-		if !strings.HasPrefix(target, targetDir) {
-			return errors.Errorf("illegal file path: %s", target)
-		}
-
-		rel, err := filepath.Rel(targetDir, target)
-		if err != nil {
+		if err := isTargetSafeToCreate(targetDir, header.Name, target); err != nil {
 			return err
 		}
 
-		if strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
-			return errors.Errorf("%q is outside of %q", header.Name, targetDir)
-		}
-
-		err = extract(ctx, targetDir, reader, header, target)
+		err = extract(ctx, targetDir, reader, header, target, extractLinks)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func extract(ctx context.Context, targetDir string, reader *tar.Reader, header *tar.Header, target string) error {
+func isTargetSafeToCreate(targetDir, name, target string) error {
+	if len(name) == 0 {
+		return errors.Errorf("illegal empty file name")
+	}
+
+	// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
+	if !strings.HasPrefix(target, targetDir) {
+		return errors.Errorf("illegal file path: %s", target)
+	}
+
+	rel, err := filepath.Rel(targetDir, target)
+	if err != nil {
+		return err
+	}
+
+	if strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return errors.Errorf("%q is outside of %q", name, targetDir)
+	}
+
+	return nil
+}
+
+func evaluateTargetPath(targetDir, name string) string {
+	return filepath.Join(targetDir, name)
+}
+
+//nolint:revive
+func extract(ctx context.Context, targetDir string, reader *tar.Reader, header *tar.Header, target string, extractLinks bool) error {
 	log := logd.FromContext(ctx)
 
 	switch header.Typeflag {
+	case tar.TypeReg:
+		if err := extractFile(target, header, reader); err != nil {
+			return errors.WithStack(err)
+		}
 	case tar.TypeDir:
 		if err := os.MkdirAll(target, header.FileInfo().Mode()); err != nil {
 			return errors.WithStack(err)
 		}
 	case tar.TypeLink:
-		if err := extractLink(ctx, targetDir, target, header); err != nil {
-			return errors.WithStack(err)
+		if extractLinks {
+			if err := extractLink(ctx, targetDir, target, header); err != nil {
+				return errors.WithStack(err)
+			}
 		}
 	case tar.TypeSymlink:
-		if err := extractSymlink(ctx, targetDir, target, header); err != nil {
-			return errors.WithStack(err)
-		}
-	case tar.TypeReg:
-		if err := extractFile(target, header, reader); err != nil {
-			return errors.WithStack(err)
+		if extractLinks {
+			if err := extractSymlink(ctx, targetDir, target, header); err != nil {
+				return errors.WithStack(err)
+			}
 		}
 	default:
 		log.Info("skipping special file", "name", header.Name)
@@ -108,7 +132,7 @@ func extract(ctx context.Context, targetDir string, reader *tar.Reader, header *
 func extractLink(ctx context.Context, targetDir, target string, header *tar.Header) error {
 	log := logd.FromContext(ctx)
 
-	if isSafeToLink(header.Linkname, targetDir, target) && isSafeToLink(header.Name, targetDir, target) {
+	if isHardlinkSafeToLink(header.Linkname, targetDir) {
 		if err := os.Link(filepath.Join(targetDir, header.Linkname), target); err != nil {
 			return errors.WithStack(err)
 		}
@@ -119,10 +143,26 @@ func extractLink(ctx context.Context, targetDir, target string, header *tar.Head
 	return nil
 }
 
+// isHardlinkSafeToLink checks that the provided relative hardlink is NOT pointing outside of the `targetDir`
+func isHardlinkSafeToLink(link, targetDir string) bool {
+	if filepath.IsAbs(link) {
+		return false
+	}
+
+	if len(link) == 0 {
+		return false
+	}
+
+	finalPath := filepath.Join(targetDir, link)
+	relpath, err := filepath.Rel(targetDir, finalPath)
+
+	return err == nil && !strings.HasPrefix(filepath.Clean(relpath), "..")
+}
+
 func extractSymlink(ctx context.Context, targetDir, target string, header *tar.Header) error {
 	log := logd.FromContext(ctx)
 
-	if isSafeToLink(header.Linkname, targetDir, target) && isSafeToLink(header.Name, targetDir, target) {
+	if isSymlinkSafeToLink(header.Linkname, targetDir, target) {
 		if err := os.Symlink(header.Linkname, target); err != nil {
 			return errors.WithStack(err)
 		}
@@ -133,13 +173,18 @@ func extractSymlink(ctx context.Context, targetDir, target string, header *tar.H
 	return nil
 }
 
-// isSafeToLink checks that the provided relative hard or symbolic link is NOT pointing outside of the `targetDir`
-func isSafeToLink(symlink, targetDir, target string) bool {
+// isSymlinkSafeToLink checks that the provided relative symbolic link is NOT pointing outside of the `targetDir`
+func isSymlinkSafeToLink(symlink, targetDir, target string) bool {
 	if filepath.IsAbs(symlink) {
 		return false
 	}
 
-	finalPath := filepath.Join(target, symlink)
+	if len(symlink) == 0 {
+		return false
+	}
+
+	symlinkDir := filepath.Dir(target)
+	finalPath := filepath.Join(symlinkDir, symlink)
 	relpath, err := filepath.Rel(targetDir, finalPath)
 
 	return err == nil && !strings.HasPrefix(filepath.Clean(relpath), "..")
@@ -151,7 +196,7 @@ func extractFile(target string, header *tar.Header, tarReader *tar.Reader) error
 		mode = common.ReadWriteAllFileMode
 	}
 
-	destinationFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, mode)
+	destinationFile, err := os.OpenFile(target, hardenedOpenFileFlags, mode)
 
 	defer (func() { _ = destinationFile.Close() })()
 

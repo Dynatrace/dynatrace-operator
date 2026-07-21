@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 var _ envModifier = RawImageModifier{}
@@ -49,7 +48,7 @@ func (mod RawImageModifier) getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  mod.dk.ActiveGate().GetTenantSecretName(),
-					DefaultMode: ptr.To(int32(0o640)),
+					DefaultMode: new(int32(0o640)),
 				},
 			},
 		},
@@ -83,7 +82,7 @@ func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 				Name: mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),
 			},
 			Key:      connectioninfo.TenantUUIDKey,
-			Optional: ptr.To(false),
+			Optional: new(false),
 		}}}
 }
 
@@ -95,7 +94,7 @@ func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 				Name: mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),
 			},
 			Key:      connectioninfo.CommunicationEndpointsKey,
-			Optional: ptr.To(false),
+			Optional: new(false),
 		}},
 	}
 }

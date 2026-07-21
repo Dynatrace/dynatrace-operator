@@ -26,7 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -41,6 +40,7 @@ const (
 	envExtensionsModuleExecPathName = "ExtensionsModuleExecPath"
 	envDsInstallDirName             = "DsInstallDir"
 	envK8sClusterID                 = "K8sClusterUID"
+	envK8sClusterName               = "K8sClusterName"
 	envActiveGateTrustedCertName    = "ActiveGateTrustedCert"
 	envK8sExtServiceURL             = "K8sExtServiceUrl"
 	envHTTPSCertPathPem             = "DsHttpsCertPathPem"
@@ -80,71 +80,71 @@ const (
 )
 
 func useLegacyMounts(dk *dynakube.DynaKube) bool {
-	return exp.NewFlags(dk.Annotations).UseEECLegacyMounts()
+	return exp.NewFlags(dk.Annotations, false).UseEECLegacyMounts()
 }
 
-func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
+func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube, imageURI string) error {
 	log := logd.FromContext(ctx)
 
-	appLabels := buildAppLabels(r.dk)
+	appLabels := buildAppLabels(dk)
 
-	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
+	templateAnnotations, err := r.buildTemplateAnnotations(ctx, dk)
 	if err != nil {
 		return err
 	}
 
 	topologySpreadConstraints := k8stopology.MaxOnePerNode(appLabels)
-	if len(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints) > 0 {
-		topologySpreadConstraints = r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
+	if len(dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints) > 0 {
+		topologySpreadConstraints = dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
 	}
 
-	desiredSts, err := k8sstatefulset.Build(r.dk, r.dk.Extensions().GetExecutionControllerStatefulsetName(), buildContainer(r.dk),
+	desiredSts, err := k8sstatefulset.Build(dk, dk.Extensions().GetExecutionControllerStatefulsetName(), buildContainer(dk, imageURI),
 		k8sstatefulset.SetReplicas(1),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
-		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
+		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.ExtensionExecutionController.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, templateAnnotations),
 		k8sstatefulset.SetAffinity(buildAffinity()),
-		k8sstatefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
+		k8sstatefulset.SetTolerations(dk.Spec.Templates.ExtensionExecutionController.Tolerations),
 		k8sstatefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
 		k8sstatefulset.SetServiceAccount(serviceAccountName),
 		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
 		k8sstatefulset.SetRollingUpdateStrategyType(),
-		setImagePullSecrets(r.dk.CustomPullSecretReferences()),
-		setVolumes(r.dk),
-		setPersistentVolumeClaim(r.dk),
+		setImagePullSecrets(dk.CustomPullSecretReferences()),
+		setVolumes(dk),
+		setPersistentVolumeClaim(dk),
 	)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), extensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
-	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
-		log.Info("failed to create/update " + r.dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+		log.Info("failed to create/update " + dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
+		k8sconditions.SetKubeAPIError(dk.Conditions(), extensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
-	k8sconditions.SetStatefulSetCreated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, desiredSts.Name)
+	k8sconditions.SetStatefulSetCreated(dk.Conditions(), extensionControllerStatefulSetConditionType, desiredSts.Name)
 
 	return nil
 }
 
-func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
+func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	secrets := k8ssecret.Query(r.client, r.client)
 
 	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
-		Name:      r.dk.Extensions().GetTLSSecretName(),
-		Namespace: r.dk.Namespace,
+		Name:      dk.Extensions().GetTLSSecretName(),
+		Namespace: dk.Namespace,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	templateAnnotations := make(map[string]string)
-	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(r.dk.Spec.Templates.ExtensionExecutionController.Annotations, containerName))
+	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.ExtensionExecutionController.Annotations, containerName))
 
 	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
 	if err != nil {
@@ -170,10 +170,10 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 	}
 }
 
-func buildContainer(dk *dynakube.DynaKube) corev1.Container {
+func buildContainer(dk *dynakube.DynaKube, imageURI string) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
-		Image:           dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository + ":" + dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag,
+		Image:           imageURI,
 		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.GetPullPolicy(),
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -209,12 +209,12 @@ func buildSecurityContext(dk *dynakube.DynaKube) *corev1.SecurityContext {
 				"ALL",
 			},
 		},
-		Privileged:               ptr.To(false),
-		RunAsUser:                ptr.To(userGroupID),
-		RunAsGroup:               ptr.To(userGroupID),
-		RunAsNonRoot:             ptr.To(true),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
+		Privileged:               new(false),
+		RunAsUser:                new(userGroupID),
+		RunAsGroup:               new(userGroupID),
+		RunAsNonRoot:             new(true),
+		ReadOnlyRootFilesystem:   new(true),
+		AllowPrivilegeEscalation: new(false),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
@@ -229,7 +229,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 		},
 	}
 
-	podSecurityContext.FSGroup = ptr.To(userGroupID)
+	podSecurityContext.FSGroup = new(userGroupID)
 
 	return podSecurityContext
 }
@@ -248,6 +248,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID},
+		{Name: envK8sClusterName, Value: dk.Status.KubernetesClusterName},
 		{Name: envK8sExtServiceURL, Value: serviceURLScheme + dk.Extensions().GetServiceNameFQDN()},
 		{Name: envDSTokenPath, Value: prefix + eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey},
 		{Name: envHTTPSCertPathPem, Value: prefix + envEECHTTPSCertPathPem},

@@ -29,7 +29,7 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk *dy
 
 	agentInstaller, err := provisioner.getInstaller(ctx, dk)
 	if err != nil {
-		log.Info("failed to create CodeModule installer", "dk", dk.GetName())
+		log.Info("failed to create CodeModule installer")
 
 		return err
 	}
@@ -57,7 +57,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 	switch {
 	case dk.FF().IsNodeImagePull():
 		return provisioner.getJobInstaller(ctx, dk), nil
-	case dk.OneAgent().GetCustomCodeModulesImage() != "":
+	case dk.OneAgent().GetCodeModulesImage() != "":
 		props := &image.Properties{
 			ImageURI:     dk.OneAgent().GetCodeModulesImage(),
 			APIReader:    provisioner.apiReader,
@@ -95,13 +95,8 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk *dy
 }
 
 func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk *dynakube.DynaKube) installer.Installer {
-	imageURI := dk.OneAgent().GetCustomCodeModulesImage()
-	if imageURI == "" {
-		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
-	}
-
 	props := &job.Properties{
-		ImageURI:        imageURI,
+		ImageURI:        dk.OneAgent().GetCodeModulesImage(),
 		ImagePullPolicy: dk.OneAgent().GetCodeModulesImagePullPolicy(),
 		Owner:           dk,
 		PullSecrets:     dk.PullSecretNames(),

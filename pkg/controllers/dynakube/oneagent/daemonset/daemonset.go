@@ -2,18 +2,16 @@ package daemonset
 
 import (
 	"context"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -24,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -32,6 +29,7 @@ const (
 	appArmorUnconfined                = corev1.DeprecatedAppArmorBetaProfileNameUnconfined
 	annotationTenantTokenHash         = api.InternalFlagPrefix + "tenant-token-hash"
 	annotationEnableDaemonSetEviction = "cluster-autoscaler.kubernetes.io/enable-ds-eviction"
+	AnnotationPGCHash                 = api.InternalFlagPrefix + "pgc-hash"
 
 	serviceAccountName = "dynatrace-dynakube-oneagent"
 
@@ -68,7 +66,7 @@ const (
 
 	userGroupID int64 = 1000
 
-	initContainerName = "dynatrace-operator"
+	pgcSecretVolumeName = "bootstrapper-pgc"
 )
 
 var nodeMetadataFilePath = filepath.Join(nodeMetadataFolderPath, nodeMetadataFilename)
@@ -82,34 +80,37 @@ type classicFullStack struct {
 }
 
 type builder struct {
-	dk             *dynakube.DynaKube
-	hostInjectSpec *oneagent.HostInjectSpec
-	clusterID      string
-	deploymentType string
+	dk                     *dynakube.DynaKube
+	hostInjectSpec         *oneagent.HostInjectSpec
+	clusterID              string
+	deploymentType         string
+	processGroupConfigHash string
 }
 
 type Builder interface {
 	BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewHostMonitoring(dk *dynakube.DynaKube, clusterID, processGroupConfigHash string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
-			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
+			dk:                     dk,
+			hostInjectSpec:         dk.Spec.OneAgent.HostMonitoring,
+			clusterID:              clusterID,
+			deploymentType:         deploymentmetadata.HostMonitoringDeploymentType,
+			processGroupConfigHash: processGroupConfigHash,
 		},
 	}
 }
 
-func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID, processGroupConfigHash string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
-			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
+			dk:                     dk,
+			hostInjectSpec:         &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			clusterID:              clusterID,
+			deploymentType:         deploymentmetadata.CloudNativeDeploymentType,
+			processGroupConfigHash: processGroupConfigHash,
 		},
 	}
 }
@@ -152,7 +153,7 @@ func (classic *classicFullStack) BuildDaemonSet(ctx context.Context) (*appsv1.Da
 }
 
 func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
-	ctx, _ = logd.NewFromContext(ctx, "oneagent-daemonset")
+	ctx, _ = logd.NewFromContext(ctx, "daemonset")
 	dk := b.dk
 
 	podSpec, err := b.podSpec(ctx)
@@ -174,6 +175,12 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 		webhook.AnnotationDynatraceInject: "false",
 		annotationTenantTokenHash:         dk.Status.OneAgent.ConnectionInfo.TenantTokenHash,
 		annotationEnableDaemonSetEviction: "false",
+	}
+
+	if bootstrapperconfig.NeedsPGC(dk) {
+		if b.processGroupConfigHash != "" {
+			templateAnnotations[AnnotationPGCHash] = b.processGroupConfigHash
+		}
 	}
 
 	templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations), containerName, initContainerName)
@@ -223,9 +230,7 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 	affinity := b.affinity()
 
 	podSpec := corev1.PodSpec{
-		InitContainers: []corev1.Container{
-			b.initContainerSpec(),
-		},
+		InitContainers: []corev1.Container{b.initContainerSpec()},
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
@@ -248,7 +253,7 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
-		TerminationGracePeriodSeconds: ptr.To(defaultTerminationGracePeriod),
+		TerminationGracePeriodSeconds: new(defaultTerminationGracePeriod),
 	}
 
 	if b.dk.OneAgent().IsReadinessProbeNeeded() {
@@ -260,80 +265,6 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 	}
 
 	return podSpec, nil
-}
-
-func (b *builder) initContainerSpec() corev1.Container {
-	return corev1.Container{
-		Image:           os.Getenv(k8senv.DTOperatorImageEnvName),
-		ImagePullPolicy: b.dk.OneAgent().GetImagePullPolicy(),
-		Name:            initContainerName,
-		Env:             b.initContainerEnvVars(),
-		Args:            b.initContainerArguments(),
-		VolumeMounts:    b.initContainerVolumeMounts(),
-		SecurityContext: b.initContainerSecurityContext(),
-	}
-}
-
-func (b *builder) initContainerEnvVars() []corev1.EnvVar {
-	return []corev1.EnvVar{
-		{
-			Name: dtNodeName,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "spec.nodeName",
-				},
-			},
-		},
-	}
-}
-
-func (b *builder) initContainerArguments() []string {
-	attributes := []string{
-		"k8s.cluster.name=" + b.dk.Status.KubernetesClusterName,
-		"k8s.cluster.uid=" + b.dk.Status.KubeSystemUUID,
-		"k8s.node.name=$(DT_K8S_NODE_NAME)",
-	}
-
-	if b.dk.Status.KubernetesClusterMEID != "" {
-		attributes = append(attributes, "dt.entity.kubernetes_cluster="+b.dk.Status.KubernetesClusterMEID)
-	}
-
-	return []string{
-		"generate-metadata",
-		"--file",
-		nodeMetadataFilePath,
-		"--attributes",
-		strings.Join(attributes, ","),
-	}
-}
-
-func (b *builder) initContainerVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
-		{
-			Name:      nodeMetadataVolumeName,
-			MountPath: nodeMetadataFolderPath,
-			ReadOnly:  false,
-		},
-	}
-}
-
-func (b *builder) initContainerSecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		AllowPrivilegeEscalation: ptr.To(false),
-		RunAsNonRoot:             ptr.To(true),
-		RunAsUser:                ptr.To(userGroupID),
-		RunAsGroup:               ptr.To(userGroupID),
-		Capabilities: &corev1.Capabilities{
-			Drop: []corev1.Capability{
-				"ALL",
-			},
-		},
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-		ReadOnlyRootFilesystem: ptr.To(true),
-	}
 }
 
 func (b *builder) immutableOneAgentImage() string {
@@ -415,11 +346,11 @@ func (b *builder) dnsPolicy() corev1.DNSPolicy {
 }
 
 func (b *builder) volumeMounts() []corev1.VolumeMount {
-	return prepareVolumeMounts(b.dk)
+	return prepareVolumeMounts(b.dk, b.processGroupConfigHash)
 }
 
 func (b *builder) volumes() []corev1.Volume {
-	return prepareVolumes(b.dk)
+	return prepareVolumes(b.dk, b.processGroupConfigHash)
 }
 
 func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
@@ -434,16 +365,16 @@ func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 	securityContext := &corev1.SecurityContext{}
 
 	if b.dk != nil && b.dk.OneAgent().IsReadOnlyFSSupported() {
-		securityContext.RunAsNonRoot = ptr.To(true)
-		securityContext.RunAsUser = ptr.To(userGroupID)
-		securityContext.RunAsGroup = ptr.To(userGroupID)
-		securityContext.ReadOnlyRootFilesystem = ptr.To(b.isRootFsReadonly(ctx))
+		securityContext.RunAsNonRoot = new(true)
+		securityContext.RunAsUser = new(userGroupID)
+		securityContext.RunAsGroup = new(userGroupID)
+		securityContext.ReadOnlyRootFilesystem = new(b.isRootFsReadonly(ctx))
 	} else {
-		securityContext.ReadOnlyRootFilesystem = ptr.To(false)
+		securityContext.ReadOnlyRootFilesystem = new(false)
 	}
 
 	if b.dk != nil && b.dk.OneAgent().IsPrivilegedNeeded() {
-		securityContext.Privileged = ptr.To(true)
+		securityContext.Privileged = new(true)
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
 
@@ -554,6 +485,6 @@ func (b *builder) isRootFsReadonly(ctx context.Context) bool {
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
-		FSGroup: ptr.To(userGroupID),
+		FSGroup: new(userGroupID),
 	}
 }

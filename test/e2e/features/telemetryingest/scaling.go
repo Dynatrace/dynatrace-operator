@@ -12,13 +12,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 var (
-	scaleReplicas = ptr.To(int32(3))
-	baseReplicas  = ptr.To(int32(2))
+	scaleReplicas = new(int32(3))
+	baseReplicas  = new(int32(2))
 )
 
 func WithHPA(t *testing.T) features.Feature {
@@ -29,7 +28,7 @@ func WithHPA(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
-		componentDynakube.WithOTelCollectorImageRef(t),
+		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
@@ -68,7 +67,7 @@ func EnforceReplicas(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
-		componentDynakube.WithOTelCollectorImageRef(t),
+		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
 		componentDynakube.WithOTelCollectorReplicas(baseReplicas),
 	}
 

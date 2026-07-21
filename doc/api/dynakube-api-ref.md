@@ -10,6 +10,7 @@
 |`enableIstio`||-|boolean|
 |`networkZone`||-|string|
 |`proxy`||-|object|
+|`publicRegistryOverride`||-|string|
 |`resourceAttributes`||-|object|
 |`skipCertCheck`||-|boolean|
 |`tokens`||-|string|
@@ -76,12 +77,14 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`enabled`||-|boolean|
+|`initResources`||-|object|
 |`namespaceSelector`||-|object|
 
 ### .spec.oneAgent.hostMonitoring
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`annotations`||-|object|
 |`args`||-|array|
 |`dnsPolicy`||-|string|
@@ -117,6 +120,7 @@
 |:-|:-|:-|:-|
 |`annotations`||-|object|
 |`labels`||-|object|
+|`nodeSelector`||-|object|
 |`replicas`||-|integer|
 |`resources`||-|object|
 |`tlsRefName`||-|string|
@@ -134,6 +138,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`additionalResourceAttributes`||-|object|
 |`annotations`||-|object|
 |`args`||-|array|
 |`dnsPolicy`||-|string|
@@ -215,6 +220,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
@@ -223,6 +229,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
@@ -274,6 +281,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
@@ -311,6 +319,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
@@ -319,6 +328,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`digest`||-|string|
 |`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|

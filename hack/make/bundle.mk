@@ -45,7 +45,7 @@ bundle/show-image-ref:
 bundle: OLM=true # with the current state of the helm chart OLM must always be true when generating the bundle. it should not be set to false accidentally
 bundle: prerequisites/kustomize prerequisites/operator-sdk manifests/$(PLATFORM)/core
 	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
-	@git restore config/
+	@git restore config/crd/ config/helm/chart/default/templates/ config/manifests/bases/
 
 .PHONY: bundle/build
 ## Build the bundle image

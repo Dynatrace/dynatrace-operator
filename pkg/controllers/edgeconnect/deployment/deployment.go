@@ -14,7 +14,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -23,7 +22,7 @@ const (
 )
 
 func New(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
-	ctx, _ = logd.NewFromContext(ctx, "edgeconnect-deployment")
+	ctx, _ = logd.NewFromContext(ctx, "deployment")
 
 	return create(ctx, ec)
 }
@@ -66,7 +65,7 @@ func create(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment
 					ServiceAccountName:            ec.GetServiceAccountName(),
 					DeprecatedServiceAccount:      ec.GetServiceAccountName(),
 					SecurityContext:               buildPodSecurityContext(),
-					TerminationGracePeriodSeconds: ptr.To(int64(30)),
+					TerminationGracePeriodSeconds: new(int64(30)),
 					Volumes:                       prepareVolumes(ec),
 					NodeSelector:                  ec.Spec.NodeSelector,
 					Tolerations:                   ec.Spec.Tolerations,
@@ -117,12 +116,12 @@ func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
 		Env:             ec.Spec.Env,
 		Resources:       prepareResourceRequirements(ec),
 		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: ptr.To(false),
-			Privileged:               ptr.To(false),
-			ReadOnlyRootFilesystem:   ptr.To(true),
-			RunAsGroup:               ptr.To(unprivilegedGroup),
-			RunAsUser:                ptr.To(unprivilegedUser),
-			RunAsNonRoot:             ptr.To(true),
+			AllowPrivilegeEscalation: new(false),
+			Privileged:               new(false),
+			ReadOnlyRootFilesystem:   new(true),
+			RunAsGroup:               new(unprivilegedGroup),
+			RunAsUser:                new(unprivilegedUser),
+			RunAsNonRoot:             new(true),
 			SeccompProfile: &corev1.SeccompProfile{
 				Type: corev1.SeccompProfileTypeRuntimeDefault,
 			},
@@ -181,7 +180,7 @@ func prepareConfigVolume(ec *edgeconnect.EdgeConnect) corev1.Volume {
 				Items: []corev1.KeyToPath{
 					{Key: consts.EdgeConnectConfigFileName, Path: consts.EdgeConnectConfigFileName},
 				},
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}
@@ -207,6 +206,6 @@ func prepareResourceRequirements(ec *edgeconnect.EdgeConnect) corev1.ResourceReq
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
-		FSGroup: ptr.To(unprivilegedGroup),
+		FSGroup: new(unprivilegedGroup),
 	}
 }

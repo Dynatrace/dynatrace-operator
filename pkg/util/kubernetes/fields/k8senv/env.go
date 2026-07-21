@@ -1,7 +1,10 @@
 package k8senv
 
 import (
+	"context"
+	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,10 +22,38 @@ const (
 	OLMOperatorNamespaceEnv     = "OLM_OPERATOR_NAMESPACE"
 	AppVersion                  = "APP_VERSION"
 
+	DTExtractCodeModulesImageLinksEnvVar = "DT_EXTRACT_CODEMODULES_IMAGE_LINKS"
+	KubemonEnableOperand                 = "KUBEMON_ENABLE_OPERAND"
+
 	DTClientCacheCleanInterval        = "DT_CLIENT_CACHE_CLEAN_INTERVAL"
 	defaultDTClientCacheCleanInterval = time.Hour
 	minDTClientCacheCleanInterval     = 5 * time.Minute
 	maxDTClientCacheCleanInterval     = 100 * time.Hour
+
+	DefaultRequeueAfterEnvVar = "DT_DEFAULT_REQUEUE_AFTER"
+	defaultRequeueInterval    = 15 * time.Minute
+	minRequeueInterval        = time.Minute
+	maxRequeueInterval        = time.Hour
+
+	WebhookCertsRequeueAfterEnvVar  = "DT_WEBHOOK_CERTS_REQUEUE_AFTER"
+	defaultWebhookCertsRequeueAfter = 3 * time.Hour
+	minWebhookCertsRequeueAfter     = 5 * time.Minute
+	maxWebhookCertsRequeueAfter     = 11 * time.Hour
+
+	WebhookCertsRenewalThresholdEnvVar  = "DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD"
+	defaultWebhookCertsRenewalThreshold = 12 * time.Hour
+	minWebhookCertsRenewalThreshold     = 12 * time.Hour // must be >= minCertificateRenewalThreshold (pkg/controllers/certificates)
+	maxWebhookCertsRenewalThreshold     = 720 * time.Hour
+
+	WebhookCertsServerDurationEnvVar  = "DT_WEBHOOK_CERTS_SERVER_DURATION"
+	defaultWebhookCertsServerDuration = 7 * 24 * time.Hour
+	minWebhookCertsServerDuration     = 24 * time.Hour
+	maxWebhookCertsServerDuration     = 365 * 24 * time.Hour
+
+	WebhookCertsRootDurationEnvVar  = "DT_WEBHOOK_CERTS_ROOT_DURATION"
+	defaultWebhookCertsRootDuration = 365 * 24 * time.Hour
+	minWebhookCertsRootDuration     = 7 * 24 * time.Hour
+	maxWebhookCertsRootDuration     = 10 * 365 * 24 * time.Hour
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
@@ -101,26 +132,90 @@ func GetCSIDataDir() string {
 	return os.Getenv(CSIDataDir)
 }
 
-func GetDTClientCacheCleanInterval(log logd.Logger) time.Duration {
-	rawDuration := os.Getenv(DTClientCacheCleanInterval)
-	if rawDuration == "" {
-		log.Debug("no custom env set, using default", "env", DTClientCacheCleanInterval, "default", defaultDTClientCacheCleanInterval)
+func GetDefaultRequeueAfter(ctx context.Context) time.Duration {
+	return parseDuration(ctx, DefaultRequeueAfterEnvVar, defaultRequeueInterval, minRequeueInterval, maxRequeueInterval)
+}
 
-		return defaultDTClientCacheCleanInterval
+func GetDTClientCacheCleanInterval(ctx context.Context) time.Duration {
+	return parseDuration(ctx, DTClientCacheCleanInterval, defaultDTClientCacheCleanInterval, minDTClientCacheCleanInterval, maxDTClientCacheCleanInterval)
+}
+
+// GetDTExtractCodeModulesImageLinks reads the value of DT_EXTRACT_CODEMODULES_IMAGE_LINKS.
+func GetDTExtractCodeModulesImageLinks(ctx context.Context) bool {
+	rawValue := os.Getenv(DTExtractCodeModulesImageLinksEnvVar)
+	if rawValue == "" {
+		return false
 	}
 
-	parsedDuration, err := time.ParseDuration(rawDuration)
+	value, err := strconv.ParseBool(rawValue)
 	if err != nil {
-		log.Info("couldn't parse time.Duration from env", "env", DTClientCacheCleanInterval, "value", rawDuration, "err", err)
+		_, log := logd.NewFromContext(ctx, "k8senv")
+		log.Info("couldn't parse bool from env", "env", DTExtractCodeModulesImageLinksEnvVar, "value", rawValue, "err", err)
 
-		return defaultDTClientCacheCleanInterval
+		return false
 	}
 
-	if parsedDuration < minDTClientCacheCleanInterval || parsedDuration > maxDTClientCacheCleanInterval {
-		log.Info("parsed time.Duration from env is not in the allowed range", "env", DTClientCacheCleanInterval, "value", parsedDuration, "min", minDTClientCacheCleanInterval, "max", maxDTClientCacheCleanInterval)
+	return value
+}
 
-		return defaultDTClientCacheCleanInterval
+func IsKubemonOperandEnabled() bool {
+	rawValue := os.Getenv(KubemonEnableOperand)
+	if rawValue == "" {
+		return false
 	}
 
-	return parsedDuration
+	value, err := strconv.ParseBool(rawValue)
+	if err != nil {
+		return false
+	}
+
+	return value
+}
+
+func NewRef(envName string) string {
+	return fmt.Sprintf("$(%s)", envName)
+}
+
+func GetWebhookCertsRequeueAfter(ctx context.Context) time.Duration {
+	return parseDuration(ctx, WebhookCertsRequeueAfterEnvVar, defaultWebhookCertsRequeueAfter, minWebhookCertsRequeueAfter, maxWebhookCertsRequeueAfter)
+}
+
+func GetWebhookCertsRenewalThreshold(ctx context.Context) time.Duration {
+	return parseDuration(ctx, WebhookCertsRenewalThresholdEnvVar, defaultWebhookCertsRenewalThreshold, minWebhookCertsRenewalThreshold, maxWebhookCertsRenewalThreshold)
+}
+
+func GetWebhookCertsServerDuration(ctx context.Context) time.Duration {
+	return parseDuration(ctx, WebhookCertsServerDurationEnvVar, defaultWebhookCertsServerDuration, minWebhookCertsServerDuration, maxWebhookCertsServerDuration)
+}
+
+func GetWebhookCertsRootDuration(ctx context.Context) time.Duration {
+	return parseDuration(ctx, WebhookCertsRootDurationEnvVar, defaultWebhookCertsRootDuration, minWebhookCertsRootDuration, maxWebhookCertsRootDuration)
+}
+
+func parseDuration(ctx context.Context, envVar string, defaultValue, minValue, maxValue time.Duration) time.Duration {
+	_, log := logd.NewFromContext(ctx, "k8senv")
+
+	rawDuration := os.Getenv(envVar)
+	if rawDuration == "" {
+		log.Debug("no custom env set, using default", "env", envVar, "default", defaultValue)
+
+		return defaultValue
+	}
+
+	duration, err := time.ParseDuration(rawDuration)
+	if err != nil {
+		log.Error(err, "invalid duration value, using default", "env", envVar, "value", rawDuration, "default", defaultValue)
+
+		return defaultValue
+	}
+
+	if duration < minValue || duration > maxValue {
+		log.Info("duration not in allowed range, using default", "env", envVar, "value", duration, "min", minValue, "max", maxValue, "default", defaultValue)
+
+		return defaultValue
+	}
+
+	log.Info("using custom duration", "env", envVar, "value", duration)
+
+	return duration
 }

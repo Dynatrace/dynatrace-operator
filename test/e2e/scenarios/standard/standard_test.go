@@ -8,12 +8,16 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/bootstrapper"
 	classicToCloud "github.com/Dynatrace/dynatrace-operator/test/e2e/features/classic/switchmodes"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/codemodules"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/csimigration"
 	noInjection "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/noinjection"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/standard"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/switchmodes"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/e2e/features/supportarchive"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/usepublicregistry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
@@ -43,7 +47,7 @@ func TestMain(m *testing.M) {
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
 			events.LogEvents(ctx, c, t)
-			logs.WriteOperatorLog(ctx, c, t)
+			logs.WriteOperatorLogToFile(ctx, c, t)
 		}
 
 		return ctx, nil
@@ -68,8 +72,44 @@ func TestStandard_cloudnative_codemodules_migrate_to_node_image_pull(t *testing.
 	testEnv.Test(t, codemodules.MigrateToNodeImagePull(t))
 }
 
-func TestStandard_public_registry_images(t *testing.T) {
+func TestStandard_public_registry_images_tag(t *testing.T) {
 	testEnv.Test(t, publicregistry.Feature(t))
+}
+
+func TestStandard_public_registry_images_digest(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureWithDigest(t))
+}
+
+func TestStandard_public_registry_images_logmonitoring(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureLogMonitoring(t))
+}
+
+func TestStandard_public_registry_images_digest_logmonitoring(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureLogMonitoringWithDigest(t))
+}
+
+func TestStandard_public_registry_images_tag_and_digest(t *testing.T) {
+	testEnv.Test(t, publicregistry.FeatureWithTagAndDigest(t))
+}
+
+func TestStandard_use_public_registry_oneagent(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.OneAgent(t))
+}
+
+func TestStandard_use_public_registry_oneagent_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.OneAgentWithOverride(t))
+}
+
+func TestStandard_use_public_registry_activegate(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.ActiveGate(t))
+}
+
+func TestStandard_use_public_registry_activegate_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.ActiveGateWithOverride(t))
+}
+
+func TestStandard_use_public_registry_codemodules_with_csi(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.CodeModulesWithCSI(t))
 }
 
 func TestStandard_cloudnative_disabled_auto_inject(t *testing.T) {
@@ -90,4 +130,20 @@ func TestStandard_cloudnative_to_classic(t *testing.T) {
 
 func TestStandard_node_image_pull_with_csi(t *testing.T) {
 	testEnv.Test(t, bootstrapper.InstallWithCSI(t))
+}
+
+func TestStandard_pgc_with_fullstack(t *testing.T) {
+	testEnv.Test(t, bootstrapper.PGCWithCloudNativeFullStack(t))
+}
+
+func TestStandard_host_agent_pgc_host_monitoring(t *testing.T) {
+	testEnv.Test(t, hostmonitoring.HostAgentPGC(t))
+}
+
+func TestStandard_host_agent_pgc_cloudnative(t *testing.T) {
+	testEnv.Test(t, cloudnative.HostAgentPGC(t))
+}
+
+func TestStandard_cloudnative_csi_migration(t *testing.T) {
+	testEnv.Test(t, csimigration.Feature(t))
 }

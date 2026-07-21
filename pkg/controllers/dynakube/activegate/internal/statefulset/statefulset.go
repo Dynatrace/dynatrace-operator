@@ -23,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -139,7 +138,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		TerminationGracePeriodSeconds: statefulSetBuilder.dynakube.ActiveGate().GetTerminationGracePeriodSeconds(),
 		TopologySpreadConstraints:     statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
 		Volumes:                       statefulSetBuilder.buildVolumes(),
-		AutomountServiceAccountToken:  ptr.To(false),
+		AutomountServiceAccountToken:  new(false),
 	}
 	sts.Spec.Template.Spec = podSpec
 }
@@ -183,7 +182,7 @@ func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityC
 		},
 	}
 
-	sc.FSGroup = ptr.To(consts.DockerImageGroup)
+	sc.FSGroup = new(consts.DockerImageGroup)
 
 	return &sc
 }
@@ -195,14 +194,14 @@ func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.Topology
 	return []corev1.TopologySpreadConstraint{
 		{
 			MaxSkew:           1,
-			TopologyKey:       "topology.kubernetes.io/zone",
-			WhenUnsatisfiable: "ScheduleAnyway",
+			TopologyKey:       corev1.LabelTopologyZone,
+			WhenUnsatisfiable: corev1.ScheduleAnyway,
 			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
 		{
 			MaxSkew:           1,
-			TopologyKey:       "kubernetes.io/hostname",
-			WhenUnsatisfiable: "DoNotSchedule",
+			TopologyKey:       corev1.LabelHostname,
+			WhenUnsatisfiable: corev1.ScheduleAnyway,
 			NodeTaintsPolicy:  &nodeInclusionPolicyHonor,
 			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
@@ -268,7 +267,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 					Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
 				},
 				Key:      deploymentmetadata.ActiveGateMetadataKey,
-				Optional: ptr.To(false),
+				Optional: new(false),
 			},
 		}},
 		{Name: consts.EnvDTHTTPPort, Value: strconv.Itoa(consts.HTTPContainerPort)},

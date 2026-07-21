@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/secrets"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,7 +49,7 @@ func New( //nolint:revive
 }
 
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
-	ctx, log := logd.NewFromContext(mutationRequest.Context, "pod-mutation-injection")
+	ctx, log := logd.NewFromContext(mutationRequest.Context, "injection")
 	mutationRequest.Context = ctx
 
 	if !mutationRequest.DynaKube.OneAgent().IsAppInjectionNeeded() && !mutationRequest.DynaKube.MetadataEnrichment().IsEnabled() {
@@ -121,21 +122,14 @@ func (h *Handler) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 }
 
 func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) (bool, error) {
-	log := logd.FromContext(mutationRequest.Context)
 	mutationRequest.InstallContainer = h.createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
 
 	var mutated bool
 
-	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
-		err := h.oaMutator.Mutate(mutationRequest)
-		if err != nil {
-			return false, err
-		}
+	oaEnabled := h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest)
 
-		mutated = true
-	}
-
-	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
+	// metaMutator is automatically enabled if oaMutator is enabled, but it can also be enabled standalone
+	if h.metaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) || oaEnabled {
 		err := h.metaMutator.Mutate(mutationRequest)
 		if err != nil {
 			return false, err
@@ -144,20 +138,20 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 		mutated = true
 	}
 
+	if oaEnabled {
+		err := h.oaMutator.Mutate(mutationRequest)
+		if err != nil {
+			return false, err
+		}
+
+		mutated = true
+	}
+
 	if mutated {
-		_, err := addContainerAttributes(mutationRequest)
-		if err != nil {
+		if err := addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer); err != nil {
 			return false, err
 		}
 
-		err = addPodAttributes(mutationRequest)
-		if err != nil {
-			log.Info("failed to add pod attributes to init-container")
-
-			return false, err
-		}
-
-		addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer)
 		events.SendPodInjectEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
 	}
 
@@ -166,22 +160,26 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 
 func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
 	log := logd.FromContext(mutationRequest.Context)
-	mutationRequest.InstallContainer = k8scontainer.FindInitInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
 
-	// metadata enrichment does not need to be reinvoked, addContainerAttributes() does what is needed
-	hasNewContainers, err := addContainerAttributes(mutationRequest)
-	if err != nil {
-		log.Error(err, "error during reinvocation for updating the init-container, failed to update container-attributes on the init container")
+	installContainer := k8scontainer.FindInitInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
+	if installContainer == nil {
+		log.Error(nil, "could not find init container during reinvoke")
 
 		return false
 	}
 
-	var oaUpdated bool
-	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
-		oaUpdated = h.oaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest())
+	updated, err := metadata.AddContainerAttributes(mutationRequest.BaseRequest, installContainer)
+	if err != nil {
+		log.Error(err, "failed to update container-attributes on the init container during reinvoke")
+
+		return false
 	}
 
-	return hasNewContainers || oaUpdated
+	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
+		updated = h.oaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest()) || updated
+	}
+
+	return updated
 }
 
 func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {

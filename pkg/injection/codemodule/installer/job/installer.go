@@ -17,7 +17,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,7 +44,7 @@ type Installer struct {
 }
 
 func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
-	ctx, log := logd.NewFromContext(ctx, "oneagent-job")
+	ctx, log := logd.NewFromContext(ctx, "job")
 	log.Info("installing agent via Job", "image", inst.props.ImageURI, "target dir", targetDir)
 
 	err := os.MkdirAll(inst.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
@@ -85,7 +84,7 @@ func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (
 
 		_ = os.RemoveAll(inst.props.PathResolver.AgentJobWorkDirForJob(jobName))
 
-		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationBackground)})
+		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: new(metav1.DeletePropagationBackground)})
 	}
 
 	job, err := inst.query().Get(ctx, types.NamespacedName{Name: jobName, Namespace: inst.props.Owner.GetNamespace()})

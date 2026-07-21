@@ -9,8 +9,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
+
+type Option = builder.Option[*appsv1.StatefulSet]
 
 var (
 	// Mandatory fields, provided in constructor as named params
@@ -33,7 +34,7 @@ func Build(owner metav1.Object, name string, container corev1.Container, options
 
 func SetReplicas(replicas int32) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.Spec.Replicas = ptr.To(replicas)
+		s.Spec.Replicas = new(replicas)
 	}
 }
 
@@ -52,6 +53,12 @@ func SetAffinity(afinity corev1.Affinity) builder.Option[*appsv1.StatefulSet] {
 func SetTolerations(tolerations []corev1.Toleration) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.Tolerations = tolerations
+	}
+}
+
+func SetNodeSelector(nodeSelector map[string]string) builder.Option[*appsv1.StatefulSet] {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.NodeSelector = nodeSelector
 	}
 }
 
@@ -112,9 +119,58 @@ func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
-				Partition: ptr.To(int32(0)),
+				Partition: new(int32(0)),
 			},
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
+		}
+	}
+}
+
+func SetVolumes(volumes []corev1.Volume) Option {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.Volumes = append(s.Spec.Template.Spec.Volumes, volumes...)
+	}
+}
+
+func SetDNSPolicy(policy corev1.DNSPolicy) Option {
+	return func(s *appsv1.StatefulSet) {
+		if policy == "" {
+			return
+		}
+
+		s.Spec.Template.Spec.DNSPolicy = policy
+	}
+}
+
+func SetPriorityClassName(name string) Option {
+	return func(s *appsv1.StatefulSet) {
+		if name == "" {
+			return
+		}
+
+		s.Spec.Template.Spec.PriorityClassName = name
+	}
+}
+
+func SetTerminationGracePeriodSeconds(seconds *int64) Option {
+	return func(s *appsv1.StatefulSet) {
+		if seconds == nil {
+			return
+		}
+
+		s.Spec.Template.Spec.TerminationGracePeriodSeconds = seconds
+	}
+}
+
+func SetRollingUpdateStrategy(strategy *appsv1.RollingUpdateStatefulSetStrategy) Option {
+	return func(s *appsv1.StatefulSet) {
+		if strategy == nil {
+			return
+		}
+
+		s.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+			Type:          appsv1.RollingUpdateStatefulSetStrategyType,
+			RollingUpdate: strategy,
 		}
 	}
 }

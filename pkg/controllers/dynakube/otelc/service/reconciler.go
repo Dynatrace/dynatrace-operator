@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,7 +49,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "otelc-service")
+	ctx, _ = logd.NewFromContext(ctx, "service")
 	if !dk.TelemetryIngest().IsEnabled() {
 		r.removeServiceOnce(ctx, dk)
 
@@ -92,9 +91,9 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 	for _, service := range telemetryServiceList.Items {
 		if service.Name != actualServiceName {
 			if err := r.client.Delete(ctx, &service); err != nil {
-				log.Info("failed to clean up telemetry service", "service name", service.Name, "namespace", service.Namespace, "error", err)
+				log.Info("failed to clean up telemetry service", "serviceName", service.Name, "error", err)
 			} else {
-				log.Info("removed unused telemetry service", "service name", service.Name, "namespace", service.Namespace)
+				log.Info("removed unused telemetry service", "serviceName", service.Name)
 			}
 		}
 	}
@@ -158,14 +157,14 @@ func buildServicePortList(ctx context.Context, protocols []otelcgen.Protocol) []
 					Name:        otlpGRPCPortName,
 					Port:        otlpGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptr.To(appProtocolGRPC),
+					AppProtocol: new(appProtocolGRPC),
 					TargetPort:  intstr.FromInt32(otlpGRPCPort),
 				},
 				corev1.ServicePort{
 					Name:        otlpHTTPPortName,
 					Port:        otlpHTTPPort,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptr.To(appProtocolHTTP),
+					AppProtocol: new(appProtocolHTTP),
 					TargetPort:  intstr.FromInt32(otlpHTTPPort),
 				})
 		case otelcgen.JaegerProtocol:
@@ -174,7 +173,7 @@ func buildServicePortList(ctx context.Context, protocols []otelcgen.Protocol) []
 					Name:        jaegerGRPCPortName,
 					Port:        jaegerGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptr.To(appProtocolGRPC),
+					AppProtocol: new(appProtocolGRPC),
 					TargetPort:  intstr.FromInt32(jaegerGRPCPort),
 				},
 				corev1.ServicePort{

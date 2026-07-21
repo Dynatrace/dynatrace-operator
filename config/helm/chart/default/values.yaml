@@ -19,10 +19,11 @@ platform: ""
 # supply either image or imageref; if both supplied, imageref will be disregarded
 image: ""
 #image description using tags
-#resulting image will be named <repository>:v<tag>
+#resulting image will be named <repository>:v<tag>, or <repository>@<digest> if a digest is provided
 imageRef:
   repository: "" #path to repo
   tag: "" #defaults to chart version
+  digest: "" #optional image digest (e.g. sha256:...), when set, the tag is ignored when rendering the image reference
   pullPolicy: ""
 
 customPullSecret: ""
@@ -32,6 +33,8 @@ installCRD: true
 debugLogs: false
 # creates a Job to migrate CRD storage during upgrade from old versions to the new one
 crdStorageMigrationJob: true
+# opt-in to extracting links from codemodules images. default behavior is to only handle regular files
+extractCodeModulesImageLinks: false
 
 operator:
   nodeSelector: {}
@@ -63,6 +66,9 @@ operator:
     cpu: 100m
     memory: 128Mi
   startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
+  requeueAfter: "" # requeue period for the controller, defaults to 15m
+  clientCacheCleanupInterval: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 1h
+  kubemonEnableOperand: false # temporary gate; set to true to enable kubemon in dev/test. Remove when kubemon is complete.
 
 webhook:
   hostNetwork: false
@@ -125,6 +131,11 @@ webhook:
   mutatingWebhook:
     failurePolicy: Ignore
     timeoutSeconds: 10
+  certs:
+    rootDuration: "" # CA root certificate validity duration, defaults to 8760h (365 days), min: 168h (7 days), max: 87600h (10 years); must be greater than serverDuration
+    serverDuration: "" # server certificate validity duration, defaults to 168h (7 days), min: 24h, max: 8760h (365 days); must be greater than renewalThreshold
+    renewalThreshold: "" # certificate renewal threshold, defaults to 12h, min: 12h, max: 720h (30 days); must be greater than requeueAfter
+    requeueAfter: "" # requeue interval when certificates are up to date, defaults to 3h, min: 5m, max: 11h; must be less than renewalThreshold
   volumes:
     certsDir:
       sizeLimit: 10Mi
@@ -270,6 +281,7 @@ csidriver:
         memory: 30Mi
 
 rbac:
+  kubeletFineGrainedAuthz: ""
   activeGate:
     create: true
     annotations: {}

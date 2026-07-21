@@ -7,11 +7,18 @@ import (
 	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/host"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
-func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
+const (
+	// This should result in file permissions of -r--r--r--
+	// This is necessary because the OneAgent (in classicFullstack) may replicate these files into instrumented user pods
+	// where all processes need to be able to read these.
+	globalReadFilePerm = 0o444
+)
+
+func prepareVolumeMounts(dk *dynakube.DynaKube, processGroupConfigHash string) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{getOneAgentSecretVolumeMount(), getNodeMetadataVolumeMount()}
 
 	if dk.OneAgent().IsReadOnlyFSSupported() {
@@ -35,6 +42,12 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 	if dk.NeedsOneAgentProxy() {
 		volumeMounts = append(volumeMounts, getHTTPProxyMount())
+	}
+
+	// Mount the PGC secret file only if the PGC is needed and the processGroupConfigHash is not empty meaning that the
+	// PGC secret has required key and is available for mounting.
+	if bootstrapperconfig.NeedsPGC(dk) && processGroupConfigHash != "" {
+		volumeMounts = append(volumeMounts, getPGCSecretFileMount())
 	}
 
 	return volumeMounts
@@ -108,7 +121,7 @@ func getHTTPProxyMount() corev1.VolumeMount {
 	return proxy.BuildVolumeMount()
 }
 
-func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
+func prepareVolumes(dk *dynakube.DynaKube, processGroupConfigHash string) []corev1.Volume {
 	volumes := []corev1.Volume{getRootVolume(), getNodeMetadataVolume(), getOneAgentSecretVolume(dk)}
 
 	if dk.OneAgent().IsReadOnlyFSSupported() {
@@ -117,6 +130,12 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		} else {
 			volumes = append(volumes, getStorageVolume(dk))
 		}
+	}
+
+	// Mount the PGC secret volume only if the PGC is needed and the processGroupConfigHash is not empty meaning that the
+	// PGC secret has required key and is available for mounting.
+	if bootstrapperconfig.NeedsPGC(dk) && processGroupConfigHash != "" {
+		volumes = append(volumes, getPGCSecretVolume(dk))
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -183,7 +202,7 @@ func getStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
 				Path: dk.OneAgent().GetHostPath(),
-				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+				Type: new(corev1.HostPathDirectoryOrCreate),
 			},
 		},
 	}
@@ -201,7 +220,7 @@ func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 						Path: "custom.pem",
 					},
 				},
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 			},
 		},
 	}
@@ -213,7 +232,7 @@ func buildHTTPProxyVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  proxy.BuildSecretName(dk.Name),
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 			},
 		},
 	}
@@ -225,7 +244,7 @@ func getOneAgentSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  dk.OneAgent().GetTenantSecret(),
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 			},
 		},
 	}
@@ -239,5 +258,29 @@ func getRootVolume() corev1.Volume {
 				Path: "/",
 			},
 		},
+	}
+}
+
+func getPGCSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
+	return corev1.Volume{
+		Name: pgcSecretVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: bootstrapperconfig.GetSourceConfigSecretName(dk.Name),
+				Items: []corev1.KeyToPath{{
+					Key:  bootstrapperconfig.DeclarativeInputFileName,
+					Path: bootstrapperconfig.DeclarativeInputFileName,
+				}},
+			},
+		},
+	}
+}
+
+func getPGCSecretFileMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      pgcSecretVolumeName,
+		MountPath: csiStorageVolumeMount + "/opt/agent/conf/" + bootstrapperconfig.DeclarativeInputFileName,
+		SubPath:   bootstrapperconfig.DeclarativeInputFileName,
+		ReadOnly:  true,
 	}
 }

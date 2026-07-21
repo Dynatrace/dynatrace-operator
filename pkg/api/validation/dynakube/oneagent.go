@@ -11,16 +11,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	errorConflictingOneagentMode = `The DynaKube specification attempts to use multiple OneAgent modes simultaneously, which is not supported.`
-
-	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring/CloudNativeFullstack mode and retrieve the respective codeModules image, but the CSI driver and/or node image pull is not enabled.`
-
-	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but the code modules image is not set.`
 
 	errorNodeSelectorConflict = `The Dynakube specification conflicts with another Dynakube's OneAgent or Standalone-LogMonitoring. Only one Agent per node is supported.
 Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
@@ -45,7 +42,13 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
 
+	errorInvalidOneAgentArgument = "The DynaKube's OneAgent specification contains invalid arguments. Make sure to remove forbidden characters (newline, tab, carriage return, null) from the value in your custom resource."
+
 	warningDeprecatedVersion = `version field is deprecated. Please use "%s" field instead to set a version.`
+
+	warningDeprecatedVersionIgnored = `version field is deprecated and ignored. Please remove the version field from the DynaKube specification.`
+
+	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but neither a code modules image is set nor a public registry is used.`
 )
 
 func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -69,7 +72,7 @@ func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dyn
 	}
 
 	if counter > 1 {
-		log.Info("requested dynakube has conflicting one agent configuration", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube has conflicting one agent configuration")
 
 		return errorConflictingOneagentMode
 	}
@@ -101,7 +104,7 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 
 		if hasLogMonitoringSelectorConflict(dk, &item) || hasOneAgentSelectorConflict(dk, &item) {
 			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgent().GetNodeSelector(dk.LogMonitoring().GetNodeSelector())) {
-				log.Info("requested dynakube has conflicting OneAgent nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
+				log.Info("requested dynakube has conflicting OneAgent nodeSelector")
 
 				conflictingDynakubes[item.Name] = true
 			}
@@ -160,30 +163,6 @@ func conflictingMaxUnavailableAnnotationWithRollingUpdate(_ context.Context, _ *
 
 	if dk.LogMonitoring().Template().RollingUpdate != nil {
 		return warningDeprecatedMaxUnavailableAnnotationWithRollingUpdate
-	}
-
-	return ""
-}
-
-func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if !v.modules.CSIDriver && !dk.FF().IsNodeImagePull() {
-		if dk.OneAgent().IsApplicationMonitoringMode() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
-			return errorImageFieldSetWithoutCSIFlag
-		}
-
-		if dk.OneAgent().IsCloudNativeFullstackMode() && len(dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage) > 0 {
-			return errorImageFieldSetWithoutCSIFlag
-		}
-	}
-
-	return ""
-}
-
-func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() {
-		if dk.OneAgent().GetCustomCodeModulesImage() == "" {
-			return errorImagePullRequiresCodeModulesImage
-		}
 	}
 
 	return ""
@@ -306,10 +285,25 @@ func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube
 	return ""
 }
 
-func deprecatedOneAgentVersionField(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func invalidOneAgentArguments(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	args := dk.OneAgent().GetArguments()
+	for _, arg := range args {
+		if strings.ContainsAny(arg, sanitize.InvalidCommandLineCharset) {
+			return errorInvalidOneAgentArgument
+		}
+	}
+
+	return ""
+}
+
+func deprecatedOneAgentVersionField(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	oa := dk.OneAgent()
 
 	if oa.GetCustomVersion() != "" {
+		if dk.FF().IsPublicRegistry() {
+			return warningDeprecatedVersionIgnored
+		}
+
 		switch {
 		case oa.IsApplicationMonitoringMode():
 			return fmt.Sprintf(warningDeprecatedVersion, "codeModulesImage")
@@ -338,4 +332,14 @@ func findDuplicates[S ~[]E, E comparable](s S) []E {
 	}
 
 	return duplicates
+}
+
+func missingCodeModulesImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() {
+		if dk.OneAgent().GetCustomCodeModulesImage() == "" && !dk.FF().IsPublicRegistry() {
+			return errorImagePullRequiresCodeModulesImage
+		}
+	}
+
+	return ""
 }

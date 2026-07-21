@@ -2,8 +2,11 @@ package daemonset
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
 func getInitArgs(dk dynakube.DynaKube) []string {
@@ -24,5 +27,10 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv), fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 	}
 
-	return append(baseArgs, dk.LogMonitoring().Template().Args...)
+	attrs := dk.GetResourceAttributes()
+	for _, key := range slices.Sorted(maps.Keys(attrs)) {
+		baseArgs = append(baseArgs, fmt.Sprintf("-p %s=%s", sanitize.CommandLineArg(key), sanitize.CommandLineArg(attrs[key])))
+	}
+
+	return append(baseArgs, sanitize.CommandLineArgs(dk.LogMonitoring().Template().Args)...)
 }

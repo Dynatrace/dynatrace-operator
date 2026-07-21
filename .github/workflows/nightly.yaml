@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Prepare build parameters
@@ -39,11 +39,11 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -70,11 +70,11 @@ jobs:
       artifact-metadata: write
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -87,7 +87,7 @@ jobs:
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Create SBOM
         id: sbom
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           format: 'cyclonedx'
@@ -122,7 +122,7 @@ jobs:
       HELM_PACKAGE_VERSION: 0.0.0-${{ needs.prepare.outputs.version_without_prefix }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Setup Golang
@@ -143,7 +143,7 @@ jobs:
         run: |
           helm registry login -u "${{ github.repository_owner }}" -p "${{ secrets.GITHUB_TOKEN }}" "${{ env.IMAGE_REGISTRY }}"
       - name: Authenticate Docker
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}

@@ -19,6 +19,7 @@ env:
   IMAGE_REGISTRY: ghcr.io
   IMAGE_NAME: dynatrace/dynatrace-operator
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+  FIPS_PLATFORMS: linux/amd64,linux/arm64
   PR_PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
@@ -37,7 +38,7 @@ jobs:
       markdown_changed: ${{ steps.markdown.outputs.any_changed == 'true' && 'true' || '' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: ${{ github.event_name == 'merge_group' && '0' || '2' }}
           ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
@@ -59,7 +60,8 @@ jobs:
         run: |
           echo "is_authorized=${{ secrets.QUAY_USERNAME != '' && secrets.QUAY_PASSWORD != '' }}" >> $GITHUB_OUTPUT
       - name: Detect CI file changes
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        if: ${{ !github.event.created }}
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: ci
         with:
           files: |
@@ -67,7 +69,8 @@ jobs:
             .github/actions/**
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Go file changes
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        if: ${{ !github.event.created }}
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: go-files
         with:
           files: |
@@ -75,28 +78,32 @@ jobs:
             go.mod
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Dockerfile changes
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        if: ${{ !github.event.created }}
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: dockerfile
         with:
           files: |
             Dockerfile
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Helm config changes
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        if: ${{ !github.event.created }}
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: helm
         with:
           files: |
             config/**
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect prerequisites.mk changes
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        if: ${{ !github.event.created }}
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: prerequisites
         with:
           files: |
             hack/make/prerequisites.mk
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect markdown changes
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        if: ${{ !github.event.created }}
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: markdown
         with:
           files: |
@@ -125,14 +132,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.1.4
+          version: v4.2.3
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -145,14 +152,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.1.4
+          version: v4.2.3
       - name: Run Linting
         id: helm-linting
         run: |
@@ -165,7 +172,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Setup Golang
@@ -190,7 +197,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
@@ -202,7 +209,7 @@ jobs:
         run: |
           echo "version=$(awk '/GOLANGCI_LINT_VERSION/{print $3}' hack/make/prerequisites.mk)" >> $GITHUB_OUTPUT
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
+        uses: golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee # v9.2.1
         with:
           version: ${{ steps.linter-version.outputs.version }}
           skip-cache: true
@@ -216,7 +223,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
@@ -224,11 +231,11 @@ jobs:
           go-version: 'stable' # Latest stable version
           cache: false
       - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
-          version: v3.17.3
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+          version: v3.21.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           package-manager-cache: false
       - name: Check deepcopy files are up-to-date
@@ -257,7 +264,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run Snyk to check for vulnerabilities
@@ -276,11 +283,11 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run zizmor
-        uses: zizmorcore/zizmor-action@71321a20a9ded102f6e9ce5718a2fcec2c4f70d8 # v0.5.2
+        uses: zizmorcore/zizmor-action@192e21d79ab29983730a13d1382995c2307fbcaa # v0.5.7
 
   govulncheck:
     needs: [detect-changes]
@@ -291,7 +298,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run govulncheck
@@ -308,7 +315,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Lint markdown files
@@ -325,11 +332,11 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -340,6 +347,34 @@ jobs:
           platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
           images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
 
+  build-push-fips:
+    needs: [ detect-changes ]
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.helm_changed)
+    name: Build FIPS images
+    permissions:
+      packages: write
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Login to Registry
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        uses: ./.github/actions/build-push-image
+        with:
+          platforms: ${{github.ref_protected && env.FIPS_PLATFORMS || env.FIPS_PLATFORMS }}
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          fips: true
+          suffix: "fips"
+
   build-push-olm-bundle:
     needs: [ detect-changes ]
     if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.ci_changed ||  needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed)
@@ -349,11 +384,11 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -370,7 +405,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run preflight

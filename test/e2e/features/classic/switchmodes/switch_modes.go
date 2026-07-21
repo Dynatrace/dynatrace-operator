@@ -21,6 +21,10 @@ const (
 )
 
 func Feature(t *testing.T) features.Feature {
+	if tenant.UsePlatformToken() {
+		t.Skip("ClassicFullStack is not supported with platform token")
+	}
+
 	builder := features.New("classic-to-cloudnative")
 
 	// build classic full stack dynakube
@@ -31,7 +35,7 @@ func Feature(t *testing.T) features.Feature {
 	}
 
 	dynakubeClassicFullStack := *dynakubeComponents.New(
-		append(commonOptions, dynakubeComponents.WithClassicFullstackSpec(&oneagent.HostInjectSpec{}))...,
+		append(commonOptions, dynakubeComponents.WithClassicFullStackSpec(&oneagent.HostInjectSpec{}))...,
 	)
 
 	sampleAppClassic := sample.NewApp(t, &dynakubeClassicFullStack,

@@ -9,12 +9,12 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/move"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestMutateInitContainer(t *testing.T) {
@@ -147,8 +148,8 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		csiVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
-		require.NoError(t, err)
+		csiVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NotNil(t, csiVolume)
 		require.NotNil(t, csiVolume.CSI)
 		require.NotNil(t, csiVolume.CSI.ReadOnly)
 		require.True(t, *csiVolume.CSI.ReadOnly)
@@ -183,8 +184,8 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		csiVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
-		require.NoError(t, err)
+		csiVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NotNil(t, csiVolume)
 		require.NotNil(t, csiVolume.CSI)
 		require.NotNil(t, csiVolume.CSI.ReadOnly)
 		require.True(t, *csiVolume.CSI.ReadOnly)
@@ -224,8 +225,8 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		emptyDirVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
-		require.NoError(t, err)
+		emptyDirVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NotNil(t, emptyDirVolume)
 		require.NotNil(t, emptyDirVolume.EmptyDir)
 
 		emptyDirMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
@@ -247,9 +248,6 @@ func TestMutateInitContainer(t *testing.T) {
 		image := "myimage.io:latest"
 		dk := dynakube.DynaKube{}
 		dk.Name = "node-image-pull-scenario"
-		dk.Annotations = map[string]string{
-			exp.OANodeImagePullKey: "true",
-		}
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
 		dk.Status.CodeModules.ImageID = image
@@ -266,8 +264,8 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		emptyDirVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
-		require.NoError(t, err)
+		emptyDirVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NotNil(t, emptyDirVolume)
 		require.NotNil(t, emptyDirVolume.EmptyDir)
 
 		emptyDirMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
@@ -318,9 +316,6 @@ func TestMutateInitContainer(t *testing.T) {
 		image := "myimage.io:latest"
 		dk := dynakube.DynaKube{}
 		dk.Name = "node-image-pull-scenario"
-		dk.Annotations = map[string]string{
-			exp.OANodeImagePullKey: "true",
-		}
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
 			Requests: k8sresource.NewResourceList("40m", "40Mi"),
@@ -341,6 +336,49 @@ func TestMutateInitContainer(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
+	})
+
+	t.Run("should not enable links extraction by default", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{})
+
+		dk := dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: "dynakube"},
+			Spec:       dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
+		}
+		dk.Status.CodeModules.Version = "latest"
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      &corev1.Pod{},
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		require.NoError(t, mutateInitContainer(request, installPath))
+		assert.NotContains(t, request.InstallContainer.Env, corev1.EnvVar{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"})
+	})
+
+	t.Run("should forward links extraction", func(t *testing.T) {
+		t.Setenv(k8senv.DTExtractCodeModulesImageLinksEnvVar, "true")
+		installconfig.SetModulesOverride(t, installconfig.Modules{})
+
+		dk := dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: "dynakube"},
+			Spec:       dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
+		}
+		dk.Status.CodeModules.Version = "latest"
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      &corev1.Pod{},
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		require.NoError(t, mutateInitContainer(request, installPath))
+		assert.Contains(t, request.InstallContainer.Env, corev1.EnvVar{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"})
 	})
 }
 

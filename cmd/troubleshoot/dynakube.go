@@ -127,6 +127,12 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.Tokens())
 	}
 
+	if tokens.HasPlatformToken() {
+		logInfof(log, "skipping token scope lookup due to platform token")
+
+		return nil
+	}
+
 	var optionalScopes map[string]bool
 
 	if optionalScopes, err = tokens.VerifyScopes(ctx, dtClient.Token, *dk); err != nil {

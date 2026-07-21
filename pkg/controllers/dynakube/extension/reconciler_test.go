@@ -1,6 +1,8 @@
 package extension
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -8,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
@@ -19,8 +22,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 const (
@@ -34,7 +37,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient)
-		err := r.Reconcile(t.Context(), dk)
+		err := r.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		// assert extensions token is not generated
@@ -71,7 +74,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		require.NotEmpty(t, dk.Conditions())
 
 		// reconcile
-		err = r.Reconcile(t.Context(), dk)
+		err = r.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		// assert extensions token is deleted after reconciliation
@@ -87,7 +90,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient)
-		err := r.Reconcile(t.Context(), dk)
+		err := r.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		// assert extensions token is generated
@@ -109,10 +112,15 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		dk := createDynakube()
 		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 
-		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
-		r := NewReconciler(fake.NewClient(), misconfiguredReader)
-		err := r.Reconcile(t.Context(), dk)
-		require.Error(t, err)
+		expectedErr := errors.New("get error")
+		errorReader := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				return expectedErr
+			},
+		})
+		r := NewReconciler(fake.NewClient(), errorReader)
+		err := r.Reconcile(t.Context(), nil, dk)
+		require.ErrorIs(t, err, expectedErr)
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
@@ -145,7 +153,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		fakeClient := fake.NewClient(oldSecret)
 		r := NewReconciler(fakeClient, fakeClient)
 
-		err = r.Reconcile(t.Context(), dk)
+		err = r.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		// assert extensions token is generated
@@ -175,7 +183,7 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 
 		r := NewReconciler(mockK8sClient, mockK8sClient)
-		err := r.Reconcile(t.Context(), dk)
+		err := r.Reconcile(t.Context(), nil, dk)
 
 		require.NoError(t, err)
 
@@ -200,7 +208,7 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 
 		r := NewReconciler(mockK8sClient, mockK8sClient)
-		err := r.Reconcile(t.Context(), dk)
+		err := r.Reconcile(t.Context(), nil, dk)
 
 		require.NoError(t, err)
 
@@ -217,7 +225,13 @@ func createDynakube() *dynakube.DynaKube {
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Spec: dynakube.DynaKubeSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			Templates: dynakube.TemplatesSpec{
+				ExtensionExecutionController: extensions.ExecutionControllerSpec{
+					ImageRef: image.Ref{Repository: "some-registry/dynatrace/eec", Tag: "1.0.0"},
+				},
+			},
+		},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
 				ConnectionInfo: communication.ConnectionInfo{

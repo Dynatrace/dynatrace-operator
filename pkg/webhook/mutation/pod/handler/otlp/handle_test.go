@@ -296,7 +296,7 @@ func TestHandler_Handle(t *testing.T) {
 		// target secret should now exist in the workload namespace
 		var target corev1.Secret
 		targetKey := client.ObjectKey{Name: consts.OTLPExporterSecretName, Namespace: testNamespaceName}
-		require.NoError(t, h.apiReader.Get(req.Context, targetKey, &target))
+		require.NoError(t, h.apiReader.Get(t.Context(), targetKey, &target))
 		assert.Equal(t, consts.OTLPExporterSecretName, target.Name)
 		assert.Equal(t, testNamespaceName, target.Namespace)
 

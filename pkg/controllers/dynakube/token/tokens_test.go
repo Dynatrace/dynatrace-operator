@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
@@ -354,7 +353,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 					},
 				},
 			},
@@ -373,7 +372,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 					},
 				},
 			},
@@ -391,7 +390,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
-						Enabled: ptr.To(true),
+						Enabled: new(true),
 					},
 				},
 			},
@@ -502,11 +501,39 @@ func TestCheckForDataIngestToken(t *testing.T) {
 	})
 }
 
-func TestDisableLookupForPlatformToken(t *testing.T) {
-	tokens := Tokens{APIKey: &Token{Value: dttoken.PlatformPrefix + "test", Features: []Feature{{Name: "ignoreme"}}}}
-	scopes, err := tokens.VerifyScopes(t.Context(), nil, dynakube.DynaKube{})
-	require.NoError(t, err)
-	assert.Empty(t, scopes)
+func TestTokens_HasPlatformToken(t *testing.T) {
+	tests := []struct {
+		name     string
+		tokens   Tokens
+		expected bool
+	}{
+		{
+			name:     "no api token",
+			tokens:   Tokens{},
+			expected: false,
+		},
+		{
+			name:     "empty api token value",
+			tokens:   Tokens{APIKey: &Token{Value: ""}},
+			expected: false,
+		},
+		{
+			name:     "regular api token",
+			tokens:   Tokens{APIKey: &Token{Value: "dt0c01.regular-token"}},
+			expected: false,
+		},
+		{
+			name:     "platform api token",
+			tokens:   Tokens{APIKey: &Token{Value: dttoken.PlatformPrefix + ".platform-token"}},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.tokens.HasPlatformToken())
+		})
+	}
 }
 
 func TestGetMissingScopes(t *testing.T) {

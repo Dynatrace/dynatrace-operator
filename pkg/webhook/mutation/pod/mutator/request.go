@@ -47,11 +47,24 @@ func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.Dyn
 	}
 }
 
+// PodAnnotationWriter is implemented by *attributes.Pod. Mutators store their
+// attrs here so that annotation writing is deferred to after all injections
+// complete, preventing earlier-mutator annotations from being read back as
+// high-precedence pod annotations by later mutators.
+type PodAnnotationWriter interface {
+	ApplyJSONAnnotationToPod(*corev1.Pod) error
+}
+
 // BaseRequest is the base request for all mutation requests
 type BaseRequest struct {
 	Pod       *corev1.Pod
 	Namespace corev1.Namespace
 	DynaKube  dynakube.DynaKube
+	// AnnotationWriter is set by the last mutator to run (initial mutation and
+	// reinvocation). webhook.Handle writes pod annotations via this writer after
+	// both handlers complete, so no mutator's annotations are visible to a later
+	// mutator's NewPodAttributes call.
+	AnnotationWriter PodAnnotationWriter
 }
 
 func (req *BaseRequest) PodName() string {

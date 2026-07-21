@@ -1,7 +1,6 @@
 package daemonset
 
 import (
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -24,23 +22,17 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 const (
 	testImageTag  = "1.203.0.0-0"
 	testTokenHash = "test-token-hash"
-
-	testKubernetesClusterName = "cluster-name"
-	testKubernetesClusterUID  = "cluster-uid"
-	testKubernetesClusterMEID = "cluster-meid"
-	testOperatorImageName     = "operator-image-name"
 )
 
-func TestUseImmutableImage(t *testing.T) {
+func TestBuildDaemonSet(t *testing.T) {
 	t.Cleanup(k8sversion.DisableCacheForTest(123))
 
-	t.Run("use image from status", func(t *testing.T) {
+	t.Run("use image from status, serviceAccountName set", func(t *testing.T) {
 		imageID := "my.repo.com/image:my-tag"
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -64,6 +56,7 @@ func TestUseImmutableImage(t *testing.T) {
 		podSpecs := ds.Spec.Template.Spec
 		assert.NotNil(t, podSpecs)
 		assert.Equal(t, imageID, podSpecs.Containers[0].Image)
+		assert.Equal(t, serviceAccountName, podSpecs.ServiceAccountName)
 	})
 }
 
@@ -284,7 +277,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -293,9 +286,9 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
 
 		assert.NotNil(t, securityContext)
-		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsUser)
-		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsGroup)
-		assert.Equal(t, ptr.To(true), securityContext.RunAsNonRoot)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsUser)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsGroup)
+		assert.Equal(t, new(true), securityContext.RunAsNonRoot)
 		assert.NotEmpty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
 		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
@@ -318,7 +311,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -347,7 +340,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -374,7 +367,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
@@ -383,10 +376,10 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
 
 		assert.NotNil(t, securityContext)
-		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsUser)
-		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsGroup)
-		assert.Equal(t, ptr.To(true), securityContext.RunAsNonRoot)
-		assert.Equal(t, ptr.To(true), securityContext.Privileged)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsUser)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsGroup)
+		assert.Equal(t, new(true), securityContext.RunAsNonRoot)
+		assert.Equal(t, new(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
 	})
@@ -417,7 +410,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.RunAsUser)
 		assert.Nil(t, securityContext.RunAsGroup)
 		assert.Nil(t, securityContext.RunAsNonRoot)
-		assert.Equal(t, ptr.To(true), securityContext.Privileged)
+		assert.Equal(t, new(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
 	})
@@ -482,7 +475,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.RunAsUser)
 		assert.Nil(t, securityContext.RunAsGroup)
 		assert.Nil(t, securityContext.RunAsNonRoot)
-		assert.Equal(t, ptr.To(true), securityContext.Privileged)
+		assert.Equal(t, new(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
 	})
@@ -547,46 +540,6 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 }
 
-func TestPodSpecServiceAccountName(t *testing.T) {
-	t.Run("service account name is unprivileged + readonly by default", func(t *testing.T) {
-		builder := builder{
-			dk: &dynakube.DynaKube{},
-		}
-		podSpec, _ := builder.podSpec(t.Context())
-
-		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
-	})
-	t.Run("privileged and readonly is recognized", func(t *testing.T) {
-		builder := builder{
-			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						exp.OAPrivilegedKey: "true",
-					},
-				},
-			},
-		}
-		podSpec, _ := builder.podSpec(t.Context())
-
-		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
-	})
-	t.Run("service account name is unprivileged if run as unprivileged", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.OAPrivilegedKey: "false",
-				},
-			},
-		}
-		builder := builder{
-			dk: dk,
-		}
-		podSpec, _ := builder.podSpec(t.Context())
-
-		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
-	})
-}
-
 func TestPodSpecProbes(t *testing.T) {
 	expectedHealthcheck := containerv1.HealthConfig{
 		Test:        []string{"echo", "super pod"},
@@ -605,6 +558,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 			},
+			hostInjectSpec: &oneagent.HostInjectSpec{},
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -638,6 +592,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 			},
+			hostInjectSpec: &oneagent.HostInjectSpec{},
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -651,7 +606,8 @@ func TestPodSpecProbes(t *testing.T) {
 	})
 	t.Run("nil probes when dynakube oneagent status has no healthcheck", func(t *testing.T) {
 		builder := builder{
-			dk: &dynakube.DynaKube{},
+			dk:             &dynakube.DynaKube{},
+			hostInjectSpec: &oneagent.HostInjectSpec{},
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -672,6 +628,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 			},
+			hostInjectSpec: &oneagent.HostInjectSpec{},
 		}
 		podSpec, _ := builder.podSpec(t.Context())
 
@@ -765,7 +722,7 @@ func TestUpdateStrategy(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		daemonset, err := dsBuilder.BuildDaemonSet(t.Context())
 
 		expected := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()) //nolint:staticcheck
@@ -790,7 +747,7 @@ func TestUpdateStrategy(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		daemonset, err := dsBuilder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -900,7 +857,7 @@ func TestAnnotations(t *testing.T) {
 	t.Run("default apparmor annotation is present in 1.30", func(t *testing.T) {
 		k8sversion.DisableCacheForTest(30)
 
-		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID, testProcessGroupConfigHash).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.Contains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 		assert.Equal(t, appArmorUnconfined, ds.Spec.Template.Annotations[appArmorAnnotation])
@@ -912,7 +869,7 @@ func TestAnnotations(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(dk, testClusterID, testProcessGroupConfigHash).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, corev1.DeprecatedAppArmorBetaProfileRuntimeDefault, ds.Spec.Template.Annotations[appArmorAnnotation])
 	})
@@ -920,7 +877,7 @@ func TestAnnotations(t *testing.T) {
 	t.Run("apparmor annotation is absent in 1.31", func(t *testing.T) {
 		k8sversion.DisableCacheForTest(31)
 
-		ds, err := NewCloudNativeFullStack(baseDK, testClusterID).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(baseDK, testClusterID, testProcessGroupConfigHash).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 	})
@@ -931,7 +888,7 @@ func TestAnnotations(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.OneAgent.CloudNativeFullStack.Annotations = map[string]string{appArmorAnnotation: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewCloudNativeFullStack(dk, testClusterID).BuildDaemonSet(t.Context())
+		ds, err := NewCloudNativeFullStack(dk, testClusterID, testProcessGroupConfigHash).BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 		assert.NotContains(t, ds.Spec.Template.Annotations, appArmorAnnotation)
 	})
@@ -958,8 +915,7 @@ func TestAnnotations(t *testing.T) {
 			annotationTenantTokenHash:         testTokenHash,
 			annotationEnableDaemonSetEviction: "false",
 		}
-
-		builder := NewCloudNativeFullStack(&dk, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID, "")
 		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -985,9 +941,10 @@ func TestAnnotations(t *testing.T) {
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
 			annotationEnableDaemonSetEviction: "false",
+			AnnotationPGCHash:                 testProcessGroupConfigHash,
 		}
 
-		builder := NewHostMonitoring(&dk, testClusterID)
+		builder := NewHostMonitoring(&dk, testClusterID, testProcessGroupConfigHash)
 		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -1043,7 +1000,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 			},
 		}
 
-		builder := NewCloudNativeFullStack(&dk, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID, testProcessGroupConfigHash)
 		daemonset, err := builder.BuildDaemonSet(t.Context())
 
 		require.NoError(t, err)
@@ -1121,97 +1078,4 @@ func TestDefaultArguments(t *testing.T) {
 		}
 		assert.Equal(t, expectedDefaultArguments, ds.Spec.Template.Spec.Containers[0].Args)
 	})
-}
-
-func TestInitContainerSpec(t *testing.T) {
-	dk := &dynakube.DynaKube{
-		Status: dynakube.DynaKubeStatus{},
-	}
-
-	dsBuilder := builder{
-		dk: dk,
-	}
-
-	require.NoError(t, os.Setenv(k8senv.DTOperatorImageEnvName, testOperatorImageName))
-	spec := dsBuilder.initContainerSpec()
-	require.NoError(t, os.Unsetenv(k8senv.DTOperatorImageEnvName))
-
-	assert.Equal(t, testOperatorImageName, spec.Image)
-	assert.Equal(t, initContainerName, spec.Name)
-	assert.Empty(t, spec.ImagePullPolicy)
-	assert.NotEmpty(t, spec.Env)
-	assert.NotEmpty(t, spec.Args)
-	assert.NotEmpty(t, spec.VolumeMounts)
-	assert.NotNil(t, spec.SecurityContext)
-}
-
-func TestInitContainerEnvVars(t *testing.T) {
-	dsBuilder := builder{}
-
-	envVars := dsBuilder.initContainerEnvVars()
-
-	assert.Len(t, envVars, 1)
-	assert.Equal(t, dtNodeName, envVars[0].Name)
-	assert.Equal(t, &corev1.EnvVarSource{
-		FieldRef: &corev1.ObjectFieldSelector{
-			FieldPath: "spec.nodeName",
-		},
-	}, envVars[0].ValueFrom)
-}
-
-func TestInitContainerArguments(t *testing.T) {
-	dk := &dynakube.DynaKube{
-		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID:        testKubernetesClusterUID,
-			KubernetesClusterMEID: testKubernetesClusterMEID,
-			KubernetesClusterName: testKubernetesClusterName,
-		},
-	}
-
-	dsBuilder := builder{
-		dk: dk,
-	}
-
-	arguments := dsBuilder.initContainerArguments()
-	assert.Equal(t, "generate-metadata", arguments[0])
-	assert.Equal(t, "--file", arguments[1])
-	assert.Equal(t, nodeMetadataFilePath, arguments[2])
-	assert.Equal(t, "--attributes", arguments[3])
-
-	attributes := strings.Split(arguments[4], ",")
-
-	assert.Equal(t, "k8s.cluster.name="+testKubernetesClusterName, attributes[0])
-	assert.Equal(t, "k8s.cluster.uid="+testKubernetesClusterUID, attributes[1])
-	assert.Equal(t, "k8s.node.name=$(DT_K8S_NODE_NAME)", attributes[2])
-	assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
-}
-
-func TestInitContainerVolumeMounts(t *testing.T) {
-	dsBuilder := builder{}
-
-	volumeMounts := dsBuilder.initContainerVolumeMounts()
-
-	assert.Len(t, volumeMounts, 1)
-	assert.Contains(t, volumeMounts, corev1.VolumeMount{
-		Name:      nodeMetadataVolumeName,
-		MountPath: nodeMetadataFolderPath,
-		ReadOnly:  false,
-	})
-}
-
-func TestInitContainerSecurityContext(t *testing.T) {
-	dsBuilder := builder{}
-
-	securityContext := dsBuilder.initContainerSecurityContext()
-
-	assert.False(t, *securityContext.Privileged)
-	assert.False(t, *securityContext.AllowPrivilegeEscalation)
-	assert.True(t, *securityContext.RunAsNonRoot)
-	assert.Equal(t, userGroupID, *securityContext.RunAsUser)
-	assert.Equal(t, userGroupID, *securityContext.RunAsGroup)
-	assert.Empty(t, securityContext.Capabilities.Add)
-	assert.Len(t, securityContext.Capabilities.Drop, 1)
-	assert.Contains(t, securityContext.Capabilities.Drop, corev1.Capability("ALL"))
-	assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, securityContext.SeccompProfile.Type)
-	assert.True(t, *securityContext.ReadOnlyRootFilesystem)
 }

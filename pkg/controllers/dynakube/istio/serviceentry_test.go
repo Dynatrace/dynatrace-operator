@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/stretchr/testify/assert"
 	istio "istio.io/api/networking/v1beta1"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
@@ -43,7 +44,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_DNS,
 			},
 		}
-		commHosts1 := []CommunicationHost{{
+		commHosts1 := []connectioninfo.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
 			Protocol: protocolHTTPS,
@@ -51,7 +52,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 		assert.Equal(t, expected, result)
 
-		commHosts2 := []CommunicationHost{{
+		commHosts2 := []connectioninfo.CommunicationHost{{
 			Host:     testHost1,
 			Port:     testPort1,
 			Protocol: protocolHTTPS,
@@ -77,7 +78,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_DNS,
 			},
 		}
-		commHosts1 := []CommunicationHost{{
+		commHosts1 := []connectioninfo.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
 			Protocol: protocolHTTPS,
@@ -110,7 +111,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
-		commHosts1 := []CommunicationHost{{
+		commHosts1 := []connectioninfo.CommunicationHost{{
 			Host:     testIP,
 			Port:     testPort,
 			Protocol: protocolHTTPS,
@@ -118,7 +119,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		result := buildServiceEntryIPs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 		assert.Equal(t, expected, result)
 
-		commHosts2 := []CommunicationHost{{
+		commHosts2 := []connectioninfo.CommunicationHost{{
 			Host:     testIP,
 			Port:     testPort1,
 			Protocol: protocolHTTPS,
@@ -150,7 +151,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
-		commHosts1 := []CommunicationHost{{
+		commHosts1 := []connectioninfo.CommunicationHost{{
 			Host:     testIP,
 			Port:     testPort,
 			Protocol: protocolHTTPS,
@@ -167,7 +168,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 
 func TestBuildServiceEntryForHostname(t *testing.T) {
 	expected := buildExpectedServiceEntryForHostname(t)
-	commHosts1 := []CommunicationHost{{
+	commHosts1 := []connectioninfo.CommunicationHost{{
 		Host:     testHost1,
 		Port:     testPort1,
 		Protocol: protocolHTTP,
@@ -175,7 +176,7 @@ func TestBuildServiceEntryForHostname(t *testing.T) {
 	result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 	assert.Equal(t, expected, result)
 
-	commHosts2 := []CommunicationHost{{
+	commHosts2 := []connectioninfo.CommunicationHost{{
 		Host:     testHost2,
 		Port:     testPort2,
 		Protocol: protocolHTTP,
@@ -186,14 +187,14 @@ func TestBuildServiceEntryForHostname(t *testing.T) {
 
 func TestBuildServiceEntryIp(t *testing.T) {
 	expected := buildExpectedServiceEntryForIP(t)
-	commHosts1 := []CommunicationHost{{
+	commHosts1 := []connectioninfo.CommunicationHost{{
 		Host: testIP1,
 		Port: testPort1,
 	}}
 	result := buildServiceEntryIPs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 	assert.Equal(t, expected, result)
 
-	commHosts2 := []CommunicationHost{{
+	commHosts2 := []connectioninfo.CommunicationHost{{
 		Host: testIP2,
 		Port: testPort2,
 	}}

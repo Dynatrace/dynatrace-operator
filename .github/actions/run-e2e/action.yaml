@@ -11,9 +11,6 @@ inputs:
     description: Target branch to run E2E tests over
     required: true
     default: main
-  target-image:
-    description: Target image to run E2E tests over
-    required: false
   helm-chart:
     description: Helm chart used for installation
     required: false
@@ -38,6 +35,15 @@ inputs:
   tenant1-oauth-urn:
     description: The OAuth urn of Tenant 1
     required: true
+  tenant1-platform-token:
+    description: The platform token of Tenant 1
+    required: true
+  tenant1-platform-token-nosettings:
+    description: The platform token of Tenant 1 without settings scope
+    required: true
+  tenant1-dataingest-platform-token:
+    description: The data ingest platform token of Tenant 1
+    required: true
   tenant2-name:
     description: The name of Tenant 2
     required: true
@@ -47,9 +53,54 @@ inputs:
   tenant2-dataingesttoken:
     description: The data ingest token of Tenant 2
     required: true
-  github-token:
-    description: The GitHub token
+  tenant2-platform-token:
+    description: The platform token of Tenant 2
     required: true
+  tenant3-phase3-name:
+    description: The name of Tenant 3 Phase 3
+    required: true
+  tenant3-phase3-apitoken:
+    description: The API token of Tenant 3 Phase 3
+    required: true
+  tenant3-phase3-dataingesttoken:
+    description: The data ingest token of Tenant 3 Phase 3
+    required: true
+  tenant3-phase3-oauth-client-id:
+    description: The OAuth client ID of Tenant 3 Phase 3
+    required: true
+  tenant3-phase3-oauth-secret:
+    description: The OAuth secret of Tenant 3 Phase 3
+    required: true
+  tenant3-phase3-oauth-urn:
+    description: The OAuth urn of Tenant 3 Phase 3
+    required: true
+  tenant3-phase3-platform-token:
+    description: The platform token of Tenant 3 Phase 3
+    required: true
+  tenant3-phase3-platform-token-nosettings:
+    description: The platform token of Tenant 3 without settings scope Phase 3
+    required: true
+  tenant3-phase3-dataingest-platform-token:
+    description: The data ingest platform token of Tenant 3 Phase 3
+    required: true
+  tenant4-phase3-name:
+    description: The name of Tenant 4 Phase 3
+    required: true
+  tenant4-phase3-platform-token:
+    description: The platform token of Tenant 4 Phase 3
+    required: true
+  e2e-public-registry-override:
+    description: Override for the public registry used in E2E tests
+    required: false
+  use-platform-token:
+    description: If true runs the test suite with platform token
+    required: false
+  use-tenant-phase3:
+    description: If true runs the test suite with phase 3 tenant
+    required: false
+  e2e-make-target:
+    description: Make target path under test/e2e/ to run instead of the default suite (e.g. "cloudnative/codemodules"). Leave empty to run the full default suite.
+    required: false
 outputs:
   cluster_status:
     description: Status of the cluster creation ['skipped'|'success']
@@ -63,29 +114,29 @@ runs:
         sudo apt-get update
         sudo apt-get install -y make
     - name: Checkout workflow scripts from ref branch
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         path: ref
         persist-credentials: false
     - name: Checkout target branch
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         ref: ${{ inputs.target-branch || 'main' }}
         path: target
         persist-credentials: false
     - name: Set up kubectl
-      uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
+      uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
     - name: Set up go
       uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
       with:
         go-version: 'stable' # Latest stable version
         cache: false
     - name: Set up helm
-      uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+      uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
       with:
         # renovate datasource=github-releases depName=helm/helm
-        version: v4.1.4
-        token: ${{ inputs.github-token }}
+        version: v4.2.3
+        token: ${{ github.token }}
     - name: Install gotestsum
       shell: bash
       run: go install gotest.tools/gotestsum@latest
@@ -115,7 +166,6 @@ runs:
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
         HELM_CHART: ${{ inputs.helm-chart }}
         TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
-        TARGET_IMAGE: ${{ inputs.target-image }}
         TENANT1_NAME: ${{ inputs.tenant1-name }}
         TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
         TENANT1_APITOKEN_NOSETTINGS: ${{ inputs.tenant1-apitoken-nosettings }}
@@ -123,9 +173,28 @@ runs:
         TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
         TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
         TENANT1_OAUTH_URN: ${{ inputs.tenant1-oauth-urn }}
+        TENANT1_PLATFORM_TOKEN: ${{ inputs.tenant1-platform-token }}
+        TENANT1_PLATFORM_TOKEN_NOSETTINGS: ${{ inputs.tenant1-platform-token-nosettings }}
+        TENANT1_DATAINGEST_PLATFORM_TOKEN: ${{ inputs.tenant1-dataingest-platform-token }}
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
+        TENANT2_PLATFORM_TOKEN: ${{ inputs.tenant2-platform-token }}
+        TENANT3_PHASE3_NAME: ${{ inputs.tenant3-phase3-name }}
+        TENANT3_PHASE3_APITOKEN: ${{ inputs.tenant3-phase3-apitoken }}
+        TENANT3_PHASE3_DATAINGESTTOKEN: ${{ inputs.tenant3-phase3-dataingesttoken }}
+        TENANT3_PHASE3_OAUTH_CLIENT_ID: ${{ inputs.tenant3-phase3-oauth-client-id }}
+        TENANT3_PHASE3_OAUTH_SECRET: ${{ inputs.tenant3-phase3-oauth-secret }}
+        TENANT3_PHASE3_OAUTH_URN: ${{ inputs.tenant3-phase3-oauth-urn }}
+        TENANT3_PHASE3_PLATFORM_TOKEN: ${{ inputs.tenant3-phase3-platform-token }}
+        TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS: ${{ inputs.tenant3-phase3-platform-token-nosettings }}
+        TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN: ${{ inputs.tenant3-phase3-dataingest-platform-token }}
+        TENANT4_PHASE3_NAME: ${{ inputs.tenant4-phase3-name }}
+        TENANT4_PHASE3_PLATFORM_TOKEN: ${{ inputs.tenant4-phase3-platform-token }}
+        E2E_PUBLIC_REGISTRY_OVERRIDE: ${{ inputs.e2e-public-registry-override }}
+        USE_PLATFORM_TOKEN: ${{ inputs.use-platform-token }}
+        USE_TENANT_PHASE3: ${{ inputs.use-tenant-phase3 }}
+        E2E_MAKE_TARGET: ${{ inputs.e2e-make-target }}
       if: steps.check_cluster_status.outputs.skip_tests != 'true'
     - name: Destroy cluster
       shell: bash
@@ -135,7 +204,15 @@ runs:
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
       if: always()
     - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
       with:
         files: target/results/*.xml
+    - name: Upload logs
       if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: e2e-test-logs
+        path: target/results/*.log
+        if-no-files-found: ignore
+        retention-days: 7

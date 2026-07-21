@@ -3,7 +3,9 @@ package token
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestToken_String(t *testing.T) {
@@ -34,4 +36,10 @@ func TestToken_String(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.token.String())
 		})
 	}
+}
+
+func TestTokenVerifyScopesNoFeatures(t *testing.T) {
+	optionalScopes, err := (&Token{}).verifyScopes(t.Context(), nil, dynakube.DynaKube{})
+	require.NoError(t, err)
+	assert.Empty(t, optionalScopes)
 }

@@ -39,7 +39,7 @@ spec:
       annotations:
         dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: operator
-      {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
+      {{- if and (.Values.operator.apparmor) (not (include "kubernetes.appArmorSecurityContextSupported" .)) }}
         container.apparmor.security.beta.kubernetes.io/operator: runtime/default
       {{- end }}
       {{- if .Values.operator.annotations }}
@@ -52,7 +52,7 @@ spec:
         {{- toYaml .Values.operator.labels | nindent 8 }}
         {{- end }}
     spec:
-      {{- $needsCertgen := not (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+      {{- $needsCertgen := not (include "dynatrace-operator.openshiftOrOlm" .) }}
       {{- $needsMigrator := and .Release.IsUpgrade .Values.operator.crdStorageMigrationInitManager }}
       {{- if or $needsCertgen $needsMigrator }}
       initContainers:
@@ -70,6 +70,7 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            {{- include "dynatrace-operator.webhookCertsCtrl.envs" . | nindent 12 }}
           resources:
             requests:
               {{- toYaml .Values.operator.requests | nindent 14 }}
@@ -123,6 +124,14 @@ spec:
             - name: DT_CLIENT_LOG_LEVEL
               value: {{ . }}
             {{- end }}
+            {{- if .Values.operator.clientCacheCleanupInterval }}
+            - name: DT_CLIENT_CACHE_CLEAN_INTERVAL
+              value: "{{ .Values.operator.clientCacheCleanupInterval }}"
+            {{- end }}
+            {{- if .Values.operator.kubemonEnableOperand }}
+            - name: KUBEMON_ENABLE_OPERAND
+              value: "true"
+            {{- end }}
             {{- if .Values.enableInsecurePprofEndpoint }}
             - name: PPROF_BIND_ADDRESS
               value: ":6060"
@@ -130,6 +139,11 @@ spec:
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12}}
             {{ include "dynatrace-operator.gomemlimit" .Values.operator | nindent 12 }}
             {{ include "dynatrace-operator.app-version-env" . | nindent 12 }}
+            {{- with .Values.operator.requeueAfter }}
+            - name: DT_DEFAULT_REQUEUE_AFTER
+              value: {{ . | quote }}
+            {{- end }}
+            {{- include "dynatrace-operator.webhookCertsCtrl.envs" . | nindent 12 }}
           ports:
             - containerPort: 10080
               name: livez

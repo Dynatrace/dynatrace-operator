@@ -21,14 +21,21 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
-Check if default image or imageref is used
+Check if default image or imageref is used.
+When imageRef.digest is set, it wins over imageRef.tag. The rendered image
+reference uses <repository>@<digest> and the tag is omitted to avoid the
+confusing case where the tag and digest disagree.
 */}}
 {{- define "dynatrace-operator.image" -}}
 {{- if .Values.image -}}
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
     {{- if (.Values.imageRef).repository -}}
-        {{- .Values.imageRef.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" .Values.imageRef.repository -}}
+        {{- if .Values.imageRef.digest -}}
+            {{- printf "%s@%s" .Values.imageRef.repository .Values.imageRef.digest -}}
+        {{- else -}}
+            {{- .Values.imageRef.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" .Values.imageRef.repository -}}
+        {{- end -}}
     {{- else if hasPrefix "0.0.0-nightly-" .Chart.AppVersion -}}
         {{- printf "%s:%s" "ghcr.io/dynatrace/dynatrace-operator" (.Chart.AppVersion | replace "0.0.0-" "") }}
     {{- else if eq (include "dynatrace-operator.platform" .) "openshift" -}}
@@ -142,15 +149,13 @@ The common envs that inform the component about what is configured in its pod
 {{- end -}}
 
 {{- define "kubernetes.appArmorSecurityContextSupported" -}}
-{{- if semverCompare ">=1.31.0" .Capabilities.KubeVersion.Version  -}}
+{{- if semverCompare ">=1.31.0" .Capabilities.KubeVersion.Version -}}
     true
-{{- else -}}
-    false
 {{- end -}}
 {{- end -}}
 
 {{- define "kubernetes.defaultAppArmorProfile" -}}
-{{- if eq (include "kubernetes.appArmorSecurityContextSupported" .) "true" -}}
+{{- if (include "kubernetes.appArmorSecurityContextSupported" .) -}}
 appArmorProfile:
   type: RuntimeDefault
 {{- end -}}
@@ -169,4 +174,23 @@ appArmorProfile:
 topologySpreadConstraints:
   {{- toYaml .Values.webhook.topologySpreadConstraints | nindent 2 }}
   {{- end -}}
+{{- end -}}
+
+{{- define "dynatrace-operator.webhookCertsCtrl.envs" -}}
+{{- with .Values.webhook.certs.rootDuration }}
+- name: DT_WEBHOOK_CERTS_ROOT_DURATION
+  value: {{ . | quote }}
+{{- end }}
+{{- with .Values.webhook.certs.serverDuration }}
+- name: DT_WEBHOOK_CERTS_SERVER_DURATION
+  value: {{ . | quote }}
+{{- end }}
+{{- with .Values.webhook.certs.renewalThreshold }}
+- name: DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD
+  value: {{ . | quote }}
+{{- end }}
+{{- with .Values.webhook.certs.requeueAfter }}
+- name: DT_WEBHOOK_CERTS_REQUEUE_AFTER
+  value: {{ . | quote }}
+{{- end }}
 {{- end -}}

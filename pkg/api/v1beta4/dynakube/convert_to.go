@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -29,8 +28,9 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	src.toExtensionsSpec(dst)
 	src.toOneAgentSpec(dst)
 	src.toActiveGateSpec(dst)
-	src.toTemplatesSpec(dst)
+	// we need to convert TelemetryIngestSpec first since `toTemplatesSpec` relies on it
 	src.toTelemetryIngestSpec(dst)
+	src.toTemplatesSpec(dst)
 
 	return nil
 }
@@ -157,10 +157,10 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
-	if dst.ImageRef.IsZero() {
+	if !dst.ImageRef.HasImage() && (dk.TelemetryIngest().IsEnabled() || dk.Extensions().IsPrometheusEnabled()) {
 		dst.ImageRef.Repository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 		dst.ImageRef.Tag = "latest"
-		dk.RemovedFields().DefaultOTELCImage.Set(ptr.To(true))
+		dk.RemovedFields().DefaultOTELCImage.Set(new(true))
 	}
 	dst.TLSRefName = src.TLSRefName
 	dst.Resources = src.Resources

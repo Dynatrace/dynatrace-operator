@@ -83,7 +83,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-30"
+                    "text": "k8s_1-30 (platform token) (phase 3)"
                   }
                 ]
               }
@@ -184,7 +184,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-15"
+                    "text": "ocp_4-15 (platform token) (phase 3)"
                   }
                 ]
               }
@@ -219,7 +219,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-32"
+                    "text": "k8s_1-32 (platform token)"
                   }
                 ]
               }
@@ -320,7 +320,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-17"
+                    "text": "ocp_4-17 (platform token)"
                   }
                 ]
               }
@@ -355,7 +355,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-34"
+                    "text": "k8s_1-34 (platform token) (phase 3)"
                   }
                 ]
               }
@@ -456,7 +456,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-19"
+                    "text": "ocp_4-19 (platform token) (phase 3)"
                   }
                 ]
               }
@@ -491,7 +491,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-36"
+                    "text": "k8s_1-36 (platform token)"
                   }
                 ]
               }
@@ -650,7 +650,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-21"
+                    "text": "ocp_4-21 (platform token)"
                   }
                 ]
               }
@@ -670,6 +670,69 @@
                   {
                     "type": "emoji",
                     "name": "${{ env.OCP_4_21_EMOJI }}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "n/a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "n/a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "ocp_4-22"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "${{ env.OCP_4_22_RUN_ID_URL }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.OCP_4_22_EMOJI }}"
                   }
                 ]
               }

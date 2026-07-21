@@ -2,16 +2,20 @@ package metadata
 
 import (
 	"context"
-	"maps"
+	"fmt"
+	"strconv"
 
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,10 +34,6 @@ func NewMutator(metaClient client.Client) dtwebhook.Mutator {
 }
 
 func (mut *Mutator) IsEnabled(_ context.Context, request *dtwebhook.BaseRequest) bool {
-	if oneagent.IsEnabled(request) {
-		return true
-	}
-
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject,
 		request.DynaKube.FF().IsAutomaticInjection())
 	enabledOnDynakube := request.DynaKube.MetadataEnrichment().IsEnabled()
@@ -53,11 +53,24 @@ func (mut *Mutator) IsInjected(_ context.Context, request *dtwebhook.BaseRequest
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
+func initResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
+	if custom := dk.MetadataEnrichment().GetInitResources(); custom != nil {
+		return *custom
+	}
+
+	return corev1.ResourceRequirements{
+		Requests: k8sresource.NewResourceList("30m", "30Mi"),
+		Limits:   k8sresource.NewResourceList("100m", "60Mi"),
+	}
+}
+
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_, log := logd.NewFromContext(request.Context, "metadata-enrichment-pod-common")
+	_, log := logd.NewFromContext(request.Context, "metadata-enrichment")
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
-	workloadInfo, err := workload.FindRootOwnerOfPod(request.Context, mut.metaClient, *request.BaseRequest, log)
+	request.InstallContainer.Resources = initResources(request.DynaKube)
+
+	attrs, err := attributes.NewPodAttributes(request.Context, *request.BaseRequest, mut.metaClient)
 	if err != nil {
 		return dtwebhook.MutatorError{
 			Err:      errors.WithStack(err),
@@ -65,40 +78,40 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		}
 	}
 
-	attrs := podattr.Attributes{}
-	attrs.WorkloadInfo = podattr.WorkloadInfo{
-		WorkloadKind: workloadInfo.Kind,
-		WorkloadName: workloadInfo.Name,
-	}
-	attrs.ClusterInfo = podattr.ClusterInfo{
-		ClusterUID: request.DynaKube.Status.KubeSystemUUID,
+	if oneagent.IsEnabled(request.BaseRequest) {
+		attrs.SetDynakubeAttributes(request.Context, request.DynaKube.OneAgent().GetResourceAttributes())
+	} else {
+		attrs.SetDynakubeAttributes(request.Context, request.DynaKube.GetResourceAttributes())
 	}
 
 	withDeprecatedAttributesArg := arg.Arg{
 		Name:  bootstrapper.EnableAttributesDTKubernetesFlag,
-		Value: "false",
+		Value: strconv.FormatBool(request.DynaKube.FF().EnableAttributesDTKubernetes()),
 	}
 
-	if request.DynaKube.FF().EnableAttributesDTKubernetes() {
-		setDeprecatedAttributes(&attrs)
+	args := attrs.Convert(func(key, value string) string {
+		if key == "" || value == "" {
+			return ""
+		}
 
-		withDeprecatedAttributesArg.Value = "true"
-	}
+		return attributes.ToArg(key, value)
+	})
 
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{withDeprecatedAttributesArg})...)
+	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
 
-	addMetadataToInitArgs(request, &attrs)
+	request.InstallContainer.Env = append(request.InstallContainer.Env, attrs.GetPodEnvVars()...)
+
+	turnOnMetadataEnrichment(request)
+
 	setInjectedAnnotation(request.Pod)
-	SetWorkloadAnnotations(request.Pod, workloadInfo)
 
-	args, err := podattr.ToArgs(attrs)
+	request.AnnotationWriter = attrs
+
+	_, err = AddContainerAttributes(request.BaseRequest, request.InstallContainer)
 	if err != nil {
 		return err
 	}
-
-	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
-
-	turnOnMetadataEnrichment(request)
 
 	return nil
 }
@@ -107,25 +120,8 @@ func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{{Name: bootstrapper.MetadataEnrichmentFlag}})...)
 }
 
-func (mut *Mutator) Reinvoke(_ context.Context, request *dtwebhook.ReinvocationRequest) bool {
+func (mut *Mutator) Reinvoke(_ context.Context, _ *dtwebhook.ReinvocationRequest) bool {
 	return false
-}
-
-func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
-	log := logd.FromContext(request.Context)
-
-	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube, log)
-	if copiedMetadataAnnotations == nil {
-		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
-
-		return
-	}
-
-	if attributes.UserDefined == nil {
-		attributes.UserDefined = make(map[string]string)
-	}
-
-	maps.Copy(attributes.UserDefined, copiedMetadataAnnotations)
 }
 
 func setInjectedAnnotation(pod *corev1.Pod) {
@@ -148,11 +144,41 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	}
 }
 
-func SetWorkloadAnnotations(pod *corev1.Pod, workload *workload.Info) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
+func AddContainerAttributes(request *dtwebhook.BaseRequest, installContainer *corev1.Container) (bool, error) {
+	containers := request.NewContainers(isInjected)
+	if len(containers) > 0 {
+		args := make([]string, 0)
+
+		for _, c := range containers {
+			contInfos := *attributes.NewContainerInfo(*c)
+
+			json, err := contInfos.ToJSON()
+			if err != nil {
+				return false, err
+			}
+
+			args = append(args, fmt.Sprintf("--%s=%s", container.Flag, json))
+
+			volumes.AddConfigVolumeMount(c, request)
+		}
+
+		installContainer.Args = append(installContainer.Args, args...)
+
+		return true, nil
 	}
 
-	pod.Annotations[AnnotationWorkloadKind] = workload.Kind
-	pod.Annotations[AnnotationWorkloadName] = workload.Name
+	return false, nil
+}
+
+func isInjected(container corev1.Container, request *dtwebhook.BaseRequest) bool {
+	if request.IsSplitMountsEnabled() {
+		if (request.DynaKube.OneAgent().IsAppInjectionNeeded() && !volumes.HasSplitOneAgentMounts(&container)) ||
+			(request.DynaKube.MetadataEnrichment().IsEnabled() && !volumes.HasSplitEnrichmentMounts(&container)) {
+			return false
+		}
+
+		return true
+	} else {
+		return volumes.HasCommonConfigVolumeMounts(&container)
+	}
 }

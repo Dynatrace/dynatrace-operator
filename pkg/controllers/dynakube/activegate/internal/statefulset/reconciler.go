@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -36,7 +37,7 @@ func NewReconciler(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) error {
-	ctx, log := logd.NewFromContext(ctx, "activegate-statefulset")
+	ctx, log := logd.NewFromContext(ctx, "statefulset")
 
 	err := r.manageStatefulSet(ctx, dk, agCapability)
 	if err != nil {
@@ -101,12 +102,10 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 		return "", err
 	}
 
-	if len(customPropertyData) < 1 && len(authTokenData) < 1 {
-		return "", nil
-	}
+	resourceAttributesData := deploymentproperties.BuildContent(dk.Spec.ResourceAttributes)
 
 	hash := fnv.New32()
-	if _, err := hash.Write([]byte(customPropertyData + authTokenData)); err != nil {
+	if _, err := hash.Write([]byte(customPropertyData + authTokenData + resourceAttributesData)); err != nil {
 		return "", errors.WithStack(err)
 	}
 

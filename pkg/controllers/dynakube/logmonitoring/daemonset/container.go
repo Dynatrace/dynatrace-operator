@@ -4,13 +4,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
-	defaultImageRepo = "registry.lab.dynatrace.org/oneagent/dynatrace-logmodule-amd64" // TODO: finalize
-	defaultImageTag  = "latest"
-
 	containerName       = "main"
 	runAs         int64 = 65532
 
@@ -28,7 +24,7 @@ var (
 	}
 )
 
-func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
+func getContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededCapabilities
 
@@ -36,9 +32,13 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, containerName)
 	}
 
+	if imageURI == "" {
+		imageURI = dk.LogMonitoring().Template().ImageRef.String()
+	}
+
 	container := corev1.Container{
 		Name:            containerName,
-		Image:           dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
+		Image:           imageURI,
 		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.GetPullPolicy(),
 		VolumeMounts:    getVolumeMounts(tenantUUID),
 		Env:             getEnvs(),
@@ -49,7 +49,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	return container
 }
 
-func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
+func getInitContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededInitCapabilities
 
@@ -57,9 +57,14 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container 
 		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.LogMonitoring.Annotations, initContainerName)
 	}
 
+	image := imageURI
+	if imageURI == "" {
+		image = dk.LogMonitoring().Template().ImageRef.String()
+	}
+
 	container := corev1.Container{
 		Name:            initContainerName,
-		Image:           dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
+		Image:           image,
 		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.GetPullPolicy(),
 		VolumeMounts:    []corev1.VolumeMount{getDTVolumeMounts(tenantUUID)},
 		Command:         []string{bootstrapCommand},
@@ -74,12 +79,12 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container 
 
 func getBaseSecurityContext(dk dynakube.DynaKube) *corev1.SecurityContext {
 	securityContext := &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		AllowPrivilegeEscalation: ptr.To(false),
-		RunAsUser:                ptr.To(runAs),
-		RunAsGroup:               ptr.To(runAs),
-		RunAsNonRoot:             ptr.To(true),
+		Privileged:               new(false),
+		ReadOnlyRootFilesystem:   new(true),
+		AllowPrivilegeEscalation: new(false),
+		RunAsUser:                new(runAs),
+		RunAsGroup:               new(runAs),
+		RunAsNonRoot:             new(true),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{"ALL"},
 		},
@@ -91,8 +96,8 @@ func getBaseSecurityContext(dk dynakube.DynaKube) *corev1.SecurityContext {
 	}
 
 	if dk.OneAgent().IsPrivilegedNeeded() {
-		securityContext.Privileged = ptr.To(true)
-		securityContext.AllowPrivilegeEscalation = ptr.To(true)
+		securityContext.Privileged = new(true)
+		securityContext.AllowPrivilegeEscalation = new(true)
 	}
 
 	return securityContext

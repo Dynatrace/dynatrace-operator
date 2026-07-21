@@ -9,19 +9,18 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestAddInputVolume(t *testing.T) {
 	t.Run("two projected volumes added to pod spec as single volume source", func(t *testing.T) {
 		pod := &corev1.Pod{}
 
-		AddInputVolume(pod)
-
-		assert.Len(t, pod.Spec.Volumes, 1)
+		require.NoError(t, AddInputVolume(pod))
+		require.Len(t, pod.Spec.Volumes, 1)
 
 		assert.Equal(t, corev1.Volume{
 			Name: "dynatrace-input",
@@ -33,7 +32,7 @@ func TestAddInputVolume(t *testing.T) {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: consts.BootstrapperInitSecretName,
 								},
-								Optional: ptr.To(false),
+								Optional: new(false),
 							},
 						},
 						{
@@ -41,13 +40,95 @@ func TestAddInputVolume(t *testing.T) {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: consts.BootstrapperInitCertsSecretName,
 								},
-								Optional: ptr.To(true),
+								Optional: new(true),
 							},
 						},
 					},
 				},
 			},
 		}, pod.Spec.Volumes[0])
+	})
+
+	t.Run("existing volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{
+						Name: "dynatrace-input",
+						VolumeSource: corev1.VolumeSource{
+							Projected: &corev1.ProjectedVolumeSource{
+								Sources: []corev1.VolumeProjection{
+									{
+										Secret: &corev1.SecretProjection{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: consts.BootstrapperInitSecretName,
+											},
+										},
+									},
+									{
+										Secret: &corev1.SecretProjection{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: consts.BootstrapperInitCertsSecretName,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		expectPod := pod.DeepCopy()
+
+		require.NoError(t, AddInputVolume(pod))
+		assert.Equal(t, expectPod, pod)
+	})
+
+	t.Run("conflicting volume type", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			volume corev1.VolumeSource
+		}{
+			{
+				"emptyDir",
+				corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			},
+			{
+				"missing sources",
+				corev1.VolumeSource{Projected: &corev1.ProjectedVolumeSource{Sources: []corev1.VolumeProjection{{}}}},
+			},
+			{
+				"invalid source types",
+				corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{ConfigMap: &corev1.ConfigMapProjection{}},
+							{ConfigMap: &corev1.ConfigMapProjection{}},
+						},
+					},
+				},
+			},
+			{
+				"invalid secret names",
+				corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{Secret: &corev1.SecretProjection{LocalObjectReference: corev1.LocalObjectReference{Name: "foo"}}},
+							{Secret: &corev1.SecretProjection{LocalObjectReference: corev1.LocalObjectReference{Name: "bar"}}},
+						},
+					},
+				},
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				pod := &corev1.Pod{Spec: corev1.PodSpec{Volumes: []corev1.Volume{{Name: InputVolumeName, VolumeSource: test.volume}}}}
+
+				assert.Error(t, AddInputVolume(pod))
+			})
+		}
 	})
 }
 
@@ -70,7 +151,7 @@ func TestAddConfigVolume(t *testing.T) {
 			},
 		}
 
-		AddConfigVolume(t.Context(), pod)
+		require.NoError(t, AddConfigVolume(t.Context(), pod))
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 		assert.Equal(t, corev1.Volume{
@@ -102,15 +183,41 @@ func TestAddConfigVolume(t *testing.T) {
 			},
 		}
 
-		AddConfigVolume(t.Context(), pod)
+		require.NoError(t, AddConfigVolume(t.Context(), pod))
 
 		assert.Len(t, pod.Spec.Volumes, 1)
 		assert.Equal(t, corev1.Volume{
 			Name: "dynatrace-config",
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{
-				SizeLimit: ptr.To(resource.MustParse("300Mi")),
+				SizeLimit: new(resource.MustParse("300Mi")),
 			}},
 		}, pod.Spec.Volumes[0])
+	})
+
+	t.Run("existing volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: ConfigVolumeName, VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: corev1.StorageMediumHugePages}}},
+				},
+			},
+		}
+		expectPod := pod.DeepCopy()
+
+		require.NoError(t, AddConfigVolume(t.Context(), pod))
+		assert.Equal(t, expectPod, pod)
+	})
+
+	t.Run("conflicting volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: ConfigVolumeName, VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}}},
+				},
+			},
+		}
+
+		require.Error(t, AddConfigVolume(t.Context(), pod))
 	})
 }
 
@@ -166,7 +273,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}
@@ -195,7 +302,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}
@@ -218,7 +325,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 		assert.True(t, HasSplitEnrichmentMounts(container))
 	})
 
-	t.Run("should add split mounts for metadataenrichment if classicfullstack is enabled", func(t *testing.T) {
+	t.Run("should add split mounts for metadataenrichment if classicFullStack is enabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -226,7 +333,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 		}

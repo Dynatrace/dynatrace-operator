@@ -335,6 +335,23 @@ properties:
     title: Webhook startup probe failureThreshold
     description: Number of times the startup probe can fail before giving up. Defaults to 1.
 
+  webhook.certs.rootDuration:
+    type: string
+    title: Webhook CA root certificate duration
+    description: Validity duration for the generated CA root certificate. Accepts Go duration strings (e.g. 8760h). Defaults to 8760h (365 days), min 168h (7 days), max 87600h (10 years). Must be greater than serverDuration.
+  webhook.certs.serverDuration:
+    type: string
+    title: Webhook server certificate duration
+    description: Validity duration for the generated server certificate. Accepts Go duration strings (e.g. 168h). Defaults to 168h (7 days), min 24h, max 8760h (365 days). Must be greater than renewalThreshold.
+  webhook.certs.renewalThreshold:
+    type: string
+    title: Webhook certificate renewal threshold
+    description: Certificates are renewed when their remaining validity falls below this threshold. Accepts Go duration strings (e.g. 12h). Defaults to 12h, min 12h, max 720h (30 days). Must be greater than requeueAfter.
+  webhook.certs.requeueAfter:
+    type: string
+    title: Webhook certificate controller requeueAfter
+    description: Requeue interval for the webhook certificate controller when certificates are up to date. Accepts Go duration strings (e.g. 3h). Defaults to 3h, min 5m, max 11h. Must be less than renewalThreshold.
+
   csidriver.enabled:
     type: boolean
     title: Enables CSI driver

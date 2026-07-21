@@ -52,20 +52,20 @@ jobs:
     steps:
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.MARKETPLACE_REPOS_APP_ID }}
           private-key: ${{ secrets.MARKETPLACE_REPOS_APP_KEY }}
           owner: Dynatrace
           repositories: ${{ matrix.fork_repo_name }}
       - name: Checkout workflow scripts
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 1
           token: ${{ github.token }}
           persist-credentials: false
       - name: Checkout dynatrace-operator at release-branch
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.branch || github.event.pull_request.base.ref }}
           path: release-src
@@ -145,17 +145,27 @@ jobs:
             operator_dir="operators/dynatrace-operator/${VERSION}"
           fi
 
+          # Detect previous version BEFORE creating the new directory so the current version is not included in the scan
+          if [ "${MARKETPLACE}" = "redhat" ]; then
+            operator_versions_dirs="$(ls -d operators/dynatrace-operator-rhmp/*/ 2>/dev/null || true)"
+          else
+            operator_versions_dirs="$(ls -d operators/dynatrace-operator/*/ 2>/dev/null || true)"
+          fi
+          # strip trailing slash and path prefix from each dir, filter out non-version strings, then pick the highest semver
+          last_version="$(echo "${operator_versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | grep -E '^[vV]?[0-9]' | sort -V | tail -1)"
+
           mkdir -p "${operator_dir}"
 
           # Copy bundle files
           cp -rf "${GITHUB_WORKSPACE}/release-src/config/olm/${bundle_source}/${VERSION}/manifests" "${operator_dir}/"
           cp -rf "${GITHUB_WORKSPACE}/release-src/config/olm/${bundle_source}/${VERSION}/metadata" "${operator_dir}/"
 
-          # Create Dockerfile for community marketplaces
+          # Create Dockerfile for community marketplaces using the platform-appropriate source
           if [ "${MARKETPLACE}" = "community" ] || [ "${MARKETPLACE}" = "community-prod" ]; then
             echo "Creating Dockerfile for ${MARKETPLACE}"
-            origin_dockerfile="${GITHUB_WORKSPACE}/release-src/config/olm/kubernetes/${VERSION}/bundle.Dockerfile"
+            origin_dockerfile="${GITHUB_WORKSPACE}/release-src/config/olm/${bundle_source}/${VERSION}/bundle.Dockerfile"
             target_dockerfile="${operator_dir}/Dockerfile"
+            cp "${origin_dockerfile}" "${target_dockerfile}"
           fi
 
           # Update package annotation for redhat
@@ -164,15 +174,6 @@ jobs:
               "s/  operators.operatorframework.io.bundle.package.v1: dynatrace-operator/  operators.operatorframework.io.bundle.package.v1: dynatrace-operator-rhmp/" \
               "${operator_dir}/metadata/annotations.yaml"
           fi
-
-          # Determine last existing version and set spec.replaces
-          if [ "${MARKETPLACE}" = "redhat" ]; then
-            operator_versions_dirs="$(ls -d operators/dynatrace-operator-rhmp/*/ 2>/dev/null || true)"
-          else
-            operator_versions_dirs="$(ls -d operators/dynatrace-operator/*/ 2>/dev/null || true)"
-          fi
-          # strip trailing slash and path prefix from each dir, filter out non-version strings, then pick the highest semver
-          last_version="$(echo "${operator_versions_dirs}" | sed 's|/$||' | sed 's|.*/||' | grep -E '^[vV]?[0-9]' | sort -V | tail -1)"
 
           csv_file="${operator_dir}/manifests/dynatrace-operator.clusterserviceversion.yaml"
 
@@ -210,7 +211,11 @@ jobs:
         run: |
           cd "${FORK_REPO_DIR}"
 
-          git add -A
+          if [ "${MARKETPLACE}" = "redhat" ]; then
+            git add "operators/dynatrace-operator-rhmp/${VERSION}/"
+          else
+            git add "operators/dynatrace-operator/${VERSION}/"
+          fi
           if git diff-index --quiet HEAD; then
             echo "No changes to commit; nothing to push for ${MARKETPLACE}."
             exit 0

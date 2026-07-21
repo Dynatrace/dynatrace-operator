@@ -87,7 +87,7 @@ type MockExecutor_Exec_Call struct {
 //   - podNamespace string
 //   - containerName string
 //   - command []string
-func (_e *MockExecutor_Expecter) Exec(ctx interface{}, config interface{}, podName interface{}, podNamespace interface{}, containerName interface{}, command interface{}) *MockExecutor_Exec_Call {
+func (_e *MockExecutor_Expecter) Exec(ctx any, config any, podName any, podNamespace any, containerName any, command any) *MockExecutor_Exec_Call {
 	return &MockExecutor_Exec_Call{Call: _e.mock.On("Exec", ctx, config, podName, podNamespace, containerName, command)}
 }
 

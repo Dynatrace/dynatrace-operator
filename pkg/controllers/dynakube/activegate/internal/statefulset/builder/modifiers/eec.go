@@ -2,13 +2,13 @@ package modifiers
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	eecconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 var _ volumeModifier = EECModifier{}
@@ -17,7 +17,7 @@ var _ builder.Modifier = EECModifier{}
 
 const (
 	eecVolumeName = "eec-token"
-	eecMountPath  = "/var/lib/dynatrace/secrets/eec/token"
+	eecMountPath  = operatorconsts.DTComponentsSecretsRootDir + "/eec/token"
 	eecFile       = "eec.token"
 )
 
@@ -44,7 +44,7 @@ func (mod EECModifier) Modify(sts *appsv1.StatefulSet) error {
 }
 
 func (mod EECModifier) getVolumes() []corev1.Volume {
-	mode := ptr.To(int32(0o640))
+	mode := new(int32(0o640))
 
 	return []corev1.Volume{
 		{

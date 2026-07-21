@@ -13,6 +13,7 @@ import (
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	metadataenrichmentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -22,6 +23,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 func TestConvertFrom(t *testing.T) {
@@ -187,7 +189,7 @@ func TestConvertFrom(t *testing.T) {
 	t.Run("clear default otelc image", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
-		from.RemovedFields().DefaultOTELCImage.Set(ptr.To(true))
+		from.RemovedFields().DefaultOTELCImage.Set(new(true))
 
 		to := DynaKube{}
 
@@ -246,6 +248,48 @@ func TestConvertFrom(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, to.Spec.OneAgent.HostGroup, from.Spec.OneAgent.HostGroup)
+	})
+
+	t.Run("migrate telemetryIngest from latest to v1beta5", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Spec.TelemetryIngest = &telemetryingestlatest.Spec{
+			ServiceName: "telemetry-ingest-service-name",
+			TLSRefName:  "telemetry-ingest-tls-secret-name",
+			Protocols:   []otelcgen.Protocol{"protocol1", "protocol2"},
+		}
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		require.NotNil(t, to.Spec.TelemetryIngest)
+		assert.Equal(t, from.Spec.TelemetryIngest.ServiceName, to.Spec.TelemetryIngest.ServiceName)
+		assert.Equal(t, from.Spec.TelemetryIngest.TLSRefName, to.Spec.TelemetryIngest.TLSRefName)
+		assert.Equal(t, from.Spec.TelemetryIngest.Protocols, to.Spec.TelemetryIngest.Protocols)
+	})
+
+	t.Run("telemetryIngest round-trip preserves spec via v1beta5", func(t *testing.T) {
+		original := DynaKube{
+			Spec: DynaKubeSpec{
+				APIURL: "api-url",
+				TelemetryIngest: &telemetryingest.Spec{
+					ServiceName: "telemetry-ingest-service-name",
+					TLSRefName:  "telemetry-ingest-tls-secret-name",
+					Protocols:   []otelcgen.Protocol{"protocol1", "protocol2"},
+				},
+			},
+		}
+
+		hub := dynakubelatest.DynaKube{}
+		require.NoError(t, original.ConvertTo(&hub))
+
+		roundTripped := DynaKube{}
+		require.NoError(t, roundTripped.ConvertFrom(&hub))
+
+		require.NotNil(t, roundTripped.Spec.TelemetryIngest)
+		assert.Equal(t, original.Spec.TelemetryIngest.ServiceName, roundTripped.Spec.TelemetryIngest.ServiceName)
+		assert.Equal(t, original.Spec.TelemetryIngest.TLSRefName, roundTripped.Spec.TelemetryIngest.TLSRefName)
+		assert.Equal(t, original.Spec.TelemetryIngest.Protocols, roundTripped.Spec.TelemetryIngest.Protocols)
 	})
 }
 
@@ -491,7 +535,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
 			},
-			DynatraceAPIRequestThreshold: ptr.To(uint16(42)),
+			DynatraceAPIRequestThreshold: new(uint16(42)),
 			APIURL:                       "api-url",
 			Tokens:                       "token",
 			TrustedCAs:                   "trusted-ca",
@@ -500,7 +544,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			SkipCertCheck:                true,
 			EnableIstio:                  true,
 			MetadataEnrichment: metadataenrichmentlatest.Spec{
-				Enabled:           ptr.To(true),
+				Enabled:           new(true),
 				NamespaceSelector: getTestNamespaceSelector(),
 			},
 		},
@@ -608,7 +652,7 @@ func getNewActiveGateSpec() activegatelatest.Spec {
 				"activegate-node-selector-key": "activegate-node-selector-value",
 			},
 			Image:    "activegate-image",
-			Replicas: ptr.To(int32(42)),
+			Replicas: new(int32(42)),
 			Group:    "activegate-group",
 			CustomProperties: &value.Source{
 				Value:     "activegate-cp-value",
@@ -668,7 +712,7 @@ func getNewOpenTelemetryTemplateSpec() dynakubelatest.OpenTelemetryCollectorSpec
 			"otelc-annotation-key1": "otelc-annotation-value1",
 			"otelc-annotation-key2": "otelc-annotation-value2",
 		},
-		Replicas: ptr.To(int32(42)),
+		Replicas: new(int32(42)),
 		ImageRef: image.Ref{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
@@ -760,9 +804,9 @@ func getPersistentVolumeClaimSpec() *corev1.PersistentVolumeClaimSpec {
 			},
 		},
 		VolumeName:                "volume-name",
-		StorageClassName:          ptr.To("localstorage"),
-		VolumeMode:                ptr.To(corev1.PersistentVolumeFilesystem),
-		VolumeAttributesClassName: ptr.To("volume-attributes-class-name"),
+		StorageClassName:          new("localstorage"),
+		VolumeMode:                new(corev1.PersistentVolumeFilesystem),
+		VolumeAttributesClassName: new("volume-attributes-class-name"),
 	}
 }
 

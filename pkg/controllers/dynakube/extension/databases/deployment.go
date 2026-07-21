@@ -17,7 +17,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -88,10 +87,10 @@ func buildServiceAccountName(dbSpec extensions.DatabaseSpec) string {
 	return defaultServiceAccount
 }
 
-func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev1.Container {
+func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec, imageURI string) corev1.Container {
 	container := corev1.Container{
 		Name:            containerName,
-		Image:           dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String(),
+		Image:           imageURI,
 		ImagePullPolicy: dk.Spec.Templates.SQLExtensionExecutor.ImageRef.GetPullPolicy(),
 		Args:            buildContainerArgs(dk),
 		Env:             buildContainerEnvs(),
@@ -186,7 +185,7 @@ func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []
 }
 
 func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.Volume {
-	mode := ptr.To(int32(0o640))
+	mode := new(int32(0o640))
 
 	volumes := []corev1.Volume{
 		{
@@ -271,18 +270,18 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
-		FSGroup: ptr.To(userGroupID),
+		FSGroup: new(userGroupID),
 	}
 }
 
 func buildContainerSecurityContext(annotations map[string]string) *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		Privileged:               ptr.To(false),
-		AllowPrivilegeEscalation: ptr.To(false),
-		ReadOnlyRootFilesystem:   ptr.To(true),
-		RunAsNonRoot:             ptr.To(true),
-		RunAsGroup:               ptr.To(userGroupID),
-		RunAsUser:                ptr.To(userGroupID),
+		Privileged:               new(false),
+		AllowPrivilegeEscalation: new(false),
+		ReadOnlyRootFilesystem:   new(true),
+		RunAsNonRoot:             new(true),
+		RunAsGroup:               new(userGroupID),
+		RunAsUser:                new(userGroupID),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -313,7 +312,7 @@ func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.Dyna
 			return nil
 		}
 
-		log.Info("deleted deployment", "name", deploy.Name)
+		log.Info("deleted deployment", "deploymentName", deploy.Name)
 	}
 
 	return nil

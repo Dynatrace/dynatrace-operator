@@ -7,7 +7,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	oaClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/metadata/rules"
@@ -17,7 +20,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,13 +29,25 @@ type istioReconciler interface {
 	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
+type versionReconciler interface {
+	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, imageClient dtimage.Client, versionClient dtversion.Client) error
+}
+
+type connectionInfoReconciler interface {
+	Reconcile(ctx context.Context, oaClient oaClient.Client, dk *dynakube.DynaKube) error
+}
+
+type enrichmentRulesReconciler interface {
+	Reconcile(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error
+}
+
 type Reconciler struct {
 	client                    client.Client
 	apiReader                 client.Reader
 	istioReconciler           istioReconciler
-	versionReconciler         version.Reconciler
-	connectionInfoReconciler  controllers.Reconciler
-	enrichmentRulesReconciler controllers.Reconciler
+	versionReconciler         versionReconciler
+	connectionInfoReconciler  connectionInfoReconciler
+	enrichmentRulesReconciler enrichmentRulesReconciler
 }
 
 func NewReconciler(
@@ -41,14 +55,17 @@ func NewReconciler(
 	apiReader client.Reader,
 ) *Reconciler {
 	return &Reconciler{
-		client:          client,
-		apiReader:       apiReader,
-		istioReconciler: istio.NewReconciler(client, apiReader),
+		client:                    client,
+		apiReader:                 apiReader,
+		istioReconciler:           istio.NewReconciler(client, apiReader),
+		versionReconciler:         version.NewReconciler(apiReader),
+		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader),
+		enrichmentRulesReconciler: rules.NewReconciler(),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-injection")
+	ctx, log := logd.NewFromContext(ctx, "injection")
 
 	err := r.reconcileSubReconcilers(ctx, dtClient, dk)
 	if err != nil {
@@ -92,27 +109,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, 
 }
 
 func (r *Reconciler) reconcileSubReconcilers(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
-	versionReconciler := r.versionReconciler
-	if versionReconciler == nil {
-		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
-	}
-
-	connectionInfoReconciler := r.connectionInfoReconciler
-	if connectionInfoReconciler == nil {
-		connectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient.OneAgent, dk)
-	}
-
-	enrichmentRulesReconciler := r.enrichmentRulesReconciler
-	if enrichmentRulesReconciler == nil {
-		enrichmentRulesReconciler = rules.NewReconciler(dtClient.Settings, dk)
-	}
-
 	var setupErrors []error
-	if err := r.setupOneAgentInjection(ctx, dk, versionReconciler, connectionInfoReconciler); err != nil {
+	if err := r.setupOneAgentInjection(ctx, dk, dtClient); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
-	if err := r.setupEnrichmentInjection(ctx, dk, enrichmentRulesReconciler); err != nil {
+	if err := r.setupEnrichmentInjection(ctx, dk, dtClient.Settings); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
@@ -134,7 +136,7 @@ func (r *Reconciler) setupOTLPSecret(ctx context.Context, namespaces []corev1.Na
 }
 
 func (r *Reconciler) setupInitSecret(ctx context.Context, dtClient *dynatrace.Client, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichment().IsEnabled() {
+	if bootstrapperconfig.NeedsPGC(dk) || dk.MetadataEnrichment().IsEnabled() {
 		if err := r.generateInitSecret(ctx, dtClient, namespaces, dk); err != nil {
 			return err
 		}
@@ -150,24 +152,24 @@ func (r *Reconciler) unmap(ctx context.Context, dk *dynakube.DynaKube) {
 
 	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
 	if err != nil {
-		log.Error(err, "failed to list namespaces for dynakube", "dkName", dk.Name)
+		log.Error(err, "failed to list namespaces for dynakube")
 	}
 
 	dkMapper := r.createDynakubeMapper(ctx, dk)
 	if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
-		log.Error(err, "could not unmap dynakube from namespace", "dkName", dk.Name)
+		log.Error(err, "could not unmap dynakube from namespace")
 	}
 }
 
-func (r *Reconciler) setupOneAgentInjection(ctx context.Context, dk *dynakube.DynaKube, versionReconciler version.Reconciler, connectionInfoReconciler controllers.Reconciler) error {
+func (r *Reconciler) setupOneAgentInjection(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client) error {
 	log := logd.FromContext(ctx)
 
-	err := versionReconciler.ReconcileCodeModules(ctx, dk)
+	err := r.versionReconciler.ReconcileCodeModules(ctx, dk, dtClient.Images, dtClient.Version)
 	if err != nil {
 		return err
 	}
 
-	err = connectionInfoReconciler.Reconcile(ctx)
+	err = r.connectionInfoReconciler.Reconcile(ctx, dtClient.OneAgent, dk)
 	if err != nil {
 		return err
 	}
@@ -216,10 +218,10 @@ func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1
 	return nil
 }
 
-func (r *Reconciler) setupEnrichmentInjection(ctx context.Context, dk *dynakube.DynaKube, enrichmentRulesReconciler controllers.Reconciler) error {
+func (r *Reconciler) setupEnrichmentInjection(ctx context.Context, dk *dynakube.DynaKube, settingsClient dtsettings.Client) error {
 	log := logd.FromContext(ctx)
 
-	err := enrichmentRulesReconciler.Reconcile(ctx)
+	err := r.enrichmentRulesReconciler.Reconcile(ctx, settingsClient, dk)
 	if err != nil {
 		log.Info("couldn't reconcile metadata-enrichment rules")
 
@@ -246,7 +248,8 @@ func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.
 	log := logd.FromContext(ctx)
 
 	if meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType) == nil &&
-		meta.FindStatusCondition(*dk.Conditions(), metaDataEnrichmentConditionType) == nil {
+		meta.FindStatusCondition(*dk.Conditions(), metaDataEnrichmentConditionType) == nil &&
+		meta.FindStatusCondition(*dk.Conditions(), bootstrapperconfig.ConfigConditionType) == nil {
 		return
 	}
 
@@ -257,6 +260,7 @@ func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.
 
 	meta.RemoveStatusCondition(dk.Conditions(), codeModulesInjectionConditionType)
 	meta.RemoveStatusCondition(dk.Conditions(), metaDataEnrichmentConditionType)
+	meta.RemoveStatusCondition(dk.Conditions(), bootstrapperconfig.ConfigConditionType)
 }
 
 func (r *Reconciler) cleanupOTLPSecret(ctx context.Context, namespaces []corev1.Namespace, dk *dynakube.DynaKube) {

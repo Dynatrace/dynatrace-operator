@@ -83,6 +83,7 @@ func TestDo(t *testing.T) {
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.EXPECT().InstallAgent(t.Context(), targetDir).Return(true, nil)
 			})),
+			WithBaseURL("url"),
 		}
 		client := New(opts...)
 
@@ -110,6 +111,7 @@ func TestDo(t *testing.T) {
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.EXPECT().InstallAgent(t.Context(), targetDir).Return(true, nil)
 			})),
+			WithBaseURL("url"),
 		}
 		client := New(opts...)
 
@@ -134,6 +136,7 @@ func TestDo(t *testing.T) {
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {
 				i.EXPECT().InstallAgent(t.Context(), targetDir).Return(false, expectedErr)
 			})),
+			WithBaseURL("url"),
 		}
 		client := New(opts...)
 

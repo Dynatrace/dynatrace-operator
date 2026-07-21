@@ -4,7 +4,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "E2E daily test results for `${{ env.TARGET_BRANCH }}` `${{ github.sha }}` "
+        "text": "E2E daily test results for `${{ env.TARGET_BRANCH }}` `${{ github.sha }}` ${{ env.MAKE_TARGET_INFO }}"
       }
     },
     {
@@ -87,6 +87,76 @@
                 "elements": [
                   {
                     "type": "text",
+                    "text": "k8s-latest (platform token)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "${{ env.K8S_PLATFORM_TOKEN_JOB_ID }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.K8S_PLATFORM_TOKEN_STATUS }}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "k8s-latest (platform token) (phase 3)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "${{ env.K8S_PHASE3_JOB_ID }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.K8S_PHASE3_STATUS }}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
                     "text": "ocp-latest"
                   }
                 ]
@@ -107,6 +177,41 @@
                   {
                     "type": "emoji",
                     "name": "${{ env.OCP_STATUS }}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "ocp-latest (platform token)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "${{ env.OCP_PLATFORM_TOKEN_JOB_ID }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.OCP_PLATFORM_TOKEN_STATUS }}"
                   }
                 ]
               }
@@ -177,6 +282,41 @@
                   {
                     "type": "emoji",
                     "name": "${{ env.OCP_OLM_STATUS }}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "ocp-olm (platform token)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "${{ env.OCP_OLM_PLATFORM_TOKEN_JOB_ID }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.OCP_OLM_PLATFORM_TOKEN_STATUS }}"
                   }
                 ]
               }

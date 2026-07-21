@@ -40,10 +40,11 @@ runs:
       env:
         VERSION: ${{ inputs.version }}
       run: |
-        MAJOR_MINOR="${VERSION%.*}"
+        BASE_VERSION="${VERSION%%-*}"
+        MAJOR_MINOR="${BASE_VERSION%.*}"
         echo "major_minor=${MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
     - name: Checkout release branch
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
         ref: release-${{ steps.vars.outputs.major_minor }}
         fetch-depth: 0
@@ -93,7 +94,7 @@ runs:
         VERSION: ${{ inputs.version }}
         PLATFORM: openshift
         IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator
-        OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
+        TAG: v${{ inputs.version }}
       run: |
         make bundle
     - name: Generate OLM bundles (kubernetes)
@@ -103,19 +104,19 @@ runs:
         VERSION: ${{ inputs.version }}
         PLATFORM: kubernetes
         IMAGE: docker.io/dynatrace/dynatrace-operator
-        OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
+        TAG: v${{ inputs.version }}
       run: |
         make bundle
     - name: Create GitHub app token
       if: ${{ inputs.dry-run != 'true' }}
-      uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
       id: create-github-app-token
       with:
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
     - name: Create CSV update PR
       if: ${{ inputs.dry-run != 'true' }}
-      uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
+      uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
       with:
         base: release-${{ steps.vars.outputs.major_minor }}
         branch: csv-${{ steps.vars.outputs.major_minor}}
@@ -124,7 +125,9 @@ runs:
         add-paths: |
           config/olm/**
           config/deploy/kubernetes/kustomization.yaml
+          config/deploy/kubernetes/kubernetes.yaml
           config/deploy/openshift/kustomization.yaml
+          config/deploy/openshift/openshift.yaml
           config/manifests/bases/**
           config/helm/**
         commit-message: "[Automatic] Update OLM bundles for v${{ inputs.version }}"
@@ -134,13 +137,15 @@ runs:
             This PR updates the OLM bundles/CSVs on `release-${{ steps.vars.outputs.major_minor }}` for version `v${{ inputs.version }}`.
     - name: Upload generated bundles as artifact
       if: ${{ inputs.dry-run == 'true' }}
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: csv-bundles-${{ inputs.version }}
         path: |
           config/olm/
           config/deploy/kubernetes/kustomization.yaml
+          config/deploy/kubernetes/kubernetes.yaml
           config/deploy/openshift/kustomization.yaml
+          config/deploy/openshift/openshift.yaml
           config/manifests/bases/
           config/helm/
         if-no-files-found: error

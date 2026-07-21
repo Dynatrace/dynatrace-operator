@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -72,7 +71,7 @@ func (b *builder) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		},
 		Key:      deploymentmetadata.OneAgentMetadataKey,
-		Optional: ptr.To(false),
+		Optional: new(false),
 	}})
 }
 
@@ -82,7 +81,7 @@ func (b *builder) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		},
 		Key:      deploymentmetadata.OperatorVersionKey,
-		Optional: ptr.To(false),
+		Optional: new(false),
 	}})
 }
 
@@ -92,14 +91,14 @@ func (b *builder) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 			Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.TenantUUIDKey,
-		Optional: ptr.To(false),
+		Optional: new(false),
 	}})
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDTServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.CommunicationEndpointsKey,
-		Optional: ptr.To(false),
+		Optional: new(false),
 	}})
 }
 

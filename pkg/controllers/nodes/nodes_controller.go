@@ -20,7 +20,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -82,12 +81,12 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	if skip, err := token.NewReader(controller.apiReader, dk).HasPlatformToken(ctx); err != nil {
 		return reconcile.Result{}, err
 	} else if skip {
-		log.Info("node controller disabled due to detected platform token in secret", "node", nodeName)
+		log.Info("node controller disabled due to detected platform token in secret")
 
 		return reconcile.Result{}, nil
 	}
 
-	log.Info("reconciling node", "node", nodeName)
+	log.Info("reconciling node")
 
 	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
@@ -195,7 +194,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	// `GetEntityIDForIP` fetches ALL host entities for the entire tenant, not just those belonging to this Kubernetes cluster.
 	// Which means a single call can pull in data from every cluster and environment reporting to the same tenant.
 	// Mark-for-termination events are rare, caching this possibly large dataset would waste memory with no meaningful benefit.
-	dk.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(0))
+	dk.Spec.DynatraceAPIRequestThreshold = new(uint16(0))
 
 	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
 	if err != nil {
@@ -243,8 +242,7 @@ func (controller *Controller) markForTermination(ctx context.Context, dk *dynaku
 
 	cacheEntry.SetLastMarkedForTerminationTimestamp(controller.timeProvider.Now().UTC())
 
-	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cacheEntry.IPAddress,
-		"node", cacheEntry.NodeName)
+	log.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", cacheEntry.IPAddress)
 
 	return controller.sendMarkedForTermination(ctx, dk, cacheEntry)
 }

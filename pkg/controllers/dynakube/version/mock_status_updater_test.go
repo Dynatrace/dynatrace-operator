@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -72,7 +73,7 @@ type MockStatusUpdater_CheckForDowngrade_Call struct {
 // CheckForDowngrade is a helper method to define mock.On call
 //   - ctx context.Context
 //   - latestVersion string
-func (_e *MockStatusUpdater_Expecter) CheckForDowngrade(ctx interface{}, latestVersion interface{}) *MockStatusUpdater_CheckForDowngrade_Call {
+func (_e *MockStatusUpdater_Expecter) CheckForDowngrade(ctx any, latestVersion any) *MockStatusUpdater_CheckForDowngrade_Call {
 	return &MockStatusUpdater_CheckForDowngrade_Call{Call: _e.mock.On("CheckForDowngrade", ctx, latestVersion)}
 }
 
@@ -192,50 +193,6 @@ func (_c *MockStatusUpdater_CustomVersion_Call) RunAndReturn(run func() string) 
 	return _c
 }
 
-// IsAutoRegistryEnabled provides a mock function for the type MockStatusUpdater
-func (_mock *MockStatusUpdater) IsAutoRegistryEnabled() bool {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for IsAutoRegistryEnabled")
-	}
-
-	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func() bool); ok {
-		r0 = returnFunc()
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-	return r0
-}
-
-// MockStatusUpdater_IsAutoRegistryEnabled_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsAutoRegistryEnabled'
-type MockStatusUpdater_IsAutoRegistryEnabled_Call struct {
-	*mock.Call
-}
-
-// IsAutoRegistryEnabled is a helper method to define mock.On call
-func (_e *MockStatusUpdater_Expecter) IsAutoRegistryEnabled() *MockStatusUpdater_IsAutoRegistryEnabled_Call {
-	return &MockStatusUpdater_IsAutoRegistryEnabled_Call{Call: _e.mock.On("IsAutoRegistryEnabled")}
-}
-
-func (_c *MockStatusUpdater_IsAutoRegistryEnabled_Call) Run(run func()) *MockStatusUpdater_IsAutoRegistryEnabled_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *MockStatusUpdater_IsAutoRegistryEnabled_Call) Return(b bool) *MockStatusUpdater_IsAutoRegistryEnabled_Call {
-	_c.Call.Return(b)
-	return _c
-}
-
-func (_c *MockStatusUpdater_IsAutoRegistryEnabled_Call) RunAndReturn(run func() bool) *MockStatusUpdater_IsAutoRegistryEnabled_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // IsAutoUpdateEnabled provides a mock function for the type MockStatusUpdater
 func (_mock *MockStatusUpdater) IsAutoUpdateEnabled() bool {
 	ret := _mock.Called()
@@ -320,6 +277,112 @@ func (_c *MockStatusUpdater_IsEnabled_Call) Return(b bool) *MockStatusUpdater_Is
 }
 
 func (_c *MockStatusUpdater_IsEnabled_Call) RunAndReturn(run func() bool) *MockStatusUpdater_IsEnabled_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IsPublicRegistryEnabled provides a mock function for the type MockStatusUpdater
+func (_mock *MockStatusUpdater) IsPublicRegistryEnabled() bool {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsPublicRegistryEnabled")
+	}
+
+	var r0 bool
+	if returnFunc, ok := ret.Get(0).(func() bool); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	return r0
+}
+
+// MockStatusUpdater_IsPublicRegistryEnabled_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsPublicRegistryEnabled'
+type MockStatusUpdater_IsPublicRegistryEnabled_Call struct {
+	*mock.Call
+}
+
+// IsPublicRegistryEnabled is a helper method to define mock.On call
+func (_e *MockStatusUpdater_Expecter) IsPublicRegistryEnabled() *MockStatusUpdater_IsPublicRegistryEnabled_Call {
+	return &MockStatusUpdater_IsPublicRegistryEnabled_Call{Call: _e.mock.On("IsPublicRegistryEnabled")}
+}
+
+func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) Run(run func()) *MockStatusUpdater_IsPublicRegistryEnabled_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) Return(b bool) *MockStatusUpdater_IsPublicRegistryEnabled_Call {
+	_c.Call.Return(b)
+	return _c
+}
+
+func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) RunAndReturn(run func() bool) *MockStatusUpdater_IsPublicRegistryEnabled_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LatestImageInfo provides a mock function for the type MockStatusUpdater
+func (_mock *MockStatusUpdater) LatestImageInfo(ctx context.Context) (*image.Info, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LatestImageInfo")
+	}
+
+	var r0 *image.Info
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (*image.Info, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) *image.Info); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*image.Info)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockStatusUpdater_LatestImageInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestImageInfo'
+type MockStatusUpdater_LatestImageInfo_Call struct {
+	*mock.Call
+}
+
+// LatestImageInfo is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockStatusUpdater_Expecter) LatestImageInfo(ctx any) *MockStatusUpdater_LatestImageInfo_Call {
+	return &MockStatusUpdater_LatestImageInfo_Call{Call: _e.mock.On("LatestImageInfo", ctx)}
+}
+
+func (_c *MockStatusUpdater_LatestImageInfo_Call) Run(run func(ctx context.Context)) *MockStatusUpdater_LatestImageInfo_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockStatusUpdater_LatestImageInfo_Call) Return(info *image.Info, err error) *MockStatusUpdater_LatestImageInfo_Call {
+	_c.Call.Return(info, err)
+	return _c
+}
+
+func (_c *MockStatusUpdater_LatestImageInfo_Call) RunAndReturn(run func(ctx context.Context) (*image.Info, error)) *MockStatusUpdater_LatestImageInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -438,7 +501,7 @@ type MockStatusUpdater_UseTenantRegistry_Call struct {
 
 // UseTenantRegistry is a helper method to define mock.On call
 //   - context1 context.Context
-func (_e *MockStatusUpdater_Expecter) UseTenantRegistry(context1 interface{}) *MockStatusUpdater_UseTenantRegistry_Call {
+func (_e *MockStatusUpdater_Expecter) UseTenantRegistry(context1 any) *MockStatusUpdater_UseTenantRegistry_Call {
 	return &MockStatusUpdater_UseTenantRegistry_Call{Call: _e.mock.On("UseTenantRegistry", context1)}
 }
 
@@ -489,7 +552,7 @@ type MockStatusUpdater_ValidateStatus_Call struct {
 
 // ValidateStatus is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockStatusUpdater_Expecter) ValidateStatus(ctx interface{}) *MockStatusUpdater_ValidateStatus_Call {
+func (_e *MockStatusUpdater_Expecter) ValidateStatus(ctx any) *MockStatusUpdater_ValidateStatus_Call {
 	return &MockStatusUpdater_ValidateStatus_Call{Call: _e.mock.On("ValidateStatus", ctx)}
 }
 

@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -41,11 +40,11 @@ var (
 		},
 		Job: JobConfig{
 			SecurityContext: corev1.SecurityContext{
-				AllowPrivilegeEscalation: ptr.To(true),
-				Privileged:               ptr.To(true),
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				RunAsNonRoot:             ptr.To(false),
-				RunAsUser:                ptr.To(int64(0)),
+				AllowPrivilegeEscalation: new(true),
+				Privileged:               new(true),
+				ReadOnlyRootFilesystem:   new(true),
+				RunAsNonRoot:             new(false),
+				RunAsUser:                new(int64(0)),
 				SELinuxOptions: &corev1.SELinuxOptions{
 					Level: "s0",
 				},
@@ -86,7 +85,7 @@ type Config struct {
 
 func Get(ctx context.Context) Config {
 	once.Do(func() {
-		_, log := logd.NewFromContext(ctx, "csi-job")
+		_, log := logd.NewFromContext(ctx, "helmconfig")
 
 		confJSON := os.Getenv(JSONEnv)
 		if confJSON == "" {

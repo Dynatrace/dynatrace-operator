@@ -106,6 +106,21 @@ table_section = {"type": "table", "rows": []}
 rows = [table_header]
 
 
+def format_platform_version(platform_version):
+    for item in matrix:
+        token = item.get("token")
+        tenant_phase = item.get("tenantPhase")
+        pv = f"{item['platform']}_{item['version']}"
+        if pv == platform_version:
+            result = platform_version
+            if token:
+                result = f"{result} ({token} token)"
+            if tenant_phase:
+                result = f"{result} (phase {tenant_phase})"
+            return result
+    return platform_version
+
+
 # In case we have different number of supported k8s and ocp environments
 for k8s_env, ocp_env in zip_longest(supported_k8s, supported_ocps):
     k8s_env = k8s_env or "n/a"
@@ -149,7 +164,7 @@ for k8s_env, ocp_env in zip_longest(supported_k8s, supported_ocps):
             "elements": [
                 {
                     "type": "rich_text_section",
-                    "elements": [{"type": "text", "text": k8s_env}],
+                    "elements": [{"type": "text", "text": format_platform_version(k8s_env)}],
                 }
             ],
         },
@@ -167,7 +182,7 @@ for k8s_env, ocp_env in zip_longest(supported_k8s, supported_ocps):
             "elements": [
                 {
                     "type": "rich_text_section",
-                    "elements": [{"type": "text", "text": ocp_env}],
+                    "elements": [{"type": "text", "text": format_platform_version(ocp_env)}],
                 }
             ],
         },

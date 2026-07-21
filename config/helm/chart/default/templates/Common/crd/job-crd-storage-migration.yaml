@@ -1,3 +1,4 @@
+{{- if .Values.crdStorageMigrationJob }}
 # Copyright 2026 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-{{- if .Values.crdStorageMigrationJob }}
+
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -28,7 +29,7 @@ spec:
       labels:
         {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 8 }}
       annotations:
-      {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
+      {{- if and (.Values.operator.apparmor) (not (include "kubernetes.appArmorSecurityContextSupported" .)) }}
         container.apparmor.security.beta.kubernetes.io/crd-storage-migration: runtime/default
       {{- end }}
     spec:
@@ -52,6 +53,35 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- $needsCertgen := not (include "dynatrace-operator.openshiftOrOlm" .) }}
+      {{- if $needsCertgen }}
+      initContainers:
+        - name: webhook-cert-generator
+          image: {{ include "dynatrace-operator.image" . }}
+          {{- with .Values.imageRef.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
+          args:
+            - certgen
+            - --crd-check=false
+          env:
+            {{- if .Values.debugLogs }}
+            - name: LOG_LEVEL
+              value: "debug"
+            {{- end }}
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              {{- toYaml .Values.operator.requests | nindent 14 }}
+            limits:
+              {{- toYaml .Values.operator.limits | nindent 14 }}
+          securityContext:
+            {{- toYaml .Values.operator.securityContext | nindent 12 }}
+      {{- end }}
       containers:
         - name: crd-storage-migration
           image: {{ include "dynatrace-operator.image" . }}
@@ -61,6 +91,10 @@ spec:
           args:
             - crd-storage-migration
           env:
+            {{- if .Values.debugLogs }}
+            - name: LOG_LEVEL
+              value: "debug"
+            {{- end }}
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:

@@ -8,6 +8,7 @@ on:
 env:
   GOOGLE_MARKETPLACE_ANNOTATION: com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+  FIPS_PLATFORMS: linux/amd64,linux/arm64
   DEPLOYER_PLATFORMS: linux/amd64
 
 jobs:
@@ -19,7 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Prepare build parameters
@@ -38,40 +39,40 @@ jobs:
     permissions:
       id-token: write
     env:
-      GCR_IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY }}
-      ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}
-      RHCC_IMAGE: quay.io/${{ secrets.RHCC_REPOSITORY }}
-      DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}
+      GCR_IMAGE: gcr.io/${{ vars.GCR_REPOSITORY }}
+      ECR_IMAGE: public.ecr.aws/${{ vars.ECR_REPOSITORY }}
+      RHCC_IMAGE: quay.io/${{ vars.RHCC_REPOSITORY }}
+      DOCKER_IMAGE: docker.io/${{ vars.DOCKERHUB_REPOSITORY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to GCR
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: gcr.io
           username: ${{ secrets.GCR_USERNAME }}
           password: ${{ secrets.GCR_JSON_KEY }}
       - name: Login to RHCC
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: quay.io
           username: ${{ secrets.RHCC_USERNAME }}
           password: ${{ secrets.RHCC_PASSWORD }}
       - name: Login to Docker
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
       - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2.1.6
         with:
           registry-type: public
       - name: Build image
@@ -81,8 +82,18 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           images: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
           annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
+      - name: Build fips image
+        id: build-fips-image
+        uses: ./.github/actions/build-push-image
+        with:
+          platforms: ${{ env.FIPS_PLATFORMS }}
+          images: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
+          annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
+          fips: true
+          suffix: fips
     outputs:
       digest: ${{steps.build-image.outputs.digest}}
+      fips-digest: ${{steps.build-fips-image.outputs.digest}}
 
   signing:
     name: Sign the image index/manifests + Add SBOM
@@ -117,38 +128,38 @@ jobs:
             repository: RHCC_REPOSITORY
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Registry
         if: ${{ matrix.registry != 'amazon-ecr' }}
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
           password: ${{ secrets[matrix.password] }}
       - name: Configure aws credentials
         if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
       - name: Login to Amazon ECR
         if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2.1.6
         with:
           registry-type: public
       - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image-ref: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
@@ -156,15 +167,42 @@ jobs:
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Add build provenance attestation for ${{ matrix.registry }}
         uses: ./.github/actions/attest-artifact
         with:
-          subject-name: ${{ matrix.url }}/${{ secrets[matrix.repository] }}
+          subject-name: ${{ matrix.url }}/${{ vars[matrix.repository] }}
           subject-digest: ${{ needs.build-push.outputs.digest }}
+      - name: Sign fips images for ${{matrix.registry}}
+        uses: ./.github/actions/sign-image
+        with:
+          image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Create sbom for ${{matrix.registry}} fips
+        id: sbom-fips
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
+          format: 'cyclonedx'
+          output: 'fips-result.json'
+          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
+          skip-files: '/usr/local/bin/dynatrace-operator'
+      - name: Upload sbom to ${{matrix.registry}} fips
+        uses: ./.github/actions/upload-sbom
+        with:
+          image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
+          sbom: 'fips-result.json'
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Add build provenance attestation for ${{ matrix.registry }} fips
+        uses: ./.github/actions/attest-artifact
+        with:
+          subject-name: ${{ matrix.url }}/${{ vars[matrix.repository] }}
+          subject-digest: ${{ needs.build-push.outputs.fips-digest }}
 
   run-preflight-rhcc:
     name: Run preflight for rhcc
@@ -175,11 +213,11 @@ jobs:
       SCAN_REGISTRY: "quay.io"
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.SCAN_REGISTRY }}
           username: ${{ secrets.RHCC_USERNAME }}
@@ -189,7 +227,7 @@ jobs:
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ env.SCAN_REGISTRY }}
-          repository: ${{ secrets.RHCC_REPOSITORY }}
+          repository: ${{ vars.RHCC_REPOSITORY }}
           report-name: "preflight.json"
           redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
           pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
@@ -208,7 +246,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Setup Golang
@@ -231,10 +269,10 @@ jobs:
         run: |
           make manifests/crd/release CHART_VERSION="${VERSION_WITHOUT_PREFIX}"
 
-          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}"
-          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}"
-          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}"
-          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}"
+          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}" DIGEST="${DIGEST}"
+          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}" DIGEST="${DIGEST}"
+          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}" DIGEST="${DIGEST}"
+          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}" DIGEST="${DIGEST}"
       - name: Build helm packages
         uses: ./.github/actions/build-helm
         with:
@@ -248,7 +286,7 @@ jobs:
         run: |
           helm registry login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}" "docker.io"
       - name: Login Docker to dockerhub
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -262,12 +300,12 @@ jobs:
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
           registry-url: docker.io
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
       - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2.1.6
         with:
           registry-type: public
       - name: Upload and sign helm package to Amazon ECR
@@ -286,7 +324,7 @@ jobs:
           mkdir -p tmp
           echo ${COSIGN_PUBLIC_KEY} | base64 -d > tmp/cosign.pub
       - name: Create pre-release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         if: ${{ contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md
@@ -302,7 +340,7 @@ jobs:
           draft: true
           fail_on_unmatched_files: true
       - name: Create release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         if: ${{ !contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md
@@ -332,7 +370,7 @@ jobs:
           hack/build/ci/generate-new-helm-index-yaml.sh
       - name: Create pull request for adding helm index to main branch
         if: ${{ !contains(github.ref, '-rc.') }}
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           base: main
           delete-branch: true

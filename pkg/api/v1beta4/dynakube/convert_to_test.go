@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -24,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 var testTime = metav1.Now()
@@ -144,7 +144,11 @@ func TestConvertTo(t *testing.T) {
 	t.Run("default otelc image", func(t *testing.T) {
 		from := getOldDynakubeBase()
 
-		to := dynakubelatest.DynaKube{}
+		to := dynakubelatest.DynaKube{
+			Spec: dynakubelatest.DynaKubeSpec{
+				TelemetryIngest: &telemetryingestlatest.Spec{},
+			},
+		}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -152,6 +156,20 @@ func TestConvertTo(t *testing.T) {
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
 		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+
+		compareBase(t, from, to)
+	})
+
+	t.Run("no default otelc image when telemetry ingest is disabled", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Spec.TelemetryIngest = nil
+
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef)
 
 		compareBase(t, from, to)
 	})
@@ -301,9 +319,9 @@ func getOldDynakubeBase() DynaKube {
 			},
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
-			DynatraceAPIRequestThreshold: ptr.To(uint16(42)),
+			DynatraceAPIRequestThreshold: new(uint16(42)),
 			MetadataEnrichment: MetadataEnrichment{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 			},
 			TelemetryIngest: &telemetryingest.Spec{
 				ServiceName: "telemetry-ingest-service-name",
@@ -321,7 +339,7 @@ func getOldHostInjectSpec() oneagent.HostInjectSpec {
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
 		},
-		AutoUpdate: ptr.To(false),
+		AutoUpdate: new(false),
 		DNSPolicy:  corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"host-inject-annotation-key": "host-inject-annotation-value",
@@ -416,7 +434,7 @@ func getOldActiveGateSpec() activegate.Spec {
 				"activegate-node-selector-key": "activegate-node-selector-value",
 			},
 			Image:    "activegate-image",
-			Replicas: ptr.To(int32(42)),
+			Replicas: new(int32(42)),
 			Group:    "activegate-group",
 			CustomProperties: &value.Source{
 				Value:     "activegate-cp-value",
@@ -469,7 +487,7 @@ func getOldOpenTelemetryTemplateSpec() OpenTelemetryCollectorSpec {
 			"otelc-annotation-key1": "otelc-annotation-value1",
 			"otelc-annotation-key2": "otelc-annotation-value2",
 		},
-		Replicas: ptr.To(int32(42)),
+		Replicas: new(int32(42)),
 		ImageRef: image.Ref{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",

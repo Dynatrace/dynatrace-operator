@@ -17,8 +17,12 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Feature(t *testing.T) features.Feature {
+const withCSI = true
+
+func Feature(t *testing.T, releaseTag string) features.Feature {
 	builder := features.New("cloudnative-upgrade")
+
+	builder.Assess("install operator "+releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
@@ -40,8 +44,11 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// update to snapshot
-	withCSI := true
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
+
+	// Guarantees the operator reconciles after upgrade and before restarting the app
+	dynakube.TriggerReconciliation(builder, testDynakube)
+
 	builder.Assess("restart half of sample apps", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 

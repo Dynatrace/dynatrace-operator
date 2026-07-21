@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -35,7 +34,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "kspm-daemonset")
+	ctx, log := logd.NewFromContext(ctx, "daemonset")
 
 	if !dk.KSPM().IsEnabled() {
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
@@ -139,6 +138,6 @@ func getDefaultMaxSurge() *intstr.IntOrString {
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
-		FSGroup: ptr.To(runAs),
+		FSGroup: new(runAs),
 	}
 }

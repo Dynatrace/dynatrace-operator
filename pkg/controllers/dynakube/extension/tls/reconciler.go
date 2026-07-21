@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -25,49 +24,47 @@ const (
 	extensionsSelfSignedTLSCommonNameSuffix = "extension-controller"
 )
 
-type reconciler struct {
+type Reconciler struct {
 	timeProvider *timeprovider.Provider
-	dk           *dynakube.DynaKube
 	secrets      k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
-	return &reconciler{
-		dk:           dk,
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
+	return &Reconciler{
 		timeProvider: timeprovider.New(),
 		secrets:      k8ssecret.Query(clt, apiReader),
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context) error {
-	ctx, _ = logd.NewFromContext(ctx, "extension-tls")
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "tls")
 
-	if ext := r.dk.Extensions(); ext.IsAnyEnabled() && ext.NeedsSelfSignedTLS() {
-		return r.reconcileSelfSignedTLSSecret(ctx)
+	if ext := dk.Extensions(); ext.IsAnyEnabled() && ext.NeedsSelfSignedTLS() {
+		return r.reconcileSelfSignedTLSSecret(ctx, dk)
 	}
 
-	if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
+	if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
 		return nil
 	}
 
 	defer func() {
-		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+		meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 	}()
 
-	return r.deleteSelfSignedTLSSecret(ctx)
+	return r.deleteSelfSignedTLSSecret(ctx, dk)
 }
 
-func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
+func (r *Reconciler) reconcileSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
 	_, err := r.secrets.Get(ctx, types.NamespacedName{
-		Name:      r.dk.Extensions().GetSelfSignedTLSSecretName(),
-		Namespace: r.dk.Namespace,
+		Name:      dk.Extensions().GetSelfSignedTLSSecretName(),
+		Namespace: dk.Namespace,
 	})
 	if err != nil && k8serrors.IsNotFound(err) {
-		return r.createSelfSignedTLSSecret(ctx)
+		return r.createSelfSignedTLSSecret(ctx, dk)
 	}
 
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -75,48 +72,48 @@ func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
+func (r *Reconciler) deleteSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
 	return r.secrets.Delete(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.dk.Extensions().GetSelfSignedTLSSecretName(),
-			Namespace: r.dk.Namespace,
+			Name:      dk.Extensions().GetSelfSignedTLSSecretName(),
+			Namespace: dk.Namespace,
 		},
 	})
 }
 
-func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
+func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
 	cert, err := certificates.New(r.timeProvider)
 	if err != nil {
-		k8sconditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
-	cert.Cert.DNSNames = certificates.AltNames(r.dk.Name, r.dk.Namespace, extensionsSelfSignedTLSCommonNameSuffix)
+	cert.Cert.DNSNames = certificates.AltNames(dk.Name, dk.Namespace, extensionsSelfSignedTLSCommonNameSuffix)
 	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
 	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
-	cert.Cert.Subject.CommonName = certificates.CommonName(r.dk.Name, r.dk.Namespace, extensionsSelfSignedTLSCommonNameSuffix)
+	cert.Cert.Subject.CommonName = certificates.CommonName(dk.Name, dk.Namespace, extensionsSelfSignedTLSCommonNameSuffix)
 
 	err = cert.SelfSign()
 	if err != nil {
-		k8sconditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	pemCert, pemPk, err := cert.ToPEM()
 	if err != nil {
-		k8sconditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.ExtensionComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ExtensionComponentLabel)
 	secretData := map[string][]byte{consts.TLSCrtDataName: pemCert, consts.TLSKeyDataName: pemPk}
 
-	secret, err := k8ssecret.Build(r.dk, r.dk.Extensions().GetSelfSignedTLSSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(dk, dk.Extensions().GetSelfSignedTLSSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		k8sconditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -125,12 +122,12 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	err = r.secrets.Create(ctx, secret)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
-	k8sconditions.SetSecretCreated(r.dk.Conditions(), conditionType, secret.Name)
+	k8sconditions.SetSecretCreated(dk.Conditions(), conditionType, secret.Name)
 
 	return nil
 }

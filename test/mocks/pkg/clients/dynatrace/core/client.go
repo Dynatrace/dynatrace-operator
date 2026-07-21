@@ -65,7 +65,7 @@ type Client_DELETE_Call struct {
 // DELETE is a helper method to define mock.On call
 //   - ctx context.Context
 //   - path string
-func (_e *Client_Expecter) DELETE(ctx interface{}, path interface{}) *Client_DELETE_Call {
+func (_e *Client_Expecter) DELETE(ctx any, path any) *Client_DELETE_Call {
 	return &Client_DELETE_Call{Call: _e.mock.On("DELETE", ctx, path)}
 }
 
@@ -124,7 +124,7 @@ type Client_GET_Call struct {
 // GET is a helper method to define mock.On call
 //   - ctx context.Context
 //   - path string
-func (_e *Client_Expecter) GET(ctx interface{}, path interface{}) *Client_GET_Call {
+func (_e *Client_Expecter) GET(ctx any, path any) *Client_GET_Call {
 	return &Client_GET_Call{Call: _e.mock.On("GET", ctx, path)}
 }
 
@@ -183,7 +183,7 @@ type Client_POST_Call struct {
 // POST is a helper method to define mock.On call
 //   - ctx context.Context
 //   - path string
-func (_e *Client_Expecter) POST(ctx interface{}, path interface{}) *Client_POST_Call {
+func (_e *Client_Expecter) POST(ctx any, path any) *Client_POST_Call {
 	return &Client_POST_Call{Call: _e.mock.On("POST", ctx, path)}
 }
 
@@ -242,7 +242,7 @@ type Client_PUT_Call struct {
 // PUT is a helper method to define mock.On call
 //   - ctx context.Context
 //   - path string
-func (_e *Client_Expecter) PUT(ctx interface{}, path interface{}) *Client_PUT_Call {
+func (_e *Client_Expecter) PUT(ctx any, path any) *Client_PUT_Call {
 	return &Client_PUT_Call{Call: _e.mock.On("PUT", ctx, path)}
 }
 

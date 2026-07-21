@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
@@ -64,8 +65,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace}})
 		dtClient := oneagentclientmock.NewClient(t)
 
-		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.OneAgent.ConnectionInfo)
 
@@ -93,8 +94,8 @@ func TestReconcile(t *testing.T) {
 		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)
 		assert.NotEmpty(t, dk.Status.OneAgent.ConnectionInfo)
 
@@ -108,8 +109,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient()
 		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(oneagentclient.ConnectionInfo{}, errors.New("BOOM")).Once()
-		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.Error(t, err)
 
 		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.DynatraceAPIErrorReason)
@@ -120,8 +121,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createFailK8sClient()
 		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
-		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.Error(t, err)
 
 		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.KubeAPIErrorReason)
@@ -132,8 +133,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dk)
 		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
-		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)
 
 		tenantTokenHash, err := hasher.GenerateHash(testTenantToken)
@@ -162,11 +163,11 @@ func TestReconcile(t *testing.T) {
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-		rec := r.(*reconciler)
-		rec.timeProvider.Set(rec.timeProvider.Now().Add(time.Minute * 20))
+		r := NewReconciler(fakeClient, fakeClient)
 
-		err := r.Reconcile(ctx)
+		r.timeProvider.Set(r.timeProvider.Now().Add(time.Minute * 20))
+
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
@@ -190,8 +191,8 @@ func TestReconcile(t *testing.T) {
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)
 
 		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
@@ -216,8 +217,8 @@ func TestReconcile(t *testing.T) {
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
@@ -243,8 +244,8 @@ func TestReconcile(t *testing.T) {
 		}
 		setEmptyCommunicationHostsCondition(dk.Conditions())
 
-		r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-		err := r.Reconcile(ctx)
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
@@ -256,6 +257,53 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
 		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason)
+	})
+}
+
+func TestReconcile_StaleNetworkZoneEndpoints(t *testing.T) {
+	ctx := t.Context()
+
+	// The cluster keeps returning the old IP (10.0.0.1) until the AG re-registers,
+	// while the current AG Service ClusterIP is already 10.0.0.2.
+	const (
+		staleClusterEndpoints = "https://10.0.0.1:443/communication,https://" + testName + "-activegate." + testNamespace + ":443/communication"
+		currentServiceIP      = "10.0.0.2"
+	)
+
+	t.Run("blocks deployment and does not overwrite endpoints when cluster returns stale endpoints", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.NetworkZone = "restricted-zone"
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
+		}
+		dk.Status.ActiveGate.ServiceIPs = []string{currentServiceIP}
+		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+			TenantUUID: testTenantUUID,
+			Endpoints:  staleClusterEndpoints,
+		}
+
+		dtClient := oneagentclientmock.NewClient(t)
+		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(
+			oneagentclient.ConnectionInfo{
+				TenantUUID:  testTenantUUID,
+				TenantToken: testTenantToken,
+				Endpoints:   staleClusterEndpoints,
+			}, nil).Once()
+		fakeClient := fake.NewClient(dk)
+
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(ctx, dtClient, dk)
+		require.ErrorIs(t, err, StaleNetworkZoneEndpointsError)
+
+		// Endpoints in status are left untouched so downstream consumers do not
+		// propagate the stale IP to the OneAgent ConfigMap / DaemonSet.
+		assert.Equal(t, staleClusterEndpoints, dk.Status.OneAgent.ConnectionInfo.Endpoints)
+		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, StaleNetworkZoneEndpointsReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
 
@@ -282,8 +330,8 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 		}, nil).Once()
 	fakeClient := fake.NewClient(dk)
 
-	r := NewReconciler(fakeClient, fakeClient, dtClient, dk)
-	err := r.Reconcile(ctx)
+	r := NewReconciler(fakeClient, fakeClient)
+	err := r.Reconcile(ctx, dtClient, dk)
 	require.ErrorIs(t, err, NoOneAgentCommunicationEndpointsError)
 
 	assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)

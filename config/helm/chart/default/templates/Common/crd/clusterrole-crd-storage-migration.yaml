@@ -1,3 +1,4 @@
+{{- if .Values.crdStorageMigrationJob }}
 # Copyright 2026 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +15,7 @@
 
 # For more information why the individual permissions are required see
 # https://github.com/Dynatrace/dynatrace-operator/blob/main/doc/roles/operator-roles.md
-{{- if .Values.crdStorageMigrationJob }}
+
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -24,6 +25,24 @@ metadata:
   annotations:
     {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
 rules:
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    resourceNames:
+      - dynatrace-webhook
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    resourceNames:
+      - dynatrace-webhook
+    verbs:
+      - get
+      - update
   - apiGroups:
       - apiextensions.k8s.io
     resources:
@@ -35,7 +54,7 @@ rules:
     verbs:
       - get
       - update
-  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  {{- if (include "dynatrace-operator.openshiftOrOlm" .) }}
   - apiGroups:
       - security.openshift.io
     resourceNames:

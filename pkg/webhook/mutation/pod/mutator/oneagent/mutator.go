@@ -38,9 +38,9 @@ func NewMutator() dtwebhook.Mutator {
 }
 
 func IsSelfExtractingImage(mutationRequest *dtwebhook.BaseRequest) bool {
-	ffEnabled := mutationRequest.DynaKube.FF().IsNodeImagePull()
+	hasImage := mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != ""
 
-	return ffEnabled && !isCSIVolume(mutationRequest)
+	return hasImage && !isCSIVolume(mutationRequest)
 }
 
 func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
@@ -49,7 +49,7 @@ func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
 		defaultVolumeType = CSIVolumeType
 	}
 
-	if mutationRequest.DynaKube.FF().IsNodeImagePull() {
+	if mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != "" {
 		return maputils.GetField(mutationRequest.Pod.Annotations, AnnotationVolumeType, defaultVolumeType) == CSIVolumeType
 	}
 
@@ -95,7 +95,7 @@ func validateInstallPath(installPath string) error {
 }
 
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_, log := logd.NewFromContext(request.Context, "oa-mutation")
+	_, log := logd.NewFromContext(request.Context, "oneagent")
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 
 	if err := validateInstallPath(installPath); err != nil {
@@ -116,7 +116,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 }
 
 func (mut *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	_, log := logd.NewFromContext(ctx, "oa-mutation")
+	_, log := logd.NewFromContext(ctx, "oneagent")
 
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 	if err := validateInstallPath(installPath); err != nil {

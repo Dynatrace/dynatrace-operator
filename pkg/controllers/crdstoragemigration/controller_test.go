@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -44,7 +43,7 @@ func TestInitReconcile(t *testing.T) {
 
 	t.Run("deployment not ready", func(t *testing.T) {
 		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
-			Spec: appsv1.DeploymentSpec{Replicas: ptr.To(int32(1))},
+			Spec: appsv1.DeploymentSpec{Replicas: new(int32(1))},
 		})
 
 		run = nil
@@ -54,7 +53,7 @@ func TestInitReconcile(t *testing.T) {
 
 	t.Run("run error", func(t *testing.T) {
 		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
-			Spec:   appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+			Spec:   appsv1.DeploymentSpec{Replicas: new(int32(3))},
 			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
 		})
 
@@ -72,7 +71,7 @@ func TestInitReconcile(t *testing.T) {
 
 	t.Run("run ok", func(t *testing.T) {
 		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
-			Spec:   appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+			Spec:   appsv1.DeploymentSpec{Replicas: new(int32(3))},
 			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
 		})
 
@@ -95,7 +94,7 @@ func Test_isDeploymentReady(t *testing.T) {
 			name: "ready: generation synced and all replicas ready",
 			deploy: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Generation: 2},
-				Spec:       appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(3))},
 				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 3},
 			},
 			expected: true,
@@ -104,7 +103,7 @@ func Test_isDeploymentReady(t *testing.T) {
 			name: "not ready: generation synced but not all replicas ready",
 			deploy: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Generation: 2},
-				Spec:       appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(3))},
 				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 2},
 			},
 			expected: false,
@@ -113,7 +112,7 @@ func Test_isDeploymentReady(t *testing.T) {
 			name: "not ready: generation not yet observed by controller",
 			deploy: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Generation: 3},
-				Spec:       appsv1.DeploymentSpec{Replicas: ptr.To(int32(3))},
+				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(3))},
 				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 3},
 			},
 			expected: false,
@@ -122,7 +121,7 @@ func Test_isDeploymentReady(t *testing.T) {
 			name: "not ready: scaled down deployment",
 			deploy: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Generation: 1},
-				Spec:       appsv1.DeploymentSpec{Replicas: ptr.To(int32(0))},
+				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(0))},
 				Status:     appsv1.DeploymentStatus{ObservedGeneration: 1, ReadyReplicas: 0},
 			},
 			expected: false,

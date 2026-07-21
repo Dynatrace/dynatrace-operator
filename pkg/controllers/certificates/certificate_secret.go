@@ -67,11 +67,14 @@ func (certSecret *certificateSecret) isRecent() bool {
 	}
 }
 
-func (certSecret *certificateSecret) validateCertificates(ctx context.Context, namespace string) error {
+func (certSecret *certificateSecret) validateCertificates(ctx context.Context, namespace string, renewalThreshold, serverCertDuration, rootCertDuration time.Duration) error {
 	certs := Certs{
-		Domain:  getDomain(namespace),
-		SrcData: certSecret.secret.Data,
-		Now:     time.Now(),
+		Domain:             webhook.DeploymentName + "." + namespace,
+		SrcData:            certSecret.secret.Data,
+		Now:                time.Now(),
+		RenewalThreshold:   renewalThreshold,
+		ServerCertDuration: serverCertDuration,
+		RootCertDuration:   rootCertDuration,
 	}
 	if err := certs.ValidateCerts(ctx); err != nil {
 		return fmt.Errorf("validate certificates: %w", err)
@@ -86,8 +89,12 @@ func buildSecretName() string {
 	return fmt.Sprintf("%s%s", webhook.DeploymentName, secretPostfix)
 }
 
-func getDomain(namespace string) string {
-	return fmt.Sprintf("%s.%s.svc", webhook.DeploymentName, namespace)
+func buildSANs(domain string) []string {
+	return []string{
+		domain,
+		domain + ".svc",
+		domain + ".svc.cluster.local",
+	}
 }
 
 func (certSecret *certificateSecret) areWebhookConfigsValid(configs []*admissionregistrationv1.WebhookClientConfig) bool {

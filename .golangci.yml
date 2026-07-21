@@ -28,7 +28,6 @@ linters:
     - godot
     - goheader
     - gomoddirectives
-    - gomodguard
     - goprintffuncname
     - gosec
     - gosmopolitan
@@ -202,7 +201,7 @@ linters:
         - name: var-naming
           arguments:
             - [] # AllowList
-            - ["DT", "EEC", "KSPM", "OLM", "OTLP", "DK", "EC", "GRPC", "OS"] # DenyList
+            - ["DT", "EEC", "KSPM", "OLM", "OTLP", "DK", "EC", "GRPC", "OS", "CSI"] # DenyList
         - name: unused-receiver
           disabled: true
         - name: import-shadowing

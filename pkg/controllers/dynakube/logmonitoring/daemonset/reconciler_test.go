@@ -11,12 +11,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,7 +54,7 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, nil, dk)
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -73,7 +75,7 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, nil, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
@@ -83,7 +85,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context(), dk)
+		err = reconciler.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -105,7 +107,7 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, nil, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
@@ -115,7 +117,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context(), dk)
+		err = reconciler.Reconcile(t.Context(), nil, dk)
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -138,7 +140,7 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, nil, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, *dk.Conditions())
@@ -159,13 +161,38 @@ func TestReconcile(t *testing.T) {
 		reconciler := NewReconciler(boomClient,
 			boomClient)
 
-		err := reconciler.Reconcile(t.Context(), dk)
+		err := reconciler.Reconcile(t.Context(), nil, dk)
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
 		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		assert.Equal(t, k8sconditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+
+	t.Run("template image takes precedence over public registry", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+		templateImageURI := "my-custom-registry:5000/my-custom-repo:my-custom-tag"
+		dk := createDynakube(true)
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			ImageRef: image.Ref{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"},
+		}
+
+		mockK8sClient := fake.NewClient()
+		imageClient := imageclientmock.NewClient(t)
+
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
+		require.NoError(t, err)
+
+		var daemonset appsv1.DaemonSet
+		err = mockK8sClient.Get(ctx, types.NamespacedName{
+			Name:      dk.LogMonitoring().GetDaemonSetName(),
+			Namespace: dk.Namespace,
+		}, &daemonset)
+		require.NoError(t, err)
+		assert.Equal(t, templateImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, templateImageURI, daemonset.Spec.Template.Spec.InitContainers[0].Image)
 	})
 }
 
@@ -178,7 +205,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -203,6 +230,19 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Equal(t, intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable) //nolint:staticcheck
 	})
 
+	t.Run("respect public-registry resolved image", func(t *testing.T) {
+		expectedImageURI := "my-public-registry:5000/my-test-repo:my-test-tag"
+		dk := createDynakube(false)
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{}
+		reconciler := NewReconciler(nil, fake.NewClient())
+		daemonset, err := reconciler.generateDaemonSet(dk, expectedImageURI)
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+
+		assert.Equal(t, expectedImageURI, daemonset.Spec.Template.Spec.InitContainers[0].Image)
+		assert.Equal(t, expectedImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
+	})
+
 	t.Run("respect custom labels", func(t *testing.T) {
 		customLabels := map[string]string{
 			"custom": "label",
@@ -214,7 +254,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -234,7 +274,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -251,7 +291,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -271,7 +311,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -285,7 +325,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.NetworkZone = "my-networkzone"
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -299,7 +339,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Status.ProxyURLHash = "proxy-hash"
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -314,7 +354,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -331,7 +371,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -345,7 +385,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.CustomPullSecret = customPullSecret
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -368,7 +408,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			Tolerations: customTolerations,
 		}
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -385,7 +425,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			NodeSelector: customNodeSelector,
 		}
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -397,7 +437,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = ""
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -419,7 +459,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 		assert.Contains(t, daemonset.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+containerName)
@@ -438,7 +478,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient())
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 		assert.NotContains(t, daemonset.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+containerName)
@@ -461,7 +501,9 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 			APIURL:        "test-url",
 			LogMonitoring: logMonitoring,
 			Templates: dynakube.TemplatesSpec{
-				LogMonitoring: &logmonitoring.TemplateSpec{},
+				LogMonitoring: &logmonitoring.TemplateSpec{
+					ImageRef: image.Ref{Repository: "some-registry/dynatrace/logmonitoring", Tag: "1.0.0"},
+				},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{

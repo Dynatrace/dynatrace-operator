@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	istio "istio.io/api/networking/v1beta1"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +24,7 @@ func BuildNameForFQDNServiceEntry(ownerName, component string) string {
 	return ownerName + "-fqdn-" + component
 }
 
-func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []CommunicationHost) *istiov1beta1.ServiceEntry {
+func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []connectioninfo.CommunicationHost) *istiov1beta1.ServiceEntry {
 	hosts := make([]string, len(hostHosts))
 	portSet := make(map[uint32]bool)
 
@@ -55,7 +56,7 @@ func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []CommunicationHos
 	}
 }
 
-func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []CommunicationHost) *istiov1beta1.ServiceEntry {
+func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []connectioninfo.CommunicationHost) *istiov1beta1.ServiceEntry {
 	var ports []*istio.ServicePort
 
 	portSet := make(map[uint32]bool)

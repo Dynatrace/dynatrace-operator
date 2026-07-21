@@ -8,6 +8,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -274,220 +276,6 @@ func setupDisabledCSIEnv(t *testing.T) {
 		LogMonitoring:  true,
 		EdgeConnect:    true,
 		Supportability: true,
-	})
-}
-
-func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
-	t.Run("spec with appMon enabled and image name", func(t *testing.T) {
-		testImage := "testImage"
-		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
-			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage,
-						},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("spec with cloudNative enabled and image name", func(t *testing.T) {
-		testImage := "testImage"
-		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
-			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage,
-						},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("spec with appMon enabled, csi driver not enabled but image set", func(t *testing.T) {
-		setupDisabledCSIEnv(t)
-
-		testImage := "testImage"
-		assertDenied(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynakube.DynaKube{
-			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage,
-						},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("spec with cloudNative enabled, csi driver not enabled but image set", func(t *testing.T) {
-		setupDisabledCSIEnv(t)
-
-		testImage := "testImage"
-		assertDenied(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynakube.DynaKube{
-			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage,
-						},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("spec with appMon enabled, csi driver not enabled but node image pull enabled and image set", func(t *testing.T) {
-		setupDisabledCSIEnv(t)
-
-		testImage := "testImage"
-		assertAllowed(t, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.OANodeImagePullKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage,
-						},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("spec with cloudNative enabled, csi driver not enabled but node image pull enabled and image set", func(t *testing.T) {
-		setupDisabledCSIEnv(t)
-
-		testImage := "testImage"
-		assertAllowed(t, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.OANodeImagePullKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage,
-						},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("spec with appMon enabled, csi driver and node image pull not enabled and image set", func(t *testing.T) {
-		setupDisabledCSIEnv(t)
-
-		testImage := "testImage"
-		assertDenied(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.OANodeImagePullKey: "false",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage,
-						},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("spec with cloudNative enabled, csi driver and node image pull not enabled and image set", func(t *testing.T) {
-		setupDisabledCSIEnv(t)
-
-		testImage := "testImage"
-		assertDenied(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.OANodeImagePullKey: "false",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage,
-						},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("spec with cloudnative enabled, csi driver and node image pull enabled and image not set", func(t *testing.T) {
-		assertDenied(t, []string{errorImagePullRequiresCodeModulesImage}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.OANodeImagePullKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{},
-					},
-				},
-			},
-		})
-	})
-
-	t.Run("spec with appmon enabled, csi driver and node image pull enabled and image not set", func(t *testing.T) {
-		assertDenied(t, []string{errorImagePullRequiresCodeModulesImage}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.OANodeImagePullKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{},
-					},
-				},
-			},
-		})
 	})
 }
 
@@ -1018,63 +806,253 @@ func TestDeprecatedOneAgentAutoUpdate(t *testing.T) {
 }
 
 func TestDeprecatedOneAgentVersion(t *testing.T) {
-	baseDK := &dynakube.DynaKube{
+	apiToken := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube",
 			Namespace: testNamespace,
 		},
-		Spec: dynakube.DynaKubeSpec{
-			APIURL:   testAPIURL,
-			OneAgent: oneagent.Spec{},
+		Data: map[string][]byte{
+			token.APIKey: []byte("test-platform-token"),
 		},
+		Type: corev1.SecretTypeOpaque,
 	}
-
+	platformToken := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			token.APIKey: []byte(dttoken.PlatformPrefix + "test-platform-token"),
+		},
+		Type: corev1.SecretTypeOpaque,
+	}
 	testcases := []struct {
 		name            string
-		valid           oneagent.Spec
+		dk              dynakube.DynaKube
+		apiToken        *corev1.Secret
 		expectedWarning string
 	}{
 		{
 			"classic fullstack",
-			oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
-				Version: "1.0.0.20240101-000000", //nolint:staticcheck
-			}},
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
 			fmt.Sprintf(warningDeprecatedVersion, "image"),
 		},
 		{
 			"host monitoring",
-			oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
-				Version: "1.0.0.20240101-000000", //nolint:staticcheck
-			}},
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
 			fmt.Sprintf(warningDeprecatedVersion, "image"),
 		},
 		{
-			"cloudnative fullstack",
-			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-				HostInjectSpec: oneagent.HostInjectSpec{
-					Version: "1.0.0.20240101-000000", //nolint:staticcheck
+			"host monitoring + public registry ff",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
 				},
-			}},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"host monitoring + public registry ff + image specified",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+						Image:   "test/image/test-image:some-tag",
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"cloudnative fullstack",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
+							Version: "1.0.0.20240101-000000", //nolint:staticcheck
+						},
+					}},
+				},
+			},
+			apiToken,
 			fmt.Sprintf(warningDeprecatedVersion, "image and/or codeModulesImage"),
 		},
 		{
+			"cloudnative fullstack + public registry ff",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
+							Version: "1.0.0.20240101-000000", //nolint:staticcheck
+						},
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"cloudnative fullstack + public registry ff + image specified",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
+							Version: "1.0.0.20240101-000000", //nolint:staticcheck
+							Image:   "test/image/test-image:some-tag",
+						},
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
 			"app monitoring",
-			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-				Version: "1.0.0.20240101-000000", //nolint:staticcheck
-			}},
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
 			fmt.Sprintf(warningDeprecatedVersion, "codeModulesImage"),
+		},
+		{
+			"app monitoring + public registry ff",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			apiToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"app monitoring + platform token",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+					}},
+				},
+			},
+			platformToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
+		},
+		{
+			"app monitoring + platform token + image specified",
+			dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: oneagent.Spec{
+						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+							Version: "1.0.0.20240101-000000", //nolint:staticcheck
+							AppInjectionSpec: oneagent.AppInjectionSpec{
+								CodeModulesImage: "test/image/test-image:some-tag",
+							},
+						},
+					},
+				},
+			},
+			platformToken,
+			fmt.Sprint(warningDeprecatedVersionIgnored),
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			validDK := baseDK.DeepCopy()
-			validDK.Spec.OneAgent = tc.valid
-
-			deprecatedDK := baseDK.DeepCopy()
-			deprecatedDK.Spec.OneAgent = tc.valid
-
-			warnings, err := assertAllowed(t, deprecatedDK)
+			deprecatedDK := &tc.dk
+			warnings, err := assertAllowed(t, deprecatedDK, tc.apiToken)
 			require.NoError(t, err, "creation")
 			require.Len(t, warnings, 1)
 			assert.Equal(t, tc.expectedWarning, warnings[0])
@@ -1133,7 +1111,10 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 			oaspec: oneagent.Spec{
 				ClassicFullStack: &oneagent.HostInjectSpec{
 					RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-						MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}}},
+						MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2},
+					},
+				},
+			},
 			expectedWarnings: 0,
 		},
 		{
@@ -1175,6 +1156,118 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 					OneAgent: tc.oaspec,
 				},
 			})
+		})
+	}
+}
+
+func TestInvalidOneAgentArguments(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: defaultDynakubeObjectMeta,
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+			},
+		},
+	}
+
+	assertSanitizeArg(t, dk, func(dk *dynakube.DynaKube, value string) {
+		dk.Spec.OneAgent.CloudNativeFullStack.Args = []string{value}
+	}, errorInvalidOneAgentArgument)
+}
+
+func TestMissingCodeModulesImage(t *testing.T) {
+	baseDK := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+		},
+	}
+
+	testcases := []struct {
+		name        string
+		oaSpec      oneagent.Spec
+		annotations map[string]string
+		isValid     bool
+	}{
+		{
+			"node-image-pull + application monitoring",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
+			map[string]string{
+				exp.OANodeImagePullKey: "true",
+			},
+			false,
+		},
+		{
+			"node-image-pull + application monitoring + codemodules image",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{
+					CodeModulesImage: "test-image",
+				},
+			}},
+			map[string]string{
+				exp.OANodeImagePullKey: "true",
+			},
+			true,
+		},
+		{
+			"node-image-pull + application monitoring + public registry",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{},
+			}},
+			map[string]string{
+				exp.OANodeImagePullKey:   "true",
+				exp.UsePublicRegistryKey: "true",
+			},
+			true,
+		},
+		{
+			"node-image-pull + cloud native full stack",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
+			map[string]string{
+				exp.OANodeImagePullKey: "true",
+			},
+			false,
+		},
+		{
+			"node-image-pull + cloud native full stack + codemodules image",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{
+					CodeModulesImage: "test-image",
+				},
+			}},
+			map[string]string{
+				exp.OANodeImagePullKey: "true",
+			},
+			true,
+		},
+		{
+			"node-image-pull + cloud native full stack + public registry",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{},
+			}},
+			map[string]string{
+				exp.OANodeImagePullKey:   "true",
+				exp.UsePublicRegistryKey: "true",
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := baseDK.DeepCopy()
+			dk.Annotations = tc.annotations
+			dk.Spec.OneAgent = tc.oaSpec
+
+			if tc.isValid {
+				assertAllowedWithoutWarnings(t, dk)
+			} else {
+				assertDenied(t, []string{errorImagePullRequiresCodeModulesImage}, dk)
+			}
 		})
 	}
 }

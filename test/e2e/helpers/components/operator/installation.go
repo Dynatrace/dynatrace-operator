@@ -35,7 +35,7 @@ func Install(releaseTag string, withCSI bool) env.Func {
 		if releaseTag == "" {
 			return ctx, errors.New("missing release tag")
 		}
-		err := installViaHelm(releaseTag, withCSI)
+		err := InstallViaHelm(releaseTag, withCSI)
 		if err != nil {
 			return ctx, err
 		}
@@ -59,7 +59,7 @@ func InstallLocal(withCSI bool) env.Func {
 				return ctx, err
 			}
 		} else {
-			err := installViaHelm("", withCSI)
+			err := InstallViaHelm("", withCSI)
 			if err != nil {
 				return ctx, err
 			}
@@ -158,7 +158,7 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	return err
 }
 
-func installViaHelm(releaseTag string, withCSI bool) error {
+func InstallViaHelm(releaseTag string, withCSI bool, extraOpts ...helm.Option) error {
 	manager := helm.New("''")
 
 	_platform, err := platform.NewResolver().GetPlatform()
@@ -180,7 +180,14 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 		_ = klogLevel.Set("0")
 	}()
 
-	return manager.RunUpgrade(opts...)
+	return manager.RunUpgrade(append(opts, extraOpts...)...)
+}
+
+func UninstallViaHelm(releaseName, namespace string, extraOpts ...helm.Option) error {
+	return helm.New("''").RunUninstall(append([]helm.Option{
+		helm.WithReleaseName(releaseName),
+		helm.WithNamespace(namespace),
+	}, extraOpts...)...)
 }
 
 func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
@@ -204,20 +211,30 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 		), nil
 	}
 
-	// Install nightly
-	if chartURI := os.Getenv("HELM_CHART"); strings.HasSuffix(chartURI, ":0.0.0-nightly-chart") {
-		return append(opts, helm.WithArgs(chartURI)), nil
-	}
-
-	// Install from filesystem
 	rootDir := project.RootDir()
-	imageRef, err := getImageRef(rootDir)
+	isFIPS := os.Getenv("FIPS") == "true"
+	imageRef, err := getImageRef(rootDir, isFIPS)
 	if err != nil {
 		return nil, err
 	}
 
 	if imageRef == "" {
 		return nil, errors.New("could not determine operator image")
+	}
+
+	// if target branch is set and not main, it means that we are running tests on a feature branch, so we want to
+	// install the operator using local helm chart and target branch
+	if targetBranch, ok := os.LookupEnv("TARGET_BRANCH"); ok && targetBranch != "main" {
+		return append(opts,
+			helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
+			helm.WithArgs("--set", "imageRef.pullPolicy=Always"),
+			helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
+		), nil
+	}
+
+	// Install nightly
+	if chartURI := os.Getenv("HELM_CHART"); strings.HasSuffix(chartURI, ":0.0.0-nightly-chart") {
+		return append(opts, helm.WithArgs(chartURI)), nil
 	}
 
 	return append(opts,
@@ -230,9 +247,15 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 // Cache image ref on first invocation to allow switching branches.
 var imageRef string
 
-func getImageRef(rootDir string) (string, error) {
+func getImageRef(rootDir string, fips140 bool) (string, error) {
 	if imageRef == "" {
-		command := exec.Command("make", "-C", rootDir, "deploy/show-image-ref")
+		cmdShowImage := "deploy/show-image-ref"
+
+		if fips140 {
+			cmdShowImage = "deploy/show-image-ref/fips"
+		}
+
+		command := exec.Command("make", "-C", rootDir, cmdShowImage)
 		command.Env = os.Environ()
 		stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 		command.Stdout = stdout

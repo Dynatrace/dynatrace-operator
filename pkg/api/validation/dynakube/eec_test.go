@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -145,6 +146,44 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			},
 		},
 	)
+}
+
+func TestExtensionControllerImageNotRequired(t *testing.T) {
+	newDK := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+					CapabilityProperties: activegate.CapabilityProperties{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("256Mi"),
+							},
+						},
+					},
+				},
+				Extensions: &extensions.Spec{
+					Databases: []extensions.DatabaseSpec{{ID: "test"}},
+				},
+			},
+		}
+	}
+	t.Run("image not required when public registry is used", func(t *testing.T) {
+		dk := newDK()
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		assertAllowedWithoutWarnings(t, dk)
+	})
+	t.Run("image not required when platform token is present", func(t *testing.T) {
+		dk := newDK()
+		assertAllowedWithoutWarnings(t, dk, platformTokenSecret())
+	})
 }
 
 func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
@@ -328,7 +367,7 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 						ActiveGate: agSpec,
 					},
 				}
-				assertAllowedWithoutWarnings(t, setExtensions(dk1), setExtensions(dk2))
+				assertAllowedWithWarnings(t, 1, setExtensions(dk1), setExtensions(dk2))
 			},
 		},
 
@@ -355,10 +394,10 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 				}
 				warnings, err := assertAllowed(t, setExtensions(dk1), setExtensions(dk2))
 				require.NoError(t, err)
-				require.Len(t, warnings, 1)
+				require.Len(t, warnings, 2)
 
 				expected := fmt.Sprintf(warningConflictingAPIURLForExtensions, dk2.Name)
-				assert.Equal(t, expected, warnings[0])
+				assert.Contains(t, warnings, expected)
 			},
 		},
 
@@ -384,7 +423,7 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 						ActiveGate: agSpec,
 					},
 				}
-				assertAllowedWithoutWarnings(t, setExtensions(dk1), dk2)
+				assertAllowedWithWarnings(t, 1, setExtensions(dk1), dk2)
 			},
 		},
 	)

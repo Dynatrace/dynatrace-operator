@@ -14,13 +14,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -133,8 +132,8 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		connInfoReconciler := controllermock.NewReconciler(t)
-		connInfoReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
+		connInfoReconciler := newMockConnectionInfoReconciler(t)
+		connInfoReconciler.On("Reconcile", anyCtx, mock.Anything, mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
 
 		fakeClient := fake.NewClient()
 		reconciler := &Reconciler{
@@ -161,8 +160,8 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		versionReconciler := versionmock.NewReconciler(t)
-		versionReconciler.EXPECT().ReconcileOneAgent(anyCtx, &dk).Return(errors.New("BOOM")).Once()
+		versionReconciler := newMockVersionReconciler(t)
+		versionReconciler.EXPECT().ReconcileOneAgent(anyCtx, &dk, mock.Anything, mock.Anything).Return(errors.New("BOOM")).Once()
 
 		fakeClient := fake.NewClient()
 		reconciler := &Reconciler{
@@ -170,7 +169,7 @@ func TestReconcile(t *testing.T) {
 			apiReader:                fakeClient,
 			configmap:                k8sconfigmap.Query(fakeClient, fakeClient),
 			daemonset:                k8sdaemonset.Query(fakeClient, fakeClient),
-			connectionInfoReconciler: controllermock.NewReconciler(t),
+			connectionInfoReconciler: newMockConnectionInfoReconciler(t),
 			versionReconciler:        versionReconciler,
 		}
 
@@ -338,7 +337,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	dkKey := metav1.ObjectMeta{Name: "my-dynakube", Namespace: "my-namespace"}
 	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
-	r := Reconciler{}
+	r := Reconciler{apiReader: fake.NewClient()}
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: dkKey,
@@ -488,7 +487,7 @@ func TestHasSpecChanged(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r := Reconciler{}
+			r := Reconciler{apiReader: fake.NewClient()}
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
 			oldInstance := dynakube.DynaKube{
 				ObjectMeta: key,
@@ -523,7 +522,7 @@ func TestHasSpecChanged(t *testing.T) {
 
 func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run("adds correct affinities", func(t *testing.T) {
-		r := Reconciler{}
+		r := Reconciler{apiReader: fake.NewClient()}
 		dk := newDynaKube()
 		ds, err := r.buildDesiredDaemonSet(t.Context(), dk)
 
@@ -745,18 +744,73 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	})
 }
 
-func createConnectionInfoReconcilerMock(t *testing.T) connectionInfoReconciler {
-	connInfoReconciler := controllermock.NewReconciler(t)
-	connInfoReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
+func TestPGCConfigHash(t *testing.T) {
+	const testNamespace = "test-namespace"
+	const testDynakubeName = "test-dynakube"
 
-	return connInfoReconciler
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeName, Namespace: testNamespace},
+	}
+
+	t.Run("secret not found returns empty hash", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		r := &Reconciler{apiReader: fakeClient}
+
+		hash, err := r.getProcessGroupConfigHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("secret found returns hash of pgc data", func(t *testing.T) {
+		pgcData := []byte("some-pgc-content")
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				bootstrapperconfig.DeclarativeInputFileName: pgcData,
+			},
+		}
+		fakeClient := fake.NewClient(secret)
+		r := &Reconciler{apiReader: fakeClient}
+
+		hash, err := r.getProcessGroupConfigHash(t.Context(), dk)
+		require.NoError(t, err)
+
+		expectedHash, err := hasher.GenerateHash(pgcData)
+		require.NoError(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("secret found but no pgc data returns empty hash", func(t *testing.T) {
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
+				Namespace: testNamespace,
+			},
+		}
+		fakeClient := fake.NewClient(secret)
+		r := &Reconciler{apiReader: fakeClient}
+
+		hash, err := r.getProcessGroupConfigHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+}
+
+func createConnectionInfoReconcilerMock(t *testing.T) connectionInfoReconciler {
+	m := newMockConnectionInfoReconciler(t)
+	m.EXPECT().Reconcile(anyCtx, mock.Anything, mock.Anything).Return(nil).Once()
+
+	return m
 }
 
 func createVersionReconcilerMock(t *testing.T) versionReconciler {
-	versionReconciler := versionmock.NewReconciler(t)
-	versionReconciler.EXPECT().ReconcileOneAgent(anyCtx, mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+	m := newMockVersionReconciler(t)
+	m.EXPECT().ReconcileOneAgent(anyCtx, mock.AnythingOfType("*dynakube.DynaKube"), mock.Anything, mock.Anything).Return(nil).Once()
 
-	return versionReconciler
+	return m
 }
 
 func createTokens() token.Tokens {

@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/pkg/errors"
 )
 
@@ -41,13 +40,13 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 func (r *Reconciler) generateData(dk *dynakube.DynaKube, tokens token.Tokens) (map[string][]byte, error) {
 	var registryToken string
 
-	registry, err := getImageRegistryFromAPIURL(dk.Spec.APIURL)
+	registry, err := getImageRegistryFromAPIURL(dk.APIURL())
 	if err != nil {
 		return nil, err
 	}
 
 	switch {
-	case tokens.PaasToken().Value != "" && !dttoken.IsPlatform(tokens.APIToken().Value):
+	case tokens.PaasToken().Value != "":
 		registryToken = tokens.PaasToken().Value
 	case tokens.APIToken().Value != "":
 		registryToken = tokens.APIToken().Value

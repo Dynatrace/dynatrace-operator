@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: dynakubes.dynatrace.com
 spec:
   group: dynatrace.com
@@ -1095,6 +1095,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -1402,6 +1405,9 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -1610,6 +1616,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -1692,6 +1701,9 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3085,6 +3097,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3392,6 +3407,9 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3600,6 +3618,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -3682,6 +3703,9 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -5759,6 +5783,261 @@ spec:
                       type: string
                     type: array
                 type: object
+              kubernetesMonitoring:
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  customProperties:
+                    properties:
+                      value:
+                        nullable: true
+                        type: string
+                      valueFrom:
+                        nullable: true
+                        type: string
+                    type: object
+                  dnsPolicy:
+                    type: string
+                  env:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                        valueFrom:
+                          properties:
+                            configMapKeyRef:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  default: ""
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            fieldRef:
+                              properties:
+                                apiVersion:
+                                  type: string
+                                fieldPath:
+                                  type: string
+                              required:
+                              - fieldPath
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            fileKeyRef:
+                              properties:
+                                key:
+                                  type: string
+                                optional:
+                                  default: false
+                                  type: boolean
+                                path:
+                                  type: string
+                                volumeName:
+                                  type: string
+                              required:
+                              - key
+                              - path
+                              - volumeName
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            resourceFieldRef:
+                              properties:
+                                containerName:
+                                  type: string
+                                divisor:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                resource:
+                                  type: string
+                              required:
+                              - resource
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            secretKeyRef:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  default: ""
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                          type: object
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  group:
+                    type: string
+                  image:
+                    type: string
+                  imagePullPolicy:
+                    enum:
+                    - IfNotPresent
+                    - Always
+                    - Never
+                    type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  priorityClassName:
+                    type: string
+                  registration:
+                    properties:
+                      appEnabled:
+                        type: boolean
+                      clusterName:
+                        type: string
+                    type: object
+                  replicas:
+                    format: int32
+                    type: integer
+                  resources:
+                    properties:
+                      claims:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            request:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        type: object
+                    type: object
+                  rollingUpdate:
+                    properties:
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        x-kubernetes-int-or-string: true
+                      partition:
+                        format: int32
+                        type: integer
+                    type: object
+                  terminationGracePeriodSeconds:
+                    format: int64
+                    type: integer
+                  tlsCertsRef:
+                    properties:
+                      secretName:
+                        type: string
+                    required:
+                    - secretName
+                    type: object
+                  tolerations:
+                    items:
+                      properties:
+                        effect:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        tolerationSeconds:
+                          format: int64
+                          type: integer
+                        value:
+                          type: string
+                      type: object
+                    type: array
+                  topologySpreadConstraints:
+                    items:
+                      properties:
+                        labelSelector:
+                          properties:
+                            matchExpressions:
+                              items:
+                                properties:
+                                  key:
+                                    type: string
+                                  operator:
+                                    type: string
+                                  values:
+                                    items:
+                                      type: string
+                                    type: array
+                                    x-kubernetes-list-type: atomic
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              type: object
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        matchLabelKeys:
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        maxSkew:
+                          format: int32
+                          type: integer
+                        minDomains:
+                          format: int32
+                          type: integer
+                        nodeAffinityPolicy:
+                          type: string
+                        nodeTaintsPolicy:
+                          type: string
+                        topologyKey:
+                          type: string
+                        whenUnsatisfiable:
+                          type: string
+                      required:
+                      - maxSkew
+                      - topologyKey
+                      - whenUnsatisfiable
+                      type: object
+                    type: array
+                type: object
               logMonitoring:
                 properties:
                   ingestRuleMatchers:
@@ -5777,6 +6056,39 @@ spec:
                 properties:
                   enabled:
                     type: boolean
+                  initResources:
+                    properties:
+                      claims:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            request:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        type: object
+                    type: object
                   namespaceSelector:
                     properties:
                       matchExpressions:
@@ -5888,6 +6200,10 @@ spec:
                   classicFullStack:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       annotations:
                         additionalProperties:
                           type: string
@@ -6329,6 +6645,10 @@ spec:
                   hostMonitoring:
                     nullable: true
                     properties:
+                      additionalResourceAttributes:
+                        additionalProperties:
+                          type: string
+                        type: object
                       annotations:
                         additionalProperties:
                           type: string
@@ -6564,6 +6884,8 @@ spec:
                     nullable: true
                     type: string
                 type: object
+              publicRegistryOverride:
+                type: string
               resourceAttributes:
                 additionalProperties:
                   type: string
@@ -6596,6 +6918,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -6903,6 +7228,9 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7111,6 +7439,9 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7206,6 +7537,9 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7219,6 +7553,10 @@ spec:
                             type: string
                         type: object
                       labels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      nodeSelector:
                         additionalProperties:
                           type: string
                         type: object
@@ -7335,6 +7673,9 @@ spec:
                     properties:
                       imageRef:
                         properties:
+                          digest:
+                            pattern: ^[a-z0-9]+:([a-f0-9]+|[A-F0-9]+)$
+                            type: string
                           pullPolicy:
                             enum:
                             - IfNotPresent
@@ -7406,6 +7747,18 @@ spec:
                   version:
                     type: string
                 type: object
+              apiToken:
+                properties:
+                  availableOptionalScopes:
+                    properties:
+                      settingsRead:
+                        type: boolean
+                      settingsWrite:
+                        type: boolean
+                    type: object
+                  platform:
+                    type: boolean
+                type: object
               codeModules:
                 properties:
                   imageID:
@@ -7470,6 +7823,32 @@ spec:
                 type: string
               kubernetesClusterName:
                 type: string
+              kubernetesMonitoring:
+                properties:
+                  connectionInfo:
+                    properties:
+                      endpoints:
+                        type: string
+                      lastRequest:
+                        format: date-time
+                        type: string
+                      tenantTokenHash:
+                        type: string
+                      tenantUUID:
+                        type: string
+                    type: object
+                  imageID:
+                    type: string
+                  lastProbeTimestamp:
+                    format: date-time
+                    type: string
+                  source:
+                    type: string
+                  type:
+                    type: string
+                  version:
+                    type: string
+                type: object
               metadataEnrichment:
                 properties:
                   rules:

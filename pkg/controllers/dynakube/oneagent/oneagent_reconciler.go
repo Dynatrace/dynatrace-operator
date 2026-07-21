@@ -12,6 +12,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	oaClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -19,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -43,11 +47,11 @@ const (
 )
 
 type connectionInfoReconciler interface {
-	Reconcile(ctx context.Context) error
+	Reconcile(ctx context.Context, oaClient oaClient.Client, dk *dynakube.DynaKube) error
 }
 
 type versionReconciler interface {
-	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, imageClient dtimage.Client, versionClient dtversion.Client) error
 }
 
 // NewReconciler initializes a new Reconciler instance
@@ -57,11 +61,13 @@ func NewReconciler(
 	clusterID string,
 ) *Reconciler {
 	return &Reconciler{
-		client:    client,
-		apiReader: apiReader,
-		clusterID: clusterID,
-		configmap: k8sconfigmap.Query(client, apiReader),
-		daemonset: k8sdaemonset.Query(client, apiReader),
+		client:                   client,
+		apiReader:                apiReader,
+		clusterID:                clusterID,
+		configmap:                k8sconfigmap.Query(client, apiReader),
+		daemonset:                k8sdaemonset.Query(client, apiReader),
+		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader),
+		versionReconciler:        version.NewReconciler(apiReader),
 	}
 }
 
@@ -84,31 +90,25 @@ type Reconciler struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-oneagent")
+	ctx, log := logd.NewFromContext(ctx, "oneagent")
 	log.Info("reconciling OneAgent")
 
-	versionReconciler := r.versionReconciler
-	if versionReconciler == nil {
-		versionReconciler = version.NewReconciler(r.apiReader, dtClient.Version, timeprovider.New().Freeze())
-	}
-
-	connectionInfoReconciler := r.connectionInfoReconciler
-	if connectionInfoReconciler == nil {
-		connectionInfoReconciler = oaconnectioninfo.NewReconciler(r.client, r.apiReader, dtClient.OneAgent, dk)
-	}
-
-	err := versionReconciler.ReconcileOneAgent(ctx, dk)
+	err := r.versionReconciler.ReconcileOneAgent(ctx, dk, dtClient.Images, dtClient.Version)
 	if err != nil {
 		return err
 	}
 
-	err = connectionInfoReconciler.Reconcile(ctx)
+	err = r.connectionInfoReconciler.Reconcile(ctx, dtClient.OneAgent, dk)
 	if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) { // This only informational
 		log.Info("OneAgents are not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
 
 		if dk.Spec.NetworkZone != "" {
-			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", dk.Spec.NetworkZone, "dynakube", dk.Name)
+			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", dk.Spec.NetworkZone)
 		}
+	}
+
+	if errors.Is(err, oaconnectioninfo.StaleNetworkZoneEndpointsError) { // This only informational
+		log.Info("OneAgent endpoints do not yet advertise every local ActiveGate Service IP, postponing OneAgent deployment until the ActiveGate has re-registered")
 	}
 
 	if err != nil {
@@ -214,7 +214,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 
 	_, err = r.configmap.CreateOrUpdate(ctx, configMap)
 	if err != nil {
-		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+		log.Info("could not create or update configMap for connection info", "configMapName", configMap.Name)
 		k8sconditions.SetKubeAPIError(dk.Conditions(), oaConditionType, err)
 
 		return err
@@ -313,15 +313,18 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube,
 func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 
-	var err error
+	processGroupConfigHash, err := r.getProcessGroupConfigHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
 
 	switch {
 	case dk.OneAgent().IsClassicFullStackMode():
 		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsHostMonitoringMode():
-		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID).BuildDaemonSet(ctx)
+		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID, processGroupConfigHash).BuildDaemonSet(ctx)
 	case dk.OneAgent().IsCloudNativeFullstackMode():
-		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
+		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID, processGroupConfigHash).BuildDaemonSet(ctx)
 	}
 
 	if err != nil {
@@ -364,6 +367,26 @@ func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dk *dynakube.D
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetDaemonsetName(), Namespace: dk.Namespace}}
 
 	return client.IgnoreNotFound(r.client.Delete(ctx, &oneAgentDaemonSet))
+}
+
+func (r *Reconciler) getProcessGroupConfigHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	var secret corev1.Secret
+
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: bootstrapperconfig.GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	pgcData := secret.Data[bootstrapperconfig.DeclarativeInputFileName]
+	if pgcData == nil {
+		return "", nil
+	}
+
+	return hasher.GenerateHash(pgcData)
 }
 
 func getInstanceStatuses(pods []corev1.Pod) map[string]oneagent.Instance {

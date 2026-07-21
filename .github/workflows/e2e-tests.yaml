@@ -6,22 +6,70 @@ on:
     - cron: 0 0 * * 1-5
   workflow_dispatch:
     inputs:
+      e2e-make-target:
+        description: 'Make target path under test/e2e/ to run instead of the default suite (e.g. "cloudnative/codemodules"). Leave empty to run the full default suite.'
+        required: false
       target:
-        description: 'Target branch to run E2E tests over'
+        description: 'Target branch to run E2E tests over (take precedence over nightly helm chart/image)'
         required: true
         default: 'main'
       helm-chart:
         description: 'Helm chart used for installation'
-        required: true
-        default: 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart'
-        type: string
+        type: choice
+        options:
+         - oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart
+         - ""
+      run-e2e-in-k8s:
+        description: 'Run E2E tests in Kubernetes cluster'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-k8s-platform-token:
+        description: 'Run E2E tests in Kubernetes cluster with platform token'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-k8s-phase3:
+        description: 'Run E2E tests in Kubernetes cluster with phase 3 tenant'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-ocp:
+        description: 'Run E2E tests in OpenShift cluster'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-ocp-platform-token:
+        description: 'Run E2E tests in OpenShift cluster with platform token'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-ocp-olm:
+        description: 'Run OLM E2E tests in OpenShift cluster'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-ocp-olm-platform-token:
+        description: 'Run OLM E2E tests in OpenShift cluster platform token'
+        default: true
+        required: false
+        type: boolean
+      run-e2e-in-ocp-fips:
+        description: 'Run E2E tests in using FIPS OpenShift cluster'
+        default: true
+        required: false
+        type: boolean
 
 permissions:
   checks: write
 
 jobs:
   run-in-k8s:
+    if: ${{ github.event.inputs.run-e2e-in-k8s != 'false' }}
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -30,7 +78,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run e2e test
@@ -48,10 +96,150 @@ jobs:
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          tenant3-phase3-name: ${{ secrets.TENANT3_PHASE3_NAME }}
+          tenant3-phase3-apitoken: ${{ secrets.TENANT3_PHASE3_APITOKEN }}
+          tenant3-phase3-dataingesttoken: ${{ secrets.TENANT3_PHASE3_DATAINGESTTOKEN }}
+          tenant3-phase3-oauth-client-id: ${{ secrets.TENANT3_PHASE3_OAUTH_CLIENT_ID }}
+          tenant3-phase3-oauth-secret: ${{ secrets.TENANT3_PHASE3_OAUTH_SECRET }}
+          tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
+          tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
+          tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
+          e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
+      - name: Determine cluster status
+        if: failure()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
+        run: |
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
+            exit 1
+          fi
+
+  run-in-k8s-platform-token:
+    if: ${{ github.event.inputs.run-e2e-in-k8s-platform-token != 'false' }}
+    name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (platform token)
+    permissions:
+      checks: write
+      pull-requests: write
+    environment: E2E
+    runs-on:
+      - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ job.check_run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Run e2e test
+        id: run_e2e_test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto
+          flc-environment: dto-k8s-latest-pt-flc
+          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          tenant3-phase3-name: ${{ secrets.TENANT3_PHASE3_NAME }}
+          tenant3-phase3-apitoken: ${{ secrets.TENANT3_PHASE3_APITOKEN }}
+          tenant3-phase3-dataingesttoken: ${{ secrets.TENANT3_PHASE3_DATAINGESTTOKEN }}
+          tenant3-phase3-oauth-client-id: ${{ secrets.TENANT3_PHASE3_OAUTH_CLIENT_ID }}
+          tenant3-phase3-oauth-secret: ${{ secrets.TENANT3_PHASE3_OAUTH_SECRET }}
+          tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
+          tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
+          tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
+          use-platform-token: "true"
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
+          e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
+      - name: Determine cluster status
+        if: failure()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
+        run: |
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
+            exit 1
+          fi
+  run-in-k8s-phase3:
+    if: ${{ github.event.inputs.run-e2e-in-k8s-phase3 != 'false' }}
+    name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }}) (phase 3)
+    permissions:
+      checks: write
+      pull-requests: write
+    environment: E2E
+    runs-on:
+      - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ job.check_run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Run e2e test
+        id: run_e2e_test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto
+          flc-environment: dto-k8s-latest-p3-flc
+          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          tenant3-phase3-name: ${{ secrets.TENANT3_PHASE3_NAME }}
+          tenant3-phase3-apitoken: ${{ secrets.TENANT3_PHASE3_APITOKEN }}
+          tenant3-phase3-dataingesttoken: ${{ secrets.TENANT3_PHASE3_DATAINGESTTOKEN }}
+          tenant3-phase3-oauth-client-id: ${{ secrets.TENANT3_PHASE3_OAUTH_CLIENT_ID }}
+          tenant3-phase3-oauth-secret: ${{ secrets.TENANT3_PHASE3_OAUTH_SECRET }}
+          tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
+          tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
+          tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
+          use-platform-token: "true"
+          use-tenant-phase3: "true"
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
+          e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -61,7 +249,11 @@ jobs:
             exit 1
           fi
   run-in-ocp:
+    if: ${{ github.event.inputs.run-e2e-in-ocp != 'false' }}
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -70,7 +262,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run e2e test
@@ -88,10 +280,87 @@ jobs:
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          tenant3-phase3-name: ${{ secrets.TENANT3_PHASE3_NAME }}
+          tenant3-phase3-apitoken: ${{ secrets.TENANT3_PHASE3_APITOKEN }}
+          tenant3-phase3-dataingesttoken: ${{ secrets.TENANT3_PHASE3_DATAINGESTTOKEN }}
+          tenant3-phase3-oauth-client-id: ${{ secrets.TENANT3_PHASE3_OAUTH_CLIENT_ID }}
+          tenant3-phase3-oauth-secret: ${{ secrets.TENANT3_PHASE3_OAUTH_SECRET }}
+          tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
+          tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
+          tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
+          e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
+      - name: Determine cluster status
+        if: failure()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
+        run: |
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
+            exit 1
+          fi
+  run-in-ocp-platform-token:
+    if: ${{ github.event.inputs.run-e2e-in-ocp-platform-token != 'false' }}
+    name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform token)
+    permissions:
+      checks: write
+      pull-requests: write
+    environment: E2E
+    runs-on:
+      - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ job.check_run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Run e2e test
+        id: run_e2e_test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto
+          flc-environment: dto-ocp-ltst-pt-flc
+          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          tenant3-phase3-name: ${{ secrets.TENANT3_PHASE3_NAME }}
+          tenant3-phase3-apitoken: ${{ secrets.TENANT3_PHASE3_APITOKEN }}
+          tenant3-phase3-dataingesttoken: ${{ secrets.TENANT3_PHASE3_DATAINGESTTOKEN }}
+          tenant3-phase3-oauth-client-id: ${{ secrets.TENANT3_PHASE3_OAUTH_CLIENT_ID }}
+          tenant3-phase3-oauth-secret: ${{ secrets.TENANT3_PHASE3_OAUTH_SECRET }}
+          tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
+          tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
+          tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
+          use-platform-token: "true"
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
+          e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -101,7 +370,11 @@ jobs:
             exit 1
           fi
   run-in-ocp-olm:
+    if: ${{ github.event.inputs.run-e2e-in-ocp-olm != 'false' }}
     name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }})
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -110,7 +383,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run e2e test
@@ -128,10 +401,87 @@ jobs:
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          tenant3-phase3-name: ${{ secrets.TENANT3_PHASE3_NAME }}
+          tenant3-phase3-apitoken: ${{ secrets.TENANT3_PHASE3_APITOKEN }}
+          tenant3-phase3-dataingesttoken: ${{ secrets.TENANT3_PHASE3_DATAINGESTTOKEN }}
+          tenant3-phase3-oauth-client-id: ${{ secrets.TENANT3_PHASE3_OAUTH_CLIENT_ID }}
+          tenant3-phase3-oauth-secret: ${{ secrets.TENANT3_PHASE3_OAUTH_SECRET }}
+          tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
+          tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
+          tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
+          e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
+      - name: Determine cluster status
+        if: failure()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
+        run: |
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
+            exit 1
+          fi
+  run-in-ocp-olm-platform-token:
+    if: ${{ github.event.inputs.run-e2e-in-ocp-olm-platform-token != 'false' }}
+    name: Run OLM in OpenShift latest (${{ github.event.inputs.target || 'main' }}) (platform token)
+    permissions:
+      checks: write
+      pull-requests: write
+    environment: E2E
+    runs-on:
+      - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ job.check_run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Run e2e test
+        id: run_e2e_test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto
+          flc-environment: dto-ocp-olm-pt-flc
+          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          tenant3-phase3-name: ${{ secrets.TENANT3_PHASE3_NAME }}
+          tenant3-phase3-apitoken: ${{ secrets.TENANT3_PHASE3_APITOKEN }}
+          tenant3-phase3-dataingesttoken: ${{ secrets.TENANT3_PHASE3_DATAINGESTTOKEN }}
+          tenant3-phase3-oauth-client-id: ${{ secrets.TENANT3_PHASE3_OAUTH_CLIENT_ID }}
+          tenant3-phase3-oauth-secret: ${{ secrets.TENANT3_PHASE3_OAUTH_SECRET }}
+          tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
+          tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
+          tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
+          use-platform-token: "true"
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
+          e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -141,7 +491,11 @@ jobs:
             exit 1
           fi
   run-in-ocp-fips:
+    if: ${{ github.event.inputs.run-e2e-in-ocp-fips != 'false' }}
     name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
+    permissions:
+      checks: write
+      pull-requests: write
     environment: E2E
     runs-on:
       - operator-e2e
@@ -150,7 +504,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Run e2e test
@@ -159,8 +513,7 @@ jobs:
         with:
           flc-namespace: dto
           flc-environment: dto-ocp-fips
-          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
-          target-image: ${{ format('{0}-fips', github.event.inputs.target || 'main') }}
+          target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
@@ -168,10 +521,26 @@ jobs:
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant1-platform-token: ${{ secrets.TENANT1_PLATFORM_TOKEN }}
+          tenant1-platform-token-nosettings: ${{ secrets.TENANT1_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant1-dataingest-platform-token: ${{ secrets.TENANT1_DATAINGEST_PLATFORM_TOKEN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tenant2-platform-token: ${{ secrets.TENANT2_PLATFORM_TOKEN }}
+          tenant3-phase3-name: ${{ secrets.TENANT3_PHASE3_NAME }}
+          tenant3-phase3-apitoken: ${{ secrets.TENANT3_PHASE3_APITOKEN }}
+          tenant3-phase3-dataingesttoken: ${{ secrets.TENANT3_PHASE3_DATAINGESTTOKEN }}
+          tenant3-phase3-oauth-client-id: ${{ secrets.TENANT3_PHASE3_OAUTH_CLIENT_ID }}
+          tenant3-phase3-oauth-secret: ${{ secrets.TENANT3_PHASE3_OAUTH_SECRET }}
+          tenant3-phase3-oauth-urn: ${{ secrets.TENANT3_PHASE3_OAUTH_URN }}
+          tenant3-phase3-platform-token: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN }}
+          tenant3-phase3-platform-token-nosettings: ${{ secrets.TENANT3_PHASE3_PLATFORM_TOKEN_NOSETTINGS }}
+          tenant3-phase3-dataingest-platform-token: ${{ secrets.TENANT3_PHASE3_DATAINGEST_PLATFORM_TOKEN }}
+          tenant4-phase3-name: ${{ secrets.TENANT4_PHASE3_NAME }}
+          tenant4-phase3-platform-token: ${{ secrets.TENANT4_PHASE3_PLATFORM_TOKEN }}
+          e2e-public-registry-override: ${{ vars.E2E_PUBLIC_REGISTRY_OVERRIDE }}
+          e2e-make-target: ${{ github.event.inputs.e2e-make-target }}
       - name: Determine cluster status
         if: failure()
         env:
@@ -185,33 +554,46 @@ jobs:
   notify-slack:
     name: Notify test results in Slack
     environment: E2E
-    needs: [ "run-in-k8s", "run-in-ocp", "run-in-ocp-fips", "run-in-ocp-olm"]
+    needs: [ "run-in-k8s", "run-in-k8s-platform-token", "run-in-k8s-phase3", "run-in-ocp", "run-in-ocp-platform-token", "run-in-ocp-fips", "run-in-ocp-olm", "run-in-ocp-olm-platform-token"]
     runs-on: ubuntu-24.04
     if: ${{ always() }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Set Slack message
         id: set_slack_message
         env:
           TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
+          E2E_MAKE_TARGET: ${{ github.event.inputs.e2e-make-target }}
           K8S_CLUSTER_STATUS: ${{ needs.run-in-k8s.outputs.cluster_status }}
           K8S_JOB_ID: ${{ needs.run-in-k8s.outputs.job_id }}
           K8S_RESULT: ${{ needs.run-in-k8s.result }}
+          K8S_PLATFORM_TOKEN_CLUSTER_STATUS: ${{ needs.run-in-k8s-platform-token.outputs.cluster_status }}
+          K8S_PLATFORM_TOKEN_JOB_ID: ${{ needs.run-in-k8s-platform-token.outputs.job_id }}
+          K8S_PLATFORM_TOKEN_RESULT: ${{ needs.run-in-k8s-platform-token.result }}
+          K8S_PHASE3_CLUSTER_STATUS: ${{ needs.run-in-k8s-phase3.outputs.cluster_status }}
+          K8S_PHASE3_JOB_ID: ${{ needs.run-in-k8s-phase3.outputs.job_id }}
+          K8S_PHASE3_RESULT: ${{ needs.run-in-k8s-phase3.result }}
           OCP_CLUSTER_STATUS: ${{ needs.run-in-ocp.outputs.cluster_status }}
           OCP_JOB_ID: ${{ needs.run-in-ocp.outputs.job_id }}
           OCP_RESULT: ${{ needs.run-in-ocp.result }}
+          OCP_PLATFORM_TOKEN_CLUSTER_STATUS: ${{ needs.run-in-ocp-platform-token.outputs.cluster_status }}
+          OCP_PLATFORM_TOKEN_JOB_ID: ${{ needs.run-in-ocp-platform-token.outputs.job_id }}
+          OCP_PLATFORM_TOKEN_RESULT: ${{ needs.run-in-ocp-platform-token.result }}
           OCP_FIPS_CLUSTER_STATUS: ${{ needs.run-in-ocp-fips.outputs.cluster_status }}
           OCP_FIPS_JOB_ID: ${{ needs.run-in-ocp-fips.outputs.job_id }}
           OCP_FIPS_RESULT: ${{ needs.run-in-ocp-fips.result }}
           OCP_OLM_CLUSTER_STATUS: ${{ needs.run-in-ocp-olm.outputs.cluster_status }}
           OCP_OLM_JOB_ID: ${{ needs.run-in-ocp-olm.outputs.job_id }}
           OCP_OLM_RESULT: ${{ needs.run-in-ocp-olm.result }}
+          OCP_OLM_PLATFORM_TOKEN_CLUSTER_STATUS: ${{ needs.run-in-ocp-olm-platform-token.outputs.cluster_status }}
+          OCP_OLM_PLATFORM_TOKEN_JOB_ID: ${{ needs.run-in-ocp-olm-platform-token.outputs.job_id }}
+          OCP_OLM_PLATFORM_TOKEN_RESULT: ${{ needs.run-in-ocp-olm-platform-token.result }}
         run: |
           get_emoji() {
-            if [ "$1" = "skipped" ]; then
+            if [ "$1" = "skipped" ] || [ "$2" = "skipped" ]; then
               echo "large_yellow_circle"
             elif [ "$2" = "success" ]; then
               echo "white_check_mark"
@@ -220,15 +602,28 @@ jobs:
             fi
           }
           K8S_STATUS=$(get_emoji "${K8S_CLUSTER_STATUS}" "${K8S_RESULT}")
+          K8S_PLATFORM_TOKEN_STATUS=$(get_emoji "${K8S_PLATFORM_TOKEN_CLUSTER_STATUS}" "${K8S_PLATFORM_TOKEN_RESULT}")
+          K8S_PHASE3_STATUS=$(get_emoji "${K8S_PHASE3_CLUSTER_STATUS}" "${K8S_PHASE3_RESULT}")
           OCP_STATUS=$(get_emoji "${OCP_CLUSTER_STATUS}" "${OCP_RESULT}")
+          OCP_PLATFORM_TOKEN_STATUS=$(get_emoji "${OCP_PLATFORM_TOKEN_CLUSTER_STATUS}" "${OCP_PLATFORM_TOKEN_RESULT}")
           OCP_FIPS_STATUS=$(get_emoji "${OCP_FIPS_CLUSTER_STATUS}" "${OCP_FIPS_RESULT}")
           OCP_OLM_STATUS=$(get_emoji "${OCP_OLM_CLUSTER_STATUS}" "${OCP_OLM_RESULT}")
+          OCP_OLM_PLATFORM_TOKEN_STATUS=$(get_emoji "${OCP_OLM_PLATFORM_TOKEN_CLUSTER_STATUS}" "${OCP_OLM_PLATFORM_TOKEN_RESULT}")
 
           echo "K8S_STATUS=$K8S_STATUS" >> $GITHUB_ENV
           echo "K8S_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${K8S_JOB_ID}" >> $GITHUB_ENV
 
+          echo "K8S_PLATFORM_TOKEN_STATUS=$K8S_PLATFORM_TOKEN_STATUS" >> $GITHUB_ENV
+          echo "K8S_PLATFORM_TOKEN_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${K8S_PLATFORM_TOKEN_JOB_ID}" >> $GITHUB_ENV
+
+          echo "K8S_PHASE3_STATUS=$K8S_PHASE3_STATUS" >> $GITHUB_ENV
+          echo "K8S_PHASE3_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${K8S_PHASE3_JOB_ID}" >> $GITHUB_ENV
+
           echo "OCP_STATUS=$OCP_STATUS" >> $GITHUB_ENV
           echo "OCP_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_JOB_ID}" >> $GITHUB_ENV
+
+          echo "OCP_PLATFORM_TOKEN_STATUS=$OCP_PLATFORM_TOKEN_STATUS" >> $GITHUB_ENV
+          echo "OCP_PLATFORM_TOKEN_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_PLATFORM_TOKEN_JOB_ID}" >> $GITHUB_ENV
 
           echo "OCP_FIPS_STATUS=$OCP_FIPS_STATUS" >> $GITHUB_ENV
           echo "OCP_FIPS_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_FIPS_JOB_ID}" >> $GITHUB_ENV
@@ -236,9 +631,18 @@ jobs:
           echo "OCP_OLM_STATUS=$OCP_OLM_STATUS" >> $GITHUB_ENV
           echo "OCP_OLM_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_JOB_ID}" >> $GITHUB_ENV
 
+          echo "OCP_OLM_PLATFORM_TOKEN_STATUS=$OCP_OLM_PLATFORM_TOKEN_STATUS" >> $GITHUB_ENV
+          echo "OCP_OLM_PLATFORM_TOKEN_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_OLM_PLATFORM_TOKEN_JOB_ID}" >> $GITHUB_ENV
+
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
-      - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+
+          if [ -n "$E2E_MAKE_TARGET" ]; then
+            echo "MAKE_TARGET_INFO=run via \`make test/e2e/$E2E_MAKE_TARGET/publish\`" >> $GITHUB_ENV
+          else
+            echo "MAKE_TARGET_INFO=" >> $GITHUB_ENV
+          fi
+      - name: Notify in Slack
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook

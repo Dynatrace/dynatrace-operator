@@ -11,15 +11,21 @@ import (
 
 var errEmptyOSOrInstallerType = goerrors.New("OS or installerType is empty")
 
+type latestAgentVersionResponse struct {
+	LatestAgentVersion string `json:"latestAgentVersion"`
+}
+
+func (lr *latestAgentVersionResponse) IsEmpty() bool {
+	return len(lr.LatestAgentVersion) == 0
+}
+
 // GetLatestAgentVersion gets the latest agent version for the given OS and installer type configured on the Tenant.
 func (c *ClientImpl) GetLatestAgentVersion(ctx context.Context, os, installerType string) (string, error) {
 	if len(os) == 0 || len(installerType) == 0 {
 		return "", errEmptyOSOrInstallerType
 	}
 
-	response := struct {
-		LatestAgentVersion string `json:"latestAgentVersion"`
-	}{}
+	var resp latestAgentVersionResponse
 
 	queryParams := map[string]string{
 		"bitness": "64",
@@ -33,9 +39,9 @@ func (c *ClientImpl) GetLatestAgentVersion(ctx context.Context, os, installerTyp
 	err := c.apiClient.GET(ctx, "/v1/deployment/installer/agent").
 		WithPath(os, installerType, "latest/metainfo").
 		WithPaasToken().
-		WithQueryParams(queryParams).Execute(&response)
+		WithQueryParams(queryParams).Execute(&resp)
 
-	return response.LatestAgentVersion, errors.WithStack(err)
+	return resp.LatestAgentVersion, errors.WithStack(err)
 }
 
 // determineArch gives you the proper arch value, because the OSAgent and ActiveGate images on the tenant-image-registry only have AMD images.

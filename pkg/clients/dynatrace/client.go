@@ -6,8 +6,6 @@ import (
 	"crypto/x509"
 	"net/http"
 	"net/url"
-	"path"
-	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
@@ -15,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
@@ -31,6 +30,7 @@ type Client struct {
 	Settings   settings.Client
 	ActiveGate activegate.Client
 	HostEvent  hostevent.Client
+	Images     image.Client
 	OneAgent   oneagent.Client
 	Version    version.Client
 	Token      token.Client
@@ -75,12 +75,6 @@ func NewClient(options ...Option) (*Client, error) {
 		config.PaasToken = config.APIToken
 	}
 
-	if strings.Contains(config.BaseURL.Hostname(), ".apps.") {
-		mapThirdGenAPIURL(config.BaseURL)
-	} else if path.Base(config.BaseURL.Path) != "api" {
-		config.BaseURL = config.BaseURL.JoinPath("api")
-	}
-
 	apiClient := core.NewClient(core.Config{
 		BaseURL:    config.BaseURL,
 		HTTPClient: httpClient,
@@ -93,6 +87,7 @@ func NewClient(options ...Option) (*Client, error) {
 		Settings:   settings.NewClient(apiClient),
 		ActiveGate: activegate.NewClient(apiClient),
 		HostEvent:  hostevent.NewClient(apiClient, config.NetworkZone),
+		Images:     image.NewClient(apiClient),
 		OneAgent:   oneagent.NewClient(apiClient, config.HostGroup, config.NetworkZone),
 		Version:    version.NewClient(apiClient),
 		Token:      token.NewClient(apiClient),
@@ -309,34 +304,4 @@ func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.UR
 	proxyFunc := proxyConfig.ProxyFunc()
 
 	return func(req *http.Request) (*url.URL, error) { return proxyFunc(req.URL) }
-}
-
-const thirdGenAPPSHostParts = 2
-
-// mapThirdGenAPIURL remaps a 3rd gen URL (*.apps.*) to its 2nd gen equivalent.
-func mapThirdGenAPIURL(u *url.URL) {
-	hostname := u.Hostname()
-
-	parts := strings.SplitN(hostname, ".apps.", thirdGenAPPSHostParts)
-	if len(parts) != thirdGenAPPSHostParts {
-		return
-	}
-
-	prefix, suffix := parts[0], parts[1]
-
-	var newHostname string
-
-	if !strings.Contains(prefix, ".") {
-		newHostname = prefix + ".live." + suffix
-	} else {
-		newHostname = prefix + "." + suffix
-	}
-
-	if port := u.Port(); port != "" {
-		u.Host = newHostname + ":" + port
-	} else {
-		u.Host = newHostname
-	}
-
-	u.Path = "/api"
 }

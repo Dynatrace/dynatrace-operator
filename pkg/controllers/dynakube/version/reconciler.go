@@ -2,64 +2,51 @@ package version
 
 import (
 	"context"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Reconciler interface {
-	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
-	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error
-	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
-}
-
-type reconciler struct {
-	dtClient     version.Client
-	timeProvider *timeprovider.Provider
-
+type Reconciler struct {
 	apiReader client.Reader
 }
 
-func NewReconciler(apiReader client.Reader, dtClient version.Client, timeProvider *timeprovider.Provider) Reconciler {
-	return &reconciler{
-		apiReader:    apiReader,
-		timeProvider: timeProvider,
-		dtClient:     dtClient,
+func NewReconciler(apiReader client.Reader) *Reconciler {
+	return &Reconciler{
+		apiReader: apiReader,
 	}
 }
 
-func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-version")
+func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
+	ctx, _ = logd.NewFromContext(ctx, "version")
 
-	updater := newCodeModulesUpdater(dk, r.dtClient)
-	if r.needsUpdate(ctx, updater, dk) {
+	updater := newCodeModulesUpdater(dk, imageClient, versionClient)
+	if r.needsUpdate(ctx, updater) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
 
 	return nil
 }
 
-func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-version")
+func (r *Reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
+	ctx, _ = logd.NewFromContext(ctx, "version")
 
-	updater := newOneAgentUpdater(dk, r.apiReader, r.dtClient)
-	if r.needsUpdate(ctx, updater, dk) {
+	updater := newOneAgentUpdater(dk, r.apiReader, imageClient, versionClient)
+	if r.needsUpdate(ctx, updater) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
 
 	return nil
 }
 
-func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "dynakube-version")
+func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
+	ctx, _ = logd.NewFromContext(ctx, "version")
 
-	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient)
-	if r.needsUpdate(ctx, updater, dk) {
+	updater := newActiveGateUpdater(dk, r.apiReader, imageClient, versionClient)
+	if r.needsUpdate(ctx, updater) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
 
 		return err
@@ -68,7 +55,7 @@ func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 	return nil
 }
 
-func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUpdater, dk *dynakube.DynaKube) error {
+func (r *Reconciler) updateVersionStatuses(ctx context.Context, updater StatusUpdater, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 	log.Info("updating version status", "updater", updater.Name())
 
@@ -96,7 +83,7 @@ func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 	return nil
 }
 
-func (r *reconciler) needsUpdate(ctx context.Context, updater StatusUpdater, dk *dynakube.DynaKube) bool {
+func (r *Reconciler) needsUpdate(ctx context.Context, updater StatusUpdater) bool {
 	log := logd.FromContext(ctx)
 	if !updater.IsEnabled() {
 		log.Info("skipping version status update for disabled section", "updater", updater.Name())
@@ -104,49 +91,5 @@ func (r *reconciler) needsUpdate(ctx context.Context, updater StatusUpdater, dk 
 		return false
 	}
 
-	if updater.Target().Source != determineSource(updater) {
-		log.Info("source changed, update for version status is needed", "updater", updater.Name())
-
-		return true
-	}
-
-	if hasCustomFieldChanged(ctx, updater) {
-		return true
-	}
-
-	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dk.APIRequestThreshold()) {
-		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
-
-		return false
-	}
-
 	return true
-}
-
-func hasCustomFieldChanged(ctx context.Context, updater StatusUpdater) bool {
-	log := logd.FromContext(ctx)
-
-	if updater.Target().Source == status.CustomImageVersionSource {
-		oldImage := updater.Target().ImageID
-		newImage := updater.CustomImage()
-		// The old image is can be the same as the new image (if only digest was given, or a tag was given but couldn't get the digest)
-		// or the old image is the same as the new image but with the digest added to the end of it (if a tag was provide, and we could append the digest to the end)
-		// or the 2 images are different
-		if !strings.HasPrefix(oldImage, newImage) {
-			log.Info("custom image value changed, update for version status is needed", "updater", updater.Name(), "oldImage", oldImage, "newImage", newImage)
-
-			return true
-		}
-	} else if updater.Target().Source == status.CustomVersionVersionSource {
-		oldVersion := updater.Target().Version
-		newVersion := updater.CustomVersion()
-
-		if oldVersion != newVersion {
-			log.Info("custom version value changed, update for version status is needed", "updater", updater.Name(), "oldVersion", oldVersion, "newVersion", newVersion)
-
-			return true
-		}
-	}
-
-	return false
 }

@@ -9,6 +9,7 @@ const (
 	NoProxyKey = FFPrefix + "no-proxy"
 
 	UseEECLegacyMountsKey = FFPrefix + "use-eec-legacy-mounts"
+	UsePublicRegistryKey  = FFPrefix + "use-public-registry"
 
 	silentPhrase = "silent"
 	failPhrase   = "fail"
@@ -17,11 +18,19 @@ const (
 )
 
 type FeatureFlags struct {
-	annotations map[string]string
+	annotations      map[string]string
+	hasPlatformToken bool
 }
 
-func NewFlags(annotations map[string]string) *FeatureFlags {
-	return &FeatureFlags{annotations: annotations}
+func NewFlags(annotations map[string]string, hasPlatformToken bool) *FeatureFlags {
+	return &FeatureFlags{annotations: annotations, hasPlatformToken: hasPlatformToken}
+}
+
+// IsSet checks if the annotation(feature-flag) is present, does not check the value in any way.
+func (ff *FeatureFlags) IsSet(flag string) bool {
+	_, ok := ff.annotations[flag]
+
+	return ok
 }
 
 // GetNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
@@ -31,6 +40,10 @@ func (ff *FeatureFlags) GetNoProxy() string {
 
 func (ff *FeatureFlags) UseEECLegacyMounts() bool {
 	return ff.getBoolWithDefault(UseEECLegacyMountsKey, true)
+}
+
+func (ff *FeatureFlags) IsPublicRegistry() bool {
+	return ff.hasPlatformToken || ff.getBoolWithDefault(UsePublicRegistryKey, false)
 }
 
 // Deprecated: Do not use "disable" feature flags.

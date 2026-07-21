@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -15,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -36,8 +37,8 @@ func NewReconciler(clt client.Client,
 
 var KubernetesSettingsNotAvailableError = errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment until it is ready")
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, log := logd.NewFromContext(ctx, "logmonitoring-daemonset")
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
+	ctx, log := logd.NewFromContext(ctx, "daemonset")
 
 	if !dk.LogMonitoring().IsStandalone() {
 		if meta.FindStatusCondition(*dk.Conditions(), ConditionType) == nil {
@@ -46,7 +47,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 		err := r.daemonset.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace}})
 		if err != nil {
-			log.Error(err, "failed to clean-up LogMonitoring config-secret")
+			log.Error(err, "failed to clean-up LogMonitoring DaemonSet")
 		}
 
 		meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
@@ -54,7 +55,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	ds, err := r.generateDaemonSet(dk)
+	// templates section takes precedence over public registry
+	var imageURI string
+
+	templateImageRef := dk.LogMonitoring().Template().ImageRef
+	if templateImageRef.HasImage() {
+		imageURI = templateImageRef.String()
+	} else {
+		var err error
+
+		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.LogModule)
+		if err != nil {
+			return err
+		}
+	}
+
+	ds, err := r.generateDaemonSet(dk, imageURI)
 	if err != nil {
 		return err
 	}
@@ -74,7 +90,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	return nil
 }
 
-func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
+func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (*appsv1.DaemonSet, error) {
 	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		return nil, err
@@ -87,8 +103,8 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 
 	labels := k8slabel.NewAppLabels(k8slabel.LogMonitoringComponentLabel, dk.Name, k8slabel.LogMonitoringComponentLabel, tag)
 
-	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(*dk, tenantUUID),
-		k8sdaemonset.SetInitContainer(getInitContainer(*dk, tenantUUID)),
+	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(*dk, tenantUUID, imageURI),
+		k8sdaemonset.SetInitContainer(getInitContainer(*dk, tenantUUID, imageURI)),
 		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.LogMonitoring().Template().Labels),
 		k8sdaemonset.SetAllAnnotations(nil, r.getAnnotations(dk)),
 		k8sdaemonset.SetServiceAccount(serviceAccountName),
@@ -131,6 +147,6 @@ func isMEConfigured(dk dynakube.DynaKube) bool {
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
-		FSGroup: ptr.To(runAs),
+		FSGroup: new(runAs),
 	}
 }

@@ -41,6 +41,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
+		dynakubeComponents.WithAnnotations(map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "true"}),
 	)
 
 	type testCase struct {
@@ -125,7 +126,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		{
 			name: "metadata enrichment have deprecated attributes - pod",
 			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("pod-no-dt-attributes"),
+				sample.WithName("pod-with-dt-attributes"),
 				sample.WithNamespaceLabels(injectEverythingLabels),
 			),
 			assess: assessMetadataEnrichmentHasDeprecatedAttributes,
@@ -180,7 +181,7 @@ func podHasOnlyMetadataEnrichmentInitContainer(samplePod *sample.App) features.F
 }
 
 func assessPodHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
-	enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, resource, testPod)
+	enrichmentMetadata := metadataenrichment.GetMetadataJSONFromPod(ctx, t, resource, testPod)
 
 	assert.Equal(t, "pod", enrichmentMetadata.WorkloadKind)
 	assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)
@@ -212,16 +213,13 @@ func podHasCompleteInitContainer(samplePod *sample.App) features.Func {
 
 		require.Len(t, initContainers, 1)
 
-		assert.Contains(t, testPod.Annotations, metacommon.AnnotationWorkloadKind)
-		assert.Contains(t, testPod.Annotations, metacommon.AnnotationWorkloadName)
-
 		return ctx
 	}
 }
 
 func assessDeploymentHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, deploymentName string) k8sdeployment.PodConsumer {
 	return func(pod corev1.Pod) {
-		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, resource, pod)
+		enrichmentMetadata := metadataenrichment.GetMetadataJSONFromPod(ctx, t, resource, pod)
 
 		assert.Equal(t, "deployment", enrichmentMetadata.WorkloadKind)
 		assert.Equal(t, deploymentName, enrichmentMetadata.WorkloadName)
@@ -238,15 +236,13 @@ func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) k8sdeployment.PodConsu
 		assert.Contains(t, initContainers[0].Args, "--"+bootstrapper.MetadataEnrichmentFlag)
 		// The `--target=/mnt/bin` is a sign that the init-container will download/configure the oneagent
 		assert.NotContains(t, initContainers[0].Args, "--"+bootstrapper.TargetFolderFlag+"="+consts.AgentInitBinDirMount)
-		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadKind)
-		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadName)
 	}
 }
 
 func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testPod := samplePod.ListPods(ctx, t, envConfig.Client().Resources()).Items[0]
-		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, envConfig.Client().Resources(), testPod)
+		enrichmentMetadata := metadataenrichment.GetMetadataJSONFromPod(ctx, t, envConfig.Client().Resources(), testPod)
 
 		assert.Equal(t, "pod", enrichmentMetadata.DTWorkloadKind)
 		assert.Equal(t, testPod.Name, enrichmentMetadata.DTWorkloadName)
@@ -261,7 +257,7 @@ func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) feat
 func assessMetadataEnrichmentDoesNotHaveDeprecatedAttributes(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testPod := samplePod.ListPods(ctx, t, envConfig.Client().Resources()).Items[0]
-		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, envConfig.Client().Resources(), testPod)
+		enrichmentMetadata := metadataenrichment.GetMetadataJSONFromPod(ctx, t, envConfig.Client().Resources(), testPod)
 
 		assert.Empty(t, enrichmentMetadata.DTWorkloadKind)
 		assert.Empty(t, enrichmentMetadata.DTWorkloadName)

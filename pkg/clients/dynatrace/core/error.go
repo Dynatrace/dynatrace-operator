@@ -40,7 +40,7 @@ func (e *HTTPError) Error() string {
 				sb.WriteString("; ")
 			}
 
-			sb.WriteString(formatServerError(&serverErr))
+			sb.WriteString(formatServerError(&serverErr, e.StatusCode))
 		}
 
 		return fmt.Sprintf("HTTP %d: %s", e.StatusCode, sb.String())
@@ -99,13 +99,19 @@ func StatusCode(err error) int {
 	return httpErr.StatusCode
 }
 
-func formatServerError(e *ServerError) string {
+func formatServerError(e *ServerError, statusCode int) string {
 	if len(e.Message) == 0 && e.Code == 0 {
 		return "unknown server error"
 	}
 
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "dynatrace server error %d: %s", e.Code, e.Message)
+	if e.Code == statusCode {
+		// This should be the default case. In most cases the response body contains the same status code
+		// as the HTTP response, so we can omit the duplicate information.
+		sb.WriteString(e.Message)
+	} else {
+		fmt.Fprintf(&sb, "dynatrace server error %d: %s", e.Code, e.Message)
+	}
 
 	for _, v := range e.ConstraintViolations {
 		// Fprintf scales allocations linearly with the amount of items.

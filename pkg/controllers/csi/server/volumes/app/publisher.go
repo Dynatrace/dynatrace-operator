@@ -21,6 +21,7 @@ import (
 	"os"
 	"time"
 
+	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
@@ -52,7 +53,7 @@ const (
 )
 
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	ctx, log := logd.NewFromContext(ctx, "csi-appvolume")
+	ctx, log := logd.NewFromContext(ctx, "appvolume")
 
 	if !pub.isCodeModuleAvailable(ctx, volumeCfg) {
 		provisionerNotDoneErr := errors.Errorf("version or digest is not yet set, csi-provisioner hasn't finished setup yet for %s DynaKube", volumeCfg.DynakubeName)
@@ -214,7 +215,7 @@ func (pub *Publisher) addPodInfoSymlink(ctx context.Context, volumeCfg *csivolum
 func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (string, error) {
 	upperDir := pub.path.AppMountVarDir(volumeCfg.VolumeID)
 
-	err := os.MkdirAll(upperDir, os.ModePerm)
+	err := os.MkdirAll(upperDir, dtcsi.AppmountsDirPermissions)
 	if err != nil {
 		return "", err
 	}

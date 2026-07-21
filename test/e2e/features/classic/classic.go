@@ -17,11 +17,15 @@ import (
 // installed and restarted to check if OneAgent is injected and can communicate
 // with the *Dynatrace Cluster*.
 func Feature(t *testing.T) features.Feature {
+	if tenant.UsePlatformToken() {
+		t.Skip("ClassicFullStack is not supported with platform token")
+	}
+
 	builder := features.New("classic")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithClassicFullstackSpec(&oneagent.HostInjectSpec{}),
+		dynakubeComponents.WithClassicFullStackSpec(&oneagent.HostInjectSpec{}),
 	)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)

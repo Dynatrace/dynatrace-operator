@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -26,6 +27,10 @@ type DynaKubeStatus struct { //nolint:revive
 
 	// Observed state of ActiveGate
 	ActiveGate activegate.Status `json:"activeGate,omitempty"`
+
+	// Observed state of KubernetesMonitoring
+	// +optional
+	KubernetesMonitoring kubemon.Status `json:"kubernetesMonitoring,omitzero"`
 
 	// Observed state of Code Modules
 	CodeModules oneagent.CodeModulesStatus `json:"codeModules,omitempty"`
@@ -63,6 +68,20 @@ type DynaKubeStatus struct { //nolint:revive
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	APIToken APITokenStatus `json:"apiToken,omitempty"`
+}
+
+type APITokenStatus struct {
+	AvailableOptionalScopes AvailableOptionalScopes `json:"availableOptionalScopes,omitempty"`
+
+	// Platform indicates whether the provided apiToken is a platform token.
+	Platform *bool `json:"platform,omitempty"`
+}
+
+type AvailableOptionalScopes struct {
+	SettingsRead  *bool `json:"settingsRead,omitempty"`
+	SettingsWrite *bool `json:"settingsWrite,omitempty"`
 }
 
 func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
@@ -83,12 +102,12 @@ func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 }
 
 func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) error {
-	_, log := logd.NewFromContext(ctx, "dynakube-v1beta6")
+	_, log := logd.NewFromContext(ctx, "v1beta6")
 	dk.Status.UpdatedTimestamp = metav1.Now()
 	err := client.Status().Update(ctx, dk)
 
 	if err != nil && k8serrors.IsConflict(err) {
-		log.Info("could not update dynakube due to conflict", "name", dk.Name)
+		log.Info("could not update dynakube due to conflict")
 
 		return nil
 	}

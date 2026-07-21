@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -51,6 +52,16 @@ func IsReady(name, namespace string) features.Func {
 		sts, err := Get(ctx, resources, name, namespace)
 		require.NoError(t, err)
 		assert.Equal(t, sts.Status.Replicas, sts.Status.ReadyReplicas)
+
+		return ctx
+	}
+}
+
+func VerifyUsesImage(name, namespace, expectedImage string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var sts appsv1.StatefulSet
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, name, namespace, &sts))
+		objects.VerifyWorkloadUsesImage(t, sts.Spec.Template.Spec.Containers, expectedImage, name)
 
 		return ctx
 	}

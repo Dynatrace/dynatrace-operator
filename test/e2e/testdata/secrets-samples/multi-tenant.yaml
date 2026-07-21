@@ -2,6 +2,8 @@ tenants:
   - tenantUid: abc1234
     apiUrl: https://abc1234.dev.dynatracelabs.com/api
     apiToken: <apiToken>
+    platformToken: <platformToken>
   - tenantUid: def5678
     apiUrl: https://def5678.dev.dynatracelabs.com/api
     apiToken: <apiToken>
+    platformToken: <platformToken>

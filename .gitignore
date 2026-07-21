@@ -113,3 +113,11 @@ dynatrace-operator-bin-sbom.cdx.json
 
 package.json
 package-lock.json
+
+/test/e2e/results/*.log
+/results
+__pycache__
+*.out
+
+.envrc
+CLAUDE.md.local

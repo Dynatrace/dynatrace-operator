@@ -7,13 +7,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
 	tokenVolumeName           = "kspm-token"
-	tokenMountPath            = "/var/lib/dynatrace/secrets/tokens/kspm/node-configuration-collector"
+	tokenMountPath            = consts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
 	tokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
 
 	nodeRootMountPath = "/node_root"
@@ -59,7 +59,7 @@ func getTokenVolume(dk dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  dk.KSPM().GetTokenSecretName(),
-				DefaultMode: ptr.To(int32(0o640)),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}
@@ -86,7 +86,7 @@ func getNodeVolumes(mappedHostPaths []string) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: path,
-					Type: ptr.To(corev1.HostPathDirectory),
+					Type: new(corev1.HostPathDirectory),
 				},
 			},
 		}

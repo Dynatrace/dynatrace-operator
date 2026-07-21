@@ -64,9 +64,14 @@ func (checker *CorrectnessChecker) migrateAppMounts(ctx context.Context) {
 		}
 	}
 
-	err = os.MkdirAll(checker.path.AppMountsBaseDir(), os.ModePerm)
+	err = os.MkdirAll(checker.path.AppMountsBaseDir(), dtcsi.AppmountsDirPermissions)
 	if err != nil {
 		log.Error(err, "failed to create app mounts base directory")
+	} else {
+		err = os.Chmod(checker.path.AppMountsBaseDir(), dtcsi.AppmountsDirPermissions)
+		if err != nil {
+			log.Error(err, "failed to set permissions of the app mounts base directory")
+		}
 	}
 
 	for _, appMount := range oldAppMounts {
@@ -117,7 +122,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 
 		tenantUUID, err := TenantUUIDFromAPIURL(dk.APIURL())
 		if err != nil {
-			log.Error(err, "malformed APIURL for dynakube, skipping host dir migration for it", "dk", dk.Name, "apiUrl", dk.APIURL())
+			log.Error(err, "malformed APIURL for dynakube, skipping host dir migration for it", "dynakube", dk.Name, "apiUrl", dk.APIURL())
 
 			continue
 		}
@@ -130,7 +135,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 				continue
 			}
 
-			log.Error(err, "failed to check deprecated host dir existence, skipping host dir migration for it", "dk", dk.Name, "apiUrl", dk.APIURL())
+			log.Error(err, "failed to check deprecated host dir existence, skipping host dir migration for it", "dynakube", dk.Name, "apiUrl", dk.APIURL())
 
 			continue
 		}

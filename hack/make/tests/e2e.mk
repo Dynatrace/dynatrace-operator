@@ -13,6 +13,18 @@ test/e2e/%/debug:
 test/e2e/%/olm:
 	@make OLM=true $(@D)
 
+## Start a test but using FIPS image
+test/e2e/%/fips:
+	@make FIPS=true $(@D)
+
+## Run any e2e test with platform token
+test/e2e/%/platform-token:
+	@make USE_PLATFORM_TOKEN=true $(@D)
+
+## Run any e2e test with phase 3 tenant
+test/e2e/%/phase3:
+	@make USE_TENANT_PHASE3=true USE_PLATFORM_TOKEN=true $(@D)
+
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \
@@ -20,6 +32,7 @@ test/e2e:
 	make test/e2e/no-csi || RC=1; \
 	make test/e2e/istio  || RC=1; \
 	make test/e2e/release || RC=1; \
+	make test/e2e/permissions || RC=1; \
 	exit $$RC
 
 ## Run standard, no-csi, istio and release e2e tests with /publish
@@ -29,6 +42,14 @@ test/e2e-publish:
 	make test/e2e/no-csi/publish || RC=1; \
 	make test/e2e/istio/publish || RC=1; \
 	make test/e2e/release/publish || RC=1; \
+	make test/e2e/permissions/publish || RC=1; \
+	exit $$RC
+
+## Start tests that support kind
+test/e2e/kind:
+	RC=0; \
+	make test/e2e/edgeconnect/normal || RC=1; \
+	make test/e2e/permissions || RC=1; \
 	exit $$RC
 
 ## Run standard e2e test only
@@ -45,7 +66,11 @@ test/e2e/no-csi:
 
 ## Run release e2e test only
 test/e2e/release:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/release $(SKIPCLEANUP)
+
+## Run permissions e2e test
+test/e2e/permissions:
+	$(GOTESTCMD) -timeout 10m ./test/e2e/scenarios/permissions $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:
@@ -123,13 +148,20 @@ test/e2e/cloudnative/resilience:
 test/e2e/cloudnative/switchmodes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "cloudnative_to_classic" $(SKIPCLEANUP)
 
+## Runs CloudNative CSI migration e2e test only
+test/e2e/cloudnative/csi-migration:
+	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/standard -run "cloudnative_csi_migration" $(SKIPCLEANUP)
+
 ## Runs CloudNative upgrade e2e test only
 test/e2e/cloudnative/upgrade:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "cloudnative_upgrade" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "cloudnative_upgrade" $(SKIPCLEANUP)
 
 ## Runs extensions upgrade e2e test only
 test/e2e/extensions/upgrade:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "extensions_upgrade" $(SKIPCLEANUP)
+
+test/e2e/token/upgrade:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "token_upgrade" $(SKIPCLEANUP)
 
 ## Runs DatabaseExecutor related e2e tests
 test/e2e/extensions/dbexecutor:
@@ -167,9 +199,88 @@ test/e2e/applicationmonitoring/bootstrapper-csi:
 test/e2e/applicationmonitoring/bootstrapper-no-csi:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "node_image_pull_with_no_csi" $(SKIPCLEANUP)
 
-## Runs public registry images e2e test only
+## Runs PGC bootstrapper tests for CloudNativeFullStack (both CSI and no-CSI)
+test/e2e/cloudnative/pgc-bootstrapper:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "pgc_with_fullstack" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "pgc_with_fullstack" $(SKIPCLEANUP)
+
+## Runs PGC e2e tests for all OneAgent modes (HostMonitoring and CloudNativeFullStack)
+test/e2e/pgc:
+	$(MAKE) test/e2e/cloudnative/pgc-bootstrapper
+	$(MAKE) test/e2e/cloudnative/pgc-hostagent
+	$(MAKE) test/e2e/hostmonitoring/pgc
+
+## Runs all public registry images e2e tests
 test/e2e/publicregistry:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images" $(SKIPCLEANUP)
+
+## Runs public registry images e2e test with tag-based image references only
+test/e2e/publicregistry/tag:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_tag$$" $(SKIPCLEANUP)
+
+## Runs public registry images e2e test with digest-based image references only
+test/e2e/publicregistry/digest:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_digest" $(SKIPCLEANUP)
+
+## Runs public registry images e2e test with both tag and digest set, verifying tag is used as version label
+test/e2e/publicregistry/tag-and-digest:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "public_registry_images_tag_and_digest" $(SKIPCLEANUP)
+
+## Runs all use-public-registry e2e scenarios — OneAgent / ActiveGate / CodeModules,
+## each with and without publicRegistryOverride (OA + AG on standard, CodeModules on nocsi)
+test/e2e/usepublicregistry:
+	RC=0; \
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry" $(SKIPCLEANUP) || RC=1; \
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry" $(SKIPCLEANUP) || RC=1; \
+	exit $$RC
+
+## Runs only use-public-registry OneAgent scenarios (with and without publicRegistryOverride)
+test/e2e/usepublicregistry/oneagent:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_oneagent" $(SKIPCLEANUP)
+
+## Runs only use-public-registry ActiveGate scenarios (with and without publicRegistryOverride)
+test/e2e/usepublicregistry/activegate:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_activegate" $(SKIPCLEANUP)
+
+## Runs only use-public-registry CodeModules scenarios (with and without publicRegistryOverride, requires no-csi)
+test/e2e/usepublicregistry/codemodules:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_codemodules" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/standard -run "use_public_registry_codemodules_with_csi" $(SKIPCLEANUP)
+
+test/e2e/usepublicregistry/dbexecutor:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_db_executor" $(SKIPCLEANUP)
+
+test/e2e/usepublicregistry/logmon:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_logmon" $(SKIPCLEANUP)
+
+## Runs combined all-features test: CloudNative OA + ActiveGate + DBExecutor, each with an explicit image override, plus use-public-registry flag
+test/e2e/usepublicregistry/all-features-with-image-overrides:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_all_features_with_image_overrides" $(SKIPCLEANUP)
+
+## Runs E2E tests related to propagation of resource attributes
+test/e2e/resourceattributes:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes" $(SKIPCLEANUP)
+
+## Runs E2E tests related to propagation of resource attributes (logmon)
+test/e2e/resourceattributes/logmononly:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_logmon_only" $(SKIPCLEANUP)
+
+## Runs E2E tests related to propagation of resource attributes (metadata enrichment only)
+test/e2e/resourceattributes/metadataonly:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_metadata_only" $(SKIPCLEANUP)
+
+## Runs E2E tests related to propagation of resource attributes (oneagent)
+test/e2e/resourceattributes/oneagent:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_oneagent" $(SKIPCLEANUP)
+
+## Runs E2E tests related to propagation of resource attributes (otlp)
+test/e2e/resourceattributes/otlp:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_otlp" $(SKIPCLEANUP)
+
+## Runs E2E tests related to propagation of resource attributes (combined)
+test/e2e/resourceattributes/combined:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "resource_attributes_combined" $(SKIPCLEANUP)
+
 
 ## Runs SupportArchive e2e test only
 test/e2e/supportarchive:
@@ -182,6 +293,14 @@ test/e2e/edgeconnect:
 ## Runs Edgeconnect e2e base test cases
 test/e2e/edgeconnect/normal:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install" $(SKIPCLEANUP)
+
+## Runs EdgeConnect e2e test with tag-based image reference
+test/e2e/edgeconnect/tag:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_tag" $(SKIPCLEANUP)
+
+## Runs EdgeConnect e2e test with digest-pinned image reference
+test/e2e/edgeconnect/digest:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_digest" $(SKIPCLEANUP)
 
 ## Runs Edgeconnect e2e proxy test cases
 test/e2e/edgeconnect/proxy:
@@ -214,6 +333,32 @@ test/e2e/hostmonitoring/withoutcsi:
 test/e2e/hostmonitoring/generate-metadata:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "host_monitoring_generate_metadata" $(SKIPCLEANUP)
 
+## Runs Host Monitoring PGC with CSI e2e test only
+test/e2e/hostmonitoring/pgc-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "host_agent_pgc_host_monitoring" $(SKIPCLEANUP)
+
+## Runs Host Monitoring PGC without CSI e2e test only
+test/e2e/hostmonitoring/pgc-no-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "host_agent_pgc_host_monitoring" $(SKIPCLEANUP)
+
+## Runs Host Monitoring PGC e2e tests for both CSI and no-CSI
+test/e2e/hostmonitoring/pgc:
+	$(MAKE) test/e2e/hostmonitoring/pgc-csi
+	$(MAKE) test/e2e/hostmonitoring/pgc-no-csi
+
+## Runs CloudNativeFullStack host agent PGC with CSI e2e test only
+test/e2e/cloudnative/pgc-hostagent-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "host_agent_pgc_cloudnative" $(SKIPCLEANUP)
+
+## Runs CloudNativeFullStack host agent PGC without CSI e2e test only
+test/e2e/cloudnative/pgc-hostagent-no-csi:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "host_agent_pgc_cloudnative" $(SKIPCLEANUP)
+
+## Runs CloudNativeFullStack host agent PGC e2e tests for both CSI and no-CSI
+test/e2e/cloudnative/pgc-hostagent:
+	$(MAKE) test/e2e/cloudnative/pgc-hostagent-csi
+	$(MAKE) test/e2e/cloudnative/pgc-hostagent-no-csi
+
 ## Runs CloudNative default e2e test only
 test/e2e/cloudnative/withoutcsi:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "cloudnative" $(SKIPCLEANUP)
@@ -239,4 +384,10 @@ test/e2e/telemetryingest/scaling:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_scaling" $(SKIPCLEANUP)
 
 test/e2e/kspm:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm.*" $(SKIPCLEANUP)
+
+test/e2e/kspm/optionalscopes:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm_with_optional_scopes" $(SKIPCLEANUP)
+
+test/e2e/token/migration:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "token_migration" $(SKIPCLEANUP)

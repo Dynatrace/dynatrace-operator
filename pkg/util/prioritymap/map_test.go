@@ -181,7 +181,7 @@ func TestDuplicateArguments(t *testing.T) {
 		"--set-host-property=custom-prop3",
 	}
 
-	var tests = []struct {
+	tests := []struct {
 		title          string
 		expectedArgs   []string
 		defaultArgPrio int
@@ -286,4 +286,19 @@ func TestDuplicateArguments(t *testing.T) {
 			assert.Equal(t, tt.expectedArgs, argMap.AsKeyValueStrings())
 		})
 	}
+}
+
+func TestTrimInvalidStringChars(t *testing.T) {
+	t.Run("remove chars", func(t *testing.T) {
+		m := New(WithSeparator("="), WithSanitizeCommandLineArg())
+		m.Append("test", "foo\nbar")
+		assert.Equal(t, []string{"test=foobar"}, m.AsKeyValueStrings())
+	})
+
+	t.Run("prevent duplicates", func(t *testing.T) {
+		m := New(WithAllowDuplicates(), WithSeparator("="), WithSanitizeCommandLineArg())
+		m.Append("test", "foobar")
+		m.Append("test", "foo\nbar")
+		assert.Equal(t, []string{"test=foobar"}, m.AsKeyValueStrings())
+	})
 }
