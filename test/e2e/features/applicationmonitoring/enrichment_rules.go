@@ -9,10 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
-	e2eEnrichment "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/metadataenrichment"
+	enrichment "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
-	componentEnrichment "github.com/Dynatrace/dynatrace-operator/test/helpers/components/metadataenrichment"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -40,12 +39,12 @@ func EnrichmentRules(t *testing.T) features.Feature {
 	// Setup: pre-create the Kubernetes Cluster MEID on the tenant so the rule can be
 	// scoped directly to the cluster without waiting for DynaKube reconciliation.
 	// Then clean any leftover rules from previous runs before creating the test rule.
-	builder.Setup(componentEnrichment.EnsureKubernetesClusterMEID(secretConfig))
-	builder.Setup(componentEnrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
+	builder.Setup(enrichment.EnsureKubernetesClusterMEID(secretConfig))
+	builder.Setup(enrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
 
 	// Be aware that this requires additional permissions on the service user group if platform token is used
 	// Add a new policy to your service user group that allows write access to 'ingest.enrichment.config'
-	builder.Setup(componentEnrichment.CreateEnrichmentRuleOnTenant(secretConfig, expectedRule))
+	builder.Setup(enrichment.CreateEnrichmentRuleOnTenant(secretConfig, expectedRule))
 
 	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
@@ -55,7 +54,7 @@ func EnrichmentRules(t *testing.T) features.Feature {
 	dynakubeComponents.Install(builder, &secretConfig, *testDynakube)
 
 	builder.Assess("enrichment rule is stored in DynaKube status",
-		componentEnrichment.CheckEnrichmentRuleInDynaKubeStatus(testDynakube, expectedRule))
+		enrichment.CheckEnrichmentRuleInDynaKubeStatus(testDynakube, expectedRule))
 
 	sampleApp := sample.NewApp(t, testDynakube,
 		sample.WithName("enrichment-rule-app"),
@@ -71,7 +70,7 @@ func EnrichmentRules(t *testing.T) features.Feature {
 
 	builder.WithTeardown("uninstall sample app", sampleApp.Uninstall())
 	builder.WithTeardown("delete enrichment rules from tenant",
-		componentEnrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
+		enrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
 
 	return builder.Feature()
 }
@@ -79,7 +78,7 @@ func EnrichmentRules(t *testing.T) features.Feature {
 func checkEnrichmentAttributeInMetadataFile(app *sample.App, key, value string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		pod := app.GetPod(ctx, t, envConfig.Client().Resources())
-		metadata := e2eEnrichment.GetMetadataMapFromPod(ctx, t, envConfig.Client().Resources(), pod)
+		metadata := enrichment.GetMetadataMapFromPod(ctx, t, envConfig.Client().Resources(), pod)
 
 		assert.Equal(t, value, metadata[key])
 
