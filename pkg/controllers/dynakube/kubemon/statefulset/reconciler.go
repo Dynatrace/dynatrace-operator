@@ -57,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	if _, err = r.sts.WithOwner(dk).CreateOrUpdate(ctx, desiredStatefulSet); err != nil {
+	if _, err = r.sts.CreateOrUpdate(ctx, desiredStatefulSet); err != nil {
 		return err
 	}
 

@@ -102,7 +102,7 @@ func (r *Reconciler) createSecret(ctx context.Context, agClient agclient.Client,
 		return errors.WithStack(err)
 	}
 
-	_, err = r.secrets.WithOwner(dk).CreateOrUpdate(ctx, secret)
+	_, err = r.secrets.CreateOrUpdate(ctx, secret)
 
 	return errors.WithStack(err)
 }
