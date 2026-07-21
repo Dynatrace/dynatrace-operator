@@ -175,3 +175,22 @@ topologySpreadConstraints:
   {{- toYaml .Values.webhook.topologySpreadConstraints | nindent 2 }}
   {{- end -}}
 {{- end -}}
+
+{{- define "dynatrace-operator.webhookCertsCtrl.envs" -}}
+{{- with .Values.webhook.certs.rootDuration }}
+- name: DT_WEBHOOK_CERTS_ROOT_DURATION
+  value: {{ . | quote }}
+{{- end }}
+{{- with .Values.webhook.certs.serverDuration }}
+- name: DT_WEBHOOK_CERTS_SERVER_DURATION
+  value: {{ . | quote }}
+{{- end }}
+{{- with .Values.webhook.certs.renewalThreshold }}
+- name: DT_WEBHOOK_CERTS_RENEWAL_THRESHOLD
+  value: {{ . | quote }}
+{{- end }}
+{{- with .Values.webhook.certs.requeueAfter }}
+- name: DT_WEBHOOK_CERTS_REQUEUE_AFTER
+  value: {{ . | quote }}
+{{- end }}
+{{- end -}}

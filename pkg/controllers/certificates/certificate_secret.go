@@ -67,11 +67,14 @@ func (certSecret *certificateSecret) isRecent() bool {
 	}
 }
 
-func (certSecret *certificateSecret) validateCertificates(ctx context.Context, namespace string) error {
+func (certSecret *certificateSecret) validateCertificates(ctx context.Context, namespace string, renewalThreshold, serverCertDuration, rootCertDuration time.Duration) error {
 	certs := Certs{
-		Domain:  webhook.DeploymentName + "." + namespace,
-		SrcData: certSecret.secret.Data,
-		Now:     time.Now(),
+		Domain:             webhook.DeploymentName + "." + namespace,
+		SrcData:            certSecret.secret.Data,
+		Now:                time.Now(),
+		RenewalThreshold:   renewalThreshold,
+		ServerCertDuration: serverCertDuration,
+		RootCertDuration:   rootCertDuration,
 	}
 	if err := certs.ValidateCerts(ctx); err != nil {
 		return fmt.Errorf("validate certificates: %w", err)

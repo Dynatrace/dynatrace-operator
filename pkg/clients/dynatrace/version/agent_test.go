@@ -18,13 +18,9 @@ func TestGetLatestAgentVersion(t *testing.T) {
 		req.EXPECT().WithQueryParams(queryParams).Return(req).Once()
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().
-			Execute(new(struct {
-				LatestAgentVersion string `json:"latestAgentVersion"`
-			})).
+			Execute(new(latestAgentVersionResponse)).
 			Run(func(model any) {
-				resp := model.(*struct {
-					LatestAgentVersion string `json:"latestAgentVersion"`
-				})
+				resp := model.(*latestAgentVersionResponse)
 				resp.LatestAgentVersion = "1.2.3"
 			}).
 			Return(err).Once()

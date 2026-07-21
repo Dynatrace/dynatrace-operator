@@ -70,6 +70,7 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            {{- include "dynatrace-operator.webhookCertsCtrl.envs" . | nindent 12 }}
           resources:
             requests:
               {{- toYaml .Values.operator.requests | nindent 14 }}
@@ -142,6 +143,7 @@ spec:
             - name: DT_DEFAULT_REQUEUE_AFTER
               value: {{ . | quote }}
             {{- end }}
+            {{- include "dynatrace-operator.webhookCertsCtrl.envs" . | nindent 12 }}
           ports:
             - containerPort: 10080
               name: livez

@@ -19,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/projectpath"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -71,65 +70,6 @@ func SetupTestEnvironment(tb testing.TB, opts ...TestEnvOpt) client.Client {
 	return clt
 }
 
-// startManager creates a Manager from cfg, runs it in a background goroutine, and waits for cache
-// sync. tb.Cleanup cancels the manager when the test ends.
-func startManager(tb testing.TB, cfg *rest.Config, setup func(ctrl.Manager) error) ctrl.Manager {
-	tb.Helper()
-
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:         testEnv.Scheme,
-		LeaderElection: false,
-		Metrics:        metricsserver.Options{BindAddress: "0"},
-	})
-	if err != nil {
-		tb.Fatal(err)
-	}
-
-	if setup != nil {
-		if err := setup(mgr); err != nil {
-			tb.Fatal(err)
-		}
-	}
-
-	ctx := tb.Context()
-
-	go func() {
-		if err := mgr.Start(ctx); err != nil {
-			tb.Error(err, "run manager")
-		}
-	}()
-
-	if !mgr.GetCache().WaitForCacheSync(ctx) {
-		tb.Fatal("cache failed to sync")
-	}
-
-	return mgr
-}
-
-func SetupCachedTestEnvironment(tb testing.TB, opts ...TestEnvOpt) (client.Client, client.Reader) {
-	setupBaseTestEnv(tb)
-
-	for _, opt := range opts {
-		opt(testEnv)
-	}
-
-	cfg, err := testEnv.Start()
-	if err != nil {
-		tb.Fatal(err)
-	}
-
-	tb.Cleanup(func() {
-		if err := testEnv.Stop(); err != nil {
-			tb.Error(err, "stop env")
-		}
-	})
-
-	mgr := startManager(tb, cfg, nil)
-
-	return mgr.GetClient(), mgr.GetAPIReader()
-}
-
-// TODO: could be refactored to use startManager
 func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookInstallOptions, webhookSetup func(ctrl.Manager) error) client.Client {
 	setupBaseTestEnv(t)
 

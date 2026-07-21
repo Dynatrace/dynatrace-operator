@@ -11,6 +11,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	// This should result in file permissions of -r--r--r--
+	// This is necessary because the OneAgent (in classicFullstack) may replicate these files into instrumented user pods
+	// where all processes need to be able to read these.
+	globalReadFilePerm = 0o444
+)
+
 func prepareVolumeMounts(dk *dynakube.DynaKube, processGroupConfigHash string) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{getOneAgentSecretVolumeMount(), getNodeMetadataVolumeMount()}
 
@@ -213,7 +220,7 @@ func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 						Path: "custom.pem",
 					},
 				},
-				DefaultMode: new(int32(0o640)),
+				DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 			},
 		},
 	}
@@ -225,7 +232,7 @@ func buildHTTPProxyVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  proxy.BuildSecretName(dk.Name),
-				DefaultMode: new(int32(0o640)),
+				DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 			},
 		},
 	}
@@ -237,7 +244,7 @@ func getOneAgentSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  dk.OneAgent().GetTenantSecret(),
-				DefaultMode: new(int32(0o640)),
+				DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 			},
 		},
 	}
