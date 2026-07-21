@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -34,7 +35,6 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/yaml"
@@ -46,7 +46,7 @@ import (
 //	go test ./pkg/api/validation/dynakube/ -run TestSerialization -update
 var updateSerializationGolden = flag.Bool("update", false, "update the serialization golden files in testdata/")
 
-var latestGVK = schema.GroupVersionKind{Group: "dynatrace.com", Version: "v1beta6", Kind: "DynaKube"}
+var latestGVK = latest.GroupVersion.WithKind("DynaKube")
 
 // TestSerialization exercises how the latest (v1beta6) DynaKube is persisted by
 // the API server, which is where the `omitzero` struct tags take effect on the
