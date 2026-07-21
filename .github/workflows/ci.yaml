@@ -139,7 +139,7 @@ jobs:
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.2.2
+          version: v4.2.3
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -159,7 +159,7 @@ jobs:
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.2.2
+          version: v4.2.3
       - name: Run Linting
         id: helm-linting
         run: |
