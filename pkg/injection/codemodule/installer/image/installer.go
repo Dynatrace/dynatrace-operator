@@ -115,7 +115,7 @@ func (installer *Installer) installAgentFromImage(ctx context.Context, targetDir
 		installer.props.ImageURI,
 	)
 	if err != nil {
-		log.Info("failed to extract agent binaries from image", "image", image, "imageCacheDir", imageCacheDir, "err", err)
+		log.Info("failed to extract agent binaries from image", "image", image, "imageCacheDir", CacheDir, "err", err)
 
 		return errors.WithStack(err)
 	}
