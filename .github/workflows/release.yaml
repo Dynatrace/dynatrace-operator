@@ -95,10 +95,155 @@ jobs:
       digest: ${{steps.build-image.outputs.digest}}
       fips-digest: ${{steps.build-fips-image.outputs.digest}}
 
+  copy-image-to-artifact-gcr:
+    name: Create image artifacts for gcr
+    environment: Release
+    needs: [prepare, build-push]
+    permissions:
+      contents: read
+      actions: write
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Copy image to artifact for gcr
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: gcr.io/${{ vars.GCR_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          artifact-name: release-image-gcr
+          registry: gcr.io
+          registry-token: ${{ secrets.GCR_JSON_KEY }}
+          registry-username: ${{ secrets.GCR_USERNAME }}
+      - name: Copy fips image to artifact for gcr
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: gcr.io/${{ vars.GCR_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.fips-digest }}
+          artifact-name: release-fips-image-gcr
+          registry: gcr.io
+          registry-token: ${{ secrets.GCR_JSON_KEY }}
+          registry-username: ${{ secrets.GCR_USERNAME }}
+
+  copy-image-to-artifact-dockerhub:
+    name: Create image artifacts for dockerhub
+    environment: Release
+    needs: [prepare, build-push]
+    permissions:
+      contents: read
+      actions: write
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Copy image to artifact for dockerhub
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: docker.io/${{ vars.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          artifact-name: release-image-dockerhub
+          registry: docker.io
+          registry-token: ${{ secrets.DOCKERHUB_PASSWORD }}
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+      - name: Copy fips image to artifact for dockerhub
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: docker.io/${{ vars.DOCKERHUB_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.fips-digest }}
+          artifact-name: release-fips-image-dockerhub
+          registry: docker.io
+          registry-token: ${{ secrets.DOCKERHUB_PASSWORD }}
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+
+  copy-image-to-artifact-amazon-ecr:
+    name: Create image artifacts
+    environment: Release
+    needs: [prepare, build-push]
+    permissions:
+      id-token: write
+      contents: read
+      actions: write
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Copy image to artifact for amazon-ecr
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: public.ecr.aws/${{ vars.ECR_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          artifact-name: release-image-amazon-ecr
+          registry: public.ecr.aws
+          registry-token: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
+      - name: Copy fips image to artifact for amazon-ecr
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: public.ecr.aws/${{ vars.ECR_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.fips-digest }}
+          artifact-name: release-fips-image-amazon-ecr
+          registry: public.ecr.aws
+          registry-token: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
+
+  copy-image-to-artifact-rhcc:
+    name: Create image artifacts
+    environment: Release
+    needs: [prepare, build-push]
+    permissions:
+      contents: read
+      actions: write
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Copy image to artifact for rhcc
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: quay.io/${{ vars.RHCC_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          artifact-name: release-image-rhcc
+          registry: quay.io
+          registry-token: ${{ secrets.RHCC_PASSWORD }}
+          registry-username: ${{ secrets.RHCC_USERNAME }}
+      - name: Copy fips image to artifact for rhcc
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: quay.io/${{ vars.RHCC_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.fips-digest }}
+          artifact-name: release-fips-image-rhcc
+          registry: quay.io
+          registry-token: ${{ secrets.RHCC_PASSWORD }}
+          registry-username: ${{ secrets.RHCC_USERNAME }}
+
+  create-sbom:
+    name: Create SBOM
+    needs: [copy-image-to-artifact-gcr,copy-image-to-artifact-dockerhub,copy-image-to-artifact-amazon-ecr,copy-image-to-artifact-rhcc]
+    permissions:
+      actions: write
+    strategy:
+      matrix:
+        registry: [gcr, dockerhub, amazon-ecr, rhcc]
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      sbom-artifact-name: release-sbom-${{ matrix.registry }}
+      image-artifact-name: release-image-${{ matrix.registry }}
+
+  create-sbom-fips:
+    name: Create SBOM
+    needs: [copy-image-to-artifact-gcr,copy-image-to-artifact-dockerhub,copy-image-to-artifact-amazon-ecr,copy-image-to-artifact-rhcc]
+    permissions:
+      actions: write
+    strategy:
+      matrix:
+        registry: [gcr, dockerhub, amazon-ecr, rhcc]
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      sbom-artifact-name: release-fips-sbom-${{ matrix.registry }}
+      image-artifact-name: release-fips-image-${{ matrix.registry }}
+
   signing:
     name: Sign the image index/manifests + Add SBOM
     environment: Release
-    needs: [prepare, build-push]
+    needs: [prepare, build-push, create-sbom, create-sbom-fips]
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -155,15 +300,10 @@ jobs:
           image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Create sbom for ${{matrix.registry}}
-        id: sbom
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          image-ref: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-          format: 'cyclonedx'
-          output: 'result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-          skip-files: '/usr/local/bin/dynatrace-operator'
+          name: release-sbom-${{ matrix.registry }}
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
@@ -182,20 +322,15 @@ jobs:
           image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Create sbom for ${{matrix.registry}} fips
-        id: sbom-fips
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          image-ref: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
-          format: 'cyclonedx'
-          output: 'fips-result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-          skip-files: '/usr/local/bin/dynatrace-operator'
+          name: release-fips-sbom-${{ matrix.registry }}
       - name: Upload sbom to ${{matrix.registry}} fips
         uses: ./.github/actions/upload-sbom
         with:
           image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
-          sbom: 'fips-result.json'
+          sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Add build provenance attestation for ${{ matrix.registry }} fips
