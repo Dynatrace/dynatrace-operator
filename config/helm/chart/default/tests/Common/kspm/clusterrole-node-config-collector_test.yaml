@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test clusterrole for the dynatrace OpenTelemetry collector endpoints
 templates:
   - Common/kspm/clusterrole-node-config-collector.yaml

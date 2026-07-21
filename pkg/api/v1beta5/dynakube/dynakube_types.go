@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
 // +versionName=v1beta5

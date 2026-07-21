@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package dynakube
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

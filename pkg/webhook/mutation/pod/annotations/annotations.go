@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package annotations
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"

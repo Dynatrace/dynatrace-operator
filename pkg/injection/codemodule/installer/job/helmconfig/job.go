@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // The CodeModule installer Job configuration settings is meant to be partly inherited from the CSI DaemonSet settings and partly
 // defined specifically for the Job. These settings are defined in the Helm chart and passed to the CSI driver via an environment
 // variable in JSON format. This file contains the logic to read and parse these settings.
