@@ -3,7 +3,6 @@ package connectioninfo_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
@@ -23,23 +22,20 @@ import (
 )
 
 // Integration tests for the connectioninfo reconciler against a real API server. Drives one DynaKube
-// through ordered, state-sharing phases; most phases assert with a single reconcile call and apiReader.
-// Branch and error logic is covered by the unit test.
+// through ordered, state-sharing phases; each phase asserts with a single reconcile call against a
+// direct API client. Branch and error logic is covered by the unit test.
 
 const (
-	integrationNamespace         = "dynatrace"
-	integrationTenantUUID        = "test-uuid"
-	integrationEndpoints         = "https://tenant.live.dynatrace.com/communication"
-	integrationTenantToken       = "test-token"
-	integrationEventuallyTimeout = 5 * time.Second
-	integrationEventuallyTick    = 50 * time.Millisecond
+	integrationNamespace   = "dynatrace"
+	integrationTenantUUID  = "test-uuid"
+	integrationEndpoints   = "https://tenant.live.dynatrace.com/communication"
+	integrationTenantToken = "test-token"
 )
 
 var anyContext = mock.MatchedBy(func(context.Context) bool { return true })
 
 type lifecycleDeps struct {
 	clt                    client.Client
-	apiReader              client.Reader
 	reconciler             *connectioninfo.Reconciler
 	dk                     *dynakube.DynaKube
 	baselineConnectionInfo agclient.ConnectionInfo
@@ -48,7 +44,7 @@ type lifecycleDeps struct {
 
 // TestReconcileLifecycle walks the phases in order: provision → rotate → stabilize → disable → re-enable.
 func TestReconcileLifecycle(t *testing.T) {
-	clt, apiReader := integrationtests.SetupCachedTestEnvironment(t)
+	clt := integrationtests.SetupTestEnvironment(t)
 	ctx := t.Context()
 	reconciler := connectioninfo.NewReconciler(clt)
 
@@ -81,7 +77,6 @@ func TestReconcileLifecycle(t *testing.T) {
 	// The subtests below share dk and run in order: each builds on the state left by the previous one.
 	deps := lifecycleDeps{
 		clt:                    clt,
-		apiReader:              apiReader,
 		reconciler:             reconciler,
 		dk:                     dk,
 		baselineConnectionInfo: baselineConnectionInfo,
@@ -102,14 +97,14 @@ func runProvisionPhase(t *testing.T, deps lifecycleDeps) {
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.baselineConnectionInfo, nil)
 
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
-	require.True(t, isConnectionInfoApplied(t.Context(), deps.apiReader, deps.dk, deps.baselineConnectionInfo))
+	require.True(t, isConnectionInfoApplied(t.Context(), deps.clt, deps.dk, deps.baselineConnectionInfo))
 
-	cm := getConfigMap(t, deps.apiReader, deps.dk)
+	cm := getConfigMap(t, deps.clt, deps.dk)
 	assert.Len(t, cm.Data, 2)
 	assertManagedLabels(t, cm.Labels, deps.dk)
 	assert.True(t, metav1.IsControlledBy(cm, deps.dk))
 
-	secret := getSecret(t, deps.apiReader, deps.dk)
+	secret := getSecret(t, deps.clt, deps.dk)
 	assert.Len(t, secret.Data, 1)
 	assertManagedLabels(t, secret.Labels, deps.dk)
 	assert.True(t, metav1.IsControlledBy(secret, deps.dk))
@@ -122,7 +117,7 @@ func runRotatePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.rotatedConnectionInfo, nil)
 
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
-	require.True(t, isConnectionInfoApplied(t.Context(), deps.apiReader, deps.dk, deps.rotatedConnectionInfo))
+	require.True(t, isConnectionInfoApplied(t.Context(), deps.clt, deps.dk, deps.rotatedConnectionInfo))
 }
 
 func runStabilizePhase(t *testing.T, deps lifecycleDeps) {
@@ -131,14 +126,14 @@ func runStabilizePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.rotatedConnectionInfo, nil)
 
-	cmRV := getConfigMap(t, deps.apiReader, deps.dk).ResourceVersion
-	secretRV := getSecret(t, deps.apiReader, deps.dk).ResourceVersion
+	cmRV := getConfigMap(t, deps.clt, deps.dk).ResourceVersion
+	secretRV := getSecret(t, deps.clt, deps.dk).ResourceVersion
 
 	// Repeated reconciles with identical input must not rewrite resources.
 	for range 3 {
 		require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
-		assert.Equal(t, cmRV, getConfigMap(t, deps.apiReader, deps.dk).ResourceVersion)
-		assert.Equal(t, secretRV, getSecret(t, deps.apiReader, deps.dk).ResourceVersion)
+		assert.Equal(t, cmRV, getConfigMap(t, deps.clt, deps.dk).ResourceVersion)
+		assert.Equal(t, secretRV, getSecret(t, deps.clt, deps.dk).ResourceVersion)
 	}
 }
 
@@ -149,8 +144,8 @@ func runDisablePhase(t *testing.T, deps lifecycleDeps) {
 
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), nil, deps.dk))
 
-	cmErr := deps.apiReader.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: deps.dk.Namespace}, &corev1.ConfigMap{})
-	secretErr := deps.apiReader.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: deps.dk.Namespace}, &corev1.Secret{})
+	cmErr := deps.clt.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: deps.dk.Namespace}, &corev1.ConfigMap{})
+	secretErr := deps.clt.Get(t.Context(), client.ObjectKey{Name: deps.dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: deps.dk.Namespace}, &corev1.Secret{})
 	require.True(t, k8serrors.IsNotFound(cmErr))
 	require.True(t, k8serrors.IsNotFound(secretErr))
 	assert.Empty(t, deps.dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID)
@@ -164,12 +159,8 @@ func runReEnablePhase(t *testing.T, deps lifecycleDeps) {
 	dtClient := agclientmock.NewClient(t)
 	dtClient.EXPECT().GetConnectionInfo(anyContext).Return(deps.baselineConnectionInfo, nil)
 
-	// The cache backing the reconciler may still hold the config map/secret deleted by the disable
-	// phase, so retry until the deletion has propagated and the reconcile re-creates them.
-	require.Eventually(t, func() bool {
-		return deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk) == nil
-	}, integrationEventuallyTimeout, integrationEventuallyTick)
-	require.True(t, isConnectionInfoApplied(t.Context(), deps.apiReader, deps.dk, deps.baselineConnectionInfo))
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
+	require.True(t, isConnectionInfoApplied(t.Context(), deps.clt, deps.dk, deps.baselineConnectionInfo))
 }
 
 func getConfigMap(t *testing.T, reader client.Reader, dk *dynakube.DynaKube) *corev1.ConfigMap {
