@@ -66,10 +66,11 @@ all: prerequisites build deploy
 
 ## Adds Apache 2.0 license headers to Go and Helm YAML source files that are missing them
 add-license-headers: prerequisites/addlicense
-	$(ADDLICENSE) -s=only -l apache -c "Dynatrace LLC" \
+	$(ADDLICENSE) -s=only -y "" -l apache -c "Dynatrace LLC" \
 		-ignore "vendor/**" \
 		-ignore "**/zz_generated.*.go" \
 		-ignore "test/mocks/**" \
+		-ignore "**/testdata/**" \
 		-ignore "**/mock_*_test.go" \
 		-ignore "config/helm/repos/stable/index.yaml" \
 		-ignore "config/helm/repos/stable/artifacthub-repo.yml" \
