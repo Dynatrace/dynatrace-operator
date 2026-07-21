@@ -25,7 +25,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -85,7 +84,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		authTokenReconciler:        authtoken.NewReconciler(clt, apiReader),
 		istioReconciler:            istio.NewReconciler(clt, apiReader),
 		connectionReconciler:       agconnectioninfo.NewReconciler(clt, apiReader),
-		versionReconciler:          version.NewReconciler(apiReader, timeprovider.New().Freeze()),
+		versionReconciler:          version.NewReconciler(apiReader),
 		pullSecretReconciler:       dtpullsecret.NewReconciler(clt, apiReader),
 		customPropertiesReconciler: customproperties.NewReconciler(clt, apiReader),
 		statefulsetReconciler:      statefulset.NewReconciler(clt, apiReader),

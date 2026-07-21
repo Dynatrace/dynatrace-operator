@@ -20,7 +20,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,7 +58,7 @@ func NewReconciler(
 		client:                    client,
 		apiReader:                 apiReader,
 		istioReconciler:           istio.NewReconciler(client, apiReader),
-		versionReconciler:         version.NewReconciler(apiReader, timeprovider.New().Freeze()),
+		versionReconciler:         version.NewReconciler(apiReader),
 		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader),
 		enrichmentRulesReconciler: rules.NewReconciler(),
 	}
