@@ -175,7 +175,7 @@ func isAuthTokenApplied(ctx context.Context, reader client.Reader, dk *dynakube.
 func assertManagedLabels(t *testing.T, labels map[string]string, dk *dynakube.DynaKube) {
 	t.Helper()
 
-	assert.Equal(t, k8slabel.ActiveGateComponentLabel, labels[k8slabel.AppComponentLabel])
+	assert.Equal(t, k8slabel.KubeMonComponentLabel, labels[k8slabel.AppComponentLabel])
 	assert.Equal(t, dk.Name, labels[k8slabel.AppCreatedByLabel])
 }
 

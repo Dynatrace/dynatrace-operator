@@ -22,7 +22,7 @@ const (
 
 	// DefaultRotationInterval mirrors the AG value: rotate at 29 days against a 60-day token
 	// validity to avoid expiry warnings in the Dynatrace UI.
-	DefaultRotationInterval = time.Hour*24*30 - time.Hour*24
+	DefaultRotationInterval = time.Hour * 24 * 29
 )
 
 type Reconciler struct {
@@ -67,14 +67,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 	}
 
 	if k8serrors.IsNotFound(err) {
-		log.Info("creating kubemon auth token secret")
-
 		return r.createSecret(ctx, agClient, dk)
 	}
 
 	if r.isOutdated(secret) {
-		log.Info("kubemon auth token is outdated, rotating")
+		log.Info("kubemon auth token is outdated, rotating", "secretName", dk.KubernetesMonitoring().GetAuthTokenSecretName())
 
+		// Delete the old secret, so we can use creation timestamp to determine if the new secret is outdated in the next reconciliation.
 		if err := r.secrets.Delete(ctx, secret); err != nil {
 			return errors.WithStack(err)
 		}
@@ -91,7 +90,7 @@ func (r *Reconciler) createSecret(ctx context.Context, agClient agclient.Client,
 		return errors.WithStack(err)
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KubeMonComponentLabel)
 
 	secret, err := k8ssecret.Build(dk,
 		dk.KubernetesMonitoring().GetAuthTokenSecretName(),
