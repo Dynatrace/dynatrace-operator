@@ -25,7 +25,7 @@ MARKDOWN_LINK_CHECK_VERSION ?= v3.14.2
 # renovate depName=github.com/helm-unittest/helm-unittest
 HELMUNITTEST_VERSION ?= v1.1.1
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.18.8
+GO_TEST_COVERAGE_VERSION ?= v2.18.9
 # renovate depName=github.com/openapitools/openapi-generator-cli
 OPENAPI_GENERATOR_CLI_VERSION ?= v2.38.0+incompatible
 
