@@ -7,14 +7,9 @@ MAINFEST_DIR="$3"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BOILERPLATE="${SCRIPT_DIR}/../boilerplate.go.txt"
 
-# Convert boilerplate.go.txt (Go block comment) to YAML # comment style
+# Convert boilerplate.go.txt (Go // comment) to YAML # comment style
 yaml_license_header() {
-    awk '
-        /^\*\/$/ { next }
-        /^\/\*$/  { next }
-        /^$/      { print "#"; next }
-                  { print "# " $0 }
-    ' "${BOILERPLATE}"
+    awk '{ sub(/^\/\/ /, "# "); print }' "${BOILERPLATE}"
     echo ""
 }
 
