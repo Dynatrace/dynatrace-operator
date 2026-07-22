@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -81,6 +82,8 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 	pmConfig.SortPropertiesByKey()
 
+	sanitizePMC(log, dk, pmConfig)
+
 	marshaled, err := json.Marshal(pmConfig)
 	if err != nil {
 		k8sconditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
@@ -91,6 +94,27 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	}
 
 	return marshaled, nil
+}
+
+// sanitizePMC removes control characters from PMC properties to prevent
+// injection of malicious INI sections/keys in ruxitagentproc.conf.
+func sanitizePMC(log logd.Logger, dk *dynakube.DynaKube, pmConfig *oneagentclient.ProcessModuleConfig) {
+	for i := range pmConfig.Properties {
+		property := &pmConfig.Properties[i]
+
+		sanitizedSection := sanitize.CommandLineArg(property.Section)
+		sanitizedKey := sanitize.CommandLineArg(property.Key)
+		sanitizedValue := sanitize.CommandLineArg(property.Value)
+
+		if sanitizedSection != property.Section || sanitizedKey != property.Key || sanitizedValue != property.Value {
+			log.Info("stripped control characters from process module config property",
+				"dynakube", dk.Name, "section", property.Section, "key", property.Key)
+		}
+
+		property.Section = sanitizedSection
+		property.Key = sanitizedKey
+		property.Value = sanitizedValue
+	}
 }
 
 func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKube) (*oneagentclient.ProcessModuleConfig, error) {

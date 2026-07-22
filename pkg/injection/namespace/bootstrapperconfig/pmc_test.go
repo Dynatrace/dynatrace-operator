@@ -15,6 +15,7 @@ import (
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
@@ -303,6 +304,89 @@ func TestPreparePMC(t *testing.T) {
 		var pmConfig oneagentclient.ProcessModuleConfig
 		err = json.Unmarshal(result, &pmConfig)
 		require.NoError(t, err)
+	})
+}
+
+func TestSanitizePMC(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "some-dynakube",
+		},
+	}
+
+	t.Run("control chars in value => stripped", func(t *testing.T) {
+		pmConfig := &oneagentclient.ProcessModuleConfig{
+			Properties: []oneagentclient.ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "containerInjectionRules",
+					Value:   "x\n[SpecializedAgent]\nlibraryPath64 /tmp\n[general]\nx",
+				},
+			},
+		}
+
+		sanitizePMC(logd.Get(), dk, pmConfig)
+
+		assert.Equal(t, "x[SpecializedAgent]libraryPath64 /tmp[general]x", pmConfig.Properties[0].Value)
+		assert.NotContains(t, pmConfig.Properties[0].Value, "\n")
+	})
+
+	t.Run("clean value => untouched", func(t *testing.T) {
+		pmConfig := &oneagentclient.ProcessModuleConfig{
+			Properties: []oneagentclient.ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "hostGroup",
+					Value:   "clean-value",
+				},
+			},
+		}
+
+		sanitizePMC(logd.Get(), dk, pmConfig)
+
+		assert.Equal(t, "clean-value", pmConfig.Properties[0].Value)
+	})
+
+	t.Run("control chars in section/key => stripped", func(t *testing.T) {
+		pmConfig := &oneagentclient.ProcessModuleConfig{
+			Properties: []oneagentclient.ProcessModuleProperty{
+				{
+					Section: "general\n[other]",
+					Key:     "key\t",
+					Value:   "value\r",
+				},
+			},
+		}
+
+		sanitizePMC(logd.Get(), dk, pmConfig)
+
+		assert.Equal(t, "general[other]", pmConfig.Properties[0].Section)
+		assert.Equal(t, "key", pmConfig.Properties[0].Key)
+		assert.Equal(t, "value", pmConfig.Properties[0].Value)
+	})
+
+	t.Run("injected newline + marshaling/unmarshaling => single-line value", func(t *testing.T) {
+		pmConfig := &oneagentclient.ProcessModuleConfig{
+			Properties: []oneagentclient.ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "containerInjectionRules",
+					Value:   "x\n[SpecializedAgent]\nlibraryPath64 /tmp\n[general]\nx",
+				},
+			},
+		}
+
+		sanitizePMC(logd.Get(), dk, pmConfig)
+
+		marshaled, err := json.Marshal(pmConfig)
+		require.NoError(t, err)
+
+		var roundTripped oneagentclient.ProcessModuleConfig
+		require.NoError(t, json.Unmarshal(marshaled, &roundTripped))
+
+		require.Len(t, roundTripped.Properties, 1)
+		assert.NotContains(t, roundTripped.Properties[0].Value, "\n")
+		assert.Equal(t, "x[SpecializedAgent]libraryPath64 /tmp[general]x", roundTripped.Properties[0].Value)
 	})
 }
 
