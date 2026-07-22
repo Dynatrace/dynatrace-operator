@@ -14,7 +14,8 @@ type Status struct {
 	status.VersionStatus `json:",inline"`
 
 	// Information about KubernetesMonitoring's connections.
-	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitempty,omitzero"`
+	// +kubebuilder:validation:Optional
+	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitzero"`
 }
 
 func (s *Status) IsZero() bool {

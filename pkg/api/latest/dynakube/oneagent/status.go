@@ -28,7 +28,8 @@ type Status struct {
 	Healthcheck *containerv1.HealthConfig `json:"healthcheck,omitempty"`
 
 	// Information about OneAgent's connections
-	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitempty,omitzero"` // Left the "Status" suffix for compatibility
+	// +kubebuilder:validation:Optional
+	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitzero"` // Left the "Status" suffix for compatibility
 }
 
 // IsZero reports whether every field is zero. It is required for the `omitzero`

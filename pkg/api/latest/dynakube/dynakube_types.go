@@ -60,10 +60,11 @@ const (
 // DynaKube is the Schema for the DynaKube API.
 type DynaKube struct {
 	metav1.TypeMeta `json:",inline"`
-
-	Status            DynaKubeStatus `json:"status,omitempty,omitzero"`
+	// +kubebuilder:validation:Optional
+	Status            DynaKubeStatus `json:"status,omitzero"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              DynaKubeSpec `json:"spec,omitempty,omitzero"`
+	// +kubebuilder:validation:Optional
+	Spec DynaKubeSpec `json:"spec,omitzero"`
 }
 
 // +k8s:openapi-gen=true
@@ -117,8 +118,9 @@ type DynaKubeSpec struct { //nolint:revive
 
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	OneAgent oneagent.Spec `json:"oneAgent,omitempty,omitzero"`
+	OneAgent oneagent.Spec `json:"oneAgent,omitzero"`
 
 	// Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
 	// For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
@@ -154,8 +156,9 @@ type DynaKubeSpec struct { //nolint:revive
 	Templates TemplatesSpec `json:"templates,omitzero"`
 
 	// General configuration about ActiveGate instances.
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	ActiveGate activegate.Spec `json:"activeGate,omitempty,omitzero"`
+	ActiveGate activegate.Spec `json:"activeGate,omitzero"`
 
 	// Configuration for the KubernetesMonitoring operand (split-AG mode).
 	// When set, a dedicated KubernetesMonitoring StatefulSet is created independently of the ActiveGate.

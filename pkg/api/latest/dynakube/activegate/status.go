@@ -14,7 +14,8 @@ type Status struct {
 	status.VersionStatus `json:",inline"`
 
 	// Information about Active Gate's connections
-	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitempty,omitzero"`
+	// +kubebuilder:validation:Optional
+	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitzero"`
 
 	// The ClusterIPs set by Kubernetes on the ActiveGate Service created by the Operator
 	ServiceIPs []string `json:"serviceIPs,omitempty"`
