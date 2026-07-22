@@ -166,14 +166,14 @@ type DynaKubeSpec struct { //nolint:revive
 	// Set to true if you want to skip certification validation checks.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
+	SkipCertCheck bool `json:"skipCertCheck"`
 
 	// When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding
 	// VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
 	// Disabled by default.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	EnableIstio bool `json:"enableIstio,omitempty"`
+	EnableIstio bool `json:"enableIstio"`
 
 	// Overrides the default registry from which Dynatrace images are pulled.
 	// +kubebuilder:validation:Optional
