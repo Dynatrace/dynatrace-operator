@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package exporterconfig
 
 // ActiveGateCertDataName is the key used to store ActiveGate certificate data in the secret containing the ActiveGate Certificate for the OTLP exporter.

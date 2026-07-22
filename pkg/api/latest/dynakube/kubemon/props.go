@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package kubemon
 
 import corev1 "k8s.io/api/core/v1"

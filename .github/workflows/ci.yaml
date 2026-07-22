@@ -254,6 +254,11 @@ jobs:
           make prerequisites/mockery
           make go/gen_mocks
           git diff --exit-code
+      - name: Check license headers are up-to-date
+        id: license-headers
+        run: |
+          make add-license-headers
+          git diff --exit-code
 
   security:
     needs: [detect-changes]

@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test csi driver resource
 templates:
   - Common/csi/csidriver.yaml

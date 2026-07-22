@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // Package hostevent implements a Dynatrace API client to fetch host information and sending events for nodes.
 package hostevent
 

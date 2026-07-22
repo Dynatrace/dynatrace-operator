@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // +kubebuilder:object:generate=true
 // +k8s:openapi-gen=true
 package status
