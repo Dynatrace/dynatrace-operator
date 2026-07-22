@@ -17,75 +17,14 @@ x-google-marketplace:
   applicationApiVersion: v1beta1
   publishedVersion: 1.10.1
   publishedVersionMetadata:
-    releaseNote: >
-      ### Installation
+    releaseNote: >-
+      ## What's Changed
+      ### Bugfixes
+      * Fix OA communication host handling by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/6983
+      * Fix OA DaemonSet secret mount permissions by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/6974
+      * Do not use timeprovider.Freeze() in live code by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/6971
 
-
-      For information on how to install the [latest dynatrace-operator](https://github.com/Dynatrace/dynatrace-operator/releases/latest) please visit our [official Documentation](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation).
-
-
-
-      #### Helm (recommended)
-
-      ```sh
-
-      helm upgrade dynatrace-operator oci://public.ecr.aws/dynatrace/dynatrace-operator \
-
-        --version 1.10.1 \
-        --create-namespace --namespace dynatrace \
-        --install \
-        --atomic
-      ```
-
-
-      <details>
-
-        <summary>Other upgrade/install instructions</summary>
-
-      #### Kubernetes
-
-      ```sh
-
-      kubectl create namespace dynatrace
-
-
-      # Operator without CSI driver
-
-      kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.10.1/kubernetes.yaml
-
-
-      # Operator with CSI driver
-
-      kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.10.1/kubernetes-csi.yaml
-
-      ```
-
-
-      #### Openshift
-
-      ```sh
-
-      oc create namespace dynatrace
-
-
-      # Operator without CSI driver
-
-      oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.10.1/openshift.yaml
-
-
-      # Operator with CSI driver
-
-      oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.10.1/openshift-csi.yaml
-
-      ```
-
-
-      </details>
-
-
-      ### What's Changed
-
-      Release Notes can be found in our [official Documentation](https://docs.dynatrace.com/docs/whats-new/release-notes/dynatrace-operator).
+      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.10.0...v1.10.1
 
     releaseTypes:
       - Feature
