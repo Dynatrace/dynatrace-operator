@@ -28,6 +28,8 @@ HELMUNITTEST_VERSION ?= v1.1.1
 GO_TEST_COVERAGE_VERSION ?= v2.18.9
 # renovate depName=github.com/openapitools/openapi-generator-cli
 OPENAPI_GENERATOR_CLI_VERSION ?= v2.40.0+incompatible
+# renovate depName=github.com/google/addlicense
+ADDLICENSE_VERSION ?= v1.2.0
 
 # Enable renovate once project is migrated to newer structure
 OPERATOR_SDK_VERSION ?= v1.36.0
@@ -44,6 +46,7 @@ PYTHON ?= $(LOCALBIN)/.venv/bin/python3
 MARKDOWNLINT ?= $(LOCALBIN_NPM)/markdownlint
 MARKDOWN_LINK_CHECK ?= $(LOCALBIN_NPM)/markdown-link-check
 OPENAPI_GENERATOR_CLI ?= $(LOCALBIN_NPM)/openapi-generator-cli
+ADDLICENSE ?= $(LOCALBIN)/addlicense
 
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_VERSION ?= $(shell v='$(call gomodver,sigs.k8s.io/controller-runtime)'; \
@@ -129,6 +132,10 @@ prerequisites/git-ignore-revs-file:
 ## Install 'openapi-generator-cli' if it is missing
 prerequisites/openapi-generator-cli:
 	npm install @openapitools/openapi-generator-cli@$(OPENAPI_GENERATOR_CLI_VERSION)
+
+## Install 'addlicense' if it is missing
+prerequisites/addlicense:
+	$(call go-install-tool,$(ADDLICENSE),github.com/google/addlicense,$(ADDLICENSE_VERSION))
 
 .PHONY: prerequisites/operator-sdk
 OPERATOR_SDK ?= $(LOCALBIN)/operator-sdk

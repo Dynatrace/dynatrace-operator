@@ -4,6 +4,20 @@ KUSTOMIZE="$1"
 HELM_CRD_DIR="$2"
 MAINFEST_DIR="$3"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BOILERPLATE="${SCRIPT_DIR}/../boilerplate.go.txt"
+
+# Convert boilerplate.go.txt (Go block comment) to YAML # comment style
+yaml_license_header() {
+    awk '
+        /^\*\/$/ { next }
+        /^\/\*$/  { next }
+        /^$/      { print "#"; next }
+                  { print "# " $0 }
+    ' "${BOILERPLATE}"
+    echo ""
+}
+
 # Create the crd with the conversion webhook patch
 DYNATRACE_OPERATOR_CRD_YAML="dynatrace-operator-crd.yaml"
 SOURCE_CRD_DIR="${MAINFEST_DIR}/kubernetes"
@@ -36,6 +50,7 @@ HELM_FOOTER="{{- end -}}"
 
 # Overwrite the previously generated CRD
 {
+	yaml_license_header
 	echo "$HELM_HEADER"
 	echo "$CRD_CONTENT"
 	echo "$HELM_FOOTER"

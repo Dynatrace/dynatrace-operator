@@ -8,6 +8,12 @@
 
 echo Shell: "${SHELL}"
 
+echo Adding licenses...
+make add-license-headers
+
+echo Generate deep-copy files
+make manifests/deepcopy
+
 echo Linting markdown files...
 make markdown/lint
 
