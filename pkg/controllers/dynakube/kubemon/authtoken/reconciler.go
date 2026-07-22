@@ -67,7 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 	}
 
 	if k8serrors.IsNotFound(err) {
-		return r.createSecret(ctx, agClient, dk)
+		return r.createOrUpdateSecret(ctx, agClient, dk)
 	}
 
 	if r.isOutdated(secret) {
@@ -78,13 +78,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 			return errors.WithStack(err)
 		}
 
-		return r.createSecret(ctx, agClient, dk)
+		return r.createOrUpdateSecret(ctx, agClient, dk)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) createSecret(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
+func (r *Reconciler) createOrUpdateSecret(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
 	authTokenInfo, err := agClient.GetAuthToken(ctx, dk.Name)
 	if err != nil {
 		return errors.WithStack(err)

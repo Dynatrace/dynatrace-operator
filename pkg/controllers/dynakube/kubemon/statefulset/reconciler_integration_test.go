@@ -25,7 +25,15 @@ import (
 // direct API client. Branch and error logic is covered by the unit test.
 
 const (
-	integrationNamespace = "dynatrace"
+	integrationNamespace      = "dynatrace"
+	integrationDynaKubeName   = "lifecycle"
+	integrationAPIURL         = "https://tenant.live.dynatrace.com/api"
+	integrationImage          = "registry.example.com/linux/activegate:1.2.3"
+	integrationKubeSystemUUID = "test-cluster-uuid"
+
+	integrationTenantToken        = "test-tenant-token"
+	integrationAuthToken          = "test-auth-token"
+	integrationRotatedTenantToken = "rotated-tenant-token"
 )
 
 type lifecycleDeps struct {
@@ -48,19 +56,19 @@ func TestReconcileLifecycle(t *testing.T) {
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "lifecycle",
+			Name:      integrationDynaKubeName,
 			Namespace: integrationNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: "https://tenant.live.dynatrace.com/api",
+			APIURL: integrationAPIURL,
 			KubernetesMonitoring: &kubemonapi.Spec{
 				StatefulSetProperties: kubemonapi.StatefulSetProperties{
-					Image: "registry.example.com/linux/activegate:1.2.3",
+					Image: integrationImage,
 				},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID: "test-cluster-uuid",
+			KubeSystemUUID: integrationKubeSystemUUID,
 		},
 	}
 	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
@@ -71,7 +79,7 @@ func TestReconcileLifecycle(t *testing.T) {
 			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{
-			connectioninfo.TenantTokenKey: []byte("test-tenant-token"),
+			connectioninfo.TenantTokenKey: []byte(integrationTenantToken),
 		},
 	}
 	integrationtests.CreateKubernetesObject(t, t.Context(), clt, tenantTokenSecret)
@@ -82,7 +90,7 @@ func TestReconcileLifecycle(t *testing.T) {
 			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{
-			kubemonauthtoken.SecretKey: []byte("test-auth-token"),
+			kubemonauthtoken.SecretKey: []byte(integrationAuthToken),
 		},
 	}
 	integrationtests.CreateKubernetesObject(t, t.Context(), clt, authTokenSecret)
@@ -128,7 +136,7 @@ func runRolloutCompletePhase(t *testing.T, deps *lifecycleDeps) {
 func runRotatePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	deps.tenantTokenSecret.Data[connectioninfo.TenantTokenKey] = []byte("rotated-tenant-token")
+	deps.tenantTokenSecret.Data[connectioninfo.TenantTokenKey] = []byte(integrationRotatedTenantToken)
 	require.NoError(t, deps.clt.Update(t.Context(), deps.tenantTokenSecret))
 
 	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
@@ -166,7 +174,7 @@ func runReEnablePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
 	deps.dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
-	deps.dk.Spec.KubernetesMonitoring.Image = "registry.example.com/linux/activegate:1.2.3"
+	deps.dk.Spec.KubernetesMonitoring.Image = integrationImage
 
 	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
 

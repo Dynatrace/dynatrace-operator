@@ -31,7 +31,14 @@ import (
 // rotationInterval via authtoken.WithRotationInterval and waits out real elapsed time.
 
 const (
-	integrationNamespace = "dynatrace"
+	integrationNamespace    = "dynatrace"
+	integrationDynaKubeName = "lifecycle"
+	integrationAPIURL       = "https://tenant.live.dynatrace.com/api"
+
+	integrationTokenID        = "id"
+	integrationInitialToken   = "initial-token"
+	integrationRotatedToken   = "rotated-token"
+	integrationReEnabledToken = "re-enabled-token"
 
 	// integrationRotationInterval must stay comfortably longer than a couple of back-to-back
 	// reconciles (see the stabilize phase) so it doesn't trigger a spurious rotation there, while
@@ -57,11 +64,11 @@ func TestReconcileLifecycle(t *testing.T) {
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "lifecycle",
+			Name:      integrationDynaKubeName,
 			Namespace: integrationNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:               "https://tenant.live.dynatrace.com/api",
+			APIURL:               integrationAPIURL,
 			KubernetesMonitoring: &kubemonapi.Spec{},
 		},
 	}
@@ -84,17 +91,18 @@ func runProvisionPhase(t *testing.T, deps lifecycleDeps) {
 	t.Helper()
 
 	dtClient := agclientmock.NewClient(t)
-	dtClient.EXPECT().GetAuthToken(anyContext, deps.dk.Name).Return(&agclient.AuthTokenInfo{TokenID: "id", Token: "initial-token"}, nil)
+	dtClient.EXPECT().GetAuthToken(anyContext, deps.dk.Name).Return(&agclient.AuthTokenInfo{TokenID: integrationTokenID, Token: integrationInitialToken}, nil)
 
 	// Create path is deterministic: the reconciler's Get of a never-created secret returns NotFound,
 	// so a single reconcile creates it and the read-back observes it immediately.
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
-	require.True(t, isAuthTokenApplied(t.Context(), deps.clt, deps.dk, "initial-token"))
 
 	secret := getSecret(t, deps.clt, deps.dk)
 	assert.Len(t, secret.Data, 1)
-	assertManagedLabels(t, secret.Labels, deps.dk)
-	assertOwnedBy(t, secret.OwnerReferences, deps.dk)
+	assert.Equal(t, []byte(integrationInitialToken), secret.Data[authtoken.SecretKey])
+	assert.Equal(t, k8slabel.KubeMonComponentLabel, secret.Labels[k8slabel.AppComponentLabel])
+	assert.Equal(t, deps.dk.Name, secret.Labels[k8slabel.AppCreatedByLabel])
+	assert.True(t, metav1.IsControlledBy(secret, deps.dk))
 }
 
 func runStabilizePhase(t *testing.T, deps lifecycleDeps) {
@@ -116,7 +124,7 @@ func runRotatePhase(t *testing.T, deps lifecycleDeps) {
 	t.Helper()
 
 	dtClient := agclientmock.NewClient(t)
-	dtClient.EXPECT().GetAuthToken(anyContext, deps.dk.Name).Return(&agclient.AuthTokenInfo{TokenID: "id", Token: "rotated-token"}, nil)
+	dtClient.EXPECT().GetAuthToken(anyContext, deps.dk.Name).Return(&agclient.AuthTokenInfo{TokenID: integrationTokenID, Token: integrationRotatedToken}, nil)
 
 	oldSecret := getSecret(t, deps.clt, deps.dk)
 
@@ -126,9 +134,9 @@ func runRotatePhase(t *testing.T, deps lifecycleDeps) {
 	time.Sleep(integrationRotationInterval + 200*time.Millisecond)
 
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
-	require.True(t, isAuthTokenApplied(t.Context(), deps.clt, deps.dk, "rotated-token"))
 
 	rotated := getSecret(t, deps.clt, deps.dk)
+	assert.Equal(t, []byte(integrationRotatedToken), rotated.Data[authtoken.SecretKey])
 	assert.NotEqual(t, oldSecret.UID, rotated.UID, "rotation must delete and recreate the secret")
 }
 
@@ -148,10 +156,10 @@ func runReEnablePhase(t *testing.T, deps lifecycleDeps) {
 
 	deps.dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 	dtClient := agclientmock.NewClient(t)
-	dtClient.EXPECT().GetAuthToken(anyContext, deps.dk.Name).Return(&agclient.AuthTokenInfo{TokenID: "id", Token: "re-enabled-token"}, nil)
+	dtClient.EXPECT().GetAuthToken(anyContext, deps.dk.Name).Return(&agclient.AuthTokenInfo{TokenID: integrationTokenID, Token: integrationReEnabledToken}, nil)
 
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
-	require.True(t, isAuthTokenApplied(t.Context(), deps.clt, deps.dk, "re-enabled-token"))
+	assert.Equal(t, []byte(integrationReEnabledToken), getSecret(t, deps.clt, deps.dk).Data[authtoken.SecretKey])
 }
 
 func getSecret(t *testing.T, reader client.Reader, dk *dynakube.DynaKube) *corev1.Secret {
@@ -161,27 +169,4 @@ func getSecret(t *testing.T, reader client.Reader, dk *dynakube.DynaKube) *corev
 	require.NoError(t, reader.Get(t.Context(), types.NamespacedName{Name: dk.KubernetesMonitoring().GetAuthTokenSecretName(), Namespace: dk.Namespace}, secret))
 
 	return secret
-}
-
-func isAuthTokenApplied(ctx context.Context, reader client.Reader, dk *dynakube.DynaKube, token string) bool {
-	secret := &corev1.Secret{}
-	if err := reader.Get(ctx, types.NamespacedName{Name: dk.KubernetesMonitoring().GetAuthTokenSecretName(), Namespace: dk.Namespace}, secret); err != nil {
-		return false
-	}
-
-	return string(secret.Data[authtoken.SecretKey]) == token
-}
-
-func assertManagedLabels(t *testing.T, labels map[string]string, dk *dynakube.DynaKube) {
-	t.Helper()
-
-	assert.Equal(t, k8slabel.KubeMonComponentLabel, labels[k8slabel.AppComponentLabel])
-	assert.Equal(t, dk.Name, labels[k8slabel.AppCreatedByLabel])
-}
-
-func assertOwnedBy(t *testing.T, refs []metav1.OwnerReference, dk *dynakube.DynaKube) {
-	t.Helper()
-
-	require.Len(t, refs, 1)
-	assert.Equal(t, dk.Name, refs[0].Name)
 }

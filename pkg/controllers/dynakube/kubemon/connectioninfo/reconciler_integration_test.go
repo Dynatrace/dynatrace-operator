@@ -26,10 +26,15 @@ import (
 // direct API client. Branch and error logic is covered by the unit test.
 
 const (
-	integrationNamespace   = "dynatrace"
-	integrationTenantUUID  = "test-uuid"
-	integrationEndpoints   = "https://tenant.live.dynatrace.com/communication"
-	integrationTenantToken = "test-token"
+	integrationNamespace    = "dynatrace"
+	integrationDynaKubeName = "lifecycle"
+	integrationAPIURL       = "https://tenant.live.dynatrace.com/api"
+	integrationTenantUUID   = "test-uuid"
+	integrationEndpoints    = "https://tenant.live.dynatrace.com/communication"
+	integrationTenantToken  = "test-token"
+
+	integrationRotatedEndpoints   = "https://tenant.live.dynatrace.com/updated"
+	integrationRotatedTenantToken = "rotated-token"
 )
 
 var anyContext = mock.MatchedBy(func(context.Context) bool { return true })
@@ -52,11 +57,11 @@ func TestReconcileLifecycle(t *testing.T) {
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "lifecycle",
+			Name:      integrationDynaKubeName,
 			Namespace: integrationNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:               "https://tenant.live.dynatrace.com/api",
+			APIURL:               integrationAPIURL,
 			KubernetesMonitoring: &kubemonapi.Spec{},
 		},
 	}
@@ -70,8 +75,8 @@ func TestReconcileLifecycle(t *testing.T) {
 
 	rotatedConnectionInfo := agclient.ConnectionInfo{
 		TenantUUID:  integrationTenantUUID,
-		TenantToken: "rotated-token",
-		Endpoints:   "https://tenant.live.dynatrace.com/updated",
+		TenantToken: integrationRotatedTenantToken,
+		Endpoints:   integrationRotatedEndpoints,
 	}
 
 	// The subtests below share dk and run in order: each builds on the state left by the previous one.
