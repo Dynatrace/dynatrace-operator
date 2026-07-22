@@ -60,11 +60,18 @@ const (
 // DynaKube is the Schema for the DynaKube API.
 type DynaKube struct {
 	metav1.TypeMeta `json:",inline"`
+
+	// metadata is a standard object metadata
 	// +kubebuilder:validation:Optional
-	Status            DynaKubeStatus `json:"status,omitzero"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitzero"`
+
+	// spec defines the desired state of DynaKube
+	// +kubebuilder:validation:Required
+	Spec DynaKubeSpec `json:"spec"`
+
+	// status defines the observed state of DynaKube
 	// +kubebuilder:validation:Optional
-	Spec DynaKubeSpec `json:"spec,omitzero"`
+	Status DynaKubeStatus `json:"status,omitzero"`
 }
 
 // +k8s:openapi-gen=true
