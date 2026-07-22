@@ -15,19 +15,21 @@ CONTROLLER_GEN_VERSION ?= v0.21.0
 # renovate depName=github.com/golangci/golangci-lint/v2
 GOLANGCI_LINT_VERSION ?= v2.12.2
 # renovate depName=golang.org/x/tools
-GOLANG_TOOLS_VERSION ?= v0.46.0
+GOLANG_TOOLS_VERSION ?= v0.48.0
 # renovate depName=github.com/vektra/mockery
 MOCKERY_VERSION ?= v3.7.1
 # renovate depName=github.com/igorshubovych/markdownlint-cli
-MARKDOWNLINT_CLI_VERSION ?= v0.49.0
+MARKDOWNLINT_CLI_VERSION ?= v0.49.1
 # renovate depName=github.com/tcort/markdown-link-check
 MARKDOWN_LINK_CHECK_VERSION ?= v3.14.2
 # renovate depName=github.com/helm-unittest/helm-unittest
 HELMUNITTEST_VERSION ?= v1.1.1
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.18.8
+GO_TEST_COVERAGE_VERSION ?= v2.18.9
 # renovate depName=github.com/openapitools/openapi-generator-cli
-OPENAPI_GENERATOR_CLI_VERSION ?= v2.38.0+incompatible
+OPENAPI_GENERATOR_CLI_VERSION ?= v2.40.0+incompatible
+# renovate depName=github.com/google/addlicense
+ADDLICENSE_VERSION ?= v1.2.0
 
 # Enable renovate once project is migrated to newer structure
 OPERATOR_SDK_VERSION ?= v1.36.0
@@ -44,6 +46,7 @@ PYTHON ?= $(LOCALBIN)/.venv/bin/python3
 MARKDOWNLINT ?= $(LOCALBIN_NPM)/markdownlint
 MARKDOWN_LINK_CHECK ?= $(LOCALBIN_NPM)/markdown-link-check
 OPENAPI_GENERATOR_CLI ?= $(LOCALBIN_NPM)/openapi-generator-cli
+ADDLICENSE ?= $(LOCALBIN)/addlicense
 
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_VERSION ?= $(shell v='$(call gomodver,sigs.k8s.io/controller-runtime)'; \
@@ -129,6 +132,10 @@ prerequisites/git-ignore-revs-file:
 ## Install 'openapi-generator-cli' if it is missing
 prerequisites/openapi-generator-cli:
 	npm install @openapitools/openapi-generator-cli@$(OPENAPI_GENERATOR_CLI_VERSION)
+
+## Install 'addlicense' if it is missing
+prerequisites/addlicense:
+	$(call go-install-tool,$(ADDLICENSE),github.com/google/addlicense,$(ADDLICENSE_VERSION))
 
 .PHONY: prerequisites/operator-sdk
 OPERATOR_SDK ?= $(LOCALBIN)/operator-sdk

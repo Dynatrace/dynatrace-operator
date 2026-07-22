@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test role for the extensions controller for prometheus
 templates:
   - Common/extensions/role-extension-controller-prometheus.yaml

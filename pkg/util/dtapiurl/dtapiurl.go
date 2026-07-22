@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // Package dtapiurl provides helpers for working with Dynatrace API URLs,
 // in particular for mapping between 2nd gen and 3rd gen URLs.
 package dtapiurl

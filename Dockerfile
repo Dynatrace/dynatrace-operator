@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 # check=skip=RedundantTargetPlatform
 # setup build image
 FROM --platform=$BUILDPLATFORM golang:1.26.5@sha256:079e59808d2d252516e27e3f3a9c003740dee7f75e55aa71528766d52bcfc16a AS operator-build
@@ -6,7 +9,7 @@ WORKDIR /app
 
 ARG DEBUG_TOOLS
 # renovate depName=github.com/go-delve/delve/cmd/dlv
-RUN if [ "$DEBUG_TOOLS" = "true" ]; then GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@v1.26.3; fi
+RUN if [ "$DEBUG_TOOLS" = "true" ]; then GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@v1.27.0; fi
 
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.10.0

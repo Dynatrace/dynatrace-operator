@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // Package kubemon reconciles the dedicated Kubernetes Monitoring operand.
 //
 // Non-obvious behavior:

@@ -1,4 +1,6 @@
 all: false
+template-data:
+  boilerplate-file: ./hack/boilerplate.go.txt
 dir: 'test/mocks/{{trimPrefix "dynatrace-operator/" .InterfaceDirRelative}}'
 pkgname: mocks
 force-file-write: true
