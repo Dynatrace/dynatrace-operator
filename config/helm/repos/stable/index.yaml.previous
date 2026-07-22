@@ -36,8 +36,6 @@ entries:
       name: 0sewa0
     - email: andrii.soldatenko@dynatrace.com
       name: andriisoldatenko
-    - email: christoph.muellner@dynatrace.com
-      name: chrismuellner
     - email: george.balea@dynatrace.com
       name: geba-dyna
     name: dynatrace-operator
