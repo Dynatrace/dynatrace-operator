@@ -12,7 +12,7 @@ import (
 )
 
 type Container struct {
-	ContainerName string `json:"k8s.container.name,omitempty"`
+	ContainerName string `json:"k8s.container.name,omitzero"`
 }
 
 func NewContainerAttributes(c corev1.Container) *Container {
@@ -36,7 +36,7 @@ type ContainerInfo struct {
 	ImageDigest string `json:"container_image.digest,omitempty"`
 
 	// used for metadata enrichment and OTLP exporter auto-config
-	Container `json:",omitempty"`
+	Container `json:",omitzero"`
 }
 
 func NewContainerInfo(c corev1.Container) *ContainerInfo {
