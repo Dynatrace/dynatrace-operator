@@ -19,7 +19,20 @@ const (
 	testName        = "test-name"
 	testPort1String = "1234"
 	testNamespace   = "dynatrace"
+
+	testPort1 = 1234
+	testHost1 = "test-host-1"
+	testIP1   = "42.42.42.42"
+	testPort2 = 5678
+	testHost2 = "test-host-2"
+	testIP2   = "66.249.65.40"
 )
+
+func buildTestLabels() map[string]string {
+	return map[string]string{
+		"test": "test",
+	}
+}
 
 func TestServiceEntryGeneration(t *testing.T) {
 	const (

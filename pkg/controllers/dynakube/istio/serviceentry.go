@@ -17,6 +17,8 @@ const (
 	ignoredSubdomain = "ignored.subdomain"
 	subnetMask       = "/32"
 	protocolTCP      = "TCP"
+	protocolHTTP     = "http"
+	protocolHTTPS    = "https"
 )
 
 func BuildNameForIPServiceEntry(ownerName, component string) string {
