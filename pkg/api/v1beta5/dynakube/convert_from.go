@@ -222,7 +222,7 @@ func (dst *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
 	}
 
 	if len(src.Status.MetadataEnrichment.Rules) > 0 {
-		dst.Status.MetadataEnrichment.Rules = make([]EnrichmentRule, 0)
+		dst.Status.MetadataEnrichment.Rules = []EnrichmentRule{}
 		for _, rule := range src.Status.MetadataEnrichment.Rules {
 			dst.Status.MetadataEnrichment.Rules = append(dst.Status.MetadataEnrichment.Rules,
 				EnrichmentRule{
