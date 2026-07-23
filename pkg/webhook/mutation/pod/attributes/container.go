@@ -12,7 +12,7 @@ import (
 )
 
 type Container struct {
-	ContainerName string `json:"k8s.container.name,omitzero"`
+	ContainerName string `json:"k8s.container.name,omitempty"`
 }
 
 func NewContainerAttributes(c corev1.Container) *Container {
