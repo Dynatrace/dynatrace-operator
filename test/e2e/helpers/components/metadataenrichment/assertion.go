@@ -48,6 +48,13 @@ func GetRawMetadataFromPod(ctx context.Context, t *testing.T, resource *resource
 	return readMetadataFile(ctx, t, resource, enrichedPod, MetadataFile)
 }
 
+func GetMetadataMapFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {
+	var metadata map[string]string
+	require.NoError(t, json.Unmarshal(GetRawMetadataFromPod(ctx, t, resource, enrichedPod), &metadata))
+
+	return metadata
+}
+
 func GetMetadataPropertiesFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {
 	properties := readMetadataFile(ctx, t, resource, enrichedPod, PropertiesFile)
 

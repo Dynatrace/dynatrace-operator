@@ -6,6 +6,7 @@ package settings
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
@@ -250,6 +251,239 @@ func expectCallOrder(calls ...*mock.Call) {
 		call.NotBefore(prev)
 		prev = call
 	}
+}
+
+func TestGetEnrichmentRuleObjects(t *testing.T) {
+	ctx := t.Context()
+
+	params := map[string]string{
+		schemaIDsQueryParam: metadataEnrichmentSchemaID,
+		scopesQueryParam:    "KUBERNETES_CLUSTER-123",
+	}
+
+	t.Run("success", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(params).Return(request).Once()
+		request.EXPECT().Execute(new(enrichmentRulesObjectsResponse)).
+			Run(injectResponse(enrichmentRulesObjectsResponse{Items: []EnrichmentRuleObject{{ObjectID: "obj-1"}, {ObjectID: "obj-2"}}})).
+			Return(nil).Once()
+		apiClient.EXPECT().GET(anyCtx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objects, err := client.GetEnrichmentRuleObjects(ctx, "KUBERNETES_CLUSTER-123")
+		require.NoError(t, err)
+		assert.Equal(t, []EnrichmentRuleObject{{ObjectID: "obj-1"}, {ObjectID: "obj-2"}}, objects)
+	})
+
+	t.Run("empty scope", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		client := NewClient(apiClient)
+		objects, err := client.GetEnrichmentRuleObjects(ctx, "")
+		require.Error(t, err)
+		assert.Empty(t, objects)
+	})
+
+	t.Run("error from API", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(params).Return(request).Once()
+		request.EXPECT().Execute(new(enrichmentRulesObjectsResponse)).Return(errors.New("api error")).Once()
+		apiClient.EXPECT().GET(anyCtx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objects, err := client.GetEnrichmentRuleObjects(ctx, "KUBERNETES_CLUSTER-123")
+		require.Error(t, err)
+		assert.Empty(t, objects)
+	})
+}
+
+func TestCreateEnrichmentRuleObject(t *testing.T) {
+	ctx := t.Context()
+	const scope = "KUBERNETES_CLUSTER-123"
+
+	rule := metadataenrichment.Rule{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "my-label", Target: "dt.cost.product"}
+
+	matchBody := mock.MatchedBy(func(arg any) bool {
+		body, ok := arg.([]postObjectsBody[enrichmentRuleValue])
+
+		return ok &&
+			len(body) == 1 &&
+			body[0].SchemaID == metadataEnrichmentSchemaID &&
+			body[0].Scope == scope &&
+			body[0].Value.Type == metadataenrichment.K8sNamespaceLabelRule &&
+			body[0].Value.ValueSource == "my-label" &&
+			body[0].Value.Target == "dt.cost.product"
+	})
+
+	t.Run("success", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).
+			Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-123"}})).
+			Return(nil).Once()
+		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objectID, err := client.CreateEnrichmentRuleObject(ctx, scope, rule)
+		require.NoError(t, err)
+		assert.Equal(t, "obj-123", objectID)
+	})
+
+	t.Run("error from API", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
+		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objectID, err := client.CreateEnrichmentRuleObject(ctx, scope, rule)
+		require.Error(t, err)
+		assert.Empty(t, objectID)
+	})
+
+	t.Run("response not exactly one entry", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()
+		apiClient.On("POST", ctx, ObjectsPath).Return(request)
+
+		client := NewClient(apiClient)
+		objectID, err := client.CreateEnrichmentRuleObject(ctx, scope, rule)
+		require.ErrorAs(t, err, new(notSingleEntryError))
+		assert.Empty(t, objectID)
+	})
+
+	t.Run("empty scope", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		client := NewClient(apiClient)
+		objectID, err := client.CreateEnrichmentRuleObject(t.Context(), "", rule)
+		require.Error(t, err)
+		assert.Empty(t, objectID)
+	})
+}
+
+func TestCreateLegacyEnrichmentRuleObject(t *testing.T) {
+	ctx := t.Context()
+	const scope = "KUBERNETES_CLUSTER-123"
+
+	rule := metadataenrichment.Rule{Type: metadataenrichment.LabelRule, Source: "my-label", Target: "dt.cost.product"}
+
+	matchBody := mock.MatchedBy(func(arg any) bool {
+		body, ok := arg.([]postObjectsBody[legacyEnrichmentValue])
+
+		return ok &&
+			len(body) == 1 &&
+			body[0].SchemaID == legacyMetadataEnrichmentSchemaID &&
+			body[0].Scope == scope &&
+			len(body[0].Value.Rules) == 1 &&
+			body[0].Value.Rules[0].Type == metadataenrichment.LabelRule &&
+			body[0].Value.Rules[0].Source == "my-label" &&
+			body[0].Value.Rules[0].Target == "dt.cost.product"
+	})
+
+	t.Run("success", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).
+			Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-456"}})).
+			Return(nil).Once()
+		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objectID, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule)
+		require.NoError(t, err)
+		assert.Equal(t, "obj-456", objectID)
+	})
+
+	t.Run("error from API", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
+		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objectID, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule)
+		require.Error(t, err)
+		assert.Empty(t, objectID)
+	})
+
+	t.Run("response not exactly one entry", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()
+		apiClient.On("POST", ctx, ObjectsPath).Return(request)
+
+		client := NewClient(apiClient)
+		objectID, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule)
+		require.ErrorAs(t, err, new(notSingleEntryError))
+		assert.Empty(t, objectID)
+	})
+
+	t.Run("empty scope", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		client := NewClient(apiClient)
+		objectID, err := client.CreateLegacyEnrichmentRuleObject(t.Context(), "", rule)
+		require.Error(t, err)
+		assert.Empty(t, objectID)
+	})
+}
+
+func TestGetLegacyEnrichmentRuleObjects(t *testing.T) {
+	ctx := t.Context()
+
+	params := map[string]string{
+		schemaIDsQueryParam: legacyMetadataEnrichmentSchemaID,
+		scopesQueryParam:    "KUBERNETES_CLUSTER-123",
+	}
+
+	t.Run("success", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(params).Return(request).Once()
+		request.EXPECT().Execute(new(enrichmentRulesObjectsResponse)).
+			Run(injectResponse(enrichmentRulesObjectsResponse{Items: []EnrichmentRuleObject{{ObjectID: "obj-1"}}})).
+			Return(nil).Once()
+		apiClient.EXPECT().GET(anyCtx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objects, err := client.GetLegacyEnrichmentRuleObjects(ctx, "KUBERNETES_CLUSTER-123")
+		require.NoError(t, err)
+		assert.Equal(t, []EnrichmentRuleObject{{ObjectID: "obj-1"}}, objects)
+	})
+
+	t.Run("empty scope", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		client := NewClient(apiClient)
+		objects, err := client.GetLegacyEnrichmentRuleObjects(ctx, "")
+		require.Error(t, err)
+		assert.Empty(t, objects)
+	})
+
+	t.Run("error from API", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(params).Return(request).Once()
+		request.EXPECT().Execute(new(enrichmentRulesObjectsResponse)).Return(errors.New("api error")).Once()
+		apiClient.EXPECT().GET(anyCtx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objects, err := client.GetLegacyEnrichmentRuleObjects(ctx, "KUBERNETES_CLUSTER-123")
+		require.Error(t, err)
+		assert.Empty(t, objects)
+	})
 }
 
 // This is just a sanity check that the models match what's returned by the API.

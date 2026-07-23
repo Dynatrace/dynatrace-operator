@@ -10,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,18 +19,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func BuildSettingsClient(secretConfig tenant.Secret) (dtsettings.Client, error) {
-	dtClient, err := dynatrace.NewClient(
-		dynatrace.WithBaseURL(secretConfig.APIURL),
-		dynatrace.WithAPIToken(secretConfig.TokensWithSettingsScope().APIToken),
-		dynatrace.WithSkipCertificateValidation(false))
-	if err != nil {
-		return nil, err
-	}
-
-	return dtClient.Settings, nil
-}
-
 func CheckKSPMSettingsExistOnTenant(secretConfig tenant.Secret, dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
@@ -40,7 +26,7 @@ func CheckKSPMSettingsExistOnTenant(secretConfig tenant.Secret, dk *dynakube.Dyn
 
 		require.NotEmpty(t, dk.Status.KubernetesClusterMEID, "KubernetesClusterMEID must be populated in DynaKube status")
 
-		settingsClient, err := BuildSettingsClient(secretConfig)
+		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err)
 
 		kspmSettings, err := settingsClient.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
@@ -62,7 +48,7 @@ func DeleteKSPMSettingsFromTenant(secretConfig tenant.Secret) features.Func {
 		kubeSystemUUID := string(kubeSystemNS.UID)
 		t.Logf("kube-system UUID: %s", kubeSystemUUID)
 
-		settingsClient, err := BuildSettingsClient(secretConfig)
+		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err, "Could not build settings client")
 
 		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
