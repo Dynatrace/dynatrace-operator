@@ -59,11 +59,20 @@ jobs:
             "public.ecr.aws/dynatrace/dynatrace-operator:${TAG}" \
             --format '{{.Manifest.Digest}}')
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
-      - name: Generate release notes
+      - name: Fetch release notes
         env:
-          GITHUB_REF_NAME: ${{ steps.vars.outputs.tag }}
+          TAG: ${{ steps.vars.outputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          hack/build/ci/generate-release-notes.sh
+          if ! gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --silent 2>/dev/null; then
+            echo "Error: release for tag '${TAG}' does not exist." >&2
+            echo "Publish the release first, then re-run this workflow." >&2
+            exit 1
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            --method POST \
+            --field "tag_name=${TAG}" \
+            --jq '.body' > CHANGELOG.md
       - uses: ./.github/actions/update-csv-bundles
         with:
           digest: ${{ steps.digest.outputs.digest }}
