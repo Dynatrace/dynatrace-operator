@@ -185,7 +185,7 @@ tests:
                     memory: 128Mi
                 volumeMounts:
                   - name: certs-dir
-                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                    mountPath: /tmp/k8s-webhook-server/serving-certs
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
@@ -398,7 +398,7 @@ tests:
                     memory: 128Mi
                 volumeMounts:
                   - name: certs-dir
-                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                    mountPath: /tmp/k8s-webhook-server/serving-certs
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
@@ -576,7 +576,7 @@ tests:
                     memory: 128Mi
                 volumeMounts:
                   - name: certs-dir
-                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                    mountPath: /tmp/k8s-webhook-server/serving-certs
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
