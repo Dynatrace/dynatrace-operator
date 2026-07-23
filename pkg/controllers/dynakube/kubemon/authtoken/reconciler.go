@@ -19,13 +19,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const day = 24 * time.Hour
+
 const (
 	// SecretKey is the key used inside the auth token Secret, matching the AG convention.
 	SecretKey = "auth-token"
 
-	// DefaultRotationInterval mirrors the AG value: rotate at 29 days against a 60-day token
+	// DefaultRotationInterval mirrors the legacy unified AG: rotate at 29 days against a 60-day token
 	// validity to avoid expiry warnings in the Dynatrace UI.
-	DefaultRotationInterval = time.Hour * 24 * 29
+	DefaultRotationInterval = 29 * day
 )
 
 type Reconciler struct {
