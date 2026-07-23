@@ -36,7 +36,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "kubemon-connectioninfo")
+	ctx, _ = logd.NewFromContext(ctx, "connectioninfo")
 
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		return r.cleanup(ctx, dk)

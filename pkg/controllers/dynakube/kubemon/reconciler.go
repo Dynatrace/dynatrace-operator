@@ -75,7 +75,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 // Sub-reconcilers mutate dk.Status.KubernetesMonitoring.* and dk.Status.Conditions in-memory;
 // the parent controller persists status changes via deferred Status().Update().
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, _ token.Tokens) (err error) {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-kubemon")
+	ctx, log := logd.NewFromContext(ctx, "kubemon")
 
 	// Temporary gate, to be removed once kubemon is complete
 	if !k8senv.IsKubemonOperandEnabled() {

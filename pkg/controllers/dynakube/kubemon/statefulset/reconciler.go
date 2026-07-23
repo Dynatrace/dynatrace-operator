@@ -52,7 +52,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "kubemon-statefulset")
+	ctx, _ = logd.NewFromContext(ctx, "statefulset")
 
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		return r.delete(ctx, dk)
