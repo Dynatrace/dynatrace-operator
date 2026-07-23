@@ -118,82 +118,117 @@ func TestReconcileResolveReplicasReadFailure(t *testing.T) {
 // TestReconcileBuildsStatefulSet covers the shape of the produced StatefulSet. The fake client has
 // no StatefulSet controller, so reconcile always reports rollout in progress.
 func TestReconcileBuildsStatefulSet(t *testing.T) {
-	dk := newTestDynaKube(true)
-	partition := int32(2)
-	grace := int64(45)
-	dk.Spec.KubernetesMonitoring.Env = []corev1.EnvVar{{Name: "CUSTOM", Value: "value"}}
-	dk.Spec.KubernetesMonitoring.RollingUpdate = &appsv1.RollingUpdateStatefulSetStrategy{Partition: &partition}
-	dk.Spec.KubernetesMonitoring.DNSPolicy = corev1.DNSNone
-	dk.Spec.KubernetesMonitoring.PriorityClassName = "high-priority"
-	dk.Spec.KubernetesMonitoring.TerminationGracePeriodSeconds = &grace
-	sts := reconcileAndGetSTS(t, dk)
+	t.Run("container identity and service account", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk)
 
-	require.Len(t, sts.Spec.Template.Spec.Containers, 1)
-	container := sts.Spec.Template.Spec.Containers[0]
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		container := sts.Spec.Template.Spec.Containers[0]
 
-	// container identity
-	assert.Equal(t, statefulset.ContainerName, container.Name)
-	assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), container.Image)
-	assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
+		assert.Equal(t, statefulset.ContainerName, container.Name)
+		assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), container.Image)
+		assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
+	})
 
-	// env vars: capabilities, seed envs, deployment metadata, connection info, and custom
-	require.Len(t, container.Env, 7)
+	t.Run("env vars: capabilities, seed envs, deployment metadata, connection info, and custom", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KubernetesMonitoring.Env = []corev1.EnvVar{{Name: "CUSTOM", Value: "value"}}
+		sts := reconcileAndGetSTS(t, dk)
 
-	capabilitiesEnv := k8senv.Find(container.Env, agconsts.EnvDTCapabilities)
-	require.NotNil(t, capabilitiesEnv)
-	assert.Equal(t, activegate.KubeMonCapability.ArgumentName, capabilitiesEnv.Value)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		container := sts.Spec.Template.Spec.Containers[0]
 
-	namespaceEnv := k8senv.Find(container.Env, agconsts.EnvDTIDSeedNamespace)
-	require.NotNil(t, namespaceEnv)
-	assert.Equal(t, dk.Namespace, namespaceEnv.Value)
+		require.Len(t, container.Env, 7)
 
-	clusterIDEnv := k8senv.Find(container.Env, agconsts.EnvDTIDSeedClusterID)
-	require.NotNil(t, clusterIDEnv)
-	assert.Equal(t, dk.Status.KubeSystemUUID, clusterIDEnv.Value)
+		capabilitiesEnv := k8senv.Find(container.Env, agconsts.EnvDTCapabilities)
+		require.NotNil(t, capabilitiesEnv)
+		assert.Equal(t, activegate.KubeMonCapability.ArgumentName, capabilitiesEnv.Value)
 
-	metadataEnv := k8senv.Find(container.Env, deploymentmetadata.EnvDTDeploymentMetadata)
-	require.NotNil(t, metadataEnv)
-	require.NotNil(t, metadataEnv.ValueFrom)
-	require.NotNil(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
-	assert.Equal(t, deploymentmetadata.KubemonMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
+		namespaceEnv := k8senv.Find(container.Env, agconsts.EnvDTIDSeedNamespace)
+		require.NotNil(t, namespaceEnv)
+		assert.Equal(t, dk.Namespace, namespaceEnv.Value)
 
-	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTTenant))
-	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTServer))
-	assert.NotNil(t, k8senv.Find(container.Env, "CUSTOM"))
+		clusterIDEnv := k8senv.Find(container.Env, agconsts.EnvDTIDSeedClusterID)
+		require.NotNil(t, clusterIDEnv)
+		assert.Equal(t, dk.Status.KubeSystemUUID, clusterIDEnv.Value)
 
-	// tenant token volume mount
-	require.Len(t, container.VolumeMounts, 3)
-	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
-	assert.Equal(t, connectioninfo.TenantTokenMountPoint, container.VolumeMounts[0].MountPath)
-	assert.Equal(t, connectioninfo.TenantTokenKey, container.VolumeMounts[0].SubPath)
-	assert.True(t, container.VolumeMounts[0].ReadOnly)
-	assert.True(t, hasTenantSecretVolume(sts, dk))
-	assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash])
+		metadataEnv := k8senv.Find(container.Env, deploymentmetadata.EnvDTDeploymentMetadata)
+		require.NotNil(t, metadataEnv)
+		require.NotNil(t, metadataEnv.ValueFrom)
+		require.NotNil(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
+		assert.Equal(t, deploymentmetadata.KubemonMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
 
-	// auth token volume mount
-	assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
-	assert.Equal(t, agconsts.AuthTokenMountPoint, container.VolumeMounts[1].MountPath)
-	assert.Equal(t, kubemonauthtoken.SecretKey, container.VolumeMounts[1].SubPath)
-	assert.True(t, container.VolumeMounts[1].ReadOnly)
-	assert.True(t, hasAuthTokenVolume(sts, dk))
-	assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationAuthTokenHash])
+		assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTTenant))
+		assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTServer))
+		assert.NotNil(t, k8senv.Find(container.Env, "CUSTOM"))
+	})
 
-	// update strategy
-	require.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
-	require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
-	require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate.Partition)
-	assert.Equal(t, partition, *sts.Spec.UpdateStrategy.RollingUpdate.Partition)
+	t.Run("tenant token volume mount", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk)
 
-	// pod scheduling
-	assert.Equal(t, corev1.DNSNone, sts.Spec.Template.Spec.DNSPolicy)
-	assert.Equal(t, "high-priority", sts.Spec.Template.Spec.PriorityClassName)
-	assert.Equal(t, grace, *sts.Spec.Template.Spec.TerminationGracePeriodSeconds)
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		container := sts.Spec.Template.Spec.Containers[0]
 
-	// storage
-	assert.Empty(t, sts.Spec.VolumeClaimTemplates)
-	require.Len(t, sts.Spec.Template.Spec.Volumes, 3)
-	assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
-	assert.NotNil(t, sts.Spec.Template.Spec.Volumes[2].EmptyDir)
+		require.Len(t, container.VolumeMounts, 3)
+		assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
+		assert.Equal(t, connectioninfo.TenantTokenMountPoint, container.VolumeMounts[0].MountPath)
+		assert.Equal(t, connectioninfo.TenantTokenKey, container.VolumeMounts[0].SubPath)
+		assert.True(t, container.VolumeMounts[0].ReadOnly)
+		assert.True(t, hasTenantSecretVolume(sts, dk))
+		assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash])
+	})
+
+	t.Run("auth token volume mount", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk)
+
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		container := sts.Spec.Template.Spec.Containers[0]
+
+		require.Len(t, container.VolumeMounts, 3)
+		assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
+		assert.Equal(t, agconsts.AuthTokenMountPoint, container.VolumeMounts[1].MountPath)
+		assert.Equal(t, kubemonauthtoken.SecretKey, container.VolumeMounts[1].SubPath)
+		assert.True(t, container.VolumeMounts[1].ReadOnly)
+		assert.True(t, hasAuthTokenVolume(sts, dk))
+		assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationAuthTokenHash])
+	})
+
+	t.Run("update strategy with rolling partition", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		partition := int32(2)
+		dk.Spec.KubernetesMonitoring.RollingUpdate = &appsv1.RollingUpdateStatefulSetStrategy{Partition: &partition}
+		sts := reconcileAndGetSTS(t, dk)
+
+		require.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
+		require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
+		require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate.Partition)
+		assert.Equal(t, partition, *sts.Spec.UpdateStrategy.RollingUpdate.Partition)
+	})
+
+	t.Run("pod scheduling overrides", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		grace := int64(45)
+		dk.Spec.KubernetesMonitoring.DNSPolicy = corev1.DNSNone
+		dk.Spec.KubernetesMonitoring.PriorityClassName = "high-priority"
+		dk.Spec.KubernetesMonitoring.TerminationGracePeriodSeconds = &grace
+		sts := reconcileAndGetSTS(t, dk)
+
+		assert.Equal(t, corev1.DNSNone, sts.Spec.Template.Spec.DNSPolicy)
+		assert.Equal(t, "high-priority", sts.Spec.Template.Spec.PriorityClassName)
+		assert.Equal(t, grace, *sts.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	})
+
+	t.Run("storage volumes", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk)
+
+		assert.Empty(t, sts.Spec.VolumeClaimTemplates)
+		require.Len(t, sts.Spec.Template.Spec.Volumes, 3)
+		assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
+		assert.NotNil(t, sts.Spec.Template.Spec.Volumes[2].EmptyDir)
+	})
 }
 
 // TestReconcileWriteFailures covers the two write/read error paths after the StatefulSet is built:
