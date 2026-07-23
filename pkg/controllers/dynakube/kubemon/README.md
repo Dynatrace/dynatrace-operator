@@ -30,12 +30,15 @@ workaround, and the operator can manage each capability's lifecycle separately.
 - StatefulSet lifecycle and rollout-based availability handling
 - Transient vs persistent error mapping with tests
 - Self-sufficient connection-info reconciler (kubemon-owned ConfigMap and Secret)
+- Self-sufficient auth-token reconciler (kubemon-owned Secret, rotated on a 29-day interval)
 - Runtime wiring in StatefulSet (required env vars, token mount, restart trigger hash)
 - Support for core StatefulSet spec propagation (`rollingUpdate`, storage, DNS policy, priority class, termination grace period, ephemeral volume)
+- Cluster identity and deployment metadata seeded into the operand
 
 ### Missing
 
-- KSPM-gated Service, image discovery, registration, custom TLS, custom properties
+- Self-registration in the Dynatrace UI (manual via Settings API for now)
+- KSPM-gated Service, image discovery, custom TLS, custom properties
 - Gateway service account and RBAC
 - Webhook validation for split-AG mode
 - End-to-end tests
