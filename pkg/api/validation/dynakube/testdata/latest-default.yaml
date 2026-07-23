@@ -267,5 +267,4 @@ spec:
         whenUnsatisfiable: ScheduleAnyway
   tokens: token
   trustedCAs: trusted-ca
-status:
-  metadataEnrichment: {}
+status: {}

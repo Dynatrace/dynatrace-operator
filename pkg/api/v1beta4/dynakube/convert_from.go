@@ -218,14 +218,17 @@ func (dst *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.MetadataEnrichment.Rules = make([]EnrichmentRule, 0)
-	for _, rule := range src.Status.MetadataEnrichment.Rules {
-		dst.Status.MetadataEnrichment.Rules = append(dst.Status.MetadataEnrichment.Rules,
-			EnrichmentRule{
-				Type:   EnrichmentRuleType(rule.Type),
-				Source: rule.Source,
-				Target: rule.Target,
-			})
+	if len(src.Status.MetadataEnrichment.Rules) > 0 {
+		dst.Status.MetadataEnrichment.Rules = make([]EnrichmentRule, 0)
+		for _, rule := range src.Status.MetadataEnrichment.Rules {
+			dst.Status.MetadataEnrichment.Rules = append(dst.Status.MetadataEnrichment.Rules,
+				EnrichmentRule{
+					Type:   EnrichmentRuleType(rule.Type),
+					Source: rule.Source,
+					Target: rule.Target,
+				})
+		}
+
 	}
 
 	dst.Status.Kspm.TokenSecretHash = src.Status.KSPM.TokenSecretHash
