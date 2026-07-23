@@ -80,7 +80,6 @@ spec:
       - matcher3
   metadataEnrichment:
     enabled: false
-    namespaceSelector: {}
   networkZone: network-zone
   oneAgent:
     hostGroup: hostgroup-value
@@ -266,17 +265,6 @@ spec:
       - maxSkew: 1
         topologyKey: kubernetes.io/hostname
         whenUnsatisfiable: ScheduleAnyway
-    sqlExtensionExecutor:
-      imageRef: {}
   tokens: token
   trustedCAs: trusted-ca
-status:
-  activeGate:
-    connectionInfoStatus: {}
-  apiToken:
-    availableOptionalScopes: {}
-  codeModules: {}
-  kspm: {}
-  metadataEnrichment: {}
-  oneAgent:
-    connectionInfoStatus: {}
+status: {}

@@ -26,29 +26,35 @@ import (
 type DynaKubeStatus struct { //nolint:revive
 
 	// Observed state of OneAgent
-	OneAgent oneagent.Status `json:"oneAgent,omitempty"`
+	// +kubebuilder:validation:Optional
+	OneAgent oneagent.Status `json:"oneAgent,omitzero"`
 
 	// Observed state of ActiveGate
-	ActiveGate activegate.Status `json:"activeGate,omitempty"`
+	// +kubebuilder:validation:Optional
+	ActiveGate activegate.Status `json:"activeGate,omitzero"`
 
 	// Observed state of KubernetesMonitoring
 	// +optional
 	KubernetesMonitoring kubemon.Status `json:"kubernetesMonitoring,omitzero"`
 
 	// Observed state of Code Modules
-	CodeModules oneagent.CodeModulesStatus `json:"codeModules,omitempty"`
+	// +kubebuilder:validation:Optional
+	CodeModules oneagent.CodeModulesStatus `json:"codeModules,omitzero"`
 
 	// Observed state of Metadata-Enrichment
-	MetadataEnrichment metadataenrichment.Status `json:"metadataEnrichment,omitempty"`
+	// +kubebuilder:validation:Optional
+	MetadataEnrichment metadataenrichment.Status `json:"metadataEnrichment,omitzero"`
 
 	// Observed state of KSPM
-	KSPM kspm.Status `json:"kspm,omitempty"`
+	// +kubebuilder:validation:Optional
+	KSPM kspm.Status `json:"kspm,omitzero"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Last Updated"
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
-	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
+	// +kubebuilder:validation:Optional
+	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitzero"`
 
 	// ProxyURLHash is the hashed value of what is in spec.proxy.
 	// Used for setting it as an annotation value for components that use the proxy.
@@ -72,11 +78,13 @@ type DynaKubeStatus struct { //nolint:revive
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	APIToken APITokenStatus `json:"apiToken,omitempty"`
+	// +kubebuilder:validation:Optional
+	APIToken APITokenStatus `json:"apiToken,omitzero"`
 }
 
 type APITokenStatus struct {
-	AvailableOptionalScopes AvailableOptionalScopes `json:"availableOptionalScopes,omitempty"`
+	// +kubebuilder:validation:Optional
+	AvailableOptionalScopes AvailableOptionalScopes `json:"availableOptionalScopes,omitzero"`
 
 	// Platform indicates whether the provided apiToken is a platform token.
 	Platform *bool `json:"platform,omitempty"`
