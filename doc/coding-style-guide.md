@@ -301,6 +301,19 @@ dk.FeatureFlag("enable-otlp-exporter")
 
 Feature flags are for **cross-cutting behavior toggles** that have no natural home in the spec (e.g. experimental runtime options, rollout toggles).
 
+### `omitempty` vs `omitzero`
+
+`omitempty` has **no effect on struct-typed fields** (non-pointer). It only
+omits empty pointers, slices, maps, and zero-valued primitives. A struct value
+is never "empty" to the encoder, so the field is always rendered, even when all
+of its own fields are zero.
+
+Use `omitzero` (Go 1.24+) for struct-typed fields you want dropped when unset.
+It omits the field when the value is the zero value, and correctly handles
+`time.Time`, which `omitempty` cannot.
+
+- Both may be combined, the field is then omitted if it is empty **or** zero.
+
 ## Errors
 
 ### Do's

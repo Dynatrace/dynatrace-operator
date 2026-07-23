@@ -160,9 +160,6 @@ linters:
         - ^require\.
         - WaitForCondition
         - ^int*
-    modernize:
-      disable:
-        - omitzero
     revive:
       enable-all-rules: true
       rules:
