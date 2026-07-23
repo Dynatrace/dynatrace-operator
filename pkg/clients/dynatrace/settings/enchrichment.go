@@ -5,6 +5,7 @@ package settings
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
@@ -19,6 +20,26 @@ const (
 	globalScope                      = "environment"
 	effectiveValuesPath              = "/v2/settings/effectiveValues"
 )
+
+// EnrichmentRuleObject holds the objectId of a single enrichment rule settings object,
+// used to identify rules for deletion.
+type EnrichmentRuleObject struct {
+	ObjectID string `json:"objectId"`
+}
+
+type enrichmentRulesObjectsResponse struct {
+	Items []EnrichmentRuleObject `json:"items"`
+}
+
+type enrichmentRuleValue struct {
+	Type        metadataenrichment.RuleType `json:"type"`
+	ValueSource string                      `json:"valueSource"`
+	Target      string                      `json:"target"`
+}
+
+type legacyEnrichmentValue struct {
+	Rules []metadataenrichment.Rule `json:"rules"`
+}
 
 type getRulesResponse struct {
 	Items []ruleItem `json:"items"`
@@ -44,6 +65,76 @@ type ingestEnrichmentConfig struct {
 	Target      string                      `json:"target"`
 	ValueSource string                      `json:"valueSource"`
 	Condition   string                      `json:"condition"`
+}
+
+func (c *ClientImpl) getEnrichmentRuleObjectsForSchema(ctx context.Context, schemaID, scope string) ([]EnrichmentRuleObject, error) {
+	var resp enrichmentRulesObjectsResponse
+
+	err := c.apiClient.GET(ctx, ObjectsPath).
+		WithQueryParams(map[string]string{
+			schemaIDsQueryParam: schemaID,
+			scopesQueryParam:    scope,
+		}).
+		Execute(&resp)
+	if err != nil {
+		return nil, fmt.Errorf("get enrichment rule objects (%s): %w", schemaID, err)
+	}
+
+	return resp.Items, nil
+}
+
+func (c *ClientImpl) GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error) {
+	if scope == "" {
+		return nil, errors.New("no scope provided for getting enrichment rule objects")
+	}
+
+	return c.getEnrichmentRuleObjectsForSchema(ctx, metadataEnrichmentSchemaID, scope)
+}
+
+func (c *ClientImpl) GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error) {
+	if scope == "" {
+		return nil, errors.New("no scope provided for getting legacy enrichment rule objects")
+	}
+
+	return c.getEnrichmentRuleObjectsForSchema(ctx, legacyMetadataEnrichmentSchemaID, scope)
+}
+
+func (c *ClientImpl) CreateEnrichmentRuleObject(ctx context.Context, scope string, rule metadataenrichment.Rule) (string, error) {
+	return c.createEnrichmentRule(ctx, metadataEnrichmentSchemaID, scope, rule)
+}
+
+func (c *ClientImpl) CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rule metadataenrichment.Rule) (string, error) {
+	return c.createEnrichmentRule(ctx, legacyMetadataEnrichmentSchemaID, scope, rule)
+}
+
+func (c *ClientImpl) createEnrichmentRule(ctx context.Context, schemaID, scope string, rule metadataenrichment.Rule) (string, error) {
+	if scope == "" {
+		return "", errors.New("no scope (MEID) was provided for creating the enrichment rule")
+	}
+
+	var response []postObjectsResponse
+
+	err := c.apiClient.POST(ctx, ObjectsPath).
+		WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).
+		WithJSONBody(buildEnrichmentBody(schemaID, scope, rule)).
+		Execute(&response)
+	if err != nil {
+		return "", fmt.Errorf("create enrichment rule (%s): %w", schemaID, err)
+	}
+
+	return getObjectID(response)
+}
+
+func buildEnrichmentBody(schemaID, scope string, rule metadataenrichment.Rule) any {
+	if schemaID == metadataEnrichmentSchemaID {
+		return newPostObjectsBody(schemaID, "", scope, enrichmentRuleValue{
+			Type:        rule.Type,
+			ValueSource: rule.Source,
+			Target:      rule.Target,
+		})
+	}
+
+	return newPostObjectsBody(schemaID, "", scope, legacyEnrichmentValue{Rules: []metadataenrichment.Rule{rule}})
 }
 
 // GetRules returns metadata enrichment rules.
