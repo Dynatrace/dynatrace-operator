@@ -105,6 +105,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 	return nil
 }
 
+// IsTransientError reports whether err represents a converging/transient kubemon state
+// (e.g. rollout in progress, connection info not yet ready) rather than a hard failure.
+// Callers such as the parent DynaKube controller should trigger a fast requeue instead of
+// treating it as a component error. This is the single place new transient sentinels need
+// to be registered.
+func IsTransientError(err error) bool {
+	return errors.Is(err, k8sstatefulset.ErrRolloutInProgress) ||
+		errors.Is(err, kubemonconnectioninfo.ErrConnectionInfoNotReady)
+}
+
 func (r *Reconciler) reconcileCondition(dk *dynakube.DynaKube, err error) {
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		meta.RemoveStatusCondition(dk.Conditions(), kubemonapi.KubeMonAvailableConditionType)
@@ -121,8 +131,7 @@ func (r *Reconciler) reconcileCondition(dk *dynakube.DynaKube, err error) {
 		condition.Status = metav1.ConditionTrue
 		condition.Reason = reasonAvailable
 		condition.Message = messageAvailable
-	case errors.Is(err, k8sstatefulset.ErrRolloutInProgress),
-		errors.Is(err, kubemonconnectioninfo.ErrConnectionInfoNotReady):
+	case IsTransientError(err):
 		condition.Status = metav1.ConditionFalse
 		condition.Reason = reasonReconciling
 		condition.Message = pkgerrors.Cause(err).Error()

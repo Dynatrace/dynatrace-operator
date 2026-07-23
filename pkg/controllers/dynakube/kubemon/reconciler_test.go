@@ -5,6 +5,7 @@ package kubemon
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -143,6 +144,28 @@ func TestReconcileConditionMapping(t *testing.T) {
 			assert.Equal(t, test.wantStatus, condition.Status)
 			assert.Equal(t, test.wantReason, condition.Reason)
 			assert.Equal(t, test.wantMessage, condition.Message)
+		})
+	}
+}
+
+// TestIsTransientError covers the shared classifier used both by reconcileCondition and by the
+// parent DynaKube controller to decide whether a kubemon error is a converging/transient state.
+func TestIsTransientError(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"nil error -> false", nil, false},
+		{"rollout in progress -> true", k8sstatefulset.ErrRolloutInProgress, true},
+		{"connection info not ready -> true", kubemonconnectioninfo.ErrConnectionInfoNotReady, true},
+		{"wrapped rollout in progress -> true", fmt.Errorf("wrap: %w", k8sstatefulset.ErrRolloutInProgress), true},
+		{"unrelated error -> false", errors.New("boom"), false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, IsTransientError(test.err))
 		})
 	}
 }
