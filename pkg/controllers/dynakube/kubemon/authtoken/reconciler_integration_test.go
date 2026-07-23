@@ -31,7 +31,7 @@ import (
 // Rotation is driven by comparing the server-managed creationTimestamp against the current time,
 // and a real apiserver sets that field on create and ignores client-supplied values on update, so
 // it cannot be backdated through the client. Instead, the rotate phase configures a short
-// rotationInterval via authtoken.WithRotationInterval and waits out real elapsed time.
+// rotationInterval passed to authtoken.NewReconciler and waits out real elapsed time.
 
 const (
 	integrationNamespace    = "dynatrace"
@@ -61,7 +61,7 @@ type lifecycleDeps struct {
 func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	ctx := t.Context()
-	reconciler := authtoken.NewReconciler(clt, authtoken.WithRotationInterval(integrationRotationInterval))
+	reconciler := authtoken.NewReconciler(clt, integrationRotationInterval)
 
 	integrationtests.CreateNamespace(t, ctx, clt, integrationNamespace)
 

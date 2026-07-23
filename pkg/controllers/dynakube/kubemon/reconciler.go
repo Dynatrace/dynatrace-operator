@@ -66,7 +66,7 @@ type Reconciler struct {
 func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
 		connectionInfoReconciler: kubemonconnectioninfo.NewReconciler(kubeClient),
-		authTokenReconciler:      kubemonauthtoken.NewReconciler(kubeClient),
+		authTokenReconciler:      kubemonauthtoken.NewReconciler(kubeClient, kubemonauthtoken.DefaultRotationInterval),
 		statefulsetReconciler:    kubemonstatefulset.NewReconciler(kubeClient),
 	}
 }

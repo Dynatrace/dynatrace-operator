@@ -35,28 +35,14 @@ type Reconciler struct {
 	rotationInterval time.Duration
 }
 
-// Option customizes a Reconciler created by NewReconciler.
-type Option func(*Reconciler)
-
-// WithRotationInterval overrides the default rotation interval, e.g. to use a short-lived
-// interval in tests instead of waiting out the production value.
-func WithRotationInterval(interval time.Duration) Option {
-	return func(r *Reconciler) {
-		r.rotationInterval = interval
-	}
-}
-
-func NewReconciler(kubeClient client.Client, opts ...Option) *Reconciler {
-	r := &Reconciler{
+// NewReconciler creates a Reconciler. rotationInterval controls how long an auth token secret is
+// kept before being rotated; pass DefaultRotationInterval in production, or a short-lived value
+// in tests instead of waiting out the production value.
+func NewReconciler(kubeClient client.Client, rotationInterval time.Duration) *Reconciler {
+	return &Reconciler{
 		secrets:          k8ssecret.Query(kubeClient, kubeClient),
-		rotationInterval: DefaultRotationInterval,
+		rotationInterval: rotationInterval,
 	}
-
-	for _, opt := range opts {
-		opt(r)
-	}
-
-	return r
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
