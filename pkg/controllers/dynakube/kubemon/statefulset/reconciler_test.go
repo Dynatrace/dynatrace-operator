@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -135,21 +136,30 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 	assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), container.Image)
 	assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
 
-	// env vars: capabilities, seed envs, deployment metadata, connection info, then custom
+	// env vars: capabilities, seed envs, deployment metadata, connection info, and custom
 	require.Len(t, container.Env, 7)
-	assert.Equal(t, agconsts.EnvDTCapabilities, container.Env[0].Name)
-	assert.Equal(t, activegate.KubeMonCapability.ArgumentName, container.Env[0].Value)
-	assert.Equal(t, agconsts.EnvDTIDSeedNamespace, container.Env[1].Name)
-	assert.Equal(t, dk.Namespace, container.Env[1].Value)
-	assert.Equal(t, agconsts.EnvDTIDSeedClusterID, container.Env[2].Name)
-	assert.Equal(t, dk.Status.KubeSystemUUID, container.Env[2].Value)
-	assert.Equal(t, deploymentmetadata.EnvDTDeploymentMetadata, container.Env[3].Name)
-	require.NotNil(t, container.Env[3].ValueFrom)
-	require.NotNil(t, container.Env[3].ValueFrom.ConfigMapKeyRef)
-	assert.Equal(t, deploymentmetadata.KubemonMetadataKey, container.Env[3].ValueFrom.ConfigMapKeyRef.Key)
-	assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[4].Name)
-	assert.Equal(t, connectioninfo.EnvDTServer, container.Env[5].Name)
-	assert.Equal(t, "CUSTOM", container.Env[6].Name)
+
+	capabilitiesEnv := k8senv.Find(container.Env, agconsts.EnvDTCapabilities)
+	require.NotNil(t, capabilitiesEnv)
+	assert.Equal(t, activegate.KubeMonCapability.ArgumentName, capabilitiesEnv.Value)
+
+	namespaceEnv := k8senv.Find(container.Env, agconsts.EnvDTIDSeedNamespace)
+	require.NotNil(t, namespaceEnv)
+	assert.Equal(t, dk.Namespace, namespaceEnv.Value)
+
+	clusterIDEnv := k8senv.Find(container.Env, agconsts.EnvDTIDSeedClusterID)
+	require.NotNil(t, clusterIDEnv)
+	assert.Equal(t, dk.Status.KubeSystemUUID, clusterIDEnv.Value)
+
+	metadataEnv := k8senv.Find(container.Env, deploymentmetadata.EnvDTDeploymentMetadata)
+	require.NotNil(t, metadataEnv)
+	require.NotNil(t, metadataEnv.ValueFrom)
+	require.NotNil(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
+	assert.Equal(t, deploymentmetadata.KubemonMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
+
+	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTTenant))
+	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTServer))
+	assert.NotNil(t, k8senv.Find(container.Env, "CUSTOM"))
 
 	// tenant token volume mount
 	require.Len(t, container.VolumeMounts, 3)

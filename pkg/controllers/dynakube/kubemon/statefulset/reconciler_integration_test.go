@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
@@ -197,9 +198,8 @@ func assertStatefulSetShape(t *testing.T, sts *appsv1.StatefulSet, dk *dynakube.
 	assert.Equal(t, statefulset.ContainerName, container.Name)
 	assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), container.Image)
 
-	require.GreaterOrEqual(t, len(container.Env), 6)
-	assert.Equal(t, connectioninfo.EnvDTTenant, container.Env[4].Name)
-	assert.Equal(t, connectioninfo.EnvDTServer, container.Env[5].Name)
+	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTTenant))
+	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTServer))
 
 	require.Len(t, container.VolumeMounts, 3)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
