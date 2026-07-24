@@ -6,7 +6,7 @@ metadata:
     capabilities: Deep Insights
     categories: Monitoring,Logging & Tracing
     containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
-    createdAt: 2026-07-15T12:04:22Z
+    createdAt: 2026-07-24T07:45:30Z
     operatorframework.io/suggested-namespace: dynatrace
     operators.operatorframework.io/builder: operator-sdk-v1.36.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -372,10 +372,11 @@ spec:
   description: |
     The Dynatrace Operator supports rollout and lifecycle management of various Dynatrace components in Kubernetes and OpenShift.
 
-    Currently the Dynatrace Operator supports the following capabilities:
+    The Dynatrace Operator supports the following capabilities:
 
     ### OneAgent
       * `classicFullStack` rolls out one OneAgent pod per node to monitor its pods and the node itself
+      * `cloudNativeFullStack` rolls out one OneAgent pod per node to monitor its pods and the node itself, and injects into application pods via a webhook
       * `applicationMonitoring` is a webhook based injection mechanism for automatic app-only injection
       * `hostMonitoring` monitors only the hosts, i.e., the nodes, in the cluster without app-only injection
     ### ActiveGate
@@ -388,18 +389,18 @@ spec:
     ### Installation
     Once you've installed the Dynatrace Operator, you can create a DynaKube custom resource.
 
-    First, please add a Secret within the Project you've deployed the Dynatrace Operator to, which would contain your API and PaaS tokens. Create tokens of type *Dynatrace API* (`API_TOKEN`) and *Platform as a Service* (`PAAS_TOKEN`) and use their values in the following commands respectively.
+    First, please add a Secret within the Project you've deployed the Dynatrace Operator to, which would contain your API token. Create a token of type *Dynatrace API* (`API_TOKEN`) and use its value in the following command.
 
     For assistance please refer to [Create user-generated access tokens](https://www.dynatrace.com/support/help/shortlink/token#create-user-generated-access-tokens).
 
-    ``` $ kubectl -n <project> create secret generic dynakube --from-literal="apiToken=API_TOKEN" --from-literal="paasToken=PAAS_TOKEN" ```
+    ``` $ kubectl -n <project> create secret generic dynakube --from-literal="apiToken=API_TOKEN" ```
 
-    You may update this Secret at any time to rotate the tokens.
+    You may update this Secret at any time to rotate the token.
 
     After creation of the secret add the DynaKube object in the project where the Dynatrace Operator has been deployed, configured to your needs.
 
     ### Required Parameters
-    * `apiUrl` - provide the URL to the API of your Dynatrace environment. In Dynatrace SaaS it will look like `https://<ENVIRONMENTID>.live.dynatrace.com/api` . In Dynatrace Managed like `https://<YourDynatraceServerURL>/e/<ENVIRONMENTID>/api` .
+    * `apiUrl` - provide the URL to the API of your Dynatrace environment. In Dynatrace SaaS it will look like `https://<ENVIRONMENTID>.live.dynatrace.com/api`.
 
     ### Advanced Options
     * **Disable Certificate Checking** - disable any certificate validation that may interact poorly with proxies with in your cluster
@@ -877,7 +878,7 @@ spec:
         - label:
             app.kubernetes.io/component: operator
             app.kubernetes.io/name: dynatrace-operator
-            app.kubernetes.io/version: 0.0.0-snapshot
+            app.kubernetes.io/version: 1.10.0
             dynatrace.com/install-source: operatorhub
           name: dynatrace-operator
           spec:
@@ -896,7 +897,7 @@ spec:
                 labels:
                   app.kubernetes.io/component: operator
                   app.kubernetes.io/name: dynatrace-operator
-                  app.kubernetes.io/version: 0.0.0-snapshot
+                  app.kubernetes.io/version: 1.10.0
                   name: dynatrace-operator
               spec:
                 affinity:
@@ -951,7 +952,7 @@ spec:
                       - name: GOMEMLIMIT
                         value: 116MiB
                       - name: APP_VERSION
-                        value: 0.0.0-snapshot
+                        value: 1.10.0
                     image: docker.io/dynatrace/dynatrace-operator@sha256:f835903675c5cc05404785fcbe8978e6a3fce5e469a349ff54b63d1d60490884
                     livenessProbe:
                       httpGet:
@@ -1044,7 +1045,7 @@ spec:
         - label:
             app.kubernetes.io/component: webhook
             app.kubernetes.io/name: dynatrace-operator
-            app.kubernetes.io/version: 0.0.0-snapshot
+            app.kubernetes.io/version: 1.10.0
           name: dynatrace-webhook
           spec:
             replicas: 2
@@ -1063,7 +1064,7 @@ spec:
                 labels:
                   app.kubernetes.io/component: webhook
                   app.kubernetes.io/name: dynatrace-operator
-                  app.kubernetes.io/version: 0.0.0-snapshot
+                  app.kubernetes.io/version: 1.10.0
                   internal.dynatrace.com/app: webhook
                   internal.dynatrace.com/component: webhook
               spec:
