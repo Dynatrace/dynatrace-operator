@@ -46,7 +46,7 @@ const (
 	clusterCaCertVolumeMountPath = "/mnt/dynatrace/certs"
 
 	activeGateCaCertVolumeName      = "active-gate-ca"
-	activeGateCaCertVolumeMountPath = "/mnt/dynatrace/certs/activegate/"
+	activeGateCaCertVolumeMountPath = "/mnt/dynatrace/certs/activegate"
 
 	csiStorageVolumeName  = "osagent-storage"
 	csiStorageVolumeMount = "/mnt/volume_storage_mount"

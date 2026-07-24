@@ -47,7 +47,7 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
           echo "dry-run=${DRY_RUN}" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
       - name: Fetch image digest
@@ -59,11 +59,19 @@ jobs:
             "public.ecr.aws/dynatrace/dynatrace-operator:${TAG}" \
             --format '{{.Manifest.Digest}}')
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
-      - name: Generate release notes
+      - name: Fetch release notes
         env:
-          GITHUB_REF_NAME: ${{ steps.vars.outputs.tag }}
+          TAG: ${{ steps.vars.outputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          hack/build/ci/generate-release-notes.sh
+          PREV_TAG=$(gh api "repos/${GITHUB_REPOSITORY}/releases" \
+            --jq "[.[] | select(.draft == false) | .tag_name | select(test(\"rc\") | not)] | index(\"${TAG}\") as \$i | .[\$i+1]")
+          echo "Generating notes for ${TAG} since ${PREV_TAG}"
+          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            --method POST \
+            --field "tag_name=${TAG}" \
+            --field "previous_tag_name=${PREV_TAG}" \
+            --jq '.body' | sed 's/^### /\n### /' > CHANGELOG.md
       - uses: ./.github/actions/update-csv-bundles
         with:
           digest: ${{ steps.digest.outputs.digest }}
