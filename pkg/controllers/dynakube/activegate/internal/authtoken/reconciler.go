@@ -24,6 +24,7 @@ import (
 
 const (
 	ActiveGateAuthTokenName = "auth-token"
+	authTokenPublicParts    = 2
 
 	// Buffer to avoid warnings in the UI
 	AuthTokenBuffer           = time.Hour * 24
@@ -164,7 +165,11 @@ func (r *Reconciler) conditionSetSecretCreated(dk *dynakube.DynaKube, secret *co
 	lifespan := time.Since(secret.CreationTimestamp.Time)
 	days := strconv.Itoa(int(lifespan.Hours() / 24))
 	tokenAllParts := strings.Split(string(secret.Data[ActiveGateAuthTokenName]), ".")
-	tokenPublicPart := strings.Join(tokenAllParts[:2], ".")
+
+	tokenPublicPart := ""
+	if len(tokenAllParts) >= authTokenPublicParts {
+		tokenPublicPart = strings.Join(tokenAllParts[:authTokenPublicParts], ".")
+	}
 
 	setAuthSecretCreated(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
 }

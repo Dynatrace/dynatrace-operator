@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -198,4 +199,31 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, firstCreationTimestamp, secondCreationTimestamp)
 		assert.Equal(t, secondTransition, firstTransition)
 	})
+}
+
+func TestConditionSetSecretCreatedDoesNotPanicOnMalformedToken(t *testing.T) {
+	r := &Reconciler{}
+
+	tests := []struct {
+		name  string
+		token string
+	}{
+		{name: "empty token", token: ""},
+		{name: "single-part token", token: "single"},
+		{name: "valid token", token: testToken},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := newDynaKube()
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{CreationTimestamp: metav1.Now()},
+				Data:       map[string][]byte{ActiveGateAuthTokenName: []byte(tt.token)},
+			}
+
+			assert.NotPanics(t, func() {
+				r.conditionSetSecretCreated(dk, secret)
+			})
+		})
+	}
 }
