@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,7 +30,7 @@ func Query(kubeClient client.Client, kubeReader client.Reader) QueryObject {
 				return out
 			},
 			IsEqual:      isEqual,
-			MustRecreate: func(_, _ *corev1.Secret) bool { return false },
+			MustRecreate: mustRecreate,
 
 			KubeClient: kubeClient,
 			KubeReader: kubeReader,
@@ -39,4 +40,11 @@ func Query(kubeClient client.Client, kubeReader client.Reader) QueryObject {
 
 func isEqual(secret *corev1.Secret, other *corev1.Secret) bool {
 	return reflect.DeepEqual(secret.Data, other.Data) && reflect.DeepEqual(secret.Labels, other.Labels) && reflect.DeepEqual(secret.OwnerReferences, other.OwnerReferences)
+}
+
+// mustRecreate forces a delete+create for immutable secrets, whose data cannot be updated in place
+// and would be rejected by the API server. Checking both current and desired covers the transition
+// from a pre-existing mutable secret to an immutable one.
+func mustRecreate(current, desired *corev1.Secret) bool {
+	return ptr.Deref(current.Immutable, false) || ptr.Deref(desired.Immutable, false)
 }

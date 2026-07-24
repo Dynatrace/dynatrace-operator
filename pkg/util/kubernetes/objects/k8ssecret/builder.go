@@ -51,3 +51,9 @@ func SetType(secretType corev1.SecretType) builder.Option[*corev1.Secret] {
 		s.Type = secretType
 	}
 }
+
+func SetImmutable(immutable bool) builder.Option[*corev1.Secret] {
+	return func(s *corev1.Secret) {
+		s.Immutable = new(immutable)
+	}
+}

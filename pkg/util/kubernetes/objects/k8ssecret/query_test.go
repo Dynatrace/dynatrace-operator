@@ -329,4 +329,44 @@ func TestCreateOrUpdate(t *testing.T) {
 		secret, _ := secretQuery.Get(t.Context(), types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.Equal(t, secret.Data[testSecretDataKey], newValue)
 	})
+	t.Run("recreates immutable secret when data changes", func(t *testing.T) {
+		existing := getTestSecret()
+		existing.Immutable = new(true)
+
+		var deleted, created, updated bool
+		immutableClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deleted = true
+
+				return c.Delete(ctx, obj, opts...)
+			},
+			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				created = true
+
+				return c.Create(ctx, obj, opts...)
+			},
+			Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				updated = true
+
+				return c.Update(ctx, obj, opts...)
+			},
+		}, existing)
+		secretQuery := Query(immutableClient, immutableClient)
+
+		newValue := []byte("dGVzdCB2YWx1ZSBudW1iZXIgMg==")
+		desired := getTestSecret()
+		desired.Immutable = new(true)
+		desired.Data[testSecretDataKey] = newValue
+
+		recreated, err := secretQuery.CreateOrUpdate(t.Context(), desired)
+		require.NoError(t, err)
+		require.True(t, recreated)
+
+		assert.True(t, deleted, "immutable secret must be deleted")
+		assert.True(t, created, "immutable secret must be created again")
+		assert.False(t, updated, "immutable secret must not be updated in place")
+
+		secret, _ := secretQuery.Get(t.Context(), types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
+		assert.Equal(t, newValue, secret.Data[testSecretDataKey])
+	})
 }

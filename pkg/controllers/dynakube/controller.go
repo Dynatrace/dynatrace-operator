@@ -40,7 +40,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/pkg/errors"
@@ -411,8 +410,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 	log.Debug("start reconciling KubernetesMonitoring")
 
 	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient.ActiveGate, controller.tokens); err != nil {
-		if errors.Is(err, k8sstatefulset.ErrRolloutInProgress) {
-			// rollout in progress is transient and shouldn't be reported as a component error
+		if kubemon.IsTransientError(err) {
+			// transient kubemon state (e.g. rollout in progress, connection info not ready) is not a component error
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 		} else {
 			log.Info("could not reconcile KubernetesMonitoring")

@@ -11,6 +11,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -26,10 +29,18 @@ import (
 const (
 	ContainerName             = "kubemon"
 	AnnotationTenantTokenHash = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
+	AnnotationAuthTokenHash   = api.InternalFlagPrefix + "kubemon-authtoken-hash"
 	StorageVolumeName         = "kubemon-storage"
+	AuthTokenVolumeName       = "kubemon-authtoken-secret"
 )
 
-var ErrImageRequired = errors.New("kubernetes monitoring image is required")
+var (
+	// TODO: remove this error once image discovery is implemented
+	ErrImageRequired        = errors.New("kubernetes monitoring image is required")
+	ErrMissingKubeSystemUID = errors.New("kube-system UUID not yet available")
+	ErrMissingTenantToken   = errors.New("tenant token secret is missing or has an empty value")
+	ErrMissingAuthToken     = errors.New("auth token secret is missing or has an empty value")
+)
 
 type Reconciler struct {
 	kubeClient client.Client
@@ -44,8 +55,14 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "statefulset")
+
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		return r.delete(ctx, dk)
+	}
+
+	if err := ensureReady(dk); err != nil {
+		return err
 	}
 
 	desiredStatefulSet, err := r.buildDesiredStatefulSet(ctx, dk)
@@ -53,7 +70,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	if _, err = r.sts.WithOwner(dk).CreateOrUpdate(ctx, desiredStatefulSet); err != nil {
+	_, err = r.sts.CreateOrUpdate(ctx, desiredStatefulSet)
+	if err != nil {
 		return err
 	}
 
@@ -65,6 +83,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	return err
 }
 
+// ensureReady validates the DynaKube fields required to build the StatefulSet. Without any of
+// them the build fails either way, so we short-circuit here before doing any work or API calls.
+func ensureReady(dk *dynakube.DynaKube) error {
+	if dk.KubernetesMonitoring().GetCustomImage() == "" {
+		return ErrImageRequired
+	}
+
+	if dk.Status.KubeSystemUUID == "" {
+		return ErrMissingKubeSystemUID
+	}
+
+	return nil
+}
+
 // buildEnvs prepends the mandatory AG runtime env vars (and optional DT_GROUP) to any user-supplied vars.
 func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	connInfoCM := dk.KubernetesMonitoring().GetConnectionInfoConfigMapName()
@@ -73,6 +105,26 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{
 			Name:  agconsts.EnvDTCapabilities,
 			Value: activegate.KubeMonCapability.ArgumentName,
+		},
+		{
+			Name:  agconsts.EnvDTIDSeedNamespace,
+			Value: dk.Namespace,
+		},
+		{
+			Name:  agconsts.EnvDTIDSeedClusterID,
+			Value: dk.Status.KubeSystemUUID,
+		},
+		{
+			Name: deploymentmetadata.EnvDTDeploymentMetadata,
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dk.Name),
+					},
+					Key:      deploymentmetadata.KubemonMetadataKey,
+					Optional: new(false),
+				},
+			},
 		},
 		{
 			Name: connectioninfo.EnvDTTenant,
@@ -112,9 +164,20 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 			Secret: &corev1.SecretVolumeSource{
 				SecretName:  km.GetTenantSecretName(),
 				DefaultMode: new(int32(0o640)),
+				Optional:    new(false),
 			},
 		},
 	},
+		{
+			Name: AuthTokenVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  km.GetAuthTokenSecretName(),
+					DefaultMode: new(int32(0o640)),
+					Optional:    new(false),
+				},
+			},
+		},
 		{
 			Name:         StorageVolumeName,
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
@@ -132,6 +195,11 @@ func buildVolumeMounts(_ *dynakube.DynaKube) []corev1.VolumeMount {
 		MountPath: connectioninfo.TenantTokenMountPoint,
 		SubPath:   connectioninfo.TenantTokenKey,
 	}, {
+		Name:      AuthTokenVolumeName,
+		ReadOnly:  true,
+		MountPath: agconsts.AuthTokenMountPoint,
+		SubPath:   kubemonauthtoken.SecretKey,
+	}, {
 		Name:      StorageVolumeName,
 		MountPath: agconsts.GatewayTmpMountPoint,
 	}}
@@ -147,9 +215,6 @@ func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {
 
 func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube) (*appsv1.StatefulSet, error) {
 	image := dk.KubernetesMonitoring().GetCustomImage()
-	if image == "" {
-		return nil, ErrImageRequired
-	}
 
 	// no .replicas means the field is controlled by HPA, so we read it from live object
 	replicas, err := k8sstatefulset.ResolveReplicas(
@@ -167,6 +232,11 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	authTokenHash, err := r.getAuthTokenHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
 	container := corev1.Container{
 		Name:            ContainerName,
 		Image:           image,
@@ -177,13 +247,14 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	}
 
 	km := dk.KubernetesMonitoring()
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KubeMonComponentLabel)
 
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), km.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, map[string]string{
 			AnnotationTenantTokenHash: tokenHash,
+			AnnotationAuthTokenHash:   authTokenHash,
 		})),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
@@ -194,6 +265,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		k8sstatefulset.SetDNSPolicy(km.DNSPolicy),
 		k8sstatefulset.SetPriorityClassName(km.PriorityClassName),
 		k8sstatefulset.SetTerminationGracePeriodSeconds(km.TerminationGracePeriodSeconds),
+		k8sstatefulset.SetAutomountServiceAccountToken(true),
 	}
 
 	return k8sstatefulset.Build(dk, km.GetStatefulSetName(), container, opts...)
@@ -205,9 +277,33 @@ func (r *Reconciler) getTenantTokenHash(ctx context.Context, dk *dynakube.DynaKu
 		return "", errors.WithStack(err)
 	}
 
-	hash, err := hasher.GenerateHash(string(secret.Data[connectioninfo.TenantTokenKey]))
+	token := secret.Data[connectioninfo.TenantTokenKey]
+	if len(token) == 0 {
+		return "", ErrMissingTenantToken
+	}
+
+	hash, err := hasher.GenerateHash(string(token))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to hash tenant token")
+	}
+
+	return hash, nil
+}
+
+func (r *Reconciler) getAuthTokenHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	var secret corev1.Secret
+	if err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetAuthTokenSecretName(), Namespace: dk.Namespace}, &secret); err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	token := secret.Data[kubemonauthtoken.SecretKey]
+	if len(token) == 0 {
+		return "", ErrMissingAuthToken
+	}
+
+	hash, err := hasher.GenerateHash(string(token))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash auth token")
 	}
 
 	return hash, nil
