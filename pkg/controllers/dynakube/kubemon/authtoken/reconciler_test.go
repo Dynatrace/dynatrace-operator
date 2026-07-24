@@ -172,10 +172,11 @@ func TestReconcileWriteFailures(t *testing.T) {
 	})
 }
 
-// TestReconcileRotationFailures covers a failing delete on the rotation path: the outdated secret
-// must survive and no new token must be fetched, since rotation deletes before creating.
+// TestReconcileRotationFailures covers a failing recreate on the rotation path: the outdated secret
+// is immutable, so CreateOrUpdate recreates it (delete + create). The fresh token is fetched before
+// the recreate, so GetAuthToken is expected; when the delete fails the old secret must survive.
 func TestReconcileRotationFailures(t *testing.T) {
-	t.Run("returns error and leaves outdated secret in place when delete fails", func(t *testing.T) {
+	t.Run("returns error and leaves outdated secret in place when recreate fails", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			dk := newTestDynaKube()
 			fresh := newFreshSecret(dk, testToken)
@@ -186,7 +187,7 @@ func TestReconcileRotationFailures(t *testing.T) {
 				},
 			}, dk, fresh)
 			agCl := agclientmock.NewClient(t)
-			// No GetAuthToken expectation — a failed delete must abort before a new token is fetched.
+			agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(newAuthTokenResponse(testRotatedToken), nil).Once()
 
 			r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
 

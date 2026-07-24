@@ -58,24 +58,21 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 	}
 
 	if k8serrors.IsNotFound(err) {
-		return r.createOrUpdateSecret(ctx, agClient, dk)
+		return r.ensureSecret(ctx, agClient, dk)
 	}
 
 	if r.isOutdated(secret) {
 		log.Info("kubemon auth token is outdated, rotating", "secretName", dk.KubernetesMonitoring().GetAuthTokenSecretName())
 
-		// Delete the old secret, so we can use creation timestamp to determine if the new secret is outdated in the next reconciliation.
-		if err := r.secrets.Delete(ctx, secret); err != nil {
-			return errors.WithStack(err)
-		}
-
-		return r.createOrUpdateSecret(ctx, agClient, dk)
+		// The secret is immutable, so CreateOrUpdate recreates it (delete + create). The fresh
+		// creation timestamp is what lets the next reconciliation determine whether it is outdated.
+		return r.ensureSecret(ctx, agClient, dk)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) createOrUpdateSecret(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
+func (r *Reconciler) ensureSecret(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
 	authTokenInfo, err := agClient.GetAuthToken(ctx, dk.Name)
 	if err != nil {
 		return errors.WithStack(err)
@@ -87,6 +84,7 @@ func (r *Reconciler) createOrUpdateSecret(ctx context.Context, agClient agclient
 		dk.KubernetesMonitoring().GetAuthTokenSecretName(),
 		map[string][]byte{SecretKey: []byte(authTokenInfo.Token)},
 		k8ssecret.SetLabels(coreLabels.BuildLabels()),
+		k8ssecret.SetImmutable(true),
 	)
 	if err != nil {
 		return errors.WithStack(err)
