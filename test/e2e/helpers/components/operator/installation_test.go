@@ -66,6 +66,29 @@ func TestGetHelmOptions(t *testing.T) {
 		}, opts)
 	})
 
+	t.Run("use nightly with fips", func(t *testing.T) {
+		t.Setenv("HELM_CHART", "oci://registry:0.0.0-nightly-chart")
+		t.Setenv("FIPS", "true")
+		opts, err := getHelmOptions("", "test", true)
+		require.NoError(t, err)
+		assertOptions(t, &helm.Opts{
+			Namespace:   "dynatrace",
+			ReleaseName: "dynatrace-operator",
+			Args: []string{
+				"--create-namespace",
+				"--install",
+				"--set", "platform=test",
+				"--set", "installCRD=true",
+				"--set", "csidriver.enabled=true",
+				"--set", "manifests=true",
+				"--set", "debugLogs=true",
+				"oci://registry:0.0.0-nightly-chart",
+				"--set", "image=registry:nightly-fips",
+				"--set", "imageRef.pullPolicy=Always",
+			},
+		}, opts)
+	})
+
 	t.Run("use filesystem", func(t *testing.T) {
 		tempDir := t.TempDir()
 		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho repo:tag"), os.ModePerm)) //nolint:gosec
