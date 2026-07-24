@@ -79,6 +79,63 @@ func TestReconcileMissingKubeSystemUID(t *testing.T) {
 	require.ErrorIs(t, err, statefulset.ErrMissingKubeSystemUID)
 }
 
+func TestReconcileMissingTokenValue(t *testing.T) {
+	tests := []struct {
+		name        string
+		tenantData  map[string][]byte
+		authData    map[string][]byte
+		expectedErr error
+	}{
+		{
+			"tenant token key missing",
+			map[string][]byte{},
+			map[string][]byte{kubemonauthtoken.SecretKey: []byte("test-auth-token")},
+			statefulset.ErrMissingTenantToken,
+		},
+		{
+			"tenant token value empty",
+			map[string][]byte{connectioninfo.TenantTokenKey: {}},
+			map[string][]byte{kubemonauthtoken.SecretKey: []byte("test-auth-token")},
+			statefulset.ErrMissingTenantToken,
+		},
+		{
+			"auth token key missing",
+			map[string][]byte{connectioninfo.TenantTokenKey: []byte("test-tenant-token")},
+			map[string][]byte{},
+			statefulset.ErrMissingAuthToken,
+		},
+		{
+			"auth token value empty",
+			map[string][]byte{connectioninfo.TenantTokenKey: []byte("test-tenant-token")},
+			map[string][]byte{kubemonauthtoken.SecretKey: {}},
+			statefulset.ErrMissingAuthToken,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dk := newTestDynaKube(true)
+			tenantSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
+					Namespace: dk.Namespace,
+				},
+				Data: test.tenantData,
+			}
+			authSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
+					Namespace: dk.Namespace,
+				},
+				Data: test.authData,
+			}
+
+			err := statefulset.NewReconciler(fake.NewClient(dk, tenantSecret, authSecret)).Reconcile(t.Context(), dk)
+			require.ErrorIs(t, err, test.expectedErr)
+		})
+	}
+}
+
 // TestReconcileResolveReplicasReadFailure verifies that a non-NotFound StatefulSet read error
 // from ResolveReplicas exits reconcile before any StatefulSet write.
 func TestReconcileResolveReplicasReadFailure(t *testing.T) {

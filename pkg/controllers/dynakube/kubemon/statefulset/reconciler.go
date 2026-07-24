@@ -38,6 +38,8 @@ var (
 	// TODO: remove this error once image discovery is implemented
 	ErrImageRequired        = errors.New("kubernetes monitoring image is required")
 	ErrMissingKubeSystemUID = errors.New("kube-system UUID not yet available")
+	ErrMissingTenantToken   = errors.New("tenant token secret is missing or has an empty value")
+	ErrMissingAuthToken     = errors.New("auth token secret is missing or has an empty value")
 )
 
 type Reconciler struct {
@@ -275,7 +277,12 @@ func (r *Reconciler) getTenantTokenHash(ctx context.Context, dk *dynakube.DynaKu
 		return "", errors.WithStack(err)
 	}
 
-	hash, err := hasher.GenerateHash(string(secret.Data[connectioninfo.TenantTokenKey]))
+	token := secret.Data[connectioninfo.TenantTokenKey]
+	if len(token) == 0 {
+		return "", ErrMissingTenantToken
+	}
+
+	hash, err := hasher.GenerateHash(string(token))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to hash tenant token")
 	}
@@ -289,7 +296,12 @@ func (r *Reconciler) getAuthTokenHash(ctx context.Context, dk *dynakube.DynaKube
 		return "", errors.WithStack(err)
 	}
 
-	hash, err := hasher.GenerateHash(string(secret.Data[kubemonauthtoken.SecretKey]))
+	token := secret.Data[kubemonauthtoken.SecretKey]
+	if len(token) == 0 {
+		return "", ErrMissingAuthToken
+	}
+
+	hash, err := hasher.GenerateHash(string(token))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to hash auth token")
 	}
