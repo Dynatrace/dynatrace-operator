@@ -5,12 +5,14 @@ package injection
 
 import (
 	"context"
+	"os"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
@@ -50,6 +52,16 @@ func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube)
 		SecurityContext: securityContextForInitContainer(pod, dk, h.isOpenShift),
 		Resources:       defaultInitContainerResources(),
 		Args:            append([]string{bootstrapper.Use}, arg.ConvertArgsToStrings(args)...),
+	}
+
+	connectionTimeout := os.Getenv(k8senv.DTClientBinaryConnectionTimeout)
+	if connectionTimeout != "" {
+		initContainer.Env = []corev1.EnvVar{
+			{
+				Name:  k8senv.DTClientBinaryConnectionTimeout,
+				Value: connectionTimeout,
+			},
+		}
 	}
 
 	return initContainer

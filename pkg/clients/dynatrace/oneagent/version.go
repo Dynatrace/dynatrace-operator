@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 )
 
@@ -60,7 +61,8 @@ func (c *ClientImpl) Get(ctx context.Context, args GetParams, writer io.Writer) 
 			"bitness":      "64",
 			"skipMetadata": strconv.FormatBool(args.SkipMetadata),
 		}).
-		WithRawQueryParams(technologiesQueryParams(args.Technologies))
+		WithRawQueryParams(technologiesQueryParams(args.Technologies)).
+		WithConnectionTimeout(k8senv.GetDTClientBinaryConnectionTimeout(ctx))
 
 	sha256, err := makeRequestForBinary(apiRequest, writer)
 	if err == nil {
@@ -91,7 +93,8 @@ func (c *ClientImpl) GetLatest(ctx context.Context, args GetParams, writer io.Wr
 			"bitness":      "64",
 			"skipMetadata": strconv.FormatBool(args.SkipMetadata),
 		}).
-		WithRawQueryParams(technologiesQueryParams(args.Technologies))
+		WithRawQueryParams(technologiesQueryParams(args.Technologies)).
+		WithConnectionTimeout(k8senv.GetDTClientBinaryConnectionTimeout(ctx))
 
 	sha256, err := makeRequestForBinary(apiRequest, writer)
 	if err == nil {
