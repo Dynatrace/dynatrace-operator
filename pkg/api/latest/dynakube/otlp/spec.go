@@ -15,7 +15,8 @@ type ExporterConfiguration struct {
 type ExporterConfigurationSpec struct {
 
 	// The OpenTelemetry signals that should be configured to be sent via OTLP
-	Signals SignalConfiguration `json:"signals,omitempty"`
+	// +kubebuilder:validation:Optional
+	Signals SignalConfiguration `json:"signals,omitzero"`
 
 	// When enabled, existing environment variables for the configuration of the OTLP exporter will be overridden.
 	// Disabled by default.
@@ -23,8 +24,9 @@ type ExporterConfigurationSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable override of existing OTLP environment variables",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	OverrideEnvVars *bool `json:"overrideEnvVars,omitempty"`
 	// The namespaces where you want Dynatrace Operator to inject OTLP exporter configuration.
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitzero"`
 
 	// Additional resource attributes that are merged on top of the global spec.resourceAttributes.
 	// If the same key exists in both, the value from additionalResourceAttributes takes precedence.

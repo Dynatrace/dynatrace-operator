@@ -24,14 +24,14 @@ type OpenTelemetryCollectorSpec struct {
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef"`
+	ImageRef image.Ref `json:"imageRef,omitzero"`
 
 	// +kubebuilder:validation:Optional
 	TLSRefName string `json:"tlsRefName,omitempty"`
 
 	// Define resources' requests and limits for single OtelCollector pod
 	// +kubebuilder:validation:Optional
-	Resources corev1.ResourceRequirements `json:"resources"`
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 
 	// Node selector to control the selection of nodes for the OtelCollector pods
 	// +kubebuilder:validation:Optional

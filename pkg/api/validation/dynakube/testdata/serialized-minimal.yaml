@@ -1,0 +1,7 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: minimal
+  namespace: default
+spec:
+  apiUrl: https://minimal.dev.dynatracelabs.com/api

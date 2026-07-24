@@ -57,7 +57,7 @@ type NodeConfigurationCollectorSpec struct {
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitempty"`
+	ImageRef image.Ref `json:"imageRef,omitzero"`
 
 	// If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
 	// name. If not specified the setting will be removed from the DaemonSet.
@@ -66,7 +66,7 @@ type NodeConfigurationCollectorSpec struct {
 
 	// Define resources' requests and limits for single NodeConfigurationCollector pod
 	// +kubebuilder:validation:Optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 
 	// Define the nodeAffinity for the DaemonSet of the NodeConfigurationCollector
 	// +kubebuilder:validation:Optional
