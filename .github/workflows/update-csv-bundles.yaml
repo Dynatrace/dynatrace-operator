@@ -71,7 +71,7 @@ jobs:
             --method POST \
             --field "tag_name=${TAG}" \
             --field "previous_tag_name=${PREV_TAG}" \
-            --jq '.body' > CHANGELOG.md
+            --jq '.body' | sed 's/^### /\n### /' > CHANGELOG.md
       - uses: ./.github/actions/update-csv-bundles
         with:
           digest: ${{ steps.digest.outputs.digest }}
