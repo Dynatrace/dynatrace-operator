@@ -319,23 +319,90 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 		assert.Equal(t, "my-literal-value", attrs.rules["dt.custom"])
 		assert.Len(t, attrs.rules, 1)
 	})
+}
 
-	t.Run("CUSTOM without target is dropped", func(t *testing.T) {
-		attrs := newTestPodAttributes()
-		dk := dynakube.DynaKube{
-			Status: dynakube.DynaKubeStatus{
-				MetadataEnrichment: metadataenrichment.Status{
-					Rules: []metadataenrichment.Rule{
-						{Type: metadataenrichment.CustomRule, Source: "high prio!"},
-					},
-				},
+func TestGetFromEnrichmentRulesPrecedence(t *testing.T) {
+	tests := []struct {
+		name                 string
+		rules                []metadataenrichment.Rule
+		namespaceLabels      map[string]string
+		namespaceAnnotations map[string]string
+		expect               map[string]string
+	}{
+		{
+			name: "explicit-target rule: first rule to resolve a value wins over later rules",
+			rules: []metadataenrichment.Rule{
+				{Type: metadataenrichment.LabelRule, Source: "env", Target: "custom.env"},
+				{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "env-annotation", Target: "custom.env"},
 			},
-		}
+			namespaceLabels:      map[string]string{"env": "first"},
+			namespaceAnnotations: map[string]string{"env-annotation": "second"},
+			expect:               map[string]string{"custom.env": "first"},
+		},
+		{
+			name: "explicit-target rule: later rule wins when the earlier rule's source is absent from namespace",
+			rules: []metadataenrichment.Rule{
+				{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "missing-label", Target: "custom.env"},
+				{Type: metadataenrichment.AnnotationRule, Source: "env-annotation", Target: "custom.env"},
+			},
+			namespaceAnnotations: map[string]string{"env-annotation": "second"},
+			expect:               map[string]string{"custom.env": "second"},
+		},
+		{
+			name: "explicit-target CUSTOM rule takes precedence when listed first, regardless of type",
+			rules: []metadataenrichment.Rule{
+				{Type: metadataenrichment.CustomRule, Source: "literal-value", Target: "custom.env"},
+				{Type: metadataenrichment.LabelRule, Source: "env", Target: "custom.env"},
+			},
+			namespaceLabels: map[string]string{"env": "from-label"},
+			expect:          map[string]string{"custom.env": "literal-value"},
+		},
+		{
+			name: "explicit-target rule: precedence applies independently per target key",
+			rules: []metadataenrichment.Rule{
+				{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "env", Target: "custom.env"},
+				{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "team", Target: "custom.team"},
+				{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "env-annotation", Target: "custom.env"},
+			},
+			namespaceLabels:      map[string]string{"env": "prod", "team": "platform"},
+			namespaceAnnotations: map[string]string{"env-annotation": "should-be-ignored"},
+			expect:               map[string]string{"custom.env": "prod", "custom.team": "platform"},
+		},
+		{
+			// Legacy (no-target) rules always overwrite, even a value already claimed by an
+			// earlier explicit-target rule for the same key. This is the intentional
+			// inconsistency preserving pre-1.10 behavior for legacy schema rules.
+			name: "legacy rule without a target overwrites a value already claimed by an earlier explicit-target rule for the same key",
+			rules: []metadataenrichment.Rule{
+				{Type: metadataenrichment.LabelRule, Source: "env", Target: metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.AnnotationRule), "note")},
+				{Type: metadataenrichment.AnnotationRule, Source: "note"},
+			},
+			namespaceLabels:      map[string]string{"env": "explicit-value"},
+			namespaceAnnotations: map[string]string{"note": "legacy-value"},
+			expect:               map[string]string{metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.AnnotationRule), "note"): "legacy-value"},
+		},
+		{
+			name: "explicit-target rule does not overwrite a value already claimed by an earlier legacy rule for the same key",
+			rules: []metadataenrichment.Rule{
+				{Type: metadataenrichment.AnnotationRule, Source: "note"},
+				{Type: metadataenrichment.LabelRule, Source: "env", Target: metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.AnnotationRule), "note")},
+			},
+			namespaceLabels:      map[string]string{"env": "explicit-value"},
+			namespaceAnnotations: map[string]string{"note": "legacy-value"},
+			expect:               map[string]string{metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.AnnotationRule), "note"): "legacy-value"},
+		},
+	}
 
-		attrs.applyEnrichmentRules(corev1.Namespace{}, dk)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			attrs := newTestPodAttributes()
+			dk := dynakube.DynaKube{Status: dynakube.DynaKubeStatus{MetadataEnrichment: metadataenrichment.Status{Rules: tt.rules}}}
+			ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Labels: tt.namespaceLabels, Annotations: tt.namespaceAnnotations}}
 
-		assert.Empty(t, attrs.rules)
-	})
+			attrs.applyEnrichmentRules(ns, dk)
+			assert.Equal(t, tt.expect, attrs.rules)
+		})
+	}
 }
 
 func TestGetMetadataAnnotations(t *testing.T) {
@@ -583,6 +650,7 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations 
 		*dk,
 	)
 }
+
 func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -593,6 +661,7 @@ func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
 		},
 	}
 }
+
 func getTestPod(annotations map[string]string) *corev1.Pod {
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
