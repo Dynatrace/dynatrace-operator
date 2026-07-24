@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -304,6 +305,80 @@ func Test_enrichmentSchemaModel(t *testing.T) {
 			var resp getRulesResponse
 			require.NoError(t, json.Unmarshal([]byte(test.input), &resp))
 			assert.Equal(t, test.expect, resp)
+		})
+	}
+}
+
+type capturingLogSink struct {
+	values []any
+}
+
+func (c *capturingLogSink) Enabled(level int) bool                            { return true }
+func (c *capturingLogSink) Error(err error, msg string, keysAndValues ...any) {}
+func (c *capturingLogSink) Init(info logr.RuntimeInfo)                        {}
+func (c *capturingLogSink) WithName(name string) logr.LogSink                 { return c }
+func (c *capturingLogSink) WithValues(keysAndValues ...any) logr.LogSink      { return c }
+func (c *capturingLogSink) Info(level int, msg string, keysAndValues ...any) {
+	c.values = append(c.values, keysAndValues...)
+}
+
+func TestLogDroppedRules(t *testing.T) {
+	tests := []struct {
+		name   string
+		resp   getRulesResponse
+		expect []any
+	}{
+		{"no rules", getRulesResponse{}, nil},
+		{
+			"legacy rules",
+			getRulesResponse{
+				Items: []ruleItem{
+					{Value: ruleItemValue{Rules: []metadataenrichment.Rule{
+						{Type: "a", Source: "a"},
+						{Type: "b", Source: "b"},
+						{Type: "c", Source: "c"},
+					}}},
+				},
+			},
+			nil,
+		},
+		{
+			"no dropped rules",
+			getRulesResponse{
+				Items: []ruleItem{
+					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", Target: "a", ValueSource: "a"}}},
+					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", Target: "b", ValueSource: "b"}}},
+				},
+			},
+			nil,
+		},
+		{
+			"log dropped rules",
+			getRulesResponse{
+				Items: []ruleItem{
+					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", Target: "a", ValueSource: "a"}}},
+					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", Target: "b", ValueSource: "b", Condition: "b"}}},
+					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "FOO", Target: "c", ValueSource: "c"}}},
+					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", ValueSource: "d"}}},
+				},
+			},
+			[]any{
+				"rules",
+				[]ingestEnrichmentConfig{
+					{Type: "K8S_NAMESPACE_LABEL", Target: "b", ValueSource: "b", Condition: "b"},
+					{Type: "FOO", Target: "c", ValueSource: "c"},
+					{Type: "K8S_NAMESPACE_LABEL", ValueSource: "d"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var logSink capturingLogSink
+			ctx := logr.NewContext(context.Background(), logr.New(&logSink))
+			_ = getRulesFromResponse(ctx, tt.resp)
+			assert.Equal(t, tt.expect, logSink.values)
 		})
 	}
 }
