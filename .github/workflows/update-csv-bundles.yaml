@@ -69,9 +69,13 @@ jobs:
             echo "Publish the release first, then re-run this workflow." >&2
             exit 1
           fi
+          PREV_TAG=$(gh api "repos/${GITHUB_REPOSITORY}/releases" \
+            --jq "[.[] | select(.tag_name != \"${TAG}\") | select(.prerelease == false) | select(.draft == false)] | first | .tag_name")
+          echo "Generating notes for ${TAG} since ${PREV_TAG}"
           gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
             --method POST \
             --field "tag_name=${TAG}" \
+            --field "previous_tag_name=${PREV_TAG}" \
             --jq '.body' > CHANGELOG.md
       - uses: ./.github/actions/update-csv-bundles
         with:
