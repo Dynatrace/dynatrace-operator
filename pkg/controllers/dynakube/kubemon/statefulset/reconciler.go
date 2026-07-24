@@ -59,6 +59,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return r.delete(ctx, dk)
 	}
 
+	if err := ensureReady(dk); err != nil {
+		return err
+	}
+
 	desiredStatefulSet, err := r.buildDesiredStatefulSet(ctx, dk)
 	if err != nil {
 		return err
@@ -77,12 +81,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	return err
 }
 
-// buildEnvs prepends the mandatory AG runtime env vars (and optional DT_GROUP) to any user-supplied vars.
-func buildEnvs(dk *dynakube.DynaKube) ([]corev1.EnvVar, error) {
-	if dk.Status.KubeSystemUUID == "" {
-		return nil, ErrMissingKubeSystemUID
+// ensureReady validates the DynaKube fields required to build the StatefulSet. Without any of
+// them the build fails either way, so we short-circuit here before doing any work or API calls.
+func ensureReady(dk *dynakube.DynaKube) error {
+	if dk.KubernetesMonitoring().GetCustomImage() == "" {
+		return ErrImageRequired
 	}
 
+	if dk.Status.KubeSystemUUID == "" {
+		return ErrMissingKubeSystemUID
+	}
+
+	return nil
+}
+
+// buildEnvs prepends the mandatory AG runtime env vars (and optional DT_GROUP) to any user-supplied vars.
+func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	connInfoCM := dk.KubernetesMonitoring().GetConnectionInfoConfigMapName()
 
 	envs := []corev1.EnvVar{
@@ -136,7 +150,7 @@ func buildEnvs(dk *dynakube.DynaKube) ([]corev1.EnvVar, error) {
 		envs = append(envs, corev1.EnvVar{Name: agconsts.EnvDTGroup, Value: dk.Spec.KubernetesMonitoring.Group})
 	}
 
-	return append(envs, dk.KubernetesMonitoring().Env...), nil
+	return append(envs, dk.KubernetesMonitoring().Env...)
 }
 
 // buildVolumes returns the pod-level volumes.
@@ -199,9 +213,6 @@ func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {
 
 func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube) (*appsv1.StatefulSet, error) {
 	image := dk.KubernetesMonitoring().GetCustomImage()
-	if image == "" {
-		return nil, ErrImageRequired
-	}
 
 	// no .replicas means the field is controlled by HPA, so we read it from live object
 	replicas, err := k8sstatefulset.ResolveReplicas(
@@ -224,17 +235,12 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
-	envs, err := buildEnvs(dk)
-	if err != nil {
-		return nil, err
-	}
-
 	container := corev1.Container{
 		Name:            ContainerName,
 		Image:           image,
 		ImagePullPolicy: dk.KubernetesMonitoring().GetPullPolicy(),
 		Resources:       dk.KubernetesMonitoring().Resources,
-		Env:             envs,
+		Env:             buildEnvs(dk),
 		VolumeMounts:    buildVolumeMounts(dk),
 	}
 
