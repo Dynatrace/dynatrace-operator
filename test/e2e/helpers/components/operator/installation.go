@@ -239,9 +239,10 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 	if chartURI := os.Getenv("HELM_CHART"); strings.HasSuffix(chartURI, ":0.0.0-nightly-chart") {
 		opts = append(opts, helm.WithArgs(chartURI))
 		if isFIPS {
-			registry := strings.TrimPrefix(strings.TrimSuffix(chartURI, ":0.0.0-nightly-chart"), "oci://")
+			repository := strings.TrimPrefix(strings.TrimSuffix(chartURI, ":0.0.0-nightly-chart"), "oci://")
 			opts = append(opts,
-				helm.WithArgs("--set", "image="+registry+":nightly-fips"),
+				helm.WithArgs("--set", "imageRef.repository="+repository),
+				helm.WithArgs("--set", "imageRef.tag=nightly-fips"),
 				helm.WithArgs("--set", "imageRef.pullPolicy=Always"),
 			)
 		}

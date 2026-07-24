@@ -83,7 +83,8 @@ func TestGetHelmOptions(t *testing.T) {
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
 				"oci://registry:0.0.0-nightly-chart",
-				"--set", "image=registry:nightly-fips",
+				"--set", "imageRef.repository=registry",
+				"--set", "imageRef.tag=nightly-fips",
 				"--set", "imageRef.pullPolicy=Always",
 			},
 		}, opts)
