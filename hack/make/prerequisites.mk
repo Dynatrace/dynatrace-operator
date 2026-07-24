@@ -17,7 +17,7 @@ GOLANGCI_LINT_VERSION ?= v2.12.2
 # renovate depName=golang.org/x/tools
 GOLANG_TOOLS_VERSION ?= v0.48.0
 # renovate depName=github.com/vektra/mockery
-MOCKERY_VERSION ?= v3.7.1
+MOCKERY_VERSION ?= v3.7.2
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 MARKDOWNLINT_CLI_VERSION ?= v0.49.1
 # renovate depName=github.com/tcort/markdown-link-check
@@ -27,7 +27,7 @@ HELMUNITTEST_VERSION ?= v1.1.1
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
 GO_TEST_COVERAGE_VERSION ?= v2.18.9
 # renovate depName=github.com/openapitools/openapi-generator-cli
-OPENAPI_GENERATOR_CLI_VERSION ?= v2.40.0+incompatible
+OPENAPI_GENERATOR_CLI_VERSION ?= v2.40.1+incompatible
 # renovate depName=github.com/google/addlicense
 ADDLICENSE_VERSION ?= v1.2.0
 
