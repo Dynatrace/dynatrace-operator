@@ -35,6 +35,7 @@ const (
 )
 
 var (
+	// TODO: remove this error once image discovery is implemented
 	ErrImageRequired        = errors.New("kubernetes monitoring image is required")
 	ErrMissingKubeSystemUID = errors.New("kube-system UUID not yet available")
 )
