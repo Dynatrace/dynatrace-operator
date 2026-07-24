@@ -33,8 +33,7 @@ echo "Running make target: ${TARGET:-default}"
 if [[ $FLC_ENVIRONMENT =~ "olm" ]]; then
   make OLM=true "${TARGET:-test/e2e/no-csi/publish}"
 elif [[ $FLC_ENVIRONMENT =~ "fips" ]]; then
-  export FIPS=true
-  make BRANCH="$TARGET_BRANCH" "${TARGET:-test/e2e-publish}"
+  make BRANCH="$TARGET_BRANCH" FIPS=true "${TARGET:-test/e2e-publish}"
 else
   make BRANCH="$TARGET_BRANCH" "${TARGET:-test/e2e-publish}"
 fi
