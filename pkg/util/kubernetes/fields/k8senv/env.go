@@ -33,6 +33,11 @@ const (
 	minDTClientCacheCleanInterval     = 5 * time.Minute
 	maxDTClientCacheCleanInterval     = 100 * time.Hour
 
+	DTClientBinaryConnectionTimeout        = "DT_CLIENT_BINARY_CONNECTION_TIMEOUT"
+	defaultDTClientBinaryConnectionTimeout = 15 * time.Minute
+	minDTClientBinaryConnectionTimeout     = 1 * time.Second
+	maxDTClientBinaryConnectionTimeout     = 15 * time.Minute
+
 	DefaultRequeueAfterEnvVar = "DT_DEFAULT_REQUEUE_AFTER"
 	defaultRequeueInterval    = 15 * time.Minute
 	minRequeueInterval        = time.Minute
@@ -141,6 +146,10 @@ func GetDefaultRequeueAfter(ctx context.Context) time.Duration {
 
 func GetDTClientCacheCleanInterval(ctx context.Context) time.Duration {
 	return parseDuration(ctx, DTClientCacheCleanInterval, defaultDTClientCacheCleanInterval, minDTClientCacheCleanInterval, maxDTClientCacheCleanInterval)
+}
+
+func GetDTClientBinaryConnectionTimeout(ctx context.Context) time.Duration {
+	return parseDuration(ctx, DTClientBinaryConnectionTimeout, defaultDTClientBinaryConnectionTimeout, minDTClientBinaryConnectionTimeout, maxDTClientBinaryConnectionTimeout)
 }
 
 // GetDTExtractCodeModulesImageLinks reads the value of DT_EXTRACT_CODEMODULES_IMAGE_LINKS.
