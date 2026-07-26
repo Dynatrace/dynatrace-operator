@@ -209,3 +209,40 @@ func getTestVolumeConfig(t *testing.T) csivolumes.VolumeConfig {
 		RetryTimeout: time.Minute,
 	}
 }
+
+func TestPreparePodInfoUpperDir(t *testing.T) {
+	path := metadata.PathResolver{RootDir: t.TempDir()}
+	volumeCfg := getTestVolumeConfig(t)
+	destPath := path.OverlayVarPodInfo(volumeCfg.VolumeID)
+	require.NoError(t, os.MkdirAll(filepath.Dir(destPath), os.ModePerm))
+
+	pub := Publisher{path: path}
+
+	require.NoError(t, pub.preparePodInfoUpperDir(&volumeCfg))
+
+	// the pod-info file must not be left open between mounts
+	before := countOpenFiles(t)
+	for range 50 {
+		require.NoError(t, pub.preparePodInfoUpperDir(&volumeCfg))
+	}
+
+	assert.Equal(t, before, countOpenFiles(t), "open file descriptors leaked across mounts")
+
+	written, err := os.ReadFile(destPath)
+	require.NoError(t, err)
+	assert.Equal(t, path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName), string(written))
+}
+
+func countOpenFiles(t *testing.T) int {
+	t.Helper()
+
+	dir, err := os.Open("/dev/fd")
+	require.NoError(t, err)
+
+	defer func() { _ = dir.Close() }()
+
+	names, err := dir.Readdirnames(-1)
+	require.NoError(t, err)
+
+	return len(names)
+}
