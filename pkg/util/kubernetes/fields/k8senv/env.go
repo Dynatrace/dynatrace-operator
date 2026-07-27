@@ -33,10 +33,11 @@ const (
 	minDTClientCacheCleanInterval     = 5 * time.Minute
 	maxDTClientCacheCleanInterval     = 100 * time.Hour
 
-	DTClientBinaryConnectionTimeout        = "DT_CLIENT_BINARY_CONNECTION_TIMEOUT"
-	defaultDTClientBinaryConnectionTimeout = 15 * time.Minute
-	minDTClientBinaryConnectionTimeout     = 1 * time.Second
-	maxDTClientBinaryConnectionTimeout     = 15 * time.Minute
+	DTClientConnectionTimeout = "DT_CLIENT_CONNECTION_TIMEOUT"
+	// DefaultDTClientConnectionTimeout enough time to download an OneAgent package of about 1GB in size
+	DefaultDTClientConnectionTimeout = 15 * time.Minute
+	minDTClientConnectionTimeout     = 1 * time.Second
+	maxDTClientConnectionTimeout     = 30 * time.Minute
 
 	DefaultRequeueAfterEnvVar = "DT_DEFAULT_REQUEUE_AFTER"
 	defaultRequeueInterval    = 15 * time.Minute
@@ -148,8 +149,8 @@ func GetDTClientCacheCleanInterval(ctx context.Context) time.Duration {
 	return parseDuration(ctx, DTClientCacheCleanInterval, defaultDTClientCacheCleanInterval, minDTClientCacheCleanInterval, maxDTClientCacheCleanInterval)
 }
 
-func GetDTClientBinaryConnectionTimeout(ctx context.Context) time.Duration {
-	return parseDuration(ctx, DTClientBinaryConnectionTimeout, defaultDTClientBinaryConnectionTimeout, minDTClientBinaryConnectionTimeout, maxDTClientBinaryConnectionTimeout)
+func GetDTClientConnectionTimeout(ctx context.Context) time.Duration {
+	return parseDuration(ctx, DTClientConnectionTimeout, DefaultDTClientConnectionTimeout, minDTClientConnectionTimeout, maxDTClientConnectionTimeout)
 }
 
 // GetDTExtractCodeModulesImageLinks reads the value of DT_EXTRACT_CODEMODULES_IMAGE_LINKS.

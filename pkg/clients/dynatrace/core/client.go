@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -55,8 +54,6 @@ type Request interface {
 	WithoutToken() Request
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) Request
-	// WithConnectionTimeout sets the connection timeout for the request. This timeout is applied to the underlying HTTP client.
-	WithConnectionTimeout(timeout time.Duration) Request
 	// Execute executes the request and unmarshals the response into the provided model
 	// If the provided model implements the Cacheable interface, then the ClientImpl will cache the response.
 	Execute(model any) error
@@ -84,8 +81,7 @@ func NewClient(cfg Config) *ClientImpl {
 }
 
 type RequestImpl struct {
-	client            *ClientImpl
-	connectionTimeout time.Duration
+	client *ClientImpl
 
 	ctx       context.Context
 	query     url.Values
@@ -115,11 +111,10 @@ func (c *ClientImpl) newRequest(ctx context.Context) *RequestImpl {
 	}
 
 	return &RequestImpl{
-		headers:           headers,
-		client:            c,
-		ctx:               ctx,
-		query:             query,
-		connectionTimeout: 30 * time.Second,
+		headers: headers,
+		client:  c,
+		ctx:     ctx,
+		query:   query,
 	}
 }
 
@@ -221,13 +216,6 @@ func (r *RequestImpl) WithHeader(key, value string) Request {
 	return r
 }
 
-// WithConnectionTimeout sets the connection timeout for the request. This timeout is applied to the underlying HTTP client.
-func (r *RequestImpl) WithConnectionTimeout(timeout time.Duration) Request {
-	r.connectionTimeout = timeout
-
-	return r
-}
-
 // Execute executes the request and unmarshals the response into the provided model
 func (r *RequestImpl) Execute(model any) error {
 	cacheableModel, isCacheable := model.(Cacheable)
@@ -321,8 +309,6 @@ func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.He
 		httpClient = http.DefaultClient
 	}
 
-	httpClient.Timeout = r.connectionTimeout
-
 	loggerArgs := createLoggerArgs(r.body)
 
 	resp, err := httpClient.Do(req)
@@ -383,8 +369,6 @@ func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
-
-	httpClient.Timeout = r.connectionTimeout
 
 	loggerArgs := createLoggerArgs(r.body)
 

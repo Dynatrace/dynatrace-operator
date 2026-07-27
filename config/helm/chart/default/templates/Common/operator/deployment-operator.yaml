@@ -133,6 +133,7 @@ spec:
               value: {{ . | quote }}
             {{- end }}
             {{- include "dynatrace-operator.webhookCertsCtrl.envs" . | nindent 12 }}
+            {{ include "dynatrace-operator.connection-timeout-env" . | nindent 12 }}
           ports:
             - containerPort: 10080
               name: livez

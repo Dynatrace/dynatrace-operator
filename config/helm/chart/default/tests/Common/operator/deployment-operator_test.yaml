@@ -1211,3 +1211,24 @@ tests:
             value: "3h"
           count: 1
           any: true
+
+  - it: should not have DT_CLIENT_CONNECTION_TIMEOUT if connectionTimeout is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+
+  - it: should have DT_CLIENT_CONNECTION_TIMEOUT if connectionTimeout is set
+    set:
+      platform: kubernetes
+      operator:
+        connectionTimeout: 1
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+            value: "1"

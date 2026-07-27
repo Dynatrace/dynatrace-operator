@@ -22,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
@@ -56,6 +57,8 @@ type Config struct {
 	NoProxy           string
 	DisableKeepAlives bool
 	CacheEntryTTL     time.Duration
+
+	ConnectionTimeout time.Duration
 }
 
 // Option is a functional option for configuring the client
@@ -263,13 +266,22 @@ func WithCacheTTL(ttl time.Duration) Option {
 	}
 }
 
+func WithConnectionTimeout(timeout time.Duration) Option {
+	return func(c *Config) error {
+		c.ConnectionTimeout = timeout
+
+		return nil
+	}
+}
+
 func addCacheMiddleware(httpClient *http.Client, config *Config) {
 	httpClient.Transport = middleware.NewCacheRoundTripper(httpClient.Transport, config.CacheEntryTTL)
 }
 
 func getClientAndConfig(options ...Option) (*http.Client, *Config, error) {
 	config := Config{
-		UserAgent: operatorversion.UserAgent(),
+		UserAgent:         operatorversion.UserAgent(),
+		ConnectionTimeout: k8senv.DefaultDTClientConnectionTimeout,
 	}
 
 	for _, opt := range options {
@@ -299,6 +311,7 @@ func getClientAndConfig(options ...Option) (*http.Client, *Config, error) {
 
 	return &http.Client{
 		Transport: transport,
+		Timeout:   config.ConnectionTimeout,
 	}, &config, nil
 }
 

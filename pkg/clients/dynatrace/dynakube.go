@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -21,6 +22,8 @@ func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dyn
 	if err != nil {
 		return nil, err
 	}
+
+	opts = append(opts, WithConnectionTimeout(k8senv.GetDTClientConnectionTimeout(ctx)))
 
 	return NewClient(opts...)
 }

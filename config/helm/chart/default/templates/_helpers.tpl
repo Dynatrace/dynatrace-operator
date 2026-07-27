@@ -194,3 +194,12 @@ topologySpreadConstraints:
   value: {{ . | quote }}
 {{- end }}
 {{- end -}}
+
+{{- define "dynatrace-operator.connection-timeout-env" -}}
+  {{- if .Values.operator.connectionTimeout -}}
+    {{- with .Values.operator.connectionTimeout }}
+- name: DT_CLIENT_CONNECTION_TIMEOUT
+  value: {{ . | quote }}
+    {{- end }}
+  {{- end -}}
+{{- end -}}

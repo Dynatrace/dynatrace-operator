@@ -82,6 +82,7 @@ spec:
               value: "true"
             {{- end }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
+            {{ include "dynatrace-operator.connection-timeout-env" . | nindent 12 }}
           readinessProbe:
             httpGet:
               path: /readyz

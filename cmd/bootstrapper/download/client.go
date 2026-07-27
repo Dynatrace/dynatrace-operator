@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 )
 
 type Client struct {
@@ -46,7 +47,7 @@ func New(options ...Option) *Client {
 }
 
 func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, props binary.Properties) error {
-	dtClient, err := cl.createDTClientFromFs(inputDir)
+	dtClient, err := cl.createDTClientFromFs(ctx, inputDir)
 	if err != nil {
 		return err
 	}
@@ -61,7 +62,7 @@ func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, pro
 	return err
 }
 
-func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.Client, error) {
+func (cl *Client) createDTClientFromFs(ctx context.Context, inputDir string) (oneagent.Client, error) {
 	config, err := configFromFs(inputDir)
 	if err != nil {
 		return nil, err
@@ -80,7 +81,7 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.Client, error)
 		options = append(options, dynatrace.WithCerts(certs))
 	}
 
-	options = append(options, dynatrace.WithBaseURL(cl.baseURL))
+	options = append(options, dynatrace.WithBaseURL(cl.baseURL), dynatrace.WithConnectionTimeout(k8senv.GetDTClientConnectionTimeout(ctx)))
 
 	dtClient, err := dynatrace.NewClient(options...)
 	if err != nil {
