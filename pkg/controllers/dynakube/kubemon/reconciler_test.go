@@ -26,7 +26,7 @@ import (
 
 // TestReconcileDisabled covers removal of an existing condition once cleanup succeeds.
 func TestReconcileDisabled(t *testing.T) {
-	t.Setenv(k8senv.KubemonEnableOperand, "true") // remove with gate
+	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true") // remove with gate
 	t.Run("removes condition when disabled and cleanup succeeds", func(t *testing.T) {
 		connInfoReconciler := newMockConnectionInfoReconciler(t)
 		statefulSetReconciler := newMockStatefulsetReconciler(t)
@@ -51,7 +51,7 @@ func TestReconcileDisabled(t *testing.T) {
 // (rollout, connection info) map to Reconciling; any other error surfaces as Error with the
 // root-cause message.
 func TestReconcileConditionMapping(t *testing.T) {
-	t.Setenv(k8senv.KubemonEnableOperand, "true") // remove with gate
+	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true") // remove with gate
 	tests := []struct {
 		name           string
 		connInfoErr    error

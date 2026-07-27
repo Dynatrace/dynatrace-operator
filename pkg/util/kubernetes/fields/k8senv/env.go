@@ -26,7 +26,7 @@ const (
 	AppVersion                  = "APP_VERSION"
 
 	DTExtractCodeModulesImageLinksEnvVar = "DT_EXTRACT_CODEMODULES_IMAGE_LINKS"
-	KubemonEnableOperand                 = "KUBEMON_ENABLE_OPERAND"
+	ExperimentalEnableKubemonOperand     = "EXPERIMENTAL_ENABLE_KUBEMON_OPERAND"
 
 	DTClientCacheCleanInterval        = "DT_CLIENT_CACHE_CLEAN_INTERVAL"
 	defaultDTClientCacheCleanInterval = time.Hour
@@ -162,7 +162,7 @@ func GetDTExtractCodeModulesImageLinks(ctx context.Context) bool {
 }
 
 func IsKubemonOperandEnabled() bool {
-	rawValue := os.Getenv(KubemonEnableOperand)
+	rawValue := os.Getenv(ExperimentalEnableKubemonOperand)
 	if rawValue == "" {
 		return false
 	}
