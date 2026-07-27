@@ -297,23 +297,29 @@ tests:
             name: DT_HOST_AVAILABILITY_DETECTION
             value: "false"
 
-  - it: should not have init container on install
+  - it: should have certgen but not migrator on openshift install
     set:
       platform: openshift
       operator.crdStorageMigrationInitManager: true
     asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: webhook-cert-generator
       - isNull:
-          path: spec.template.spec.containers[0].initContainers
+          path: spec.template.spec.initContainers[1]
 
-  - it: should not have init container when they are disabled
+  - it: should have certgen but not migrator when migrator is disabled on openshift
     set:
       platform: openshift
       operator.crdStorageMigrationInitManager: false
     release:
       upgrade: true
     asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: webhook-cert-generator
       - isNull:
-          path: spec.template.spec.containers[0].initContainers
+          path: spec.template.spec.initContainers[1]
 
   - it: should not have imagePullSecrets defined in spec
     set:
@@ -357,6 +363,35 @@ tests:
           path: spec.template.spec
           value:
             initContainers:
+              - name: webhook-cert-generator
+                image: image-name
+                args:
+                  - certgen
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
               - name: crd-storage-migrator
                 image: image-name
                 args:
