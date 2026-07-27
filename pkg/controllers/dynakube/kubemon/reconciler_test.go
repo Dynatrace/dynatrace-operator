@@ -11,9 +11,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
-	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
+	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -42,9 +44,9 @@ func TestReconcileDisabled(t *testing.T) {
 		meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: kubemonapi.KubeMonAvailableConditionType, Status: metav1.ConditionTrue, Reason: reasonAvailable})
 		connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
-		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
-		err := reconciler.Reconcile(t.Context(), dk, nil, nil)
+		err := reconciler.Reconcile(t.Context(), dk, agclientmock.NewClient(t), imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 		require.NoError(t, err)
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), kubemonapi.KubeMonAvailableConditionType))
 	})
@@ -101,10 +103,10 @@ func TestReconcileConditionMapping(t *testing.T) {
 		},
 		{
 			name:           "stack-wrapped error -> error without stack trace in message",
-			statefulSetErr: pkgerrors.WithStack(kubemonstatefulset.ErrImageRequired),
+			statefulSetErr: pkgerrors.WithStack(errors.New("sentinel error")),
 			wantStatus:     metav1.ConditionFalse,
 			wantReason:     reasonError,
-			wantMessage:    kubemonstatefulset.ErrImageRequired.Error(),
+			wantMessage:    "sentinel error",
 		},
 	}
 
@@ -125,10 +127,10 @@ func TestReconcileConditionMapping(t *testing.T) {
 				authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(test.authTokenErr).Once()
 			}
 			if test.connInfoErr == nil && test.authTokenErr == nil {
-				statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(test.statefulSetErr).Once()
+				statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(test.statefulSetErr).Once()
 			}
 
-			err := reconciler.Reconcile(t.Context(), dk, nil, nil)
+			err := reconciler.Reconcile(t.Context(), dk, agclientmock.NewClient(t), imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 			wantErr := test.connInfoErr
 			if wantErr == nil {

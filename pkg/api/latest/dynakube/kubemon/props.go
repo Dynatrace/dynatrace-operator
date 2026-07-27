@@ -3,7 +3,14 @@
 
 package kubemon
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	"net/url"
+	"strings"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
+	corev1 "k8s.io/api/core/v1"
+)
 
 const (
 	KubeMonAvailableConditionType = "KubernetesMonitoringAvailable"
@@ -11,6 +18,8 @@ const (
 	NameSuffix = "-kubemon"
 
 	ServiceAccountName = "dynatrace-activegate"
+
+	TenantRegistrySubPath = "/linux/activegate"
 )
 
 // KubeMon wraps Spec and Status for ergonomic access via dk.KubernetesMonitoring().
@@ -18,7 +27,8 @@ type KubeMon struct {
 	*Spec
 	*Status
 
-	name string
+	name   string
+	apiURL string
 }
 
 func (km *Spec) IsEnabled() bool {
@@ -28,6 +38,10 @@ func (km *Spec) IsEnabled() bool {
 // SetName seeds the DynaKube name onto the wrapper.
 func (km *KubeMon) SetName(name string) {
 	km.name = name
+}
+
+func (km *KubeMon) SetURL(apiURL string) {
+	km.apiURL = apiURL
 }
 
 func (km *Spec) GetServiceAccountName() string {
@@ -65,4 +79,29 @@ func (km *Spec) GetCustomImage() string {
 	}
 
 	return km.Image
+}
+
+func (km *KubeMon) GetDefaultImage(version string) string {
+	apiURLHost := km.apiURLHost()
+	if apiURLHost == "" {
+		return ""
+	}
+
+	truncatedVersion := dtversion.ToImageTag(version)
+	tag := truncatedVersion
+
+	if !strings.Contains(tag, api.RawTag) {
+		tag += "-" + api.RawTag
+	}
+
+	return apiURLHost + TenantRegistrySubPath + ":" + tag
+}
+
+func (km *KubeMon) apiURLHost() string {
+	parsedURL, err := url.Parse(km.apiURL)
+	if err != nil {
+		return ""
+	}
+
+	return parsedURL.Host
 }

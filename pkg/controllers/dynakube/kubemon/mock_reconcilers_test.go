@@ -12,6 +12,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -223,16 +225,16 @@ func (_m *mockStatefulsetReconciler) EXPECT() *mockStatefulsetReconciler_Expecte
 }
 
 // Reconcile provides a mock function for the type mockStatefulsetReconciler
-func (_mock *mockStatefulsetReconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ret := _mock.Called(ctx, dk)
+func (_mock *mockStatefulsetReconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
+	ret := _mock.Called(ctx, dk, imageClient, versionClient)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
-		r0 = returnFunc(ctx, dk)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube, image.Client, version.Client) error); ok {
+		r0 = returnFunc(ctx, dk, imageClient, versionClient)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -247,11 +249,13 @@ type mockStatefulsetReconciler_Reconcile_Call struct {
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-func (_e *mockStatefulsetReconciler_Expecter) Reconcile(ctx any, dk any) *mockStatefulsetReconciler_Reconcile_Call {
-	return &mockStatefulsetReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk)}
+//   - imageClient image.Client
+//   - versionClient version.Client
+func (_e *mockStatefulsetReconciler_Expecter) Reconcile(ctx any, dk any, imageClient any, versionClient any) *mockStatefulsetReconciler_Reconcile_Call {
+	return &mockStatefulsetReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, imageClient, versionClient)}
 }
 
-func (_c *mockStatefulsetReconciler_Reconcile_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube)) *mockStatefulsetReconciler_Reconcile_Call {
+func (_c *mockStatefulsetReconciler_Reconcile_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client)) *mockStatefulsetReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -261,9 +265,19 @@ func (_c *mockStatefulsetReconciler_Reconcile_Call) Run(run func(ctx context.Con
 		if args[1] != nil {
 			arg1 = args[1].(*dynakube.DynaKube)
 		}
+		var arg2 image.Client
+		if args[2] != nil {
+			arg2 = args[2].(image.Client)
+		}
+		var arg3 version.Client
+		if args[3] != nil {
+			arg3 = args[3].(version.Client)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -274,7 +288,7 @@ func (_c *mockStatefulsetReconciler_Reconcile_Call) Return(err error) *mockState
 	return _c
 }
 
-func (_c *mockStatefulsetReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube) error) *mockStatefulsetReconciler_Reconcile_Call {
+func (_c *mockStatefulsetReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error) *mockStatefulsetReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

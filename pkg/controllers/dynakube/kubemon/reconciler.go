@@ -22,10 +22,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -53,7 +54,7 @@ type authTokenReconciler interface {
 }
 
 type statefulsetReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error
 }
 
 // Reconciler orchestrates the kubemon operand. Sub-reconciler fields are interfaces so they
@@ -75,7 +76,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 // Reconcile is the operand entry point called by the parent DynaKube controller.
 // Sub-reconcilers mutate dk.Status.KubernetesMonitoring.* and dk.Status.Conditions in-memory;
 // the parent controller persists status changes via deferred Status().Update().
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, _ token.Tokens) (err error) {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, imageClient image.Client, versionClient version.Client) (err error) {
 	ctx, log := logd.NewFromContext(ctx, "kubemon")
 
 	// Temporary gate, to be removed once kubemon is complete
@@ -97,7 +98,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 		return err
 	}
 
-	if err = r.statefulsetReconciler.Reconcile(ctx, dk); err != nil {
+	if err = r.statefulsetReconciler.Reconcile(ctx, dk, imageClient, versionClient); err != nil {
 		return err
 	}
 

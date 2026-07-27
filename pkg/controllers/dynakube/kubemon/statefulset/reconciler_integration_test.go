@@ -9,12 +9,16 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
+	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -46,6 +50,8 @@ type lifecycleDeps struct {
 	dk                     *dynakube.DynaKube
 	tenantTokenSecret      *corev1.Secret
 	authTokenSecret        *corev1.Secret
+	imgClient              image.Client
+	verClient              version.Client
 	initialTenantTokenHash string
 	rotatedTenantTokenHash string
 }
@@ -100,12 +106,15 @@ func TestReconcileLifecycle(t *testing.T) {
 	integrationtests.CreateKubernetesObject(t, t.Context(), clt, authTokenSecret)
 
 	// The subtests below share dk and run in order: each builds on the state left by the previous one.
+	// All phases use a custom image, so neither client is invoked; mocks with no expectations verify that.
 	deps := &lifecycleDeps{
-		clt:               clt,
-		reconciler:        reconciler,
-		dk:                dk,
+		clt:        clt,
+		reconciler: reconciler,
+		dk:         dk,
 		tenantTokenSecret: tenantTokenSecret,
 		authTokenSecret:   authTokenSecret,
+		imgClient:  imageclientmock.NewClient(t),
+		verClient:  versionclientmock.NewClient(t),
 	}
 
 	t.Run("provision", func(t *testing.T) { runProvisionPhase(t, deps) })
@@ -119,7 +128,7 @@ func TestReconcileLifecycle(t *testing.T) {
 func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
+	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk, deps.imgClient, deps.verClient), k8sstatefulset.ErrRolloutInProgress)
 
 	sts := getStatefulSet(t, deps.clt, deps.dk)
 
@@ -134,7 +143,7 @@ func runRolloutCompletePhase(t *testing.T, deps *lifecycleDeps) {
 
 	markRolloutComplete(t, t.Context(), deps.clt, deps.dk)
 
-	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dk))
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dk, deps.imgClient, deps.verClient))
 }
 
 func runRotatePhase(t *testing.T, deps *lifecycleDeps) {
@@ -143,7 +152,7 @@ func runRotatePhase(t *testing.T, deps *lifecycleDeps) {
 	deps.tenantTokenSecret.Data[connectioninfo.TenantTokenKey] = []byte(integrationRotatedTenantToken)
 	require.NoError(t, deps.clt.Update(t.Context(), deps.tenantTokenSecret))
 
-	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
+	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk, deps.imgClient, deps.verClient), k8sstatefulset.ErrRolloutInProgress)
 
 	sts := getStatefulSet(t, deps.clt, deps.dk)
 	deps.rotatedTenantTokenHash = sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash]
@@ -157,7 +166,7 @@ func runStabilizePhase(t *testing.T, deps *lifecycleDeps) {
 
 	// Repeated reconciles with identical input must not rewrite the StatefulSet.
 	for range 3 {
-		require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
+		require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk, deps.imgClient, deps.verClient), k8sstatefulset.ErrRolloutInProgress)
 		assert.Equal(t, stsRV, getStatefulSet(t, deps.clt, deps.dk).ResourceVersion)
 	}
 }
@@ -168,7 +177,7 @@ func runDisablePhase(t *testing.T, deps *lifecycleDeps) {
 	name := deps.dk.KubernetesMonitoring().GetStatefulSetName()
 	deps.dk.Spec.KubernetesMonitoring = nil
 
-	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dk))
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dk, deps.imgClient, deps.verClient))
 
 	err := deps.clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: integrationNamespace}, &appsv1.StatefulSet{})
 	require.True(t, k8serrors.IsNotFound(err))
@@ -180,7 +189,7 @@ func runReEnablePhase(t *testing.T, deps *lifecycleDeps) {
 	deps.dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 	deps.dk.Spec.KubernetesMonitoring.Image = integrationImage
 
-	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk), k8sstatefulset.ErrRolloutInProgress)
+	require.ErrorIs(t, deps.reconciler.Reconcile(t.Context(), deps.dk, deps.imgClient, deps.verClient), k8sstatefulset.ErrRolloutInProgress)
 
 	sts := getStatefulSet(t, deps.clt, deps.dk)
 	assertStatefulSetShape(t, sts, deps.dk)
