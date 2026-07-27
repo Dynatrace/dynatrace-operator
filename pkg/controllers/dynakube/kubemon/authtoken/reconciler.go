@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -31,17 +32,17 @@ const (
 )
 
 type Reconciler struct {
-	secrets          k8ssecret.QueryObject
-	rotationInterval time.Duration
+	secrets k8ssecret.QueryObject
+	clock   clock.PassiveClock
 }
 
-// NewReconciler creates a Reconciler. rotationInterval controls how long an auth token secret is
-// kept before being rotated; pass DefaultRotationInterval in production, or a short-lived value
-// in tests instead of waiting out the production value.
-func NewReconciler(kubeClient client.Client, rotationInterval time.Duration) *Reconciler {
+// NewReconciler creates a Reconciler. The clock supplies the current time used to decide whether an
+// auth token secret is outdated; pass clock.RealClock{} in production, or a fake clock in tests to
+// advance time instead of waiting out the production rotation interval.
+func NewReconciler(kubeClient client.Client, clk clock.PassiveClock) *Reconciler {
 	return &Reconciler{
-		secrets:          k8ssecret.Query(kubeClient, kubeClient),
-		rotationInterval: rotationInterval,
+		secrets: k8ssecret.Query(kubeClient, kubeClient),
+		clock:   clk,
 	}
 }
 
@@ -100,5 +101,5 @@ func (r *Reconciler) cleanup(ctx context.Context, dk *dynakube.DynaKube) error {
 }
 
 func (r *Reconciler) isOutdated(secret *corev1.Secret) bool {
-	return secret.CreationTimestamp.Add(r.rotationInterval).Before(time.Now())
+	return secret.CreationTimestamp.Add(DefaultRotationInterval).Before(r.clock.Now())
 }

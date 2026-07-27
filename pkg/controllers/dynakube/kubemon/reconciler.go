@@ -32,6 +32,7 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -66,7 +67,7 @@ type Reconciler struct {
 func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
 		connectionInfoReconciler: kubemonconnectioninfo.NewReconciler(kubeClient),
-		authTokenReconciler:      kubemonauthtoken.NewReconciler(kubeClient, kubemonauthtoken.DefaultRotationInterval),
+		authTokenReconciler:      kubemonauthtoken.NewReconciler(kubeClient, clock.RealClock{}),
 		statefulsetReconciler:    kubemonstatefulset.NewReconciler(kubeClient),
 	}
 }

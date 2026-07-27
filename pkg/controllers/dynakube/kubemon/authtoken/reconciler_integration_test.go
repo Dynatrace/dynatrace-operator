@@ -22,16 +22,16 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	clocktesting "k8s.io/utils/clock/testing"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Integration tests for the authtoken reconciler against a real API server. Drive one DynaKube
 // through ordered, state-sharing phases; branch and error logic is covered by the unit test.
 //
-// Rotation is driven by comparing the server-managed creationTimestamp against the current time,
-// and a real apiserver sets that field on create and ignores client-supplied values on update, so
-// it cannot be backdated through the client. Instead, the rotate phase configures a short
-// rotationInterval passed to authtoken.NewReconciler and waits out real elapsed time.
+// The apiserver stamps creationTimestamp and ignores client-supplied values, so rotation can't be
+// triggered by backdating the secret. Instead the reconciler runs on a fake clock the rotate phase
+// advances past the production DefaultRotationInterval — no sleep.
 
 const (
 	integrationNamespace    = "dynatrace"
@@ -42,11 +42,6 @@ const (
 	integrationInitialToken   = "initial-token"
 	integrationRotatedToken   = "rotated-token"
 	integrationReEnabledToken = "re-enabled-token"
-
-	// integrationRotationInterval must stay comfortably longer than a couple of back-to-back
-	// reconciles (see the stabilize phase) so it doesn't trigger a spurious rotation there, while
-	// staying short enough that the rotate phase can wait it out on real elapsed time.
-	integrationRotationInterval = time.Second
 )
 
 var anyContext = mock.MatchedBy(func(context.Context) bool { return true })
@@ -54,6 +49,7 @@ var anyContext = mock.MatchedBy(func(context.Context) bool { return true })
 type lifecycleDeps struct {
 	clt        client.Client
 	reconciler *authtoken.Reconciler
+	clock      *clocktesting.FakePassiveClock
 	dk         *dynakube.DynaKube
 }
 
@@ -61,7 +57,9 @@ type lifecycleDeps struct {
 func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	ctx := t.Context()
-	reconciler := authtoken.NewReconciler(clt, integrationRotationInterval)
+	// Seed from the wall clock so it shares an epoch with the apiserver-stamped creationTimestamp.
+	fakeClock := clocktesting.NewFakePassiveClock(time.Now())
+	reconciler := authtoken.NewReconciler(clt, fakeClock)
 
 	integrationtests.CreateNamespace(t, ctx, clt, integrationNamespace)
 
@@ -80,6 +78,7 @@ func TestReconcileLifecycle(t *testing.T) {
 	deps := lifecycleDeps{
 		clt:        clt,
 		reconciler: reconciler,
+		clock:      fakeClock,
 		dk:         dk,
 	}
 
@@ -131,10 +130,8 @@ func runRotatePhase(t *testing.T, deps lifecycleDeps) {
 
 	oldSecret := getSecret(t, deps.clt, deps.dk)
 
-	// Wait out the real rotationInterval configured on the shared reconciler; the creationTimestamp
-	// is server-managed and can't be backdated through the client. A single reconcile then observes
-	// the now-outdated secret and rotates it.
-	time.Sleep(integrationRotationInterval + 200*time.Millisecond)
+	// Advance past this secret's rotation deadline, anchored to its server-stamped creationTimestamp.
+	deps.clock.SetTime(oldSecret.CreationTimestamp.Add(authtoken.DefaultRotationInterval + time.Second))
 
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), dtClient, deps.dk))
 

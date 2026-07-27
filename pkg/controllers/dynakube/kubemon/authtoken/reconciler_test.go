@@ -23,6 +23,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -43,7 +44,7 @@ func TestReconcile(t *testing.T) {
 		agCl := agclientmock.NewClient(t)
 		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(newAuthTokenResponse(testToken), nil).Once()
 
-		r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
+		r := authtoken.NewReconciler(clt, clock.RealClock{})
 
 		require.NoError(t, r.Reconcile(t.Context(), agCl, dk))
 
@@ -57,7 +58,7 @@ func TestReconcile(t *testing.T) {
 		agCl := agclientmock.NewClient(t)
 		// No GetAuthToken expectation — the mock will fail if it is called.
 
-		r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
+		r := authtoken.NewReconciler(clt, clock.RealClock{})
 
 		require.NoError(t, r.Reconcile(t.Context(), agCl, dk))
 	})
@@ -70,7 +71,7 @@ func TestReconcile(t *testing.T) {
 			agCl := agclientmock.NewClient(t)
 			agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(newAuthTokenResponse(testRotatedToken), nil).Once()
 
-			r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
+			r := authtoken.NewReconciler(clt, clock.RealClock{})
 
 			// Fast-forwards the bubble's fake clock past the real rotation interval instead of
 			// waiting it out or backdating CreationTimestamp by hand.
@@ -98,7 +99,7 @@ func TestReconcile(t *testing.T) {
 		clt := fake.NewClient(dk, newFreshSecret(dk, testToken))
 		agCl := agclientmock.NewClient(t)
 
-		r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
+		r := authtoken.NewReconciler(clt, clock.RealClock{})
 
 		dk.Spec.KubernetesMonitoring = nil
 
@@ -121,7 +122,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 		errGetToken := errors.New("dt api error")
 		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(nil, errGetToken).Once()
 
-		r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
+		r := authtoken.NewReconciler(clt, clock.RealClock{})
 
 		require.ErrorIs(t, r.Reconcile(t.Context(), agCl, dk), errGetToken)
 
@@ -150,7 +151,7 @@ func TestReconcileWriteFailures(t *testing.T) {
 		agCl := agclientmock.NewClient(t)
 		// No GetAuthToken expectation — a failed Get must abort before the Dynatrace API is called.
 
-		r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
+		r := authtoken.NewReconciler(clt, clock.RealClock{})
 
 		require.ErrorIs(t, r.Reconcile(t.Context(), agCl, dk), errGet)
 	})
@@ -166,7 +167,7 @@ func TestReconcileWriteFailures(t *testing.T) {
 		agCl := agclientmock.NewClient(t)
 		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(newAuthTokenResponse(testToken), nil).Once()
 
-		r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
+		r := authtoken.NewReconciler(clt, clock.RealClock{})
 
 		require.ErrorIs(t, r.Reconcile(t.Context(), agCl, dk), errCreate)
 	})
@@ -189,7 +190,7 @@ func TestReconcileRotationFailures(t *testing.T) {
 			agCl := agclientmock.NewClient(t)
 			agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(newAuthTokenResponse(testRotatedToken), nil).Once()
 
-			r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
+			r := authtoken.NewReconciler(clt, clock.RealClock{})
 
 			time.Sleep(authtoken.DefaultRotationInterval + time.Second)
 
@@ -214,7 +215,7 @@ func TestReconcileCleanupFailures(t *testing.T) {
 		agCl := agclientmock.NewClient(t)
 		dk.Spec.KubernetesMonitoring = nil
 
-		r := authtoken.NewReconciler(clt, authtoken.DefaultRotationInterval)
+		r := authtoken.NewReconciler(clt, clock.RealClock{})
 
 		require.ErrorIs(t, r.Reconcile(t.Context(), agCl, dk), errDelete)
 	})
