@@ -129,8 +129,16 @@ func (updater *oneAgentUpdater) CheckForDowngrade(ctx context.Context, latestVer
 
 	var err error
 
-	if updater.Target().Source == status.TenantRegistryVersionSource {
+	switch updater.Target().Source {
+	case status.TenantRegistryVersionSource:
 		previousVersion = updater.Target().Version //nolint:staticcheck
+	case status.PublicRegistryVersionSource:
+		previousVersion, err = getTagFromImageID(imageID)
+		if err != nil {
+			setVerificationFailedReasonCondition(updater.dk.Conditions(), oaConditionType)
+
+			return false, err
+		}
 	}
 
 	downgrade, err := isDowngrade(ctx, updater.Name(), previousVersion, latestVersion)
