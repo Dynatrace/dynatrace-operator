@@ -21,7 +21,10 @@ const (
 	ActiveGate  ComponentType = "activegate"
 	EEC         ComponentType = "eec"
 	LogModule   ComponentType = "logmodule"
-	DBExecutor  ComponentType = "dynatrace-sql-extension-executor"
+	DBExecutor  ComponentType = "sql-extension-executor"
+	// DBExecutorOldName is a fallback for the old name of the DBExecutor component type
+	// TODO: remove this fallback in a future release
+	DBExecutorOldName ComponentType = "dynatrace-sql-extension-executor"
 )
 
 type Info struct {

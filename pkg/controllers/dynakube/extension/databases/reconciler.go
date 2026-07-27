@@ -64,7 +64,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 
 		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutor)
 		if err != nil {
-			return err
+			// fallback to old image name for backward compatibility
+			// TODO: remove this fallback in a future release
+			imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutorOldName)
+			if err != nil {
+				return err
+			}
+
+			log.Debug("using old image name for backward compatibility", "imageURI", imageURI)
 		}
 	}
 
