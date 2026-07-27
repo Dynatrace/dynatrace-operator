@@ -70,7 +70,7 @@ Set install source how the Operator was installed
 Exclude Kubernetes manifest not running on OLM
 */}}
 {{- define "dynatrace-operator.openshiftOrOlm" -}}
-{{- if and (or (eq (include "dynatrace-operator.platform" .) "openshift") (.Values.olm)) -}}
+{{- if or (eq (include "dynatrace-operator.platform" .) "openshift") (.Values.olm) -}}
     {{ default "true" }}
 {{- end -}}
 {{- end -}}
