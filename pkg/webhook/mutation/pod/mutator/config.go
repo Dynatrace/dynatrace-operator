@@ -33,6 +33,11 @@ const (
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "dynatrace-operator"
 
+	// AnnotationInitContainerRunAsUser can be set on a Pod to override the RunAsUser in the init container's security context.
+	AnnotationInitContainerRunAsUser = "init-container.dynatrace.com/run-as-user"
+	// AnnotationInitContainerRunAsGroup can be set on a Pod to override the RunAsGroup in the init container's security context.
+	AnnotationInitContainerRunAsGroup = "init-container.dynatrace.com/run-as-group"
+
 	// AnnotationInjectionSplitMounts can be set on a Pod to indicate that the `/var/lib/dynatrace` volume mount on the user container should be split into multiple mounts.
 	// The following mounts are created:
 	// - In case OneAgent injection is enabled:

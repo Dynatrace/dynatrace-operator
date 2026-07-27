@@ -391,6 +391,69 @@ func Test_combineSecurityContexts(t *testing.T) {
 	}
 }
 
+func Test_combineSecurityContexts_annotations(t *testing.T) {
+	t.Run("annotation overrides user", func(t *testing.T) {
+		pod := corev1.Pod{}
+		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: "999"}
+		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsUser: new(int64(10))}
+
+		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		require.NotNil(t, out)
+		require.NotNil(t, out.RunAsUser)
+		assert.Equal(t, int64(999), *out.RunAsUser)
+	})
+
+	t.Run("annotation overrides group", func(t *testing.T) {
+		pod := corev1.Pod{}
+		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsGroup: "888"}
+		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsGroup: new(int64(10))}
+
+		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		require.NotNil(t, out)
+		require.NotNil(t, out.RunAsGroup)
+		assert.Equal(t, int64(888), *out.RunAsGroup)
+	})
+
+	t.Run("annotation overrides container security context", func(t *testing.T) {
+		pod := corev1.Pod{}
+		pod.Annotations = map[string]string{
+			dtwebhook.AnnotationInitContainerRunAsUser:  "777",
+			dtwebhook.AnnotationInitContainerRunAsGroup: "666",
+		}
+		pod.Spec.Containers = []corev1.Container{
+			{SecurityContext: &corev1.SecurityContext{RunAsUser: new(int64(0)), RunAsGroup: new(int64(0))}},
+		}
+
+		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		require.NotNil(t, out)
+		require.NotNil(t, out.RunAsUser)
+		assert.Equal(t, int64(777), *out.RunAsUser)
+		require.NotNil(t, out.RunAsGroup)
+		assert.Equal(t, int64(666), *out.RunAsGroup)
+	})
+
+	t.Run("annotation root user sets RunAsNonRoot false", func(t *testing.T) {
+		pod := corev1.Pod{}
+		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: "0"}
+
+		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		require.NotNil(t, out)
+		require.NotNil(t, out.RunAsNonRoot)
+		assert.False(t, *out.RunAsNonRoot)
+	})
+
+	t.Run("invalid annotation value is ignored", func(t *testing.T) {
+		pod := corev1.Pod{}
+		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: "not-a-number"}
+		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsUser: new(int64(42))}
+
+		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		require.NotNil(t, out)
+		require.NotNil(t, out.RunAsUser)
+		assert.Equal(t, int64(42), *out.RunAsUser)
+	})
+}
+
 func Test_securityContextForInitContainer(t *testing.T) {
 	type testCase struct {
 		title       string

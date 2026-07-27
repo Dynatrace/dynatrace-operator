@@ -5,12 +5,14 @@ package injection
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
@@ -129,9 +131,33 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
+	if user := parseAnnotationAsInt64(pod.Annotations, dtwebhook.AnnotationInitContainerRunAsUser); user != nil {
+		baseSecurityCtx.RunAsUser = user
+	}
+
+	if group := parseAnnotationAsInt64(pod.Annotations, dtwebhook.AnnotationInitContainerRunAsGroup); group != nil {
+		baseSecurityCtx.RunAsGroup = group
+	}
+
 	baseSecurityCtx.RunAsNonRoot = new(isNonRoot(&baseSecurityCtx))
 
 	return &baseSecurityCtx
+}
+
+func parseAnnotationAsInt64(annotations map[string]string, key string) *int64 {
+	val, ok := annotations[key]
+	if !ok {
+		return nil
+	}
+
+	parsed, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		logd.Get().Error(err, "failed to parse pod annotation as int64, ignoring", "annotation", key, "value", val)
+
+		return nil
+	}
+
+	return &parsed
 }
 
 func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
