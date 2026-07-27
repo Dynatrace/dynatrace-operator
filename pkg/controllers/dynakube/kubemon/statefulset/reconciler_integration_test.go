@@ -7,9 +7,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
@@ -20,6 +22,7 @@ import (
 	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -194,6 +197,85 @@ func runReEnablePhase(t *testing.T, deps *lifecycleDeps) {
 	sts := getStatefulSet(t, deps.clt, deps.dk)
 	assertStatefulSetShape(t, sts, deps.dk)
 	assert.Equal(t, deps.rotatedTenantTokenHash, sts.Spec.Template.Annotations[statefulset.AnnotationTenantTokenHash])
+}
+
+// TestReconcileLifecycleAutoImage walks provision → rollout-complete → switch-to-public-registry
+// with images resolved at runtime rather than hard-coded. The test confirms that:
+//   - The version client drives image resolution in the default tenant-registry path.
+//   - Adding the public-registry annotation switches resolution to the image client, and the
+//     StatefulSet is updated with the URI returned by that client.
+func TestReconcileLifecycleAutoImage(t *testing.T) {
+	clt := integrationtests.SetupTestEnvironment(t)
+	integrationtests.CreateNamespace(t, t.Context(), clt, integrationNamespace)
+
+	const (
+		activeGateVersion = "1.2.3.4"
+		publicImageURI    = "public.registry.example.com/linux/activegate:1.2.3"
+	)
+
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "lifecycle-auto-image",
+			Namespace: integrationNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL:               "https://tenant.live.dynatrace.com/api",
+			KubernetesMonitoring: &kubemonapi.Spec{}, // no custom image — version client is called
+		},
+	}
+	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
+			Namespace: dk.Namespace,
+		},
+		Data: map[string][]byte{
+			connectioninfo.TenantTokenKey: []byte("test-tenant-token"),
+		},
+	}
+	integrationtests.CreateKubernetesObject(t, t.Context(), clt, secret)
+
+	verClient := versionclientmock.NewClient(t)
+	verClient.EXPECT().
+		GetLatestActiveGateVersion(mock.Anything, installer.OSUnix).
+		Return(activeGateVersion, nil)
+
+	imgClient := imageclientmock.NewClient(t)
+	imgClient.EXPECT().
+		GetComponentLatestInfo(mock.Anything, image.ActiveGate, "").
+		Return(&image.Info{URI: publicImageURI}, nil)
+
+	expectedTenantImage := dk.KubernetesMonitoring().GetDefaultImage(activeGateVersion)
+	require.NotEmpty(t, expectedTenantImage)
+
+	reconciler := statefulset.NewReconciler(clt)
+
+	// provision: STS is created with the version-client image, rollout not yet complete
+	require.ErrorIs(t,
+		reconciler.Reconcile(t.Context(), dk, imgClient, verClient),
+		k8sstatefulset.ErrRolloutInProgress,
+	)
+
+	sts := getStatefulSet(t, clt, dk)
+	assert.Equal(t, dk.KubernetesMonitoring().GetStatefulSetName(), sts.Name)
+	assert.True(t, metav1.IsControlledBy(sts, dk))
+	require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+	assert.Equal(t, expectedTenantImage, sts.Spec.Template.Spec.Containers[0].Image)
+
+	// rollout-complete: mark the STS ready; reconcile must return no error
+	markRolloutComplete(t, t.Context(), clt, dk)
+	require.NoError(t, reconciler.Reconcile(t.Context(), dk, imgClient, verClient))
+
+	// switch to public registry: image client is now used; STS image must update and trigger a new rollout
+	dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+	require.ErrorIs(t,
+		reconciler.Reconcile(t.Context(), dk, imgClient, verClient),
+		k8sstatefulset.ErrRolloutInProgress,
+	)
+
+	sts = getStatefulSet(t, clt, dk)
+	assert.Equal(t, publicImageURI, sts.Spec.Template.Spec.Containers[0].Image)
 }
 
 func assertStatefulSetShape(t *testing.T, sts *appsv1.StatefulSet, dk *dynakube.DynaKube) {
