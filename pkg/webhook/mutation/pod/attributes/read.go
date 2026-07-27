@@ -52,19 +52,19 @@ func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.D
 		case metadataenrichment.AnnotationRule, metadataenrichment.K8sNamespaceAnnotationRule:
 			valueFromNamespace, exists = namespace.Annotations[rule.Source]
 		case metadataenrichment.CustomRule:
-			if len(rule.Target) == 0 {
-				continue
-			}
-
 			valueFromNamespace = rule.Source
 			exists = true
 		}
 
 		if exists {
-			if len(rule.Target) > 0 {
-				attrs.rules[rule.Target] = valueFromNamespace
-			} else {
+			if rule.Target == "" {
+				// The last rule without a target to resolve to a value wins. This inconsistency is intentional to not introduce a behavior change for users upgrading from <1.10.
+				// Target can only be empty for legacy schema rules.
 				attrs.rules[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
+			} else if _, ok := attrs.rules[rule.Target]; !ok {
+				// The first rule to resolve to a value wins, regardless of type.
+				// This only is valid if the order of the rules remains unchanged from the API response.
+				attrs.rules[rule.Target] = valueFromNamespace
 			}
 		}
 	}
@@ -83,7 +83,8 @@ func (attrs *Pod) readWorkloadInfoAttributes(ctx context.Context, request mutato
 }
 
 func (attrs *Pod) readPodAttributes(request mutator.BaseRequest) {
-	attrs.podEnvVars = append(attrs.podEnvVars,
+	attrs.podEnvVars = append(
+		attrs.podEnvVars,
 		corev1.EnvVar{Name: K8sPodNameEnv, ValueFrom: k8senv.NewSourceForField("metadata.name")},
 		corev1.EnvVar{Name: K8sPodUIDEnv, ValueFrom: k8senv.NewSourceForField("metadata.uid")},
 		corev1.EnvVar{Name: K8sNodeNameEnv, ValueFrom: k8senv.NewSourceForField("spec.nodeName")},

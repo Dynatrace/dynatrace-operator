@@ -13,8 +13,7 @@ const (
 
 	K8sNamespaceLabelRule      RuleType = "K8S_NAMESPACE_LABEL"
 	K8sNamespaceAnnotationRule RuleType = "K8S_NAMESPACE_ANNOTATION"
-	// TODO: implement support for this type.
-	CustomRule RuleType = "CUSTOM"
+	CustomRule                 RuleType = "CUSTOM"
 
 	Annotation         = "metadata.dynatrace.com"
 	Prefix             = Annotation + "/"
