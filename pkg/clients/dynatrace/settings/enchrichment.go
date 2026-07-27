@@ -217,7 +217,9 @@ func isNewSchemaRequested(resp getRulesResponse) bool {
 	return false
 }
 
+// Map rules from either schema to a list of [metadataenrichment.Rule].
 func getRulesFromResponse(ctx context.Context, resp getRulesResponse) []metadataenrichment.Rule {
+	// IMPORTANT: The order of the rules MUST NOT be changed. This is because we must guarantee that the first rule to match a key wins (ICP-7916).
 	var (
 		rules   []metadataenrichment.Rule
 		dropped []ingestEnrichmentConfig
