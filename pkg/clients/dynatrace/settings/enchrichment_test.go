@@ -376,7 +376,7 @@ func TestLogDroppedRules(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var logSink capturingLogSink
-			ctx := logr.NewContext(context.Background(), logr.New(&logSink))
+			ctx := logr.NewContext(t.Context(), logr.New(&logSink))
 			_ = getRulesFromResponse(ctx, tt.resp)
 			assert.Equal(t, tt.expect, logSink.values)
 		})
