@@ -114,12 +114,12 @@ runs:
         sudo apt-get update
         sudo apt-get install -y make
     - name: Checkout workflow scripts from ref branch
-      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         path: ref
         persist-credentials: false
     - name: Checkout target branch
-      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         ref: ${{ inputs.target-branch || 'main' }}
         path: target
@@ -127,7 +127,7 @@ runs:
     - name: Set up kubectl
       uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
     - name: Set up go
-      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version: 'stable' # Latest stable version
         cache: false

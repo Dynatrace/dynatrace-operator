@@ -42,7 +42,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- $needsCertgen := not (include "dynatrace-operator.openshiftOrOlm" .) }}
+      {{- $needsCertgen := not .Values.olm }}
       {{- if $needsCertgen }}
       initContainers:
         - name: webhook-cert-generator
