@@ -200,6 +200,24 @@ tests:
       - isNotEmpty:
           path: spec.template.spec.affinity
 
+  - it: should have certgen init container on openshift
+    set:
+      platform: openshift
+      crdStorageMigrationJob: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: webhook-cert-generator
+
+  - it: should not have certgen init container when olm is true
+    set:
+      platform: kubernetes
+      olm: true
+      crdStorageMigrationJob: true
+    asserts:
+      - isNull:
+          path: spec.template.spec.initContainers
+
   - it: should not render when crdStorageMigrationJob is false
     set:
       platform: kubernetes
