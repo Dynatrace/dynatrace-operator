@@ -82,7 +82,7 @@ func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID stri
 		log.Info("updating data with new schema enabled on tenant", "schemaID", metadataEnrichmentSchemaID)
 	} else {
 		// The legacy schema was found and the toggle is not enabled
-		return getRulesFromResponse(resp), nil
+		return getRulesFromResponse(ctx, resp), nil
 	}
 
 	// Retry the request with the new schema. For managed this will always fail, but we have no practical way of knowing which environment we're running in.
@@ -103,7 +103,7 @@ func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID stri
 		return nil, nil
 	}
 
-	rules := getRulesFromResponse(resp)
+	rules := getRulesFromResponse(ctx, resp)
 	if useNewSchema && len(rules) == 0 {
 		// Rules get auto-migrated when moving to Latest Dynatrace environments, but before then it's the users responsibility to migrate them.
 		// Since the user explicitly requested the new schema, missing rules at this point are not an error.
@@ -123,15 +123,22 @@ func isNewSchemaRequested(resp getRulesResponse) bool {
 	return false
 }
 
-func getRulesFromResponse(resp getRulesResponse) []metadataenrichment.Rule {
-	var rules []metadataenrichment.Rule
+func getRulesFromResponse(ctx context.Context, resp getRulesResponse) []metadataenrichment.Rule {
+	var (
+		rules   []metadataenrichment.Rule
+		dropped []ingestEnrichmentConfig
+	)
 
 	// In practice, this loop is only actually required for the new schema where each rule is a separate item.
 	// The legacy schema put all rules into a single item's value.
 	for _, item := range resp.Items {
-		if cfg := item.Value.ingestEnrichmentConfig; metadataenrichment.IsSupportedType(cfg.Type) {
-			if cfg.Condition != "" {
-				// Skip rules with conditions for now
+		if cfg := item.Value.ingestEnrichmentConfig; cfg != (ingestEnrichmentConfig{}) {
+			if !metadataenrichment.IsSupportedType(cfg.Type) || cfg.Condition != "" || cfg.Target == "" {
+				// Rules with conditions are skipped for now. We might implement support later.
+				// At time of writing new schema does not allow rules without target.
+				// The injection can't handle empty targets for the new rule types, so drop them in case the API changes.
+				dropped = append(dropped, cfg)
+
 				continue
 			}
 
@@ -148,6 +155,10 @@ func getRulesFromResponse(resp getRulesResponse) []metadataenrichment.Rule {
 
 		// Old rules always have supported types
 		rules = append(rules, item.Value.Rules...)
+	}
+
+	if len(dropped) > 0 {
+		logd.FromContext(ctx).Info("skipped enrichment rules with unsupported values", "rules", dropped)
 	}
 
 	return rules
