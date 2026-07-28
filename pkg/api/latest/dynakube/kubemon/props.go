@@ -8,7 +8,7 @@ import corev1 "k8s.io/api/core/v1"
 const (
 	KubeMonAvailableConditionType = "KubernetesMonitoringAvailable"
 
-	OperandNameSuffix = "-kubemon"
+	NameSuffix = "-kubemon"
 
 	ServiceAccountName = "dynatrace-activegate"
 )
@@ -35,15 +35,19 @@ func (km *Spec) GetServiceAccountName() string {
 }
 
 func (km *KubeMon) GetStatefulSetName() string {
-	return km.name + OperandNameSuffix
+	return km.name + NameSuffix
 }
 
 func (km *KubeMon) GetConnectionInfoConfigMapName() string {
-	return km.name + OperandNameSuffix + "-connection-info"
+	return km.name + NameSuffix + "-connection-info"
 }
 
 func (km *KubeMon) GetTenantSecretName() string {
-	return km.name + OperandNameSuffix + "-tenant-secret"
+	return km.name + NameSuffix + "-tenant-secret"
+}
+
+func (km *KubeMon) GetAuthTokenSecretName() string {
+	return km.name + NameSuffix + "-authtoken-secret"
 }
 
 func (km *Spec) GetPullPolicy() corev1.PullPolicy {

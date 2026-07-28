@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -35,6 +36,8 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error {
+	ctx, _ = logd.NewFromContext(ctx, "connectioninfo")
+
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		return r.cleanup(ctx, dk)
 	}
@@ -84,7 +87,7 @@ func (r *Reconciler) createOrUpdateConfigMap(ctx context.Context, dk *dynakube.D
 		connectioninfo.CommunicationEndpointsKey: info.Endpoints,
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KubeMonComponentLabel)
 
 	cm, err := k8sconfigmap.Build(dk,
 		dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(),
@@ -96,15 +99,12 @@ func (r *Reconciler) createOrUpdateConfigMap(ctx context.Context, dk *dynakube.D
 	}
 
 	_, err = r.configMaps.CreateOrUpdate(ctx, cm)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (r *Reconciler) createOrUpdateSecret(ctx context.Context, dk *dynakube.DynaKube, tenantToken string) error {
-	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.ActiveGateComponentLabel, dk.KubernetesMonitoring().GetTenantSecretName(), tenantToken)
+	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.KubeMonComponentLabel, dk.KubernetesMonitoring().GetTenantSecretName(), tenantToken)
 	if err != nil {
 		return pkgerrors.WithStack(err)
 	}

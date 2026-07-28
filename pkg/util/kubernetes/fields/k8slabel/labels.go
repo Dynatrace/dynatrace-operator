@@ -23,6 +23,7 @@ const (
 	LogMonitoringComponentLabel = "logmonitoring"
 	KSPMComponentLabel          = "kspm"
 	ActiveGateComponentLabel    = "activegate"
+	KubeMonComponentLabel       = "kubemon"
 	WebhookComponentLabel       = "webhook"
 	EdgeConnectComponentLabel   = "edgeconnect"
 	ExtensionComponentLabel     = "dynatrace-extension-controller"
