@@ -31,6 +31,8 @@ type DynakubeMapper struct {
 	matchedOANamespaces   []string
 	matchedMENamespaces   []string
 	matchedOTLPNamespaces []string
+
+	deselectedNamespaces []string
 }
 
 func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynakube.DynaKube) DynakubeMapper {
@@ -46,6 +48,7 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 		matchedOANamespaces:   []string{},
 		matchedMENamespaces:   []string{},
 		matchedOTLPNamespaces: []string{},
+		deselectedNamespaces:  []string{},
 	}
 }
 
@@ -60,6 +63,12 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 
 	for _, ns := range modifiedNs {
 		if err := dm.client.Update(dm.ctx, ns); err != nil {
+			return err
+		}
+	}
+
+	for _, nsName := range dm.deselectedNamespaces {
+		if err := dm.deleteReplicatedSecrets(nsName); err != nil {
 			return err
 		}
 	}
@@ -181,9 +190,7 @@ func (dm *DynakubeMapper) mapNamespace(namespace *corev1.Namespace, dkList *dyna
 	}
 
 	if previouslyInjected && !result.IsAny() {
-		if err := dm.deleteReplicatedSecrets(namespace.Name); err != nil {
-			return false, err
-		}
+		dm.deselectedNamespaces = append(dm.deselectedNamespaces, namespace.Name)
 	}
 
 	return updated, nil

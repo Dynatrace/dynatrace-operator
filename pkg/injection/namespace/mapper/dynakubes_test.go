@@ -179,6 +179,47 @@ func TestMapFromDynakube(t *testing.T) {
 	})
 }
 
+func TestMatchingNamespaces(t *testing.T) {
+	t.Run("validating webhook run on deselected ns => replicated secrets not deleted", func(t *testing.T) {
+		matchingLabels := map[string]string{"foo": "bar"}
+		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(matchingLabels))
+
+		namespace := createNamespace(
+			"definitely-not-selected",
+			map[string]string{
+				dtwebhook.InjectionInstanceLabel: dk.Name,
+			},
+		)
+
+		clt := fake.NewClient(dk, namespace)
+		ctx := t.Context()
+
+		secretNames := []string{
+			consts.BootstrapperInitSecretName,
+			consts.BootstrapperInitCertsSecretName,
+			consts.OTLPExporterSecretName,
+			consts.OTLPExporterCertsSecretName,
+		}
+		for _, secretName := range secretNames {
+			createSecret(t, clt, secretName, namespace.Name)
+		}
+
+		// pass nil write client, just like validating webhooks
+		dm := NewDynakubeMapper(ctx, nil, clt, "dynatrace", dk)
+
+		require.NotPanics(t, func() {
+			_, err := dm.MatchingNamespaces()
+			require.NoError(t, err)
+		})
+
+		for _, secretName := range secretNames {
+			var secret corev1.Secret
+			err := clt.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace.Name}, &secret)
+			require.NoErrorf(t, err, "secret %s must not be deleted when validating webhooks are run", secretName)
+		}
+	})
+}
+
 func TestUnmapFromDynaKube(t *testing.T) {
 	dk := createDynakubeWithAppInject("dk", metav1.LabelSelector{})
 	labels := map[string]string{
