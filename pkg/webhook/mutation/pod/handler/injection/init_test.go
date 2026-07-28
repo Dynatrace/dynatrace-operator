@@ -4,6 +4,8 @@
 package injection
 
 import (
+	"math"
+	"strconv"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
@@ -44,7 +46,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = nil
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = nil
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		require.NotNil(t, initContainer)
 
@@ -81,7 +83,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = testUser
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = testUser
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -101,7 +103,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.SecurityContext.RunAsUser = testUser
 		pod.Spec.SecurityContext.RunAsGroup = testUser
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -120,7 +122,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.SecurityContext.RunAsUser = new(RootUser)
 		pod.Spec.SecurityContext.RunAsGroup = new(RootGroup)
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		assert.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -137,7 +139,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, initContainer.SecurityContext.SeccompProfile.Type)
 	})
@@ -148,7 +150,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		assert.NotContains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
@@ -159,7 +161,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"}
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		assert.NotContains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
@@ -170,7 +172,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
@@ -181,7 +183,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 
@@ -190,7 +192,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod = getTestPod()
 		pod.Annotations = map[string]string{dtwebhook.AnnotationFailurePolicy: "asd"}
 
-		initContainer = wh.createInitContainerBase(pod, *dk)
+		initContainer = wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
@@ -202,11 +204,11 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Annotations = map[string]string{}
 
 		dk := getTestDynakube()
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 		assert.Contains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 
 		dk.Spec.OneAgent = getApplicationMonitoringSpec()
-		initContainer = wh.createInitContainerBase(pod, *dk)
+		initContainer = wh.createInitContainerBase(t.Context(), pod, *dk)
 		assert.Contains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 	})
 
@@ -218,11 +220,11 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Annotations = map[string]string{}
 
 		dk.Spec.OneAgent = getHostMonitoringSpec()
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 
 		dk.Spec.OneAgent = getClassicFullStackSpec()
-		initContainer = wh.createInitContainerBase(pod, *dk)
+		initContainer = wh.createInitContainerBase(t.Context(), pod, *dk)
 		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 	})
 
@@ -232,7 +234,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 	})
@@ -244,7 +246,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := wh.createInitContainerBase(pod, *dk)
+		initContainer := wh.createInitContainerBase(t.Context(), pod, *dk)
 
 		assert.NotContains(t, initContainer.Args, "--"+bootstrapper.BaseURL)
 	})
@@ -383,7 +385,7 @@ func Test_combineSecurityContexts(t *testing.T) {
 				},
 			}
 
-			out := combineSecurityContexts(c.initContainerSc, pod)
+			out := combineSecurityContexts(t.Context(), c.initContainerSc, pod)
 			require.NotNil(t, out)
 
 			assert.Equal(t, c.expectedOut, *out)
@@ -397,7 +399,7 @@ func Test_combineSecurityContexts_annotations(t *testing.T) {
 		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: "999"}
 		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsUser: new(int64(10))}
 
-		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		out := combineSecurityContexts(t.Context(), corev1.SecurityContext{}, pod)
 		require.NotNil(t, out)
 		require.NotNil(t, out.RunAsUser)
 		assert.Equal(t, int64(999), *out.RunAsUser)
@@ -408,7 +410,7 @@ func Test_combineSecurityContexts_annotations(t *testing.T) {
 		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsGroup: "888"}
 		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsGroup: new(int64(10))}
 
-		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		out := combineSecurityContexts(t.Context(), corev1.SecurityContext{}, pod)
 		require.NotNil(t, out)
 		require.NotNil(t, out.RunAsGroup)
 		assert.Equal(t, int64(888), *out.RunAsGroup)
@@ -424,7 +426,7 @@ func Test_combineSecurityContexts_annotations(t *testing.T) {
 			{SecurityContext: &corev1.SecurityContext{RunAsUser: new(int64(0)), RunAsGroup: new(int64(0))}},
 		}
 
-		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		out := combineSecurityContexts(t.Context(), corev1.SecurityContext{}, pod)
 		require.NotNil(t, out)
 		require.NotNil(t, out.RunAsUser)
 		assert.Equal(t, int64(777), *out.RunAsUser)
@@ -436,21 +438,49 @@ func Test_combineSecurityContexts_annotations(t *testing.T) {
 		pod := corev1.Pod{}
 		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: "0"}
 
-		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		out := combineSecurityContexts(t.Context(), corev1.SecurityContext{}, pod)
 		require.NotNil(t, out)
 		require.NotNil(t, out.RunAsNonRoot)
 		assert.False(t, *out.RunAsNonRoot)
 	})
 
-	t.Run("invalid annotation value is ignored", func(t *testing.T) {
+	t.Run("invalid annotation value is ignored - not a number", func(t *testing.T) {
 		pod := corev1.Pod{}
-		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: "not-a-number"}
-		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsUser: new(int64(42))}
+		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: "not-a-number", dtwebhook.AnnotationInitContainerRunAsGroup: "not-a-number"}
+		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsUser: new(int64(42)), RunAsGroup: new(int64(42))}
 
-		out := combineSecurityContexts(corev1.SecurityContext{}, pod)
+		out := combineSecurityContexts(t.Context(), corev1.SecurityContext{}, pod)
 		require.NotNil(t, out)
 		require.NotNil(t, out.RunAsUser)
+		require.NotNil(t, out.RunAsGroup)
 		assert.Equal(t, int64(42), *out.RunAsUser)
+		assert.Equal(t, int64(42), *out.RunAsGroup)
+	})
+
+	t.Run("invalid annotation value is ignored - negative number", func(t *testing.T) {
+		pod := corev1.Pod{}
+		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: "-1", dtwebhook.AnnotationInitContainerRunAsGroup: "-1"}
+		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsUser: new(int64(42)), RunAsGroup: new(int64(42))}
+
+		out := combineSecurityContexts(t.Context(), corev1.SecurityContext{}, pod)
+		require.NotNil(t, out)
+		require.NotNil(t, out.RunAsUser)
+		require.NotNil(t, out.RunAsGroup)
+		assert.Equal(t, int64(42), *out.RunAsUser)
+		assert.Equal(t, int64(42), *out.RunAsGroup)
+	})
+
+	t.Run("invalid annotation value is ignored - too big number", func(t *testing.T) {
+		pod := corev1.Pod{}
+		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: strconv.Itoa(math.MaxInt64), dtwebhook.AnnotationInitContainerRunAsGroup: strconv.Itoa(math.MaxInt64)}
+		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsUser: new(int64(42)), RunAsGroup: new(int64(42))}
+
+		out := combineSecurityContexts(t.Context(), corev1.SecurityContext{}, pod)
+		require.NotNil(t, out)
+		require.NotNil(t, out.RunAsUser)
+		require.NotNil(t, out.RunAsGroup)
+		assert.Equal(t, int64(42), *out.RunAsUser)
+		assert.Equal(t, int64(42), *out.RunAsGroup)
 	})
 }
 
@@ -661,7 +691,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 			pod := corev1.Pod{}
 			pod.Spec.SecurityContext = &c.podSc
 
-			out := securityContextForInitContainer(&pod, c.dk, c.isOpenShift)
+			out := securityContextForInitContainer(t.Context(), &pod, c.dk, c.isOpenShift)
 			require.NotNil(t, out)
 
 			assert.Equal(t, c.expectedOut, *out)

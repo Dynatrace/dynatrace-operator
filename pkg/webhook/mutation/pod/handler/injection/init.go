@@ -5,7 +5,9 @@ package injection
 
 import (
 	"context"
+	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
@@ -20,9 +22,10 @@ import (
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
-func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
+func (h *Handler) createInitContainerBase(ctx context.Context, pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
 	args := []arg.Arg{
 		{
 			Name:  configure.ConfigFolderFlag,
@@ -49,7 +52,7 @@ func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube)
 		Name:            dtwebhook.InstallContainerName,
 		Image:           h.webhookPodImage,
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		SecurityContext: securityContextForInitContainer(pod, dk, h.isOpenShift),
+		SecurityContext: securityContextForInitContainer(ctx, pod, dk, h.isOpenShift),
 		Resources:       defaultInitContainerResources(),
 		Args:            append([]string{bootstrapper.Use}, arg.ConvertArgsToStrings(args)...),
 	}
@@ -85,7 +88,7 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 	}
 }
 
-func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
+func securityContextForInitContainer(ctx context.Context, pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   new(true),
 		AllowPrivilegeEscalation: new(false),
@@ -104,10 +107,10 @@ func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOp
 
 	addSeccompProfile(&initSecurityCtx, dk)
 
-	return combineSecurityContexts(initSecurityCtx, *pod)
+	return combineSecurityContexts(ctx, initSecurityCtx, *pod)
 }
 
-func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.Pod) *corev1.SecurityContext {
+func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.SecurityContext, pod corev1.Pod) *corev1.SecurityContext {
 	containerSecurityCtx := &corev1.SecurityContext{}
 	if len(pod.Spec.Containers) > 0 {
 		containerSecurityCtx = pod.Spec.Containers[0].SecurityContext
@@ -131,12 +134,20 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	if user := parseAnnotationAsInt64(pod.Annotations, dtwebhook.AnnotationInitContainerRunAsUser); user != nil {
-		baseSecurityCtx.RunAsUser = user
+	if user := parseAnnotationAsInt64(ctx, pod.Annotations, dtwebhook.AnnotationInitContainerRunAsUser); user != nil {
+		if valErrs := validation.IsValidUserID(*user); valErrs != nil {
+			logd.FromContext(ctx).Error(errors.New(strings.Join(valErrs, ";")), "invalid user ID from annotation, ignoring")
+		} else {
+			baseSecurityCtx.RunAsUser = user
+		}
 	}
 
-	if group := parseAnnotationAsInt64(pod.Annotations, dtwebhook.AnnotationInitContainerRunAsGroup); group != nil {
-		baseSecurityCtx.RunAsGroup = group
+	if group := parseAnnotationAsInt64(ctx, pod.Annotations, dtwebhook.AnnotationInitContainerRunAsGroup); group != nil {
+		if valErrs := validation.IsValidGroupID(*group); valErrs != nil {
+			logd.FromContext(ctx).Error(errors.New(strings.Join(valErrs, ";")), "invalid group ID from annotation, ignoring")
+		} else {
+			baseSecurityCtx.RunAsGroup = group
+		}
 	}
 
 	baseSecurityCtx.RunAsNonRoot = new(isNonRoot(&baseSecurityCtx))
@@ -144,7 +155,7 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 	return &baseSecurityCtx
 }
 
-func parseAnnotationAsInt64(annotations map[string]string, key string) *int64 {
+func parseAnnotationAsInt64(ctx context.Context, annotations map[string]string, key string) *int64 {
 	val, ok := annotations[key]
 	if !ok {
 		return nil
@@ -152,7 +163,7 @@ func parseAnnotationAsInt64(annotations map[string]string, key string) *int64 {
 
 	parsed, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		logd.Get().Error(err, "failed to parse pod annotation as int64, ignoring", "annotation", key, "value", val)
+		logd.FromContext(ctx).Error(err, "failed to parse annotation value", "key", key, "value", val)
 
 		return nil
 	}
