@@ -278,7 +278,7 @@ func getTestDynakubeWithAGCerts() *dynakube.DynaKube {
 func createTestMutationRequestWithInjectedPod(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	t.Helper()
 
-	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getInjectedPod(t), *dk)
+	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getInjectedPod(t), *dk)
 }
 
 func getInjectedPod(t *testing.T) *corev1.Pod {
@@ -316,7 +316,7 @@ func getInjectedPod(t *testing.T) *corev1.Pod {
 
 	h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
 
-	installContainer := h.createInitContainerBase(pod, *getTestDynakube())
+	installContainer := h.createInitContainerBase(t.Context(), pod, *getTestDynakube())
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
 
 	return pod
