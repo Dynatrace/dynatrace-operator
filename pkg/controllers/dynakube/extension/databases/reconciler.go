@@ -125,7 +125,7 @@ func resolveImageURI(ctx context.Context, imageClient dtimage.Client, dk *dynaku
 
 	// fallback to old image name for backward compatibility if we can't resolve the image URI by new component name.
 	// TODO: remove this fallback in a future release
-	if apiErr := new(core.HTTPError); err != nil && !errors.As(err, &apiErr) { //nolint:revive // we want to check for a specific error type, not the whole error chain
+	if apiErr := new(core.HTTPError); err != nil && !errors.As(err, &apiErr) {
 		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutorOldName)
 		if err != nil {
 			return "", err
