@@ -155,7 +155,7 @@ func getValidatedID(ctx context.Context, annotations map[string]string, key stri
 	// uint31 == positive int32 range
 	parsed, err := strconv.ParseUint(val, 10, 31)
 	if err != nil {
-		logd.FromContext(ctx).Error(err, "failed to parse annotation value, must be a uint32", "key", key, "value", val)
+		logd.FromContext(ctx).Error(err, "failed to parse annotation value, must be a positive int32", "key", key, "value", val)
 
 		return nil
 	}
