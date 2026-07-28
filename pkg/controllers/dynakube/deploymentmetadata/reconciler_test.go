@@ -156,7 +156,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("add kubemon metadata, if the operand gate is enabled and kubemon is enabled", func(t *testing.T) {
-		t.Setenv(k8senv.KubemonEnableOperand, "true") // remove with gate
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true") // remove with gate
 
 		dk := createTestDynakube(
 			&dynakube.DynaKubeSpec{
