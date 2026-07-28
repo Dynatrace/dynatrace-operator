@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -363,6 +364,46 @@ func TestPublicRegistryImage(t *testing.T) {
 
 		deployment := getReconciledDeployment(t)
 		require.Equal(t, expectedImageURI, deployment.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("imageURI from public registry fallback to old name", func(t *testing.T) {
+		expectedImageURI := "my-public-registry:5000/my-test-repo:my-test-tag"
+		getReconciledDeployment := func(t *testing.T) *appsv1.Deployment {
+			t.Helper()
+
+			dk := getTestDynakube()
+			dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+			dk.Spec.Templates = dynakube.TemplatesSpec{}
+			clt := fakeClient()
+
+			imageClient := imageclientmock.NewClient(t)
+			boom := errors.New("component not found")
+			imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.DBExecutor, "").Return(nil, boom)
+			imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.DBExecutorOldName, "").Return(&dtimage.Info{URI: expectedImageURI}, nil)
+
+			require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
+			deployments := &appsv1.DeploymentList{}
+			require.NoError(t, clt.List(t.Context(), deployments))
+			require.Len(t, deployments.Items, 1)
+
+			return &deployments.Items[0]
+		}
+
+		deployment := getReconciledDeployment(t)
+		require.Equal(t, expectedImageURI, deployment.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("imageURI from public registry http error", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.Templates = dynakube.TemplatesSpec{}
+		clt := fakeClient()
+
+		imageClient := imageclientmock.NewClient(t)
+		boom := new(core.HTTPError)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.DBExecutor, "").Return(nil, boom).Once()
+
+		require.Error(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
 	})
 
 	t.Run("no call to api when extensions are not used", func(t *testing.T) {
