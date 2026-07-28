@@ -296,7 +296,7 @@ func getClientAndConfig(options ...Option) (*http.Client, *Config, error) {
 
 	return &http.Client{
 		Transport: transport,
-		Timeout:   30 * time.Second,
+		Timeout:   15 * time.Minute,
 	}, &config, nil
 }
 

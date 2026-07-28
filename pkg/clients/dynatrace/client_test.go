@@ -197,7 +197,7 @@ func TestGetClientAndConfig(t *testing.T) {
 		httpClient, config, err := getClientAndConfig()
 		require.NoError(t, err)
 		require.NotNil(t, config)
-		assert.Equal(t, 30*time.Second, httpClient.Timeout)
+		assert.Equal(t, 15*time.Minute, httpClient.Timeout)
 		assert.Equal(t, operatorversion.UserAgent(), config.UserAgent)
 	})
 
