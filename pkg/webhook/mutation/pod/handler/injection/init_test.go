@@ -482,6 +482,19 @@ func Test_combineSecurityContexts_annotations(t *testing.T) {
 		assert.Equal(t, int64(42), *out.RunAsUser)
 		assert.Equal(t, int64(42), *out.RunAsGroup)
 	})
+
+	t.Run("math.MaxInt32 works", func(t *testing.T) {
+		pod := corev1.Pod{}
+		pod.Annotations = map[string]string{dtwebhook.AnnotationInitContainerRunAsUser: strconv.Itoa(math.MaxInt32), dtwebhook.AnnotationInitContainerRunAsGroup: strconv.Itoa(math.MaxInt32)}
+		pod.Spec.SecurityContext = &corev1.PodSecurityContext{RunAsUser: new(int64(42)), RunAsGroup: new(int64(42))}
+
+		out := combineSecurityContexts(t.Context(), corev1.SecurityContext{}, pod)
+		require.NotNil(t, out)
+		require.NotNil(t, out.RunAsUser)
+		require.NotNil(t, out.RunAsGroup)
+		assert.Equal(t, int64(math.MaxInt32), *out.RunAsUser)
+		assert.Equal(t, int64(math.MaxInt32), *out.RunAsGroup)
+	})
 }
 
 func Test_securityContextForInitContainer(t *testing.T) {
