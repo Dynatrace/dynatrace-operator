@@ -5,8 +5,10 @@ package databases
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -62,7 +64,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	} else {
 		var err error
 
-		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutor)
+		imageURI, err = resolveImageURI(ctx, imageClient, dk)
 		if err != nil {
 			return err
 		}
@@ -115,4 +117,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	k8sconditions.SetDeploymentsApplied(dk, conditionType, expectedDeploymentNames)
 
 	return nil
+}
+
+func resolveImageURI(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) (string, error) {
+	ctx, log := logd.NewFromContext(ctx, "resolveImageURI")
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutor)
+
+	// fallback to old image name for backward compatibility if we can't resolve the image URI by new component name.
+	// TODO: remove this fallback in a future release
+	if apiErr := new(core.HTTPError); err != nil && !errors.As(err, &apiErr) {
+		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutorOldName)
+		if err != nil {
+			return "", err
+		}
+
+		log.Debug("using old image name for backward compatibility", "imageURI", imageURI)
+	}
+
+	return imageURI, err
 }
