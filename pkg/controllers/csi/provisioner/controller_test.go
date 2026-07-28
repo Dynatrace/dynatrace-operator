@@ -9,12 +9,14 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -25,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -290,9 +293,10 @@ func createProvisioner(t *testing.T, objs ...client.Object) OneAgentProvisioner 
 	apiReader := fake.NewClient(objs...)
 
 	return OneAgentProvisioner{
-		path:      path,
-		apiReader: apiReader,
-		cleaner:   cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
+		path:            path,
+		apiReader:       apiReader,
+		cleaner:         cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
+		dtClientFactory: dynatrace.NewClientFromDynakube,
 	}
 }
 
@@ -460,5 +464,69 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 		Data: map[string][]byte{
 			token.APIKey: []byte("this is a token"),
 		},
+	}
+}
+
+func TestBuildDtcForConnectionTimeout(t *testing.T) {
+	t.Run("the default connection timeout is applied", func(t *testing.T) {
+		dk := createDynaKubeBase(t)
+		provisioner := createProvisioner(t, dk, createToken(t, dk))
+
+		provisioner.dtClientFactory = testDTClientBuilder(t, 15*time.Minute)
+
+		dtClient, err := buildDtc(&provisioner, context.Background(), dk)
+		require.NoError(t, err)
+		assert.NotNil(t, dtClient)
+	})
+
+	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
+		dk := createDynaKubeBase(t)
+		provisioner := createProvisioner(t, dk, createToken(t, dk))
+
+		testCases := []struct {
+			envValue string
+			timeout  time.Duration
+		}{
+			{
+				envValue: "29s",
+				timeout:  15 * time.Minute,
+			},
+			{
+				envValue: "30s",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "15m",
+				timeout:  15 * time.Minute,
+			},
+			{
+				envValue: "901s",
+				timeout:  15 * time.Minute,
+			},
+		}
+
+		for _, testCase := range testCases {
+			t.Setenv(k8senv.DTClientConnectionTimeout, testCase.envValue)
+
+			provisioner.dtClientFactory = testDTClientBuilder(t, testCase.timeout)
+
+			dtClient, err := buildDtc(&provisioner, context.Background(), dk)
+			require.NoError(t, err)
+			assert.NotNil(t, dtClient)
+		}
+	})
+}
+
+func testDTClientBuilder(t *testing.T, timeout time.Duration) func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
+		config := dynatrace.Config{}
+
+		for _, opt := range options {
+			require.NoError(t, opt(&config))
+		}
+
+		assert.Equal(t, timeout, config.ConnectionTimeout)
+
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, options...)
 	}
 }

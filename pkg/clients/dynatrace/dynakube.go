@@ -7,25 +7,33 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type ClientFactory func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string) (*Client, error)
+type ClientFactory func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...Option) (*Client, error)
 
 // NewClientFromDynakube creates a new Dynatrace dtClient using the provided DynaKube configuration and tokens.
-func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string) (*Client, error) {
+func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...Option) (*Client, error) {
+	opts, err := combinedOptions(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewClient(opts...)
+}
+
+func combinedOptions(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...Option) ([]Option, error) {
 	opts, err := optionsFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix)
 	if err != nil {
 		return nil, err
 	}
 
-	opts = append(opts, WithConnectionTimeout(k8senv.GetDTClientConnectionTimeout(ctx)))
+	opts = append(opts, options...)
 
-	return NewClient(opts...)
+	return opts, nil
 }
 
 func optionsFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string) ([]Option, error) {

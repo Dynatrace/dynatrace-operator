@@ -19,12 +19,13 @@ import (
 )
 
 const (
-	testNamespace   = "test-namespace"
-	testAPIURL      = "https://test.endpoint.com/api"
-	testCertsCMName = "test-certs-cm"
-	testProxySecret = "test-proxy-secret"
-	testProxyURL    = "http://proxy.example.com:8080"
-	testNoProxy     = "no.proxy"
+	testNamespace         = "test-namespace"
+	testAPIURL            = "https://test.endpoint.com/api"
+	testCertsCMName       = "test-certs-cm"
+	testProxySecret       = "test-proxy-secret"
+	testProxyURL          = "http://proxy.example.com:8080"
+	testNoProxy           = "no.proxy"
+	testConnectionTimeout = 45 * time.Second
 )
 
 func Test_optionsFromDynakube(t *testing.T) {
@@ -258,6 +259,30 @@ func Test_optionsFromDynakube(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, expAPIRequestThreshold, cfg.CacheEntryTTL)
+	})
+
+	t.Run("sets the default operator connection timeout", func(t *testing.T) {
+		dk := getDynakube()
+
+		opts, err := combinedOptions(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		require.NoError(t, err)
+
+		_, cfg, err := getClientAndConfig(opts...)
+		require.NoError(t, err)
+
+		require.Equal(t, 30*time.Second, cfg.ConnectionTimeout)
+	})
+
+	t.Run("overwrites the default connection timeout", func(t *testing.T) {
+		dk := getDynakube()
+
+		opts, err := combinedOptions(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", WithConnectionTimeout(testConnectionTimeout))
+		require.NoError(t, err)
+
+		_, cfg, err := getClientAndConfig(opts...)
+		require.NoError(t, err)
+
+		require.Equal(t, testConnectionTimeout, cfg.ConnectionTimeout)
 	})
 }
 

@@ -1212,7 +1212,7 @@ tests:
           count: 1
           any: true
 
-  - it: should not have DT_CLIENT_CONNECTION_TIMEOUT if connectionTimeout is not set
+  - it: should not have DT_CLIENT_CONNECTION_TIMEOUT if clientConnectionTimeout is not set
     set:
       platform: kubernetes
     asserts:
@@ -1221,14 +1221,14 @@ tests:
           content:
             name: DT_CLIENT_CONNECTION_TIMEOUT
 
-  - it: should have DT_CLIENT_CONNECTION_TIMEOUT if connectionTimeout is set
+  - it: should have DT_CLIENT_CONNECTION_TIMEOUT if clientConnectionTimeout is set
     set:
       platform: kubernetes
       operator:
-        connectionTimeout: 1
+        clientConnectionTimeout: 1m
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: DT_CLIENT_CONNECTION_TIMEOUT
-            value: "1"
+            value: "1m"

@@ -57,7 +57,7 @@ operator:
   startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
   requeueAfter: "" # requeue period for the controller, defaults to 15m
   clientCacheCleanupInterval: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 1h
-  connectionTimeout: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 15m
+  clientConnectionTimeout: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 30s
 
 webhook:
   hostNetwork: false
@@ -138,6 +138,7 @@ csidriver:
   existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one
   priorityClassValue: "1000000"
   cleanupPeriod: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes
+  clientConnectionTimeout: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 15m
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/master

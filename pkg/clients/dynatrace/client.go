@@ -281,7 +281,7 @@ func addCacheMiddleware(httpClient *http.Client, config *Config) {
 func getClientAndConfig(options ...Option) (*http.Client, *Config, error) {
 	config := Config{
 		UserAgent:         operatorversion.UserAgent(),
-		ConnectionTimeout: k8senv.DefaultDTClientConnectionTimeout,
+		ConnectionTimeout: k8senv.DefaultOperatorDTClientConnectionTimeout,
 	}
 
 	for _, opt := range options {

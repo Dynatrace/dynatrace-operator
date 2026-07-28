@@ -22,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -52,6 +53,8 @@ type OneAgentProvisioner struct {
 	jobInstallerBuilder   jobInstallerBuilder
 	cleaner               *cleanup.Cleaner
 	path                  metadata.PathResolver
+
+	dtClientFactory dynatrace.ClientFactory
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -66,6 +69,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		imageInstallerBuilder: image.NewImageInstaller,
 		jobInstallerBuilder:   job.NewInstaller,
 		cleaner:               cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
+		dtClientFactory:       dynatrace.NewClientFromDynakube,
 	}
 }
 
@@ -175,7 +179,7 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakub
 		return nil, err
 	}
 
-	dtClient, err := dynatrace.NewClientFromDynakube(ctx, provisioner.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "provisioner")
+	dtClient, err := provisioner.dtClientFactory(ctx, provisioner.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "provisioner", dynatrace.WithConnectionTimeout(k8senv.GetCSIDriverDTClientConnectionTimeout(ctx)))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create Dynatrace client")
 	}

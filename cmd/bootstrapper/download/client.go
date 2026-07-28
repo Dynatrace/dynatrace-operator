@@ -7,12 +7,12 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 )
 
 type Client struct {
@@ -21,6 +21,8 @@ type Client struct {
 }
 
 type Option func(*Client)
+
+const InitContainerDTClientConnectionTimeout = 15 * time.Minute
 
 func WithInstaller(builder binary.NewFunc) Option {
 	return func(cl *Client) {
@@ -47,7 +49,7 @@ func New(options ...Option) *Client {
 }
 
 func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, props binary.Properties) error {
-	dtClient, err := cl.createDTClientFromFs(ctx, inputDir)
+	dtClient, err := cl.createDTClientFromFs(inputDir)
 	if err != nil {
 		return err
 	}
@@ -62,7 +64,7 @@ func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, pro
 	return err
 }
 
-func (cl *Client) createDTClientFromFs(ctx context.Context, inputDir string) (oneagent.Client, error) {
+func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.Client, error) {
 	config, err := configFromFs(inputDir)
 	if err != nil {
 		return nil, err
@@ -81,7 +83,7 @@ func (cl *Client) createDTClientFromFs(ctx context.Context, inputDir string) (on
 		options = append(options, dynatrace.WithCerts(certs))
 	}
 
-	options = append(options, dynatrace.WithBaseURL(cl.baseURL), dynatrace.WithConnectionTimeout(k8senv.GetDTClientConnectionTimeout(ctx)))
+	options = append(options, dynatrace.WithBaseURL(cl.baseURL), dynatrace.WithConnectionTimeout(InitContainerDTClientConnectionTimeout))
 
 	dtClient, err := dynatrace.NewClient(options...)
 	if err != nil {

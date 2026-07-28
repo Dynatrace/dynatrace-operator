@@ -6,6 +6,8 @@ package nodes
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -18,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
 	"github.com/stretchr/testify/assert"
@@ -31,6 +34,7 @@ import (
 )
 
 const (
+	testName      = "test-dynakube"
 	testNamespace = "dynatrace"
 	testAPIToken  = "test-api-token"
 )
@@ -337,6 +341,111 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
+func TestSendMarkedForTerminationForDTConnectionTimeout(t *testing.T) {
+	fakeClient := fake.NewClient(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			token.APIKey: []byte(testAPIToken),
+		},
+	})
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			// GET /v1/entity/infrastructure/hosts
+			w.Write([]byte(`[{"entityId":"test-host","ipAddresses":["127.0.0.1"]}]`))
+		} else {
+			// POST /v1/events
+			w.WriteHeader(http.StatusOK)
+		}
+	}))
+	defer server.Close()
+
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{APIURL: server.URL},
+	}
+
+	t.Run("the default connection timeout is applied", func(t *testing.T) {
+		controller := &Controller{
+			client:          fakeClient,
+			apiReader:       fakeClient,
+			dtClientFactory: testDTClientBuilder(t, 30*time.Second),
+		}
+
+		err := controller.sendMarkedForTermination(t.Context(), dk, &cache.Entry{
+			LastSeen:                 time.Now(),
+			LastMarkedForTermination: time.Now(),
+			IPAddress:                "127.0.0.1",
+			NodeName:                 "testNode",
+			DynaKubeName:             "dynakube",
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
+		testCases := []struct {
+			envValue string
+			timeout  time.Duration
+		}{
+			{
+				envValue: "29s",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "30s",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "15m",
+				timeout:  15 * time.Minute,
+			},
+			{
+				envValue: "901s",
+				timeout:  30 * time.Second,
+			},
+		}
+
+		for _, testCase := range testCases {
+			t.Setenv(k8senv.DTClientConnectionTimeout, testCase.envValue)
+
+			controller := &Controller{
+				client:          fakeClient,
+				apiReader:       fakeClient,
+				dtClientFactory: testDTClientBuilder(t, testCase.timeout),
+			}
+
+			err := controller.sendMarkedForTermination(t.Context(), dk, &cache.Entry{
+				LastSeen:                 time.Now(),
+				LastMarkedForTermination: time.Now(),
+				IPAddress:                "127.0.0.1",
+				NodeName:                 "testNode",
+				DynaKubeName:             "dynakube",
+			})
+			require.NoError(t, err)
+		}
+	})
+}
+
+func testDTClientBuilder(t *testing.T, timeout time.Duration) func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
+		config := dynatrace.Config{}
+
+		for _, opt := range options {
+			require.NoError(t, opt(&config))
+		}
+
+		assert.Equal(t, timeout, config.ConnectionTimeout)
+
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, options...)
+	}
+}
+
 func createReconcileRequest(nodeName string) reconcile.Request {
 	return reconcile.Request{
 		NamespacedName: types.NamespacedName{Name: nodeName},
@@ -420,7 +529,7 @@ func createDefaultFakeClient() client.Client {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ ...dynatrace.Option) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }
