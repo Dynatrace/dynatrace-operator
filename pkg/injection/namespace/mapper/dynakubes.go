@@ -31,6 +31,8 @@ type DynakubeMapper struct {
 	matchedOANamespaces   []string
 	matchedMENamespaces   []string
 	matchedOTLPNamespaces []string
+
+	deselectedNamespaces []string
 }
 
 func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynakube.DynaKube) DynakubeMapper {
@@ -46,6 +48,7 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 		matchedOANamespaces:   []string{},
 		matchedMENamespaces:   []string{},
 		matchedOTLPNamespaces: []string{},
+		deselectedNamespaces:  []string{},
 	}
 }
 
@@ -60,6 +63,12 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 
 	for _, ns := range modifiedNs {
 		if err := dm.client.Update(dm.ctx, ns); err != nil {
+			return err
+		}
+	}
+
+	for _, nsName := range dm.deselectedNamespaces {
+		if err := dm.deleteReplicatedSecrets(nsName); err != nil {
 			return err
 		}
 	}
@@ -96,12 +105,7 @@ func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
 		}
 
-		if err := goerrors.Join(
-			dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, ns.Name),
-			dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitCertsSecretName, ns.Name),
-			dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterSecretName, ns.Name),
-			dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterCertsSecretName, ns.Name),
-		); err != nil {
+		if err := dm.deleteReplicatedSecrets(ns.Name); err != nil {
 			return err
 		}
 	}
@@ -111,6 +115,15 @@ func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error
 	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType.String())
 
 	return nil
+}
+
+func (dm *DynakubeMapper) deleteReplicatedSecrets(namespaceName string) error {
+	return goerrors.Join(
+		dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, namespaceName),
+		dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitCertsSecretName, namespaceName),
+		dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterSecretName, namespaceName),
+		dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterCertsSecretName, namespaceName),
+	)
 }
 
 func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *dynakube.DynaKubeList) ([]*corev1.Namespace, error) {
@@ -134,24 +147,7 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 	for i := range nsList.Items {
 		namespace := &nsList.Items[i]
 
-		result, err := match(dm.dk, namespace)
-		if err != nil {
-			return nil, err
-		}
-
-		if result.IsOA {
-			dm.matchedOANamespaces = append(dm.matchedOANamespaces, namespace.Name)
-		}
-
-		if result.IsME {
-			dm.matchedMENamespaces = append(dm.matchedMENamespaces, namespace.Name)
-		}
-
-		if result.IsOTLP {
-			dm.matchedOTLPNamespaces = append(dm.matchedOTLPNamespaces, namespace.Name)
-		}
-
-		updated, err := updateNamespace(dm.ctx, namespace, dkList)
+		updated, err := dm.mapNamespace(namespace, dkList)
 		if err != nil {
 			return nil, err
 		}
@@ -166,4 +162,36 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 	slices.Sort(dm.matchedOTLPNamespaces)
 
 	return modifiedNs, nil
+}
+
+func (dm *DynakubeMapper) mapNamespace(namespace *corev1.Namespace, dkList *dynakube.DynaKubeList) (bool, error) {
+	previouslyInjected := namespace.Labels[dtwebhook.InjectionInstanceLabel] == dm.dk.Name
+
+	result, err := match(dm.dk, namespace)
+	if err != nil {
+		return false, err
+	}
+
+	if result.IsOA {
+		dm.matchedOANamespaces = append(dm.matchedOANamespaces, namespace.Name)
+	}
+
+	if result.IsME {
+		dm.matchedMENamespaces = append(dm.matchedMENamespaces, namespace.Name)
+	}
+
+	if result.IsOTLP {
+		dm.matchedOTLPNamespaces = append(dm.matchedOTLPNamespaces, namespace.Name)
+	}
+
+	updated, err := updateNamespace(dm.ctx, namespace, dkList)
+	if err != nil {
+		return false, err
+	}
+
+	if previouslyInjected && !result.IsAny() {
+		dm.deselectedNamespaces = append(dm.deselectedNamespaces, namespace.Name)
+	}
+
+	return updated, nil
 }

@@ -137,6 +137,87 @@ func TestMapFromDynakube(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, ns.Labels, 1)
 	})
+
+	t.Run("namespace no longer matches selector => secrets deleted", func(t *testing.T) {
+		matchingLabels := map[string]string{"foo": "bar"}
+		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(matchingLabels))
+
+		namespace := createNamespace(
+			"definitely-not-selected",
+			map[string]string{
+				dtwebhook.InjectionInstanceLabel: dk.Name,
+			},
+		)
+
+		clt := fake.NewClient(dk, namespace)
+		ctx := t.Context()
+
+		secretNames := []string{
+			consts.BootstrapperInitSecretName,
+			consts.BootstrapperInitCertsSecretName,
+			consts.OTLPExporterSecretName,
+			consts.OTLPExporterCertsSecretName,
+		}
+		for _, secretName := range secretNames {
+			createSecret(t, clt, secretName, namespace.Name)
+		}
+
+		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dk)
+		err := dm.MapFromDynakube()
+		require.NoError(t, err)
+
+		var ns corev1.Namespace
+		err = clt.Get(ctx, types.NamespacedName{Name: namespace.Name}, &ns)
+		require.NoError(t, err)
+		assert.Empty(t, ns.Labels)
+
+		for _, secretName := range secretNames {
+			var secret corev1.Secret
+			err = clt.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace.Name}, &secret)
+			assert.Truef(t, k8serrors.IsNotFound(err), "expected secret %s to be deleted from deselected namespace", secretName)
+		}
+	})
+}
+
+func TestMatchingNamespaces(t *testing.T) {
+	t.Run("validating webhook run on deselected ns => replicated secrets not deleted", func(t *testing.T) {
+		matchingLabels := map[string]string{"foo": "bar"}
+		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(matchingLabels))
+
+		namespace := createNamespace(
+			"definitely-not-selected",
+			map[string]string{
+				dtwebhook.InjectionInstanceLabel: dk.Name,
+			},
+		)
+
+		clt := fake.NewClient(dk, namespace)
+		ctx := t.Context()
+
+		secretNames := []string{
+			consts.BootstrapperInitSecretName,
+			consts.BootstrapperInitCertsSecretName,
+			consts.OTLPExporterSecretName,
+			consts.OTLPExporterCertsSecretName,
+		}
+		for _, secretName := range secretNames {
+			createSecret(t, clt, secretName, namespace.Name)
+		}
+
+		// pass nil write client, just like validating webhooks
+		dm := NewDynakubeMapper(ctx, nil, clt, "dynatrace", dk)
+
+		require.NotPanics(t, func() {
+			_, err := dm.MatchingNamespaces()
+			require.NoError(t, err)
+		})
+
+		for _, secretName := range secretNames {
+			var secret corev1.Secret
+			err := clt.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace.Name}, &secret)
+			require.NoErrorf(t, err, "secret %s must not be deleted when validating webhooks are run", secretName)
+		}
+	})
 }
 
 func TestUnmapFromDynaKube(t *testing.T) {
@@ -146,11 +227,6 @@ func TestUnmapFromDynaKube(t *testing.T) {
 	}
 	namespace := createNamespace("ns1", labels)
 	namespace2 := createNamespace("ns2", labels)
-
-	createSecret := func(t *testing.T, c client.Client, name, namespace string) {
-		t.Helper()
-		c.Create(t.Context(), &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}})
-	}
 
 	t.Run("Remove from no ns => no error", func(t *testing.T) {
 		clt := fake.NewClient()
@@ -261,4 +337,9 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		assert.NotEqual(t, consts.BootstrapperInitSecretName, deletedSecretNS2.Name)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
+}
+
+func createSecret(t *testing.T, c client.Client, name, namespace string) {
+	t.Helper()
+	c.Create(t.Context(), &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}})
 }
