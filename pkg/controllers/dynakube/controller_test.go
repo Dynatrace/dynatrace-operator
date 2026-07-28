@@ -520,7 +520,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(nil).Once()
-		mockKubemonReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient.ActiveGate, token.Tokens(nil)).Return(kubemonconnectioninfo.ErrConnectionInfoNotReady).Once()
+		mockKubemonReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient.ActiveGate, dtClient.Images, dtClient.Version).Return(kubemonconnectioninfo.ErrConnectionInfoNotReady).Once()
 		mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
 		mockOtelcReconciler.EXPECT().Reconcile(anyCtx, dk).Return(nil).Once()
 		mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()

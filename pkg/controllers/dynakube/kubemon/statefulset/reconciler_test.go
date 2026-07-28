@@ -65,7 +65,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 				test.mutate(dk)
 			}
 
-			err := statefulset.NewReconciler(fake.NewClient(dk, newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk)
+			err := statefulset.NewReconciler(fake.NewClient(dk, newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 			require.Error(t, err)
 			require.NotErrorIs(t, err, k8sstatefulset.ErrRolloutInProgress)
 			test.assertError(t, err)
@@ -76,7 +76,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 func TestReconcileMissingKubeSystemUID(t *testing.T) {
 	dk := newTestDynaKube(true)
 	dk.Status.KubeSystemUUID = ""
-	err := statefulset.NewReconciler(fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk)
+	err := statefulset.NewReconciler(fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 	require.ErrorIs(t, err, statefulset.ErrMissingKubeSystemUID)
 }
 
@@ -131,7 +131,7 @@ func TestReconcileMissingTokenValue(t *testing.T) {
 				Data: test.authData,
 			}
 
-			err := statefulset.NewReconciler(fake.NewClient(dk, tenantSecret, authSecret)).Reconcile(t.Context(), dk)
+			err := statefulset.NewReconciler(fake.NewClient(dk, tenantSecret, authSecret)).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 			require.ErrorIs(t, err, test.expectedErr)
 		})
 	}

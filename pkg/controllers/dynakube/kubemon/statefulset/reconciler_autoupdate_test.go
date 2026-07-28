@@ -64,7 +64,7 @@ func TestReconcileAutoUpdate(t *testing.T) {
 		t.Run("uses version client to build container image", func(t *testing.T) {
 			transport := newFakeAutoUpdateTransport(activeGateVersionBody(firstVersion))
 			dk := newAutoUpdateKubemonDynaKube(autoUpdateAPIURL)
-			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk))
+			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 			reconciler := statefulset.NewReconciler(fakeClient)
 
 			require.ErrorIs(t,
@@ -81,7 +81,7 @@ func TestReconcileAutoUpdate(t *testing.T) {
 			transport := newFakeAutoUpdateTransport(activeGateVersionBody(firstVersion))
 			versionClient := newVersionClientForAutoUpdate(t, transport, testAutoUpdateCacheTTL)
 			dk := newAutoUpdateKubemonDynaKube(autoUpdateAPIURL)
-			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk))
+			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 			reconciler := statefulset.NewReconciler(fakeClient)
 
 			require.ErrorIs(t, reconciler.Reconcile(t.Context(), dk, nil, versionClient), k8sstatefulset.ErrRolloutInProgress)
@@ -99,7 +99,7 @@ func TestReconcileAutoUpdate(t *testing.T) {
 			)
 			versionClient := newVersionClientForAutoUpdate(t, transport, testAutoUpdateCacheTTL)
 			dk := newAutoUpdateKubemonDynaKube(autoUpdateAPIURL)
-			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk))
+			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 			reconciler := statefulset.NewReconciler(fakeClient)
 
 			synctest.Test(t, func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestReconcileAutoUpdate(t *testing.T) {
 		t.Run("uses image client to build container image", func(t *testing.T) {
 			transport := newFakeAutoUpdateTransport(activeGatePublicRegistryBody(publicFirstURI))
 			dk := newAutoUpdatePublicRegistryDynaKube(autoUpdateAPIURL)
-			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk))
+			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 			reconciler := statefulset.NewReconciler(fakeClient)
 
 			require.ErrorIs(t,
@@ -138,7 +138,7 @@ func TestReconcileAutoUpdate(t *testing.T) {
 			transport := newFakeAutoUpdateTransport(activeGatePublicRegistryBody(publicFirstURI))
 			imageClient := newImageClientForAutoUpdate(t, transport, testAutoUpdateCacheTTL)
 			dk := newAutoUpdatePublicRegistryDynaKube(autoUpdateAPIURL)
-			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk))
+			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 			reconciler := statefulset.NewReconciler(fakeClient)
 
 			require.ErrorIs(t, reconciler.Reconcile(t.Context(), dk, imageClient, nil), k8sstatefulset.ErrRolloutInProgress)
@@ -156,7 +156,7 @@ func TestReconcileAutoUpdate(t *testing.T) {
 			)
 			imageClient := newImageClientForAutoUpdate(t, transport, testAutoUpdateCacheTTL)
 			dk := newAutoUpdatePublicRegistryDynaKube(autoUpdateAPIURL)
-			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk))
+			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 			reconciler := statefulset.NewReconciler(fakeClient)
 
 			synctest.Test(t, func(t *testing.T) {
@@ -180,7 +180,7 @@ func TestReconcileAutoUpdate(t *testing.T) {
 			publicTransport := newFakeAutoUpdateTransport(activeGatePublicRegistryBody(publicFirstURI))
 
 			dk := newAutoUpdateKubemonDynaKube(autoUpdateAPIURL)
-			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk))
+			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 			reconciler := statefulset.NewReconciler(fakeClient)
 
 			// Phase 1: tenant registry — version client resolves the image
@@ -206,7 +206,7 @@ func TestReconcileAutoUpdate(t *testing.T) {
 			tenantTransport := newFakeAutoUpdateTransport(activeGateVersionBody(firstVersion))
 
 			dk := newAutoUpdatePublicRegistryDynaKube(autoUpdateAPIURL)
-			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk))
+			fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 			reconciler := statefulset.NewReconciler(fakeClient)
 
 			// Phase 1: public registry — image client resolves the image
@@ -242,6 +242,9 @@ func newAutoUpdateKubemonDynaKube(apiURL string) *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:               apiURL,
 			KubernetesMonitoring: &kubemonapi.Spec{},
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID: integrationKubeSystemUUID,
 		},
 	}
 }

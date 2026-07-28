@@ -111,13 +111,13 @@ func TestReconcileLifecycle(t *testing.T) {
 	// The subtests below share dk and run in order: each builds on the state left by the previous one.
 	// All phases use a custom image, so neither client is invoked; mocks with no expectations verify that.
 	deps := &lifecycleDeps{
-		clt:        clt,
-		reconciler: reconciler,
-		dk:         dk,
+		clt:               clt,
+		reconciler:        reconciler,
+		dk:                dk,
 		tenantTokenSecret: tenantTokenSecret,
 		authTokenSecret:   authTokenSecret,
-		imgClient:  imageclientmock.NewClient(t),
-		verClient:  versionclientmock.NewClient(t),
+		imgClient:         imageclientmock.NewClient(t),
+		verClient:         versionclientmock.NewClient(t),
 	}
 
 	t.Run("provision", func(t *testing.T) { runProvisionPhase(t, deps) })
@@ -222,10 +222,13 @@ func TestReconcileLifecycleAutoImage(t *testing.T) {
 			APIURL:               "https://tenant.live.dynatrace.com/api",
 			KubernetesMonitoring: &kubemonapi.Spec{}, // no custom image — version client is called
 		},
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID: integrationKubeSystemUUID,
+		},
 	}
 	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
 
-	secret := &corev1.Secret{
+	tenantSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
 			Namespace: dk.Namespace,
@@ -234,7 +237,18 @@ func TestReconcileLifecycleAutoImage(t *testing.T) {
 			connectioninfo.TenantTokenKey: []byte("test-tenant-token"),
 		},
 	}
-	integrationtests.CreateKubernetesObject(t, t.Context(), clt, secret)
+	integrationtests.CreateKubernetesObject(t, t.Context(), clt, tenantSecret)
+
+	authTokenSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
+		},
+		Data: map[string][]byte{
+			kubemonauthtoken.SecretKey: []byte(integrationAuthToken),
+		},
+	}
+	integrationtests.CreateKubernetesObject(t, t.Context(), clt, authTokenSecret)
 
 	verClient := versionclientmock.NewClient(t)
 	verClient.EXPECT().
