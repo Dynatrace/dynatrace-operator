@@ -93,4 +93,15 @@ func TestBuild(t *testing.T) {
 		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
 		assert.Contains(t, secret.Data, dataKey)
 	})
+	t.Run("create immutable secret", func(t *testing.T) {
+		secret, err := Build(createDeployment(),
+			testSecretName,
+			map[string][]byte{},
+			SetImmutable(true),
+			setNamespace(testNamespace),
+		)
+		require.NoError(t, err)
+		require.NotNil(t, secret.Immutable)
+		assert.True(t, *secret.Immutable)
+	})
 }

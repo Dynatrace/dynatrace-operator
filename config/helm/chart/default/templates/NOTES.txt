@@ -19,3 +19,6 @@ WARNING: The `webhook.highAvailability` field is deprecated and will be removed 
 {{- if .Values.enableInsecurePprofEndpoint }}
 WARNING: Golang profiling endpoint is enabled. Make sure to restrict external access to the operator{{ if .Values.csidriver.enabled }}, webhook and CSI driver{{ else }} and webhook{{ end }}.
 {{- end }}
+{{- if .Values.operator.kubemonEnableOperand }}
+WARNING: The kubemon operand is enabled. It is under development and not ready for production use.
+{{- end }}

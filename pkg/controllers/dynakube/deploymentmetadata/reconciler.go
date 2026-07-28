@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -34,6 +35,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 	r.addOneAgentDeploymentMetadata(dk, configMapData)
 	r.addActiveGateDeploymentMetadata(dk, configMapData)
+	r.addKubemonDeploymentMetadata(dk, configMapData)
 	r.addOperatorVersionInfo(dk, configMapData)
 
 	return r.maintainMetadataConfigMap(ctx, dk, configMapData)
@@ -53,6 +55,19 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(dk *dynakube.DynaKube, conf
 	}
 
 	configMapData[ActiveGateMetadataKey] = NewDeploymentMetadata(r.clusterID, ActiveGateMetadataKey).AsString()
+}
+
+func (r *Reconciler) addKubemonDeploymentMetadata(dk *dynakube.DynaKube, configMapData map[string]string) {
+	// Temporary gate, to be removed once kubemon is complete
+	if !k8senv.IsKubemonOperandEnabled() {
+		return
+	}
+
+	if !dk.KubernetesMonitoring().IsEnabled() {
+		return
+	}
+
+	configMapData[KubemonMetadataKey] = NewDeploymentMetadata(r.clusterID, KubemonMetadataKey).AsString()
 }
 
 func (r *Reconciler) addOperatorVersionInfo(dk *dynakube.DynaKube, configMapData map[string]string) {
