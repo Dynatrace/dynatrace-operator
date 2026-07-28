@@ -131,11 +131,11 @@ func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.Securit
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	if user := getValidatedID(ctx, pod.Annotations, dtwebhook.AnnotationInitContainerRunAsUser); user != nil {
+	if user := getValidatedID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsUser]); user != nil {
 		baseSecurityCtx.RunAsUser = user
 	}
 
-	if group := getValidatedID(ctx, pod.Annotations, dtwebhook.AnnotationInitContainerRunAsGroup); group != nil {
+	if group := getValidatedID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsGroup]); group != nil {
 		baseSecurityCtx.RunAsGroup = group
 	}
 
@@ -146,16 +146,15 @@ func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.Securit
 
 // getValidatedID will parse the provided annotation as valid user/group ID between 0 and math.MaxInt32.
 // Returns *int64 for compatibility with corev1.SecurityContext
-func getValidatedID(ctx context.Context, annotations map[string]string, key string) *int64 {
-	val, ok := annotations[key]
-	if !ok {
+func getValidatedID(ctx context.Context, value string) *int64 {
+	if value == "" {
 		return nil
 	}
 
 	// uint31 == positive int32 range
-	parsed, err := strconv.ParseUint(val, 10, 31)
+	parsed, err := strconv.ParseUint(value, 10, 31)
 	if err != nil {
-		logd.FromContext(ctx).Error(err, "failed to parse annotation value, must be a positive int32", "key", key, "value", val)
+		logd.FromContext(ctx).Error(err, "failed to parse annotation value, must be a positive int32", "value", value)
 
 		return nil
 	}
