@@ -7853,15 +7853,6 @@ spec:
                       tenantUUID:
                         type: string
                     type: object
-                  imageID:
-                    type: string
-                  lastProbeTimestamp:
-                    format: date-time
-                    type: string
-                  source:
-                    type: string
-                  type:
-                    type: string
                   version:
                     type: string
                 type: object
