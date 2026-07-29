@@ -88,7 +88,7 @@ func (km *KubeMon) GetDefaultImage(version string) string {
 	truncatedVersion := dtversion.ToImageTag(version)
 	tag := truncatedVersion
 
-	if !strings.Contains(tag, api.RawTag) {
+	if !strings.HasSuffix(tag, api.RawTag) {
 		tag += "-" + api.RawTag
 	}
 
