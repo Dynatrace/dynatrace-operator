@@ -5,12 +5,14 @@ package injection
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
@@ -20,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
+func (h *Handler) createInitContainerBase(ctx context.Context, pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
 	args := []arg.Arg{
 		{
 			Name:  configure.ConfigFolderFlag,
@@ -47,7 +49,7 @@ func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube)
 		Name:            dtwebhook.InstallContainerName,
 		Image:           h.webhookPodImage,
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		SecurityContext: securityContextForInitContainer(pod, dk, h.isOpenShift),
+		SecurityContext: securityContextForInitContainer(ctx, pod, dk, h.isOpenShift),
 		Resources:       defaultInitContainerResources(),
 		Args:            append([]string{bootstrapper.Use}, arg.ConvertArgsToStrings(args)...),
 	}
@@ -83,7 +85,7 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 	}
 }
 
-func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
+func securityContextForInitContainer(ctx context.Context, pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   new(true),
 		AllowPrivilegeEscalation: new(false),
@@ -102,10 +104,10 @@ func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOp
 
 	addSeccompProfile(&initSecurityCtx, dk)
 
-	return combineSecurityContexts(initSecurityCtx, *pod)
+	return combineSecurityContexts(ctx, initSecurityCtx, *pod)
 }
 
-func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.Pod) *corev1.SecurityContext {
+func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.SecurityContext, pod corev1.Pod) *corev1.SecurityContext {
 	containerSecurityCtx := &corev1.SecurityContext{}
 	if len(pod.Spec.Containers) > 0 {
 		containerSecurityCtx = pod.Spec.Containers[0].SecurityContext
@@ -129,9 +131,35 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
+	if user := getValidatedID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsUser]); user != nil {
+		baseSecurityCtx.RunAsUser = user
+	}
+
+	if group := getValidatedID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsGroup]); group != nil {
+		baseSecurityCtx.RunAsGroup = group
+	}
+
 	baseSecurityCtx.RunAsNonRoot = new(isNonRoot(&baseSecurityCtx))
 
 	return &baseSecurityCtx
+}
+
+// getValidatedID will parse the provided annotation as valid user/group ID between 0 and math.MaxInt32.
+// Returns *int64 for compatibility with corev1.SecurityContext
+func getValidatedID(ctx context.Context, value string) *int64 {
+	if value == "" {
+		return nil
+	}
+
+	// uint31 == positive int32 range
+	parsed, err := strconv.ParseUint(value, 10, 31)
+	if err != nil {
+		logd.FromContext(ctx).Error(err, "failed to parse annotation value, must be a positive int32", "value", value)
+
+		return nil
+	}
+
+	return new(int64(parsed))
 }
 
 func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
