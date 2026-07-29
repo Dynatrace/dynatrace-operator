@@ -115,7 +115,7 @@ type Spec struct {
 	automaticTLSCertificateEnabled bool
 
 	// UseEphemeralVolume
-	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
+	UseEphemeralVolume *bool `json:"useEphemeralVolume,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

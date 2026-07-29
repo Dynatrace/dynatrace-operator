@@ -249,6 +249,31 @@ func TestConvertFrom(t *testing.T) {
 
 		assert.Equal(t, to.Spec.OneAgent.HostGroup, from.Spec.OneAgent.HostGroup)
 	})
+
+	t.Run("unset *bool fields stay nil across a full round-trip (inverse-effect guard)", func(t *testing.T) {
+		// ICP-1012: an unset (nil) tri-state field must never become an explicit
+		// &false. Leave the four *bool fields nil and confirm they survive
+		// latest -> v1beta4 -> latest as nil, never materialising a false.
+		from := getNewDynakubeBase()
+		from.Spec.SkipCertCheck = nil
+		from.Spec.EnableIstio = nil
+		from.Spec.ActiveGate.UseEphemeralVolume = nil
+		from.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = nil
+
+		to := DynaKube{}
+		require.NoError(t, to.ConvertFrom(&from))
+
+		assert.Nil(t, to.Spec.SkipCertCheck)
+		assert.Nil(t, to.Spec.EnableIstio)
+		assert.Nil(t, to.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume)
+
+		roundTripped := dynakubelatest.DynaKube{}
+		require.NoError(t, to.ConvertTo(&roundTripped))
+
+		assert.Nil(t, roundTripped.Spec.SkipCertCheck)
+		assert.Nil(t, roundTripped.Spec.EnableIstio)
+		assert.Nil(t, roundTripped.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume)
+	})
 }
 
 func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
@@ -279,8 +304,8 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
 	assert.Equal(t, oldDk.Spec.NetworkZone, newDk.Spec.NetworkZone)
 	assert.Equal(t, oldDk.Spec.CustomPullSecret, newDk.Spec.CustomPullSecret)
-	assert.Equal(t, oldDk.Spec.SkipCertCheck, ptr.Deref(newDk.Spec.SkipCertCheck, false))
-	assert.Equal(t, oldDk.Spec.EnableIstio, ptr.Deref(newDk.Spec.EnableIstio, false))
+	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
+	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
 
 	if newDk.OneAgent().IsAppInjectionNeeded() {
 		assert.Equal(t, oldDk.OneAgent().GetNamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
@@ -429,7 +454,7 @@ func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec Exte
 	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
-	assert.Equal(t, oldSpec.UseEphemeralVolume, ptr.Deref(newSpec.UseEphemeralVolume, false))
+	assert.Equal(t, oldSpec.UseEphemeralVolume, newSpec.UseEphemeralVolume)
 }
 
 func compareLogMonitoringTemplateSpec(t *testing.T, oldSpec *logmonitoring.TemplateSpec, newSpec *logmonitoringlatest.TemplateSpec) {
