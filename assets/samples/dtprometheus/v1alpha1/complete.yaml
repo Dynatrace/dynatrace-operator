@@ -1,0 +1,326 @@
+apiVersion: dynatrace.com/v1alpha1
+kind: DtPrometheus
+metadata:
+  name: dtprometheus
+  namespace: dynatrace
+spec:
+  # DynaKube reference
+  # Name of the DynaKube in the same namespace that provides all connection
+  # settings (apiUrl, tokens, proxy, networkZone, trustedCAs, ActiveGate, etc.).
+  dynaKubeName: dynakube
+
+  # Dynatrace preset
+  # When enabled, the operator creates a built-in ScrapeConfig that discovers
+  # pods annotated with metrics.dynatrace.com/scrape: "true" and reads the
+  # port, path, and secure annotations to construct scrape targets.
+  # This provides backwards compatibility with the ActiveGate Kubernetes
+  # module annotation-based discovery workflow.
+  # The ScrapeConfig is labelled prometheus.dynatrace.com: "true" so it is
+  # automatically picked up by the Target Allocator without any extra config.
+  dynatracePreset:
+    # Enable the built-in annotation-based ScrapeConfig.
+    # Default: false
+    enabled: true
+
+  # TLS
+  # Controls TLS for internal component communication
+  # (TA -> scraper HTTPS, scraper -> gateway OTLP/TLS).
+  tls:
+    # Set to false to disable operator-managed TLS.
+    # Use when a service mesh (Istio, Linkerd) handles mTLS between components.
+    # Default: true
+    enabled: true
+
+    # Name of a Kubernetes TLS Secret (type kubernetes.io/tls) in the same namespace.
+    # All components use the certificate from this secret for internal communication.
+    # When omitted, the operator generates a self-signed certificate.
+    # Ignored when enabled is false.
+    secret: my-internal-tls-secret
+
+  # Self-monitoring
+  # When enabled, the operator deploys a dedicated self-monitoring collector.
+  # It receives internal telemetry pushed by the scraper and gateway, and scrapes
+  # the Target Allocator directly via pod annotation discovery - no PodMonitor or
+  # Prometheus CR required.
+  # Set enabled: true to opt in to shipping the stack's own telemetry to Dynatrace.
+  # Default: false
+  selfMonitoring:
+    enabled: false
+
+    # The following fields mirror the regular scraper configuration.
+    replicas: 2
+
+    # Overrides the default scraper (OTel Collector) image (full reference including tag or digest).
+    # When omitted the operator uses the image provided via the image endpoint.
+    image: docker.io/dynatrace/dynatrace-otel-collector:latest
+    pullPolicy: IfNotPresent
+
+    # Baseline: 1 CPU / 6 GiB handles ~1M DPM with a 60s scrape interval.
+    resources:
+      requests:
+        cpu: "1"
+        memory: 6Gi
+      limits:
+        memory: 6Gi
+
+    nodeSelector:
+      kubernetes.io/os: linux
+
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: tier
+                  operator: In
+                  values:
+                    - monitoring
+
+    tolerations:
+      - key: monitoring
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+
+    # Spreading scrapers across nodes has a dual benefit: HA and network
+    # locality - each scraper on a different node is closer to a subset of
+    # its assigned target pods.
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+
+    priorityClassName: high-priority
+
+    annotations: {}
+
+    labels: {}
+
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+
+  # Target Allocator
+  # The TA holds all Prometheus service discovery metadata in memory and
+  # distributes targets across the scraper pool via consistent hashing.
+  # All replicas independently produce the same target-to-scraper mapping,
+  # so multiple replicas provide failure tolerance without coordination.
+  targetAllocator:
+    # Number of TA replicas. At least 2 recommended for failure tolerance.
+    replicas: 2
+
+    # Default scrape interval applied to all CRD-based targets when not
+    # overridden in the individual ServiceMonitor / PodMonitor / ScrapeConfig.
+    scrapeInterval: 60s
+
+    # Label selector applied to all Prometheus Operator CRDs (ServiceMonitor,
+    # PodMonitor, ScrapeConfig, Probe). The TA only picks up CRDs whose labels
+    # match. When omitted, defaults to:
+    #   matchLabels:
+    #     prometheus.dynatrace.com: "true"
+    #
+    # To make the TA pick up all CRDs regardless of labels:
+    #   scrapeCRSelector: {}
+    scrapeCRSelector:
+      matchLabels:
+        prometheus.dynatrace.com: "true"
+
+    # Restricts which namespaces the TA watches for CRDs.
+    # An empty selector {} matches all namespaces.
+    scrapeCRNamespaceSelector: {}
+
+    # Overrides the default Target Allocator image (full reference including tag or digest).
+    # When omitted the operator uses the image provided via the image endpoint.
+    image: docker.io/dynatrace/otel-target-allocator:latest
+    pullPolicy: IfNotPresent
+
+    # Resource requests and limits for each TA pod.
+    # Scale with the number of scrape targets, not metric volume.
+    # Baseline: 10m CPU / 256 MiB covers up to ~200 scrape targets.
+    # At 5,000 targets use 100m / 512 MiB; at 20,000 targets use 1 CPU / 1 GiB.
+    resources:
+      requests:
+        cpu: 10m
+        memory: 256Mi
+      limits:
+        memory: 256Mi
+
+    nodeSelector:
+      kubernetes.io/os: linux
+
+    # Full affinity - nodeAffinity, podAffinity and podAntiAffinity are all
+    # expressible here. Use for node selection rules nodeSelector cannot
+    # capture, or to spread replicas across nodes/zones via podAntiAffinity.
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: tier
+                  operator: In
+                  values:
+                    - monitoring
+
+    tolerations:
+      - key: monitoring
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+
+    # Spread TA replicas across failure domains. The TA holds all discovery
+    # state in memory - keeping replicas on separate nodes/zones avoids a
+    # single hardware failure taking down all replicas simultaneously.
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+
+    # Assign a PriorityClass so the TA is not evicted under node pressure.
+    # Losing the TA causes all scrapers to lose target assignments until it
+    # recovers and they re-poll - make it the highest-priority component.
+    priorityClassName: high-priority
+
+    # Extra annotations merged into the pod template metadata.
+    # Useful for Istio injection control, Datadog APM, or scrape opt-out.
+    annotations: {}
+
+    # Extra labels merged into the pod template metadata.
+    labels: {}
+
+    # Deployment update strategy.
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+
+  # Scraper pool (tier 1)
+  # A Deployment of OTel Collectors. Each scraper polls the TA for its
+  # assigned targets, scrapes them, and forwards OTLP to the gateway pool via
+  # the loadbalancing exporter (routing_key: resource).
+  scraper:
+    replicas: 2
+
+    # Overrides the default scraper (OTel Collector) image (full reference including tag or digest).
+    # When omitted the operator uses the image provided via the image endpoint.
+    image: docker.io/dynatrace/dynatrace-otel-collector:latest
+    pullPolicy: IfNotPresent
+
+    # Baseline: 1 CPU / 6 GiB handles ~1M DPM with a 60s scrape interval.
+    resources:
+      requests:
+        cpu: "1"
+        memory: 6Gi
+      limits:
+        memory: 6Gi
+
+    nodeSelector:
+      kubernetes.io/os: linux
+
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: tier
+                  operator: In
+                  values:
+                    - monitoring
+
+    tolerations:
+      - key: monitoring
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+
+    # Spreading scrapers across nodes has a dual benefit: HA and network
+    # locality - each scraper on a different node is closer to a subset of
+    # its assigned target pods.
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+
+    priorityClassName: high-priority
+
+    annotations: {}
+
+    labels: {}
+
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+
+  # Gateway pool (tier 2)
+  # A StatefulSet of OTel Collectors. Receives OTLP from the scraper pool,
+  # runs stateful processors (metric_start_time, cumulativetodelta,
+  # k8sattributes, transform), and exports to Dynatrace via OTLP/HTTP.
+  # Deployed as a StatefulSet so each replica has a stable identity; the
+  # loadbalancing exporter on the scraper tier consistently routes all data
+  # from a given source pod to the same gateway, keeping per-series state
+  # (cumulativetodelta) coherent.
+  gateway:
+    replicas: 2
+
+    # Overrides the default gateway (OTel Collector) image (full reference including tag or digest).
+    # When omitted the operator uses the image provided via the image endpoint.
+    image: docker.io/dynatrace/dynatrace-otel-collector:latest
+    pullPolicy: IfNotPresent
+
+    # Resource requests and limits per gateway pod.
+    # Baseline: 2 CPUs / 8 GiB handles ~1M DPM with a 60s scrape interval.
+    # The cumulativetodelta processor grows memory proportionally with tracked
+    # series; increase limits when series cardinality is high.
+    resources:
+      requests:
+        cpu: "2"
+        memory: 8Gi
+      limits:
+        memory: 8Gi
+
+    nodeSelector:
+      kubernetes.io/os: linux
+
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: tier
+                  operator: In
+                  values:
+                    - monitoring
+
+    tolerations:
+      - key: monitoring
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+
+    # Zone spreading for the gateway StatefulSet ensures that a zone outage
+    # does not take down all replicas and cause delta gaps for all series
+    # routed through the affected pods.
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+
+    # The gateway is the last hop before Dynatrace and holds stateful
+    # cumulativetodelta processor state - eviction causes delta gaps.
+    priorityClassName: high-priority
+
+    annotations: {}
+
+    labels: {}
+
+    # StatefulSet update strategy. partition: N means only pods with ordinal >= N
+    # are updated; set to a non-zero value to perform canary rollouts.
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        partition: 0
