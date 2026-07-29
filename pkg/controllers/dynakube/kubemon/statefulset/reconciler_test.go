@@ -298,6 +298,7 @@ func TestResolveImage(t *testing.T) {
 		// mocks with no expectations verify that neither client is invoked on the custom-image path
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 		assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), sts.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), dk.KubernetesMonitoring().Version)
 	})
 
 	t.Run("public registry uses image client", func(t *testing.T) {
@@ -305,14 +306,16 @@ func TestResolveImage(t *testing.T) {
 		dk.Spec.KubernetesMonitoring.Image = ""
 		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
 
-		expectedImage := "public.registry.example.com/linux/activegate:1.2.3"
+		expectedTag := "1.2.3"
+		expectedImage := "public.registry.example.com/linux/activegate:" + expectedTag
 		mockImgClient := imageclientmock.NewClient(t)
 		mockImgClient.EXPECT().
 			GetComponentLatestInfo(mock.Anything, image.ActiveGate, "").
-			Return(&image.Info{URI: expectedImage}, nil)
+			Return(&image.Info{URI: expectedImage, Tag: expectedTag}, nil)
 
 		sts := reconcileAndGetSTS(t, dk, mockImgClient, versionclientmock.NewClient(t))
 		assert.Equal(t, expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, expectedTag, dk.KubernetesMonitoring().Version)
 	})
 
 	t.Run("public registry uses registry override when set", func(t *testing.T) {
@@ -321,30 +324,34 @@ func TestResolveImage(t *testing.T) {
 		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
 		dk.Spec.PublicRegistryOverride = "my.registry.example.com"
 
-		expectedImage := "my.registry.example.com/linux/activegate:1.2.3"
+		expectedTag := "1.2.3"
+		expectedImage := "my.registry.example.com/linux/activegate:" + expectedTag
 		mockImgClient := imageclientmock.NewClient(t)
 		mockImgClient.EXPECT().
 			GetComponentLatestInfo(mock.Anything, image.ActiveGate, "my.registry.example.com").
-			Return(&image.Info{URI: expectedImage}, nil)
+			Return(&image.Info{URI: expectedImage, Tag: expectedTag}, nil)
 
 		sts := reconcileAndGetSTS(t, dk, mockImgClient, versionclientmock.NewClient(t))
 		assert.Equal(t, expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, expectedTag, dk.KubernetesMonitoring().Version)
 	})
 
 	t.Run("default image is built from version client and api url", func(t *testing.T) {
 		dk := newTestDynaKube(true)
 		dk.Spec.KubernetesMonitoring.Image = ""
 
+		expectedVersion := "1.2.3.4"
 		mockVerClient := versionclientmock.NewClient(t)
 		mockVerClient.EXPECT().
 			GetLatestActiveGateVersion(mock.Anything, installer.OSUnix).
-			Return("1.2.3.4", nil)
+			Return(expectedVersion, nil)
 
-		expectedImage := dk.KubernetesMonitoring().GetDefaultImage("1.2.3.4")
+		expectedImage := dk.KubernetesMonitoring().GetDefaultImage(expectedVersion)
 		require.NotEmpty(t, expectedImage, "test precondition: APIURL must produce a non-empty default image")
 
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), mockVerClient)
 		assert.Equal(t, expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, expectedVersion, dk.KubernetesMonitoring().Version)
 	})
 
 	t.Run("image client error is propagated", func(t *testing.T) {

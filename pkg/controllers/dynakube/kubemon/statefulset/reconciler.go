@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -220,17 +219,25 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 	switch {
 	case dk.KubernetesMonitoring().GetCustomImage() != "":
 		imageURI = dk.KubernetesMonitoring().GetCustomImage()
+		dk.KubernetesMonitoring().Version = imageURI
 	case dk.FF().IsPublicRegistry():
-		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), image.ActiveGate)
+		var imageInfo *image.Info
+
+		imageInfo, err = imageClient.GetComponentLatestInfo(ctx, image.ActiveGate, dk.PublicRegistryOverride())
+		if err != nil {
+			return "", err
+		}
+		imageURI = imageInfo.URI
+		dk.KubernetesMonitoring().Version = imageInfo.Tag
 	default:
 		var latestVersion string
 
 		latestVersion, err = versionClient.GetLatestActiveGateVersion(ctx, installer.OSUnix)
+		if err != nil {
+			return "", err
+		}
 		imageURI = dk.KubernetesMonitoring().GetDefaultImage(latestVersion)
-	}
-
-	if err != nil {
-		return "", err
+		dk.KubernetesMonitoring().Version = latestVersion
 	}
 
 	return imageURI, nil

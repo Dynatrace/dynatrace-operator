@@ -5,13 +5,13 @@ package kubemon
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 )
 
 // +kubebuilder:object:generate=true
 
 type Status struct {
-	status.VersionStatus `json:",inline"`
+	// Information about the version of KubernetesMonitoring that is meant to be deployed.
+	Version string `json:"version,omitempty"`
 
 	// Information about KubernetesMonitoring's connections.
 	// +kubebuilder:validation:Optional
@@ -19,5 +19,5 @@ type Status struct {
 }
 
 func (s *Status) IsZero() bool {
-	return s.VersionStatus.IsZero() && s.ConnectionInfo == communication.ConnectionInfo{}
+	return s.Version == "" && s.ConnectionInfo == communication.ConnectionInfo{}
 }
