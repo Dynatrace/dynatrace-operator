@@ -98,7 +98,9 @@ type Reconciler struct { ... }
 func (r *Reconciler) Reconcile(...) error {
     // conditionType used here
 }
+```
 
+```go
 // ✗ standalone conditions.go with a single private constant
 // pkg/controllers/dynakube/.../conditions.go
 package customproperties
