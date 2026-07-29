@@ -77,7 +77,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 
 	t.Run("sets InsecureSkipVerify on transport when SkipCertCheck is true", func(t *testing.T) {
 		dk := getDynakube()
-		dk.Spec.SkipCertCheck = true
+		dk.Spec.SkipCertCheck = new(true)
 
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)
@@ -95,7 +95,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 
 	t.Run("TLS transport has no InsecureSkipVerify when SkipCertCheck is false", func(t *testing.T) {
 		dk := getDynakube()
-		dk.Spec.SkipCertCheck = false
+		dk.Spec.SkipCertCheck = new(false)
 
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
 		require.NoError(t, err)

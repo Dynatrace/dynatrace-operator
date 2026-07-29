@@ -67,7 +67,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				EnableIstio: true,
+				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
@@ -169,7 +169,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				EnableIstio: true,
+				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
@@ -201,7 +201,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				EnableIstio: true,
+				EnableIstio: new(true),
 				ActiveGate:  activegate.Spec{},
 			},
 			Status: dynakube.DynaKubeStatus{
@@ -237,7 +237,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				EnableIstio: true,
+				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},

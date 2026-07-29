@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -301,7 +302,7 @@ func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 }
 
 func isDefaultPVCNeeded(dk dynakube.DynaKube) bool {
-	return dk.TelemetryIngest().IsEnabled() && !dk.Spec.ActiveGate.UseEphemeralVolume
+	return dk.TelemetryIngest().IsEnabled() && !ptr.Deref(dk.Spec.ActiveGate.UseEphemeralVolume, false)
 }
 
 func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {

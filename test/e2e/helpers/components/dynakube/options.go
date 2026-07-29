@@ -276,7 +276,7 @@ func WithProxy(proxy *value.Source) Option {
 
 func WithIstioIntegration() Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.EnableIstio = true
+		dk.Spec.EnableIstio = new(true)
 	}
 }
 
@@ -308,7 +308,7 @@ func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 	return func(dk *dynakube.DynaKube) {
 		if promEnabled {
 			dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
-			dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+			dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		} else {
 			dk.Spec.Extensions = nil
 		}

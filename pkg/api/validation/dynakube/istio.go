@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 )
 
 func isIstioNotInstalled(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if dk.Spec.EnableIstio && !istio.IsInstalled(ctx, dv.apiReader) {
+	if ptr.Deref(dk.Spec.EnableIstio, false) && !istio.IsInstalled(ctx, dv.apiReader) {
 		return errorNoIstioInstalled
 	}
 

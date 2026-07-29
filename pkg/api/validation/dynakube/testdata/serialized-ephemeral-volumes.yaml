@@ -1,0 +1,12 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: ephemeral-volumes
+  namespace: default
+spec:
+  activeGate:
+    useEphemeralVolume: false
+  apiUrl: https://ephemeral-volumes.dev.dynatracelabs.com/api
+  templates:
+    extensionExecutionController:
+      useEphemeralVolume: false

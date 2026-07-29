@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -436,7 +437,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			}
 		}
 
-		if dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+		if ptr.Deref(dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume, false) {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: runtimeVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -492,7 +493,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 
 func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+		if !ptr.Deref(dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume, false) {
 			if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim == nil {
 				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 					{
