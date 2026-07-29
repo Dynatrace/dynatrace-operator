@@ -10,8 +10,9 @@ import (
 // +kubebuilder:object:generate=true
 
 type Status struct {
-	// Information about the resolved image of KubernetesMonitoring that is meant to be deployed.
-	Image string `json:"image,omitempty"`
+	// The resolved KubernetesMonitoring image that is currently deployed.
+	// The JSON tag uses "image" (matching the Spec field name) while the Go field name is ResolvedImage to distinguish it from Spec.Image.
+	ResolvedImage string `json:"image,omitempty"`
 
 	// Information about KubernetesMonitoring's connections.
 	// +kubebuilder:validation:Optional
