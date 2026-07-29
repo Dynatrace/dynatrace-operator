@@ -327,7 +327,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Create with standalone kubemon when operand env is set", func(t *testing.T) {
-		t.Setenv(k8senv.KubemonEnableOperand, "true")
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := createTestKubemonDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient)
@@ -366,7 +366,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Don't create when operand env is set but kubemon is not configured", func(t *testing.T) {
-		t.Setenv(k8senv.KubemonEnableOperand, "true")
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := addFakeTennantUUID(&dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -393,7 +393,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Cleanup when standalone kubemon is disabled", func(t *testing.T) {
-		t.Setenv(k8senv.KubemonEnableOperand, "true")
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := createTestKubemonDynakube()
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{
