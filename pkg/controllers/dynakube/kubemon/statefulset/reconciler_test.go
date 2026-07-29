@@ -288,6 +288,36 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
 		assert.NotNil(t, sts.Spec.Template.Spec.Volumes[2].EmptyDir)
 	})
+
+	t.Run("image pull secrets: tenant registry secret included by default", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		require.Len(t, sts.Spec.Template.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, dk.TenantRegistryPullSecretName(), sts.Spec.Template.Spec.ImagePullSecrets[0].Name)
+	})
+
+	t.Run("image pull secrets: tenant registry secret omitted when public registry is enabled", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.Empty(t, sts.Spec.Template.Spec.ImagePullSecrets)
+	})
+
+	t.Run("image pull secrets: custom pull secret is included alongside the tenant registry secret", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.CustomPullSecret = "my-custom-pull-secret"
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		names := make([]string, 0, len(sts.Spec.Template.Spec.ImagePullSecrets))
+		for _, ref := range sts.Spec.Template.Spec.ImagePullSecrets {
+			names = append(names, ref.Name)
+		}
+
+		assert.Contains(t, names, dk.TenantRegistryPullSecretName())
+		assert.Contains(t, names, "my-custom-pull-secret")
+	})
 }
 
 // TestResolveImage verifies all three image resolution paths and their error handling.
