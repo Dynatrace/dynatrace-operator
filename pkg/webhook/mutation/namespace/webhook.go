@@ -44,16 +44,14 @@ type webhook struct {
 //  2. if the namespace was updated by the operator => don't do the mapping: we do this because the operator also does the mapping
 //     but from the DynaKube's side (during DynaKube reconcile) and we don't want to repeat ourselves
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
-	ctx, log := logd.NewFromContext(ctx, "namespace-mutation")
+	ctx, log := logd.NewFromContext(ctx, "namespace-mutation", "operation", request.Operation)
 
 	if wh.namespace == request.Namespace {
 		return admission.Allowed("")
 	}
 
-	logger := log.WithValues("namespace", request.Name, "operation", request.Operation)
-
 	if request.UserInfo.Username == wh.serviceAccount {
-		logger.Info("ignoring change from operator", "serviceAccount", wh.serviceAccount)
+		log.Info("ignoring change from operator")
 
 		return admission.Allowed("")
 	}
