@@ -196,7 +196,6 @@ func SetPVCAnnotation() Option {
 	}
 }
 
-
 func SetImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
