@@ -239,7 +239,8 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 		imageURI = dk.KubernetesMonitoring().GetDefaultImage(latestVersion)
 	}
 
-	dk.KubernetesMonitoring().Image = imageURI
+	// added a nolint so the linter doesn't autofix to a confusing dk.KubernetesMonitoring().Image
+	dk.KubernetesMonitoring().Status.Image = imageURI //nolint
 
 	return imageURI, nil
 }
