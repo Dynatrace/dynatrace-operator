@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
@@ -14,8 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (attrs *Pod) readMetadataAnnotations(request mutator.BaseRequest) {
-	attrs.applyEnrichmentRules(request.Namespace, request.DynaKube)
+func (attrs *Pod) readMetadataAnnotations(ctx context.Context, request mutator.BaseRequest) {
+	attrs.applyEnrichmentRules(ctx, request.Namespace, request.DynaKube)
 	attrs.readNamespaceAnnotationAttributes(request.Namespace)
 	attrs.readPodAnnotationAttributes(*request.Pod)
 }
@@ -39,7 +40,9 @@ func (attrs *Pod) readPodAnnotationAttributes(pod corev1.Pod) {
 	}
 }
 
-func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.DynaKube) {
+func (attrs *Pod) applyEnrichmentRules(ctx context.Context, namespace corev1.Namespace, dk dynakube.DynaKube) {
+	var skippedRules []metadataenrichment.Rule
+
 	for _, rule := range dk.Status.MetadataEnrichment.Rules {
 		var (
 			valueFromNamespace string
@@ -65,8 +68,14 @@ func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.D
 				// The first rule to resolve to a value wins, regardless of type.
 				// This only is valid if the order of the rules remains unchanged from the API response.
 				attrs.rules[rule.Target] = valueFromNamespace
+			} else {
+				skippedRules = append(skippedRules, rule)
 			}
 		}
+	}
+
+	if len(skippedRules) > 0 {
+		logd.FromContext(ctx).Info("ignoring metadata enrichment rules with lower precedence", "rules", skippedRules)
 	}
 }
 

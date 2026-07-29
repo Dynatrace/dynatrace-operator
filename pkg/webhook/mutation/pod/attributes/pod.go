@@ -64,7 +64,7 @@ func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client c
 		return nil, err
 	}
 
-	attrs.readMetadataAnnotations(request)
+	attrs.readMetadataAnnotations(ctx, request)
 	attrs.readPodAttributes(request)
 
 	if attrs.useDeprecated {
