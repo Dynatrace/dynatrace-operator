@@ -119,7 +119,7 @@ func TestReconcile(t *testing.T) {
 
 		found := 0
 		for _, vm := range statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if vm.Name == InternalProxySecretVolumeName {
+			if vm.Name == internalProxySecretVolumeName {
 				found++
 			}
 		}

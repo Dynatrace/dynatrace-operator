@@ -26,7 +26,7 @@ import (
 
 const (
 	ActiveGateStatefulSetConditionType string = "ActiveGateStatefulSet"
-	InternalProxySecretVolumeName      string = "internal-proxy-secret-volume"
+	internalProxySecretVolumeName      string = "internal-proxy-secret-volume"
 )
 
 type Reconciler struct {
