@@ -117,7 +117,7 @@ spec:
             - name: DT_CLIENT_CACHE_CLEAN_INTERVAL
               value: "{{ .Values.operator.clientCacheCleanupInterval }}"
             {{- end }}
-            {{- if (.Values.operator.experimental | default dict).enableKubemonOperand }}
+            {{- if (.Values.operator.experimental).enableKubemonOperand }}
             - name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
               value: "true"
             {{- end }}
