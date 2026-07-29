@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 func TestConvertFrom(t *testing.T) {
@@ -278,8 +279,8 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
 	assert.Equal(t, oldDk.Spec.NetworkZone, newDk.Spec.NetworkZone)
 	assert.Equal(t, oldDk.Spec.CustomPullSecret, newDk.Spec.CustomPullSecret)
-	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
-	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
+	assert.Equal(t, oldDk.Spec.SkipCertCheck, ptr.Deref(newDk.Spec.SkipCertCheck, false))
+	assert.Equal(t, oldDk.Spec.EnableIstio, ptr.Deref(newDk.Spec.EnableIstio, false))
 
 	if newDk.OneAgent().IsAppInjectionNeeded() {
 		assert.Equal(t, oldDk.OneAgent().GetNamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
@@ -428,7 +429,7 @@ func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec Exte
 	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
-	assert.Equal(t, oldSpec.UseEphemeralVolume, newSpec.UseEphemeralVolume)
+	assert.Equal(t, oldSpec.UseEphemeralVolume, ptr.Deref(newSpec.UseEphemeralVolume, false))
 }
 
 func compareLogMonitoringTemplateSpec(t *testing.T, oldSpec *logmonitoring.TemplateSpec, newSpec *logmonitoringlatest.TemplateSpec) {
@@ -498,8 +499,8 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			CustomPullSecret:             "pull-secret",
-			SkipCertCheck:                true,
-			EnableIstio:                  true,
+			SkipCertCheck:                ptr.To(true),
+			EnableIstio:                  ptr.To(true),
 			MetadataEnrichment: metadataenrichmentlatest.Spec{
 				Enabled:           new(true),
 				NamespaceSelector: getTestNamespaceSelector(),
@@ -732,7 +733,7 @@ func getNewExtensionExecutionControllerSpec() extensionslatest.ExecutionControll
 		},
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
-		UseEphemeralVolume:          true,
+		UseEphemeralVolume:          ptr.To(true),
 	}
 }
 

@@ -629,7 +629,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	t.Run("reconcile the controller with istio enabled", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.APIURL = testAPIURL
-		dk.Spec.EnableIstio = true
+		dk.Spec.EnableIstio = new(true)
 
 		fakeClient := fake.NewClientWithIndex(dk, createCRD(t), createAPISecret())
 
@@ -644,7 +644,7 @@ func TestReconcileDynaKube(t *testing.T) {
 
 	t.Run("reconciling the controller with istio enabled (but without valid API URL) should fail", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
-		dk.Spec.EnableIstio = true
+		dk.Spec.EnableIstio = new(true)
 
 		fakeClient := fake.NewClientWithIndex(dk, createAPISecret())
 

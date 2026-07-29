@@ -959,7 +959,7 @@ func TestPersistentVolumeClaim(t *testing.T) {
 
 	t.Run("no PVC spec, UseEphemeralVolume set to true", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Empty(t, statefulSet.Spec.VolumeClaimTemplates)
@@ -968,7 +968,7 @@ func TestPersistentVolumeClaim(t *testing.T) {
 
 	t.Run("empty PVC spec, UseEphemeralVolume set to false", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = false
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(false)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{}
 		statefulSet := getStatefulset(t, dk)
 
@@ -976,7 +976,7 @@ func TestPersistentVolumeClaim(t *testing.T) {
 	})
 	t.Run("empty PVC spec, UseEphemeralVolume set to true", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{}
 		statefulSet := getStatefulset(t, dk)
 
@@ -986,7 +986,7 @@ func TestPersistentVolumeClaim(t *testing.T) {
 
 	t.Run("PVC spec, UseEphemeralVolume set to false", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = false
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(false)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
 				corev1.ReadWriteOncePod,
@@ -1000,7 +1000,7 @@ func TestPersistentVolumeClaim(t *testing.T) {
 	})
 	t.Run("PVC spec, UseEphemeralVolume set to true", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
 				corev1.ReadWriteOncePod,
@@ -1094,7 +1094,7 @@ func TestLegacyVolumes(t *testing.T) {
 	t.Run("volumes without PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		disableAutomaticAGCertificate(dk)
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -1143,7 +1143,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 	t.Run("volumes without PVC", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -1322,7 +1322,7 @@ func TestLegacyVolumes(t *testing.T) {
 	t.Run("volumes without PVC and with custom configuration, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		disableAutomaticAGCertificate(dk)
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
 		statefulSet := getStatefulset(t, dk)
@@ -1382,7 +1382,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 	t.Run("volumes without PVC and with custom configuration", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
 		statefulSet := getStatefulset(t, dk)
@@ -1461,7 +1461,7 @@ func TestVolumes(t *testing.T) {
 		dk := getTestDynakube()
 		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -1499,7 +1499,7 @@ func TestVolumes(t *testing.T) {
 	t.Run("volumes without PVC", func(t *testing.T) {
 		dk := getTestDynakube()
 		disableLegacyVolumeMounts(dk)
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -1645,7 +1645,7 @@ func TestVolumes(t *testing.T) {
 		dk := getTestDynakube()
 		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
 		statefulSet := getStatefulset(t, dk)
@@ -1694,7 +1694,7 @@ func TestVolumes(t *testing.T) {
 	t.Run("volumes without PVC and with custom configuration", func(t *testing.T) {
 		dk := getTestDynakube()
 		disableLegacyVolumeMounts(dk)
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
 		statefulSet := getStatefulset(t, dk)

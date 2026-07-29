@@ -627,7 +627,7 @@ func TestTempVolume(t *testing.T) {
 
 			dk.Spec.ActiveGate.VolumeClaimTemplate = test.pvc
 			dk.Spec.TelemetryIngest = test.telemetryIngest
-			dk.Spec.ActiveGate.UseEphemeralVolume = test.useEphemeral
+			dk.Spec.ActiveGate.UseEphemeralVolume = new(test.useEphemeral)
 
 			multiCapability := capability.NewMultiCapability(&dk)
 			statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)

@@ -25,6 +25,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
@@ -87,6 +89,38 @@ func TestSerialization(t *testing.T) {
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{Version: "1.0.0.20240101-000000"},
+				},
+			},
+		},
+		{
+			// Regression guard (ICP-1012): the non-pointer bool fields
+			// skipCertCheck and enableIstio must render even when explicitly set
+			// to false. They previously carried ,omitempty and were silently
+			// dropped from the stored object, confusing users who set them false.
+			name: "istio-skipcertcheck",
+			spec: dynakube.DynaKubeSpec{
+				APIURL:        "https://istio-skipcertcheck.dev.dynatracelabs.com/api",
+				SkipCertCheck: new(false),
+				EnableIstio:   new(false),
+			},
+		},
+		{
+			// Regression guard (ICP-1012): the non-pointer bool fields
+			// activeGate.useEphemeralVolume and
+			// templates.extensionExecutionController.useEphemeralVolume must
+			// render even when explicitly set to false. As *bool + omitempty a
+			// nil value is dropped, but an explicit false must survive so users
+			// who opt out see their setting persisted.
+			name: "ephemeral-volumes",
+			spec: dynakube.DynaKubeSpec{
+				APIURL: "https://ephemeral-volumes.dev.dynatracelabs.com/api",
+				ActiveGate: activegate.Spec{
+					UseEphemeralVolume: new(false),
+				},
+				Templates: dynakube.TemplatesSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
+						UseEphemeralVolume: new(false),
+					},
 				},
 			},
 		},

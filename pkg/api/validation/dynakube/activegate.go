@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -59,7 +60,7 @@ func memoryLimitSet(resources corev1.ResourceRequirements) bool {
 }
 
 func activeGateMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
-	return dk.Spec.ActiveGate.UseEphemeralVolume && dk.Spec.ActiveGate.VolumeClaimTemplate != nil
+	return ptr.Deref(dk.Spec.ActiveGate.UseEphemeralVolume, false) && dk.Spec.ActiveGate.VolumeClaimTemplate != nil
 }
 
 func mutuallyExclusiveActiveGatePVsettings(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {

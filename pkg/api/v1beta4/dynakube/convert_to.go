@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -52,8 +53,8 @@ func (src *DynaKube) toBase(dst *dynakubelatest.DynaKube) {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
-	dst.Spec.SkipCertCheck = src.Spec.SkipCertCheck
-	dst.Spec.EnableIstio = src.Spec.EnableIstio
+	dst.Spec.SkipCertCheck = ptr.To(src.Spec.SkipCertCheck)
+	dst.Spec.EnableIstio = ptr.To(src.Spec.EnableIstio)
 }
 
 func (src *DynaKube) toLogMonitoringSpec(dst *dynakubelatest.DynaKube) {
@@ -186,7 +187,7 @@ func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) extensi
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
 	dst.TopologySpreadConstraints = src.TopologySpreadConstraints
-	dst.UseEphemeralVolume = src.UseEphemeralVolume
+	dst.UseEphemeralVolume = ptr.To(src.UseEphemeralVolume)
 
 	return dst
 }

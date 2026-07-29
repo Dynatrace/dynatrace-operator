@@ -395,6 +395,6 @@ func getProxyTestActiveGate() *activegate.Spec {
 	return &activegate.Spec{
 		CapabilityProperties: activegate.CapabilityProperties{},
 		Capabilities:         []activegate.CapabilityDisplayName{"otlp-ingest"},
-		UseEphemeralVolume:   false,
+		UseEphemeralVolume:   new(false),
 	}
 }
