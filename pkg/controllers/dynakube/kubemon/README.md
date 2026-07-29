@@ -25,7 +25,7 @@ workaround, and the operator can manage each capability's lifecycle separately.
 
 ### Done
 
-- Temporary operand gate (`KUBEMON_ENABLE_OPERAND` env var + Helm value)
+- Temporary operand gate (`EXPERIMENTAL_ENABLE_KUBEMON_OPERAND` env var + Helm value)
 - kubemon orchestrator with one-condition ownership (`KubernetesMonitoringAvailable`)
 - StatefulSet lifecycle and rollout-based availability handling
 - Transient vs persistent error mapping with tests
@@ -50,7 +50,7 @@ Use Helm to enable kubemon in dev/test environments:
 ```zsh
 helm upgrade --install dynatrace-operator config/helm/chart/default \
   -n dynatrace --create-namespace \
-  --set operator.kubemonEnableOperand=true
+  --set operator.experimental.enableKubemonOperand=true
 ```
 
-The Helm value sets `KUBEMON_ENABLE_OPERAND=true` for operator and webhook pods.
+The Helm value sets `EXPERIMENTAL_ENABLE_KUBEMON_OPERAND=true` for operator and webhook pods.
