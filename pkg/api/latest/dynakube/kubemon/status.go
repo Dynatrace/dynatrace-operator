@@ -17,7 +17,3 @@ type Status struct {
 	// +kubebuilder:validation:Optional
 	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitzero"`
 }
-
-func (s *Status) IsZero() bool {
-	return s.Image == "" && s.ConnectionInfo == communication.ConnectionInfo{}
-}
