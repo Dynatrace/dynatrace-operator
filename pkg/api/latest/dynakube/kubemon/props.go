@@ -4,7 +4,6 @@
 package kubemon
 
 import (
-	"net/url"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -27,8 +26,8 @@ type KubeMon struct {
 	*Spec
 	*Status
 
-	name   string
-	apiURL string
+	name       string
+	apiURLHost string
 }
 
 func (km *Spec) IsEnabled() bool {
@@ -40,8 +39,8 @@ func (km *KubeMon) SetName(name string) {
 	km.name = name
 }
 
-func (km *KubeMon) SetURL(apiURL string) {
-	km.apiURL = apiURL
+func (km *KubeMon) SetAPIURLHost(apiURLHost string) {
+	km.apiURLHost = apiURLHost
 }
 
 func (km *Spec) GetServiceAccountName() string {
@@ -82,8 +81,7 @@ func (km *Spec) GetCustomImage() string {
 }
 
 func (km *KubeMon) GetDefaultImage(version string) string {
-	apiURLHost := km.apiURLHost()
-	if apiURLHost == "" {
+	if km.apiURLHost == "" {
 		return ""
 	}
 
@@ -94,14 +92,5 @@ func (km *KubeMon) GetDefaultImage(version string) string {
 		tag += "-" + api.RawTag
 	}
 
-	return apiURLHost + TenantRegistrySubPath + ":" + tag
-}
-
-func (km *KubeMon) apiURLHost() string {
-	parsedURL, err := url.Parse(km.apiURL)
-	if err != nil {
-		return ""
-	}
-
-	return parsedURL.Host
+	return km.apiURLHost + TenantRegistrySubPath + ":" + tag
 }

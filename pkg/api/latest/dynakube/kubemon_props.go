@@ -13,7 +13,7 @@ func (dk *DynaKube) KubernetesMonitoring() *kubemon.KubeMon {
 		Status: &dk.Status.KubernetesMonitoring,
 	}
 	km.SetName(dk.Name)
-	km.SetURL(dk.APIURL())
+	km.SetAPIURLHost(dk.APIURLHost())
 
 	return km
 }
