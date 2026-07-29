@@ -62,7 +62,7 @@ func (attrs *Pod) applyEnrichmentRules(ctx context.Context, namespace corev1.Nam
 		if exists {
 			if rule.Target == "" {
 				// The last rule without a target to resolve to a value wins. This inconsistency is intentional to not introduce a behavior change for users upgrading from <1.10.
-				// Target can only be empty for legacy schema rules.
+				// TODO: Verify if we can remove this branch. The API in dev does not allow an empty target for neither schema.
 				attrs.rules[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
 			} else if _, ok := attrs.rules[rule.Target]; !ok {
 				// The first rule to resolve to a value wins, regardless of type.
