@@ -219,7 +219,6 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 	switch {
 	case dk.KubernetesMonitoring().GetCustomImage() != "":
 		imageURI = dk.KubernetesMonitoring().GetCustomImage()
-		dk.KubernetesMonitoring().Version = imageURI
 	case dk.FF().IsPublicRegistry():
 		var imageInfo *image.Info
 
@@ -229,7 +228,6 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 		}
 
 		imageURI = imageInfo.URI
-		dk.KubernetesMonitoring().Version = imageInfo.Tag
 	default:
 		var latestVersion string
 
@@ -239,8 +237,9 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 		}
 
 		imageURI = dk.KubernetesMonitoring().GetDefaultImage(latestVersion)
-		dk.KubernetesMonitoring().Version = latestVersion
 	}
+
+	dk.KubernetesMonitoring().Image = imageURI
 
 	return imageURI, nil
 }

@@ -7853,7 +7853,7 @@ spec:
                       tenantUUID:
                         type: string
                     type: object
-                  version:
+                  image:
                     type: string
                 type: object
               metadataEnrichment:

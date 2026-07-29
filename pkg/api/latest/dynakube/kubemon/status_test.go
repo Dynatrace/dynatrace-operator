@@ -21,7 +21,7 @@ func TestStatus_IsZero(t *testing.T) {
 			expectedZero: true,
 		},
 		"version status set, connection info empty is not zero": {
-			status:       kubemon.Status{Version: "1.2.3"},
+			status:       kubemon.Status{Image: "1.2.3"},
 			expectedZero: false,
 		},
 		"connection info set, version status empty is not zero": {
@@ -30,7 +30,7 @@ func TestStatus_IsZero(t *testing.T) {
 		},
 		"both set is not zero": {
 			status: kubemon.Status{
-				Version:        "1.2.3",
+				Image:          "1.2.3",
 				ConnectionInfo: communication.ConnectionInfo{TenantUUID: "abc123"},
 			},
 			expectedZero: false,

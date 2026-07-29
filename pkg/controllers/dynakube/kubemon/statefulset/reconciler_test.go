@@ -298,7 +298,7 @@ func TestResolveImage(t *testing.T) {
 		// mocks with no expectations verify that neither client is invoked on the custom-image path
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 		assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), dk.KubernetesMonitoring().Version)
+		assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), dk.KubernetesMonitoring().Image)
 	})
 
 	t.Run("public registry uses image client", func(t *testing.T) {
@@ -311,11 +311,11 @@ func TestResolveImage(t *testing.T) {
 		mockImgClient := imageclientmock.NewClient(t)
 		mockImgClient.EXPECT().
 			GetComponentLatestInfo(mock.Anything, image.ActiveGate, "").
-			Return(&image.Info{URI: expectedImage, Tag: expectedTag}, nil)
+			Return(&image.Info{URI: expectedImage}, nil)
 
 		sts := reconcileAndGetSTS(t, dk, mockImgClient, versionclientmock.NewClient(t))
 		assert.Equal(t, expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, expectedTag, dk.KubernetesMonitoring().Version)
+		assert.Equal(t, expectedImage, dk.KubernetesMonitoring().Image)
 	})
 
 	t.Run("public registry uses registry override when set", func(t *testing.T) {
@@ -329,11 +329,11 @@ func TestResolveImage(t *testing.T) {
 		mockImgClient := imageclientmock.NewClient(t)
 		mockImgClient.EXPECT().
 			GetComponentLatestInfo(mock.Anything, image.ActiveGate, "my.registry.example.com").
-			Return(&image.Info{URI: expectedImage, Tag: expectedTag}, nil)
+			Return(&image.Info{URI: expectedImage}, nil)
 
 		sts := reconcileAndGetSTS(t, dk, mockImgClient, versionclientmock.NewClient(t))
 		assert.Equal(t, expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, expectedTag, dk.KubernetesMonitoring().Version)
+		assert.Equal(t, expectedImage, dk.KubernetesMonitoring().Image)
 	})
 
 	t.Run("default image is built from version client and api url", func(t *testing.T) {
@@ -351,7 +351,7 @@ func TestResolveImage(t *testing.T) {
 
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), mockVerClient)
 		assert.Equal(t, expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, expectedVersion, dk.KubernetesMonitoring().Version)
+		assert.Equal(t, expectedImage, dk.KubernetesMonitoring().Image)
 	})
 
 	t.Run("image client error is propagated", func(t *testing.T) {

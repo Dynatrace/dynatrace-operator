@@ -10,8 +10,8 @@ import (
 // +kubebuilder:object:generate=true
 
 type Status struct {
-	// Information about the version of KubernetesMonitoring that is meant to be deployed.
-	Version string `json:"version,omitempty"`
+	// Information about the resolved image of KubernetesMonitoring that is meant to be deployed.
+	Image string `json:"image,omitempty"`
 
 	// Information about KubernetesMonitoring's connections.
 	// +kubebuilder:validation:Optional
@@ -19,5 +19,5 @@ type Status struct {
 }
 
 func (s *Status) IsZero() bool {
-	return s.Version == "" && s.ConnectionInfo == communication.ConnectionInfo{}
+	return s.Image == "" && s.ConnectionInfo == communication.ConnectionInfo{}
 }
