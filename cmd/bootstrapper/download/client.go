@@ -7,12 +7,12 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 )
 
 type Client struct {
@@ -21,8 +21,6 @@ type Client struct {
 }
 
 type Option func(*Client)
-
-const InitContainerDTClientConnectionTimeout = 15 * time.Minute
 
 func WithInstaller(builder binary.NewFunc) Option {
 	return func(cl *Client) {
@@ -83,7 +81,7 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.Client, error)
 		options = append(options, dynatrace.WithCerts(certs))
 	}
 
-	options = append(options, dynatrace.WithBaseURL(cl.baseURL), dynatrace.WithConnectionTimeout(InitContainerDTClientConnectionTimeout))
+	options = append(options, dynatrace.WithBaseURL(cl.baseURL), dynatrace.WithConnectionTimeout(k8senv.DefaultCSIDriverDTClientConnectionTimeout))
 
 	dtClient, err := dynatrace.NewClient(options...)
 	if err != nil {

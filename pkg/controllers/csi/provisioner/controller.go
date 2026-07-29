@@ -179,7 +179,7 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakub
 		return nil, err
 	}
 
-	dtClient, err := provisioner.dtClientFactory(ctx, provisioner.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "provisioner", dynatrace.WithConnectionTimeout(k8senv.GetCSIDriverDTClientConnectionTimeout(ctx)))
+	dtClient, err := provisioner.dtClientFactory(ctx, provisioner.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "provisioner", k8senv.GetCSIDriverDTClientConnectionTimeout(ctx))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create Dynatrace client")
 	}

@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -1141,36 +1141,23 @@ func TestSetupTokensAndClientForConnectionTimeout(t *testing.T) {
 		},
 	})
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"scopes":["activeGateTokenManagement.create","InstallerDownload","DataExport"]}`))
-	}))
-	defer server.Close()
-
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynakube.DynaKubeSpec{APIURL: server.URL},
+		Spec: dynakube.DynaKubeSpec{APIURL: "localhost"},
 	}
-
-	t.Run("the default connection timeout is applied", func(t *testing.T) {
-		controller := &Controller{
-			client:          fakeClient,
-			apiReader:       fakeClient,
-			dtClientFactory: testDTClientBuilder(t, 30*time.Second),
-		}
-
-		clt, err := controller.setupTokensAndClient(t.Context(), dk)
-		require.NoError(t, err)
-		assert.NotNil(t, clt)
-	})
 
 	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
 		testCases := []struct {
 			envValue string
 			timeout  time.Duration
 		}{
+			{
+				envValue: "",
+				timeout:  30 * time.Second,
+			},
 			{
 				envValue: "29s",
 				timeout:  30 * time.Second,
@@ -1190,7 +1177,9 @@ func TestSetupTokensAndClientForConnectionTimeout(t *testing.T) {
 		}
 
 		for _, testCase := range testCases {
-			t.Setenv(k8senv.DTClientConnectionTimeout, testCase.envValue)
+			if testCase.envValue != "" {
+				t.Setenv(k8senv.DTClientConnectionTimeout, testCase.envValue)
+			}
 
 			controller := &Controller{
 				client:          fakeClient,
@@ -1198,24 +1187,24 @@ func TestSetupTokensAndClientForConnectionTimeout(t *testing.T) {
 				dtClientFactory: testDTClientBuilder(t, testCase.timeout),
 			}
 
-			clt, err := controller.setupTokensAndClient(t.Context(), dk)
-			require.NoError(t, err)
-			assert.NotNil(t, clt)
+			_, err := controller.setupTokensAndClient(t.Context(), dk)
+
+			// we just want to make sure that the timeout is applied correctly to the underlying http.Client
+			require.Error(t, err)
+
+			var urlErr *url.Error
+			require.ErrorAs(t, err, &urlErr)
+
+			assert.Equal(t, "unsupported protocol scheme \"\"", urlErr.Unwrap().Error())
 		}
 	})
 }
 
-func testDTClientBuilder(t *testing.T, timeout time.Duration) func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
-	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
-		config := dynatrace.Config{}
+func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+		assert.Equal(t, timeout, clientConnectionTimeout)
 
-		for _, opt := range options {
-			require.NoError(t, opt(&config))
-		}
-
-		assert.Equal(t, timeout, config.ConnectionTimeout)
-
-		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, options...)
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
 	}
 }
 
@@ -1300,13 +1289,13 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ ...dynatrace.Option) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }
 
 func newErrorClientFactory(err error) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ ...dynatrace.Option) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return nil, err
 	}
 }

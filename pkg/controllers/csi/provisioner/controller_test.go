@@ -468,17 +468,6 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 }
 
 func TestBuildDtcForConnectionTimeout(t *testing.T) {
-	t.Run("the default connection timeout is applied", func(t *testing.T) {
-		dk := createDynaKubeBase(t)
-		provisioner := createProvisioner(t, dk, createToken(t, dk))
-
-		provisioner.dtClientFactory = testDTClientBuilder(t, 15*time.Minute)
-
-		dtClient, err := buildDtc(&provisioner, context.Background(), dk)
-		require.NoError(t, err)
-		assert.NotNil(t, dtClient)
-	})
-
 	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
 		dk := createDynaKubeBase(t)
 		provisioner := createProvisioner(t, dk, createToken(t, dk))
@@ -487,6 +476,10 @@ func TestBuildDtcForConnectionTimeout(t *testing.T) {
 			envValue string
 			timeout  time.Duration
 		}{
+			{
+				envValue: "",
+				timeout:  15 * time.Minute,
+			},
 			{
 				envValue: "29s",
 				timeout:  15 * time.Minute,
@@ -506,7 +499,9 @@ func TestBuildDtcForConnectionTimeout(t *testing.T) {
 		}
 
 		for _, testCase := range testCases {
-			t.Setenv(k8senv.DTClientConnectionTimeout, testCase.envValue)
+			if testCase.envValue != "" {
+				t.Setenv(k8senv.DTClientConnectionTimeout, testCase.envValue)
+			}
 
 			provisioner.dtClientFactory = testDTClientBuilder(t, testCase.timeout)
 
@@ -517,16 +512,10 @@ func TestBuildDtcForConnectionTimeout(t *testing.T) {
 	})
 }
 
-func testDTClientBuilder(t *testing.T, timeout time.Duration) func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
-	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
-		config := dynatrace.Config{}
+func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+		assert.Equal(t, timeout, clientConnectionTimeout)
 
-		for _, opt := range options {
-			require.NoError(t, opt(&config))
-		}
-
-		assert.Equal(t, timeout, config.ConnectionTimeout)
-
-		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, options...)
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
 	}
 }

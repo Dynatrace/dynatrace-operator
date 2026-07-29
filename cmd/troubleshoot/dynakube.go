@@ -120,7 +120,7 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 
 	logInfof(log, "checking if token scopes are valid")
 
-	dtClient, err := dynatrace.NewClientFromDynakube(ctx, apiReader, dk, dynatraceAPISecretTokens.APIToken().String(), dynatraceAPISecretTokens.PaasToken().String(), "troubleshoot", dynatrace.WithConnectionTimeout(k8senv.GetOperatorDTClientConnectionTimeout(ctx)))
+	dtClient, err := dynatrace.NewClientFromDynakube(ctx, apiReader, dk, dynatraceAPISecretTokens.APIToken().String(), dynatraceAPISecretTokens.PaasToken().String(), "troubleshoot", k8senv.GetOperatorDTClientConnectionTimeout(ctx))
 	if err != nil {
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
@@ -165,7 +165,7 @@ func checkAPIURLForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 
 	logInfof(log, "checking if can pull latest agent version")
 
-	dtClient, err := dynatrace.NewClientFromDynakube(ctx, apiReader, dk, dynatraceAPISecretTokens.APIToken().String(), dynatraceAPISecretTokens.PaasToken().String(), "troubleshoot", dynatrace.WithConnectionTimeout(k8senv.GetOperatorDTClientConnectionTimeout(ctx)))
+	dtClient, err := dynatrace.NewClientFromDynakube(ctx, apiReader, dk, dynatraceAPISecretTokens.APIToken().String(), dynatraceAPISecretTokens.PaasToken().String(), "troubleshoot", k8senv.GetOperatorDTClientConnectionTimeout(ctx))
 	if err != nil {
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}

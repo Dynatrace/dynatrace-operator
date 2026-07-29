@@ -6,8 +6,7 @@ package nodes
 import (
 	"context"
 	"errors"
-	"net/http"
-	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -352,47 +351,23 @@ func TestSendMarkedForTerminationForDTConnectionTimeout(t *testing.T) {
 		},
 	})
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			// GET /v1/entity/infrastructure/hosts
-			w.Write([]byte(`[{"entityId":"test-host","ipAddresses":["127.0.0.1"]}]`))
-		} else {
-			// POST /v1/events
-			w.WriteHeader(http.StatusOK)
-		}
-	}))
-	defer server.Close()
-
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynakube.DynaKubeSpec{APIURL: server.URL},
+		Spec: dynakube.DynaKubeSpec{APIURL: "localhost"},
 	}
-
-	t.Run("the default connection timeout is applied", func(t *testing.T) {
-		controller := &Controller{
-			client:          fakeClient,
-			apiReader:       fakeClient,
-			dtClientFactory: testDTClientBuilder(t, 30*time.Second),
-		}
-
-		err := controller.sendMarkedForTermination(t.Context(), dk, &cache.Entry{
-			LastSeen:                 time.Now(),
-			LastMarkedForTermination: time.Now(),
-			IPAddress:                "127.0.0.1",
-			NodeName:                 "testNode",
-			DynaKubeName:             "dynakube",
-		})
-		require.NoError(t, err)
-	})
 
 	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
 		testCases := []struct {
 			envValue string
 			timeout  time.Duration
 		}{
+			{
+				envValue: "",
+				timeout:  30 * time.Second,
+			},
 			{
 				envValue: "29s",
 				timeout:  30 * time.Second,
@@ -412,7 +387,9 @@ func TestSendMarkedForTerminationForDTConnectionTimeout(t *testing.T) {
 		}
 
 		for _, testCase := range testCases {
-			t.Setenv(k8senv.DTClientConnectionTimeout, testCase.envValue)
+			if testCase.envValue != "" {
+				t.Setenv(k8senv.DTClientConnectionTimeout, testCase.envValue)
+			}
 
 			controller := &Controller{
 				client:          fakeClient,
@@ -427,22 +404,23 @@ func TestSendMarkedForTerminationForDTConnectionTimeout(t *testing.T) {
 				NodeName:                 "testNode",
 				DynaKubeName:             "dynakube",
 			})
-			require.NoError(t, err)
+
+			// we just want to make sure that the timeout is applied correctly to the underlying http.Client
+			require.Error(t, err)
+
+			var urlErr *url.Error
+			require.ErrorAs(t, err, &urlErr)
+
+			assert.Equal(t, "unsupported protocol scheme \"\"", urlErr.Unwrap().Error())
 		}
 	})
 }
 
-func testDTClientBuilder(t *testing.T, timeout time.Duration) func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
-	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, options ...dynatrace.Option) (*dynatrace.Client, error) {
-		config := dynatrace.Config{}
+func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+		assert.Equal(t, timeout, clientConnectionTimeout)
 
-		for _, opt := range options {
-			require.NoError(t, opt(&config))
-		}
-
-		assert.Equal(t, timeout, config.ConnectionTimeout)
-
-		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, options...)
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
 	}
 }
 
@@ -529,7 +507,7 @@ func createDefaultFakeClient() client.Client {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ ...dynatrace.Option) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }
