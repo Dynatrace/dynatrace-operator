@@ -19,10 +19,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
+	ActiveGateAuthTokenSecretConditionType string = "ActiveGateAuthTokenSecret"
+
 	ActiveGateAuthTokenName = "auth-token"
 
 	// Buffer to avoid warnings in the UI
@@ -167,4 +170,14 @@ func (r *Reconciler) conditionSetSecretCreated(dk *dynakube.DynaKube, secret *co
 	tokenPublicPart := strings.Join(tokenAllParts[:2], ".")
 
 	setAuthSecretCreated(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
+}
+
+func setAuthSecretCreated(conditions *[]metav1.Condition, conditionType string, msg string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  k8sconditions.SecretCreatedReason,
+		Message: msg,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
 }
