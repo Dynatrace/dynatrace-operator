@@ -797,9 +797,9 @@ tests:
           content:
             name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
 
-  - it: should have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND if operator.experimental.enableKubemonOperand is true
+  - it: should have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND if experimental.enableKubemonOperand is true
     set:
-      operator.experimental.enableKubemonOperand: true
+      experimental.enableKubemonOperand: true
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
@@ -817,9 +817,9 @@ tests:
             name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
           any: true
 
-  - it: should render without error and omit EXPERIMENTAL_ENABLE_KUBEMON_OPERAND when operator.experimental is null
+  - it: should render without error and omit EXPERIMENTAL_ENABLE_KUBEMON_OPERAND when experimental is null
     set:
-      operator.experimental: null
+      experimental: null
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].env
