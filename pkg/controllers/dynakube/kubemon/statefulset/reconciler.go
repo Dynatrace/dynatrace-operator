@@ -227,6 +227,7 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 		if err != nil {
 			return "", err
 		}
+
 		imageURI = imageInfo.URI
 		dk.KubernetesMonitoring().Version = imageInfo.Tag
 	default:
@@ -236,6 +237,7 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 		if err != nil {
 			return "", err
 		}
+
 		imageURI = dk.KubernetesMonitoring().GetDefaultImage(latestVersion)
 		dk.KubernetesMonitoring().Version = latestVersion
 	}
