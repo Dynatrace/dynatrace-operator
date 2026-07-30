@@ -194,9 +194,6 @@ func (dk *DynaKube) PublicRegistryOverride() string {
 	return dk.Spec.PublicRegistryOverride
 }
 
-// Hub tags this version as the 'source' of the conversion for controller runtime.
-func (*DynaKube) Hub() {}
-
 func (dk *DynaKube) OTLPExporterConfiguration() *otlp.ExporterConfiguration {
 	return otlp.NewExporterConfiguration(dk.Spec.OTLPExporterConfiguration, dk.GetResourceAttributes())
 }

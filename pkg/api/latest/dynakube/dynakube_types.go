@@ -214,3 +214,6 @@ type DynaKubeList struct { //nolint:revive
 	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []DynaKube `json:"items"`
 }
+
+// Hub tags this version as the 'source' of the conversion for controller runtime.
+func (*DynaKube) Hub() {}
