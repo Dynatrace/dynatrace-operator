@@ -36,8 +36,6 @@ const (
 	AnnotationAuthTokenHash   = api.InternalFlagPrefix + "kubemon-authtoken-hash"
 	StorageVolumeName         = "kubemon-storage"
 	AuthTokenVolumeName       = "kubemon-authtoken-secret"
-
-	HTTPSContainerPort = 9999
 )
 
 var (
@@ -212,7 +210,7 @@ func buildReadinessProbe() *corev1.Probe {
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/rest/health",
-				Port:   intstr.IntOrString{IntVal: HTTPSContainerPort},
+				Port:   intstr.IntOrString{IntVal: agconsts.HTTPSContainerPort},
 				Scheme: "HTTPS",
 			},
 		},
@@ -220,6 +218,7 @@ func buildReadinessProbe() *corev1.Probe {
 		PeriodSeconds:       15,
 		FailureThreshold:    3,
 		TimeoutSeconds:      2,
+		SuccessThreshold:    1,
 	}
 }
 
@@ -228,7 +227,7 @@ func buildLivenessProbe() *corev1.Probe {
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path:   "/rest/state",
-				Port:   intstr.IntOrString{IntVal: HTTPSContainerPort},
+				Port:   intstr.IntOrString{IntVal: agconsts.HTTPSContainerPort},
 				Scheme: "HTTPS",
 			},
 		},
