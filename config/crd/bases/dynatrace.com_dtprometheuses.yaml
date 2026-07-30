@@ -1785,6 +1785,7 @@ spec:
                     x-kubernetes-map-type: atomic
                   scrapeInterval:
                     default: 60s
+                    format: duration
                     type: string
                   tolerations:
                     items:
