@@ -19,9 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
-const (
-	conditionType = "MetadataEnrichmentRules"
-)
+const conditionType = "MetadataEnrichmentRules"
 
 type Reconciler struct {
 	timeProvider *timeprovider.Provider

@@ -15,9 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	AnnotationPVCHash = api.InternalFlagPrefix + "pvc-hash"
-)
+const AnnotationPVCHash = api.InternalFlagPrefix + "pvc-hash"
 
 type Option = builder.Option[*appsv1.StatefulSet]
 
