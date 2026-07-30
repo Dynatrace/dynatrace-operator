@@ -152,13 +152,16 @@ func (dk *DynaKube) Tokens() string {
 }
 
 func (dk *DynaKube) TenantUUID() (string, error) {
-	if dk.Status.OneAgent.ConnectionInfo.TenantUUID != "" {
+	switch {
+	case dk.Status.OneAgent.ConnectionInfo.TenantUUID != "":
 		return dk.Status.OneAgent.ConnectionInfo.TenantUUID, nil
-	} else if dk.Status.ActiveGate.ConnectionInfo.TenantUUID != "" {
+	case dk.Status.ActiveGate.ConnectionInfo.TenantUUID != "":
 		return dk.Status.ActiveGate.ConnectionInfo.TenantUUID, nil
+	case dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID != "":
+		return dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID, nil
+	default:
+		return "", errors.New("tenant UUID not available")
 	}
-
-	return "", errors.New("tenant UUID not available")
 }
 
 func (dk *DynaKube) GetDynatraceAPIRequestThreshold() uint16 {
