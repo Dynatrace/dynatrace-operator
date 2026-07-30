@@ -22,19 +22,19 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,14 +45,14 @@ import (
 // updateSerializationGolden regenerates the serialization golden files instead
 // of asserting against them. Run:
 //
-//	go test ./pkg/api/validation/dynakube/ -run TestSerialization -update
+//	go test ./pkg/api/validation/edgeconnect/ -run TestSerialization -update
 var updateSerializationGolden = flag.Bool("update", false, "update the serialization golden files in testdata/")
 
-var latestGVK = latest.GroupVersion.WithKind("DynaKube")
+var edgeConnectGVK = v1alpha2.GroupVersion.WithKind("EdgeConnect")
 
-// TestSerialization exercises how the latest (v1beta6) DynaKube is persisted by
-// the API server, which is where the `omitzero` struct tags take effect on the
-// write path.
+// TestSerialization exercises how the storage-version (v1alpha2) EdgeConnect is
+// persisted by the API server, which is where the `omitzero` struct tags take
+// effect on the write path.
 //
 // Each case creates the object from the TYPED struct (client marshals it with
 // its JSON tags, so omitzero is applied) and then reads it back as raw
@@ -68,77 +68,44 @@ func TestSerialization(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		spec   dynakube.DynaKubeSpec
-		status *dynakube.DynaKubeStatus
+		spec   edgeconnect.EdgeConnectSpec
+		status *edgeconnect.EdgeConnectStatus
 	}{
 		{
-			// Only apiUrl set: nothing else should appear, no empty {} blocks
-			// anywhere in spec, and no status.
+			// Only the required fields set: no imageRef, no resources, no status,
+			// and no empty {} blocks anywhere in spec.
 			name: "minimal",
-			spec: dynakube.DynaKubeSpec{
-				APIURL: "https://minimal.dev.dynatracelabs.com/api",
-			},
-		},
-		{
-			// A few nested fields set, their struct-typed siblings left empty:
-			// metadataEnrichment.enabled without namespaceSelector, and
-			// oneAgent.hostMonitoring.version without oneAgentResources.
-			name: "partial",
-			spec: dynakube.DynaKubeSpec{
-				APIURL:             "https://partial.dev.dynatracelabs.com/api",
-				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
-				OneAgent: oneagent.Spec{
-					HostMonitoring: &oneagent.HostInjectSpec{Version: "1.0.0.20240101-000000"},
+			spec: edgeconnect.EdgeConnectSpec{
+				APIServer: "foo.dev.apps.dynatracelabs.com",
+				OAuth: edgeconnect.OAuthSpec{
+					ClientSecret: "secret",
+					Endpoint:     "https://sso.dynatrace.com/sso/oauth2/token",
+					Resource:     "urn:dtaccount:test",
 				},
 			},
 		},
 		{
-			// Regression guard (ICP-1012): the non-pointer bool fields
-			// skipCertCheck and enableIstio must render even when explicitly set
-			// to false. They previously carried ,omitempty and were silently
-			// dropped from the stored object, confusing users who set them false.
-			name: "istio-skipcertcheck",
-			spec: dynakube.DynaKubeSpec{
-				APIURL:        "https://istio-skipcertcheck.dev.dynatracelabs.com/api",
-				SkipCertCheck: new(false),
-				EnableIstio:   new(false),
-			},
-		},
-		{
-			// Regression guard (ICP-1012): the non-pointer bool fields
-			// activeGate.useEphemeralVolume and
-			// templates.extensionExecutionController.useEphemeralVolume must
-			// render even when explicitly set to false. As *bool + omitempty a
-			// nil value is dropped, but an explicit false must survive so users
-			// who opt out see their setting persisted.
-			name: "ephemeral-volumes",
-			spec: dynakube.DynaKubeSpec{
-				APIURL: "https://ephemeral-volumes.dev.dynatracelabs.com/api",
-				ActiveGate: activegate.Spec{
-					UseEphemeralVolume: new(false),
+			// The struct-typed fields set: imageRef and resources must render in
+			// spec, and the status (version + updatedTimestamp) must render.
+			name: "populated",
+			spec: edgeconnect.EdgeConnectSpec{
+				APIServer: "foo.dev.apps.dynatracelabs.com",
+				OAuth: edgeconnect.OAuthSpec{
+					ClientSecret: "secret",
+					Endpoint:     "https://sso.dynatrace.com/sso/oauth2/token",
+					Resource:     "urn:dtaccount:test",
 				},
-				Templates: dynakube.TemplatesSpec{
-					ExtensionExecutionController: extensions.ExecutionControllerSpec{
-						UseEphemeralVolume: new(false),
+				ImageRef: image.Ref{Repository: "my.registry/edgeconnect", Tag: "1.2.3"},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("100m"),
 					},
 				},
 			},
-		},
-		{
-			// Regression guard: OneAgent connection info set while the version
-			// is unset. A narrow promoted IsZero() used to drop this whole
-			// status block; the golden file must show the connection info.
-			name: "status-connection-info",
-			spec: dynakube.DynaKubeSpec{
-				APIURL: "https://status.dev.dynatracelabs.com/api",
-			},
-			status: &dynakube.DynaKubeStatus{
-				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID: "abc12345",
-						Endpoints:  "https://abc12345.dev.dynatracelabs.com",
-					},
-				},
+			status: &edgeconnect.EdgeConnectStatus{
+				Version: status.VersionStatus{Version: "1.2.3"},
+				// Fixed timestamp keeps the golden file deterministic.
+				UpdatedTimestamp: metav1.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),
 			},
 		},
 	}
@@ -147,27 +114,27 @@ func TestSerialization(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create from the typed struct: the client marshals it via the JSON
 			// tags, so omitzero decides which struct fields are sent.
-			dk := &dynakube.DynaKube{
+			ec := &edgeconnect.EdgeConnect{
 				ObjectMeta: metav1.ObjectMeta{Name: tt.name, Namespace: metav1.NamespaceDefault},
 				Spec:       tt.spec,
 			}
-			require.NoError(t, clt.Create(t.Context(), dk))
+			require.NoError(t, clt.Create(t.Context(), ec))
 			t.Cleanup(func() {
 				// t.Context is no longer valid during cleanup
-				assert.NoError(t, clt.Delete(context.Background(), dk))
+				assert.NoError(t, clt.Delete(context.Background(), ec))
 			})
 
 			// Status is not persisted on create; set it via the subresource.
 			if tt.status != nil {
-				dk.Status = *tt.status
-				require.NoError(t, clt.Status().Update(t.Context(), dk))
+				ec.Status = *tt.status
+				require.NoError(t, clt.Status().Update(t.Context(), ec))
 			}
 
 			// Read the raw stored object back as unstructured - no decoding into
 			// typed structs, so this is exactly what the server persisted.
 			got := &unstructured.Unstructured{}
-			got.SetGroupVersionKind(latestGVK)
-			require.NoError(t, clt.Get(t.Context(), client.ObjectKeyFromObject(dk), got))
+			got.SetGroupVersionKind(edgeConnectGVK)
+			require.NoError(t, clt.Get(t.Context(), client.ObjectKeyFromObject(ec), got))
 
 			stripServerManagedFields(got)
 
@@ -197,8 +164,9 @@ func stripServerManagedFields(obj *unstructured.Unstructured) {
 	obj.SetManagedFields(nil)
 }
 
-// serializationWebhookOptions registers the v1beta6 validating webhook so that
-// creates are validated by the real webhook, matching production behavior.
+// serializationWebhookOptions registers the v1alpha2 (storage version)
+// validating webhook so that creates are validated by the real webhook,
+// matching production behavior.
 func serializationWebhookOptions() envtest.WebhookInstallOptions {
 	return envtest.WebhookInstallOptions{
 		ValidatingWebhooks: []*admissionregistrationv1.ValidatingWebhookConfiguration{
@@ -206,10 +174,10 @@ func serializationWebhookOptions() envtest.WebhookInstallOptions {
 				ObjectMeta: metav1.ObjectMeta{Name: "dynatrace-webhook"},
 				Webhooks: []admissionregistrationv1.ValidatingWebhook{
 					{
-						Name: "v1beta6.dynakube.webhook.dynatrace.com",
+						Name: "v1alpha2.edgeconnect.webhook.dynatrace.com",
 						ClientConfig: admissionregistrationv1.WebhookClientConfig{
 							Service: &admissionregistrationv1.ServiceReference{
-								Path: new("/validate-dynatrace-com-v1beta6-dynakube"),
+								Path: new("/validate-dynatrace-com-v1alpha2-edgeconnect"),
 							},
 						},
 						Rules: []admissionregistrationv1.RuleWithOperations{
@@ -220,8 +188,8 @@ func serializationWebhookOptions() envtest.WebhookInstallOptions {
 								},
 								Rule: admissionregistrationv1.Rule{
 									APIGroups:   []string{"dynatrace.com"},
-									APIVersions: []string{"v1beta6"},
-									Resources:   []string{"dynakubes"},
+									APIVersions: []string{"v1alpha2"},
+									Resources:   []string{"edgeconnects"},
 								},
 							},
 						},
