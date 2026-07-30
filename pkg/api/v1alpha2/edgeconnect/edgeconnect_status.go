@@ -18,10 +18,12 @@ type EdgeConnectStatus struct { //nolint:revive
 	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
 
 	// Version used for the Edgeconnect image
-	Version status.VersionStatus `json:"version,omitempty"`
+	// +kubebuilder:validation:Optional
+	Version status.VersionStatus `json:"version,omitzero"`
 
 	// Indicates when the resource was last updated
-	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
+	// +kubebuilder:validation:Optional
+	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitzero"`
 
 	// kube-system namespace uid
 	KubeSystemUID string `json:"kubeSystemUID,omitempty"`
