@@ -3,11 +3,6 @@
 
 package selfmonitoring
 
-import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/common"
-	appsv1 "k8s.io/api/apps/v1"
-)
-
 // SelfMonitoring wraps the self-monitoring Spec together with the owning
 // DtPrometheus name so derived state (such as Kubernetes resource names) can be
 // computed.
@@ -19,17 +14,12 @@ type SelfMonitoring struct {
 
 // +kubebuilder:object:generate=true
 
-// Spec configures the optional self-monitoring collector, which ships the stack's
-// own telemetry to Dynatrace. It carries the same configuration as the scraper.
+// Spec toggles the optional self-monitoring collector, which ships the stack's
+// own telemetry to Dynatrace. The collector's configuration (replicas, image,
+// resources, scheduling, ...) lives on the referenced DynaKube.
 type Spec struct {
-	// Set to true to opt in to shipping the stack's own telemetry to Dynatrace.
+	// Ships the stack's own telemetry to Dynatrace. Set to false to opt out.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=false
+	// +kubebuilder:default=true
 	Enabled bool `json:"enabled"`
-
-	common.Spec `json:",inline"`
-
-	// Deployment update strategy for the self-monitoring collector.
-	// +kubebuilder:validation:Optional
-	UpdateStrategy appsv1.DeploymentStrategy `json:"updateStrategy,omitzero"`
 }

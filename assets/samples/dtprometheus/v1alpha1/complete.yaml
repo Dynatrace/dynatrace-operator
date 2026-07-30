@@ -38,69 +38,13 @@ spec:
     secret: my-internal-tls-secret
 
   # Self-monitoring
-  # When enabled, the operator deploys a dedicated self-monitoring collector.
-  # It receives internal telemetry pushed by the scraper and gateway, and scrapes
-  # the Target Allocator directly via pod annotation discovery - no PodMonitor or
-  # Prometheus CR required.
-  # Set enabled: true to opt in to shipping the stack's own telemetry to Dynatrace.
-  # Default: false
+  # When enabled, the operator deploys a dedicated self-monitoring collector that
+  # ships the stack's own telemetry to Dynatrace. The collector's configuration
+  # (replicas, image, resources, scheduling, ...) is set on the referenced DynaKube.
   selfMonitoring:
-    enabled: false
-
-    # The following fields mirror the regular scraper configuration.
-    replicas: 2
-
-    # Overrides the default scraper (OTel Collector) image (full reference including tag or digest).
-    # When omitted the operator uses the image provided via the image endpoint.
-    image: docker.io/dynatrace/dynatrace-otel-collector:latest
-    pullPolicy: IfNotPresent
-
-    # Baseline: 1 CPU / 6 GiB handles ~1M DPM with a 60s scrape interval.
-    resources:
-      requests:
-        cpu: "1"
-        memory: 6Gi
-      limits:
-        memory: 6Gi
-
-    nodeSelector:
-      kubernetes.io/os: linux
-
-    affinity:
-      nodeAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-                - key: tier
-                  operator: In
-                  values:
-                    - monitoring
-
-    tolerations:
-      - key: monitoring
-        operator: Equal
-        value: "true"
-        effect: NoSchedule
-
-    # Spreading scrapers across nodes has a dual benefit: HA and network
-    # locality - each scraper on a different node is closer to a subset of
-    # its assigned target pods.
-    topologySpreadConstraints:
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: DoNotSchedule
-
-    priorityClassName: high-priority
-
-    annotations: {}
-
-    labels: {}
-
-    updateStrategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
+    # Ships the stack's own telemetry to Dynatrace. Set to false to opt out.
+    # Default: true
+    enabled: true
 
   # Target Allocator
   # The TA holds all Prometheus service discovery metadata in memory and

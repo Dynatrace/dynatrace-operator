@@ -3,8 +3,6 @@
 
 package selfmonitoring
 
-import appsv1 "k8s.io/api/apps/v1"
-
 // NameSuffix is appended to the owning DtPrometheus name to derive the base name
 // of the self-monitoring collector's Kubernetes resources.
 const NameSuffix = "-self-monitoring"
@@ -30,9 +28,4 @@ func (sm *SelfMonitoring) GetName() string {
 // IsEnabled reports whether the self-monitoring collector should be deployed.
 func (sm *SelfMonitoring) IsEnabled() bool {
 	return sm.Enabled
-}
-
-// GetUpdateStrategy returns the Deployment update strategy for the self-monitoring collector.
-func (sm *SelfMonitoring) GetUpdateStrategy() appsv1.DeploymentStrategy {
-	return sm.UpdateStrategy
 }
