@@ -348,7 +348,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data)
 	})
 	t.Run("Don't create with standalone kubemon when operand env is not set", func(t *testing.T) {
-		// KUBEMON_ENABLE_OPERAND is not set; kubemon spec is present but the operand is disabled
+		// EXPERIMENTAL_ENABLE_KUBEMON_OPERAND is not set; kubemon spec is present but the operand is disabled
 		dk := createTestKubemonDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient)
