@@ -22,7 +22,7 @@ type EdgeConnectStatus struct { //nolint:revive
 	Version status.VersionStatus `json:"version,omitzero"`
 
 	// Indicates when the resource was last updated
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitzero"`
 
 	// kube-system namespace uid
