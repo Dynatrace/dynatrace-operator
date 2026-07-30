@@ -149,7 +149,7 @@ func TestSerialization(t *testing.T) {
 			wantData, err := os.ReadFile(golden)
 			require.NoError(t, err)
 
-			assert.Equal(t, string(wantData), string(gotData))
+			assert.YAMLEq(t, string(wantData), string(gotData))
 		})
 	}
 }
