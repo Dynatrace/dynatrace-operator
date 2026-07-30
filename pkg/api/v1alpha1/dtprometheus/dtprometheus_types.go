@@ -71,13 +71,6 @@ type TLSSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=true
 	Enabled bool `json:"enabled"`
-
-	// Name of a Kubernetes TLS Secret (type kubernetes.io/tls) in the same namespace.
-	// All components use the certificate from this secret for internal communication.
-	// When omitted, the operator generates a self-signed certificate.
-	// Ignored when enabled is false.
-	// +kubebuilder:validation:Optional
-	Secret string `json:"secret,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

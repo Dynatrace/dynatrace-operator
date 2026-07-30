@@ -19,7 +19,7 @@ type Spec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Overrides the default component image (full reference including tag or digest).
-	// When omitted the operator uses the image provided via the image endpoint.
+	// When omitted the operator uses the latest available image from the public Dynatrace registry.
 	// +kubebuilder:validation:Optional
 	Image string `json:"image,omitempty"`
 

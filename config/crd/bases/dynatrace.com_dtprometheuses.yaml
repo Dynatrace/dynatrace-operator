@@ -1880,8 +1880,6 @@ spec:
                   enabled:
                     default: true
                     type: boolean
-                  secret:
-                    type: string
                 type: object
             required:
             - dynaKubeName

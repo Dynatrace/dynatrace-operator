@@ -31,12 +31,6 @@ spec:
     # Default: true
     enabled: true
 
-    # Name of a Kubernetes TLS Secret (type kubernetes.io/tls) in the same namespace.
-    # All components use the certificate from this secret for internal communication.
-    # When omitted, the operator generates a self-signed certificate.
-    # Ignored when enabled is false.
-    secret: my-internal-tls-secret
-
   # Self-monitoring
   # When enabled, the operator deploys a dedicated self-monitoring collector that
   # ships the stack's own telemetry to Dynatrace. The collector's configuration

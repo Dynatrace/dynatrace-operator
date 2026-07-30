@@ -52,12 +52,6 @@ func TestDtPrometheus_IsTLSEnabled(t *testing.T) {
 	}
 }
 
-func TestDtPrometheus_GetTLSSecret(t *testing.T) {
-	dtp := &DtPrometheus{Spec: DtPrometheusSpec{TLS: TLSSpec{Secret: "my-tls-secret"}}}
-
-	assert.Equal(t, "my-tls-secret", dtp.GetTLSSecret())
-}
-
 func TestDtPrometheus_Conditions(t *testing.T) {
 	dtp := &DtPrometheus{}
 

@@ -27,12 +27,6 @@ func (dtp *DtPrometheus) IsTLSEnabled() bool {
 	return dtp.Spec.TLS.Enabled
 }
 
-// GetTLSSecret returns the name of the user-provided TLS secret, or an empty
-// string when the operator should generate a self-signed certificate.
-func (dtp *DtPrometheus) GetTLSSecret() string {
-	return dtp.Spec.TLS.Secret
-}
-
 // Conditions returns a pointer to the status conditions slice so callers can
 // use meta.SetStatusCondition and friends.
 func (dtp *DtPrometheus) Conditions() *[]metav1.Condition {
