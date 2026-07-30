@@ -27,8 +27,8 @@ test/e2e/%/phase3:
 
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
+	make test/e2e/deploy || exit 1; \
 	RC=0; \
-	make test/e2e/deploy || RC=1; \
 	make test/e2e/standard  || RC=1; \
 	make test/e2e/no-csi || RC=1; \
 	make test/e2e/istio  || RC=1; \
@@ -37,8 +37,8 @@ test/e2e:
 
 ## Run standard, no-csi, istio and release e2e tests with /publish
 test/e2e-publish:
+	make test/e2e/deploy/publish || exit 1; \
 	RC=0; \
-	make test/e2e/deploy/publish || RC=1; \
 	make test/e2e/standard/publish || RC=1; \
 	make test/e2e/no-csi/publish || RC=1; \
 	make test/e2e/istio/publish || RC=1; \
@@ -48,8 +48,8 @@ test/e2e-publish:
 ## Start tests that support kind
 test/e2e/kind:
 	RC=0; \
+	make test/e2e/deploy || exit 1; \
 	make test/e2e/edgeconnect/normal || RC=1; \
-	make test/e2e/deploy || RC=1; \
 	exit $$RC
 
 ## Run standard e2e test only
