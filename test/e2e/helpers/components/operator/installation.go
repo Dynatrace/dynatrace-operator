@@ -193,6 +193,30 @@ func UninstallViaHelm(releaseName, namespace string, extraOpts ...helm.Option) e
 	}, extraOpts...)...)
 }
 
+// InstallViaManifests applies the pre-generated operator manifests for the given platform
+func InstallViaManifests(platform string, withCSI bool) error {
+	return execMakeCommand(
+		project.RootDir(),
+		"manifests/apply/"+platform+"/"+csiVariant(withCSI),
+	)
+}
+
+// UninstallViaManifests deletes the operator manifests for the given platform
+func UninstallViaManifests(platform string, withCSI bool) error {
+	return execMakeCommand(
+		project.RootDir(),
+		"manifests/delete/"+platform+"/"+csiVariant(withCSI),
+	)
+}
+
+func csiVariant(withCSI bool) string {
+	if withCSI {
+		return "csi"
+	}
+
+	return "core"
+}
+
 func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
 	opts := []helm.Option{
 		helm.WithReleaseName("dynatrace-operator"),
