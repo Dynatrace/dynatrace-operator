@@ -28,21 +28,21 @@ test/e2e/%/phase3:
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \
+	make test/e2e/deploy || RC=1; \
 	make test/e2e/standard  || RC=1; \
 	make test/e2e/no-csi || RC=1; \
 	make test/e2e/istio  || RC=1; \
 	make test/e2e/release || RC=1; \
-	make test/e2e/deploy || RC=1; \
 	exit $$RC
 
 ## Run standard, no-csi, istio and release e2e tests with /publish
 test/e2e-publish:
 	RC=0; \
+	make test/e2e/deploy/publish || RC=1; \
 	make test/e2e/standard/publish || RC=1; \
 	make test/e2e/no-csi/publish || RC=1; \
 	make test/e2e/istio/publish || RC=1; \
 	make test/e2e/release/publish || RC=1; \
-	make test/e2e/deploy/publish || RC=1; \
 	exit $$RC
 
 ## Start tests that support kind
