@@ -78,7 +78,7 @@ test/e2e/deploy/permissions:
 
 ## Run deploy e2e test manifest
 test/e2e/deploy/manifests:
-	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/deploy -run "manifest" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/deploy -run "manifest" $(SKIPCLEANUP)
 
 ## Run deploy e2e test manifest kubernetes
 test/e2e/deploy/manifests/kubernetes:
