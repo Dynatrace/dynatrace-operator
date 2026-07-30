@@ -51,7 +51,7 @@ func TestReconcileDisabled(t *testing.T) {
 		pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
-		err := reconciler.Reconcile(t.Context(), dk, newTestDtClient(t), token.Tokens(nil))
+		err := reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
 		require.NoError(t, err)
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), kubemonapi.KubeMonAvailableConditionType))
 	})
@@ -138,7 +138,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 				statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(test.statefulSetErr).Once()
 			}
 
-			err := reconciler.Reconcile(t.Context(), dk, newTestDtClient(t), token.Tokens(nil))
+			err := reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
 
 			wantErr := test.connInfoErr
 			if wantErr == nil {
@@ -198,7 +198,7 @@ func newTestDynaKube(enabled bool) *dynakube.DynaKube {
 	return dk
 }
 
-func newTestDtClient(t *testing.T) *dynatrace.Client {
+func newTestDTClient(t *testing.T) *dynatrace.Client {
 	t.Helper()
 
 	return &dynatrace.Client{
