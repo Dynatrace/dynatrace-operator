@@ -72,19 +72,19 @@ test/e2e/release:
 test/e2e/deploy:
 	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/deploy $(SKIPCLEANUP)
 
-## Run deploy e2e test
+## Run deploy e2e test deployer permissions
 test/e2e/deploy/permissions:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "permissions" $(SKIPCLEANUP)
 
-## Run deploy e2e test
+## Run deploy e2e test manifest
 test/e2e/deploy/manifests:
 	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/deploy -run "manifest" $(SKIPCLEANUP)
 
-## Run deploy e2e test
+## Run deploy e2e test manifest kubernetes
 test/e2e/deploy/manifests/kubernetes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "manifest_kubernetes" $(SKIPCLEANUP)
 
-## Run deploy e2e test
+## Run deploy e2e test manifest openshift
 test/e2e/deploy/manifests/openshift:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "manifest_openshift" $(SKIPCLEANUP)
 
