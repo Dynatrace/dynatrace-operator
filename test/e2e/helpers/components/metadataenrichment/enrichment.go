@@ -75,7 +75,7 @@ func EnsureKubernetesClusterMEID(secretConfig tenant.Secret) features.Func {
 
 // CreateEnrichmentRuleOnTenant creates a single enrichment rule scoped to the cluster MEID.
 // It tries the legacy schema first; if that schema is unavailable (404) it falls back to the new schema.
-func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rule metadataenrichment.Rule) features.Func {
+func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rules ...metadataenrichment.Rule) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err)
@@ -86,16 +86,16 @@ func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rule metadataenric
 		require.NoError(t, err, "Could not get K8s cluster MEID")
 		require.NotEmpty(t, k8sClusterME.ID, "Kubernetes Cluster MEID must exist before creating enrichment rules")
 
-		objectID, err := settingsClient.CreateLegacyEnrichmentRuleObject(ctx, k8sClusterME.ID, rule)
+		objectIDs, err := settingsClient.CreateLegacyEnrichmentRuleObject(ctx, k8sClusterME.ID, rules...)
 		if core.IsNotFound(err) {
 			t.Log("Legacy schema not available, falling back to new schema")
 
-			objectID, err = settingsClient.CreateEnrichmentRuleObject(ctx, k8sClusterME.ID, rule)
+			objectIDs, err = settingsClient.CreateEnrichmentRuleObject(ctx, k8sClusterME.ID, rules...)
 			require.NoError(t, err, "Could not create enrichment rule on tenant with new schema either. Please follow comment on ICP-1164 how to enable on tenant.")
 		}
 
 		require.NoError(t, err, "Could not create enrichment rule on tenant")
-		t.Logf("Created enrichment rule with objectId: %s (scope: %s)", objectID, k8sClusterME.ID)
+		t.Logf("Created enrichment rule with objectId: %v (scope: %s)", objectIDs, k8sClusterME.ID)
 
 		return ctx
 	}
@@ -151,15 +151,17 @@ func DeleteEnrichmentRulesFromTenant(secretConfig tenant.Secret) features.Func {
 }
 
 // CheckEnrichmentRuleInDynaKubeStatus asserts that the DynaKube status contains an enrichment rule matching the expected type, source, and target.
-func CheckEnrichmentRuleInDynaKubeStatus(dk *dynakube.DynaKube, expected metadataenrichment.Rule) features.Func {
+func CheckEnrichmentRuleInDynaKubeStatus(dk *dynakube.DynaKube, expected ...metadataenrichment.Rule) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, dk))
 
 		rules := dk.Status.MetadataEnrichment.Rules
 		assert.NotEmpty(t, rules, "expected enrichment rules in DynaKube status, got none")
 
-		if !slices.Contains(rules, expected) {
-			t.Errorf("enrichment rule not found in DynaKube status: want %+v, got %+v", expected, rules)
+		for _, expect := range expected {
+			if !slices.Contains(rules, expect) {
+				t.Errorf("enrichment rule not found in DynaKube status: want %+v, got %+v", expected, rules)
+			}
 		}
 
 		return ctx
