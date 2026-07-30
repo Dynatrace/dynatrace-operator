@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/statefulset/probes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/statefulset/probe"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -222,8 +222,8 @@ func (statefulSetBuilder Builder) buildBaseContainer(sts *appsv1.StatefulSet) []
 		ImagePullPolicy: statefulSetBuilder.dynakube.ActiveGate().GetPullPolicy(),
 		Resources:       statefulSetBuilder.buildResources(),
 		Env:             statefulSetBuilder.buildCommonEnvs(),
-		ReadinessProbe:  probes.BuildReadinessProbe(),
-		LivenessProbe:   probes.BuildLivenessProbe(),
+		ReadinessProbe:  probe.Readiness(),
+		LivenessProbe:   probe.Liveness(),
 		SecurityContext: securityContext,
 		VolumeMounts:    statefulSetBuilder.buildVolumeMounts(),
 	}

@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package probes
+package probe
 
 import (
 	"testing"
@@ -23,10 +23,10 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 	}
 
 	t.Run("readiness probe", func(t *testing.T) {
-		testProbeFunc(t, BuildReadinessProbe(), "/rest/health", 90, 15, 3, 2, 1)
+		testProbeFunc(t, Readiness(), "/rest/health", 90, 15, 3, 2, 1)
 	})
 
 	t.Run("liveness probe", func(t *testing.T) {
-		testProbeFunc(t, BuildLivenessProbe(), "/rest/state", 90, 30, 2, 1, 1)
+		testProbeFunc(t, Liveness(), "/rest/state", 90, 30, 2, 1, 1)
 	})
 }

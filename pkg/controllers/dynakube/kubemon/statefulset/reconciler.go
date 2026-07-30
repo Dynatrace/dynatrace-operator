@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/statefulset/probes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/statefulset/probe"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
@@ -279,8 +279,8 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		Resources:       dk.KubernetesMonitoring().Resources,
 		Env:             buildEnvs(dk),
 		VolumeMounts:    buildVolumeMounts(dk),
-		ReadinessProbe:  probes.BuildReadinessProbe(),
-		LivenessProbe:   probes.BuildLivenessProbe(),
+		ReadinessProbe:  probe.Readiness(),
+		LivenessProbe:   probe.Liveness(),
 	}
 
 	km := dk.KubernetesMonitoring()
