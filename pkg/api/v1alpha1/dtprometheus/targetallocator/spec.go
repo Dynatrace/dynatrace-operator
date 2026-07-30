@@ -29,6 +29,7 @@ type Spec struct {
 	// overridden in the individual ServiceMonitor / PodMonitor / ScrapeConfig.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="60s"
+	// +kubebuilder:validation:Format=duration
 	ScrapeInterval string `json:"scrapeInterval,omitempty"`
 
 	// Label selector applied to all Prometheus Operator CRDs (ServiceMonitor,
