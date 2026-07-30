@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/statefulset/probes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
@@ -26,7 +27,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -205,40 +205,6 @@ func buildVolumeMounts(_ *dynakube.DynaKube) []corev1.VolumeMount {
 	return mounts
 }
 
-func buildReadinessProbe() *corev1.Probe {
-	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/rest/health",
-				Port:   intstr.IntOrString{IntVal: agconsts.HTTPSContainerPort},
-				Scheme: "HTTPS",
-			},
-		},
-		InitialDelaySeconds: 90,
-		PeriodSeconds:       15,
-		FailureThreshold:    3,
-		TimeoutSeconds:      2,
-		SuccessThreshold:    1,
-	}
-}
-
-func buildLivenessProbe() *corev1.Probe {
-	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/rest/state",
-				Port:   intstr.IntOrString{IntVal: agconsts.HTTPSContainerPort},
-				Scheme: "HTTPS",
-			},
-		},
-		InitialDelaySeconds: 90,
-		PeriodSeconds:       30,
-		FailureThreshold:    2,
-		TimeoutSeconds:      1,
-		SuccessThreshold:    1,
-	}
-}
-
 func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {
 	statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace}}
 
@@ -313,8 +279,8 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		Resources:       dk.KubernetesMonitoring().Resources,
 		Env:             buildEnvs(dk),
 		VolumeMounts:    buildVolumeMounts(dk),
-		ReadinessProbe:  buildReadinessProbe(),
-		LivenessProbe:   buildLivenessProbe(),
+		ReadinessProbe:  probes.BuildReadinessProbe(),
+		LivenessProbe:   probes.BuildLivenessProbe(),
 	}
 
 	km := dk.KubernetesMonitoring()

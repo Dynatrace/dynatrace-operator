@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/statefulset/probes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -25,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
@@ -222,33 +222,8 @@ func (statefulSetBuilder Builder) buildBaseContainer(sts *appsv1.StatefulSet) []
 		ImagePullPolicy: statefulSetBuilder.dynakube.ActiveGate().GetPullPolicy(),
 		Resources:       statefulSetBuilder.buildResources(),
 		Env:             statefulSetBuilder.buildCommonEnvs(),
-		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   "/rest/health",
-					Port:   intstr.IntOrString{IntVal: consts.HTTPSContainerPort},
-					Scheme: "HTTPS",
-				},
-			},
-			InitialDelaySeconds: 90,
-			PeriodSeconds:       15,
-			FailureThreshold:    3,
-			TimeoutSeconds:      2,
-		},
-		LivenessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   "/rest/state",
-					Port:   intstr.IntOrString{IntVal: consts.HTTPSContainerPort},
-					Scheme: "HTTPS",
-				},
-			},
-			InitialDelaySeconds: 90,
-			PeriodSeconds:       30,
-			FailureThreshold:    2,
-			TimeoutSeconds:      1,
-			SuccessThreshold:    1,
-		},
+		ReadinessProbe:  probes.BuildReadinessProbe(),
+		LivenessProbe:   probes.BuildLivenessProbe(),
 		SecurityContext: securityContext,
 		VolumeMounts:    statefulSetBuilder.buildVolumeMounts(),
 	}
