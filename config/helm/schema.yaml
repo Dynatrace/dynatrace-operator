@@ -15,17 +15,9 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.10.1
+  publishedVersion: 1.10.2
   publishedVersionMetadata:
-    releaseNote: >-
-      ## What's Changed
-      ### Bugfixes
-      * Fix OA communication host handling by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/6983
-      * Fix OA DaemonSet secret mount permissions by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/6974
-      * Do not use timeprovider.Freeze() in live code by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/6971
-
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.10.0...v1.10.1
-
+    releaseNote: "<!-- Release notes generated using configuration in .github/release.yml at v1.10.2 -->\n\n## What's Changed\n\n### Bugfixes \U0001FAB2\n* Fix order of precedence for enrichment rules by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7025\n* Set the Dynatrace Client connection timeout to 15 min by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/7068\n\n### Core changes \U0001F389\n* Update aws-actions/configure-aws-credentials action to v6.2.3 (release-1.10) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7036\n* Update ossf/scorecard-action action to v2.4.4 (release-1.10) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7038\n* Fix automated CSV bundle update to use GitHub-generated changelog (#7018) by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7041\n\n### Helm changes ⛑️\n* [Automatic] Update OLM CSV bundles for v1.10.1 by @operator-bot-account[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7011\n* Fix webhook CrashLoopBackOff on gVisor nodes (#7017) by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7040\n* Fix operator deadlock on OpenShift manifest-based install by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7042\n\n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.10.1...v1.10.2\n"
     releaseTypes:
       - Feature
     recommended: true
