@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtapiurl"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
@@ -196,4 +197,24 @@ func (dk *DynaKube) PublicRegistryOverride() string {
 
 func (dk *DynaKube) OTLPExporterConfiguration() *otlp.ExporterConfiguration {
 	return otlp.NewExporterConfiguration(dk.Spec.OTLPExporterConfiguration, dk.GetResourceAttributes())
+}
+
+func (dk *DynaKube) OtelCollectorStatefulsetName() string {
+	return dk.Name + consts.OTELCollectorNameSuffix
+}
+
+func (dk *DynaKube) IsAGCertificateNeeded() bool {
+	if dk.ActiveGate().IsEnabled() && dk.ActiveGate().HasCaCert() {
+		return true
+	}
+
+	return false
+}
+
+func (dk *DynaKube) IsCACertificateNeeded() bool {
+	if !dk.ActiveGate().IsEnabled() && dk.Spec.TrustedCAs != "" {
+		return true
+	}
+
+	return false
 }
