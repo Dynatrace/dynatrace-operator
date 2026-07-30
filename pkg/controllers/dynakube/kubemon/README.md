@@ -50,7 +50,7 @@ Use Helm to enable kubemon in dev/test environments:
 ```zsh
 helm upgrade --install dynatrace-operator config/helm/chart/default \
   -n dynatrace --create-namespace \
-  --set operator.experimental.enableKubemonOperand=true
+  --set experimental.enableKubemonOperand=true
 ```
 
 The Helm value sets `EXPERIMENTAL_ENABLE_KUBEMON_OPERAND=true` for operator and webhook pods.
