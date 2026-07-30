@@ -138,7 +138,7 @@ csidriver:
   existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one
   priorityClassValue: "1000000"
   cleanupPeriod: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes
-  clientConnectionTimeout: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 15m
+  clientConnectionTimeout: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 15m. Too small value can cause failures when downloading large OneAgent packages (~1GB).
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/master

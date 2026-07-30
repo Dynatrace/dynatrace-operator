@@ -500,7 +500,7 @@ func TestBuildDtcForConnectionTimeout(t *testing.T) {
 
 		for _, testCase := range testCases {
 			if testCase.envValue != "" {
-				t.Setenv(k8senv.DTClientConnectionTimeout, testCase.envValue)
+				t.Setenv(k8senv.DTClientConnectionTimeoutEnvVar, testCase.envValue)
 			}
 
 			provisioner.dtClientFactory = testDTClientBuilder(t, testCase.timeout)

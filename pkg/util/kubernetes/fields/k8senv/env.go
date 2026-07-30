@@ -33,10 +33,10 @@ const (
 	minDTClientCacheCleanInterval     = 5 * time.Minute
 	maxDTClientCacheCleanInterval     = 100 * time.Hour
 
-	DTClientConnectionTimeout = "DT_CLIENT_CONNECTION_TIMEOUT"
+	DTClientConnectionTimeoutEnvVar = "DT_CLIENT_CONNECTION_TIMEOUT"
 	// DefaultCSIDriverDTClientConnectionTimeout enough time to download an OneAgent package of about 1GB in size
-	DefaultCSIDriverDTClientConnectionTimeout = 15 * time.Minute
-	DefaultOperatorDTClientConnectionTimeout  = 30 * time.Second
+	DefaultCSIDriverDTClientConnectionTimeout = maxDTClientConnectionTimeout
+	DefaultOperatorDTClientConnectionTimeout  = minDTClientConnectionTimeout
 	minDTClientConnectionTimeout              = 30 * time.Second
 	maxDTClientConnectionTimeout              = 15 * time.Minute
 
@@ -143,19 +143,19 @@ func GetCSIDataDir() string {
 }
 
 func GetDefaultRequeueAfter(ctx context.Context) time.Duration {
-	return parseDuration(ctx, DefaultRequeueAfterEnvVar, defaultRequeueInterval, minRequeueInterval, maxRequeueInterval)
+	return getSafeDurationFromEnv(ctx, DefaultRequeueAfterEnvVar, defaultRequeueInterval, minRequeueInterval, maxRequeueInterval)
 }
 
 func GetDTClientCacheCleanInterval(ctx context.Context) time.Duration {
-	return parseDuration(ctx, DTClientCacheCleanInterval, defaultDTClientCacheCleanInterval, minDTClientCacheCleanInterval, maxDTClientCacheCleanInterval)
+	return getSafeDurationFromEnv(ctx, DTClientCacheCleanInterval, defaultDTClientCacheCleanInterval, minDTClientCacheCleanInterval, maxDTClientCacheCleanInterval)
 }
 
 func GetOperatorDTClientConnectionTimeout(ctx context.Context) time.Duration {
-	return parseDuration(ctx, DTClientConnectionTimeout, DefaultOperatorDTClientConnectionTimeout, minDTClientConnectionTimeout, maxDTClientConnectionTimeout)
+	return getSafeDurationFromEnv(ctx, DTClientConnectionTimeoutEnvVar, DefaultOperatorDTClientConnectionTimeout, minDTClientConnectionTimeout, maxDTClientConnectionTimeout)
 }
 
 func GetCSIDriverDTClientConnectionTimeout(ctx context.Context) time.Duration {
-	return parseDuration(ctx, DTClientConnectionTimeout, DefaultCSIDriverDTClientConnectionTimeout, minDTClientConnectionTimeout, maxDTClientConnectionTimeout)
+	return getSafeDurationFromEnv(ctx, DTClientConnectionTimeoutEnvVar, DefaultCSIDriverDTClientConnectionTimeout, minDTClientConnectionTimeout, maxDTClientConnectionTimeout)
 }
 
 // GetDTExtractCodeModulesImageLinks reads the value of DT_EXTRACT_CODEMODULES_IMAGE_LINKS.
@@ -195,22 +195,22 @@ func NewRef(envName string) string {
 }
 
 func GetWebhookCertsRequeueAfter(ctx context.Context) time.Duration {
-	return parseDuration(ctx, WebhookCertsRequeueAfterEnvVar, defaultWebhookCertsRequeueAfter, minWebhookCertsRequeueAfter, maxWebhookCertsRequeueAfter)
+	return getSafeDurationFromEnv(ctx, WebhookCertsRequeueAfterEnvVar, defaultWebhookCertsRequeueAfter, minWebhookCertsRequeueAfter, maxWebhookCertsRequeueAfter)
 }
 
 func GetWebhookCertsRenewalThreshold(ctx context.Context) time.Duration {
-	return parseDuration(ctx, WebhookCertsRenewalThresholdEnvVar, defaultWebhookCertsRenewalThreshold, minWebhookCertsRenewalThreshold, maxWebhookCertsRenewalThreshold)
+	return getSafeDurationFromEnv(ctx, WebhookCertsRenewalThresholdEnvVar, defaultWebhookCertsRenewalThreshold, minWebhookCertsRenewalThreshold, maxWebhookCertsRenewalThreshold)
 }
 
 func GetWebhookCertsServerDuration(ctx context.Context) time.Duration {
-	return parseDuration(ctx, WebhookCertsServerDurationEnvVar, defaultWebhookCertsServerDuration, minWebhookCertsServerDuration, maxWebhookCertsServerDuration)
+	return getSafeDurationFromEnv(ctx, WebhookCertsServerDurationEnvVar, defaultWebhookCertsServerDuration, minWebhookCertsServerDuration, maxWebhookCertsServerDuration)
 }
 
 func GetWebhookCertsRootDuration(ctx context.Context) time.Duration {
-	return parseDuration(ctx, WebhookCertsRootDurationEnvVar, defaultWebhookCertsRootDuration, minWebhookCertsRootDuration, maxWebhookCertsRootDuration)
+	return getSafeDurationFromEnv(ctx, WebhookCertsRootDurationEnvVar, defaultWebhookCertsRootDuration, minWebhookCertsRootDuration, maxWebhookCertsRootDuration)
 }
 
-func parseDuration(ctx context.Context, envVar string, defaultValue, minValue, maxValue time.Duration) time.Duration {
+func getSafeDurationFromEnv(ctx context.Context, envVar string, defaultValue, minValue, maxValue time.Duration) time.Duration {
 	_, log := logd.NewFromContext(ctx, "k8senv")
 
 	rawDuration := os.Getenv(envVar)
