@@ -18,7 +18,6 @@ package scheme
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dtprometheus"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
@@ -46,7 +45,6 @@ func init() {
 	utilruntime.Must(v1beta4.AddToScheme(Scheme))
 	utilruntime.Must(v1beta5.AddToScheme(Scheme))
 	utilruntime.Must(latest.AddToScheme(Scheme))
-	utilruntime.Must(dtprometheus.AddToScheme(Scheme))
 	utilruntime.Must(istiov1beta1.AddToScheme(Scheme))
 	utilruntime.Must(corev1.AddToScheme(Scheme))
 	utilruntime.Must(apiextensionsv1.AddToScheme(Scheme))

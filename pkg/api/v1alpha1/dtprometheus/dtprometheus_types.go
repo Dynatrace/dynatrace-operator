@@ -8,10 +8,10 @@
 package dtprometheus
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dtprometheus/gateway"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dtprometheus/scraper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dtprometheus/selfmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dtprometheus/targetallocator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/gateway"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/scraper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/selfmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/targetallocator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
