@@ -21,12 +21,15 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -57,12 +60,17 @@ type statefulsetReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error
 }
 
+type pullSecretReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error
+}
+
 // Reconciler orchestrates the kubemon operand. Sub-reconciler fields are interfaces so they
 // can be mocked in tests.
 type Reconciler struct {
 	connectionInfoReconciler connectionInfoReconciler
 	authTokenReconciler      authTokenReconciler
 	statefulsetReconciler    statefulsetReconciler
+	pullSecretReconciler     pullSecretReconciler
 }
 
 func NewReconciler(kubeClient client.Client) *Reconciler {
@@ -70,13 +78,14 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 		connectionInfoReconciler: kubemonconnectioninfo.NewReconciler(kubeClient),
 		authTokenReconciler:      kubemonauthtoken.NewReconciler(kubeClient, clock.RealClock{}),
 		statefulsetReconciler:    kubemonstatefulset.NewReconciler(kubeClient),
+		pullSecretReconciler:     dtpullsecret.NewReconciler(kubeClient, kubeClient),
 	}
 }
 
 // Reconcile is the operand entry point called by the parent DynaKube controller.
 // Sub-reconcilers mutate dk.Status.KubernetesMonitoring.* and dk.Status.Conditions in-memory;
 // the parent controller persists status changes via deferred Status().Update().
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, imageClient image.Client, versionClient version.Client) (err error) {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtclient *dynatrace.Client, tokens token.Tokens) (err error) {
 	ctx, log := logd.NewFromContext(ctx, "kubemon")
 
 	// Temporary gate, to be removed once kubemon is complete
@@ -90,15 +99,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 
 	defer func() { r.reconcileCondition(dk, err) }()
 
-	if err = r.connectionInfoReconciler.Reconcile(ctx, agClient, dk); err != nil {
+	if err = r.connectionInfoReconciler.Reconcile(ctx, dtclient.ActiveGate, dk); err != nil {
 		return err
 	}
 
-	if err = r.authTokenReconciler.Reconcile(ctx, agClient, dk); err != nil {
+	if err = r.authTokenReconciler.Reconcile(ctx, dtclient.ActiveGate, dk); err != nil {
 		return err
 	}
 
-	if err = r.statefulsetReconciler.Reconcile(ctx, dk, imageClient, versionClient); err != nil {
+	if err = r.pullSecretReconciler.Reconcile(ctx, dk, tokens); err != nil {
+		return err
+	}
+
+	if err = r.statefulsetReconciler.Reconcile(ctx, dk, dtclient.Images, dtclient.Version); err != nil {
 		return err
 	}
 

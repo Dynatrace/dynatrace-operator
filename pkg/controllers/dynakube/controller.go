@@ -13,12 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -174,7 +172,7 @@ type injectionReconciler interface {
 }
 
 type kubemonReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, imageClient image.Client, versionClient version.Client) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error
 }
 
 // Controller reconciles a DynaKube object
@@ -410,7 +408,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	log.Debug("start reconciling KubernetesMonitoring")
 
-	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient.ActiveGate, dtClient.Images, dtClient.Version); err != nil {
+	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient, controller.tokens); err != nil {
 		if kubemon.IsTransientError(err) {
 			// transient kubemon state (e.g. rollout in progress, connection info not ready) is not a component error
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
