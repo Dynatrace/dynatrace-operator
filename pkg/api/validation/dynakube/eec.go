@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -82,5 +83,5 @@ func extensionControllerPVCStorageDevice(ctx context.Context, _ *Validator, dk *
 }
 
 func extensionControllerMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
-	return dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume && dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim != nil
+	return ptr.Deref(dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume, false) && dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim != nil
 }

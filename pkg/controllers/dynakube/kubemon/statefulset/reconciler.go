@@ -9,6 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -35,8 +38,6 @@ const (
 )
 
 var (
-	// TODO: remove this error once image discovery is implemented
-	ErrImageRequired        = errors.New("kubernetes monitoring image is required")
 	ErrMissingKubeSystemUID = errors.New("kube-system UUID not yet available")
 	ErrMissingTenantToken   = errors.New("tenant token secret is missing or has an empty value")
 	ErrMissingAuthToken     = errors.New("auth token secret is missing or has an empty value")
@@ -54,7 +55,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "statefulset")
 
 	if !dk.KubernetesMonitoring().IsEnabled() {
@@ -65,7 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	desiredStatefulSet, err := r.buildDesiredStatefulSet(ctx, dk)
+	desiredStatefulSet, err := r.buildDesiredStatefulSet(ctx, dk, imageClient, versionClient)
 	if err != nil {
 		return err
 	}
@@ -86,10 +87,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 // ensureReady validates the DynaKube fields required to build the StatefulSet. Without any of
 // them the build fails either way, so we short-circuit here before doing any work or API calls.
 func ensureReady(dk *dynakube.DynaKube) error {
-	if dk.KubernetesMonitoring().GetCustomImage() == "" {
-		return ErrImageRequired
-	}
-
 	if dk.Status.KubeSystemUUID == "" {
 		return ErrMissingKubeSystemUID
 	}
@@ -213,8 +210,45 @@ func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {
 	return r.sts.Delete(ctx, statefulSet)
 }
 
-func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube) (*appsv1.StatefulSet, error) {
-	image := dk.KubernetesMonitoring().GetCustomImage()
+func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) (string, error) {
+	var (
+		imageURI string
+		err      error
+	)
+
+	switch {
+	case dk.KubernetesMonitoring().GetCustomImage() != "":
+		imageURI = dk.KubernetesMonitoring().GetCustomImage()
+	case dk.FF().IsPublicRegistry():
+		var imageInfo *image.Info
+
+		imageInfo, err = imageClient.GetComponentLatestInfo(ctx, image.ActiveGate, dk.PublicRegistryOverride())
+		if err != nil {
+			return "", err
+		}
+
+		imageURI = imageInfo.URI
+	default:
+		var latestVersion string
+
+		latestVersion, err = versionClient.GetLatestActiveGateVersion(ctx, installer.OSUnix)
+		if err != nil {
+			return "", err
+		}
+
+		imageURI = dk.KubernetesMonitoring().GetDefaultImage(latestVersion)
+	}
+
+	dk.KubernetesMonitoring().ResolvedImage = imageURI
+
+	return imageURI, nil
+}
+
+func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) (*appsv1.StatefulSet, error) {
+	imageURI, err := r.resolveImage(ctx, dk, imageClient, versionClient)
+	if err != nil {
+		return nil, err
+	}
 
 	// no .replicas means the field is controlled by HPA, so we read it from live object
 	replicas, err := k8sstatefulset.ResolveReplicas(
@@ -239,7 +273,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 
 	container := corev1.Container{
 		Name:            ContainerName,
-		Image:           image,
+		Image:           imageURI,
 		ImagePullPolicy: dk.KubernetesMonitoring().GetPullPolicy(),
 		Resources:       dk.KubernetesMonitoring().Resources,
 		Env:             buildEnvs(dk),
@@ -265,6 +299,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		k8sstatefulset.SetDNSPolicy(km.DNSPolicy),
 		k8sstatefulset.SetPriorityClassName(km.PriorityClassName),
 		k8sstatefulset.SetTerminationGracePeriodSeconds(km.TerminationGracePeriodSeconds),
+		k8sstatefulset.SetImagePullSecrets(dk.ImagePullSecretReferences()),
 		k8sstatefulset.SetAutomountServiceAccountToken(true),
 	}
 

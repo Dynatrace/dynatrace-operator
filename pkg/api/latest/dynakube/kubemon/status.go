@@ -5,19 +5,16 @@ package kubemon
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 )
 
 // +kubebuilder:object:generate=true
 
 type Status struct {
-	status.VersionStatus `json:",inline"`
+	// The resolved KubernetesMonitoring image that is currently deployed.
+	// The JSON tag uses "image" (matching the Spec field name) while the Go field name is ResolvedImage to distinguish it from Spec.Image.
+	ResolvedImage string `json:"image,omitempty"`
 
 	// Information about KubernetesMonitoring's connections.
 	// +kubebuilder:validation:Optional
 	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitzero"`
-}
-
-func (s *Status) IsZero() bool {
-	return s.VersionStatus.IsZero() && s.ConnectionInfo == communication.ConnectionInfo{}
 }

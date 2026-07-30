@@ -209,7 +209,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 									Repository: "a",
 									Tag:        "b",
 								},
-								UseEphemeralVolume:    false,
+								UseEphemeralVolume:    new(false),
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
 							},
 							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
@@ -248,7 +248,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 									Repository: "a",
 									Tag:        "b",
 								},
-								UseEphemeralVolume: true,
+								UseEphemeralVolume: new(true),
 							},
 							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
 								ImageRef: image.Ref{
@@ -288,7 +288,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 										Repository: "a",
 										Tag:        "b",
 									},
-									UseEphemeralVolume:    true,
+									UseEphemeralVolume:    new(true),
 									PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
 								},
 								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{

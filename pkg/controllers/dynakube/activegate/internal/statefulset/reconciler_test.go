@@ -342,7 +342,7 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 	err := reconciler.Reconcile(ctx, dk, mcap)
 	require.NoError(t, err)
 
-	dk.Spec.ActiveGate.UseEphemeralVolume = true
+	dk.Spec.ActiveGate.UseEphemeralVolume = new(true)
 	err = reconciler.Reconcile(ctx, dk, mcap)
 	require.NoError(t, err)
 }

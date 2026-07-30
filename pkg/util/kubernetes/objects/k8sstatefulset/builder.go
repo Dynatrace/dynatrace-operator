@@ -28,53 +28,53 @@ var (
 	SetLabels = builder.SetLabels[*appsv1.StatefulSet]
 )
 
-func Build(owner metav1.Object, name string, container corev1.Container, options ...builder.Option[*appsv1.StatefulSet]) (*appsv1.StatefulSet, error) {
-	neededOpts := slices.Concat([]builder.Option[*appsv1.StatefulSet]{
+func Build(owner metav1.Object, name string, container corev1.Container, options ...Option) (*appsv1.StatefulSet, error) {
+	neededOpts := slices.Concat([]Option{
 		setName(name),
 		SetContainer(container),
 		setNamespace(owner.GetNamespace()),
-	}, options, []builder.Option[*appsv1.StatefulSet]{SetPVCAnnotation()})
+	}, options, []Option{SetPVCAnnotation()})
 
 	return builder.Build(owner, &appsv1.StatefulSet{}, neededOpts...)
 }
 
-func SetReplicas(replicas int32) builder.Option[*appsv1.StatefulSet] {
+func SetReplicas(replicas int32) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Replicas = new(replicas)
 	}
 }
 
-func SetPodManagementPolicy(podManagementType appsv1.PodManagementPolicyType) builder.Option[*appsv1.StatefulSet] {
+func SetPodManagementPolicy(podManagementType appsv1.PodManagementPolicyType) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.PodManagementPolicy = podManagementType
 	}
 }
 
-func SetAffinity(afinity corev1.Affinity) builder.Option[*appsv1.StatefulSet] {
+func SetAffinity(afinity corev1.Affinity) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.Affinity = &afinity
 	}
 }
 
-func SetTolerations(tolerations []corev1.Toleration) builder.Option[*appsv1.StatefulSet] {
+func SetTolerations(tolerations []corev1.Toleration) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.Tolerations = tolerations
 	}
 }
 
-func SetNodeSelector(nodeSelector map[string]string) builder.Option[*appsv1.StatefulSet] {
+func SetNodeSelector(nodeSelector map[string]string) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.NodeSelector = nodeSelector
 	}
 }
 
-func SetTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologySpreadConstraint) builder.Option[*appsv1.StatefulSet] {
+func SetTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologySpreadConstraint) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.TopologySpreadConstraints = topologySpreadConstraints
 	}
 }
 
-func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]string) builder.Option[*appsv1.StatefulSet] {
+func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]string) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Labels = labels
 		s.Spec.Selector = &metav1.LabelSelector{MatchLabels: matchLabels}
@@ -82,14 +82,14 @@ func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]s
 	}
 }
 
-func SetAllAnnotations(annotations, templateAnnotations map[string]string) builder.Option[*appsv1.StatefulSet] {
+func SetAllAnnotations(annotations, templateAnnotations map[string]string) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Annotations = maputils.MergeMap(s.Annotations, annotations)
 		s.Spec.Template.Annotations = maputils.MergeMap(s.Spec.Template.Annotations, templateAnnotations)
 	}
 }
 
-func SetContainer(container corev1.Container) builder.Option[*appsv1.StatefulSet] {
+func SetContainer(container corev1.Container) Option {
 	return func(s *appsv1.StatefulSet) {
 		targetIndex := 0
 		for index := range s.Spec.Template.Spec.Containers {
@@ -108,7 +108,7 @@ func SetContainer(container corev1.Container) builder.Option[*appsv1.StatefulSet
 	}
 }
 
-func SetServiceAccount(serviceAccountName string) builder.Option[*appsv1.StatefulSet] {
+func SetServiceAccount(serviceAccountName string) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		s.Spec.Template.Spec.DeprecatedServiceAccount = serviceAccountName
@@ -121,13 +121,13 @@ func SetAutomountServiceAccountToken(isEnabled bool) Option {
 	}
 }
 
-func SetSecurityContext(securityContext *corev1.PodSecurityContext) builder.Option[*appsv1.StatefulSet] {
+func SetSecurityContext(securityContext *corev1.PodSecurityContext) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.SecurityContext = securityContext
 	}
 }
 
-func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
+func SetRollingUpdateStrategyType() Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
@@ -187,7 +187,7 @@ func SetRollingUpdateStrategy(strategy *appsv1.RollingUpdateStatefulSetStrategy)
 	}
 }
 
-func SetPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
+func SetPVCAnnotation() Option {
 	return func(s *appsv1.StatefulSet) {
 		if s.Spec.VolumeClaimTemplates != nil {
 			if s.Annotations == nil {
@@ -196,5 +196,11 @@ func SetPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
 
 			s.Annotations[AnnotationPVCHash], _ = hasher.GenerateHash(s.Spec.VolumeClaimTemplates)
 		}
+	}
+}
+
+func SetImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) Option {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 	}
 }

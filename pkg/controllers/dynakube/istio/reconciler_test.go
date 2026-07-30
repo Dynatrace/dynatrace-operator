@@ -526,7 +526,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 			DynatraceAPIRequestThreshold: new(uint16(15)),
-			EnableIstio:                  true,
+			EnableIstio:                  new(true),
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{

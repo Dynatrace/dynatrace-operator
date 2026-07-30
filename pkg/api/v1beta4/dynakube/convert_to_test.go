@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 var testTime = metav1.Now()
@@ -314,8 +315,8 @@ func getOldDynakubeBase() DynaKube {
 			APIURL:           "api-url",
 			Tokens:           "token",
 			CustomPullSecret: "pull-secret",
-			EnableIstio:      true,
-			SkipCertCheck:    true,
+			EnableIstio:      ptr.To(true),
+			SkipCertCheck:    ptr.To(true),
 			Proxy: &value.Source{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
@@ -553,7 +554,7 @@ func getOldExtensionExecutionControllerSpec() ExtensionExecutionControllerSpec {
 		},
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
-		UseEphemeralVolume:          true,
+		UseEphemeralVolume:          ptr.To(true),
 	}
 }
 

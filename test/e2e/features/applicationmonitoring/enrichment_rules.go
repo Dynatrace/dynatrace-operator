@@ -33,10 +33,16 @@ func EnrichmentRules(t *testing.T) features.Feature {
 		Source: "e2e-test-label",
 		Target: "dt.cost.product",
 	}
+	ignoredRule := metadataenrichment.Rule{
+		Type:   metadataenrichment.LabelRule,
+		Source: "e2e-test-label-ignore",
+		Target: "dt.cost.product",
+	}
 
 	// on phase 3 only the new schema is supported, which uses the "K8S_NAMESPACE_LABEL" rule type
 	if tenant.UsePhase3Tenant() {
 		expectedRule.Type = metadataenrichment.K8sNamespaceLabelRule
+		ignoredRule.Type = metadataenrichment.K8sNamespaceLabelRule
 	}
 
 	// Setup: pre-create the Kubernetes Cluster MEID on the tenant so the rule can be
@@ -47,7 +53,7 @@ func EnrichmentRules(t *testing.T) features.Feature {
 
 	// Be aware that this requires additional permissions on the service user group if platform token is used
 	// Add a new policy to your service user group that allows write access to 'ingest.enrichment.config'
-	builder.Setup(enrichment.CreateEnrichmentRuleOnTenant(secretConfig, expectedRule))
+	builder.Setup(enrichment.CreateEnrichmentRuleOnTenant(secretConfig, expectedRule, ignoredRule))
 
 	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
@@ -57,13 +63,15 @@ func EnrichmentRules(t *testing.T) features.Feature {
 	dynakubeComponents.Install(builder, &secretConfig, *testDynakube)
 
 	builder.Assess("enrichment rule is stored in DynaKube status",
-		enrichment.CheckEnrichmentRuleInDynaKubeStatus(testDynakube, expectedRule))
+		enrichment.CheckEnrichmentRuleInDynaKubeStatus(testDynakube, expectedRule, ignoredRule))
 
-	sampleApp := sample.NewApp(t, testDynakube,
+	sampleApp := sample.NewApp(
+		t, testDynakube,
 		sample.WithName("enrichment-rule-app"),
 		sample.WithNamespaceLabels(maputil.MergeMap(
 			testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels,
 			map[string]string{expectedRule.Source: enrichmentLabelValue},
+			map[string]string{ignoredRule.Source: "ignore-me"},
 		)),
 	)
 

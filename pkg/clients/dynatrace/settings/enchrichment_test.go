@@ -312,9 +312,7 @@ func TestCreateEnrichmentRuleObject(t *testing.T) {
 			len(body) == 1 &&
 			body[0].SchemaID == metadataEnrichmentSchemaID &&
 			body[0].Scope == scope &&
-			body[0].Value.Type == metadataenrichment.K8sNamespaceLabelRule &&
-			body[0].Value.ValueSource == "my-label" &&
-			body[0].Value.Target == "dt.cost.product"
+			body[0].Value == convertRule(rule)
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -328,9 +326,9 @@ func TestCreateEnrichmentRuleObject(t *testing.T) {
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateEnrichmentRuleObject(ctx, scope, rule)
+		objectIDs, err := client.CreateEnrichmentRuleObject(ctx, scope, rule)
 		require.NoError(t, err)
-		assert.Equal(t, "obj-123", objectID)
+		assert.Equal(t, []string{"obj-123"}, objectIDs)
 	})
 
 	t.Run("error from API", func(t *testing.T) {
@@ -342,31 +340,49 @@ func TestCreateEnrichmentRuleObject(t *testing.T) {
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateEnrichmentRuleObject(ctx, scope, rule)
+		objectIDs, err := client.CreateEnrichmentRuleObject(ctx, scope, rule)
 		require.Error(t, err)
-		assert.Empty(t, objectID)
-	})
-
-	t.Run("response not exactly one entry", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()
-		apiClient.On("POST", ctx, ObjectsPath).Return(request)
-
-		client := NewClient(apiClient)
-		objectID, err := client.CreateEnrichmentRuleObject(ctx, scope, rule)
-		require.ErrorAs(t, err, new(notSingleEntryError))
-		assert.Empty(t, objectID)
+		assert.Empty(t, objectIDs)
 	})
 
 	t.Run("empty scope", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		client := NewClient(apiClient)
-		objectID, err := client.CreateEnrichmentRuleObject(t.Context(), "", rule)
+		objectIDs, err := client.CreateEnrichmentRuleObject(t.Context(), "", rule)
 		require.Error(t, err)
-		assert.Empty(t, objectID)
+		assert.Empty(t, objectIDs)
+	})
+
+	t.Run("multiple rules", func(t *testing.T) {
+		rule := metadataenrichment.Rule{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "my-label", Target: "dt.cost.product"}
+		rule2 := metadataenrichment.Rule{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "my-label-2", Target: "dt.security_context"}
+		matchBody := mock.MatchedBy(func(arg any) bool {
+			body, ok := arg.([]postObjectsBody[enrichmentRuleValue])
+
+			return ok &&
+				len(body) == 2 &&
+				body[0].SchemaID == metadataEnrichmentSchemaID &&
+				body[0].Scope == scope &&
+				body[0].Value == convertRule(rule) &&
+				body[1].SchemaID == metadataEnrichmentSchemaID &&
+				body[1].Scope == scope &&
+				body[1].Value == convertRule(rule2)
+		})
+
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).
+			Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-1"}, {ObjectID: "obj-2"}})).
+			Return(nil).Once()
+		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+
+		objectIDs, err := client.CreateEnrichmentRuleObject(ctx, scope, rule, rule2)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"obj-1", "obj-2"}, objectIDs)
 	})
 }
 
@@ -384,9 +400,7 @@ func TestCreateLegacyEnrichmentRuleObject(t *testing.T) {
 			body[0].SchemaID == legacyMetadataEnrichmentSchemaID &&
 			body[0].Scope == scope &&
 			len(body[0].Value.Rules) == 1 &&
-			body[0].Value.Rules[0].Type == metadataenrichment.LabelRule &&
-			body[0].Value.Rules[0].Source == "my-label" &&
-			body[0].Value.Rules[0].Target == "dt.cost.product"
+			body[0].Value.Rules[0] == rule
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -400,9 +414,9 @@ func TestCreateLegacyEnrichmentRuleObject(t *testing.T) {
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule)
+		objectIDs, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule)
 		require.NoError(t, err)
-		assert.Equal(t, "obj-456", objectID)
+		assert.Equal(t, []string{"obj-456"}, objectIDs)
 	})
 
 	t.Run("error from API", func(t *testing.T) {
@@ -414,31 +428,47 @@ func TestCreateLegacyEnrichmentRuleObject(t *testing.T) {
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule)
+		objectIDs, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule)
 		require.Error(t, err)
-		assert.Empty(t, objectID)
-	})
-
-	t.Run("response not exactly one entry", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()
-		apiClient.On("POST", ctx, ObjectsPath).Return(request)
-
-		client := NewClient(apiClient)
-		objectID, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule)
-		require.ErrorAs(t, err, new(notSingleEntryError))
-		assert.Empty(t, objectID)
+		assert.Empty(t, objectIDs)
 	})
 
 	t.Run("empty scope", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		client := NewClient(apiClient)
-		objectID, err := client.CreateLegacyEnrichmentRuleObject(t.Context(), "", rule)
+		objectIDs, err := client.CreateLegacyEnrichmentRuleObject(t.Context(), "", rule)
 		require.Error(t, err)
-		assert.Empty(t, objectID)
+		assert.Empty(t, objectIDs)
+	})
+
+	t.Run("multiple rules", func(t *testing.T) {
+		rule := metadataenrichment.Rule{Type: metadataenrichment.LabelRule, Source: "my-label", Target: "dt.cost.product"}
+		rule2 := metadataenrichment.Rule{Type: metadataenrichment.AnnotationRule, Source: "my-label-2", Target: "dt.security_context"}
+		matchBody := mock.MatchedBy(func(arg any) bool {
+			body, ok := arg.([]postObjectsBody[legacyEnrichmentValue])
+
+			return ok &&
+				len(body) == 1 &&
+				body[0].SchemaID == legacyMetadataEnrichmentSchemaID &&
+				body[0].Scope == scope &&
+				len(body[0].Value.Rules) == 2 &&
+				body[0].Value.Rules[0] == rule &&
+				body[0].Value.Rules[1] == rule2
+		})
+
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).
+			Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-456"}})).
+			Return(nil).Once()
+		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objectIDs, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule, rule2)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"obj-456"}, objectIDs)
 	})
 }
 

@@ -26,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -222,8 +223,8 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 			data[pmc.InputFileName] = pmcSecret
 		}
 
-		if dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio) > -1 {
-			initialConnectRetryMs := strconv.Itoa(dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio))
+		if dk.FF().GetAgentInitialConnectRetry(ptr.Deref(dk.Spec.EnableIstio, false)) > -1 {
+			initialConnectRetryMs := strconv.Itoa(dk.FF().GetAgentInitialConnectRetry(ptr.Deref(dk.Spec.EnableIstio, false)))
 			data[curl.InputFileName] = []byte(initialConnectRetryMs)
 		}
 	}
@@ -293,7 +294,7 @@ func (s *SecretGenerator) prepareDownloadConfig(ctx context.Context, dk *dynakub
 		NoProxy:       dk.FF().GetNoProxy(),
 		NetworkZone:   dk.Spec.NetworkZone,
 		HostGroup:     dk.OneAgent().GetHostGroup(),
-		SkipCertCheck: dk.Spec.SkipCertCheck,
+		SkipCertCheck: ptr.Deref(dk.Spec.SkipCertCheck, false),
 	}
 
 	if dk.NeedsOneAgentProxy() {
