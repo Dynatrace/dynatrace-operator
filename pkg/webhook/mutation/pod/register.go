@@ -77,6 +77,8 @@ func newWebhook( //nolint:revive
 
 	log.Info("got webhook's image from env", "image", webhookImage)
 
+	_ = k8senv.GetMetadaSizeLimit().WithLog(ctx).Resolve()
+
 	return &webhook{
 		injectionHandler: injection.New(
 			kubeClient,

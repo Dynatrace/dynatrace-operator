@@ -237,3 +237,60 @@ func getSafeDurationFromEnv(ctx context.Context, envVar string, defaultValue, mi
 
 	return duration
 }
+
+func GetMetadaSizeLimit() BoundedInt {
+	return BoundedInt{
+		EnvName:      "DT_METADATA_SIZE_LIMIT",
+		DefaultValue: 24 * 1024,
+	}
+}
+
+type BoundedInt struct {
+	EnvName       string
+	DefaultValue  int
+	ResolvedValue int
+	ctx           context.Context
+}
+
+func (d BoundedInt) WithLog(ctx context.Context) BoundedInt {
+	d.ctx = ctx
+
+	return d
+}
+
+func (d BoundedInt) Resolve() BoundedInt {
+	var log logd.Logger
+	if d.ctx != nil {
+		_, log = logd.NewFromContext(d.ctx, "k8senv")
+	}
+
+	rawValue := os.Getenv(d.EnvName)
+	if rawValue == "" {
+		if d.ctx != nil {
+			log.Debug("no custom env set, using default", "env", d.EnvName, "default", d.DefaultValue)
+		}
+
+		d.ResolvedValue = d.DefaultValue
+
+		return d
+	}
+
+	value, err := strconv.Atoi(rawValue)
+	if err != nil || value < 0 {
+		if d.ctx != nil {
+			log.Error(err, "invalid int value, using default", "env", d.EnvName, "value", rawValue, "default", d.DefaultValue)
+		}
+
+		d.ResolvedValue = d.DefaultValue
+
+		return d
+	}
+
+	if d.ctx != nil {
+		log.Info("using custom int value", "env", d.EnvName, "value", value)
+	}
+
+	d.ResolvedValue = value
+
+	return d
+}

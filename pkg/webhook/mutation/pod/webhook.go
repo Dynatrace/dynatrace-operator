@@ -94,6 +94,15 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 	} else if mutationRequest.AnnotationWriter != nil {
 		if err := mutationRequest.AnnotationWriter.ApplyJSONAnnotationToPod(mutationRequest.Pod); err != nil {
 			log.Error(err, "failed to write pod annotations", "podName", podName)
+
+			mutErr := new(dtwebhook.MutatorError)
+			if !errors.As(err, mutErr) {
+				// the only error here is the one returned by json.Marshal
+				return silentErrorResponse(mutationRequest.Pod, err, log)
+			}
+
+			mutationRequest.Pod = originalPod // prevent partial modifications
+			mutErr.SetAnnotations(mutationRequest.Pod)
 		}
 	}
 

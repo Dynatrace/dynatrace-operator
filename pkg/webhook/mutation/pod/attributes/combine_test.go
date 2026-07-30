@@ -5,6 +5,7 @@ package attributes
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -517,4 +518,75 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 		assert.Equal(t, "pod", result[K8sWorkloadKindAttr])
 		assert.Equal(t, podName, result[K8sWorkloadNameAttr])
 	})
+}
+
+func TestMetadataValueSizeLimit(t *testing.T) {
+	testCases := []struct {
+		envValue string
+		attrSize int
+		injected bool
+	}{
+		{
+			envValue: "", // resolvedLimit: k8senv.GetMetadaSizeLimit().DefaultValue = 24 * 1024 = 24576
+			attrSize: 24000,
+			injected: true,
+		},
+		{
+			envValue: "", // resolvedLimit: k8senv.GetMetadaSizeLimit().DefaultValue
+			attrSize: 24576,
+			injected: false,
+		},
+		{
+			envValue: "-1", // resolvedLimit: k8senv.GetMetadaSizeLimit().DefaultValue
+			attrSize: 24000,
+			injected: true,
+		},
+		{
+			envValue: "-1", // resolvedLimit: k8senv.GetMetadaSizeLimit().DefaultValue
+			attrSize: 24576,
+			injected: false,
+		},
+		{
+			envValue: "10", // resolvedLimit: 10
+			attrSize: 1,
+			injected: false,
+		},
+		{
+			envValue: "11", // resolvedLimit: 11
+			attrSize: 1,
+			injected: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run("returns MutatorError when JSON annotation exceeds size limit", func(t *testing.T) {
+			if testCase.envValue != "" {
+				t.Setenv("DT_METADATA_SIZE_LIMIT", testCase.envValue)
+			}
+
+			attrs := newTestPodAttributes()
+			attrs.dynakube["key"] = strings.Repeat("x", testCase.attrSize)
+			pod := &corev1.Pod{}
+
+			err := attrs.ApplyJSONAnnotationToPod(pod)
+
+			if testCase.injected {
+				require.NoError(t, err, testCase)
+
+				_, ok := pod.Annotations[metadataenrichment.Annotation]
+				assert.True(t, ok, testCase)
+			} else {
+				require.Error(t, err, testCase)
+				var mutErr dtwebhook.MutatorError
+				require.ErrorAs(t, err, &mutErr, testCase)
+
+				mutErr.SetAnnotations(pod)
+
+				_, ok := pod.Annotations[metadataenrichment.Annotation]
+				assert.False(t, ok, testCase)
+				assert.Equal(t, "false", pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+				assert.Contains(t, pod.Annotations[dtwebhook.AnnotationDynatraceReason], "exceeds the maximum allowed size")
+			}
+		})
+	}
 }

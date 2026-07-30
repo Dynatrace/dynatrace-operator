@@ -208,3 +208,10 @@ topologySpreadConstraints:
   value: {{ . | quote }}
   {{- end }}
 {{- end -}}
+
+{{- define "dynatrace-webhook.metadata-size-limit-env" -}}
+  {{- with .Values.webhook.metadataSizeLimit }}
+- name: DT_METADATA_SIZE_LIMIT
+  value: {{ . | quote }}
+  {{- end }}
+{{- end -}}
