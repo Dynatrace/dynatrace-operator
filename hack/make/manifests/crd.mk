@@ -1,6 +1,8 @@
 ## Generates a CRD in config/crd/bases
 manifests/crd/generate: prerequisites/controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) "$(CRD_STRIP_DESC)" $(CRD_PATHS_DYNAKUBE) output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) "$(CRD_KEEP_DESC)" $(CRD_PATHS_EDGECONNECT) output:crd:artifacts:config=config/crd/bases
+	$(if $(CRD_PATHS_DTPROMETHEUS),$(CONTROLLER_GEN) "$(CRD_KEEP_DESC)" $(CRD_PATHS_DTPROMETHEUS) output:crd:artifacts:config=config/crd/bases)
 
 ## Generates a CRD in config/crd and then applies it to a cluster using kubectl
 manifests/crd/install: prerequisites/kustomize manifests/crd/generate
