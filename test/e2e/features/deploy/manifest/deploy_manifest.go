@@ -7,7 +7,6 @@ package manifest
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
@@ -34,7 +33,7 @@ func OpenshiftCSI() features.Feature {
 }
 
 func feature(platform string, withCSI bool) features.Feature {
-	builder := features.New("deploy-manifest-" + platform + "-csi-" + strconv.FormatBool(withCSI))
+	builder := features.New("deploy-manifest-" + platform + "-" + operator.CSIVariant(withCSI))
 
 	builder.Setup(checkPlatform(platform))
 	builder.Setup(installManifests(platform, withCSI))

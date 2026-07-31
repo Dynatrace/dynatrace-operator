@@ -197,7 +197,7 @@ func UninstallViaHelm(releaseName, namespace string, extraOpts ...helm.Option) e
 func InstallViaManifests(platform string, withCSI bool) error {
 	return execMakeCommand(
 		project.RootDir(),
-		"manifests/apply/"+platform+"/"+csiVariant(withCSI),
+		"manifests/apply/"+platform+"/"+CSIVariant(withCSI),
 	)
 }
 
@@ -205,11 +205,11 @@ func InstallViaManifests(platform string, withCSI bool) error {
 func UninstallViaManifests(platform string, withCSI bool) error {
 	return execMakeCommand(
 		project.RootDir(),
-		"manifests/delete/"+platform+"/"+csiVariant(withCSI),
+		"manifests/delete/"+platform+"/"+CSIVariant(withCSI),
 	)
 }
 
-func csiVariant(withCSI bool) string {
+func CSIVariant(withCSI bool) string {
 	if withCSI {
 		return "csi"
 	}
