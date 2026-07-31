@@ -159,7 +159,7 @@ func TestReconciler(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:      testAPIURL,
-				EnableIstio: true,
+				EnableIstio: new(true),
 			},
 		}
 		setMetadataEnrichmentCreatedCondition(dk.Conditions())
@@ -705,7 +705,7 @@ func createDynaKube(dynakubeName string, dynakubeNamespace string, oneAgentSpec 
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:      testAPIURL,
 			OneAgent:    oneAgentSpec,
-			EnableIstio: true,
+			EnableIstio: new(true),
 		},
 	}
 }

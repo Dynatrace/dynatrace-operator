@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 func TestConvertFrom(t *testing.T) {
@@ -247,6 +248,31 @@ func TestConvertFrom(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, to.Spec.OneAgent.HostGroup, from.Spec.OneAgent.HostGroup)
+	})
+
+	t.Run("unset *bool fields stay nil across a full round-trip (inverse-effect guard)", func(t *testing.T) {
+		// ICP-1012: an unset (nil) tri-state field must never become an explicit
+		// &false. Leave the four *bool fields nil and confirm they survive
+		// latest -> v1beta4 -> latest as nil, never materialising a false.
+		from := getNewDynakubeBase()
+		from.Spec.SkipCertCheck = nil
+		from.Spec.EnableIstio = nil
+		from.Spec.ActiveGate.UseEphemeralVolume = nil
+		from.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = nil
+
+		to := DynaKube{}
+		require.NoError(t, to.ConvertFrom(&from))
+
+		assert.Nil(t, to.Spec.SkipCertCheck)
+		assert.Nil(t, to.Spec.EnableIstio)
+		assert.Nil(t, to.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume)
+
+		roundTripped := dynakubelatest.DynaKube{}
+		require.NoError(t, to.ConvertTo(&roundTripped))
+
+		assert.Nil(t, roundTripped.Spec.SkipCertCheck)
+		assert.Nil(t, roundTripped.Spec.EnableIstio)
+		assert.Nil(t, roundTripped.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume)
 	})
 }
 
@@ -498,8 +524,8 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			CustomPullSecret:             "pull-secret",
-			SkipCertCheck:                true,
-			EnableIstio:                  true,
+			SkipCertCheck:                ptr.To(true),
+			EnableIstio:                  ptr.To(true),
 			MetadataEnrichment: metadataenrichmentlatest.Spec{
 				Enabled:           new(true),
 				NamespaceSelector: getTestNamespaceSelector(),
@@ -732,7 +758,7 @@ func getNewExtensionExecutionControllerSpec() extensionslatest.ExecutionControll
 		},
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
-		UseEphemeralVolume:          true,
+		UseEphemeralVolume:          ptr.To(true),
 	}
 }
 

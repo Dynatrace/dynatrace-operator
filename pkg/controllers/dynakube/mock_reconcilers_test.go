@@ -12,7 +12,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -857,16 +856,16 @@ func (_m *mockKubemonReconciler) EXPECT() *mockKubemonReconciler_Expecter {
 }
 
 // Reconcile provides a mock function for the type mockKubemonReconciler
-func (_mock *mockKubemonReconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient activegate.Client, tokens token.Tokens) error {
-	ret := _mock.Called(ctx, dk, agClient, tokens)
+func (_mock *mockKubemonReconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error {
+	ret := _mock.Called(ctx, dk, dtClient, tokens)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube, activegate.Client, token.Tokens) error); ok {
-		r0 = returnFunc(ctx, dk, agClient, tokens)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube, *dynatrace.Client, token.Tokens) error); ok {
+		r0 = returnFunc(ctx, dk, dtClient, tokens)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -881,13 +880,13 @@ type mockKubemonReconciler_Reconcile_Call struct {
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
-//   - agClient activegate.Client
+//   - dtClient *dynatrace.Client
 //   - tokens token.Tokens
-func (_e *mockKubemonReconciler_Expecter) Reconcile(ctx any, dk any, agClient any, tokens any) *mockKubemonReconciler_Reconcile_Call {
-	return &mockKubemonReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, agClient, tokens)}
+func (_e *mockKubemonReconciler_Expecter) Reconcile(ctx any, dk any, dtClient any, tokens any) *mockKubemonReconciler_Reconcile_Call {
+	return &mockKubemonReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, dtClient, tokens)}
 }
 
-func (_c *mockKubemonReconciler_Reconcile_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube, agClient activegate.Client, tokens token.Tokens)) *mockKubemonReconciler_Reconcile_Call {
+func (_c *mockKubemonReconciler_Reconcile_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens)) *mockKubemonReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -897,9 +896,9 @@ func (_c *mockKubemonReconciler_Reconcile_Call) Run(run func(ctx context.Context
 		if args[1] != nil {
 			arg1 = args[1].(*dynakube.DynaKube)
 		}
-		var arg2 activegate.Client
+		var arg2 *dynatrace.Client
 		if args[2] != nil {
-			arg2 = args[2].(activegate.Client)
+			arg2 = args[2].(*dynatrace.Client)
 		}
 		var arg3 token.Tokens
 		if args[3] != nil {
@@ -920,7 +919,7 @@ func (_c *mockKubemonReconciler_Reconcile_Call) Return(err error) *mockKubemonRe
 	return _c
 }
 
-func (_c *mockKubemonReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube, agClient activegate.Client, tokens token.Tokens) error) *mockKubemonReconciler_Reconcile_Call {
+func (_c *mockKubemonReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error) *mockKubemonReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

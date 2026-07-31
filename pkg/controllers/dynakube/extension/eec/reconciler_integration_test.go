@@ -23,7 +23,7 @@ func TestStatefulSet(t *testing.T) {
 	err := reconciler.Reconcile(t.Context(), nil, dk)
 	require.NoError(t, err)
 
-	dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+	dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 	err = reconciler.Reconcile(t.Context(), nil, dk)
 	require.NoError(t, err)
 }

@@ -8,10 +8,14 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -19,8 +23,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
+	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,12 +50,6 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 		mutate      func(*dynakube.DynaKube)
 		assertError func(*testing.T, error)
 	}{
-		"missing image": {
-			mutate: func(dk *dynakube.DynaKube) { dk.Spec.KubernetesMonitoring.Image = "" },
-			assertError: func(t *testing.T, err error) {
-				require.ErrorIs(t, err, statefulset.ErrImageRequired)
-			},
-		},
 		"missing tenant secret": {
 			// Only auth token secret seeded — tenant secret Get returns NotFound first.
 			assertError: func(t *testing.T, err error) {
@@ -64,7 +65,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 				test.mutate(dk)
 			}
 
-			err := statefulset.NewReconciler(fake.NewClient(dk, newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk)
+			err := statefulset.NewReconciler(fake.NewClient(dk, newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 			require.Error(t, err)
 			require.NotErrorIs(t, err, k8sstatefulset.ErrRolloutInProgress)
 			test.assertError(t, err)
@@ -75,7 +76,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 func TestReconcileMissingKubeSystemUID(t *testing.T) {
 	dk := newTestDynaKube(true)
 	dk.Status.KubeSystemUUID = ""
-	err := statefulset.NewReconciler(fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk)
+	err := statefulset.NewReconciler(fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 	require.ErrorIs(t, err, statefulset.ErrMissingKubeSystemUID)
 }
 
@@ -130,7 +131,7 @@ func TestReconcileMissingTokenValue(t *testing.T) {
 				Data: test.authData,
 			}
 
-			err := statefulset.NewReconciler(fake.NewClient(dk, tenantSecret, authSecret)).Reconcile(t.Context(), dk)
+			err := statefulset.NewReconciler(fake.NewClient(dk, tenantSecret, authSecret)).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 			require.ErrorIs(t, err, test.expectedErr)
 		})
 	}
@@ -165,10 +166,11 @@ func TestReconcileResolveReplicasReadFailure(t *testing.T) {
 		},
 	}, dk, newTestTenantSecret(dk))
 
-	err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
+	// dk has a custom image so neither client is invoked; mocks with no expectations verify that
+	err := statefulset.NewReconciler(fakeClient).
+		Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 	require.Error(t, err)
 	require.NotErrorIs(t, err, k8sstatefulset.ErrRolloutInProgress)
-	require.NotErrorIs(t, err, statefulset.ErrImageRequired)
 	assert.False(t, writeAttempted)
 }
 
@@ -177,7 +179,7 @@ func TestReconcileResolveReplicasReadFailure(t *testing.T) {
 func TestReconcileBuildsStatefulSet(t *testing.T) {
 	t.Run("container identity and service account", func(t *testing.T) {
 		dk := newTestDynaKube(true)
-		sts := reconcileAndGetSTS(t, dk)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
@@ -190,7 +192,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 	t.Run("env vars: capabilities, seed envs, deployment metadata, connection info, and custom", func(t *testing.T) {
 		dk := newTestDynaKube(true)
 		dk.Spec.KubernetesMonitoring.Env = []corev1.EnvVar{{Name: "CUSTOM", Value: "value"}}
-		sts := reconcileAndGetSTS(t, dk)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
@@ -222,7 +224,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 
 	t.Run("tenant token volume mount", func(t *testing.T) {
 		dk := newTestDynaKube(true)
-		sts := reconcileAndGetSTS(t, dk)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
@@ -238,7 +240,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 
 	t.Run("auth token volume mount", func(t *testing.T) {
 		dk := newTestDynaKube(true)
-		sts := reconcileAndGetSTS(t, dk)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
@@ -256,7 +258,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		dk := newTestDynaKube(true)
 		partition := int32(2)
 		dk.Spec.KubernetesMonitoring.RollingUpdate = &appsv1.RollingUpdateStatefulSetStrategy{Partition: &partition}
-		sts := reconcileAndGetSTS(t, dk)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		require.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
 		require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
@@ -270,7 +272,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		dk.Spec.KubernetesMonitoring.DNSPolicy = corev1.DNSNone
 		dk.Spec.KubernetesMonitoring.PriorityClassName = "high-priority"
 		dk.Spec.KubernetesMonitoring.TerminationGracePeriodSeconds = &grace
-		sts := reconcileAndGetSTS(t, dk)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		assert.Equal(t, corev1.DNSNone, sts.Spec.Template.Spec.DNSPolicy)
 		assert.Equal(t, "high-priority", sts.Spec.Template.Spec.PriorityClassName)
@@ -279,12 +281,138 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 
 	t.Run("storage volumes", func(t *testing.T) {
 		dk := newTestDynaKube(true)
-		sts := reconcileAndGetSTS(t, dk)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		assert.Empty(t, sts.Spec.VolumeClaimTemplates)
 		require.Len(t, sts.Spec.Template.Spec.Volumes, 3)
 		assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
 		assert.NotNil(t, sts.Spec.Template.Spec.Volumes[2].EmptyDir)
+	})
+
+	t.Run("image pull secrets: tenant registry secret included by default", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		require.Len(t, sts.Spec.Template.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, dk.TenantRegistryPullSecretName(), sts.Spec.Template.Spec.ImagePullSecrets[0].Name)
+	})
+
+	t.Run("image pull secrets: tenant registry secret omitted when public registry is enabled", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.Empty(t, sts.Spec.Template.Spec.ImagePullSecrets)
+	})
+
+	t.Run("image pull secrets: custom pull secret is included alongside the tenant registry secret", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.CustomPullSecret = "my-custom-pull-secret"
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		names := make([]string, 0, len(sts.Spec.Template.Spec.ImagePullSecrets))
+		for _, ref := range sts.Spec.Template.Spec.ImagePullSecrets {
+			names = append(names, ref.Name)
+		}
+
+		assert.Contains(t, names, dk.TenantRegistryPullSecretName())
+		assert.Contains(t, names, "my-custom-pull-secret")
+	})
+}
+
+// TestResolveImage verifies all three image resolution paths and their error handling.
+func TestResolveImage(t *testing.T) {
+	t.Run("custom image is used directly without calling any client", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+
+		// mocks with no expectations verify that neither client is invoked on the custom-image path
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+		assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), sts.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, dk.KubernetesMonitoring().GetCustomImage(), dk.KubernetesMonitoring().ResolvedImage)
+	})
+
+	t.Run("public registry uses image client", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KubernetesMonitoring.Image = ""
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+
+		expectedTag := "1.2.3"
+		expectedImage := "public.registry.example.com/linux/activegate:" + expectedTag
+		mockImgClient := imageclientmock.NewClient(t)
+		mockImgClient.EXPECT().
+			GetComponentLatestInfo(mock.Anything, image.ActiveGate, "").
+			Return(&image.Info{URI: expectedImage}, nil)
+
+		sts := reconcileAndGetSTS(t, dk, mockImgClient, versionclientmock.NewClient(t))
+		assert.Equal(t, expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, expectedImage, dk.KubernetesMonitoring().ResolvedImage)
+	})
+
+	t.Run("public registry uses registry override when set", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KubernetesMonitoring.Image = ""
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+		dk.Spec.PublicRegistryOverride = "my.registry.example.com"
+
+		expectedTag := "1.2.3"
+		expectedImage := "my.registry.example.com/linux/activegate:" + expectedTag
+		mockImgClient := imageclientmock.NewClient(t)
+		mockImgClient.EXPECT().
+			GetComponentLatestInfo(mock.Anything, image.ActiveGate, "my.registry.example.com").
+			Return(&image.Info{URI: expectedImage}, nil)
+
+		sts := reconcileAndGetSTS(t, dk, mockImgClient, versionclientmock.NewClient(t))
+		assert.Equal(t, expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, expectedImage, dk.KubernetesMonitoring().ResolvedImage)
+	})
+
+	t.Run("default image is built from version client and api url", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KubernetesMonitoring.Image = ""
+
+		expectedVersion := "1.2.3.4"
+		mockVerClient := versionclientmock.NewClient(t)
+		mockVerClient.EXPECT().
+			GetLatestActiveGateVersion(mock.Anything, installer.OSUnix).
+			Return(expectedVersion, nil)
+
+		expectedImage := dk.KubernetesMonitoring().GetDefaultImage(expectedVersion)
+		require.NotEmpty(t, expectedImage, "test precondition: APIURL must produce a non-empty default image")
+
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), mockVerClient)
+		assert.Equal(t, expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, expectedImage, dk.KubernetesMonitoring().ResolvedImage)
+	})
+
+	t.Run("image client error is propagated", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KubernetesMonitoring.Image = ""
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+
+		expectedErr := errors.New("image client error")
+		mockImgClient := imageclientmock.NewClient(t)
+		mockImgClient.EXPECT().
+			GetComponentLatestInfo(mock.Anything, image.ActiveGate, "").
+			Return(nil, expectedErr)
+
+		err := statefulset.NewReconciler(fake.NewClient(dk, newTestTenantSecret(dk))).
+			Reconcile(t.Context(), dk, mockImgClient, versionclientmock.NewClient(t))
+		require.ErrorIs(t, err, expectedErr)
+	})
+
+	t.Run("version client error is propagated", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KubernetesMonitoring.Image = ""
+
+		expectedErr := errors.New("version client error")
+		mockVerClient := versionclientmock.NewClient(t)
+		mockVerClient.EXPECT().
+			GetLatestActiveGateVersion(mock.Anything, installer.OSUnix).
+			Return("", expectedErr)
+
+		err := statefulset.NewReconciler(fake.NewClient(dk, newTestTenantSecret(dk))).
+			Reconcile(t.Context(), dk, imageclientmock.NewClient(t), mockVerClient)
+		require.ErrorIs(t, err, expectedErr)
 	})
 }
 
@@ -304,7 +432,8 @@ func TestReconcileWriteFailures(t *testing.T) {
 			},
 		}, dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 
-		err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
+		err := statefulset.NewReconciler(fakeClient).
+			Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 		require.ErrorIs(t, err, errCreate)
 	})
 
@@ -329,7 +458,8 @@ func TestReconcileWriteFailures(t *testing.T) {
 			},
 		}, dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 
-		err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
+		err := statefulset.NewReconciler(fakeClient).
+			Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 		require.ErrorIs(t, err, errGet)
 	})
 }
@@ -351,13 +481,15 @@ func TestReconcileCleanupDeleteFailure(t *testing.T) {
 		},
 	}, dk, existing)
 
-	require.Error(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk))
+	// disabled path skips image resolution entirely; mocks with no expectations verify that
+	require.Error(t, statefulset.NewReconciler(fakeClient).
+		Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t)))
 }
 
-func reconcileAndGetSTS(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+func reconcileAndGetSTS(t *testing.T, dk *dynakube.DynaKube, imgClient image.Client, verClient version.Client) *appsv1.StatefulSet {
 	t.Helper()
 	fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
-	require.ErrorIs(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk), k8sstatefulset.ErrRolloutInProgress)
+	require.ErrorIs(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imgClient, verClient), k8sstatefulset.ErrRolloutInProgress)
 
 	return requireTestStatefulSet(t, t.Context(), fakeClient, dk)
 }

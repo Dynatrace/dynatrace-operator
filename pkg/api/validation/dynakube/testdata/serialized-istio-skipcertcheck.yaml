@@ -1,0 +1,9 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: istio-skipcertcheck
+  namespace: default
+spec:
+  apiUrl: https://istio-skipcertcheck.dev.dynatracelabs.com/api
+  enableIstio: false
+  skipCertCheck: false

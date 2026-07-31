@@ -1060,27 +1060,38 @@ tests:
             name: DT_DEFAULT_REQUEUE_AFTER
           any: true
 
-  - it: should have KUBEMON_ENABLE_OPERAND if operator.kubemonEnableOperand is true
+  - it: should have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND if experimental.enableKubemonOperand is true
     set:
       platform: kubernetes
-      operator.kubemonEnableOperand: true
+      experimental.enableKubemonOperand: true
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: KUBEMON_ENABLE_OPERAND
+            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
             value: "true"
           count: 1
           any: true
 
-  - it: should not have KUBEMON_ENABLE_OPERAND by default
+  - it: should not have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND by default
     set:
       platform: kubernetes
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].env
           content:
-            name: KUBEMON_ENABLE_OPERAND
+            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
+          any: true
+
+  - it: should render without error and omit EXPERIMENTAL_ENABLE_KUBEMON_OPERAND when experimental is null
+    set:
+      platform: kubernetes
+      experimental: null
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
           any: true
 
   - it: should not have cert env vars when certs values are empty
@@ -1200,3 +1211,24 @@ tests:
             value: "3h"
           count: 1
           any: true
+
+  - it: should not have DT_CLIENT_CONNECTION_TIMEOUT if clientConnectionTimeout is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+
+  - it: should have DT_CLIENT_CONNECTION_TIMEOUT if clientConnectionTimeout is set
+    set:
+      platform: kubernetes
+      operator:
+        clientConnectionTimeout: 1m
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+            value: "1m"
