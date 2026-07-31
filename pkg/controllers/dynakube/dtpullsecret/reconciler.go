@@ -37,9 +37,11 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
 	ctx, log := logd.NewFromContext(ctx, "pullsecret")
 
-	isKubemonOperandEnabled := k8senv.IsKubemonOperandEnabled() && dk.KubernetesMonitoring().IsEnabled()
+	anyRelevantOperandEnabled := dk.OneAgent().IsDaemonsetRequired() ||
+		dk.ActiveGate().IsEnabled() ||
+		(k8senv.IsKubemonOperandEnabled() && dk.KubernetesMonitoring().IsEnabled())
 
-	if dk.FF().IsPublicRegistry() || (!dk.OneAgent().IsDaemonsetRequired() && !dk.ActiveGate().IsEnabled() && !isKubemonOperandEnabled) {
+	if dk.FF().IsPublicRegistry() || !anyRelevantOperandEnabled {
 		if meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
@@ -80,7 +82,7 @@ func (r *Reconciler) deleteSecret(ctx context.Context, dk *dynakube.DynaKube, se
 func (r *Reconciler) reconcilePullSecret(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error {
 	log := logd.FromContext(ctx)
 
-	pullSecretData, err := r.generateData(dk, tokens)
+	pullSecretData, err := generateData(dk, tokens)
 	if err != nil {
 		return errors.WithMessage(err, "could not generate pull secret data")
 	}

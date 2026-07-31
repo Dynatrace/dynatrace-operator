@@ -6,8 +6,6 @@ package dtpullsecret
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	"fmt"
-	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -40,13 +38,10 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 	}
 }
 
-func (r *Reconciler) generateData(dk *dynakube.DynaKube, tokens token.Tokens) (map[string][]byte, error) {
+func generateData(dk *dynakube.DynaKube, tokens token.Tokens) (map[string][]byte, error) {
 	var registryToken string
 
-	registry, err := getImageRegistryFromAPIURL(dk.APIURL())
-	if err != nil {
-		return nil, err
-	}
+	registry := dk.APIURLHost()
 
 	switch {
 	case tokens.PaasToken().Value != "":
@@ -65,24 +60,15 @@ func (r *Reconciler) generateData(dk *dynakube.DynaKube, tokens token.Tokens) (m
 	dockerCfg := newDockerConfigWithAuth(tenantUUID,
 		registryToken,
 		registry,
-		r.buildAuthString(tenantUUID, registryToken))
+		basicAuth(tenantUUID, registryToken))
 
 	return pullSecretDataFromDockerConfig(dockerCfg)
 }
 
-func (r *Reconciler) buildAuthString(tenantUUID string, registryToken string) string {
-	auth := fmt.Sprintf("%s:%s", tenantUUID, registryToken)
+func basicAuth(username string, password string) string {
+	auth := username + ":" + password
 
 	return b64.StdEncoding.EncodeToString([]byte(auth))
-}
-
-func getImageRegistryFromAPIURL(apiURL string) (string, error) {
-	u, err := url.Parse(apiURL)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return u.Host, nil
 }
 
 func pullSecretDataFromDockerConfig(dockerConf *dockerConfig) (map[string][]byte, error) {
