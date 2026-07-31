@@ -6,7 +6,6 @@ package dtpullsecret
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -23,7 +22,7 @@ const (
 	testAPIURL     = "https://" + testAPIURLHost + "/e/" + testTenant + "/api"
 )
 
-func TestReconciler_GenerateData(t *testing.T) {
+func TestGenerateData(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
@@ -42,20 +41,8 @@ func TestReconciler_GenerateData(t *testing.T) {
 		tokens      token.Tokens
 		expectToken string
 	}{
-		{
-			name: "use paas token",
-			tokens: token.Tokens{
-				token.PaaSKey: &token.Token{Value: testPaasToken},
-			},
-			expectToken: testPaasToken,
-		},
-		{
-			name: "use api token",
-			tokens: token.Tokens{
-				token.APIKey: &token.Token{Value: testAPIToken},
-			},
-			expectToken: testAPIToken,
-		},
+		{"use paas token", token.Tokens{token.PaaSKey: &token.Token{Value: testPaasToken}}, testPaasToken},
+		{"use api token", token.Tokens{token.APIKey: &token.Token{Value: testAPIToken}}, testAPIToken},
 	}
 
 	for _, tt := range tests {
@@ -65,7 +52,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 			require.NoError(t, err)
 			assert.NotEmpty(t, data)
 
-			auth := fmt.Sprintf("%s:%s", testTenant, tt.expectToken)
+			auth := testTenant + ":" + tt.expectToken
 			expected := dockerConfig{
 				Auths: map[string]dockerAuthentication{
 					testAPIURLHost: {

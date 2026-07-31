@@ -6,7 +6,6 @@ package dtpullsecret
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -61,13 +60,13 @@ func generateData(dk *dynakube.DynaKube, tokens token.Tokens) (map[string][]byte
 	dockerCfg := newDockerConfigWithAuth(tenantUUID,
 		registryToken,
 		registry,
-		buildAuthString(tenantUUID, registryToken))
+		basicAuth(tenantUUID, registryToken))
 
 	return pullSecretDataFromDockerConfig(dockerCfg)
 }
 
-func buildAuthString(tenantUUID string, registryToken string) string {
-	auth := fmt.Sprintf("%s:%s", tenantUUID, registryToken)
+func basicAuth(username string, password string) string {
+	auth := username + ":" + password
 
 	return b64.StdEncoding.EncodeToString([]byte(auth))
 }

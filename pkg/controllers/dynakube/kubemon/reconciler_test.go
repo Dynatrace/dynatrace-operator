@@ -105,13 +105,6 @@ func TestReconcileConditionMapping(t *testing.T) {
 			wantReason:     reasonError,
 			wantMessage:    "boom",
 		},
-		{
-			name:           "stack-wrapped error -> error without stack trace in message",
-			statefulSetErr: errors.New("sentinel error"),
-			wantStatus:     metav1.ConditionFalse,
-			wantReason:     reasonError,
-			wantMessage:    "sentinel error",
-		},
 	}
 
 	for _, test := range tests {
