@@ -4,7 +4,7 @@
 package dtpullsecret
 
 import (
-	b64 "encoding/base64"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -23,19 +23,6 @@ const (
 	testAPIURL     = "https://" + testAPIURLHost + "/e/" + testTenant + "/api"
 )
 
-func TestGetImageRegistryFromAPIURL(t *testing.T) {
-	for _, url := range []string{
-		"https://host.com/api",
-		"https://host.com/e/abc1234/api",
-		"http://host.com/api",
-		"http://host.com/e/abc1234/api",
-	} {
-		host, err := getImageRegistryFromAPIURL(url)
-		require.NoError(t, err)
-		assert.Equal(t, "host.com", host)
-	}
-}
-
 func TestReconciler_GenerateData(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
@@ -49,7 +36,6 @@ func TestReconciler_GenerateData(t *testing.T) {
 			},
 		},
 	}
-	r := &Reconciler{}
 
 	tests := []struct {
 		name        string
@@ -57,35 +43,35 @@ func TestReconciler_GenerateData(t *testing.T) {
 		expectToken string
 	}{
 		{
-			"use paas token",
-			token.Tokens{
+			name: "use paas token",
+			tokens: token.Tokens{
 				token.PaaSKey: &token.Token{Value: testPaasToken},
 			},
-			testPaasToken,
+			expectToken: testPaasToken,
 		},
 		{
-			"use api token",
-			token.Tokens{
+			name: "use api token",
+			tokens: token.Tokens{
 				token.APIKey: &token.Token{Value: testAPIToken},
 			},
-			testAPIToken,
+			expectToken: testAPIToken,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			data, err := r.generateData(dk, test.tokens)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := generateData(dk, tt.tokens)
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, data)
 
-			auth := fmt.Sprintf("%s:%s", testTenant, test.expectToken)
+			auth := fmt.Sprintf("%s:%s", testTenant, tt.expectToken)
 			expected := dockerConfig{
 				Auths: map[string]dockerAuthentication{
 					testAPIURLHost: {
 						Username: testTenant,
-						Password: test.expectToken,
-						Auth:     b64.StdEncoding.EncodeToString([]byte(auth)),
+						Password: tt.expectToken,
+						Auth:     base64.StdEncoding.EncodeToString([]byte(auth)),
 					},
 				},
 			}
