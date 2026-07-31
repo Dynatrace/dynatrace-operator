@@ -108,8 +108,4 @@ type Registration struct {
 	// ClusterName is the display name used during registration. Defaults to the DynaKube name.
 	// +kubebuilder:validation:Optional
 	ClusterName string `json:"clusterName,omitempty"`
-
-	// Enable the Kubernetes app (cluster details, workload views) in Dynatrace.
-	// +kubebuilder:validation:Optional
-	AppEnabled bool `json:"appEnabled,omitempty"`
 }
