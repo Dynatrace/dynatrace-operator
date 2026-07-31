@@ -1318,3 +1318,24 @@ tests:
       - equal:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/liveness-probe"]
           value: runtime/default
+
+  - it: should not have DT_CLIENT_CONNECTION_TIMEOUT for provisioner if clientConnectionTimeout is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[1].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+
+  - it: should have DT_CLIENT_CONNECTION_TIMEOUT for provisioner if clientConnectionTimeout is set
+    set:
+      platform: kubernetes
+      csidriver:
+        clientConnectionTimeout: 1m
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+            value: "1m"

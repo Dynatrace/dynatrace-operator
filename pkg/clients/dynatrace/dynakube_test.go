@@ -19,12 +19,13 @@ import (
 )
 
 const (
-	testNamespace   = "test-namespace"
-	testAPIURL      = "https://test.endpoint.com/api"
-	testCertsCMName = "test-certs-cm"
-	testProxySecret = "test-proxy-secret"
-	testProxyURL    = "http://proxy.example.com:8080"
-	testNoProxy     = "no.proxy"
+	testNamespace         = "test-namespace"
+	testAPIURL            = "https://test.endpoint.com/api"
+	testCertsCMName       = "test-certs-cm"
+	testProxySecret       = "test-proxy-secret"
+	testProxyURL          = "http://proxy.example.com:8080"
+	testNoProxy           = "no.proxy"
+	testConnectionTimeout = 45 * time.Second
 )
 
 func Test_optionsFromDynakube(t *testing.T) {
@@ -37,7 +38,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 	t.Run("sets base URL, tokens and default user agent", func(t *testing.T) {
 		dk := getDynakube()
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		_, cfg, err := getClientAndConfig(opts...)
@@ -52,7 +53,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 	t.Run("falls back to API token value when no PaaS token provided", func(t *testing.T) {
 		dk := getDynakube()
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, "", "")
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, "", "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		_, cfg, err := getClientAndConfig(opts...)
@@ -66,7 +67,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		expUserAgent := "my-controller/1.0"
 		dk := getDynakube()
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, expUserAgent)
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, expUserAgent, testConnectionTimeout)
 		require.NoError(t, err)
 
 		_, cfg, err := getClientAndConfig(opts...)
@@ -79,7 +80,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.SkipCertCheck = new(true)
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		client, cfg, err := getClientAndConfig(opts...)
@@ -97,7 +98,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.SkipCertCheck = new(false)
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		client, cfg, err := getClientAndConfig(opts...)
@@ -115,7 +116,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.NetworkZone = expNetworkZone
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		_, cfg, err := getClientAndConfig(opts...)
@@ -129,7 +130,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.OneAgent.HostGroup = expHostGroup
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		_, cfg, err := getClientAndConfig(opts...)
@@ -141,7 +142,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 	t.Run("does not set NetworkZone when empty", func(t *testing.T) {
 		dk := getDynakube()
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		_, cfg, err := getClientAndConfig(opts...)
@@ -158,7 +159,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: testCertsCMName, Namespace: testNamespace},
 			Data:       map[string]string{dynakube.TrustedCAKey: customCA},
 		})
-		opts, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		client, cfg, err := getClientAndConfig(opts...)
@@ -176,7 +177,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.TrustedCAs = testCertsCMName
 
-		_, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		_, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to get certificate configmap")
 	})
@@ -189,7 +190,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: testCertsCMName, Namespace: testNamespace},
 			Data:       map[string]string{},
 		})
-		_, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "")
+		_, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "missing field certs")
 	})
@@ -201,7 +202,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 			"feature.dynatrace.com/no-proxy": testNoProxy,
 		})
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		_, cfg, err := getClientAndConfig(opts...)
@@ -222,7 +223,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: testProxySecret, Namespace: testNamespace},
 			Data:       map[string][]byte{dynakube.ProxyKey: []byte(testProxyURL)},
 		})
-		opts, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		_, cfg, err := getClientAndConfig(opts...)
@@ -240,7 +241,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 				Proxy:  &value.Source{ValueFrom: testProxySecret},
 			},
 		}
-		_, err := optionsFromDynakube(t.Context(), fake.NewClient(), &dk, testAPIToken, testPaasToken, "")
+		_, err := optionsFromDynakube(t.Context(), fake.NewClient(), &dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 
 		require.Error(t, err)
 	})
@@ -251,13 +252,25 @@ func Test_optionsFromDynakube(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.DynatraceAPIRequestThreshold = expCacheTTL
 
-		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "")
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
 
 		_, cfg, err := getClientAndConfig(opts...)
 		require.NoError(t, err)
 
 		require.Equal(t, expAPIRequestThreshold, cfg.CacheEntryTTL)
+	})
+
+	t.Run("overwrites the default connection timeout", func(t *testing.T) {
+		dk := getDynakube()
+
+		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
+		require.NoError(t, err)
+
+		_, cfg, err := getClientAndConfig(opts...)
+		require.NoError(t, err)
+
+		require.Equal(t, testConnectionTimeout, cfg.ConnectionTimeout)
 	})
 }
 
@@ -267,7 +280,7 @@ func TestNewClientFromDynakube(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
 		}
-		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), &dk, testAPIToken, testPaasToken, "")
+		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), &dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)
@@ -280,7 +293,7 @@ func TestNewClientFromDynakube(t *testing.T) {
 	})
 
 	t.Run("propagates option building error", func(t *testing.T) {
-		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), &dynakube.DynaKube{}, "", "", "")
+		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), &dynakube.DynaKube{}, "", "", "", testConnectionTimeout)
 
 		require.Error(t, err)
 		assert.Nil(t, dtClient)
