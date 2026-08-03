@@ -1,9 +1,9 @@
 MANIFEST_NAMESPACE ?= dynatrace
 
 kubernetes = $(KUBERNETES_CORE_YAML)
-kubernetes/csi  = $(KUBERNETES_CSIDRIVER_YAML)
-openshift  = $(OPENSHIFT_CORE_YAML)
-openshift/csi   = $(OPENSHIFT_CSIDRIVER_YAML)
+kubernetes/csi = $(KUBERNETES_CSIDRIVER_YAML)
+openshift = $(OPENSHIFT_CORE_YAML)
+openshift/csi = $(OPENSHIFT_CSIDRIVER_YAML)
 
 manifests/prepare-directory:
 	find $(MANIFESTS_DIR) -type f -not -name 'kustomization.yaml' -delete
@@ -21,4 +21,3 @@ manifests/apply/%: manifests/prepare-directory manifests/kubernetes manifests/op
 
 manifests/delete/%: manifests/prepare-directory manifests/kubernetes manifests/openshift
 	kubectl delete --ignore-not-found -f $($*)
-
