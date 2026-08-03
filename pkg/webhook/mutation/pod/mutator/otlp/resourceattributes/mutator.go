@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	OTELResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES"
+	OTelResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES"
 )
 
 type Mutator struct {
@@ -93,11 +93,11 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 
 func (m *Mutator) addResourceAttributes(podAttrs *attributes.Pod, c *corev1.Container) bool {
 	// existing existingResourceAttrs have the highest precedence, they are the base
-	existingResourceAttrs, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
+	existingResourceAttrs, ok := NewAttributesFromEnv(c.Env, OTelResourceAttributesEnv)
 	if ok {
 		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
 		c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
-			return e.Name == OTELResourceAttributesEnv
+			return e.Name == OTelResourceAttributesEnv
 		})
 	}
 
@@ -128,7 +128,7 @@ func (m *Mutator) addResourceAttributes(podAttrs *attributes.Pod, c *corev1.Cont
 	mutated = ensureEnvVarSourcesSet(podAttrs, c) || mutated
 
 	if len(kvPairs) != 0 {
-		c.Env = append(c.Env, corev1.EnvVar{Name: OTELResourceAttributesEnv, Value: strings.Join(kvPairs, ",")})
+		c.Env = append(c.Env, corev1.EnvVar{Name: OTelResourceAttributesEnv, Value: strings.Join(kvPairs, ",")})
 	}
 
 	return mutated

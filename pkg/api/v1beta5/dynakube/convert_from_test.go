@@ -193,7 +193,7 @@ func TestConvertFrom(t *testing.T) {
 	t.Run("clear default otelc image", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
-		from.RemovedFields().DefaultOTELCImage.Set(new(true))
+		from.RemovedFields().DefaultOTelColImage.Set(new(true))
 
 		to := DynaKube{}
 
@@ -202,7 +202,7 @@ func TestConvertFrom(t *testing.T) {
 
 		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Empty(t, to.Annotations[conversion.DefaultOTELCImageKey])
+		assert.Empty(t, to.Annotations[conversion.DefaultOTelColImageKey])
 
 		compareBase(t, to, from)
 	})

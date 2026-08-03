@@ -197,8 +197,8 @@ func (dk *DynaKube) PublicRegistryOverride() string {
 	return dk.Spec.PublicRegistryOverride
 }
 
-func (dk *DynaKube) OtelCollectorStatefulsetName() string {
-	return dk.Name + consts.OTELCollectorNameSuffix
+func (dk *DynaKube) OTelCollectorStatefulsetName() string {
+	return dk.Name + consts.OTelCollectorNameSuffix
 }
 
 func (dk *DynaKube) IsAGCertificateNeeded() bool {

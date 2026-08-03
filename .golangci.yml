@@ -290,6 +290,15 @@ linters:
     nolintlint:
       # Prevent flaky revive linter from failing CI
       allow-unused: true
+    forbidigo:
+      forbid:
+        # Catch wrong casings as substrings in identifiers
+        - pattern: '(?:Otel|OTEL)'
+          msg: "Use 'OTel' (not Otel/OTEL) ref https://opentelemetry.io/docs/concepts/glossary/"
+        # Catch wrong casings as substrings in identifiers
+        - pattern: '(?:Otelc|OTELC)'
+          msg: "Use 'OTelCol' (not Otelc/OTELC) ref https://opentelemetry.io/docs/concepts/glossary/"
+      analyze-types: true
   exclusions:
     generated: lax
     presets:
