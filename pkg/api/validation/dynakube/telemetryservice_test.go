@@ -315,7 +315,7 @@ func TestForbiddenSuffix(t *testing.T) {
 
 func TestImages(t *testing.T) {
 	t.Run("otel collector image missing", func(t *testing.T) {
-		assertDenied(t, []string{errorOtelCollectorMissingImage},
+		assertDenied(t, []string{errorOTELCollectorMissingImage},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
@@ -342,7 +342,7 @@ func TestImages(t *testing.T) {
 				},
 			})
 		require.NoError(t, err)
-		assert.Contains(t, warnings, warningOtelCollectorIgnoredTemplate)
+		assert.Contains(t, warnings, warningOTELCollectorIgnoredTemplate)
 	})
 
 	t.Run("otel collector repo and tag are empty but pull policy not, image section was ignored", func(t *testing.T) {
@@ -363,7 +363,7 @@ func TestImages(t *testing.T) {
 				},
 			})
 		require.NoError(t, err)
-		assert.Contains(t, warnings, warningOtelCollectorIgnoredTemplate)
+		assert.Contains(t, warnings, warningOTELCollectorIgnoredTemplate)
 	})
 
 	t.Run("otel collector image present", func(t *testing.T) {

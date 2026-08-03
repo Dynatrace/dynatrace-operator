@@ -28,8 +28,8 @@ const (
 	`
 	errorTelemetryIngestServiceNameInUse     = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is already used by other Dynakube.`
 	errorTelemetryIngestForbiddenServiceName = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is incorrect because of forbidden suffix.`
-	errorOtelCollectorMissingImage           = `The Dynakube's specification specifies the OTel Collector, but no image repository/tag is configured.`
-	warningOtelCollectorIgnoredTemplate      = "The Dynakube's `spec.templates.otelCollector` section is skipped as the `spec.telemetryIngest` section is not configured. Consider either removing `spec.templates.otelCollector.imageRef` or enabling `spec.telemetryIngest`."
+	errorOTELCollectorMissingImage           = `The Dynakube's specification specifies the OTel Collector, but no image repository/tag is configured.`
+	warningOTELCollectorIgnoredTemplate      = "The Dynakube's `spec.templates.otelCollector` section is skipped as the `spec.telemetryIngest` section is not configured. Consider either removing `spec.templates.otelCollector.imageRef` or enabling `spec.telemetryIngest`."
 )
 
 func emptyTelemetryIngestProtocolsList(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -154,21 +154,21 @@ func forbiddenTelemetryIngestServiceNameSuffix(ctx context.Context, _ *Validator
 	return ""
 }
 
-func missingOtelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func missingOTELCollectorImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() && !dk.Extensions().IsPrometheusEnabled() {
 		return ""
 	}
 
 	if !dk.Spec.Templates.OpenTelemetryCollector.ImageRef.HasImage() {
-		return errorOtelCollectorMissingImage
+		return errorOTELCollectorMissingImage
 	}
 
 	return ""
 }
 
-func ignoredOtelCollectorTemplate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func ignoredOTELCollectorTemplate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() && dk.Spec.Templates.OpenTelemetryCollector.ImageRef != (image.Ref{}) {
-		return warningOtelCollectorIgnoredTemplate
+		return warningOTELCollectorIgnoredTemplate
 	}
 
 	return ""

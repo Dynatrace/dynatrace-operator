@@ -67,9 +67,9 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 	)
 }
 
-func TestExtensionsWithoutOtelcImage(t *testing.T) {
+func TestExtensionsWithoutOTELCollectorImage(t *testing.T) {
 	t.Run("error when image is not specified", func(t *testing.T) {
-		assertDenied(t, []string{errorOtelCollectorMissingImage},
+		assertDenied(t, []string{errorOTELCollectorMissingImage},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{

@@ -3,7 +3,7 @@
 
 package dynakube
 
-func (dk *DynaKube) OtelCollectorStatefulsetName() string {
+func (dk *DynaKube) OTELCollectorStatefulsetName() string {
 	return dk.Name + "-otel-collector"
 }
 

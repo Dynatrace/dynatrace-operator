@@ -240,7 +240,7 @@ func TestNoCSI_telemetryingest_w_otel_collector_endpoint_tls(t *testing.T) {
 }
 
 func TestNoCSI_telemetryingest_configuration_update(t *testing.T) {
-	testEnv.Test(t, telemetryingest.OtelCollectorConfigUpdate(t))
+	testEnv.Test(t, telemetryingest.OTELCollectorConfigUpdate(t))
 }
 
 func TestNoCSI_telemetryingest_scaling_hpa(t *testing.T) {

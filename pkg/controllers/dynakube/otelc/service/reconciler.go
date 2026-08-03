@@ -82,7 +82,7 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 	listOps := []client.ListOption{
 		client.InNamespace(dk.Namespace),
 		client.MatchingLabels{
-			k8slabel.AppComponentLabel: k8slabel.OtelCComponentLabel,
+			k8slabel.AppComponentLabel: k8slabel.OTELCComponentLabel,
 			k8slabel.AppCreatedByLabel: dk.Name,
 		},
 	}
@@ -128,8 +128,8 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 }
 
 func (r *Reconciler) buildService(ctx context.Context, dk *dynakube.DynaKube) (*corev1.Service, error) {
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel)
-	appLabels := k8slabel.NewAppLabels(k8slabel.OtelCComponentLabel, dk.Name, k8slabel.OtelCComponentLabel, "")
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OTELCComponentLabel)
+	appLabels := k8slabel.NewAppLabels(k8slabel.OTELCComponentLabel, dk.Name, k8slabel.OTELCComponentLabel, "")
 
 	return k8sservice.Build(dk,
 		dk.TelemetryIngest().GetServiceName(),

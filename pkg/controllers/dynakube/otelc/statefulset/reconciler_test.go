@@ -35,7 +35,7 @@ import (
 const (
 	testDynakubeName          = "dynakube"
 	testNamespaceName         = "dynatrace"
-	testOtelPullSecret        = "otelc-pull-secret"
+	testOTELPullSecret        = "otelc-pull-secret"
 	testTelemetryIngestSecret = "test-ts-secret"
 	testKubeSystemUUID        = "123e4567-e89b-12d3-a456-426614174000"
 	testKubernetesClusterName = "test-cluster"
@@ -68,7 +68,7 @@ func TestReconcile(t *testing.T) {
 
 		var sts appsv1.StatefulSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      dk.OtelCollectorStatefulsetName(),
+			Name:      dk.OTELCollectorStatefulsetName(),
 			Namespace: dk.Namespace,
 		}, &sts)
 		require.False(t, k8serrors.IsNotFound(err))
@@ -80,7 +80,7 @@ func TestReconcile(t *testing.T) {
 		dk.Spec.Extensions = nil
 
 		previousSts := appsv1.StatefulSet{}
-		previousSts.Name = dk.OtelCollectorStatefulsetName()
+		previousSts.Name = dk.OTELCollectorStatefulsetName()
 		previousSts.Namespace = dk.Namespace
 		mockK8sClient := fake.NewClient(&previousSts)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
@@ -95,7 +95,7 @@ func TestReconcile(t *testing.T) {
 
 		var sts appsv1.StatefulSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      dk.OtelCollectorStatefulsetName(),
+			Name:      dk.OTELCollectorStatefulsetName(),
 			Namespace: dk.Namespace,
 		}, &sts)
 		require.True(t, k8serrors.IsNotFound(err))
@@ -131,7 +131,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err := reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
-		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OTELCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
@@ -143,7 +143,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		err = reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
-		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OTELCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
@@ -169,7 +169,7 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
 
 		sts := &appsv1.StatefulSet{}
-		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTELCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
 
 		assert.NotEmpty(t, sts.Spec.Template.Annotations[annotationDataIngestTokenSecretHash])
 	})
@@ -190,7 +190,7 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
 
 		sts := &appsv1.StatefulSet{}
-		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTELCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
 		originalHash := sts.Spec.Template.Annotations[annotationDataIngestTokenSecretHash]
 		require.NotEmpty(t, originalHash)
 
@@ -200,7 +200,7 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
 
 		sts = &appsv1.StatefulSet{}
-		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTELCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
 
 		assert.NotEqual(t, originalHash, sts.Spec.Template.Annotations[annotationDataIngestTokenSecretHash])
 	})
@@ -284,7 +284,7 @@ func TestImagePullSecrets(t *testing.T) {
 
 	t.Run("custom pull secret", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
-		dk.Spec.CustomPullSecret = testOtelPullSecret
+		dk.Spec.CustomPullSecret = testOTELPullSecret
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -294,7 +294,7 @@ func TestImagePullSecrets(t *testing.T) {
 
 	t.Run("does not include tenant registry pull secret even when custom pull secret is set", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
-		dk.Spec.CustomPullSecret = testOtelPullSecret
+		dk.Spec.CustomPullSecret = testOTELPullSecret
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -484,7 +484,7 @@ func TestReconcileReplicas(t *testing.T) {
 			if tc.existingReplicas != nil {
 				objs = append(objs, &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      dk.OtelCollectorStatefulsetName(),
+						Name:      dk.OTELCollectorStatefulsetName(),
 						Namespace: dk.Namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
@@ -516,7 +516,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 
 		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
 		sts := &appsv1.StatefulSet{}
-		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTELCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
 
 		return sts
 	}
@@ -536,7 +536,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 
 		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
 		sts := &appsv1.StatefulSet{}
-		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTELCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
 
 		return sts
 	}
@@ -635,7 +635,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube, objs ...client.Object) 
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
-	err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+	err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OTELCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 	require.NoError(t, err)
 
 	return statefulSet

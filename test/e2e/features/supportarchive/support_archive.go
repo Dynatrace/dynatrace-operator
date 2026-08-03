@@ -71,7 +71,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithCloudNativeSpec(&oneagent.CloudNativeFullStackSpec{}),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
-		dynakubeComponents.WithOTelCollectorImageRef(t, dynakubeComponents.GetLatestOTelCollectorImageTagURI(t)),
+		dynakubeComponents.WithOTELCollectorImageRef(t, dynakubeComponents.GetLatestOTELCollectorImageTagURI(t)),
 		dynakubeComponents.WithExtensionsPrometheusEnabledSpec(true),
 		dynakubeComponents.WithExtensionsEECImageRef(t, dynakubeComponents.GetLatestEECImageTagURI(t)),
 	)
@@ -116,7 +116,7 @@ func Feature(t *testing.T) features.Feature {
 	// check if components are running
 	builder.Assess("active gate pod is running", k8sstatefulset.IsReady(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
 	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
-	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OTELCollectorStatefulsetName(), testDynakube.Namespace))
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))

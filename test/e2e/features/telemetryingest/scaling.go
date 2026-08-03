@@ -31,7 +31,7 @@ func WithHPA(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
-		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
+		componentDynakube.WithOTELCollectorImageRef(t, componentDynakube.GetLatestOTELCollectorImageTagURI(t)),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
@@ -46,7 +46,7 @@ func WithHPA(t *testing.T) features.Feature {
 		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
 				Kind:       "StatefulSet",
-				Name:       testDynakube.OtelCollectorStatefulsetName(),
+				Name:       testDynakube.OTELCollectorStatefulsetName(),
 				APIVersion: "apps/v1",
 			},
 			MinReplicas: scaleReplicas,
@@ -55,7 +55,7 @@ func WithHPA(t *testing.T) features.Feature {
 	}
 
 	builder.Assess("create HPA with min replicas 3", k8shpa.Create(testHPA))
-	builder.Assess("check if the otelc statefulset has replicas set to 3", k8sstatefulset.WaitForReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *scaleReplicas))
+	builder.Assess("check if the otelc statefulset has replicas set to 3", k8sstatefulset.WaitForReplicas(testDynakube.OTELCollectorStatefulsetName(), testDynakube.Namespace, *scaleReplicas))
 
 	builder.Teardown(k8shpa.Delete(testHPA))
 
@@ -70,19 +70,19 @@ func EnforceReplicas(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
-		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
-		componentDynakube.WithOTelCollectorReplicas(baseReplicas),
+		componentDynakube.WithOTELCollectorImageRef(t, componentDynakube.GetLatestOTELCollectorImageTagURI(t)),
+		componentDynakube.WithOTELCollectorReplicas(baseReplicas),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
-	builder.Assess("scale otelc statefulset replicas to 3", k8sstatefulset.Update(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, func(ss *appsv1.StatefulSet) {
+	builder.Assess("scale otelc statefulset replicas to 3", k8sstatefulset.Update(testDynakube.OTELCollectorStatefulsetName(), testDynakube.Namespace, func(ss *appsv1.StatefulSet) {
 		ss.Spec.Replicas = scaleReplicas
 	}))
 
-	builder.Assess("check if otelc replicas were rolled back to 2", k8sstatefulset.WaitForReplicas(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, *baseReplicas))
+	builder.Assess("check if otelc replicas were rolled back to 2", k8sstatefulset.WaitForReplicas(testDynakube.OTELCollectorStatefulsetName(), testDynakube.Namespace, *baseReplicas))
 
 	return builder.Feature()
 }
