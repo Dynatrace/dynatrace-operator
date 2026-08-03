@@ -11,11 +11,9 @@ RELEASE_CRD_YAML=config/deploy/dynatrace-operator-crd.yaml
 
 KUBERNETES_CORE_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes.yaml
 KUBERNETES_CSIDRIVER_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes-csi.yaml
-KUBERNETES_OLM_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes-olm.yaml
 
 OPENSHIFT_CORE_YAML=$(MANIFESTS_DIR)openshift/openshift.yaml
 OPENSHIFT_CSIDRIVER_YAML=$(MANIFESTS_DIR)openshift/openshift-csi.yaml
-OPENSHIFT_OLM_YAML=$(MANIFESTS_DIR)openshift/openshift-olm.yaml
 
 ifeq ($(shell echo $CHART_VERSION),)
 	ifneq ($(shell git branch --show-current | grep "^release-"),)
