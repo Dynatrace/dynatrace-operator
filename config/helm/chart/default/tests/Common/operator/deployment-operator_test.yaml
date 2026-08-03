@@ -1155,6 +1155,8 @@ tests:
 
   - it: should not have cert env vars in init container when certs values are empty
     asserts:
+      - isNotNull:
+          path: spec.template.spec.initContainers[0]
       - notContains:
           path: spec.template.spec.initContainers[0].env
           content:
@@ -1183,6 +1185,8 @@ tests:
       webhook.certs.renewalThreshold: "12h"
       webhook.certs.requeueAfter: "3h"
     asserts:
+      - isNotNull:
+          path: spec.template.spec.initContainers[0]
       - contains:
           path: spec.template.spec.initContainers[0].env
           content:
