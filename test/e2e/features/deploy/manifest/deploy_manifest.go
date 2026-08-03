@@ -16,50 +16,41 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func KubernetesNoCSI() features.Feature {
-	return feature("kubernetes", false)
+func KubernetesNoCSI(t *testing.T) features.Feature { return kubernetes(t, false) }
+func KubernetesCSI(t *testing.T) features.Feature   { return kubernetes(t, true) }
+func OpenshiftNoCSI(t *testing.T) features.Feature  { return openshift(t, false) }
+func OpenshiftCSI(t *testing.T) features.Feature    { return openshift(t, true) }
+
+func kubernetes(t *testing.T, withCSI bool) features.Feature {
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err, "failed to detect cluster platform")
+
+	if isOpenshift {
+		t.Skip("skipping kubernetes manifests, cluster is openshift")
+	}
+
+	return feature("kubernetes", withCSI)
 }
 
-func KubernetesCSI() features.Feature {
-	return feature("kubernetes", true)
-}
+func openshift(t *testing.T, withCSI bool) features.Feature {
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err, "failed to detect cluster platform")
 
-func OpenshiftNoCSI() features.Feature {
-	return feature("openshift", false)
-}
+	if !isOpenshift {
+		t.Skip("skipping openshift manifests, cluster is not openshift")
+	}
 
-func OpenshiftCSI() features.Feature {
-	return feature("openshift", true)
+	return feature("openshift", withCSI)
 }
 
 func feature(platform string, withCSI bool) features.Feature {
 	builder := features.New("deploy-manifest-" + platform + "-" + operator.CSIVariant(withCSI))
 
-	builder.Setup(checkPlatform(platform))
 	builder.Setup(installManifests(platform, withCSI))
 	builder.Assess("operator installed", verifyInstall(withCSI))
 	builder.Teardown(uninstallManifests(platform, withCSI))
 
 	return builder.Feature()
-}
-
-func checkPlatform(wantPlatform string) features.Func {
-	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-		t.Helper()
-
-		isOpenshift, err := platform.NewResolver().IsOpenshift()
-		require.NoError(t, err, "failed to detect cluster platform")
-
-		if wantPlatform == "openshift" && !isOpenshift {
-			t.Skip("skipping openshift manifests, cluster is not openshift")
-		}
-
-		if wantPlatform == "kubernetes" && isOpenshift {
-			t.Skip("skipping kubernetes manifests, cluster is openshift")
-		}
-
-		return ctx
-	}
 }
 
 func installManifests(platform string, withCSI bool) features.Func {

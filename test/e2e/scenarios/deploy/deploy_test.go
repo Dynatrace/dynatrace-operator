@@ -54,17 +54,17 @@ func TestDeploy_permissions_deployer_no_escalate_with_csi(t *testing.T) {
 }
 
 func TestDeploy_manifest_kubernetes_no_csi(t *testing.T) {
-	testEnv.Test(t, manifest.KubernetesNoCSI())
+	testEnv.Test(t, manifest.KubernetesNoCSI(t))
 }
 
 func TestDeploy_manifest_kubernetes_csi(t *testing.T) {
-	testEnv.Test(t, manifest.KubernetesCSI())
+	testEnv.Test(t, manifest.KubernetesCSI(t))
 }
 
 func TestDeploy_manifest_openshift_no_csi(t *testing.T) {
-	testEnv.Test(t, manifest.OpenshiftNoCSI())
+	testEnv.Test(t, manifest.OpenshiftNoCSI(t))
 }
 
 func TestDeploy_manifest_openshift_csi(t *testing.T) {
-	testEnv.Test(t, manifest.OpenshiftCSI())
+	testEnv.Test(t, manifest.OpenshiftCSI(t))
 }
