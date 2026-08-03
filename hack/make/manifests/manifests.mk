@@ -15,10 +15,10 @@ manifests: manifests/prepare-directory manifests/kubernetes manifests/openshift 
 manifests/deepcopy: prerequisites/controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/api/..."
 
-manifests/apply/%: manifests
+manifests/apply/%: manifests/prepare-directory manifests/kubernetes manifests/openshift
 	kubectl get namespace $(MANIFEST_NAMESPACE) >/dev/null 2>&1 || kubectl create namespace $(MANIFEST_NAMESPACE)
 	kubectl apply -f $($*) # Apply how a user would based on release notes
 
-manifests/delete/%: manifests
+manifests/delete/%: manifests/prepare-directory manifests/kubernetes manifests/openshift
 	kubectl delete --ignore-not-found -f $($*)
 
