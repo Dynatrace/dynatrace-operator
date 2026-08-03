@@ -32,3 +32,7 @@ func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
 func IsDeployedViaOLM() bool {
 	return os.Getenv(k8senv.OLMOperatorNamespaceEnv) != ""
 }
+
+func IsRunLocally() bool {
+	return os.Getenv("RUN_LOCAL") == "true"
+}

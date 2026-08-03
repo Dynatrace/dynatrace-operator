@@ -20,6 +20,10 @@ import (
 )
 
 const (
+	oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
+	oneagentInstallerScriptURLEnvVarName  = "ONEAGENT_INSTALLER_SCRIPT_URL"
+	oneagentInstallerTokenEnvVarName      = "ONEAGENT_INSTALLER_TOKEN"
+
 	errorConflictingOneagentMode = `The DynaKube specification attempts to use multiple OneAgent modes simultaneously, which is not supported.`
 
 	errorNodeSelectorConflict = `The Dynakube specification conflicts with another Dynakube's OneAgent or Standalone-LogMonitoring. Only one Agent per node is supported.

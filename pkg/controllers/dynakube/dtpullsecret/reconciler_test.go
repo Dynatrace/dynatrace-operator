@@ -367,7 +367,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Don't create when operand env is set but kubemon is not configured", func(t *testing.T) {
 		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-		dk := addFakeTennantUUID(&dynakube.DynaKube{
+		dk := addFakeTenantUUID(&dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
@@ -425,7 +425,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 }
 
 func createTestDynakube() *dynakube.DynaKube {
-	return addFakeTennantUUID(&dynakube.DynaKube{
+	return addFakeTenantUUID(&dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
@@ -437,14 +437,14 @@ func createTestDynakube() *dynakube.DynaKube {
 	})
 }
 
-func addFakeTennantUUID(dk *dynakube.DynaKube) *dynakube.DynaKube {
+func addFakeTenantUUID(dk *dynakube.DynaKube) *dynakube.DynaKube {
 	dk.Status.OneAgent.ConnectionInfo.TenantUUID = testTenant
 
 	return dk
 }
 
 func createTestKubemonDynakube() *dynakube.DynaKube {
-	return addFakeTennantUUID(&dynakube.DynaKube{
+	return addFakeTenantUUID(&dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,

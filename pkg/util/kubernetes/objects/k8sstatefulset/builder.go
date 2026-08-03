@@ -6,6 +6,7 @@ package k8sstatefulset
 import (
 	"slices"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/builder"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -13,6 +14,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const AnnotationPVCHash = api.InternalFlagPrefix + "pvc-hash"
 
 type Option = builder.Option[*appsv1.StatefulSet]
 
