@@ -33,7 +33,7 @@ func Feature(t *testing.T) features.Feature {
 		componentDynakube.WithExtensionsEECImageRef(t, componentDynakube.GetLatestEECImageTagURI(t)),
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
-		componentDynakube.WithOTELCollectorImageRef(t, componentDynakube.GetLatestOTELCollectorImageTagURI(t)),
+		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
@@ -57,7 +57,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OTELCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
 

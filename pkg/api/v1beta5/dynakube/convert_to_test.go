@@ -201,7 +201,7 @@ func TestConvertTo(t *testing.T) {
 
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})
@@ -222,7 +222,7 @@ func TestConvertTo(t *testing.T) {
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
 		assert.Equal(t, image.PullPolicy("Always"), to.Spec.Templates.OpenTelemetryCollector.ImageRef.PullPolicy)
-		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})
@@ -242,7 +242,7 @@ func TestConvertTo(t *testing.T) {
 
 		assert.NotEqual(t, "user-supplied-repo", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})
@@ -262,7 +262,7 @@ func TestConvertTo(t *testing.T) {
 
 		assert.Equal(t, "user-supplied-repo", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.Equal(t, "user-tag", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.NotContains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+		assert.NotContains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})

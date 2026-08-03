@@ -144,8 +144,8 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		eecToken := "eecToken"
 
 		secretData := map[string][]byte{
-			eecConsts.TokenSecretKey:      []byte(eecToken),
-			DeprecatedOtelcTokenSecretKey: []byte(dsToken),
+			eecConsts.TokenSecretKey:        []byte(eecToken),
+			DeprecatedOTelColTokenSecretKey: []byte(dsToken),
 		}
 
 		oldSecret, err := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
@@ -166,7 +166,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		require.NotEmpty(t, secretFound.Data[eecConsts.TokenSecretKey])
 		require.NotEmpty(t, secretFound.Data[consts.DatasourceTokenSecretKey])
-		require.Empty(t, secretFound.Data[DeprecatedOtelcTokenSecretKey])
+		require.Empty(t, secretFound.Data[DeprecatedOTelColTokenSecretKey])
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())

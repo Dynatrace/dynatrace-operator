@@ -4,7 +4,7 @@
 package consts
 
 const (
-	OTELCollectorNameSuffix = "-otel-collector"
+	OTelCollectorNameSuffix = "-otel-collector"
 	NodeCollectorNameSuffix = "-node-config-collector"
 
 	DTComponentsSecretsRootDir = "/var/lib/dynatrace/secrets"

@@ -27,7 +27,7 @@ const (
 	WebhookComponentLabel       = "webhook"
 	EdgeConnectComponentLabel   = "edgeconnect"
 	ExtensionComponentLabel     = "dynatrace-extension-controller"
-	OTELCComponentLabel         = "dynatrace-otel-collector"
+	OTelColComponentLabel       = "dynatrace-otel-collector"
 	DatabaseSQLExecutorLabel    = "dynatrace-sql-extension-executor"
 	NodeControllerLabel         = "node-controller"
 	OperatorComponentLabel      = "operator"
