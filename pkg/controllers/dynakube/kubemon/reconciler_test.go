@@ -36,11 +36,13 @@ func TestReconcileDisabled(t *testing.T) {
 		authTokenReconciler := newMockAuthTokenReconciler(t)
 		statefulSetReconciler := newMockStatefulsetReconciler(t)
 		pullSecretReconciler := newMockPullSecretReconciler(t)
+		customPropertiesReconciler := newMockCustomPropertiesReconciler(t)
 		reconciler := &Reconciler{
-			connectionInfoReconciler: connInfoReconciler,
-			authTokenReconciler:      authTokenReconciler,
-			statefulsetReconciler:    statefulSetReconciler,
-			pullSecretReconciler:     pullSecretReconciler,
+			connectionInfoReconciler:   connInfoReconciler,
+			authTokenReconciler:        authTokenReconciler,
+			statefulsetReconciler:      statefulSetReconciler,
+			pullSecretReconciler:       pullSecretReconciler,
+			customPropertiesReconciler: customPropertiesReconciler,
 		}
 		dk := newTestDynaKube(false)
 
@@ -48,6 +50,7 @@ func TestReconcileDisabled(t *testing.T) {
 		connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+		customPropertiesReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
 		err := reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
@@ -63,13 +66,14 @@ func TestReconcileDisabled(t *testing.T) {
 func TestReconcileConditionMapping(t *testing.T) {
 	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true") // remove with gate
 	tests := []struct {
-		name           string
-		connInfoErr    error
-		authTokenErr   error
-		statefulSetErr error
-		wantStatus     metav1.ConditionStatus
-		wantReason     string
-		wantMessage    string
+		name                string
+		connInfoErr         error
+		authTokenErr        error
+		customPropertiesErr error
+		statefulSetErr      error
+		wantStatus          metav1.ConditionStatus
+		wantReason          string
+		wantMessage         string
 	}{
 		{
 			name:        "all succeed -> available",
@@ -90,6 +94,13 @@ func TestReconcileConditionMapping(t *testing.T) {
 			wantStatus:   metav1.ConditionFalse,
 			wantReason:   reasonError,
 			wantMessage:  "api error",
+		},
+		{
+			name:                "custom properties error -> error",
+			customPropertiesErr: errors.New("custom properties api error"),
+			wantStatus:          metav1.ConditionFalse,
+			wantReason:          reasonError,
+			wantMessage:         "custom properties api error",
 		},
 		{
 			name:           "rollout in progress -> reconciling",
@@ -113,11 +124,13 @@ func TestReconcileConditionMapping(t *testing.T) {
 			authTokenReconciler := newMockAuthTokenReconciler(t)
 			statefulSetReconciler := newMockStatefulsetReconciler(t)
 			pullSecretReconciler := newMockPullSecretReconciler(t)
+			customPropertiesReconciler := newMockCustomPropertiesReconciler(t)
 			reconciler := &Reconciler{
-				connectionInfoReconciler: connInfoReconciler,
-				authTokenReconciler:      authTokenReconciler,
-				statefulsetReconciler:    statefulSetReconciler,
-				pullSecretReconciler:     pullSecretReconciler,
+				connectionInfoReconciler:   connInfoReconciler,
+				authTokenReconciler:        authTokenReconciler,
+				statefulsetReconciler:      statefulSetReconciler,
+				pullSecretReconciler:       pullSecretReconciler,
+				customPropertiesReconciler: customPropertiesReconciler,
 			}
 			dk := newTestDynaKube(true)
 
@@ -127,6 +140,9 @@ func TestReconcileConditionMapping(t *testing.T) {
 			}
 			if test.connInfoErr == nil && test.authTokenErr == nil {
 				pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+				customPropertiesReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(test.customPropertiesErr).Once()
+			}
+			if test.connInfoErr == nil && test.authTokenErr == nil && test.customPropertiesErr == nil {
 				statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(test.statefulSetErr).Once()
 			}
 
@@ -135,6 +151,9 @@ func TestReconcileConditionMapping(t *testing.T) {
 			wantErr := test.connInfoErr
 			if wantErr == nil {
 				wantErr = test.authTokenErr
+			}
+			if wantErr == nil {
+				wantErr = test.customPropertiesErr
 			}
 			if wantErr == nil {
 				wantErr = test.statefulSetErr

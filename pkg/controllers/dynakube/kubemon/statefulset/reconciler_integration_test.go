@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
+	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -306,17 +307,19 @@ func assertStatefulSetShape(t *testing.T, sts *appsv1.StatefulSet, dk *dynakube.
 	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTTenant))
 	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTServer))
 
-	require.Len(t, container.VolumeMounts, 3)
+	require.Len(t, container.VolumeMounts, 4)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
 	assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
 	assert.Equal(t, kubemonauthtoken.SecretKey, container.VolumeMounts[1].SubPath)
-	assert.Equal(t, statefulset.StorageVolumeName, container.VolumeMounts[2].Name)
+	assert.Equal(t, kubemoncustomproperties.VolumeName, container.VolumeMounts[2].Name)
+	assert.Equal(t, statefulset.StorageVolumeName, container.VolumeMounts[3].Name)
 	assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
 
-	require.Len(t, sts.Spec.Template.Spec.Volumes, 3)
+	require.Len(t, sts.Spec.Template.Spec.Volumes, 4)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, sts.Spec.Template.Spec.Volumes[0].Name)
 	assert.Equal(t, statefulset.AuthTokenVolumeName, sts.Spec.Template.Spec.Volumes[1].Name)
-	assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
+	assert.Equal(t, kubemoncustomproperties.VolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
+	assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[3].Name)
 }
 
 func markRolloutComplete(t *testing.T, ctx context.Context, clt client.Client, dk *dynakube.DynaKube) {
