@@ -73,7 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		return handleMissingScope("settings:objects:read", err)
 	}
 
-	if !dk.FF().IsAutomaticK8sAPIMonitoring() || !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
+	if !isRegistrationEnabled(dk) {
 		return nil
 	}
 
@@ -173,10 +173,7 @@ func (r *Reconciler) createK8sConnectionSettingIfAbsent(ctx context.Context, dtC
 		return "", nil // settings already exist => don't need to create, and we do not update
 	}
 
-	kubernetesClusterName := dk.FF().GetAutomaticK8sAPIMonitoringClusterName()
-	if kubernetesClusterName == "" {
-		kubernetesClusterName = dk.Name
-	}
+	kubernetesClusterName := getRegistrationClusterName(dk)
 
 	objectID, err := dtClient.CreateOrUpdateKubernetesSetting(ctx, kubernetesClusterName, dk.Status.KubeSystemUUID, "")
 	if err != nil {
@@ -220,4 +217,24 @@ func (r *Reconciler) createK8sAppSettingIfAbsent(ctx context.Context, dtClient s
 	}
 
 	return nil
+}
+
+func isRegistrationEnabled(dk *dynakube.DynaKube) bool {
+	if dk.KubernetesMonitoring().IsRegistrationEnabled() {
+		return true
+	}
+
+	return dk.FF().IsAutomaticK8sAPIMonitoring() && dk.ActiveGate().IsKubernetesMonitoringEnabled()
+}
+
+func getRegistrationClusterName(dk *dynakube.DynaKube) string {
+	if name := dk.KubernetesMonitoring().GetRegistrationClusterName(); name != "" {
+		return name
+	}
+
+	if name := dk.FF().GetAutomaticK8sAPIMonitoringClusterName(); name != "" {
+		return name
+	}
+
+	return dk.Name
 }
