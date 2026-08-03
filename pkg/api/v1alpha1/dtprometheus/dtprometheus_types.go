@@ -34,8 +34,8 @@ type DtPrometheusSpec struct { //nolint:revive
 	// +nullable
 	TLS *TLSSpec `json:"tls"`
 
-	// Deploys a dedicated self-monitoring collector that ships the stack's own
-	// telemetry to Dynatrace. Enabled by default; set to null to opt out.
+	// Send self-monitoring for the stack's own telemetry to Dynatrace.
+	// Enabled by default; set to null to opt out.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default={}
 	// +nullable
@@ -63,10 +63,7 @@ type DynatracePresetSpec struct{}
 // TLSSpec configures operator-managed TLS between components.
 type TLSSpec struct{}
 
-// SelfMonitoringSpec toggles the optional self-monitoring collector, which ships
-// the stack's own telemetry to Dynatrace. Its presence enables the collector; the
-// collector's configuration (replicas, image, resources, scheduling, ...) lives on
-// the referenced DynaKube.
+// SelfMonitoringSpec toggles shipping the stack's own telemetry to Dynatrace.
 type SelfMonitoringSpec struct{}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
