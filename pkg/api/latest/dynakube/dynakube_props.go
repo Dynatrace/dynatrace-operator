@@ -11,7 +11,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtapiurl"
@@ -196,10 +195,6 @@ func (dk *DynaKube) GetResourceAttributes() map[string]string {
 
 func (dk *DynaKube) PublicRegistryOverride() string {
 	return dk.Spec.PublicRegistryOverride
-}
-
-func (dk *DynaKube) OTLPExporterConfiguration() *otlp.ExporterConfiguration {
-	return otlp.NewExporterConfiguration(dk.Spec.OTLPExporterConfiguration, dk.GetResourceAttributes())
 }
 
 func (dk *DynaKube) OtelCollectorStatefulsetName() string {

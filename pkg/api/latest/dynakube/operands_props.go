@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 )
 
@@ -105,4 +106,8 @@ func (dk *DynaKube) TelemetryIngest() *telemetryingest.TelemetryIngest {
 	ts.SetName(dk.Name)
 
 	return ts
+}
+
+func (dk *DynaKube) OTLPExporterConfiguration() *otlp.ExporterConfiguration {
+	return otlp.NewExporterConfiguration(dk.Spec.OTLPExporterConfiguration, dk.GetResourceAttributes())
 }
