@@ -5,6 +5,7 @@ package oneagent
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -13,6 +14,11 @@ import (
 
 const (
 	connectionInfoPath = "/v1/deployment/installer/agent/connectioninfo"
+
+	// endpointDelimiter separates the individual endpoints inside the
+	// formattedCommunicationEndpoints string returned by the connectioninfo API.
+	// It matches the delimiter used by connectioninfo.ParseOACommunicationHosts.
+	endpointDelimiter = ";"
 )
 
 type ConnectionInfo struct {
@@ -50,5 +56,34 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, err
 		return ConnectionInfo{}, errors.WithStack(err)
 	}
 
+	resp.Endpoints = deduplicateEndpoints(resp.Endpoints)
+
 	return resp, nil
+}
+
+// deduplicateEndpoints removes duplicate endpoints from a formatted
+// communication-endpoints string (delimiter-separated, see endpointDelimiter).
+func deduplicateEndpoints(endpoints string) string {
+	if endpoints == "" {
+		return endpoints
+	}
+
+	seen := make(map[string]struct{})
+	unique := make([]string, 0)
+
+	for endpoint := range strings.SplitSeq(endpoints, endpointDelimiter) {
+		endpoint = strings.TrimSpace(endpoint)
+		if endpoint == "" {
+			continue
+		}
+
+		if _, ok := seen[endpoint]; ok {
+			continue
+		}
+
+		seen[endpoint] = struct{}{}
+		unique = append(unique, endpoint)
+	}
+
+	return strings.Join(unique, endpointDelimiter)
 }

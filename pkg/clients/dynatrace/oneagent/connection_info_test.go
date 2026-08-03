@@ -6,6 +6,7 @@ package oneagent
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -107,4 +108,76 @@ func Test_GetConnectionInfo(t *testing.T) {
 		_, err := oaClient.GetConnectionInfo(ctx)
 		assert.ErrorIs(t, err, expectErr)
 	})
+
+	t.Run("duplicate endpoints are deduplicated", func(t *testing.T) {
+		response.Endpoints = testCommunicationEndpoint + ";" + testCommunicationEndpoint
+		expectedResponse.Endpoints = testCommunicationEndpoint
+
+		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
+		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
+		require.NoError(t, err)
+
+		assert.Equal(t, expectedResponse, connectionInfo)
+	})
+}
+
+func Test_deduplicateEndpoints(t *testing.T) {
+	const (
+		epA = "https://tenant.dev.dynatracelabs.com:443"
+		epB = "https://other.dev.dynatracelabs.com:8443"
+		epC = "https://third.dev.dynatracelabs.com:443"
+	)
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "single endpoint",
+			input:    epA,
+			expected: epA,
+		},
+		{
+			name:     "no duplicates is a no-op",
+			input:    epA + ";" + epB + ";" + epC,
+			expected: epA + ";" + epB + ";" + epC,
+		},
+		{
+			name:     "some duplicates preserve first-occurrence order",
+			input:    epB + ";" + epA + ";" + epB + ";" + epC + ";" + epA,
+			expected: epB + ";" + epA + ";" + epC,
+		},
+		{
+			name:     "all duplicates collapse to one",
+			input:    epA + ";" + epA + ";" + epA,
+			expected: epA,
+		},
+		{
+			name:     "endpoints differing only by surrounding whitespace are duplicates",
+			input:    epA + "; " + epA + " ;\t" + epA,
+			expected: epA,
+		},
+		{
+			name:     "empty segments are dropped",
+			input:    epA + ";;" + epB + ";",
+			expected: epA + ";" + epB,
+		},
+		{
+			name:     "endpoints differing only by case are kept as distinct",
+			input:    epA + ";" + strings.ToUpper(epA),
+			expected: epA + ";" + strings.ToUpper(epA),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, deduplicateEndpoints(tt.input))
+		})
+	}
 }
