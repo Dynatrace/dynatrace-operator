@@ -195,26 +195,30 @@ func UninstallViaHelm(releaseName, namespace string, extraOpts ...helm.Option) e
 
 // InstallViaManifests applies the pre-generated operator manifests for the given platform
 func InstallViaManifests(platform string, withCSI bool) error {
+	cmd := "manifests/apply/" + platform
+
+	if withCSI {
+		cmd += "/csi"
+	}
+
 	return execMakeCommand(
 		project.RootDir(),
-		"manifests/apply/"+platform+"/"+ManifestsSuffix(withCSI),
+		cmd,
 	)
 }
 
 // UninstallViaManifests deletes the operator manifests for the given platform
 func UninstallViaManifests(platform string, withCSI bool) error {
-	return execMakeCommand(
-		project.RootDir(),
-		"manifests/delete/"+platform+"/"+ManifestsSuffix(withCSI),
-	)
-}
+	cmd := "manifests/delete/" + platform
 
-func ManifestsSuffix(withCSI bool) string {
 	if withCSI {
-		return "csi"
+		cmd += "/csi"
 	}
 
-	return "core"
+	return execMakeCommand(
+		project.RootDir(),
+		cmd,
+	)
 }
 
 func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {

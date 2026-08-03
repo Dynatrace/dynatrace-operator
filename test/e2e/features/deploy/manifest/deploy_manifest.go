@@ -9,6 +9,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/stretchr/testify/require"
@@ -16,12 +17,16 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func KubernetesNoCSI(t *testing.T) features.Feature { return kubernetes(t, false) }
-func KubernetesCSI(t *testing.T) features.Feature   { return kubernetes(t, true) }
-func OpenshiftNoCSI(t *testing.T) features.Feature  { return openshift(t, false) }
-func OpenshiftCSI(t *testing.T) features.Feature    { return openshift(t, true) }
+const (
+	withCSI    = true
+	withoutCSI = false
+	k8s        = "kubernetes"
+	ocp        = "openshift"
+)
 
-func kubernetes(t *testing.T, withCSI bool) features.Feature {
+func KubernetesNoCSI(t *testing.T) features.Feature { //nolint:dupl
+	builder := features.New("deploy-manifest-k8s")
+
 	isOpenshift, err := platform.NewResolver().IsOpenshift()
 	require.NoError(t, err, "failed to detect cluster platform")
 
@@ -29,63 +34,108 @@ func kubernetes(t *testing.T, withCSI bool) features.Feature {
 		t.Skip("skipping kubernetes manifests, cluster is openshift")
 	}
 
-	return feature("kubernetes", withCSI)
-}
+	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		return ctx, operator.InstallViaManifests(k8s, withoutCSI)
+	}, true))
 
-func openshift(t *testing.T, withCSI bool) features.Feature {
-	isOpenshift, err := platform.NewResolver().IsOpenshift()
-	require.NoError(t, err, "failed to detect cluster platform")
+	builder.Assess("operator installed", helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		return operator.VerifyInstall(ctx, c, withoutCSI)
+	}, true))
 
-	if !isOpenshift {
-		t.Skip("skipping openshift manifests, cluster is not openshift")
-	}
+	builder.Teardown(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		if c.FailFast() {
+			return ctx, nil
+		}
 
-	return feature("openshift", withCSI)
-}
-
-func feature(platform string, withCSI bool) features.Feature {
-	builder := features.New("deploy-manifest-" + platform + "-" + operator.ManifestsSuffix(withCSI))
-
-	builder.Setup(installManifests(platform, withCSI))
-	builder.Assess("operator installed", verifyInstall(withCSI))
-	builder.Teardown(uninstallManifests(platform, withCSI))
+		return ctx, operator.UninstallViaManifests(k8s, withoutCSI)
+	}, true))
 
 	return builder.Feature()
 }
 
-func installManifests(platform string, withCSI bool) features.Func {
-	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-		t.Helper()
+func KubernetesCSI(t *testing.T) features.Feature { //nolint:dupl
+	builder := features.New("deploy-manifest-k8s-csi")
 
-		err := operator.InstallViaManifests(platform, withCSI)
-		require.NoError(t, err, "failed to apply %s manifests (csi=%t)", platform, withCSI)
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err, "failed to detect cluster platform")
 
-		return ctx
+	if isOpenshift {
+		t.Skip("skipping kubernetes manifests, cluster is openshift")
 	}
-}
 
-func verifyInstall(withCSI bool) features.Func {
-	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-		t.Helper()
+	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		return ctx, operator.InstallViaManifests(k8s, withCSI)
+	}, true))
 
-		ctx, err := operator.VerifyInstall(ctx, c, withCSI)
-		require.NoError(t, err, "operator installation verification failed")
+	builder.Assess("operator installed", helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		return operator.VerifyInstall(ctx, c, withCSI)
+	}, true))
 
-		return ctx
-	}
-}
-
-func uninstallManifests(platform string, withCSI bool) features.Func {
-	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-		t.Helper()
-
+	builder.Teardown(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if c.FailFast() {
-			return ctx
+			return ctx, nil
 		}
 
-		err := operator.UninstallViaManifests(platform, withCSI)
-		require.NoError(t, err, "manifest cleanup failed")
+		return ctx, operator.UninstallViaManifests(k8s, withCSI)
+	}, true))
 
-		return ctx
+	return builder.Feature()
+}
+
+func OpenshiftNoCSI(t *testing.T) features.Feature { //nolint:dupl
+	builder := features.New("deploy-manifest-ocp")
+
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err, "failed to detect cluster platform")
+
+	if !isOpenshift {
+		t.Skip("skipping openshift manifests, cluster is kubernetes")
 	}
+
+	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		return ctx, operator.InstallViaManifests(ocp, withoutCSI)
+	}, true))
+
+	builder.Assess("operator installed", helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		return operator.VerifyInstall(ctx, c, withoutCSI)
+	}, true))
+
+	builder.Teardown(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		if c.FailFast() {
+			return ctx, nil
+		}
+
+		return ctx, operator.UninstallViaManifests(ocp, withoutCSI)
+	}, true))
+
+	return builder.Feature()
+}
+
+func OpenshiftCSI(t *testing.T) features.Feature { //nolint:dupl
+	builder := features.New("deploy-manifest-ocp-csi")
+
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err, "failed to detect cluster platform")
+
+	if !isOpenshift {
+		t.Skip("skipping openshift manifests, cluster is kubernetes")
+	}
+
+	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		return ctx, operator.InstallViaManifests(ocp, withCSI)
+	}, true))
+
+	builder.Assess("operator installed", helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		return operator.VerifyInstall(ctx, c, withCSI)
+	}, true))
+
+	builder.Teardown(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		if c.FailFast() {
+			return ctx, nil
+		}
+
+		return ctx, operator.UninstallViaManifests(ocp, withCSI)
+	}, true))
+
+	return builder.Feature()
 }

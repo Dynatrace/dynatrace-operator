@@ -1,9 +1,8 @@
 MANIFEST_NAMESPACE ?= dynatrace
 
-# map each "platform/variant" combo to its YAML file
-kubernetes/core = $(KUBERNETES_CORE_YAML)
+kubernetes = $(KUBERNETES_CORE_YAML)
 kubernetes/csi  = $(KUBERNETES_CSIDRIVER_YAML)
-openshift/core  = $(OPENSHIFT_CORE_YAML)
+openshift  = $(OPENSHIFT_CORE_YAML)
 openshift/csi   = $(OPENSHIFT_CSIDRIVER_YAML)
 
 manifests/prepare-directory:
@@ -18,7 +17,7 @@ manifests/deepcopy: prerequisites/controller-gen
 
 manifests/apply/%: manifests
 	kubectl get namespace $(MANIFEST_NAMESPACE) >/dev/null 2>&1 || kubectl create namespace $(MANIFEST_NAMESPACE)
-	kubectl apply --server-side --force-conflicts -f $($*)
+	kubectl apply -f $($*) # Apply how a user would based on release notes
 
 manifests/delete/%: manifests
 	kubectl delete --ignore-not-found -f $($*)
