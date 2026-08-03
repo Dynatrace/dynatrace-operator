@@ -7,12 +7,9 @@ package manifest
 
 import (
 	"context"
-	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
-	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -24,15 +21,8 @@ const (
 	ocp        = "openshift"
 )
 
-func KubernetesNoCSI(t *testing.T) features.Feature { //nolint:dupl
+func KubernetesNoCSI() features.Feature { //nolint:dupl
 	builder := features.New("deploy-manifest-k8s")
-
-	isOpenshift, err := platform.NewResolver().IsOpenshift()
-	require.NoError(t, err, "failed to detect cluster platform")
-
-	if isOpenshift {
-		t.Skip("skipping kubernetes manifests, cluster is openshift")
-	}
 
 	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		return ctx, operator.InstallViaManifests(k8s, withoutCSI)
@@ -53,15 +43,8 @@ func KubernetesNoCSI(t *testing.T) features.Feature { //nolint:dupl
 	return builder.Feature()
 }
 
-func KubernetesCSI(t *testing.T) features.Feature { //nolint:dupl
+func KubernetesCSI() features.Feature { //nolint:dupl
 	builder := features.New("deploy-manifest-k8s-csi")
-
-	isOpenshift, err := platform.NewResolver().IsOpenshift()
-	require.NoError(t, err, "failed to detect cluster platform")
-
-	if isOpenshift {
-		t.Skip("skipping kubernetes manifests, cluster is openshift")
-	}
 
 	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		return ctx, operator.InstallViaManifests(k8s, withCSI)
@@ -82,15 +65,8 @@ func KubernetesCSI(t *testing.T) features.Feature { //nolint:dupl
 	return builder.Feature()
 }
 
-func OpenshiftNoCSI(t *testing.T) features.Feature { //nolint:dupl
+func OpenshiftNoCSI() features.Feature { //nolint:dupl
 	builder := features.New("deploy-manifest-ocp")
-
-	isOpenshift, err := platform.NewResolver().IsOpenshift()
-	require.NoError(t, err, "failed to detect cluster platform")
-
-	if !isOpenshift {
-		t.Skip("skipping openshift manifests, cluster is kubernetes")
-	}
 
 	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		return ctx, operator.InstallViaManifests(ocp, withoutCSI)
@@ -111,15 +87,8 @@ func OpenshiftNoCSI(t *testing.T) features.Feature { //nolint:dupl
 	return builder.Feature()
 }
 
-func OpenshiftCSI(t *testing.T) features.Feature { //nolint:dupl
+func OpenshiftCSI() features.Feature { //nolint:dupl
 	builder := features.New("deploy-manifest-ocp-csi")
-
-	isOpenshift, err := platform.NewResolver().IsOpenshift()
-	require.NoError(t, err, "failed to detect cluster platform")
-
-	if !isOpenshift {
-		t.Skip("skipping openshift manifests, cluster is kubernetes")
-	}
 
 	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		return ctx, operator.InstallViaManifests(ocp, withCSI)
