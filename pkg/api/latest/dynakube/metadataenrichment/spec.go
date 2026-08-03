@@ -66,3 +66,9 @@ func IsSupportedType(ruleType RuleType) bool {
 
 	return false
 }
+
+// +kubebuilder:object:generate=true
+
+type Status struct {
+	Rules []Rule `json:"rules,omitempty"`
+}

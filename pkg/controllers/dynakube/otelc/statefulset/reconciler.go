@@ -36,6 +36,8 @@ const (
 	annotationDataIngestTokenSecretHash                 = api.InternalFlagPrefix + "data-ingest-token-hash"
 
 	runAs int64 = 10001
+
+	conditionType string = "OtelStatefulSet"
 )
 
 type Reconciler struct {

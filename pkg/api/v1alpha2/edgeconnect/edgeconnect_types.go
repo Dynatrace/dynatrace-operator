@@ -15,6 +15,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Hub tags this version as the 'source' of the conversion for controller runtime.
+func (*EdgeConnect) Hub() {}
+
 // EdgeConnectSpec defines the desired state of EdgeConnect.
 type EdgeConnectSpec struct { //nolint:revive
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html

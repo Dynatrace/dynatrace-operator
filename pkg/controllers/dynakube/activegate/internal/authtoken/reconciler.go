@@ -19,10 +19,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
+	activeGateAuthTokenSecretConditionType string = "ActiveGateAuthTokenSecret"
+
 	ActiveGateAuthTokenName = "auth-token"
 
 	// Buffer to avoid warnings in the UI
@@ -44,11 +47,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 	ctx, _ = logd.NewFromContext(ctx, "authtoken")
 
 	if !dk.ActiveGate().IsEnabled() {
-		if meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType) == nil {
+		if meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType) == nil {
 			return nil
 		}
 
-		defer meta.RemoveStatusCondition(dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
+		defer meta.RemoveStatusCondition(dk.Conditions(), activeGateAuthTokenSecretConditionType)
 
 		secret, _ := k8ssecret.Build(dk, dk.ActiveGate().GetAuthTokenSecretName(), nil)
 		_ = r.deleteSecret(ctx, dk, secret)
@@ -75,7 +78,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context, dk *dynakube.
 			return r.ensureAuthTokenSecret(ctx, dk, agClient)
 		}
 
-		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), activeGateAuthTokenSecretConditionType, err)
 
 		return errors.WithStack(err)
 	}
@@ -83,7 +86,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context, dk *dynakube.
 	if isSecretOutdated(secret) {
 		log.Info("activeGateAuthToken is outdated, creating new one")
 
-		k8sconditions.SetSecretOutdated(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret is outdated, update in progress")
+		k8sconditions.SetSecretOutdated(dk.Conditions(), activeGateAuthTokenSecretConditionType, "secret is outdated, update in progress")
 
 		if err := r.deleteSecret(ctx, dk, secret); err != nil {
 			return errors.WithStack(err)
@@ -109,7 +112,7 @@ func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context, dk *dynakube.Dyn
 func (r *Reconciler) getActiveGateAuthToken(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client) (map[string][]byte, error) {
 	authTokenInfo, err := agClient.GetAuthToken(ctx, dk.Name)
 	if err != nil {
-		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetDynatraceAPIError(dk.Conditions(), activeGateAuthTokenSecretConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
@@ -129,14 +132,14 @@ func (r *Reconciler) createSecret(ctx context.Context, dk *dynakube.DynaKube, se
 		secretData,
 		k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), activeGateAuthTokenSecretConditionType, err)
 
 		return errors.WithStack(err)
 	}
 
 	err = r.secrets.WithOwner(dk).Create(ctx, secret)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), activeGateAuthTokenSecretConditionType, err)
 
 		return errors.Errorf("failed to create secret '%s': %v", secretName, err)
 	}
@@ -148,7 +151,7 @@ func (r *Reconciler) createSecret(ctx context.Context, dk *dynakube.DynaKube, se
 
 func (r *Reconciler) deleteSecret(ctx context.Context, dk *dynakube.DynaKube, secret *corev1.Secret) error {
 	if err := r.secrets.Delete(ctx, secret); err != nil {
-		k8sconditions.SetKubeAPIError(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), activeGateAuthTokenSecretConditionType, err)
 
 		return err
 	}
@@ -166,5 +169,15 @@ func (r *Reconciler) conditionSetSecretCreated(dk *dynakube.DynaKube, secret *co
 	tokenAllParts := strings.Split(string(secret.Data[ActiveGateAuthTokenName]), ".")
 	tokenPublicPart := strings.Join(tokenAllParts[:2], ".")
 
-	setAuthSecretCreated(dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
+	setAuthSecretCreated(dk.Conditions(), activeGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
+}
+
+func setAuthSecretCreated(conditions *[]metav1.Condition, conditionType string, msg string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  k8sconditions.SecretCreatedReason,
+		Message: msg,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
 }
