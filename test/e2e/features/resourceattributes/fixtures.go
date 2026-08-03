@@ -173,7 +173,7 @@ func assessOTLPInjectionAttributes(dk dynakube.DynaKube, app *sample.App, expect
 
 		err := query.ForEachPod(func(p corev1.Pod) {
 			require.NotEmptyf(t, p.Spec.Containers, "pod %s has no containers", p.Name)
-			gotAttrs, ok := resourceattributes.NewAttributesFromEnv(p.Spec.Containers[0].Env, resourceattributes.OTELResourceAttributesEnv)
+			gotAttrs, ok := resourceattributes.NewAttributesFromEnv(p.Spec.Containers[0].Env, resourceattributes.OTelResourceAttributesEnv)
 			require.Truef(t, ok, "OTEL_RESOURCE_ATTRIBUTES missing on pod %s", p.Name)
 
 			for k, v := range expected {
@@ -203,8 +203,8 @@ func assessOTLPInjectionAttributesAbsent(app *sample.App) features.Func {
 
 		err := query.ForEachPod(func(p corev1.Pod) {
 			require.NotEmptyf(t, p.Spec.Containers, "pod %s has no containers", p.Name)
-			_, ok := resourceattributes.NewAttributesFromEnv(p.Spec.Containers[0].Env, resourceattributes.OTELResourceAttributesEnv)
-			assert.Falsef(t, ok, "%s must be absent on pod %s when OTLP is not configured", resourceattributes.OTELResourceAttributesEnv, p.Name)
+			_, ok := resourceattributes.NewAttributesFromEnv(p.Spec.Containers[0].Env, resourceattributes.OTelResourceAttributesEnv)
+			assert.Falsef(t, ok, "%s must be absent on pod %s when OTLP is not configured", resourceattributes.OTelResourceAttributesEnv, p.Name)
 		})
 		require.NoError(t, err)
 

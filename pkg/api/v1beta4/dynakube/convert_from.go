@@ -157,7 +157,7 @@ func fromOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src dynakub
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
-	if usingDefault := dk.RemovedFields().DefaultOTELCImage.Get(); usingDefault != nil && *usingDefault {
+	if usingDefault := dk.RemovedFields().DefaultOTelColImage.Get(); usingDefault != nil && *usingDefault {
 		dst.ImageRef.Repository = ""
 		dst.ImageRef.Tag = ""
 	}

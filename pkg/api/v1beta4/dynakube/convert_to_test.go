@@ -159,7 +159,7 @@ func TestConvertTo(t *testing.T) {
 
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})
