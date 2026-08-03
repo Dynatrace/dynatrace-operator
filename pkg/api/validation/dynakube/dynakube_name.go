@@ -47,7 +47,7 @@ const (
 	maxDeploymentLen = maxPodNameLen - podSuffixLen - hyphenLen //nolint:unused
 
 	maxNameLengthForExtensions = maxStatefulSetNameLength - len(consts.ExtensionsControllerSuffix)
-	maxNameLengthForOTelC      = maxStatefulSetNameLength - len(consts.OTelCollectorNameSuffix)
+	maxNameLengthForOTelCol    = maxStatefulSetNameLength - len(consts.OTelCollectorNameSuffix)
 	maxNameLengthForKSPM       = maxDaemonSetNameLength - len(consts.NodeCollectorNameSuffix)
 )
 
@@ -86,7 +86,7 @@ func nameTooLong(dk *dynakube.DynaKube) string {
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {
-		maxLength = min(maxLength, maxNameLengthForOTelC)
+		maxLength = min(maxLength, maxNameLengthForOTelCol)
 		suffix = otelcNameTooLongSuffix
 	}
 
