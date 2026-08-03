@@ -45,10 +45,6 @@ spec:
                 minLength: 1
                 type: string
               dynatracePreset:
-                properties:
-                  enabled:
-                    default: false
-                    type: boolean
                 type: object
               gateway:
                 properties:
@@ -1879,10 +1875,6 @@ spec:
               tls:
                 default: {}
                 nullable: true
-                properties:
-                  enabled:
-                    default: true
-                    type: boolean
                 type: object
             required:
             - dynaKubeName

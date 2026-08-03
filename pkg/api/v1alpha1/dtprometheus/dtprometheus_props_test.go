@@ -13,16 +13,16 @@ import (
 func TestDtPrometheus_IsDynatracePresetEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		enabled  bool
+		preset   *DynatracePresetSpec
 		expected bool
 	}{
-		{"disabled", false, false},
-		{"enabled", true, true},
+		{"disabled when unset", nil, false},
+		{"enabled when present", &DynatracePresetSpec{}, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dtp := &DtPrometheus{Spec: DtPrometheusSpec{DynatracePreset: DynatracePresetSpec{Enabled: tt.enabled}}}
+			dtp := &DtPrometheus{Spec: DtPrometheusSpec{DynatracePreset: tt.preset}}
 			assert.Equal(t, tt.expected, dtp.IsDynatracePresetEnabled())
 		})
 	}
@@ -31,16 +31,16 @@ func TestDtPrometheus_IsDynatracePresetEnabled(t *testing.T) {
 func TestDtPrometheus_IsTLSEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		enabled  bool
+		tls      *TLSSpec
 		expected bool
 	}{
-		{"disabled", false, false},
-		{"enabled", true, true},
+		{"disabled when unset", nil, false},
+		{"enabled when present", &TLSSpec{}, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dtp := &DtPrometheus{Spec: DtPrometheusSpec{TLS: TLSSpec{Enabled: tt.enabled}}}
+			dtp := &DtPrometheus{Spec: DtPrometheusSpec{TLS: tt.tls}}
 			assert.Equal(t, tt.expected, dtp.IsTLSEnabled())
 		})
 	}

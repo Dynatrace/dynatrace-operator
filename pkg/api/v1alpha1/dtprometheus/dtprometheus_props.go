@@ -8,14 +8,16 @@ import (
 )
 
 // IsDynatracePresetEnabled reports whether the built-in annotation-based
-// ScrapeConfig should be created.
+// ScrapeConfig should be created. Disabled unless the section is explicitly present.
 func (dtp *DtPrometheus) IsDynatracePresetEnabled() bool {
-	return dtp.Spec.DynatracePreset.Enabled
+	return dtp.Spec.DynatracePreset != nil
 }
 
-// IsTLSEnabled reports whether operator-managed TLS between components is enabled.
+// IsTLSEnabled reports whether operator-managed TLS between components is
+// enabled. The TLS section defaults to an empty object (enabled) when omitted;
+// it is disabled only when explicitly set to null.
 func (dtp *DtPrometheus) IsTLSEnabled() bool {
-	return dtp.Spec.TLS.Enabled
+	return dtp.Spec.TLS != nil
 }
 
 // IsSelfMonitoringEnabled reports whether the self-monitoring collector should be

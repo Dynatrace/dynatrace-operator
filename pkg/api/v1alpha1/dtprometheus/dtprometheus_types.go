@@ -25,14 +25,14 @@ type DtPrometheusSpec struct { //nolint:revive
 	// This provides backwards compatibility with the ActiveGate Kubernetes
 	// module annotation-based discovery workflow.
 	// +kubebuilder:validation:Optional
-	DynatracePreset DynatracePresetSpec `json:"dynatracePreset,omitzero"`
+	DynatracePreset *DynatracePresetSpec `json:"dynatracePreset,omitzero"`
 
 	// Controls TLS for internal component communication
 	// (TA -> scraper HTTPS, scraper -> gateway OTLP/TLS).
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default={}
 	// +nullable
-	TLS TLSSpec `json:"tls"`
+	TLS *TLSSpec `json:"tls"`
 
 	// Deploys a dedicated self-monitoring collector that ships the stack's own
 	// telemetry to Dynatrace. Enabled by default; set to null to opt out.
@@ -58,21 +58,10 @@ type DtPrometheusSpec struct { //nolint:revive
 }
 
 // DynatracePresetSpec toggles the operator-managed annotation-based ScrapeConfig.
-type DynatracePresetSpec struct {
-	// Enable the built-in annotation-based ScrapeConfig.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled"`
-}
+type DynatracePresetSpec struct{}
 
 // TLSSpec configures operator-managed TLS between components.
-type TLSSpec struct {
-	// Set to false to disable operator-managed TLS. Use when a service mesh
-	// (Istio, Linkerd) handles mTLS between components.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=true
-	Enabled bool `json:"enabled"`
-}
+type TLSSpec struct{}
 
 // SelfMonitoringSpec toggles the optional self-monitoring collector, which ships
 // the stack's own telemetry to Dynatrace. Its presence enables the collector; the
