@@ -17,15 +17,15 @@ func TestDtPrometheusStatus_SetPhase(t *testing.T) {
 		changed := dtpStatus.SetPhase(status.Running)
 
 		assert.True(t, changed)
-		assert.Equal(t, status.Running, dtpStatus.DeploymentPhase)
+		assert.Equal(t, status.Running, dtpStatus.Phase)
 	})
 
 	t.Run("reports no change when the phase is unchanged", func(t *testing.T) {
-		dtpStatus := &DtPrometheusStatus{DeploymentPhase: status.Running}
+		dtpStatus := &DtPrometheusStatus{Phase: status.Running}
 
 		changed := dtpStatus.SetPhase(status.Running)
 
 		assert.False(t, changed)
-		assert.Equal(t, status.Running, dtpStatus.DeploymentPhase)
+		assert.Equal(t, status.Running, dtpStatus.Phase)
 	})
 }

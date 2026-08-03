@@ -4,17 +4,8 @@
 package dtprometheus
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/gateway"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/scraper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/selfmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/targetallocator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// GetDynaKubeName returns the name of the referenced DynaKube.
-func (dtp *DtPrometheus) GetDynaKubeName() string {
-	return dtp.Spec.DynaKubeName
-}
 
 // IsDynatracePresetEnabled reports whether the built-in annotation-based
 // ScrapeConfig should be created.
@@ -27,6 +18,13 @@ func (dtp *DtPrometheus) IsTLSEnabled() bool {
 	return dtp.Spec.TLS.Enabled
 }
 
+// IsSelfMonitoringEnabled reports whether the self-monitoring collector should be
+// deployed. The self-monitoring section defaults to an empty object (enabled)
+// when omitted; it is disabled only when explicitly set to null.
+func (dtp *DtPrometheus) IsSelfMonitoringEnabled() bool {
+	return dtp.Spec.SelfMonitoring != nil
+}
+
 // Conditions returns a pointer to the status conditions slice so callers can
 // use meta.SetStatusCondition and friends.
 func (dtp *DtPrometheus) Conditions() *[]metav1.Condition {
@@ -35,24 +33,18 @@ func (dtp *DtPrometheus) Conditions() *[]metav1.Condition {
 
 // TargetAllocator returns the Target Allocator accessor wrapping the target
 // allocator spec and the owning DtPrometheus name.
-func (dtp *DtPrometheus) TargetAllocator() *targetallocator.TargetAllocator {
-	return targetallocator.New(&dtp.Spec.TargetAllocator, dtp.Name)
+func (dtp *DtPrometheus) TargetAllocator() *TargetAllocator {
+	return NewTargetAllocator(&dtp.Spec.TargetAllocator, dtp.Name)
 }
 
 // Scraper returns the scraper pool accessor wrapping the scraper spec and the
 // owning DtPrometheus name.
-func (dtp *DtPrometheus) Scraper() *scraper.Scraper {
-	return scraper.New(&dtp.Spec.Scraper, dtp.Name)
+func (dtp *DtPrometheus) Scraper() *Scraper {
+	return NewScraper(&dtp.Spec.Scraper, dtp.Name)
 }
 
 // Gateway returns the gateway pool accessor wrapping the gateway spec and the
 // owning DtPrometheus name.
-func (dtp *DtPrometheus) Gateway() *gateway.Gateway {
-	return gateway.New(&dtp.Spec.Gateway, dtp.Name)
-}
-
-// SelfMonitoring returns the self-monitoring accessor wrapping the self-monitoring
-// spec and the owning DtPrometheus name.
-func (dtp *DtPrometheus) SelfMonitoring() *selfmonitoring.SelfMonitoring {
-	return selfmonitoring.New(&dtp.Spec.SelfMonitoring, dtp.Name)
+func (dtp *DtPrometheus) Gateway() *Gateway {
+	return NewGateway(&dtp.Spec.Gateway, dtp.Name)
 }

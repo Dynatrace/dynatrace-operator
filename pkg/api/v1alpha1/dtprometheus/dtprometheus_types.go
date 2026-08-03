@@ -8,10 +8,6 @@
 package dtprometheus
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/gateway"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/scraper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/selfmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus/targetallocator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,6 +16,7 @@ type DtPrometheusSpec struct { //nolint:revive
 	// Name of the DynaKube in the same namespace that provides all connection
 	// settings (apiUrl, tokens, proxy, networkZone, trustedCAs, ActiveGate, etc.).
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	DynaKubeName string `json:"dynaKubeName"`
 
 	// When enabled, the operator creates a built-in ScrapeConfig that discovers
@@ -33,27 +30,31 @@ type DtPrometheusSpec struct { //nolint:revive
 	// Controls TLS for internal component communication
 	// (TA -> scraper HTTPS, scraper -> gateway OTLP/TLS).
 	// +kubebuilder:validation:Optional
-	TLS TLSSpec `json:"tls,omitzero"`
+	// +kubebuilder:default={}
+	// +nullable
+	TLS TLSSpec `json:"tls"`
 
-	// When enabled, the operator deploys a dedicated self-monitoring collector
-	// that ships the stack's own telemetry to Dynatrace.
+	// Deploys a dedicated self-monitoring collector that ships the stack's own
+	// telemetry to Dynatrace. Enabled by default; set to null to opt out.
 	// +kubebuilder:validation:Optional
-	SelfMonitoring selfmonitoring.Spec `json:"selfMonitoring,omitzero"`
+	// +kubebuilder:default={}
+	// +nullable
+	SelfMonitoring *SelfMonitoringSpec `json:"selfMonitoring"`
 
 	// Configures the Target Allocator, which holds all Prometheus service
 	// discovery metadata and distributes scrape targets across the scraper pool.
 	// +kubebuilder:validation:Optional
-	TargetAllocator targetallocator.Spec `json:"targetAllocator,omitzero"`
+	TargetAllocator TargetAllocatorSpec `json:"targetAllocator,omitzero"`
 
 	// Configures the scraper pool (tier 1): a Deployment of OTel Collectors that
 	// scrape their assigned targets and forward OTLP to the gateway pool.
 	// +kubebuilder:validation:Optional
-	Scraper scraper.Spec `json:"scraper,omitzero"`
+	Scraper ScraperSpec `json:"scraper,omitzero"`
 
 	// Configures the gateway pool (tier 2): a StatefulSet of OTel Collectors that
 	// run stateful processors and export to Dynatrace via OTLP/HTTP.
 	// +kubebuilder:validation:Optional
-	Gateway gateway.Spec `json:"gateway,omitzero"`
+	Gateway GatewaySpec `json:"gateway,omitzero"`
 }
 
 // DynatracePresetSpec toggles the operator-managed annotation-based ScrapeConfig.
@@ -72,6 +73,12 @@ type TLSSpec struct {
 	// +kubebuilder:default=true
 	Enabled bool `json:"enabled"`
 }
+
+// SelfMonitoringSpec toggles the optional self-monitoring collector, which ships
+// the stack's own telemetry to Dynatrace. Its presence enables the collector; the
+// collector's configuration (replicas, image, resources, scheduling, ...) lives on
+// the referenced DynaKube.
+type SelfMonitoringSpec struct{}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true

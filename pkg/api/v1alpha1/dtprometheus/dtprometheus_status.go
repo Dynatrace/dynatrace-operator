@@ -15,7 +15,7 @@ import (
 // DtPrometheusStatus defines the observed state of DtPrometheus.
 type DtPrometheusStatus struct { //nolint:revive
 	// Defines the current state (Running, Deploying, Error, ...)
-	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
+	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
 	// Indicates when the resource was last updated
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
@@ -28,8 +28,8 @@ type DtPrometheusStatus struct { //nolint:revive
 
 // SetPhase sets the status phase on the DtPrometheus object.
 func (dtps *DtPrometheusStatus) SetPhase(phase status.DeploymentPhase) bool {
-	upd := phase != dtps.DeploymentPhase
-	dtps.DeploymentPhase = phase
+	upd := phase != dtps.Phase
+	dtps.Phase = phase
 
 	return upd
 }

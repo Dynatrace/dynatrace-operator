@@ -230,7 +230,7 @@ func fromAreStatusesEqual(t *testing.T, src *edgeconnect.EdgeConnectStatus, dst 
 
 	assert.True(t, reflect.DeepEqual(src.KubeSystemUID, dst.KubeSystemUID), "KubeSystemUID")
 
-	assert.True(t, reflect.DeepEqual(src.DeploymentPhase, dst.DeploymentPhase), "DeploymentPhase")
+	assert.True(t, reflect.DeepEqual(src.DeploymentPhase, dst.DeploymentPhase), "Phase")
 
 	assert.True(t, reflect.DeepEqual(src.UpdatedTimestamp, dst.UpdatedTimestamp), "UpdatedTimestamp")
 

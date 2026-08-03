@@ -1,21 +1,18 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package common
+package dtprometheus
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	corev1 "k8s.io/api/core/v1"
 )
 
-// +kubebuilder:object:generate=true
-
-// Spec holds the pod-level settings shared by all DtPrometheus components.
-type Spec struct {
+// CommonPodSpec holds the pod-level settings shared by all DtPrometheus components.
+type CommonPodSpec struct {
 	// Number of replicas for the component. At least 2 is recommended for
 	// failure tolerance.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=2
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Overrides the default component image (full reference including tag or digest).
@@ -25,7 +22,7 @@ type Spec struct {
 
 	// Image pull policy for the component pods.
 	// +kubebuilder:validation:Optional
-	PullPolicy image.PullPolicy `json:"pullPolicy,omitempty"`
+	ImagePullPolicy image.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// Resource requests and limits for each component pod.
 	// +kubebuilder:validation:Optional
@@ -60,4 +57,9 @@ type Spec struct {
 	// Extra labels merged into the pod template metadata.
 	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels,omitempty"`
+}
+
+// GetPullPolicy returns the image pull policy for the component pods.
+func (spec *CommonPodSpec) GetPullPolicy() corev1.PullPolicy {
+	return corev1.PullPolicy(spec.ImagePullPolicy)
 }

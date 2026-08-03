@@ -15,30 +15,20 @@ spec:
   # port, path, and secure annotations to construct scrape targets.
   # This provides backwards compatibility with the ActiveGate Kubernetes
   # module annotation-based discovery workflow.
-  # The ScrapeConfig is labelled prometheus.dynatrace.com: "true" so it is
+  # The ScrapeConfig is labeled `prometheus.dynatrace.com: "true"` so it is
   # automatically picked up by the Target Allocator without any extra config.
-  dynatracePreset:
-    # Enable the built-in annotation-based ScrapeConfig.
-    # Default: false
-    enabled: true
+  dynatracePreset: {}
 
   # TLS
   # Controls TLS for internal component communication
   # (TA -> scraper HTTPS, scraper -> gateway OTLP/TLS).
-  tls:
-    # Set to false to disable operator-managed TLS.
-    # Use when a service mesh (Istio, Linkerd) handles mTLS between components.
-    # Default: true
-    enabled: true
+  tls: {}
 
   # Self-monitoring
   # When enabled, the operator deploys a dedicated self-monitoring collector that
   # ships the stack's own telemetry to Dynatrace. The collector's configuration
   # (replicas, image, resources, scheduling, ...) is set on the referenced DynaKube.
-  selfMonitoring:
-    # Ships the stack's own telemetry to Dynatrace. Set to false to opt out.
-    # Default: true
-    enabled: true
+  selfMonitoring: {}
 
   # Target Allocator
   # The TA holds all Prometheus service discovery metadata in memory and
@@ -49,13 +39,12 @@ spec:
     # Number of TA replicas. At least 2 recommended for failure tolerance.
     replicas: 2
 
-    # Default scrape interval applied to all CRD-based targets when not
-    # overridden in the individual ServiceMonitor / PodMonitor / ScrapeConfig.
+    # Default interval used by the Target Allocator to look up targets
+    # (ServiceMonitor, PodMonitor, ScrapeConfig, Probe).
     scrapeInterval: 60s
 
-    # Label selector applied to all Prometheus Operator CRDs (ServiceMonitor,
-    # PodMonitor, ScrapeConfig, Probe). The TA only picks up CRDs whose labels
-    # match. When omitted, defaults to:
+    # Label selector used by the TA to pick up Prometheus CRs
+    # When omitted, defaults to:
     #   matchLabels:
     #     prometheus.dynatrace.com: "true"
     #
@@ -65,12 +54,12 @@ spec:
       matchLabels:
         prometheus.dynatrace.com: "true"
 
-    # Restricts which namespaces the TA watches for CRDs.
+    # Restricts which namespaces the TA watches for Prometheus CRs.
     # An empty selector {} matches all namespaces.
     scrapeCRNamespaceSelector: {}
 
     # Overrides the default Target Allocator image (full reference including tag or digest).
-    # When omitted the operator uses the image provided via the image endpoint.
+    # When omitted the operator uses the image configured in the tenant.
     image: docker.io/dynatrace/otel-target-allocator:latest
     pullPolicy: IfNotPresent
 
@@ -119,7 +108,7 @@ spec:
     # Assign a PriorityClass so the TA is not evicted under node pressure.
     # Losing the TA causes all scrapers to lose target assignments until it
     # recovers and they re-poll - make it the highest-priority component.
-    priorityClassName: high-priority
+    # priorityClassName: my-priority-class
 
     # Extra annotations merged into the pod template metadata.
     # Useful for Istio injection control, Datadog APM, or scrape opt-out.
@@ -182,7 +171,7 @@ spec:
         topologyKey: kubernetes.io/hostname
         whenUnsatisfiable: DoNotSchedule
 
-    priorityClassName: high-priority
+    # priorityClassName: my-priority-class
 
     annotations: {}
 
@@ -250,7 +239,8 @@ spec:
 
     # The gateway is the last hop before Dynatrace and holds stateful
     # cumulativetodelta processor state - eviction causes delta gaps.
-    priorityClassName: high-priority
+
+    # priorityClassName: my-priority-class
 
     annotations: {}
 

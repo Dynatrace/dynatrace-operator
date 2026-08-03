@@ -42,6 +42,7 @@ spec:
           spec:
             properties:
               dynaKubeName:
+                minLength: 1
                 type: string
               dynatracePreset:
                 properties:
@@ -496,6 +497,12 @@ spec:
                     type: object
                   image:
                     type: string
+                  imagePullPolicy:
+                    enum:
+                    - IfNotPresent
+                    - Always
+                    - Never
+                    type: string
                   labels:
                     additionalProperties:
                       type: string
@@ -506,14 +513,7 @@ spec:
                     type: object
                   priorityClassName:
                     type: string
-                  pullPolicy:
-                    enum:
-                    - IfNotPresent
-                    - Always
-                    - Never
-                    type: string
                   replicas:
-                    default: 2
                     format: int32
                     type: integer
                   resources:
@@ -1083,6 +1083,12 @@ spec:
                     type: object
                   image:
                     type: string
+                  imagePullPolicy:
+                    enum:
+                    - IfNotPresent
+                    - Always
+                    - Never
+                    type: string
                   labels:
                     additionalProperties:
                       type: string
@@ -1093,14 +1099,7 @@ spec:
                     type: object
                   priorityClassName:
                     type: string
-                  pullPolicy:
-                    enum:
-                    - IfNotPresent
-                    - Always
-                    - Never
-                    type: string
                   replicas:
-                    default: 2
                     format: int32
                     type: integer
                   resources:
@@ -1136,6 +1135,10 @@ spec:
                           x-kubernetes-int-or-string: true
                         type: object
                     type: object
+                  targetsPollInterval:
+                    default: 60s
+                    format: duration
+                    type: string
                   tolerations:
                     items:
                       properties:
@@ -1226,10 +1229,8 @@ spec:
                     type: object
                 type: object
               selfMonitoring:
-                properties:
-                  enabled:
-                    default: true
-                    type: boolean
+                default: {}
+                nullable: true
                 type: object
               targetAllocator:
                 properties:
@@ -1678,6 +1679,12 @@ spec:
                     type: object
                   image:
                     type: string
+                  imagePullPolicy:
+                    enum:
+                    - IfNotPresent
+                    - Always
+                    - Never
+                    type: string
                   labels:
                     additionalProperties:
                       type: string
@@ -1688,14 +1695,7 @@ spec:
                     type: object
                   priorityClassName:
                     type: string
-                  pullPolicy:
-                    enum:
-                    - IfNotPresent
-                    - Always
-                    - Never
-                    type: string
                   replicas:
-                    default: 2
                     format: int32
                     type: integer
                   resources:
@@ -1877,6 +1877,8 @@ spec:
                     type: object
                 type: object
               tls:
+                default: {}
+                nullable: true
                 properties:
                   enabled:
                     default: true
