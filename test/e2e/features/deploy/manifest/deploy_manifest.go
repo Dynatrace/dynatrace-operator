@@ -44,7 +44,7 @@ func openshift(t *testing.T, withCSI bool) features.Feature {
 }
 
 func feature(platform string, withCSI bool) features.Feature {
-	builder := features.New("deploy-manifest-" + platform + "-" + operator.CSIVariant(withCSI))
+	builder := features.New("deploy-manifest-" + platform + "-" + operator.ManifestsSuffix(withCSI))
 
 	builder.Setup(installManifests(platform, withCSI))
 	builder.Assess("operator installed", verifyInstall(withCSI))
