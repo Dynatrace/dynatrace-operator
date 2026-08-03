@@ -1,0 +1,64 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+suite: test Role and RoleBinding for DtPrometheus operator
+templates:
+  - Common/prometheus/role-dtprometheus-operator.yaml
+tests:
+  - it: Role should exist with correct verbs and resources
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.name
+          value: dynatrace-dtprometheus-operator
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - dynatrace.com
+              resources:
+                - dtprometheuses
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+            - apiGroups:
+                - dynatrace.com
+              resources:
+                - dtprometheuses/finalizers
+                - dtprometheuses/status
+              verbs:
+                - update
+
+  - it: RoleBinding should exist with correct subjects and roleRef
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-dtprometheus-operator
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-operator
+      - equal:
+          path: roleRef
+          value:
+            kind: Role
+            name: dynatrace-dtprometheus-operator
+            apiGroup: rbac.authorization.k8s.io
