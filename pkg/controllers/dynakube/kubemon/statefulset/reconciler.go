@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
+	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -31,11 +32,12 @@ import (
 )
 
 const (
-	ContainerName             = "kubemon"
-	AnnotationTenantTokenHash = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
-	AnnotationAuthTokenHash   = api.InternalFlagPrefix + "kubemon-authtoken-hash"
-	StorageVolumeName         = "kubemon-storage"
-	AuthTokenVolumeName       = "kubemon-authtoken-secret"
+	ContainerName                  = "kubemon"
+	AnnotationTenantTokenHash      = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
+	AnnotationAuthTokenHash        = api.InternalFlagPrefix + "kubemon-authtoken-hash"
+	AnnotationCustomPropertiesHash = api.InternalFlagPrefix + "kubemon-customproperties-hash"
+	StorageVolumeName              = "kubemon-storage"
+	AuthTokenVolumeName            = "kubemon-authtoken-secret"
 )
 
 var (
@@ -177,6 +179,16 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 			},
 		},
 		{
+			Name: kubemoncustomproperties.VolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  km.GetCustomPropertiesSecretName(),
+					DefaultMode: new(int32(0o640)),
+					Optional:    new(true),
+				},
+			},
+		},
+		{
 			Name:         StorageVolumeName,
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 		},
@@ -197,6 +209,11 @@ func buildVolumeMounts(_ *dynakube.DynaKube) []corev1.VolumeMount {
 		ReadOnly:  true,
 		MountPath: agconsts.AuthTokenMountPoint,
 		SubPath:   kubemonauthtoken.SecretKey,
+	}, {
+		Name:      kubemoncustomproperties.VolumeName,
+		ReadOnly:  true,
+		MountPath: kubemoncustomproperties.MountPath,
+		SubPath:   kubemoncustomproperties.DataKey,
 	}, {
 		Name:      StorageVolumeName,
 		MountPath: agconsts.GatewayTmpMountPoint,
@@ -272,6 +289,11 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	customPropertiesHash, err := r.getCustomPropertiesHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
 	container := corev1.Container{
 		Name:            ContainerName,
 		Image:           imageURI,
@@ -290,8 +312,9 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), km.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, map[string]string{
-			AnnotationTenantTokenHash: tokenHash,
-			AnnotationAuthTokenHash:   authTokenHash,
+			AnnotationTenantTokenHash:      tokenHash,
+			AnnotationAuthTokenHash:        authTokenHash,
+			AnnotationCustomPropertiesHash: customPropertiesHash,
 		})),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
@@ -342,6 +365,33 @@ func (r *Reconciler) getAuthTokenHash(ctx context.Context, dk *dynakube.DynaKube
 	hash, err := hasher.GenerateHash(string(token))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to hash auth token")
+	}
+
+	return hash, nil
+}
+
+// getCustomPropertiesHash returns "" if Secret is missing or empty.
+// tenant/auth tokens are required and would throw error, custom properties are optional.
+func (r *Reconciler) getCustomPropertiesHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	var secret corev1.Secret
+
+	err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetCustomPropertiesSecretName(), Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	data := secret.Data[kubemoncustomproperties.DataKey]
+	if len(data) == 0 {
+		return "", nil
+	}
+
+	hash, err := hasher.GenerateHash(string(data))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash custom properties")
 	}
 
 	return hash, nil

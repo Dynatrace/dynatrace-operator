@@ -63,6 +63,10 @@ func (km *KubeMon) GetAuthTokenSecretName() string {
 	return km.name + NameSuffix + "-authtoken-secret"
 }
 
+func (km *KubeMon) GetCustomPropertiesSecretName() string {
+	return km.name + NameSuffix + "-custom-properties"
+}
+
 func (km *Spec) GetPullPolicy() corev1.PullPolicy {
 	if km == nil {
 		return ""

@@ -34,6 +34,7 @@ workaround, and the operator can manage each capability's lifecycle separately.
 - Runtime wiring in StatefulSet (required env vars, token mount, restart trigger hash)
 - Support for core StatefulSet spec propagation (`rollingUpdate`, storage, DNS policy, priority class, termination grace period, ephemeral volume)
 - Cluster identity and deployment metadata seeded into the operand
+- Custom properties (inline `value` or referenced Secret via `valueFrom`), mounted from an optional Secret with pod-template hash annotation for rollout on change
 
 ### Missing
 

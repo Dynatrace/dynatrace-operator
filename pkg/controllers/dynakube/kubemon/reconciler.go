@@ -28,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
+	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -64,21 +65,27 @@ type pullSecretReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error
 }
 
+type customPropertiesReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 // Reconciler orchestrates the kubemon operand. Sub-reconciler fields are interfaces so they
 // can be mocked in tests.
 type Reconciler struct {
-	connectionInfoReconciler connectionInfoReconciler
-	authTokenReconciler      authTokenReconciler
-	statefulsetReconciler    statefulsetReconciler
-	pullSecretReconciler     pullSecretReconciler
+	connectionInfoReconciler   connectionInfoReconciler
+	authTokenReconciler        authTokenReconciler
+	statefulsetReconciler      statefulsetReconciler
+	pullSecretReconciler       pullSecretReconciler
+	customPropertiesReconciler customPropertiesReconciler
 }
 
 func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
-		connectionInfoReconciler: kubemonconnectioninfo.NewReconciler(kubeClient),
-		authTokenReconciler:      kubemonauthtoken.NewReconciler(kubeClient, clock.RealClock{}),
-		statefulsetReconciler:    kubemonstatefulset.NewReconciler(kubeClient),
-		pullSecretReconciler:     dtpullsecret.NewReconciler(kubeClient, kubeClient),
+		connectionInfoReconciler:   kubemonconnectioninfo.NewReconciler(kubeClient),
+		authTokenReconciler:        kubemonauthtoken.NewReconciler(kubeClient, clock.RealClock{}),
+		statefulsetReconciler:      kubemonstatefulset.NewReconciler(kubeClient),
+		pullSecretReconciler:       dtpullsecret.NewReconciler(kubeClient, kubeClient),
+		customPropertiesReconciler: kubemoncustomproperties.NewReconciler(kubeClient),
 	}
 }
 
@@ -108,6 +115,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtcli
 	}
 
 	if err = r.pullSecretReconciler.Reconcile(ctx, dk, tokens); err != nil {
+		return err
+	}
+
+	if err = r.customPropertiesReconciler.Reconcile(ctx, dk); err != nil {
 		return err
 	}
 
