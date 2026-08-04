@@ -65,7 +65,7 @@ func NewCommunicationHost(endpoint string) (CommunicationHost, error) {
 }
 
 // ParseCommunicationHosts creates CommunicationHost slice from `,` separated endpoints.
-// It removes duplicates and sorts the result for deterministic output.
+// It sorts the result for deterministic output.
 func ParseCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
 	return newCommunicationHosts(endpoints, ",")
 }

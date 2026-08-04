@@ -71,6 +71,7 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, err
 // surrounding whitespace is trimmed and empty entries are dropped.
 func deduplicateEndpoints(endpoints []string) string {
 	seen := make(map[string]struct{})
+
 	var unique []string
 
 	for _, endpoint := range endpoints {
