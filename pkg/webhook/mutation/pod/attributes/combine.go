@@ -51,7 +51,7 @@ func (attrs *Pod) ApplyJSONAnnotationToPod(pod *corev1.Pod) error {
 		return err
 	}
 
-	metadataSizeLimit := k8senv.GetMetadaSizeLimit().Resolve().ResolvedValue
+	metadataSizeLimit := k8senv.GetMetadaSizeLimit().Resolve(nil).ResolvedValue //nolint:staticcheck
 	if len(json) > metadataSizeLimit {
 		errMsg := fmt.Sprintf(InvalidMetadataAnnotationSize, metadataSizeLimit, len(json))
 
