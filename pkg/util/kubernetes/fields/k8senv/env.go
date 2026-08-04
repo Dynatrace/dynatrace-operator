@@ -64,6 +64,9 @@ const (
 	defaultWebhookCertsRootDuration = 365 * 24 * time.Hour
 	minWebhookCertsRootDuration     = 7 * 24 * time.Hour
 	maxWebhookCertsRootDuration     = 10 * 365 * 24 * time.Hour
+
+	WebhookMetadataSizeLimitEnvVar       = "DT_METADATA_SIZE_LIMIT"
+	defaultWebhookMetadataSizeLimitValue = 24 * 1024
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
@@ -238,52 +241,33 @@ func getSafeDurationFromEnv(ctx context.Context, envVar string, defaultValue, mi
 	return duration
 }
 
-func GetMetadaSizeLimit() BoundedInt {
-	return BoundedInt{
-		EnvName:      "DT_METADATA_SIZE_LIMIT",
-		DefaultValue: 24 * 1024,
-	}
-}
-
-type BoundedInt struct {
-	EnvName       string
-	DefaultValue  int
-	ResolvedValue int
-}
-
-func (d BoundedInt) Resolve(ctx context.Context) BoundedInt {
+func GetMetadaSizeLimit(ctx context.Context) int {
 	var log logd.Logger
 	if ctx != nil {
 		_, log = logd.NewFromContext(ctx, "k8senv")
 	}
 
-	rawValue := os.Getenv(d.EnvName)
+	rawValue := os.Getenv(WebhookMetadataSizeLimitEnvVar)
 	if rawValue == "" {
 		if ctx != nil {
-			log.Debug("no custom env set, using default", "env", d.EnvName, "default", d.DefaultValue)
+			log.Debug("no custom env set, using default", "env", WebhookMetadataSizeLimitEnvVar, "default", defaultWebhookMetadataSizeLimitValue)
 		}
 
-		d.ResolvedValue = d.DefaultValue
-
-		return d
+		return defaultWebhookMetadataSizeLimitValue
 	}
 
 	value, err := strconv.Atoi(rawValue)
 	if err != nil || value < 0 {
 		if ctx != nil {
-			log.Error(err, "invalid int value, using default", "env", d.EnvName, "value", rawValue, "default", d.DefaultValue)
+			log.Error(err, "invalid int value, using default", "env", WebhookMetadataSizeLimitEnvVar, "value", rawValue, "default", defaultWebhookMetadataSizeLimitValue)
 		}
 
-		d.ResolvedValue = d.DefaultValue
-
-		return d
+		return defaultWebhookMetadataSizeLimitValue
 	}
 
 	if ctx != nil {
-		log.Info("using custom int value", "env", d.EnvName, "value", value)
+		log.Info("using custom int value", "env", WebhookMetadataSizeLimitEnvVar, "value", value)
 	}
 
-	d.ResolvedValue = value
-
-	return d
+	return value
 }
