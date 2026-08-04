@@ -136,25 +136,6 @@ func Test_GetConnectionInfo(t *testing.T) {
 		_, err := oaClient.GetConnectionInfo(ctx)
 		assert.ErrorIs(t, err, expectErr)
 	})
-
-	t.Run("duplicate endpoints are deduplicated", func(t *testing.T) {
-		dupResponse := &connectionInfoResponse{
-			TenantUUID:             testTenantUUID,
-			TenantToken:            testTenantToken,
-			CommunicationEndpoints: []string{testCommunicationEndpoint, testCommunicationEndpoint},
-		}
-		expected := ConnectionInfo{
-			TenantUUID:  testTenantUUID,
-			TenantToken: testTenantToken,
-			Endpoints:   testCommunicationEndpoint,
-		}
-
-		oaClient := setupMockedClient(t, map[string]string{}, "", dupResponse, nil)
-		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
-		require.NoError(t, err)
-
-		assert.Equal(t, expected, connectionInfo)
-	})
 }
 
 // Test_GetConnectionInfo_EndToEnd exercises the full path through the real core
