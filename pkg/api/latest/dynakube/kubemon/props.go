@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -61,14 +60,6 @@ func (km *KubeMon) GetTenantSecretName() string {
 
 func (km *KubeMon) GetAuthTokenSecretName() string {
 	return km.name + NameSuffix + "-authtoken-secret"
-}
-
-func (km *Spec) GetPullPolicy() corev1.PullPolicy {
-	if km == nil {
-		return ""
-	}
-
-	return corev1.PullPolicy(km.ImagePullPolicy)
 }
 
 // GetCustomImage returns the user-provided image override, or "" if unset.
