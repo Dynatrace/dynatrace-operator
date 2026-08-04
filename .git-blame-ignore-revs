@@ -4,3 +4,5 @@ d6040d6d64f4fc5726eb03e0cb6122eaa947f3e3
 fb64056b8550f326b9f7323f164762f3cd071871
 # Restructure test/helpers/kubeobjects (#6153)
 60d032c08e5eba9f1b828b3e34fc1b3338c18081
+# Standardize OTel/OTelCol naming (#7194)
+08669ba1cda14edb60f8562f3b43c15791109000
