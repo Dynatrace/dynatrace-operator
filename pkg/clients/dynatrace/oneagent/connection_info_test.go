@@ -30,30 +30,28 @@ const (
 
 func Test_GetConnectionInfo(t *testing.T) {
 	ctx := t.Context()
-	response := &ConnectionInfo{
+	response := &connectionInfoResponse{
 		TenantUUID:             testTenantUUID,
 		TenantToken:            testTenantToken,
 		CommunicationEndpoints: []string{testCommunicationEndpoint},
 	}
 
 	expectedResponse := ConnectionInfo{
-		TenantUUID:             testTenantUUID,
-		TenantToken:            testTenantToken,
-		Endpoints:              testCommunicationEndpoint,
-		CommunicationEndpoints: []string{testCommunicationEndpoint},
+		TenantUUID:  testTenantUUID,
+		TenantToken: testTenantToken,
+		Endpoints:   testCommunicationEndpoint,
 	}
 
-	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *ConnectionInfo, err error) *ClientImpl {
+	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *connectionInfoResponse, err error) *ClientImpl {
 		req := coremock.NewRequest(t)
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(params).Return(req).Once()
 		req.EXPECT().
-			Execute(&ConnectionInfo{}).
+			Execute(&connectionInfoResponse{}).
 			Run(func(model any) {
-				resp := model.(*ConnectionInfo)
+				resp := model.(*connectionInfoResponse)
 				resp.TenantUUID = response.TenantUUID
 				resp.TenantToken = response.TenantToken
-				resp.Endpoints = response.Endpoints
 				resp.CommunicationEndpoints = response.CommunicationEndpoints
 			}).
 			Return(err).Once()
@@ -86,18 +84,15 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 
 	t.Run("endpoints are derived from the deduplicated communicationEndpoints slice", func(t *testing.T) {
-		dupResponse := &ConnectionInfo{
-			TenantUUID:  testTenantUUID,
-			TenantToken: testTenantToken,
-			// The formatted string coming from the API is ignored; the slice wins.
-			Endpoints:              "https://stale.example.com:443",
+		dupResponse := &connectionInfoResponse{
+			TenantUUID:             testTenantUUID,
+			TenantToken:            testTenantToken,
 			CommunicationEndpoints: []string{testCommunicationEndpoint, testCommunicationEndpoint},
 		}
 		expected := ConnectionInfo{
-			TenantUUID:             testTenantUUID,
-			TenantToken:            testTenantToken,
-			Endpoints:              testCommunicationEndpoint,
-			CommunicationEndpoints: []string{testCommunicationEndpoint, testCommunicationEndpoint},
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+			Endpoints:   testCommunicationEndpoint,
 		}
 
 		oaClient := setupMockedClient(t, map[string]string{}, "", dupResponse, nil)
@@ -108,17 +103,22 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 
 	t.Run("no communication endpoints", func(t *testing.T) {
-		response.Endpoints = ""
-		response.CommunicationEndpoints = nil
-		expectedResponse.Endpoints = ""
-		expectedResponse.CommunicationEndpoints = nil
+		emptyResponse := &connectionInfoResponse{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+		}
+		expected := ConnectionInfo{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+			Endpoints:   "",
+		}
 
-		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
+		oaClient := setupMockedClient(t, map[string]string{}, "", emptyResponse, nil)
 		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
-		assert.Equal(t, expectedResponse, connectionInfo)
+		assert.Equal(t, expected, connectionInfo)
 	})
 
 	t.Run("bad request error", func(t *testing.T) {
@@ -138,15 +138,22 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 
 	t.Run("duplicate endpoints are deduplicated", func(t *testing.T) {
-		response.CommunicationEndpoints = []string{testCommunicationEndpoint, testCommunicationEndpoint}
-		expectedResponse.Endpoints = testCommunicationEndpoint
-		expectedResponse.CommunicationEndpoints = []string{testCommunicationEndpoint, testCommunicationEndpoint}
+		dupResponse := &connectionInfoResponse{
+			TenantUUID:             testTenantUUID,
+			TenantToken:            testTenantToken,
+			CommunicationEndpoints: []string{testCommunicationEndpoint, testCommunicationEndpoint},
+		}
+		expected := ConnectionInfo{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+			Endpoints:   testCommunicationEndpoint,
+		}
 
-		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
+		oaClient := setupMockedClient(t, map[string]string{}, "", dupResponse, nil)
 		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 
-		assert.Equal(t, expectedResponse, connectionInfo)
+		assert.Equal(t, expected, connectionInfo)
 	})
 }
 

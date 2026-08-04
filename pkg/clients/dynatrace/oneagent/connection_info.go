@@ -16,17 +16,26 @@ const (
 	connectionInfoPath = "/v1/deployment/installer/agent/connectioninfo"
 )
 
-type ConnectionInfo struct {
+// connectionInfoResponse is the raw shape returned by the connectioninfo API.
+// It is unmarshalled directly from JSON and never exposed outside this package.
+type connectionInfoResponse struct {
 	TenantUUID             string   `json:"tenantUUID"`
 	TenantToken            string   `json:"tenantToken"`
-	Endpoints              string   `json:"formattedCommunicationEndpoints"`
 	CommunicationEndpoints []string `json:"communicationEndpoints"`
+}
+
+// ConnectionInfo is the public result of GetConnectionInfo. Endpoints is
+// always deduplicated and comma-separated, consumers never see the raw
+type ConnectionInfo struct {
+	TenantUUID  string
+	TenantToken string
+	Endpoints   string
 }
 
 func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
 	ctx, log := logd.NewFromContext(ctx, loggerName)
 
-	var resp ConnectionInfo
+	var resp connectionInfoResponse
 
 	params := map[string]string{}
 	if c.networkZone != "" {
@@ -49,9 +58,11 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, err
 		return ConnectionInfo{}, errors.WithStack(err)
 	}
 
-	resp.Endpoints = deduplicateEndpoints(resp.CommunicationEndpoints)
-
-	return resp, nil
+	return ConnectionInfo{
+		TenantUUID:  resp.TenantUUID,
+		TenantToken: resp.TenantToken,
+		Endpoints:   deduplicateEndpoints(resp.CommunicationEndpoints),
+	}, nil
 }
 
 // deduplicateEndpoints removes duplicate entries from the communication
