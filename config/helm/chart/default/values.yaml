@@ -129,6 +129,7 @@ webhook:
     certsDir:
       sizeLimit: 10Mi
   startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
+  metadataSizeLimit: "" # size limit for the metadata annotation, defaults to 24576 bytes
 
 csidriver:
   enabled: true
