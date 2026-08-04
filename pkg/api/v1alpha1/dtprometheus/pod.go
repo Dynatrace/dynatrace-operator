@@ -4,7 +4,6 @@
 package dtprometheus
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -25,7 +24,8 @@ type PodSpec struct {
 
 	// Image pull policy for the component pods.
 	// +kubebuilder:validation:Optional
-	ImagePullPolicy image.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// Resource requests and limits for each component pod.
 	// +kubebuilder:validation:Optional
@@ -60,9 +60,4 @@ type PodSpec struct {
 	// Extra labels merged into the pod template metadata.
 	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels,omitempty"`
-}
-
-// GetPullPolicy returns the image pull policy for the component pods.
-func (spec *PodSpec) GetPullPolicy() corev1.PullPolicy {
-	return corev1.PullPolicy(spec.ImagePullPolicy)
 }
