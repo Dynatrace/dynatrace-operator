@@ -1,5 +1,5 @@
 apiVersion: dynatrace.com/v1alpha1
-kind: DtPrometheus
+kind: DTPrometheus
 metadata:
   name: dtprometheus
   namespace: dynatrace

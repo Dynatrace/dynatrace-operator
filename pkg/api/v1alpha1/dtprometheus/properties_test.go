@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestDtPrometheus_IsDynatracePresetEnabled(t *testing.T) {
+func TestDTPrometheus_IsDynatracePresetEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
 		preset   *DynatracePresetSpec
@@ -22,13 +22,13 @@ func TestDtPrometheus_IsDynatracePresetEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dtp := &DtPrometheus{Spec: DtPrometheusSpec{DynatracePreset: tt.preset}}
+			dtp := &DTPrometheus{Spec: DTPrometheusSpec{DynatracePreset: tt.preset}}
 			assert.Equal(t, tt.expected, dtp.IsDynatracePresetEnabled())
 		})
 	}
 }
 
-func TestDtPrometheus_IsTLSEnabled(t *testing.T) {
+func TestDTPrometheus_IsTLSEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
 		tls      *TLSSpec
@@ -40,13 +40,13 @@ func TestDtPrometheus_IsTLSEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dtp := &DtPrometheus{Spec: DtPrometheusSpec{TLS: tt.tls}}
+			dtp := &DTPrometheus{Spec: DTPrometheusSpec{TLS: tt.tls}}
 			assert.Equal(t, tt.expected, dtp.IsTLSEnabled())
 		})
 	}
 }
 
-func TestDtPrometheus_IsSelfMonitoringEnabled(t *testing.T) {
+func TestDTPrometheus_IsSelfMonitoringEnabled(t *testing.T) {
 	tests := []struct {
 		name        string
 		selfMonSpec *SelfMonitoringSpec
@@ -58,14 +58,14 @@ func TestDtPrometheus_IsSelfMonitoringEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dtp := &DtPrometheus{Spec: DtPrometheusSpec{SelfMonitoring: tt.selfMonSpec}}
+			dtp := &DTPrometheus{Spec: DTPrometheusSpec{SelfMonitoring: tt.selfMonSpec}}
 			assert.Equal(t, tt.expected, dtp.IsSelfMonitoringEnabled())
 		})
 	}
 }
 
-func TestDtPrometheus_Conditions(t *testing.T) {
-	dtp := &DtPrometheus{}
+func TestDTPrometheus_Conditions(t *testing.T) {
+	dtp := &DTPrometheus{}
 
 	conditions := dtp.Conditions()
 	*conditions = append(*conditions, metav1.Condition{Type: "Ready"})
@@ -75,8 +75,8 @@ func TestDtPrometheus_Conditions(t *testing.T) {
 	assert.Equal(t, "Ready", dtp.Status.Conditions[0].Type)
 }
 
-func TestDtPrometheus_ComponentAccessors(t *testing.T) {
-	dtp := &DtPrometheus{}
+func TestDTPrometheus_ComponentAccessors(t *testing.T) {
+	dtp := &DTPrometheus{}
 	dtp.Name = "dtprom"
 
 	t.Run("gateway wraps the spec and derives the name", func(t *testing.T) {

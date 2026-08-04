@@ -8,8 +8,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// CommonPodSpec holds the pod-level settings shared by all DtPrometheus components.
-type CommonPodSpec struct {
+// PodSpec holds the parts of the corev1.PodTemplateSpec that DTPrometheus
+// components surface for users to configure. The full corev1 spec is not
+// exposed, to limit conflicts with what the operator needs to configure for
+// proper functioning.
+type PodSpec struct {
 	// Number of replicas for the component. At least 2 is recommended for
 	// failure tolerance.
 	// +kubebuilder:validation:Optional
@@ -60,6 +63,6 @@ type CommonPodSpec struct {
 }
 
 // GetPullPolicy returns the image pull policy for the component pods.
-func (spec *CommonPodSpec) GetPullPolicy() corev1.PullPolicy {
+func (spec *PodSpec) GetPullPolicy() corev1.PullPolicy {
 	return corev1.PullPolicy(spec.ImagePullPolicy)
 }

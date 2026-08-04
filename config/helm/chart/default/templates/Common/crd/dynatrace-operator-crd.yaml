@@ -15,8 +15,8 @@ spec:
   names:
     categories:
     - dynatrace
-    kind: DtPrometheus
-    listKind: DtPrometheusList
+    kind: DTPrometheus
+    listKind: DTPrometheusList
     plural: dtprometheuses
     shortNames:
     - dtp

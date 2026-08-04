@@ -1,6 +1,3 @@
-// Copyright Dynatrace LLC
-// SPDX-License-Identifier: Apache-2.0
-
 package edgeconnect
 
 import (
@@ -230,7 +227,7 @@ func toAreStatusesEqual(t *testing.T, src *EdgeConnectStatus, dst *edgeconnect.E
 
 	assert.True(t, reflect.DeepEqual(src.KubeSystemUID, dst.KubeSystemUID), "KubeSystemUID")
 
-	assert.True(t, reflect.DeepEqual(src.DeploymentPhase, dst.DeploymentPhase), "Phase")
+	assert.True(t, reflect.DeepEqual(src.DeploymentPhase, dst.DeploymentPhase), "DeploymentPhase")
 
 	assert.True(t, reflect.DeepEqual(src.UpdatedTimestamp, dst.UpdatedTimestamp), "UpdatedTimestamp")
 

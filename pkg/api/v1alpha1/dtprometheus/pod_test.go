@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestCommonSpec_GetPullPolicy(t *testing.T) {
+func TestPodSpec_GetPullPolicy(t *testing.T) {
 	tests := []struct {
 		name     string
 		policy   image.PullPolicy
@@ -24,7 +24,7 @@ func TestCommonSpec_GetPullPolicy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			spec := &CommonPodSpec{ImagePullPolicy: tt.policy}
+			spec := &PodSpec{ImagePullPolicy: tt.policy}
 			assert.Equal(t, tt.expected, spec.GetPullPolicy())
 		})
 	}

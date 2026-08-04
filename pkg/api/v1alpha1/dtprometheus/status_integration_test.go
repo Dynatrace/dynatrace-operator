@@ -24,10 +24,10 @@ const (
 	dummyConditionReasonDtp  = "dummyReason"
 	dummyConditionMessageDtp = "dummyMessage"
 
-	duplicatedConditionErrorMessageDtp = `DtPrometheus.dynatrace.com "dtprometheus" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
+	duplicatedConditionErrorMessageDtp = `DTPrometheus.dynatrace.com "dtprometheus" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
 )
 
-func TestDtPrometheusUpdateStatus(t *testing.T) {
+func TestDTPrometheusUpdateStatus(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	clt.Create(t.Context(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -59,15 +59,15 @@ func TestDtPrometheusUpdateStatus(t *testing.T) {
 	})
 }
 
-func buildDTPrometheus() *dtprometheus.DtPrometheus {
-	return &dtprometheus.DtPrometheus{
+func buildDTPrometheus() *dtprometheus.DTPrometheus {
+	return &dtprometheus.DTPrometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        testDTPrometheusName,
 			Namespace:   testNamespaceDtp,
 			Annotations: map[string]string{},
 		},
-		Spec:   dtprometheus.DtPrometheusSpec{DynaKubeName: "dynakube"},
-		Status: dtprometheus.DtPrometheusStatus{},
+		Spec:   dtprometheus.DTPrometheusSpec{DynaKubeName: "dynakube"},
+		Status: dtprometheus.DTPrometheusStatus{},
 	}
 }
 
@@ -81,7 +81,7 @@ func buildDTPrometheusCondition() metav1.Condition {
 	}
 }
 
-func createDTPrometheus(t *testing.T, clt client.Client, dtp *dtprometheus.DtPrometheus) {
+func createDTPrometheus(t *testing.T, clt client.Client, dtp *dtprometheus.DTPrometheus) {
 	t.Helper()
 	status := dtp.Status
 	require.NoError(t, clt.Create(t.Context(), dtp))

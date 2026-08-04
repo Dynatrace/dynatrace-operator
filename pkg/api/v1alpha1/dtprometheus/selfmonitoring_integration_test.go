@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestDtPrometheusSelfMonitoringDefaulting(t *testing.T) {
+func TestDTPrometheusSelfMonitoringDefaulting(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	clt.Create(t.Context(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -29,7 +29,7 @@ func TestDtPrometheusSelfMonitoringDefaulting(t *testing.T) {
 	t.Run("key entirely absent from the manifest defaults to an empty (enabled) object", func(t *testing.T) {
 		raw := &unstructured.Unstructured{Object: map[string]any{
 			"apiVersion": "dynatrace.com/v1alpha1",
-			"kind":       "DtPrometheus",
+			"kind":       "DTPrometheus",
 			"metadata": map[string]any{
 				"name":      "selfmon-key-omitted",
 				"namespace": testNamespaceDtp,
@@ -42,7 +42,7 @@ func TestDtPrometheusSelfMonitoringDefaulting(t *testing.T) {
 		require.NoError(t, clt.Create(t.Context(), raw))
 		t.Cleanup(func() { assert.NoError(t, clt.Delete(context.Background(), raw)) })
 
-		var dtp dtprometheus.DtPrometheus
+		var dtp dtprometheus.DTPrometheus
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: "selfmon-key-omitted", Namespace: testNamespaceDtp}, &dtp))
 
 		require.NotNil(t, dtp.Spec.SelfMonitoring)
@@ -52,7 +52,7 @@ func TestDtPrometheusSelfMonitoringDefaulting(t *testing.T) {
 	t.Run("selfMonitoring explicitly set to null stays disabled", func(t *testing.T) {
 		raw := &unstructured.Unstructured{Object: map[string]any{
 			"apiVersion": "dynatrace.com/v1alpha1",
-			"kind":       "DtPrometheus",
+			"kind":       "DTPrometheus",
 			"metadata": map[string]any{
 				"name":      "selfmon-null",
 				"namespace": testNamespaceDtp,
@@ -66,7 +66,7 @@ func TestDtPrometheusSelfMonitoringDefaulting(t *testing.T) {
 		require.NoError(t, clt.Create(t.Context(), raw))
 		t.Cleanup(func() { assert.NoError(t, clt.Delete(context.Background(), raw)) })
 
-		var dtp dtprometheus.DtPrometheus
+		var dtp dtprometheus.DTPrometheus
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: "selfmon-null", Namespace: testNamespaceDtp}, &dtp))
 
 		assert.Nil(t, dtp.Spec.SelfMonitoring)

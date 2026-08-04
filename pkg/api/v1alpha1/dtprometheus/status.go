@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// DtPrometheusStatus defines the observed state of DtPrometheus.
-type DtPrometheusStatus struct { //nolint:revive
+// DTPrometheusStatus defines the observed state of DTPrometheus.
+type DTPrometheusStatus struct { //nolint:revive
 	// Defines the current state (Running, Deploying, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
@@ -26,8 +26,8 @@ type DtPrometheusStatus struct { //nolint:revive
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// SetPhase sets the status phase on the DtPrometheus object.
-func (dtps *DtPrometheusStatus) SetPhase(phase status.DeploymentPhase) bool {
+// SetPhase sets the status phase on the DTPrometheus object.
+func (dtps *DTPrometheusStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dtps.Phase
 	dtps.Phase = phase
 
@@ -35,7 +35,7 @@ func (dtps *DtPrometheusStatus) SetPhase(phase status.DeploymentPhase) bool {
 }
 
 // UpdateStatus stamps UpdatedTimestamp and persists the status subresource.
-func (dtp *DtPrometheus) UpdateStatus(ctx context.Context, apiClient client.Client) error {
+func (dtp *DTPrometheus) UpdateStatus(ctx context.Context, apiClient client.Client) error {
 	dtp.Status.UpdatedTimestamp = metav1.Now()
 	err := apiClient.Status().Update(ctx, dtp)
 

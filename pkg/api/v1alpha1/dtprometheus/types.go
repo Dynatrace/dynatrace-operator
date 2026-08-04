@@ -11,8 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DtPrometheusSpec defines the desired state of DtPrometheus.
-type DtPrometheusSpec struct { //nolint:revive
+// DTPrometheusSpec defines the desired state of DTPrometheus.
+type DTPrometheusSpec struct { //nolint:revive
 	// Name of the DynaKube in the same namespace that provides all connection
 	// settings (apiUrl, tokens, proxy, networkZone, trustedCAs, ActiveGate, etc.).
 	// +kubebuilder:validation:Required
@@ -76,30 +76,30 @@ type SelfMonitoringSpec struct{}
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// DtPrometheus is the Schema for the DtPrometheus API.
-type DtPrometheus struct { //nolint:revive
+// DTPrometheus is the Schema for the DTPrometheus API.
+type DTPrometheus struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 
 	// metadata is a standard object metadata
 	// +kubebuilder:validation:Optional
 	metav1.ObjectMeta `json:"metadata,omitzero"`
 
-	// spec defines the desired state of DtPrometheus
+	// spec defines the desired state of DTPrometheus
 	// +kubebuilder:validation:Required
-	Spec DtPrometheusSpec `json:"spec"`
+	Spec DTPrometheusSpec `json:"spec"`
 
-	// status defines the observed state of DtPrometheus
+	// status defines the observed state of DTPrometheus
 	// +kubebuilder:validation:Optional
-	Status DtPrometheusStatus `json:"status,omitzero"`
+	Status DTPrometheusStatus `json:"status,omitzero"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 
-// DtPrometheusList contains a list of DtPrometheus.
-type DtPrometheusList struct { //nolint:revive
+// DTPrometheusList contains a list of DTPrometheus.
+type DTPrometheusList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitzero"`
-	Items           []DtPrometheus `json:"items"`
+	Items           []DTPrometheus `json:"items"`
 }

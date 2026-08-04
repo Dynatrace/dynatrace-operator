@@ -5,13 +5,13 @@ package dtprometheus
 
 import appsv1 "k8s.io/api/apps/v1"
 
-// ScraperNameSuffix is appended to the owning DtPrometheus name to derive the base
+// ScraperNameSuffix is appended to the owning DTPrometheus name to derive the base
 // name of the scraper's Kubernetes resources.
 const ScraperNameSuffix = "-scraper"
 
 // +kubebuilder:object:generate=false
 
-// Scraper wraps the scraper Spec together with the owning DtPrometheus name so
+// Scraper wraps the scraper Spec together with the owning DTPrometheus name so
 // derived state (such as Kubernetes resource names) can be computed.
 type Scraper struct {
 	*ScraperSpec
@@ -22,7 +22,7 @@ type Scraper struct {
 // ScraperSpec configures the scraper pool (tier 1): a Deployment of OTel Collectors
 // that scrape their assigned targets and forward OTLP to the gateway pool.
 type ScraperSpec struct {
-	CommonPodSpec `json:",inline"`
+	PodSpec `json:",inline"`
 
 	// Default interval to poll target allocator for scrape targets.
 	// +kubebuilder:validation:Optional
@@ -35,7 +35,7 @@ type ScraperSpec struct {
 	UpdateStrategy appsv1.DeploymentStrategy `json:"updateStrategy,omitzero"`
 }
 
-// NewScraper wraps the given Spec together with the owning DtPrometheus name.
+// NewScraper wraps the given Spec together with the owning DTPrometheus name.
 func NewScraper(spec *ScraperSpec, name string) *Scraper {
 	return &Scraper{
 		ScraperSpec: spec,
@@ -43,7 +43,7 @@ func NewScraper(spec *ScraperSpec, name string) *Scraper {
 	}
 }
 
-// SetName sets the owning DtPrometheus name.
+// SetName sets the owning DTPrometheus name.
 func (s *Scraper) SetName(name string) {
 	s.name = name
 }

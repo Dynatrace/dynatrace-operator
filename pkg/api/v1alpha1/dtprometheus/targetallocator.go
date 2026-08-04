@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	// TargetAllocatorNameSuffix is appended to the owning DtPrometheus name to derive
+	// TargetAllocatorNameSuffix is appended to the owning DTPrometheus name to derive
 	// the base name of the Target Allocator's Kubernetes resources.
 	TargetAllocatorNameSuffix = "-target-allocator"
 
@@ -21,7 +21,7 @@ const (
 // +kubebuilder:object:generate=false
 
 // TargetAllocator wraps the Target Allocator Spec together with the owning
-// DtPrometheus name so derived state (such as Kubernetes resource names) can be
+// DTPrometheus name so derived state (such as Kubernetes resource names) can be
 // computed.
 type TargetAllocator struct {
 	*TargetAllocatorSpec
@@ -33,7 +33,7 @@ type TargetAllocator struct {
 // Prometheus service discovery metadata and distributes scrape targets across the
 // scraper pool.
 type TargetAllocatorSpec struct {
-	CommonPodSpec `json:",inline"`
+	PodSpec `json:",inline"`
 
 	// Default interval used by the target allocator to look for Prometheus CRs
 	// (ServiceMonitor, PodMonitor, ScrapeConfig, Probe).
@@ -59,7 +59,7 @@ type TargetAllocatorSpec struct {
 	UpdateStrategy appsv1.DeploymentStrategy `json:"updateStrategy,omitzero"`
 }
 
-// NewTargetAllocator wraps the given Spec together with the owning DtPrometheus name.
+// NewTargetAllocator wraps the given Spec together with the owning DTPrometheus name.
 func NewTargetAllocator(spec *TargetAllocatorSpec, name string) *TargetAllocator {
 	return &TargetAllocator{
 		TargetAllocatorSpec: spec,
@@ -67,7 +67,7 @@ func NewTargetAllocator(spec *TargetAllocatorSpec, name string) *TargetAllocator
 	}
 }
 
-// SetName sets the owning DtPrometheus name.
+// SetName sets the owning DTPrometheus name.
 func (ta *TargetAllocator) SetName(name string) {
 	ta.name = name
 }
