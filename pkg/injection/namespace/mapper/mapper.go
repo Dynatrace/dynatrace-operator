@@ -129,8 +129,6 @@ func matchMetadataEnrichment(dk *dynakube.DynaKube, namespace *corev1.Namespace)
 	metadataEnrichment := dk.MetadataEnrichment()
 	if !metadataEnrichment.IsEnabled() {
 		return false, nil
-	} else if metadataEnrichment.GetNamespaceSelector() == nil {
-		return true, nil
 	}
 
 	metadataEnrichmentSelector, err := metav1.LabelSelectorAsSelector(metadataEnrichment.GetNamespaceSelector())

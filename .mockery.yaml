@@ -74,6 +74,7 @@ packages:
       versionReconciler:
       connectionInfoReconciler:
       enrichmentRulesReconciler:
+      secretGenerator:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent:
     config:
       dir: "{{.InterfaceDir}}"

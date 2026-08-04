@@ -128,6 +128,7 @@ func (oa *OneAgent) GetInitResources() *corev1.ResourceRequirements {
 	return nil
 }
 
+// GetNamespaceSelector returns the namespace label selector when application monitoring or cloud-native fullstack is enabled, otherwise nil.
 func (oa *OneAgent) GetNamespaceSelector() *metav1.LabelSelector {
 	switch {
 	case oa.IsCloudNativeFullstackMode():
