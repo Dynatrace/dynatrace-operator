@@ -60,6 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	return r.ensureSecret(ctx, dk, data)
 }
 
+// resolveData returns the raw custom-properties payload. Value takes precedence over ValueFrom.
 func (r *Reconciler) resolveData(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
 	src := dk.KubernetesMonitoring().CustomProperties
 
@@ -76,7 +77,12 @@ func (r *Reconciler) resolveData(ctx context.Context, dk *dynakube.DynaKube) ([]
 		return nil, errors.WithMessagef(err, "failed to read custom properties secret %q", src.ValueFrom)
 	}
 
-	return referenced.Data[DataKey], nil
+	data, ok := referenced.Data[DataKey]
+	if !ok || len(data) == 0 {
+		return nil, errors.Errorf("secret %q has no %q key", src.ValueFrom, DataKey)
+	}
+
+	return data, nil
 }
 
 func (r *Reconciler) ensureSecret(ctx context.Context, dk *dynakube.DynaKube, data []byte) error {

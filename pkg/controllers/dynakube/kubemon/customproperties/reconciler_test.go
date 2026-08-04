@@ -97,16 +97,14 @@ func TestReconcile(t *testing.T) {
 		assertSecretAbsent(t, clt, dk)
 	})
 
-	t.Run("cleans up when referenced Secret has empty customProperties key", func(t *testing.T) {
+	t.Run("errors when referenced Secret has empty customProperties key", func(t *testing.T) {
 		dk := newTestDynaKube(withValueFrom(testReferencedSecret))
 		empty := newReferencedSecret("")
 		clt := fake.NewClient(dk, empty, newExistingCustomPropertiesSecret(dk, testInlineValue))
 
 		r := customproperties.NewReconciler(clt)
 
-		require.NoError(t, r.Reconcile(t.Context(), dk))
-
-		assertSecretAbsent(t, clt, dk)
+		require.Error(t, r.Reconcile(t.Context(), dk))
 	})
 
 	t.Run("no-op when nothing to clean and CustomProperties is nil", func(t *testing.T) {
