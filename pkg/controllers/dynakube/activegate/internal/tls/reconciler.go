@@ -29,6 +29,8 @@ const (
 	activeGateSelfSignedTLSCommonNameSuffix = "activegate"
 
 	tlsCrtDataName = "server.crt"
+
+	conditionType = "TLSSecret"
 )
 
 type Reconciler struct {

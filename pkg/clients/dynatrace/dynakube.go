@@ -5,18 +5,20 @@ package dynatrace
 
 import (
 	"context"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type ClientFactory func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string) (*Client, error)
+type ClientFactory func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*Client, error)
 
 // NewClientFromDynakube creates a new Dynatrace dtClient using the provided DynaKube configuration and tokens.
-func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string) (*Client, error) {
-	opts, err := optionsFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix)
+func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*Client, error) {
+	opts, err := optionsFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -24,14 +26,15 @@ func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dyn
 	return NewClient(opts...)
 }
 
-func optionsFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string) ([]Option, error) {
+func optionsFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) ([]Option, error) {
 	options := []Option{
 		WithBaseURL(dk.APIURL()),
 		WithAPIToken(apiToken),
 		WithPaasToken(paasToken),
-		WithSkipCertificateValidation(dk.Spec.SkipCertCheck),
+		WithSkipCertificateValidation(ptr.Deref(dk.Spec.SkipCertCheck, false)),
 		WithUserAgentSuffix(userAgentSuffix),
 		WithCacheTTL(dk.APIRequestThreshold()),
+		WithConnectionTimeout(clientConnectionTimeout),
 	}
 
 	if dk.Spec.NetworkZone != "" {

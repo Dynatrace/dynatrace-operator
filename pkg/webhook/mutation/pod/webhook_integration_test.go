@@ -662,11 +662,11 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				// metrics temporality preference should be set to delta
 				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPMetricsExporterTemporalityPreference, Value: exporter.OTLPMetricsExporterAggregationTemporalityDelta})
 
-				raEnv := k8senv.Find(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+				raEnv := k8senv.Find(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
 
 				require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
 
-				gotResourceAttributes, envVarFound := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+				gotResourceAttributes, envVarFound := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
 				require.True(t, envVarFound, "OTEL_RESOURCE_ATTRIBUTES missing")
 
 				assert.Equal(t, testNamespace, gotResourceAttributes["k8s.namespace.name"])
@@ -789,10 +789,10 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		assert.Equal(t, consts.OTLPExporterSecretName, dtTokenEnv.ValueFrom.SecretKeyRef.Name)
 		assert.Equal(t, token.DataIngestKey, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
 
-		raEnv := k8senv.Find(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+		raEnv := k8senv.Find(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
 		require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
 
-		gotResourceAttributes, envVarFound := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+		gotResourceAttributes, envVarFound := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
 		require.True(t, envVarFound, "OTEL_RESOURCE_ATTRIBUTES missing")
 
 		assert.Equal(t, overrideNamespaceName, gotResourceAttributes["k8s.namespace.name"])
@@ -886,12 +886,12 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			}
 			pod.Spec.Containers[0].Env = []corev1.EnvVar{
 				// existing OTEL_RESOURCE_ATTRIBUTES has highest precedence in the env var
-				{Name: resourceattributes.OTELResourceAttributesEnv, Value: "conflict.existing.vs.pod=from-existing"},
+				{Name: resourceattributes.OTelResourceAttributesEnv, Value: "conflict.existing.vs.pod=from-existing"},
 			}
 		})
 
 		appContainer := pod.Spec.Containers[0]
-		gotRA, found := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+		gotRA, found := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
 		require.True(t, found, "OTEL_RESOURCE_ATTRIBUTES missing")
 
 		// additionalResourceAttributes wins over resourceAttributes (both merged into dynakube layer)

@@ -5,10 +5,10 @@ go 1.26.0
 require (
 	github.com/Dynatrace/dynatrace-bootstrapper v1.4.3
 	github.com/container-storage-interface/spec v1.13.0
-	github.com/docker/cli v29.6.2+incompatible
+	github.com/docker/cli v29.7.1+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.4
-	github.com/google/go-containerregistry v0.21.7
+	github.com/google/go-containerregistry v0.21.8
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.19.1
 	github.com/kubernetes-csi/csi-lib-utils v0.24.0
@@ -27,7 +27,7 @@ require (
 	golang.org/x/net v0.57.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sys v0.47.0
-	google.golang.org/grpc v1.82.1
+	google.golang.org/grpc v1.83.0
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.30.3
 	istio.io/client-go v1.30.3

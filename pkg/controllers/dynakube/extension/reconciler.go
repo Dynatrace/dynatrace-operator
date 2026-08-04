@@ -17,6 +17,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	secretConditionType  = "ExtensionsSecret"
+	serviceConditionType = "ExtensionsService"
+)
+
 type subReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }

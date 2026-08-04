@@ -210,11 +210,11 @@ func (oa *OneAgent) GetCustomImage() string {
 func (oa *OneAgent) GetImagePullPolicy() corev1.PullPolicy {
 	switch {
 	case oa.IsClassicFullStackMode():
-		return corev1.PullPolicy(oa.ClassicFullStack.ImagePullPolicy)
+		return oa.ClassicFullStack.ImagePullPolicy
 	case oa.IsHostMonitoringMode():
-		return corev1.PullPolicy(oa.HostMonitoring.ImagePullPolicy)
+		return oa.HostMonitoring.ImagePullPolicy
 	case oa.IsCloudNativeFullstackMode():
-		return corev1.PullPolicy(oa.CloudNativeFullStack.ImagePullPolicy)
+		return oa.CloudNativeFullStack.ImagePullPolicy
 	default:
 		return ""
 	}
@@ -229,7 +229,7 @@ func (oa *OneAgent) GetDefaultImage(version string) string {
 	truncatedVersion := dtversion.ToImageTag(version)
 	tag := truncatedVersion
 
-	if !strings.Contains(tag, api.RawTag) {
+	if !strings.HasSuffix(tag, api.RawTag) {
 		tag += "-" + api.RawTag
 	}
 
@@ -314,9 +314,9 @@ func (oa *OneAgent) GetCustomCodeModulesImage() string {
 // GetCodeModulesImagePullPolicy provides the image pull policy for the CodeModules provided in the Spec.
 func (oa *OneAgent) GetCodeModulesImagePullPolicy() corev1.PullPolicy {
 	if oa.IsCloudNativeFullstackMode() {
-		return corev1.PullPolicy(oa.CloudNativeFullStack.CodeModulesImagePullPolicy)
+		return oa.CloudNativeFullStack.CodeModulesImagePullPolicy
 	} else if oa.IsApplicationMonitoringMode() {
-		return corev1.PullPolicy(oa.ApplicationMonitoring.CodeModulesImagePullPolicy)
+		return oa.ApplicationMonitoring.CodeModulesImagePullPolicy
 	}
 
 	return ""

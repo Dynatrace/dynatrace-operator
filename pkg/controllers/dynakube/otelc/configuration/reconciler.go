@@ -21,6 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const conditionType string = "OTELCConfigurationConfigMap"
+
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
@@ -84,7 +86,7 @@ func (r *Reconciler) prepareConfigMap(dk *dynakube.DynaKube) (*corev1.ConfigMap,
 		return nil, err
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OTelColComponentLabel).BuildLabels()
 
 	newSecret, err := k8sconfigmap.Build(dk,
 		GetConfigMapName(dk.Name),

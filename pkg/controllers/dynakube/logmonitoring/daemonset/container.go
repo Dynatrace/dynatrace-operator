@@ -42,7 +42,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.Cont
 	container := corev1.Container{
 		Name:            containerName,
 		Image:           imageURI,
-		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.GetPullPolicy(),
+		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.PullPolicy,
 		VolumeMounts:    getVolumeMounts(tenantUUID),
 		Env:             getEnvs(),
 		Resources:       dk.LogMonitoring().Template().Resources,
@@ -68,7 +68,7 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.
 	container := corev1.Container{
 		Name:            initContainerName,
 		Image:           image,
-		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.GetPullPolicy(),
+		ImagePullPolicy: dk.LogMonitoring().Template().ImageRef.PullPolicy,
 		VolumeMounts:    []corev1.VolumeMount{getDTVolumeMounts(tenantUUID)},
 		Command:         []string{bootstrapCommand},
 		Env:             getInitEnvs(dk),

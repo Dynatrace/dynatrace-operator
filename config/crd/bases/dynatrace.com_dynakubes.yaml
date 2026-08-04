@@ -5905,8 +5905,6 @@ spec:
                     type: string
                   registration:
                     properties:
-                      appEnabled:
-                        type: boolean
                       clusterName:
                         type: string
                     type: object
@@ -7837,16 +7835,7 @@ spec:
                       tenantUUID:
                         type: string
                     type: object
-                  imageID:
-                    type: string
-                  lastProbeTimestamp:
-                    format: date-time
-                    type: string
-                  source:
-                    type: string
-                  type:
-                    type: string
-                  version:
+                  image:
                     type: string
                 type: object
               metadataEnrichment:

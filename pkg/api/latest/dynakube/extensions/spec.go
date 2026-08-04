@@ -78,7 +78,7 @@ type ExecutionControllerSpec struct {
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Selects EmptyDir volume to be storage device
 	// +kubebuilder:validation:Optional
-	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
+	UseEphemeralVolume *bool `json:"useEphemeralVolume,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

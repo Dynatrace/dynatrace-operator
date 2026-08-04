@@ -26,7 +26,7 @@ func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dy
 		controller.determineOneAgentPhase,
 		controller.determineLogAgentPhase,
 		controller.determineKSPMPhase,
-		controller.determineOTELCollectorPhase,
+		controller.determineOTelCollectorPhase,
 	}
 	for _, component := range components {
 		if phase := component(ctx, dk); phase != status.Running {
@@ -80,9 +80,9 @@ func (controller *Controller) determineExtensionsExecutionControllerPhase(ctx co
 	return status.Running
 }
 
-func (controller *Controller) determineOTELCollectorPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+func (controller *Controller) determineOTelCollectorPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
 	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
-		return controller.determineStatefulSetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
+		return controller.determineStatefulSetPhase(ctx, dk, dk.OTelCollectorStatefulsetName())
 	}
 
 	return status.Running

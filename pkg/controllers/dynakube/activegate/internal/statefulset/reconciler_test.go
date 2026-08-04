@@ -119,7 +119,7 @@ func TestReconcile(t *testing.T) {
 
 		found := 0
 		for _, vm := range statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if vm.Name == InternalProxySecretVolumeName {
+			if vm.Name == internalProxySecretVolumeName {
 				found++
 			}
 		}
@@ -342,7 +342,7 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 	err := reconciler.Reconcile(ctx, dk, mcap)
 	require.NoError(t, err)
 
-	dk.Spec.ActiveGate.UseEphemeralVolume = true
+	dk.Spec.ActiveGate.UseEphemeralVolume = new(true)
 	err = reconciler.Reconcile(ctx, dk, mcap)
 	require.NoError(t, err)
 }

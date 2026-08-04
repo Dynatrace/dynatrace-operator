@@ -207,7 +207,7 @@ func assertOTLPEnvVarsAbsent(t *testing.T, pod *corev1.Pod) {
 	require.NotNil(t, pod)
 	require.NotEmpty(t, pod.Spec.Containers)
 	appContainer := pod.Spec.Containers[0]
-	for _, name := range []string{exporter.OTLPTraceEndpointEnv, exporter.OTLPLogsEndpointEnv, exporter.OTLPMetricsEndpointEnv, exporter.OTLPTraceHeadersEnv, exporter.OTLPLogsHeadersEnv, exporter.OTLPMetricsHeadersEnv, exporter.DynatraceAPITokenEnv, resourceattributes.OTELResourceAttributesEnv} {
+	for _, name := range []string{exporter.OTLPTraceEndpointEnv, exporter.OTLPLogsEndpointEnv, exporter.OTLPMetricsEndpointEnv, exporter.OTLPTraceHeadersEnv, exporter.OTLPLogsHeadersEnv, exporter.OTLPMetricsHeadersEnv, exporter.DynatraceAPITokenEnv, resourceattributes.OTelResourceAttributesEnv} {
 		for _, e := range appContainer.Env {
 			assert.NotEqual(t, name, e.Name, "%s should not be injected", name)
 		}
@@ -216,7 +216,7 @@ func assertOTLPEnvVarsAbsent(t *testing.T, pod *corev1.Pod) {
 
 func assertOTLPEnvVarsPresentWithResourceAttributes(t *testing.T, pod *corev1.Pod, expectedBase string) {
 	assertOTLPEnvVarsPresent(t, pod, expectedBase)
-	gotResourceAttributes, ok := resourceattributes.NewAttributesFromEnv(pod.Spec.Containers[0].Env, resourceattributes.OTELResourceAttributesEnv)
+	gotResourceAttributes, ok := resourceattributes.NewAttributesFromEnv(pod.Spec.Containers[0].Env, resourceattributes.OTelResourceAttributesEnv)
 
 	require.True(t, ok, "OTEL_RESOURCE_ATTRIBUTES missing")
 	assert.Equal(t, url.QueryEscape("checkout service"), gotResourceAttributes["service.name"])       // annotation encoded

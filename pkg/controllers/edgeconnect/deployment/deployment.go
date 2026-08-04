@@ -115,7 +115,7 @@ func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
 	return corev1.Container{
 		Name:            consts.EdgeConnectContainerName,
 		Image:           ec.Status.Version.ImageID,
-		ImagePullPolicy: ec.Spec.ImageRef.GetPullPolicy(),
+		ImagePullPolicy: ec.Spec.ImageRef.PullPolicy,
 		Env:             ec.Spec.Env,
 		Resources:       prepareResourceRequirements(ec),
 		SecurityContext: &corev1.SecurityContext{

@@ -10,10 +10,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -324,10 +326,106 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
+	t.Run("Create with standalone kubemon when operand env is set", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+		dk := createTestKubemonDynakube()
+		fakeClient := fake.NewClient()
+		r := NewReconciler(fakeClient, fakeClient)
+
+		err := r.Reconcile(t.Context(), dk, token.Tokens{
+			token.APIKey: &token.Token{Value: testValue},
+		})
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		require.NoError(t, err)
+		assert.NotEmpty(t, pullSecret.Data)
+	})
+	t.Run("Don't create with standalone kubemon when operand env is not set", func(t *testing.T) {
+		// EXPERIMENTAL_ENABLE_KUBEMON_OPERAND is not set; kubemon spec is present but the operand is disabled
+		dk := createTestKubemonDynakube()
+		fakeClient := fake.NewClient()
+		r := NewReconciler(fakeClient, fakeClient)
+
+		err := r.Reconcile(t.Context(), dk, nil)
+		require.NoError(t, err)
+
+		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+	t.Run("Don't create when operand env is set but kubemon is not configured", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+		dk := addFakeTenantUUID(&dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				// KubernetesMonitoring intentionally nil
+			},
+		})
+		fakeClient := fake.NewClient()
+		r := NewReconciler(fakeClient, fakeClient)
+
+		err := r.Reconcile(t.Context(), dk, nil)
+		require.NoError(t, err)
+
+		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+	t.Run("Cleanup when standalone kubemon is disabled", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+		dk := createTestKubemonDynakube()
+		fakeClient := fake.NewClient()
+		tokens := token.Tokens{
+			token.APIKey: &token.Token{Value: testValue},
+		}
+
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk, tokens)
+		require.NoError(t, err)
+		assert.NotEmpty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+
+		var pullSecret corev1.Secret
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+		require.NoError(t, err)
+
+		dk.Spec.KubernetesMonitoring = nil
+		err = r.Reconcile(t.Context(), dk, tokens)
+		require.NoError(t, err)
+
+		err = fakeClient.Get(t.Context(),
+			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
+			&pullSecret)
+
+		assert.True(t, k8serrors.IsNotFound(err))
+		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
+	})
 }
 
 func createTestDynakube() *dynakube.DynaKube {
-	return addFakeTennantUUID(&dynakube.DynaKube{
+	return addFakeTenantUUID(&dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
@@ -339,8 +437,21 @@ func createTestDynakube() *dynakube.DynaKube {
 	})
 }
 
-func addFakeTennantUUID(dk *dynakube.DynaKube) *dynakube.DynaKube {
+func addFakeTenantUUID(dk *dynakube.DynaKube) *dynakube.DynaKube {
 	dk.Status.OneAgent.ConnectionInfo.TenantUUID = testTenant
 
 	return dk
+}
+
+func createTestKubemonDynakube() *dynakube.DynaKube {
+	return addFakeTenantUUID(&dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL:               testAPIURL,
+			KubernetesMonitoring: &kubemonapi.Spec{},
+		},
+	})
 }

@@ -99,42 +99,56 @@ func (c *ClientImpl) GetLegacyEnrichmentRuleObjects(ctx context.Context, scope s
 	return c.getEnrichmentRuleObjectsForSchema(ctx, legacyMetadataEnrichmentSchemaID, scope)
 }
 
-func (c *ClientImpl) CreateEnrichmentRuleObject(ctx context.Context, scope string, rule metadataenrichment.Rule) (string, error) {
-	return c.createEnrichmentRule(ctx, metadataEnrichmentSchemaID, scope, rule)
+func (c *ClientImpl) CreateEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
+	return c.createEnrichmentRule(ctx, metadataEnrichmentSchemaID, scope, rules)
 }
 
-func (c *ClientImpl) CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rule metadataenrichment.Rule) (string, error) {
-	return c.createEnrichmentRule(ctx, legacyMetadataEnrichmentSchemaID, scope, rule)
+func (c *ClientImpl) CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
+	return c.createEnrichmentRule(ctx, legacyMetadataEnrichmentSchemaID, scope, rules)
 }
 
-func (c *ClientImpl) createEnrichmentRule(ctx context.Context, schemaID, scope string, rule metadataenrichment.Rule) (string, error) {
+func (c *ClientImpl) createEnrichmentRule(ctx context.Context, schemaID, scope string, rules []metadataenrichment.Rule) ([]string, error) {
 	if scope == "" {
-		return "", errors.New("no scope (MEID) was provided for creating the enrichment rule")
+		return nil, errors.New("no scope (MEID) was provided for creating the enrichment rule")
 	}
 
 	var response []postObjectsResponse
 
 	err := c.apiClient.POST(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).
-		WithJSONBody(buildEnrichmentBody(schemaID, scope, rule)).
+		WithJSONBody(buildEnrichmentBody(schemaID, scope, rules)).
 		Execute(&response)
 	if err != nil {
-		return "", fmt.Errorf("create enrichment rule (%s): %w", schemaID, err)
+		return nil, fmt.Errorf("create enrichment rule (%s): %w", schemaID, err)
 	}
 
-	return getObjectID(response)
+	objectIDs := make([]string, len(response))
+	for i, resp := range response {
+		objectIDs[i] = resp.ObjectID
+	}
+
+	return objectIDs, nil
 }
 
-func buildEnrichmentBody(schemaID, scope string, rule metadataenrichment.Rule) any {
+func buildEnrichmentBody(schemaID, scope string, rules []metadataenrichment.Rule) any {
 	if schemaID == metadataEnrichmentSchemaID {
-		return newPostObjectsBody(schemaID, "", scope, enrichmentRuleValue{
-			Type:        rule.Type,
-			ValueSource: rule.Source,
-			Target:      rule.Target,
-		})
+		values := make([]enrichmentRuleValue, len(rules))
+		for i, rule := range rules {
+			values[i] = convertRule(rule)
+		}
+
+		return newPostObjectsBody(schemaID, "", scope, values...)
 	}
 
-	return newPostObjectsBody(schemaID, "", scope, legacyEnrichmentValue{Rules: []metadataenrichment.Rule{rule}})
+	return newPostObjectsBody(schemaID, "", scope, legacyEnrichmentValue{Rules: rules})
+}
+
+func convertRule(rule metadataenrichment.Rule) enrichmentRuleValue {
+	return enrichmentRuleValue{
+		Type:        rule.Type,
+		ValueSource: rule.Source,
+		Target:      rule.Target,
+	}
 }
 
 // GetRules returns metadata enrichment rules.
@@ -217,7 +231,9 @@ func isNewSchemaRequested(resp getRulesResponse) bool {
 	return false
 }
 
+// Map rules from either schema to a list of [metadataenrichment.Rule].
 func getRulesFromResponse(ctx context.Context, resp getRulesResponse) []metadataenrichment.Rule {
+	// IMPORTANT: The order of the rules MUST NOT be changed. This is because we must guarantee that the first rule to match a key wins (ICP-7916).
 	var (
 		rules   []metadataenrichment.Rule
 		dropped []ingestEnrichmentConfig

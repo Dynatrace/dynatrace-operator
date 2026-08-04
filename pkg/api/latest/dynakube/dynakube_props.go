@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtapiurl"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
@@ -152,13 +153,16 @@ func (dk *DynaKube) Tokens() string {
 }
 
 func (dk *DynaKube) TenantUUID() (string, error) {
-	if dk.Status.OneAgent.ConnectionInfo.TenantUUID != "" {
+	switch {
+	case dk.Status.OneAgent.ConnectionInfo.TenantUUID != "":
 		return dk.Status.OneAgent.ConnectionInfo.TenantUUID, nil
-	} else if dk.Status.ActiveGate.ConnectionInfo.TenantUUID != "" {
+	case dk.Status.ActiveGate.ConnectionInfo.TenantUUID != "":
 		return dk.Status.ActiveGate.ConnectionInfo.TenantUUID, nil
+	case dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID != "":
+		return dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID, nil
+	default:
+		return "", errors.New("tenant UUID not available")
 	}
-
-	return "", errors.New("tenant UUID not available")
 }
 
 func (dk *DynaKube) GetDynatraceAPIRequestThreshold() uint16 {
@@ -191,4 +195,24 @@ func (dk *DynaKube) GetResourceAttributes() map[string]string {
 
 func (dk *DynaKube) PublicRegistryOverride() string {
 	return dk.Spec.PublicRegistryOverride
+}
+
+func (dk *DynaKube) OTelCollectorStatefulsetName() string {
+	return dk.Name + consts.OTelCollectorNameSuffix
+}
+
+func (dk *DynaKube) IsAGCertificateNeeded() bool {
+	if dk.ActiveGate().IsEnabled() && dk.ActiveGate().HasCaCert() {
+		return true
+	}
+
+	return false
+}
+
+func (dk *DynaKube) IsCACertificateNeeded() bool {
+	if !dk.ActiveGate().IsEnabled() && dk.Spec.TrustedCAs != "" {
+		return true
+	}
+
+	return false
 }

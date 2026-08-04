@@ -58,6 +58,7 @@ spec:
   apiUrl: https://url/api
   customPullSecret: pull-secret
   dynatraceApiRequestThreshold: 42
+  enableIstio: false
   extensions: {}
   logMonitoring:
     ingestRuleMatchers:
@@ -121,7 +122,7 @@ spec:
   proxy:
     value: proxy-value
     valueFrom: proxy-from
-  skipCertCheck: true
+  skipCertCheck: false
   telemetryIngest:
     protocols:
     - zipkin

@@ -194,3 +194,17 @@ topologySpreadConstraints:
   value: {{ . | quote }}
 {{- end }}
 {{- end -}}
+
+{{- define "dynatrace-operator.client-connection-timeout-env" -}}
+  {{- with .Values.operator.clientConnectionTimeout }}
+- name: DT_CLIENT_CONNECTION_TIMEOUT
+  value: {{ . | quote }}
+  {{- end }}
+{{- end -}}
+
+{{- define "dynatrace-csidriver.client-connection-timeout-env" -}}
+  {{- with .Values.csidriver.clientConnectionTimeout }}
+- name: DT_CLIENT_CONNECTION_TIMEOUT
+  value: {{ . | quote }}
+  {{- end }}
+{{- end -}}

@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -112,7 +113,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		k8sstatefulset.SetServiceAccount(serviceAccountName),
 		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
 		k8sstatefulset.SetRollingUpdateStrategyType(),
-		setImagePullSecrets(dk.CustomPullSecretReferences()),
+		k8sstatefulset.SetImagePullSecrets(dk.CustomPullSecretReferences()),
 		setVolumes(dk),
 		setPersistentVolumeClaim(dk),
 	)
@@ -167,17 +168,11 @@ func buildAffinity() corev1.Affinity {
 	return k8saffinity.NewMultiArchNodeAffinity()
 }
 
-func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
-	}
-}
-
 func buildContainer(dk *dynakube.DynaKube, imageURI string) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
 		Image:           imageURI,
-		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.GetPullPolicy(),
+		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.PullPolicy,
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
@@ -436,7 +431,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			}
 		}
 
-		if dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+		if ptr.Deref(dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume, false) {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: runtimeVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -492,7 +487,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 
 func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+		if !ptr.Deref(dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume, false) {
 			if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim == nil {
 				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 					{

@@ -89,18 +89,18 @@ func TestCustomOneAgentImage(t *testing.T) {
 
 func TestGetOneAgentImagePullPolicy(t *testing.T) {
 	t.Run("hostmonitoring", func(t *testing.T) {
-		oneAgent := OneAgent{Spec: &Spec{ClassicFullStack: &HostInjectSpec{ImagePullPolicy: "foo"}}}
-		assert.EqualValues(t, "foo", oneAgent.GetImagePullPolicy())
+		oneAgent := OneAgent{Spec: &Spec{ClassicFullStack: &HostInjectSpec{ImagePullPolicy: corev1.PullAlways}}}
+		assert.Equal(t, corev1.PullAlways, oneAgent.GetImagePullPolicy())
 	})
 
 	t.Run("CFS", func(t *testing.T) {
-		oneAgent := OneAgent{Spec: &Spec{HostMonitoring: &HostInjectSpec{ImagePullPolicy: "foo"}}}
-		assert.EqualValues(t, "foo", oneAgent.GetImagePullPolicy())
+		oneAgent := OneAgent{Spec: &Spec{HostMonitoring: &HostInjectSpec{ImagePullPolicy: corev1.PullAlways}}}
+		assert.Equal(t, corev1.PullAlways, oneAgent.GetImagePullPolicy())
 	})
 
 	t.Run("CNFS", func(t *testing.T) {
-		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{HostInjectSpec: HostInjectSpec{ImagePullPolicy: "foo"}}}}
-		assert.EqualValues(t, "foo", oneAgent.GetImagePullPolicy())
+		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{HostInjectSpec: HostInjectSpec{ImagePullPolicy: corev1.PullAlways}}}}
+		assert.Equal(t, corev1.PullAlways, oneAgent.GetImagePullPolicy())
 	})
 }
 

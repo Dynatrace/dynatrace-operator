@@ -6,6 +6,7 @@ package nodes
 import (
 	"context"
 	"errors"
+	"net/url"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
 	"github.com/stretchr/testify/assert"
@@ -31,6 +33,7 @@ import (
 )
 
 const (
+	testName      = "test-dynakube"
 	testNamespace = "dynatrace"
 	testAPIToken  = "test-api-token"
 )
@@ -337,6 +340,90 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
+func TestSendMarkedForTerminationForDTConnectionTimeout(t *testing.T) {
+	fakeClient := fake.NewClient(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			token.APIKey: []byte(testAPIToken),
+		},
+	})
+
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{APIURL: "localhost"},
+	}
+
+	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
+		testCases := []struct {
+			envValue string
+			timeout  time.Duration
+		}{
+			{
+				envValue: "",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "29s",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "30s",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "15m",
+				timeout:  15 * time.Minute,
+			},
+			{
+				envValue: "901s",
+				timeout:  30 * time.Second,
+			},
+		}
+
+		for _, testCase := range testCases {
+			if testCase.envValue != "" {
+				t.Setenv(k8senv.DTClientConnectionTimeoutEnvVar, testCase.envValue)
+			}
+
+			controller := &Controller{
+				client:          fakeClient,
+				apiReader:       fakeClient,
+				dtClientFactory: testDTClientBuilder(t, testCase.timeout),
+			}
+
+			err := controller.sendMarkedForTermination(t.Context(), dk, &cache.Entry{
+				LastSeen:                 time.Now(),
+				LastMarkedForTermination: time.Now(),
+				IPAddress:                "127.0.0.1",
+				NodeName:                 "testNode",
+				DynaKubeName:             "dynakube",
+			})
+
+			// we just want to make sure that the timeout is applied correctly to the underlying http.Client
+			require.Error(t, err)
+
+			var urlErr *url.Error
+			require.ErrorAs(t, err, &urlErr)
+
+			assert.Equal(t, "unsupported protocol scheme \"\"", urlErr.Unwrap().Error())
+		}
+	})
+}
+
+func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+		assert.Equal(t, timeout, clientConnectionTimeout)
+
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
+	}
+}
+
 func createReconcileRequest(nodeName string) reconcile.Request {
 	return reconcile.Request{
 		NamespacedName: types.NamespacedName{Name: nodeName},
@@ -420,7 +507,7 @@ func createDefaultFakeClient() client.Client {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }

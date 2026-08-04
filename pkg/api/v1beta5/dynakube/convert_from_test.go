@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 func TestConvertFrom(t *testing.T) {
@@ -192,7 +193,7 @@ func TestConvertFrom(t *testing.T) {
 	t.Run("clear default otelc image", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
-		from.RemovedFields().DefaultOTELCImage.Set(new(true))
+		from.RemovedFields().DefaultOTelColImage.Set(new(true))
 
 		to := DynaKube{}
 
@@ -201,7 +202,7 @@ func TestConvertFrom(t *testing.T) {
 
 		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Empty(t, to.Annotations[conversion.DefaultOTELCImageKey])
+		assert.Empty(t, to.Annotations[conversion.DefaultOTelColImageKey])
 
 		compareBase(t, to, from)
 	})
@@ -544,8 +545,8 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			CustomPullSecret:             "pull-secret",
-			SkipCertCheck:                true,
-			EnableIstio:                  true,
+			SkipCertCheck:                ptr.To(true),
+			EnableIstio:                  ptr.To(true),
 			MetadataEnrichment: metadataenrichmentlatest.Spec{
 				Enabled:           new(true),
 				NamespaceSelector: getTestNamespaceSelector(),
@@ -778,7 +779,7 @@ func getNewExtensionExecutionControllerSpec() extensionslatest.ExecutionControll
 		},
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
-		UseEphemeralVolume:          true,
+		UseEphemeralVolume:          ptr.To(true),
 	}
 }
 

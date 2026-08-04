@@ -15,6 +15,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Hub tags this version as the 'source' of the conversion for controller runtime.
+func (*EdgeConnect) Hub() {}
+
 // EdgeConnectSpec defines the desired state of EdgeConnect.
 type EdgeConnectSpec struct { //nolint:revive
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
@@ -45,7 +48,8 @@ type EdgeConnectSpec struct { //nolint:revive
 	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 
 	// Overrides the default image
-	ImageRef image.Ref `json:"imageRef,omitempty"`
+	// +kubebuilder:validation:Optional
+	ImageRef image.Ref `json:"imageRef,omitzero"`
 
 	// Location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required
@@ -63,7 +67,8 @@ type EdgeConnectSpec struct { //nolint:revive
 	OAuth OAuthSpec `json:"oauth"`
 
 	// Defines resources requests and limits for single pods
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// +kubebuilder:validation:Optional
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 
 	// Restrict outgoing HTTP requests to your internal resources to specified hosts
 	// +kubebuilder:example:="internal.example.org,*.dev.example.org"
@@ -115,11 +120,19 @@ type KubernetesAutomationSpec struct {
 
 // EdgeConnect is the Schema for the EdgeConnect API.
 type EdgeConnect struct {
-	Spec              EdgeConnectSpec `json:"spec,omitempty"`
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Status EdgeConnectStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +kubebuilder:validation:Optional
+	metav1.ObjectMeta `json:"metadata,omitzero"`
+
+	// spec defines the desired state of EdgeConnect
+	// +kubebuilder:validation:Required
+	Spec EdgeConnectSpec `json:"spec"`
+
+	// status defines the observed state of EdgeConnect
+	// +kubebuilder:validation:Optional
+	Status EdgeConnectStatus `json:"status,omitzero"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -129,7 +142,7 @@ type EdgeConnect struct {
 // EdgeConnectList contains a list of EdgeConnect.
 type EdgeConnectList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []EdgeConnect `json:"items"`
 }
 

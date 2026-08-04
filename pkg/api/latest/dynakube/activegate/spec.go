@@ -4,7 +4,6 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -118,7 +117,7 @@ type Spec struct {
 	automaticTLSCertificateEnabled bool
 
 	// UseEphemeralVolume
-	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
+	UseEphemeralVolume *bool `json:"useEphemeralVolume,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -154,7 +153,8 @@ type CapabilityProperties struct {
 	Image string `json:"image,omitempty"`
 
 	// The ActiveGate container image pull policy.
-	ImagePullPolicy image.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// Set activation group for ActiveGate
 	// +kubebuilder:validation:Optional

@@ -18,6 +18,7 @@ import (
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,7 +55,7 @@ func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube)
 		return errors.New("can't reconcile api url of nil dynakube")
 	}
 
-	if !dk.Spec.EnableIstio {
+	if !ptr.Deref(dk.Spec.EnableIstio, false) {
 		if isIstioConfigured(dk, OperatorComponent) {
 			err := r.cleanupIstio(ctx, dk, OperatorComponent)
 			if err != nil {
@@ -96,7 +97,7 @@ func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 
 	migrateDeprecatedCondition(dk.Conditions())
 
-	if !dk.Spec.EnableIstio || !dk.OneAgent().IsAppInjectionNeeded() {
+	if !ptr.Deref(dk.Spec.EnableIstio, false) || !dk.OneAgent().IsAppInjectionNeeded() {
 		if isIstioConfigured(dk, codeModuleConditionName) {
 			log.Info("appinjection disabled, cleaning up")
 
@@ -146,7 +147,7 @@ func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
-	if !dk.Spec.EnableIstio || !dk.ActiveGate().IsEnabled() {
+	if !ptr.Deref(dk.Spec.EnableIstio, false) || !dk.ActiveGate().IsEnabled() {
 		if isIstioConfigured(dk, activeGateConditionName) {
 			log.Info("activegate disabled, cleaning up")
 
