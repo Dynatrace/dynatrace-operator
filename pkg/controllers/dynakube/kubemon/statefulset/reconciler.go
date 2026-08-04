@@ -275,7 +275,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	container := corev1.Container{
 		Name:            ContainerName,
 		Image:           imageURI,
-		ImagePullPolicy: dk.KubernetesMonitoring().GetPullPolicy(),
+		ImagePullPolicy: dk.KubernetesMonitoring().ImagePullPolicy,
 		Resources:       dk.KubernetesMonitoring().Resources,
 		Env:             buildEnvs(dk),
 		VolumeMounts:    buildVolumeMounts(dk),
