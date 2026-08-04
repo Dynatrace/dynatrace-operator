@@ -73,7 +73,9 @@ func (dst *DynaKube) fromLogMonitoringSpec(src *dynakubelatest.DynaKube) {
 
 func (dst *DynaKube) fromKspmSpec(src *dynakubelatest.DynaKube) {
 	if src.Spec.KSPM != nil {
-		dst.Spec.Kspm = &kspm.Spec{}
+		dst.Spec.Kspm = &kspm.Spec{
+			MappedHostPaths: src.Spec.KSPM.MappedHostPaths,
+		}
 	}
 }
 
