@@ -6,7 +6,9 @@ package oneagent
 import (
 	"context"
 	"errors"
-	"strings"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -29,15 +31,16 @@ const (
 func Test_GetConnectionInfo(t *testing.T) {
 	ctx := t.Context()
 	response := &ConnectionInfo{
-		TenantUUID:  testTenantUUID,
-		TenantToken: testTenantToken,
-		Endpoints:   testCommunicationEndpoint,
+		TenantUUID:             testTenantUUID,
+		TenantToken:            testTenantToken,
+		CommunicationEndpoints: []string{testCommunicationEndpoint},
 	}
 
 	expectedResponse := ConnectionInfo{
-		TenantUUID:  testTenantUUID,
-		TenantToken: testTenantToken,
-		Endpoints:   testCommunicationEndpoint,
+		TenantUUID:             testTenantUUID,
+		TenantToken:            testTenantToken,
+		Endpoints:              testCommunicationEndpoint,
+		CommunicationEndpoints: []string{testCommunicationEndpoint},
 	}
 
 	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *ConnectionInfo, err error) *ClientImpl {
@@ -51,6 +54,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 				resp.TenantUUID = response.TenantUUID
 				resp.TenantToken = response.TenantToken
 				resp.Endpoints = response.Endpoints
+				resp.CommunicationEndpoints = response.CommunicationEndpoints
 			}).
 			Return(err).Once()
 		coreClient := coremock.NewClient(t)
@@ -81,9 +85,33 @@ func Test_GetConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedResponse, connectionInfo)
 	})
 
+	t.Run("endpoints are derived from the deduplicated communicationEndpoints slice", func(t *testing.T) {
+		dupResponse := &ConnectionInfo{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+			// The formatted string coming from the API is ignored; the slice wins.
+			Endpoints:              "https://stale.example.com:443",
+			CommunicationEndpoints: []string{testCommunicationEndpoint, testCommunicationEndpoint},
+		}
+		expected := ConnectionInfo{
+			TenantUUID:             testTenantUUID,
+			TenantToken:            testTenantToken,
+			Endpoints:              testCommunicationEndpoint,
+			CommunicationEndpoints: []string{testCommunicationEndpoint, testCommunicationEndpoint},
+		}
+
+		oaClient := setupMockedClient(t, map[string]string{}, "", dupResponse, nil)
+		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
+		require.NoError(t, err)
+
+		assert.Equal(t, expected, connectionInfo)
+	})
+
 	t.Run("no communication endpoints", func(t *testing.T) {
 		response.Endpoints = ""
+		response.CommunicationEndpoints = nil
 		expectedResponse.Endpoints = ""
+		expectedResponse.CommunicationEndpoints = nil
 
 		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
 		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
@@ -110,8 +138,9 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 
 	t.Run("duplicate endpoints are deduplicated", func(t *testing.T) {
-		response.Endpoints = testCommunicationEndpoint + ";" + testCommunicationEndpoint
+		response.CommunicationEndpoints = []string{testCommunicationEndpoint, testCommunicationEndpoint}
 		expectedResponse.Endpoints = testCommunicationEndpoint
+		expectedResponse.CommunicationEndpoints = []string{testCommunicationEndpoint, testCommunicationEndpoint}
 
 		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
 		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
@@ -119,6 +148,45 @@ func Test_GetConnectionInfo(t *testing.T) {
 
 		assert.Equal(t, expectedResponse, connectionInfo)
 	})
+}
+
+// Test_GetConnectionInfo_EndToEnd exercises the full path through the real core
+// HTTP client against an httptest.Server. The mocked JSON response contains both
+// the formatted string and a communicationEndpoints array with duplicates, and we
+// assert the returned Endpoints string is derived from the slice with duplicates
+// removed and the entries joined by endpointDelimiter.
+func Test_GetConnectionInfo_EndToEnd(t *testing.T) {
+	const (
+		epA = "https://tenant.dev.dynatracelabs.com:443"
+		epB = "https://other.dev.dynatracelabs.com:8443"
+	)
+
+	body := `{
+		"tenantUUID": "` + testTenantUUID + `",
+		"tenantToken": "` + testTenantToken + `",
+		"formattedCommunicationEndpoints": "https://stale.example.com:443",
+		"communicationEndpoints": ["` + epA + `", "` + epB + `", "` + epA + `"]
+	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, connectionInfoPath, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	defer server.Close()
+
+	coreClient := core.NewClient(core.Config{
+		BaseURL:   mustParseURL(t, server.URL),
+		PaasToken: "paas",
+	})
+	oaClient := NewClient(coreClient, "", "")
+
+	connectionInfo, err := oaClient.GetConnectionInfo(t.Context())
+	require.NoError(t, err)
+
+	assert.Equal(t, testTenantUUID, connectionInfo.TenantUUID)
+	assert.Equal(t, testTenantToken, connectionInfo.TenantToken)
+	assert.Equal(t, epA+";"+epB, connectionInfo.Endpoints)
 }
 
 func Test_deduplicateEndpoints(t *testing.T) {
@@ -130,48 +198,53 @@ func Test_deduplicateEndpoints(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		input    string
+		input    []string
 		expected string
 	}{
 		{
-			name:     "empty string",
-			input:    "",
+			name:     "nil slice",
+			input:    nil,
+			expected: "",
+		},
+		{
+			name:     "empty slice",
+			input:    []string{},
 			expected: "",
 		},
 		{
 			name:     "single endpoint",
-			input:    epA,
+			input:    []string{epA},
 			expected: epA,
 		},
 		{
-			name:     "no duplicates is a no-op",
-			input:    epA + ";" + epB + ";" + epC,
+			name:     "no duplicates is a no-op, order preserved",
+			input:    []string{epA, epB, epC},
 			expected: epA + ";" + epB + ";" + epC,
 		},
 		{
 			name:     "some duplicates preserve first-occurrence order",
-			input:    epB + ";" + epA + ";" + epB + ";" + epC + ";" + epA,
+			input:    []string{epB, epA, epB, epC, epA},
 			expected: epB + ";" + epA + ";" + epC,
 		},
 		{
 			name:     "all duplicates collapse to one",
-			input:    epA + ";" + epA + ";" + epA,
+			input:    []string{epA, epA, epA},
 			expected: epA,
 		},
 		{
-			name:     "endpoints differing only by surrounding whitespace are duplicates",
-			input:    epA + "; " + epA + " ;\t" + epA,
+			name:     "entries differing only by surrounding whitespace are trimmed and deduplicated",
+			input:    []string{epA, " " + epA, epA + "\t"},
 			expected: epA,
 		},
 		{
-			name:     "empty segments are dropped",
-			input:    epA + ";;" + epB + ";",
+			name:     "empty and whitespace-only entries are dropped",
+			input:    []string{epA, "", "   ", epB},
 			expected: epA + ";" + epB,
 		},
 		{
-			name:     "endpoints differing only by case are kept as distinct",
-			input:    epA + ";" + strings.ToUpper(epA),
-			expected: epA + ";" + strings.ToUpper(epA),
+			name:     "entries differing only by case are kept as distinct",
+			input:    []string{epA, "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443"},
+			expected: epA + ";" + "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443",
 		},
 	}
 
@@ -180,4 +253,13 @@ func Test_deduplicateEndpoints(t *testing.T) {
 			assert.Equal(t, tt.expected, deduplicateEndpoints(tt.input))
 		})
 	}
+}
+
+func mustParseURL(t *testing.T, raw string) *url.URL {
+	t.Helper()
+
+	u, err := url.Parse(raw)
+	require.NoError(t, err)
+
+	return u
 }

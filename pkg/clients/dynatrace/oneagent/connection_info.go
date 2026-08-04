@@ -22,12 +22,10 @@ const (
 )
 
 type ConnectionInfo struct {
-	TenantUUID  string `json:"tenantUUID"`
-	TenantToken string `json:"tenantToken"`
-	Endpoints   string `json:"formattedCommunicationEndpoints"`
-	// NOTE: connectionInfoPath also returns
-	// communicationEndpoints []string (individual endpoints as a slice), but we only
-	// use the pre-formatted Endpoints string above. The slice is available if needed in the future.
+	TenantUUID             string   `json:"tenantUUID"`
+	TenantToken            string   `json:"tenantToken"`
+	Endpoints              string   `json:"formattedCommunicationEndpoints"`
+	CommunicationEndpoints []string `json:"communicationEndpoints"`
 }
 
 func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
@@ -56,22 +54,18 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, err
 		return ConnectionInfo{}, errors.WithStack(err)
 	}
 
-	resp.Endpoints = deduplicateEndpoints(resp.Endpoints)
+	resp.Endpoints = deduplicateEndpoints(resp.CommunicationEndpoints)
 
 	return resp, nil
 }
 
 // deduplicateEndpoints removes duplicate endpoints from a formatted
 // communication-endpoints string (delimiter-separated, see endpointDelimiter).
-func deduplicateEndpoints(endpoints string) string {
-	if endpoints == "" {
-		return endpoints
-	}
-
+func deduplicateEndpoints(endpoints []string) string {
 	seen := make(map[string]struct{})
 	unique := make([]string, 0)
 
-	for endpoint := range strings.SplitSeq(endpoints, endpointDelimiter) {
+	for _, endpoint := range endpoints {
 		endpoint = strings.TrimSpace(endpoint)
 		if endpoint == "" {
 			continue
