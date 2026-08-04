@@ -8,8 +8,7 @@ CRD_KEEP_DESC    := $(CRD_BASE_OPTIONS)
 # New API versions under that kind are picked up automatically when their directories are added.
 # Excludes pkg/api/validation/* which holds validation logic, not CRD type definitions.
 CRD_PATHS_DYNAKUBE      := $(foreach d,$(filter-out pkg/api/validation/%,$(wildcard pkg/api/*/dynakube)),paths=./$d/...)
-CRD_PATHS_EDGECONNECT   := $(foreach d,$(filter-out pkg/api/validation/%,$(wildcard pkg/api/*/edgeconnect)),paths=./$d/...)
-CRD_PATHS_DTPROMETHEUS  := $(foreach d,$(filter-out pkg/api/validation/%,$(wildcard pkg/api/*/dtprometheus)),paths=./$d/...)
+CRD_PATHS_KEEP_DESC := $(foreach d,$(wildcard pkg/api/v1alpha*),paths=./$d/...)
 
 OLM ?= false
 
