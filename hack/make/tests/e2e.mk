@@ -168,9 +168,9 @@ test/e2e/cloudnative/switchmodes:
 test/e2e/cloudnative/csi-migration:
 	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/standard -run "cloudnative_csi_migration" $(SKIPCLEANUP)
 
-## Runs CloudNative upgrade e2e test only
-test/e2e/cloudnative/upgrade:
-	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "cloudnative_upgrade" $(SKIPCLEANUP)
+## Runs Operator upgrade e2e test only
+test/e2e/operator/upgrade:
+	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "operator_upgrade" $(SKIPCLEANUP)
 
 ## Runs extensions upgrade e2e test only
 test/e2e/extensions/upgrade:

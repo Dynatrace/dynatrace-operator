@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -19,6 +20,8 @@ const (
 )
 
 var (
+	log = logd.Get().WithName("metadata-generator")
+
 	metadataFileFlagValue string
 	attributesFlagValue   string
 )

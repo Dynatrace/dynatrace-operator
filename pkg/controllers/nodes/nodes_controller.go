@@ -29,6 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var (
+	unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
+)
+
 type Controller struct {
 	client          client.Client
 	apiReader       client.Reader
@@ -199,7 +203,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	// Mark-for-termination events are rare, caching this possibly large dataset would waste memory with no meaningful benefit.
 	dk.Spec.DynatraceAPIRequestThreshold = new(uint16(0))
 
-	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "", k8senv.GetOperatorDTClientConnectionTimeout(ctx))
 	if err != nil {
 		return err
 	}

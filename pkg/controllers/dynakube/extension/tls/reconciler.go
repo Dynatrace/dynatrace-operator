@@ -25,6 +25,8 @@ import (
 
 const (
 	extensionsSelfSignedTLSCommonNameSuffix = "extension-controller"
+
+	conditionType string = "ExtensionsTLSSecret"
 )
 
 type Reconciler struct {

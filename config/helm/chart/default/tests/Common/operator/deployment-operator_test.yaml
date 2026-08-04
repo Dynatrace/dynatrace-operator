@@ -1060,10 +1060,10 @@ tests:
             name: DT_DEFAULT_REQUEUE_AFTER
           any: true
 
-  - it: should have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND if operator.experimental.enableKubemonOperand is true
+  - it: should have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND if experimental.enableKubemonOperand is true
     set:
       platform: kubernetes
-      operator.experimental.enableKubemonOperand: true
+      experimental.enableKubemonOperand: true
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
@@ -1083,10 +1083,10 @@ tests:
             name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
           any: true
 
-  - it: should render without error and omit EXPERIMENTAL_ENABLE_KUBEMON_OPERAND when operator.experimental is null
+  - it: should render without error and omit EXPERIMENTAL_ENABLE_KUBEMON_OPERAND when experimental is null
     set:
       platform: kubernetes
-      operator.experimental: null
+      experimental: null
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].env
@@ -1155,6 +1155,8 @@ tests:
 
   - it: should not have cert env vars in init container when certs values are empty
     asserts:
+      - isNotNull:
+          path: spec.template.spec.initContainers[0]
       - notContains:
           path: spec.template.spec.initContainers[0].env
           content:
@@ -1183,6 +1185,8 @@ tests:
       webhook.certs.renewalThreshold: "12h"
       webhook.certs.requeueAfter: "3h"
     asserts:
+      - isNotNull:
+          path: spec.template.spec.initContainers[0]
       - contains:
           path: spec.template.spec.initContainers[0].env
           content:
@@ -1211,3 +1215,24 @@ tests:
             value: "3h"
           count: 1
           any: true
+
+  - it: should not have DT_CLIENT_CONNECTION_TIMEOUT if clientConnectionTimeout is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+
+  - it: should have DT_CLIENT_CONNECTION_TIMEOUT if clientConnectionTimeout is set
+    set:
+      platform: kubernetes
+      operator:
+        clientConnectionTimeout: 1m
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+            value: "1m"

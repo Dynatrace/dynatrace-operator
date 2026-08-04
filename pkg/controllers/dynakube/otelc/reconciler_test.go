@@ -133,7 +133,7 @@ func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk dynak
 	require.NoError(t, err)
 
 	var otelcSts appsv1.StatefulSet
-	err = clt.Get(ctx, types.NamespacedName{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, &otelcSts)
+	err = clt.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &otelcSts)
 	require.NoError(t, err)
 	require.NotEmpty(t, otelcSts.Spec.Template.Spec.Containers)
 

@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
@@ -104,7 +103,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
 		kubemonReconciler:            kubemon.NewReconciler(kubeClient),
 		k8sEntityReconciler:          k8sentity.NewReconciler(),
-		otelcReconciler:              otelc.NewReconciler(kubeClient, apiReader),
+		otelColReconciler:            otelc.NewReconciler(kubeClient, apiReader),
 		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
 		deploymentMetadataReconciler: deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
 		istioReconciler:              istio.NewReconciler(kubeClient, apiReader),
@@ -173,7 +172,7 @@ type injectionReconciler interface {
 }
 
 type kubemonReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, tokens token.Tokens) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error
 }
 
 // Controller reconciles a DynaKube object
@@ -188,7 +187,7 @@ type Controller struct {
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               kspmReconciler
 	kubemonReconciler            kubemonReconciler
-	otelcReconciler              dynakubeReconciler
+	otelColReconciler            dynakubeReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
 	istioReconciler              istioReconciler
@@ -367,7 +366,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	controller.tokens = tokens
 
-	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "", k8senv.GetOperatorDTClientConnectionTimeout(ctx))
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
@@ -409,7 +408,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	log.Debug("start reconciling KubernetesMonitoring")
 
-	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient.ActiveGate, controller.tokens); err != nil {
+	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient, controller.tokens); err != nil {
 		if kubemon.IsTransientError(err) {
 			// transient kubemon state (e.g. rollout in progress, connection info not ready) is not a component error
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
@@ -428,7 +427,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	log.Info("start reconciling otel-collector")
 
-	if err := controller.otelcReconciler.Reconcile(ctx, dk); err != nil {
+	if err := controller.otelColReconciler.Reconcile(ctx, dk); err != nil {
 		log.Info("could not reconcile otelc")
 
 		componentErrors = append(componentErrors, err)

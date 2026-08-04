@@ -63,6 +63,8 @@ tests:
       platform: kubernetes
       crdStorageMigrationJob: true
     asserts:
+      - isNotNull:
+          path: spec.template.spec.initContainers[0]
       - equal:
           path: spec.template.spec.initContainers[0].name
           value: webhook-cert-generator
@@ -82,7 +84,7 @@ tests:
       - isNotEmpty:
           path: spec.template.spec.initContainers[0].resources.limits
       - isNotEmpty:
-          path: spec.template.spec.initContainers[0].securityContex
+          path: spec.template.spec.initContainers[0].securityContext
 
   - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0
     set:

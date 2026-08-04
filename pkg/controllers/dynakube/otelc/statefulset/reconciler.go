@@ -30,12 +30,14 @@ import (
 )
 
 const (
-	serviceAccountName                                  = "dynatrace" + consts.OTELCollectorNameSuffix
+	serviceAccountName                                  = "dynatrace" + consts.OTelCollectorNameSuffix
 	annotationTelemetryIngestSecretHash                 = api.InternalFlagPrefix + "telemetry-ingest-secret-hash"
 	annotationTelemetryIngestConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-ingest-config-hash"
 	annotationDataIngestTokenSecretHash                 = api.InternalFlagPrefix + "data-ingest-token-hash"
 
 	runAs int64 = 10001
+
+	conditionType string = "OtelStatefulSet"
 )
 
 type Reconciler struct {
@@ -60,16 +62,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		}
 		defer meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 
-		sts, err := k8sstatefulset.Build(dk, dk.OtelCollectorStatefulsetName(), corev1.Container{})
+		sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), corev1.Container{})
 		if err != nil {
-			log.Error(err, "could not build "+dk.OtelCollectorStatefulsetName()+" during cleanup")
+			log.Error(err, "could not build "+dk.OTelCollectorStatefulsetName()+" during cleanup")
 
 			return err
 		}
 
 		err = k8sstatefulset.Query(r.client, r.apiReader).Delete(ctx, sts)
 		if err != nil {
-			log.Error(err, "failed to clean up "+dk.OtelCollectorStatefulsetName()+" statufulset")
+			log.Error(err, "failed to clean up "+dk.OTelCollectorStatefulsetName()+" statufulset")
 
 			return nil
 		}
@@ -103,12 +105,12 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		topologySpreadConstraints = dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
 	}
 
-	replicas, err := k8sstatefulset.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, dk.Spec.Templates.OpenTelemetryCollector.Replicas)
+	replicas, err := k8sstatefulset.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, dk.Spec.Templates.OpenTelemetryCollector.Replicas)
 	if err != nil {
 		return err
 	}
 
-	sts, err := k8sstatefulset.Build(dk, dk.OtelCollectorStatefulsetName(), getContainer(dk, replicas),
+	sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), getContainer(dk, replicas),
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.OpenTelemetryCollector.Labels),
@@ -131,7 +133,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 
 	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
-		log.Info("failed to create/update " + dk.OtelCollectorStatefulsetName() + " statefulset")
+		log.Info("failed to create/update " + dk.OTelCollectorStatefulsetName() + " statefulset")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
@@ -284,7 +286,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 }
 
 func buildAppLabels(dkName string) *k8slabel.AppLabels {
-	return k8slabel.NewAppLabels(k8slabel.OtelCComponentLabel, dkName, k8slabel.OtelCComponentLabel, "")
+	return k8slabel.NewAppLabels(k8slabel.OTelColComponentLabel, dkName, k8slabel.OTelColComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {

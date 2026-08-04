@@ -10,11 +10,14 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
-	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
-	pkgerrors "github.com/pkg/errors"
+	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
+	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -32,19 +35,22 @@ func TestReconcileDisabled(t *testing.T) {
 		connInfoReconciler := newMockConnectionInfoReconciler(t)
 		authTokenReconciler := newMockAuthTokenReconciler(t)
 		statefulSetReconciler := newMockStatefulsetReconciler(t)
+		pullSecretReconciler := newMockPullSecretReconciler(t)
 		reconciler := &Reconciler{
 			connectionInfoReconciler: connInfoReconciler,
 			authTokenReconciler:      authTokenReconciler,
 			statefulsetReconciler:    statefulSetReconciler,
+			pullSecretReconciler:     pullSecretReconciler,
 		}
 		dk := newTestDynaKube(false)
 
 		meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: kubemonapi.KubeMonAvailableConditionType, Status: metav1.ConditionTrue, Reason: reasonAvailable})
 		connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
-		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
-		err := reconciler.Reconcile(t.Context(), dk, nil, nil)
+		err := reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
 		require.NoError(t, err)
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), kubemonapi.KubeMonAvailableConditionType))
 	})
@@ -99,13 +105,6 @@ func TestReconcileConditionMapping(t *testing.T) {
 			wantReason:     reasonError,
 			wantMessage:    "boom",
 		},
-		{
-			name:           "stack-wrapped error -> error without stack trace in message",
-			statefulSetErr: pkgerrors.WithStack(kubemonstatefulset.ErrImageRequired),
-			wantStatus:     metav1.ConditionFalse,
-			wantReason:     reasonError,
-			wantMessage:    kubemonstatefulset.ErrImageRequired.Error(),
-		},
 	}
 
 	for _, test := range tests {
@@ -113,10 +112,12 @@ func TestReconcileConditionMapping(t *testing.T) {
 			connInfoReconciler := newMockConnectionInfoReconciler(t)
 			authTokenReconciler := newMockAuthTokenReconciler(t)
 			statefulSetReconciler := newMockStatefulsetReconciler(t)
+			pullSecretReconciler := newMockPullSecretReconciler(t)
 			reconciler := &Reconciler{
 				connectionInfoReconciler: connInfoReconciler,
 				authTokenReconciler:      authTokenReconciler,
 				statefulsetReconciler:    statefulSetReconciler,
+				pullSecretReconciler:     pullSecretReconciler,
 			}
 			dk := newTestDynaKube(true)
 
@@ -125,10 +126,11 @@ func TestReconcileConditionMapping(t *testing.T) {
 				authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(test.authTokenErr).Once()
 			}
 			if test.connInfoErr == nil && test.authTokenErr == nil {
-				statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(test.statefulSetErr).Once()
+				pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+				statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(test.statefulSetErr).Once()
 			}
 
-			err := reconciler.Reconcile(t.Context(), dk, nil, nil)
+			err := reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
 
 			wantErr := test.connInfoErr
 			if wantErr == nil {
@@ -186,4 +188,14 @@ func newTestDynaKube(enabled bool) *dynakube.DynaKube {
 	}
 
 	return dk
+}
+
+func newTestDTClient(t *testing.T) *dynatrace.Client {
+	t.Helper()
+
+	return &dynatrace.Client{
+		ActiveGate: agclientmock.NewClient(t),
+		Images:     imageclientmock.NewClient(t),
+		Version:    versionclientmock.NewClient(t),
+	}
 }

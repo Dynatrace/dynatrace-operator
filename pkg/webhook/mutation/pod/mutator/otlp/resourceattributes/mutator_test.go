@@ -598,7 +598,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 				},
 			},
 			pod: newPod(corev1.EnvVar{
-				Name:  OTELResourceAttributesEnv,
+				Name:  OTelResourceAttributesEnv,
 				Value: collisionKey + "=" + containerVal,
 			}),
 			wantAttrs:   []string{collisionKey + "=" + containerVal},
@@ -634,7 +634,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 			require.NotNil(t, req.AnnotationWriter, "AnnotationWriter must be set for deferred annotation writing")
 
 			container := pod.Spec.Containers[0]
-			env := k8senv.Find(container.Env, OTELResourceAttributesEnv)
+			env := k8senv.Find(container.Env, OTelResourceAttributesEnv)
 			require.NotNil(t, env, "OTEL_RESOURCE_ATTRIBUTES must be set")
 
 			attrs := slices.Sorted(strings.SplitSeq(env.Value, ","))
@@ -728,7 +728,7 @@ func TestMutate_AnnotationWriter(t *testing.T) {
 
 		require.NoError(t, New(client).Mutate(req))
 
-		env := k8senv.Find(pod.Spec.Containers[0].Env, OTELResourceAttributesEnv)
+		env := k8senv.Find(pod.Spec.Containers[0].Env, OTelResourceAttributesEnv)
 		require.NotNil(t, env)
 		assert.Contains(t, env.Value, collisionKey+"="+userValue, "user pod annotation must win over dynakube attrs")
 	})

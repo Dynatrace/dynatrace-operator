@@ -21,6 +21,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Hub tags this version as the 'source' of the conversion for controller runtime.
+func (*DynaKube) Hub() {}
+
 // TODO: Move these conditions related consts to a place where they are used, so we don't bloat this package further.
 const (
 	// TokenConditionType identifies the token validity condition.

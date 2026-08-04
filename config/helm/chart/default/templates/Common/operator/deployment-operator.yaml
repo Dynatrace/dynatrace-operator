@@ -117,7 +117,7 @@ spec:
             - name: DT_CLIENT_CACHE_CLEAN_INTERVAL
               value: "{{ .Values.operator.clientCacheCleanupInterval }}"
             {{- end }}
-            {{- if (.Values.operator.experimental).enableKubemonOperand }}
+            {{- if (.Values.experimental).enableKubemonOperand }}
             - name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
               value: "true"
             {{- end }}
@@ -133,6 +133,7 @@ spec:
               value: {{ . | quote }}
             {{- end }}
             {{- include "dynatrace-operator.webhookCertsCtrl.envs" . | nindent 12 }}
+            {{ include "dynatrace-operator.client-connection-timeout-env" . | nindent 12 }}
           ports:
             - containerPort: 10080
               name: livez

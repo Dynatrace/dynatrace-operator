@@ -6,11 +6,14 @@ package k8sentity
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -40,11 +43,17 @@ func newDynaKube() *dynakube.DynaKube {
 	return dk
 }
 
-func enableKubeMon(dk *dynakube.DynaKube) {
+func enableAGKubeMonCapability(dk *dynakube.DynaKube) {
 	dk.Spec.ActiveGate = activegate.Spec{
 		Capabilities: []activegate.CapabilityDisplayName{
 			activegate.KubeMonCapability.DisplayName,
 		},
+	}
+}
+
+func enableKubemonRegistration(dk *dynakube.DynaKube) {
+	dk.Spec.KubernetesMonitoring = &kubemon.Spec{
+		Registration: &kubemon.Registration{},
 	}
 }
 
@@ -54,6 +63,10 @@ func setSystemUUID(dk *dynakube.DynaKube, uuid string) {
 
 func setClusterNameFF(dk *dynakube.DynaKube, name string) {
 	dk.Annotations[exp.AGAutomaticK8sAPIMonitoringClusterNameKey] = name
+}
+
+func setKubemonRegistrationClusterName(dk *dynakube.DynaKube, name string) {
+	dk.Spec.KubernetesMonitoring.Registration.ClusterName = name
 }
 
 func enableAppFF(dk *dynakube.DynaKube) {
@@ -95,7 +108,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("refreshes MEID immediately after creating settings on first run", func(t *testing.T) {
 		dk := newDynaKube()
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
-		enableKubeMon(dk)
+		enableAGKubeMonCapability(dk)
 		enableAppFF(dk)
 		setSystemUUID(dk, systemUUID)
 
@@ -128,6 +141,97 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), meIDConditionType))
 	})
 
+	t.Run("kubemon registration path: creates settings", func(t *testing.T) {
+		// Gen3 SaaS: FF not set, no app-transition calls expected.
+		dk := newDynaKube()
+		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		enableKubemonRegistration(dk)
+		setSystemUUID(dk, systemUUID)
+
+		dtClient := settingsmock.NewClient(t)
+		dtClient.EXPECT().
+			GetK8sClusterME(anyCtx, systemUUID).
+			Return(settings.K8sClusterME{}, nil).Once()
+		dtClient.EXPECT().
+			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
+			Return(me.ID, nil).Once()
+		dtClient.EXPECT().
+			GetK8sClusterME(anyCtx, systemUUID).
+			Return(me, nil).Once()
+
+		r := NewReconciler()
+		err := r.Reconcile(t.Context(), dtClient, dk)
+		require.NoError(t, err)
+		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
+		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+	})
+
+	t.Run("kubemon registration path with app FF: creates settings and app setting", func(t *testing.T) {
+		// FF is honored on the kubemon path for Gen2/Managed compatibility.
+		// On Gen3 SaaS the GetSettingsForMonitoredEntity call returns 404 (schema absent)
+		// and is handled gracefully — this test covers the Gen2/Managed case where the
+		// schema exists and the app setting is created.
+		dk := newDynaKube()
+		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		enableKubemonRegistration(dk)
+		enableAppFF(dk)
+		setSystemUUID(dk, systemUUID)
+
+		dtClient := settingsmock.NewClient(t)
+		dtClient.EXPECT().
+			GetK8sClusterME(anyCtx, systemUUID).
+			Return(settings.K8sClusterME{}, nil).Once()
+		dtClient.EXPECT().
+			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
+			Return(me.ID, nil).Once()
+		dtClient.EXPECT().
+			GetK8sClusterME(anyCtx, systemUUID).
+			Return(me, nil).Once()
+		// Gen2/Managed: schema exists, app setting not yet created
+		dtClient.EXPECT().
+			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
+			Return(settings.TotalCountSettingsResponse{}, nil).Once()
+		dtClient.EXPECT().
+			CreateOrUpdateKubernetesAppSetting(anyCtx, me.ID).
+			Return("some-id", nil).Once()
+
+		r := NewReconciler()
+		err := r.Reconcile(t.Context(), dtClient, dk)
+		require.NoError(t, err)
+		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
+		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+	})
+
+	t.Run("kubemon registration path with app FF on gen3: schema absent, no app setting created", func(t *testing.T) {
+		// Gen3 SaaS: FF is set but builtin:app-transition.kubernetes schema does not exist.
+		// GetSettingsForMonitoredEntity returns 404 — operator skips gracefully.
+		dk := newDynaKube()
+		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		enableKubemonRegistration(dk)
+		enableAppFF(dk)
+		setSystemUUID(dk, systemUUID)
+
+		dtClient := settingsmock.NewClient(t)
+		dtClient.EXPECT().
+			GetK8sClusterME(anyCtx, systemUUID).
+			Return(settings.K8sClusterME{}, nil).Once()
+		dtClient.EXPECT().
+			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
+			Return(me.ID, nil).Once()
+		dtClient.EXPECT().
+			GetK8sClusterME(anyCtx, systemUUID).
+			Return(me, nil).Once()
+		// Gen3: schema absent — 404 returned, app setting skipped
+		dtClient.EXPECT().
+			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
+			Return(settings.TotalCountSettingsResponse{}, &core.HTTPError{StatusCode: 404}).Once()
+
+		r := NewReconciler()
+		err := r.Reconcile(t.Context(), dtClient, dk)
+		require.NoError(t, err)
+		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
+	})
+
 	t.Run("only MEID reconcile without AG", func(t *testing.T) {
 		dk := newDynaKube()
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
@@ -149,7 +253,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("no app setting reconcile without FF", func(t *testing.T) {
 		dk := newDynaKube()
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
-		enableKubeMon(dk)
+		enableAGKubeMonCapability(dk)
 		setSystemUUID(dk, systemUUID)
 
 		dtClient := settingsmock.NewClient(t)
@@ -439,4 +543,67 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)
 		require.NoError(t, err)
 	})
+}
+
+func TestIsRegistrationEnabled(t *testing.T) {
+	tests := []struct {
+		name         string
+		ff           *bool // nil = not set (defaults to true)
+		agKubemonCap bool
+		kubemonOp    bool
+		expect       bool
+	}{
+		{"false: neither path configured", nil, false, false, false},
+		{"true: AG path", nil, true, false, true},
+		{"true: AG path with FF on", new(true), true, false, true},
+		{"false: AG path with FF off", new(false), true, false, false},
+		{"true: kubemon path", nil, false, true, true},
+		{"true: kubemon path ignores FF", new(false), false, true, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := newDynaKube()
+			if tt.ff != nil {
+				dk.Annotations[exp.AGAutomaticK8sAPIMonitoringKey] = strconv.FormatBool(*tt.ff)
+			}
+			if tt.agKubemonCap {
+				enableAGKubeMonCapability(dk)
+			}
+			if tt.kubemonOp {
+				enableKubemonRegistration(dk)
+			}
+			assert.Equal(t, tt.expect, isRegistrationEnabled(dk))
+		})
+	}
+}
+
+func TestGetRegistrationClusterName(t *testing.T) {
+	const dkName = "my-oneagent" // matches newDynaKube()
+	const ffName = "ff-oneagent"
+	const kubemonName = "kubemon-oneagent"
+
+	tests := []struct {
+		name               string
+		ffClusterName      string // "" = not set
+		kubemonClusterName string // "" = not set
+		expect             string
+	}{
+		{"fallback to dk name", "", "", dkName},
+		{"FF cluster name", ffName, "", ffName},
+		{"kubemon cluster name", "", kubemonName, kubemonName},
+		{"kubemon takes precedence over FF", ffName, kubemonName, kubemonName},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := newDynaKube()
+			if tt.ffClusterName != "" {
+				setClusterNameFF(dk, tt.ffClusterName)
+			}
+			if tt.kubemonClusterName != "" {
+				enableKubemonRegistration(dk)
+				setKubemonRegistrationClusterName(dk, tt.kubemonClusterName)
+			}
+			assert.Equal(t, tt.expect, getRegistrationClusterName(dk))
+		})
+	}
 }
