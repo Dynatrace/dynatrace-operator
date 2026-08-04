@@ -389,7 +389,7 @@ func (r *Reconciler) getCustomPropertiesHash(ctx context.Context, dk *dynakube.D
 		return "", nil
 	}
 
-	hash, err := hasher.GenerateHash(string(data))
+	hash, err := hasher.GenerateSecureHash(string(data))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to hash custom properties")
 	}
