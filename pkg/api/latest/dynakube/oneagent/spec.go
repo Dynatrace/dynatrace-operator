@@ -4,7 +4,6 @@
 package oneagent
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -95,7 +94,8 @@ type HostInjectSpec struct {
 	Image string `json:"image,omitempty"`
 
 	// Define an image pull policy for the OneAgent image.
-	ImagePullPolicy image.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
 	// +kubebuilder:validation:Optional
@@ -183,7 +183,8 @@ type AppInjectionSpec struct {
 	CodeModulesImage string `json:"codeModulesImage,omitempty"`
 
 	// Define an image pull policy for the CodeModule image.
-	CodeModulesImagePullPolicy image.PullPolicy `json:"codeModulesImagePullPolicy,omitempty"`
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	CodeModulesImagePullPolicy corev1.PullPolicy `json:"codeModulesImagePullPolicy,omitempty"`
 
 	// Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
 	// For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).

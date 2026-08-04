@@ -172,7 +172,7 @@ func buildContainer(dk *dynakube.DynaKube, imageURI string) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
 		Image:           imageURI,
-		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.GetPullPolicy(),
+		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.PullPolicy,
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
