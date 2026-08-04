@@ -221,7 +221,7 @@ func TestConvertTo(t *testing.T) {
 
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Equal(t, image.PullPolicy("Always"), to.Spec.Templates.OpenTelemetryCollector.ImageRef.PullPolicy)
+		assert.Equal(t, corev1.PullPolicy("Always"), to.Spec.Templates.OpenTelemetryCollector.ImageRef.PullPolicy)
 		assert.Contains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)

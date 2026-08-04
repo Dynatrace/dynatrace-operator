@@ -94,7 +94,7 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec, image
 	container := corev1.Container{
 		Name:            containerName,
 		Image:           imageURI,
-		ImagePullPolicy: dk.Spec.Templates.SQLExtensionExecutor.ImageRef.GetPullPolicy(),
+		ImagePullPolicy: dk.Spec.Templates.SQLExtensionExecutor.ImageRef.PullPolicy,
 		Args:            buildContainerArgs(dk),
 		Env:             buildContainerEnvs(),
 		LivenessProbe: &corev1.Probe{

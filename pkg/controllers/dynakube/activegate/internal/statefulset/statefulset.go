@@ -219,7 +219,7 @@ func (statefulSetBuilder Builder) buildBaseContainer(sts *appsv1.StatefulSet) []
 	container := corev1.Container{
 		Name:            consts.ActiveGateContainerName,
 		Image:           statefulSetBuilder.dynakube.ActiveGate().GetImage(),
-		ImagePullPolicy: statefulSetBuilder.dynakube.ActiveGate().GetPullPolicy(),
+		ImagePullPolicy: statefulSetBuilder.dynakube.ActiveGate().ImagePullPolicy,
 		Resources:       statefulSetBuilder.buildResources(),
 		Env:             statefulSetBuilder.buildCommonEnvs(),
 		ReadinessProbe:  probe.Readiness(),
