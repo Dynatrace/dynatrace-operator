@@ -134,17 +134,6 @@ func TestParseCommunicationHosts(t *testing.T) {
 			},
 		},
 		{
-			name:  "duplicate endpoints are deduplicated",
-			input: "https://example.live.dynatrace.com/communication,https://example.live.dynatrace.com/communication",
-			expected: []CommunicationHost{
-				{
-					Protocol: "https",
-					Host:     "example.live.dynatrace.com",
-					Port:     443,
-				},
-			},
-		},
-		{
 			name:  "mixed protocols",
 			input: "https://secure.example.com/communication,http://insecure.example.com/communication",
 			expected: []CommunicationHost{

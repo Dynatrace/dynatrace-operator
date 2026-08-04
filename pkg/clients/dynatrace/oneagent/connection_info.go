@@ -26,6 +26,7 @@ type connectionInfoResponse struct {
 
 // ConnectionInfo is the public result of GetConnectionInfo. Endpoints is
 // always deduplicated and comma-separated, consumers never see the raw
+// endpoint list returned by the API
 type ConnectionInfo struct {
 	TenantUUID  string
 	TenantToken string
