@@ -118,8 +118,8 @@ func TestParseOACommunicationHosts(t *testing.T) {
 			},
 		},
 		{
-			name:  "multiple endpoints separated by semicolons",
-			input: "https://example.live.dynatrace.com/communication;https://managedhost.com:9999/here/communication",
+			name:  "multiple endpoints separated by commas",
+			input: "https://example.live.dynatrace.com/communication,https://managedhost.com:9999/here/communication",
 			expected: []CommunicationHost{
 				{
 					Protocol: "https",
@@ -135,7 +135,7 @@ func TestParseOACommunicationHosts(t *testing.T) {
 		},
 		{
 			name:  "duplicate endpoints are deduplicated",
-			input: "https://example.live.dynatrace.com/communication;https://example.live.dynatrace.com/communication",
+			input: "https://example.live.dynatrace.com/communication,https://example.live.dynatrace.com/communication",
 			expected: []CommunicationHost{
 				{
 					Protocol: "https",
@@ -146,14 +146,14 @@ func TestParseOACommunicationHosts(t *testing.T) {
 		},
 		{
 			name:        "invalid endpoint in list",
-			input:       "https://valid.com/communication;invalidendpoint",
+			input:       "https://valid.com/communication,invalidendpoint",
 			expectError: true,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			hosts, err := ParseOACommunicationHosts(tc.input)
+			hosts, err := ParseCommunicationHosts(tc.input)
 
 			if tc.expectError {
 				require.Error(t, err)
@@ -245,7 +245,7 @@ func TestParseAGCommunicationHosts(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			hosts, err := ParseAGCommunicationHosts(tc.input)
+			hosts, err := ParseCommunicationHosts(tc.input)
 
 			if tc.expectError {
 				require.Error(t, err)

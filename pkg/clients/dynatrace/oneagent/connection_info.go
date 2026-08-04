@@ -14,11 +14,6 @@ import (
 
 const (
 	connectionInfoPath = "/v1/deployment/installer/agent/connectioninfo"
-
-	// endpointDelimiter separates the individual endpoints inside the
-	// formattedCommunicationEndpoints string returned by the connectioninfo API.
-	// It matches the delimiter used by connectioninfo.ParseOACommunicationHosts.
-	endpointDelimiter = ";"
 )
 
 type ConnectionInfo struct {
@@ -59,8 +54,10 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, err
 	return resp, nil
 }
 
-// deduplicateEndpoints removes duplicate endpoints from a formatted
-// communication-endpoints string (delimiter-separated, see endpointDelimiter).
+// deduplicateEndpoints removes duplicate entries from the communication
+// endpoints returned by the API and joins the unique ones into a single,
+// comma-separated string. The order of first occurrence is preserved,
+// surrounding whitespace is trimmed and empty entries are dropped.
 func deduplicateEndpoints(endpoints []string) string {
 	seen := make(map[string]struct{})
 	unique := make([]string, 0)
@@ -79,5 +76,5 @@ func deduplicateEndpoints(endpoints []string) string {
 		unique = append(unique, endpoint)
 	}
 
-	return strings.Join(unique, endpointDelimiter)
+	return strings.Join(unique, ",")
 }

@@ -64,15 +64,9 @@ func NewCommunicationHost(endpoint string) (CommunicationHost, error) {
 	}, nil
 }
 
-// ParseOACommunicationHosts creates CommunicationHost slice from `;` separated endpoints.
+// ParseCommunicationHosts creates CommunicationHost slice from `,` separated endpoints.
 // It removes duplicates and sorts the result for deterministic output.
-func ParseOACommunicationHosts(endpoints string) ([]CommunicationHost, error) {
-	return newCommunicationHosts(endpoints, ";")
-}
-
-// ParseAGCommunicationHosts creates CommunicationHost slice from `,` separated endpoints.
-// It removes duplicates and sorts the result for deterministic output.
-func ParseAGCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
+func ParseCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
 	return newCommunicationHosts(endpoints, ",")
 }
 

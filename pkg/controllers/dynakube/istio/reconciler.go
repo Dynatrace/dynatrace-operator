@@ -113,7 +113,7 @@ func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 		return nil
 	}
 
-	oaCommunicationHosts, err := connectioninfo.ParseOACommunicationHosts(dk.Status.OneAgent.ConnectionInfo.Endpoints)
+	oaCommunicationHosts, err := connectioninfo.ParseCommunicationHosts(dk.Status.OneAgent.ConnectionInfo.Endpoints)
 	if err != nil {
 		setServiceEntryFailedConditionForComponent(dk.Conditions(), codeModuleConditionName)
 
@@ -163,7 +163,7 @@ func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 		return nil
 	}
 
-	agCommunicationHosts, err := connectioninfo.ParseAGCommunicationHosts(dk.Status.ActiveGate.ConnectionInfo.Endpoints)
+	agCommunicationHosts, err := connectioninfo.ParseCommunicationHosts(dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 	if err != nil {
 		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName)
 

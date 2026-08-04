@@ -154,7 +154,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 // HTTP client against an httptest.Server. The mocked JSON response contains both
 // the formatted string and a communicationEndpoints array with duplicates, and we
 // assert the returned Endpoints string is derived from the slice with duplicates
-// removed and the entries joined by endpointDelimiter.
+// removed and the entries joined by a comma.
 func Test_GetConnectionInfo_EndToEnd(t *testing.T) {
 	const (
 		epA = "https://tenant.dev.dynatracelabs.com:443"
@@ -186,7 +186,7 @@ func Test_GetConnectionInfo_EndToEnd(t *testing.T) {
 
 	assert.Equal(t, testTenantUUID, connectionInfo.TenantUUID)
 	assert.Equal(t, testTenantToken, connectionInfo.TenantToken)
-	assert.Equal(t, epA+";"+epB, connectionInfo.Endpoints)
+	assert.Equal(t, epA+","+epB, connectionInfo.Endpoints)
 }
 
 func Test_deduplicateEndpoints(t *testing.T) {
@@ -219,12 +219,12 @@ func Test_deduplicateEndpoints(t *testing.T) {
 		{
 			name:     "no duplicates is a no-op, order preserved",
 			input:    []string{epA, epB, epC},
-			expected: epA + ";" + epB + ";" + epC,
+			expected: epA + "," + epB + "," + epC,
 		},
 		{
 			name:     "some duplicates preserve first-occurrence order",
 			input:    []string{epB, epA, epB, epC, epA},
-			expected: epB + ";" + epA + ";" + epC,
+			expected: epB + "," + epA + "," + epC,
 		},
 		{
 			name:     "all duplicates collapse to one",
@@ -239,12 +239,12 @@ func Test_deduplicateEndpoints(t *testing.T) {
 		{
 			name:     "empty and whitespace-only entries are dropped",
 			input:    []string{epA, "", "   ", epB},
-			expected: epA + ";" + epB,
+			expected: epA + "," + epB,
 		},
 		{
 			name:     "entries differing only by case are kept as distinct",
 			input:    []string{epA, "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443"},
-			expected: epA + ";" + "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443",
+			expected: epA + "," + "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443",
 		},
 	}
 
