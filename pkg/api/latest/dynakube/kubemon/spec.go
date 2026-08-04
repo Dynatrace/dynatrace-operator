@@ -104,12 +104,10 @@ type TLSCertsRef struct {
 
 // Registration configures automatic cluster registration in Dynatrace.
 // Presence (even as {}) enables registration — follows CRD presence-based enablement.
+// Registration is also triggered by ActiveGate `kubernetes-monitoring` capability combined with the `automatic-kubernetes-api-monitoring` feature flag.
 type Registration struct {
-	// ClusterName is the display name used during registration. Defaults to the DynaKube name.
+	// ClusterName is the display name used during registration.
+	// When empty, falls back to the `automatic-kubernetes-api-monitoring-cluster-name` feature flag, then the DynaKube name.
 	// +kubebuilder:validation:Optional
 	ClusterName string `json:"clusterName,omitempty"`
-
-	// Enable the Kubernetes app (cluster details, workload views) in Dynatrace.
-	// +kubebuilder:validation:Optional
-	AppEnabled bool `json:"appEnabled,omitempty"`
 }

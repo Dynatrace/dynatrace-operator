@@ -163,7 +163,7 @@ func TestTokens(t *testing.T) {
 		assert.Len(t, tokens.APIToken().Features, 10)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
-		assert.Equal(t, []string{"DataExport", "activeGateTokenManagement.create", "InstallerDownload"}, GetMissingScopes(err))
+		assert.Equal(t, []string{"DataExport", "InstallerDownload", "activeGateTokenManagement.create"}, GetMissingScopes(err))
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Access problem and event feed, metrics, and topology' is missing scope 'DataExport' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("data ingest enabled => dataingest token missing rights => fail", func(t *testing.T) {
@@ -225,7 +225,7 @@ func TestTokens(t *testing.T) {
 		assert.Len(t, tokens.APIToken().Features, 10)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
-		assert.Equal(t, []string{"openTelemetryTrace.ingest", "logs.ingest", "metrics.ingest"}, GetMissingScopes(err))
+		assert.Equal(t, []string{"logs.ingest", "metrics.ingest", "openTelemetryTrace.ingest"}, GetMissingScopes(err))
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'OTLP trace exporter configuration' is missing scope 'openTelemetryTrace.ingest' feature 'OTLP logs exporter configuration' is missing scope 'logs.ingest' feature 'OTLP metrics exporter configuration' is missing scope 'metrics.ingest']")
 	})
 	t.Run("otlp exporter configuration enabled => dataingest token has rights => success", func(t *testing.T) {
@@ -580,6 +580,20 @@ func TestGetMissingScopes(t *testing.T) {
 				},
 				ScopeError{
 					Token:         PaaSKey,
+					MissingScopes: []string{"InstallerDownload"},
+				},
+			),
+			want: []string{"DataExport", "InstallerDownload"},
+		},
+		{
+			name: "missing scopes are only reported once, even across ScopeErrors",
+			err: errors.Join(
+				ScopeError{
+					Token:         APIKey,
+					MissingScopes: []string{"DataExport", "DataExport", "InstallerDownload"},
+				},
+				ScopeError{
+					Token:         DataIngestKey,
 					MissingScopes: []string{"InstallerDownload"},
 				},
 			),

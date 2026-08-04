@@ -5921,8 +5921,6 @@ spec:
                     type: string
                   registration:
                     properties:
-                      appEnabled:
-                        type: boolean
                       clusterName:
                         type: string
                     type: object

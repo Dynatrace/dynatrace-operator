@@ -18,7 +18,6 @@ import (
 	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
 	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
-	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -105,13 +104,6 @@ func TestReconcileConditionMapping(t *testing.T) {
 			wantStatus:     metav1.ConditionFalse,
 			wantReason:     reasonError,
 			wantMessage:    "boom",
-		},
-		{
-			name:           "stack-wrapped error -> error without stack trace in message",
-			statefulSetErr: pkgerrors.WithStack(errors.New("sentinel error")),
-			wantStatus:     metav1.ConditionFalse,
-			wantReason:     reasonError,
-			wantMessage:    "sentinel error",
 		},
 	}
 

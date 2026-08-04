@@ -21,9 +21,5 @@ manifests/openshift/csi: manifests/crd/helm
 manifests/openshift/core: manifests/crd/helm
 	$(call generate_openshift_manifest,false,$(OPENSHIFT_CORE_YAML))
 
-## Generates an Openshift manifest including CRD and CSI driver with OLM set to true
-manifests/openshift/olm: manifests/crd/helm
-	OLM=true $(call generate_openshift_manifest,true,$(OPENSHIFT_OLM_YAML))
-
 ## Generates a manifest for OpenShift including a CRD and a CSI driver deployment
 manifests/openshift: manifests/openshift/core manifests/openshift/csi

@@ -57,7 +57,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
 

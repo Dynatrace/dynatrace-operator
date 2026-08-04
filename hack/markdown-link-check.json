@@ -10,6 +10,9 @@
     "ignorePatterns": [
         {
             "pattern": "^https://app\\.slack\\.com/"
+        },
+        {
+            "pattern": "^https://stackoverflow\\.com/"
         }
     ]
 }
