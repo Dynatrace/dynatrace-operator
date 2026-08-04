@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package supportarchive
 
 import (
@@ -9,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +47,7 @@ func TestNodeTaintAnalysisCollector_AllTaintsTolerated(t *testing.T) {
 
 	assert.Contains(t, content, "Node count: 2")
 	assert.Contains(t, content, "OneAgent DaemonSet: my-dynakube-oneagent")
-	assert.Contains(t, content, "Desired: 2 | Ready: 2 | Nodes: 2")
+	assert.Contains(t, content, "Desired: 2 | Ready: 2 | Total cluster nodes: 2")
 	assert.Contains(t, content, "All node taints are tolerated")
 	assert.NotContains(t, content, "WARNING")
 }
@@ -196,7 +200,7 @@ func TestTolerationMatching(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.matches, tolerationMatchesTaint(tt.toleration, tt.taint))
+			assert.Equal(t, tt.matches, isTaintTolerated(tt.taint, []corev1.Toleration{tt.toleration}))
 		})
 	}
 }
@@ -259,6 +263,11 @@ func createTestDynaKube(name string) dynakube.DynaKube {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: testOperatorNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				HostMonitoring: &oneagent.HostInjectSpec{},
+			},
 		},
 	}
 }

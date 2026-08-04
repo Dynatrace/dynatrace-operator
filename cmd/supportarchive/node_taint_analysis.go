@@ -10,6 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,8 +45,6 @@ func (c nodeTaintAnalysisCollector) Do() error {
 
 	report, err := c.buildReport()
 	if err != nil {
-		logErrorf(c.log, err, "Failed to complete node taint analysis")
-
 		return err
 	}
 
@@ -70,7 +70,7 @@ func (c nodeTaintAnalysisCollector) buildReport() (string, error) {
 
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Node count: %d\n\n", len(nodes.Items)))
+	fmt.Fprintf(&sb, "Node count: %d\n\n", len(nodes.Items))
 
 	c.analyzeOneAgentDaemonSets(&sb, nodes, dynakubes)
 	c.analyzeCSIDaemonSet(&sb, nodes)
@@ -87,15 +87,23 @@ func (c nodeTaintAnalysisCollector) analyzeOneAgentDaemonSets(sb *strings.Builde
 
 	for i := range dynakubes.Items {
 		dk := &dynakubes.Items[i]
+		if !dk.OneAgent().IsDaemonsetRequired() {
+			continue
+		}
+
 		dsName := dk.OneAgent().GetDaemonsetName()
 
-		sb.WriteString(fmt.Sprintf("--- OneAgent DaemonSet: %s (DynaKube: %s) ---\n", dsName, dk.Name))
+		fmt.Fprintf(sb, "--- OneAgent DaemonSet: %s (DynaKube: %s) ---\n", dsName, dk.Name)
 
 		var ds appsv1.DaemonSet
 
 		err := c.apiReader.Get(c.ctx, client.ObjectKey{Name: dsName, Namespace: c.namespace}, &ds)
 		if err != nil {
-			sb.WriteString(fmt.Sprintf("  DaemonSet not found: %s\n\n", err.Error()))
+			if k8serrors.IsNotFound(err) {
+				sb.WriteString("  DaemonSet not found\n\n")
+			} else {
+				fmt.Fprintf(sb, "  Error fetching DaemonSet: %s\n\n", err.Error())
+			}
 
 			continue
 		}
@@ -106,13 +114,17 @@ func (c nodeTaintAnalysisCollector) analyzeOneAgentDaemonSets(sb *strings.Builde
 }
 
 func (c nodeTaintAnalysisCollector) analyzeCSIDaemonSet(sb *strings.Builder, nodes *corev1.NodeList) {
-	sb.WriteString(fmt.Sprintf("--- CSI Driver DaemonSet: %s ---\n", dtcsi.DaemonSetName))
+	fmt.Fprintf(sb, "--- CSI Driver DaemonSet: %s ---\n", dtcsi.DaemonSetName)
 
 	var ds appsv1.DaemonSet
 
 	err := c.apiReader.Get(c.ctx, client.ObjectKey{Name: dtcsi.DaemonSetName, Namespace: c.namespace}, &ds)
 	if err != nil {
-		sb.WriteString(fmt.Sprintf("  DaemonSet not found: %s\n\n", err.Error()))
+		if k8serrors.IsNotFound(err) {
+			sb.WriteString("  DaemonSet not found\n\n")
+		} else {
+			fmt.Fprintf(sb, "  Error fetching DaemonSet: %s\n\n", err.Error())
+		}
 
 		return
 	}
@@ -125,9 +137,10 @@ func (c nodeTaintAnalysisCollector) analyzeDaemonSet(sb *strings.Builder, ds *ap
 	desired := ds.Status.DesiredNumberScheduled
 	ready := ds.Status.NumberReady
 
-	sb.WriteString(fmt.Sprintf("  Desired: %d | Ready: %d | Nodes: %d\n", desired, ready, len(nodes.Items)))
+	fmt.Fprintf(sb, "  Desired: %d | Ready: %d | Total cluster nodes: %d\n", desired, ready, len(nodes.Items))
 
 	tolerations := ds.Spec.Template.Spec.Tolerations
+
 	sb.WriteString("  Configured tolerations:\n")
 
 	if len(tolerations) == 0 {
@@ -135,7 +148,7 @@ func (c nodeTaintAnalysisCollector) analyzeDaemonSet(sb *strings.Builder, ds *ap
 	}
 
 	for _, t := range tolerations {
-		sb.WriteString(fmt.Sprintf("    %s\n", formatToleration(t)))
+		fmt.Fprintf(sb, "    %s\n", formatToleration(t))
 	}
 
 	untoleratedNodes := findNodesWithUntoleratedTaints(nodes, tolerations)
@@ -145,19 +158,19 @@ func (c nodeTaintAnalysisCollector) analyzeDaemonSet(sb *strings.Builder, ds *ap
 		return
 	}
 
-	sb.WriteString(fmt.Sprintf("  WARNING: %d node(s) have untolerated taints:\n", len(untoleratedNodes)))
+	fmt.Fprintf(sb, "  WARNING: %d node(s) have untolerated taints:\n", len(untoleratedNodes))
 
 	for _, entry := range untoleratedNodes {
-		sb.WriteString(fmt.Sprintf("    Node: %s\n", entry.nodeName))
+		fmt.Fprintf(sb, "    Node: %s\n", entry.nodeName)
 
 		for _, taint := range entry.untoleratedTaints {
-			sb.WriteString(fmt.Sprintf("      - %s\n", formatTaint(taint)))
+			fmt.Fprintf(sb, "      - %s\n", formatTaint(taint))
 		}
 	}
 }
 
 type nodeWithUntoleratedTaints struct {
-	nodeName         string
+	nodeName          string
 	untoleratedTaints []corev1.Taint
 }
 
@@ -173,6 +186,11 @@ func findNodesWithUntoleratedTaints(nodes *corev1.NodeList, tolerations []corev1
 		var untolerated []corev1.Taint
 
 		for _, taint := range node.Spec.Taints {
+			// PreferNoSchedule is advisory: DaemonSet controller schedules regardless of whether the taint is tolerated
+			if taint.Effect == corev1.TaintEffectPreferNoSchedule {
+				continue
+			}
+
 			if !isTaintTolerated(taint, tolerations) {
 				untolerated = append(untolerated, taint)
 			}
@@ -180,7 +198,7 @@ func findNodesWithUntoleratedTaints(nodes *corev1.NodeList, tolerations []corev1
 
 		if len(untolerated) > 0 {
 			result = append(result, nodeWithUntoleratedTaints{
-				nodeName:         node.Name,
+				nodeName:          node.Name,
 				untoleratedTaints: untolerated,
 			})
 		}
@@ -190,38 +208,13 @@ func findNodesWithUntoleratedTaints(nodes *corev1.NodeList, tolerations []corev1
 }
 
 func isTaintTolerated(taint corev1.Taint, tolerations []corev1.Toleration) bool {
-	for _, toleration := range tolerations {
-		if tolerationMatchesTaint(toleration, taint) {
+	for i := range tolerations {
+		if tolerations[i].ToleratesTaint(klog.Background(), &taint, true) {
 			return true
 		}
 	}
 
 	return false
-}
-
-func tolerationMatchesTaint(toleration corev1.Toleration, taint corev1.Taint) bool {
-	// Empty key with Exists operator matches all taints
-	if toleration.Key == "" && toleration.Operator == corev1.TolerationOpExists {
-		if toleration.Effect == "" || toleration.Effect == taint.Effect {
-			return true
-		}
-
-		return false
-	}
-
-	if toleration.Key != taint.Key {
-		return false
-	}
-
-	if toleration.Effect != "" && toleration.Effect != taint.Effect {
-		return false
-	}
-
-	if toleration.Operator == corev1.TolerationOpExists {
-		return true
-	}
-
-	return toleration.Value == taint.Value
 }
 
 func formatToleration(t corev1.Toleration) string {
@@ -230,13 +223,13 @@ func formatToleration(t corev1.Toleration) string {
 	if t.Key == "" {
 		parts = append(parts, "key=*")
 	} else {
-		parts = append(parts, fmt.Sprintf("key=%s", t.Key))
+		parts = append(parts, "key="+t.Key)
 	}
 
 	parts = append(parts, fmt.Sprintf("operator=%s", t.Operator))
 
 	if t.Value != "" {
-		parts = append(parts, fmt.Sprintf("value=%s", t.Value))
+		parts = append(parts, "value="+t.Value)
 	}
 
 	if t.Effect != "" {

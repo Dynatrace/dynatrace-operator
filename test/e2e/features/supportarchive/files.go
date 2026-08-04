@@ -63,6 +63,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 			supportarchive.OperatorVersionFileName,
 			supportarchive.TroublshootOutputFileName,
 			supportarchive.SupportArchiveOutputFileName,
+			supportarchive.NodeTaintAnalysisFileName,
 		},
 		r.getRequiredPodFiles(k8slabel.AppNameLabel, true),
 		r.getRequiredPodFiles(k8slabel.AppManagedByLabel, r.collectManaged),
