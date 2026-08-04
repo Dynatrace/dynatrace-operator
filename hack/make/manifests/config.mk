@@ -1,13 +1,13 @@
 CRD_BASE_OPTIONS := crd:crdVersions=v1,ignoreUnexportedFields=true
 # DynaKube strips descriptions to stay within etcd's 1 MB object size limit.
-CRD_STRIP_DESC   := $(CRD_BASE_OPTIONS),maxDescLen=0
+CRD_STRIP_DESC := $(CRD_BASE_OPTIONS),maxDescLen=0
 # Smaller CRDs (EdgeConnect, DtPrometheus) keep full descriptions.
-CRD_KEEP_DESC    := $(CRD_BASE_OPTIONS)
+CRD_KEEP_DESC := $(CRD_BASE_OPTIONS)
 
 # Auto-discover versioned packages per CRD kind: pkg/api/<version>/<kind>.
 # New API versions under that kind are picked up automatically when their directories are added.
 # Excludes pkg/api/validation/* which holds validation logic, not CRD type definitions.
-CRD_PATHS_DYNAKUBE      := $(foreach d,$(filter-out pkg/api/validation/%,$(wildcard pkg/api/*/dynakube)),paths=./$d/...)
+CRD_PATHS_DYNAKUBE := $(foreach d,$(filter-out pkg/api/validation/%,$(wildcard pkg/api/*/dynakube)),paths=./$d/...)
 CRD_PATHS_KEEP_DESC := $(foreach d,$(wildcard pkg/api/v1alpha*),paths=./$d/...)
 
 OLM ?= false
