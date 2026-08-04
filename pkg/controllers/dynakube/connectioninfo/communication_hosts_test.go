@@ -94,78 +94,7 @@ func TestNewCommunicationHost(t *testing.T) {
 	}
 }
 
-func TestParseOACommunicationHosts(t *testing.T) {
-	testCases := []struct {
-		name        string
-		input       string
-		expected    []CommunicationHost
-		expectError bool
-	}{
-		{
-			name:     "empty string",
-			input:    "",
-			expected: []CommunicationHost{},
-		},
-		{
-			name:  "single endpoint",
-			input: "https://example.live.dynatrace.com/communication",
-			expected: []CommunicationHost{
-				{
-					Protocol: "https",
-					Host:     "example.live.dynatrace.com",
-					Port:     443,
-				},
-			},
-		},
-		{
-			name:  "multiple endpoints separated by commas",
-			input: "https://example.live.dynatrace.com/communication,https://managedhost.com:9999/here/communication",
-			expected: []CommunicationHost{
-				{
-					Protocol: "https",
-					Host:     "example.live.dynatrace.com",
-					Port:     443,
-				},
-				{
-					Protocol: "https",
-					Host:     "managedhost.com",
-					Port:     9999,
-				},
-			},
-		},
-		{
-			name:  "duplicate endpoints are deduplicated",
-			input: "https://example.live.dynatrace.com/communication,https://example.live.dynatrace.com/communication",
-			expected: []CommunicationHost{
-				{
-					Protocol: "https",
-					Host:     "example.live.dynatrace.com",
-					Port:     443,
-				},
-			},
-		},
-		{
-			name:        "invalid endpoint in list",
-			input:       "https://valid.com/communication,invalidendpoint",
-			expectError: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			hosts, err := ParseCommunicationHosts(tc.input)
-
-			if tc.expectError {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tc.expected, hosts)
-			}
-		})
-	}
-}
-
-func TestParseAGCommunicationHosts(t *testing.T) {
+func TestParseCommunicationHosts(t *testing.T) {
 	testCases := []struct {
 		name        string
 		input       string

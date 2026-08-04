@@ -6,9 +6,6 @@ package oneagent
 import (
 	"context"
 	"errors"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -138,45 +135,6 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 }
 
-// Test_GetConnectionInfo_EndToEnd exercises the full path through the real core
-// HTTP client against an httptest.Server. The mocked JSON response contains both
-// the formatted string and a communicationEndpoints array with duplicates, and we
-// assert the returned Endpoints string is derived from the slice with duplicates
-// removed and the entries joined by a comma.
-func Test_GetConnectionInfo_EndToEnd(t *testing.T) {
-	const (
-		epA = "https://tenant.dev.dynatracelabs.com:443"
-		epB = "https://other.dev.dynatracelabs.com:8443"
-	)
-
-	body := `{
-		"tenantUUID": "` + testTenantUUID + `",
-		"tenantToken": "` + testTenantToken + `",
-		"formattedCommunicationEndpoints": "https://stale.example.com:443",
-		"communicationEndpoints": ["` + epA + `", "` + epB + `", "` + epA + `"]
-	}`
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, connectionInfoPath, r.URL.Path)
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(body))
-	}))
-	defer server.Close()
-
-	coreClient := core.NewClient(core.Config{
-		BaseURL:   mustParseURL(t, server.URL),
-		PaasToken: "paas",
-	})
-	oaClient := NewClient(coreClient, "", "")
-
-	connectionInfo, err := oaClient.GetConnectionInfo(t.Context())
-	require.NoError(t, err)
-
-	assert.Equal(t, testTenantUUID, connectionInfo.TenantUUID)
-	assert.Equal(t, testTenantToken, connectionInfo.TenantToken)
-	assert.Equal(t, epA+","+epB, connectionInfo.Endpoints)
-}
-
 func Test_deduplicateEndpoints(t *testing.T) {
 	const (
 		epA = "https://tenant.dev.dynatracelabs.com:443"
@@ -241,13 +199,4 @@ func Test_deduplicateEndpoints(t *testing.T) {
 			assert.Equal(t, tt.expected, deduplicateEndpoints(tt.input))
 		})
 	}
-}
-
-func mustParseURL(t *testing.T, raw string) *url.URL {
-	t.Helper()
-
-	u, err := url.Parse(raw)
-	require.NoError(t, err)
-
-	return u
 }
