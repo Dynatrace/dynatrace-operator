@@ -39,7 +39,7 @@ workaround, and the operator can manage each capability's lifecycle separately.
 ### Missing
 
 - Self-registration in the Dynatrace UI (manual via Settings API for now)
-- KSPM-gated Service, image discovery, custom TLS, custom properties
+- KSPM-gated Service, image discovery, custom TLS
 - Gateway service account and RBAC
 - Webhook validation for split-AG mode
 - End-to-end tests
