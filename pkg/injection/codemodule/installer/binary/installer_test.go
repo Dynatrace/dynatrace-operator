@@ -164,6 +164,48 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		err := installer.installAgent(t.Context(), target)
 		require.NoError(t, err)
 	})
+	t.Run("cleans orphaned download files", func(t *testing.T) {
+		getParams.Version = testVersion
+		t.Cleanup(func() { getParams.Version = "" })
+
+		tmpDir := t.TempDir()
+		target := filepath.Join(tmpDir, testVersion)
+
+		orphan, err := os.CreateTemp(tmpDir, "download")
+		require.NoError(t, err)
+		orphan.Close()
+
+		otherFile, err := os.CreateTemp(tmpDir, "other")
+		require.NoError(t, err)
+		otherFile.Close()
+
+		dtClient := oneagentclientmock.NewClient(t)
+		dtClient.EXPECT().Get(t.Context(), getParams, mock.AnythingOfType("*os.File")).
+			Run(func(ctx context.Context, args oneagentclient.GetParams, writer io.Writer) {
+				zipFile := zip.SetupTestArchive(t, zip.TestRawZip)
+				defer func() { _ = zipFile.Close() }()
+
+				_, err := io.Copy(writer, zipFile)
+				require.NoError(t, err)
+			}).
+			Return(nil)
+
+		inst := &Installer{
+			dtClient:  dtClient,
+			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
+			props: &Properties{
+				OS:            installer.OSUnix,
+				Type:          installer.TypePaaS,
+				Flavor:        arch.FlavorMultidistro,
+				TargetVersion: testVersion,
+			},
+		}
+
+		err = inst.installAgent(t.Context(), target)
+		require.NoError(t, err)
+		assert.NoFileExists(t, orphan.Name())
+		assert.FileExists(t, otherFile.Name())
+	})
 }
 
 func TestIsAlreadyDownloaded(t *testing.T) {
