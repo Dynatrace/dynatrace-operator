@@ -158,16 +158,17 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 // buildVolumes returns the pod-level volumes.
 func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	km := dk.KubernetesMonitoring()
-	volumes := []corev1.Volume{{
-		Name: connectioninfo.TenantSecretVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  km.GetTenantSecretName(),
-				DefaultMode: new(int32(0o640)),
-				Optional:    new(false),
+	volumes := []corev1.Volume{
+		{
+			Name: connectioninfo.TenantSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  km.GetTenantSecretName(),
+					DefaultMode: new(int32(0o640)),
+					Optional:    new(false),
+				},
 			},
 		},
-	},
 		{
 			Name: AuthTokenVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -179,45 +180,56 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 			},
 		},
 		{
+			Name:         StorageVolumeName,
+			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+		},
+	}
+
+	if km.CustomProperties != nil {
+		volumes = append(volumes, corev1.Volume{
 			Name: kubemoncustomproperties.VolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  km.GetCustomPropertiesSecretName(),
 					DefaultMode: new(int32(0o640)),
-					Optional:    new(true),
+					Optional:    new(false),
 				},
 			},
-		},
-		{
-			Name:         StorageVolumeName,
-			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
-		},
+		})
 	}
 
 	return volumes
 }
 
 // buildVolumeMounts returns the container-level volume mounts.
-func buildVolumeMounts(_ *dynakube.DynaKube) []corev1.VolumeMount {
-	mounts := []corev1.VolumeMount{{
-		Name:      connectioninfo.TenantSecretVolumeName,
-		ReadOnly:  true,
-		MountPath: connectioninfo.TenantTokenMountPoint,
-		SubPath:   connectioninfo.TenantTokenKey,
-	}, {
-		Name:      AuthTokenVolumeName,
-		ReadOnly:  true,
-		MountPath: agconsts.AuthTokenMountPoint,
-		SubPath:   kubemonauthtoken.SecretKey,
-	}, {
-		Name:      kubemoncustomproperties.VolumeName,
-		ReadOnly:  true,
-		MountPath: kubemoncustomproperties.MountPath,
-		SubPath:   kubemoncustomproperties.DataKey,
-	}, {
-		Name:      StorageVolumeName,
-		MountPath: agconsts.GatewayTmpMountPoint,
-	}}
+func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
+	mounts := []corev1.VolumeMount{
+		{
+			Name:      connectioninfo.TenantSecretVolumeName,
+			ReadOnly:  true,
+			MountPath: connectioninfo.TenantTokenMountPoint,
+			SubPath:   connectioninfo.TenantTokenKey,
+		},
+		{
+			Name:      AuthTokenVolumeName,
+			ReadOnly:  true,
+			MountPath: agconsts.AuthTokenMountPoint,
+			SubPath:   kubemonauthtoken.SecretKey,
+		},
+		{
+			Name:      StorageVolumeName,
+			MountPath: agconsts.GatewayTmpMountPoint,
+		},
+	}
+
+	if dk.KubernetesMonitoring().CustomProperties != nil {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      kubemoncustomproperties.VolumeName,
+			ReadOnly:  true,
+			MountPath: kubemoncustomproperties.MountPath,
+			SubPath:   kubemoncustomproperties.DataKey,
+		})
+	}
 
 	return mounts
 }

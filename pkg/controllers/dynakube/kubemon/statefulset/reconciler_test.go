@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
@@ -230,7 +231,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
 
-		require.Len(t, container.VolumeMounts, 4)
+		require.Len(t, container.VolumeMounts, 3)
 		assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, connectioninfo.TenantTokenMountPoint, container.VolumeMounts[0].MountPath)
 		assert.Equal(t, connectioninfo.TenantTokenKey, container.VolumeMounts[0].SubPath)
@@ -246,7 +247,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
 
-		require.Len(t, container.VolumeMounts, 4)
+		require.Len(t, container.VolumeMounts, 3)
 		assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
 		assert.Equal(t, agconsts.AuthTokenMountPoint, container.VolumeMounts[1].MountPath)
 		assert.Equal(t, kubemonauthtoken.SecretKey, container.VolumeMounts[1].SubPath)
@@ -255,20 +256,28 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationAuthTokenHash])
 	})
 
-	t.Run("custom properties volume is optional, empty hash if secret is missing", func(t *testing.T) {
+	t.Run("no custom properties volume when CustomProperties is nil", func(t *testing.T) {
 		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.False(t, hasCustomPropertiesVolume(sts, dk))
+		assert.Empty(t, sts.Spec.Template.Annotations[statefulset.AnnotationCustomPropertiesHash])
+	})
+
+	t.Run("custom properties volume included and required when CustomProperties is set", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KubernetesMonitoring.CustomProperties = &value.Source{Value: "key=value"}
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
 
 		require.Len(t, container.VolumeMounts, 4)
-		assert.Equal(t, kubemoncustomproperties.VolumeName, container.VolumeMounts[2].Name)
-		assert.Equal(t, kubemoncustomproperties.MountPath, container.VolumeMounts[2].MountPath)
-		assert.Equal(t, kubemoncustomproperties.DataKey, container.VolumeMounts[2].SubPath)
-		assert.True(t, container.VolumeMounts[2].ReadOnly)
-		assert.True(t, hasCustomPropertiesVolume(sts, dk, true))
-		assert.Empty(t, sts.Spec.Template.Annotations[statefulset.AnnotationCustomPropertiesHash])
+		assert.Equal(t, kubemoncustomproperties.VolumeName, container.VolumeMounts[3].Name)
+		assert.Equal(t, kubemoncustomproperties.MountPath, container.VolumeMounts[3].MountPath)
+		assert.Equal(t, kubemoncustomproperties.DataKey, container.VolumeMounts[3].SubPath)
+		assert.True(t, container.VolumeMounts[3].ReadOnly)
+		assert.True(t, hasCustomPropertiesVolume(sts, dk))
 	})
 
 	t.Run("custom properties hash annotation is added when a secret exists", func(t *testing.T) {
@@ -310,9 +319,9 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		assert.Empty(t, sts.Spec.VolumeClaimTemplates)
-		require.Len(t, sts.Spec.Template.Spec.Volumes, 4)
-		assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[3].Name)
-		assert.NotNil(t, sts.Spec.Template.Spec.Volumes[3].EmptyDir)
+		require.Len(t, sts.Spec.Template.Spec.Volumes, 3)
+		assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
+		assert.NotNil(t, sts.Spec.Template.Spec.Volumes[2].EmptyDir)
 	})
 
 	t.Run("image pull secrets: tenant registry secret included by default", func(t *testing.T) {
@@ -608,11 +617,11 @@ func hasAuthTokenVolume(sts *appsv1.StatefulSet, dk *dynakube.DynaKube) bool {
 	})
 }
 
-func hasCustomPropertiesVolume(sts *appsv1.StatefulSet, dk *dynakube.DynaKube, wantOptional bool) bool {
+func hasCustomPropertiesVolume(sts *appsv1.StatefulSet, dk *dynakube.DynaKube) bool {
 	return slices.ContainsFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
 		return v.Name == kubemoncustomproperties.VolumeName &&
 			v.Secret != nil &&
 			v.Secret.SecretName == dk.KubernetesMonitoring().GetCustomPropertiesSecretName() &&
-			v.Secret.Optional != nil && *v.Secret.Optional == wantOptional
+			v.Secret.Optional != nil && !*v.Secret.Optional
 	})
 }
