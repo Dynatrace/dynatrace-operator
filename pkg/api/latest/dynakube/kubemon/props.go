@@ -72,7 +72,7 @@ func (km *Spec) GetPullPolicy() corev1.PullPolicy {
 		return ""
 	}
 
-	return corev1.PullPolicy(km.ImagePullPolicy)
+	return km.ImagePullPolicy
 }
 
 // GetCustomImage returns the user-provided image override, or "" if unset.
