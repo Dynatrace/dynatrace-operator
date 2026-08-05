@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -82,29 +81,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, oaClient oneagent.Client, dk
 func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, oaClient oneagent.Client, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
-	secretNamespacedName := types.NamespacedName{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace}
-
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, oaConnectionInfoConditionType) {
-		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName)
-		if err != nil {
-			return err
-		}
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
-		if isSecretPresent {
-			log.Info(dynakube.GetCacheValidMessage(
-				"OneAgent connection info update",
-				condition.LastTransitionTime,
-				dk.APIRequestThreshold()))
-
-			return nil
-		}
-	}
-
-	k8sconditions.SetSecretOutdated(dk.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
-
-	connectionInfo, err := oaClient.GetConnectionInfo(ctx)
-	if err != nil {
+	connectionInfo, err := oaClient.GetConnectionInfo(ctx, getRequiredEndpoints(dk))
+	if err != nil && !errors.As(err, new(oneagent.MissingIPs)) {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), oaConnectionInfoConditionType, err)
 
 		return errors.WithMessage(err, "failed to get OneAgent connection info")
@@ -120,7 +98,7 @@ func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, oaClient oneag
 		return NoOneAgentCommunicationEndpointsError
 	}
 
-	if hasStaleNetworkZoneEndpoints(dk, connectionInfo.Endpoints) {
+	if errors.As(err, new(oneagent.MissingIPs)) {
 		log.Info("OneAgent endpoints do not contain the local ActiveGate Service IP yet, postponing OneAgent deployment",
 			"tenant", connectionInfo.TenantUUID,
 			"endpoints", connectionInfo.Endpoints,
@@ -169,4 +147,12 @@ func (r *Reconciler) createTenantTokenSecret(ctx context.Context, dk *dynakube.D
 func (r *Reconciler) setDynakubeStatus(dk *dynakube.DynaKube, connectionInfo oneagent.ConnectionInfo) {
 	dk.Status.OneAgent.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
 	dk.Status.OneAgent.ConnectionInfo.Endpoints = connectionInfo.Endpoints
+}
+
+func getRequiredEndpoints(dk *dynakube.DynaKube) []string {
+	if dk == nil || dk.Spec.NetworkZone == "" || !dk.ActiveGate().IsRoutingEnabled() || len(dk.Status.ActiveGate.ServiceIPs) == 0 {
+		return nil
+	}
+
+	return dk.Status.ActiveGate.ServiceIPs
 }
