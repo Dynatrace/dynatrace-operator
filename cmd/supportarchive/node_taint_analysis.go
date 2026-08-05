@@ -221,25 +221,24 @@ func isTaintTolerated(taint corev1.Taint, tolerations []corev1.Toleration) bool 
 }
 
 func formatToleration(t corev1.Toleration) string {
-	parts := []string{}
-
-	if t.Key == "" {
-		parts = append(parts, "key=*")
-	} else {
-		parts = append(parts, "key="+t.Key)
+	key := t.Key
+	if key == "" {
+		key = "*"
 	}
 
-	parts = append(parts, fmt.Sprintf("operator=%s", t.Operator))
+	if t.Operator == corev1.TolerationOpExists || t.Operator == "" && t.Value == "" {
+		if t.Effect == "" {
+			return key
+		}
 
-	if t.Value != "" {
-		parts = append(parts, "value="+t.Value)
+		return fmt.Sprintf("%s:%s", key, t.Effect)
 	}
 
-	if t.Effect != "" {
-		parts = append(parts, fmt.Sprintf("effect=%s", t.Effect))
+	if t.Effect == "" {
+		return fmt.Sprintf("%s=%s", key, t.Value)
 	}
 
-	return strings.Join(parts, " ")
+	return fmt.Sprintf("%s=%s:%s", key, t.Value, t.Effect)
 }
 
 func formatTaint(t corev1.Taint) string {

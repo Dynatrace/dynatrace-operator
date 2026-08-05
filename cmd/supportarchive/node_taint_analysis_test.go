@@ -138,7 +138,7 @@ func TestNodeTaintAnalysisCollector_PartialToleration(t *testing.T) {
 	assert.Contains(t, content, "WARNING: 1 node(s) have untolerated taints")
 	assert.Contains(t, content, "Node: node-1")
 	assert.Contains(t, content, "key2=val2:NoExecute")
-	assert.NotContains(t, content, "key1=val1:NoSchedule")
+	assert.NotContains(t, content, "- key1=val1:NoSchedule")
 }
 
 func TestTolerationMatching(t *testing.T) {
