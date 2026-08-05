@@ -5,7 +5,6 @@ package connectioninfo
 
 import (
 	"fmt"
-	"maps"
 	"net/url"
 	"slices"
 	"strconv"
@@ -64,25 +63,18 @@ func NewCommunicationHost(endpoint string) (CommunicationHost, error) {
 	}, nil
 }
 
-// ParseOACommunicationHosts creates CommunicationHost slice from `;` separated endpoints.
-// It removes duplicates and sorts the result for deterministic output.
-func ParseOACommunicationHosts(endpoints string) ([]CommunicationHost, error) {
-	return newCommunicationHosts(endpoints, ";")
-}
-
-// ParseAGCommunicationHosts creates CommunicationHost slice from `,` separated endpoints.
-// It removes duplicates and sorts the result for deterministic output.
-func ParseAGCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
+// ParseCommunicationHosts creates CommunicationHost slice from `,` separated endpoints.
+// It sorts the result for deterministic output.
+func ParseCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
 	return newCommunicationHosts(endpoints, ",")
 }
 
 func newCommunicationHosts(endpoints string, sep string) ([]CommunicationHost, error) {
-	// we want to avoid duplicates, because they cause problems with the istio "integration", as you should not have duplicate hosts in the ServiceEntries
-	comHosts := map[string]CommunicationHost{}
-
 	if len(endpoints) == 0 {
 		return []CommunicationHost{}, nil
 	}
+
+	var comHosts []CommunicationHost
 
 	for endpoint := range strings.SplitSeq(endpoints, sep) {
 		ch, err := NewCommunicationHost(endpoint)
@@ -90,14 +82,13 @@ func newCommunicationHosts(endpoints string, sep string) ([]CommunicationHost, e
 			return nil, err
 		}
 
-		comHosts[ch.String()] = ch
+		comHosts = append(comHosts, ch)
 	}
 
-	// we have to sort the hosts to have a deterministic order for easier testing.
-
-	sortedHosts := slices.SortedFunc(maps.Values(comHosts), func(a, b CommunicationHost) int {
+	// sort for deterministic output
+	slices.SortFunc(comHosts, func(a, b CommunicationHost) int {
 		return strings.Compare(a.String(), b.String())
 	})
 
-	return sortedHosts, nil
+	return comHosts, nil
 }
