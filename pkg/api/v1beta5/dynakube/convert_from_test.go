@@ -168,7 +168,7 @@ func TestConvertFrom(t *testing.T) {
 			mappedHostPaths []string
 		}{
 			{
-				name:            "tight allowlist is preserved",
+				name:            "single entry is preserved",
 				mappedHostPaths: []string{"/boot"},
 			},
 			{
@@ -176,11 +176,11 @@ func TestConvertFrom(t *testing.T) {
 				mappedHostPaths: []string{"/boot", "/etc"},
 			},
 			{
-				name:            "empty allowlist is preserved",
+				name:            "empty slice is preserved",
 				mappedHostPaths: []string{},
 			},
 			{
-				name:            "nil allowlist is preserved",
+				name:            "nil slice is preserved",
 				mappedHostPaths: nil,
 			},
 		}

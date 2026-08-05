@@ -166,7 +166,7 @@ func TestConvertTo(t *testing.T) {
 			expected        []string
 		}{
 			{
-				name:            "tight allowlist is preserved, not loosened to root",
+				name:            "single entry is preserved, not loosened to root",
 				mappedHostPaths: []string{"/boot"},
 				expected:        []string{"/boot"},
 			},
@@ -176,12 +176,12 @@ func TestConvertTo(t *testing.T) {
 				expected:        []string{"/boot", "/etc"},
 			},
 			{
-				name:            "empty allowlist is preserved, not loosened to root",
+				name:            "empty slice is preserved, not loosened to root",
 				mappedHostPaths: []string{},
 				expected:        []string{},
 			},
 			{
-				name:            "nil allowlist is preserved, not loosened to root",
+				name:            "nil slice is preserved, not loosened to root",
 				mappedHostPaths: nil,
 				expected:        nil,
 			},
@@ -384,7 +384,7 @@ func TestConvertTo(t *testing.T) {
 			expected        []string
 		}{
 			{
-				name:            "narrow allowlist is preserved",
+				name:            "single entry is preserved",
 				mappedHostPaths: []string{"/boot"},
 				expected:        []string{"/boot"},
 			},
@@ -394,12 +394,12 @@ func TestConvertTo(t *testing.T) {
 				expected:        []string{"/boot", "/etc"},
 			},
 			{
-				name:            "empty allowlist is preserved",
+				name:            "empty slice is preserved",
 				mappedHostPaths: []string{},
 				expected:        []string{},
 			},
 			{
-				name:            "nil allowlist is preserved",
+				name:            "nil slice is preserved",
 				mappedHostPaths: nil,
 				expected:        nil,
 			},
