@@ -44,3 +44,29 @@ tests:
               targetPort: server-port
       - isNotEmpty:
           path: spec.selector
+
+  - it: should not have annotations by default
+    set:
+      platform: kubernetes
+    asserts:
+      - isKind:
+          of: Service
+      - notExists:
+          path: metadata.annotations
+
+  - it: should take custom annotations
+    set:
+      platform: kubernetes
+      webhook.annotations:
+        testKey: testValue
+        service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.annotations
+          value:
+            testKey: testValue
+            service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+      - isNotEmpty:
+          path: metadata.labels

@@ -5,6 +5,10 @@ kind: Service
 metadata:
   name: dynatrace-webhook
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.webhook.annotations }}
+  annotations:
+    {{- toYaml .Values.webhook.annotations | nindent 4 }}
+  {{- end }}
   labels:
   {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 spec:
