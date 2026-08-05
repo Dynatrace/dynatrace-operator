@@ -6,6 +6,7 @@ package version
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
@@ -17,6 +18,8 @@ import (
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const minRequestThreshold = 15 * time.Minute
 
 type updater struct {
 	edgeConnect    *edgeconnect.EdgeConnect
@@ -44,7 +47,7 @@ func newUpdater(
 func (u updater) RequiresReconcile() bool {
 	version := u.edgeConnect.Status.Version
 
-	isRequestOutdated := u.timeProvider.IsOutdated(version.LastProbeTimestamp, edgeconnect.DefaultMinRequestThreshold)
+	isRequestOutdated := u.timeProvider.IsOutdated(version.LastProbeTimestamp, minRequestThreshold)
 	didCustomImageChange := !strings.HasPrefix(version.ImageID, u.edgeConnect.Image())
 
 	if didCustomImageChange || version.ImageID == "" {

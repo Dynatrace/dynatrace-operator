@@ -10,8 +10,8 @@ import (
 const (
 	Prefix = "conversion.internal.dynatrace.com/"
 
-	AutoUpdateKey        = Prefix + "auto-update"
-	DefaultOTELCImageKey = Prefix + "default-otelc-image"
+	AutoUpdateKey          = Prefix + "auto-update"
+	DefaultOTelColImageKey = Prefix + "default-otelc-image"
 )
 
 type Field[T any] struct {
@@ -45,18 +45,18 @@ func (f Field[T]) Set(value *T) {
 }
 
 type RemovedFields struct {
-	AutoUpdate        Field[bool]
-	DefaultOTELCImage Field[bool]
+	AutoUpdate          Field[bool]
+	DefaultOTelColImage Field[bool]
 }
 
 func NewRemovedFields(annotations map[string]string) *RemovedFields {
 	return &RemovedFields{
-		AutoUpdate:        Field[bool]{name: AutoUpdateKey, data: annotations},
-		DefaultOTELCImage: Field[bool]{name: DefaultOTELCImageKey, data: annotations},
+		AutoUpdate:          Field[bool]{name: AutoUpdateKey, data: annotations},
+		DefaultOTelColImage: Field[bool]{name: DefaultOTelColImageKey, data: annotations},
 	}
 }
 
 func CleanupAnnotations(annotations map[string]string) {
 	delete(annotations, AutoUpdateKey)
-	delete(annotations, DefaultOTELCImageKey)
+	delete(annotations, DefaultOTelColImageKey)
 }

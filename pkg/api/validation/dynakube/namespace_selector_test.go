@@ -4,6 +4,7 @@
 package validation
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -152,7 +153,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 		for _, label := range testsInvalidLabels {
 			// MatchLabels
 			assertDenied(t,
-				[]string{errorNamespaceSelectorMatchLabelsViolateLabelSpec},
+				[]string{errorInvalidOneAgentNamespaceSelector},
 				&dynakube.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "invalid-namespace-selector",
@@ -176,7 +177,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 		}
 		// MatchExpressions
 		assertDenied(t,
-			[]string{errorNamespaceSelectorMatchLabelsViolateLabelSpec},
+			[]string{errorInvalidOneAgentNamespaceSelector},
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "invalid-namespace-selector",
@@ -307,4 +308,127 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				},
 			}, &dummyNamespace)
 	})
+}
+
+func TestInvalidNamespaceSelectors(t *testing.T) {
+	tests := []struct {
+		name   string
+		dk     *dynakube.DynaKube
+		expect string
+	}{
+		{
+			"appmon invalid labels",
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					OneAgent: oneagent.Spec{
+						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
+								NamespaceSelector: metav1.LabelSelector{MatchLabels: map[string]string{strings.Repeat("a", 64): ""}},
+							},
+						},
+					},
+				},
+			},
+			errorInvalidOneAgentNamespaceSelector,
+		},
+		{
+			"appmon invalid expressions",
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					OneAgent: oneagent.Spec{
+						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
+								NamespaceSelector: metav1.LabelSelector{MatchExpressions: []metav1.LabelSelectorRequirement{{}}},
+							},
+						},
+					},
+				},
+			},
+			errorInvalidOneAgentNamespaceSelector,
+		},
+		{
+			"cnfs invalid labels",
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
+								NamespaceSelector: metav1.LabelSelector{MatchLabels: map[string]string{strings.Repeat("a", 64): ""}},
+							},
+						},
+					},
+				},
+			},
+			errorInvalidOneAgentNamespaceSelector,
+		},
+		{
+			"cnfs invalid expressions",
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
+								NamespaceSelector: metav1.LabelSelector{MatchExpressions: []metav1.LabelSelectorRequirement{{}}},
+							},
+						},
+					},
+				},
+			},
+			errorInvalidOneAgentNamespaceSelector,
+		},
+		{
+			"metadata enrichment invalid labels",
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					MetadataEnrichment: metadataenrichment.Spec{
+						NamespaceSelector: metav1.LabelSelector{MatchLabels: map[string]string{strings.Repeat("a", 64): ""}},
+					},
+				},
+			},
+			errorInvalidMetadataEnrichmentNamespaceSelector,
+		},
+		{
+			"metadata enrichment invalid expressions",
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					MetadataEnrichment: metadataenrichment.Spec{
+						NamespaceSelector: metav1.LabelSelector{MatchExpressions: []metav1.LabelSelectorRequirement{{}}},
+					},
+				},
+			},
+			errorInvalidMetadataEnrichmentNamespaceSelector,
+		},
+		{
+			"otlp invalid labels",
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+						NamespaceSelector: metav1.LabelSelector{MatchLabels: map[string]string{strings.Repeat("a", 64): ""}},
+					},
+				},
+			},
+			errorInvalidOTLPExporterNamespaceSelector,
+		},
+		{
+			"otlp invalid expressions",
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+						NamespaceSelector: metav1.LabelSelector{MatchExpressions: []metav1.LabelSelectorRequirement{{}}},
+					},
+				},
+			},
+			errorInvalidOTLPExporterNamespaceSelector,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := tt.dk
+			dk.Name = "test"
+			dk.Namespace = testNamespace
+			dk.Spec.APIURL = testAPIURL
+			assertDenied(t, []string{tt.expect}, dk)
+		})
+	}
 }

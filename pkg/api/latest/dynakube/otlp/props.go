@@ -3,7 +3,10 @@
 
 package otlp
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
+import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 func NewExporterConfiguration(spec *ExporterConfigurationSpec, globalResourceAttributes map[string]string) *ExporterConfiguration {
 	return &ExporterConfiguration{
@@ -54,4 +57,12 @@ func (e *ExporterConfiguration) GetAdditionalResourceAttributes() map[string]str
 	}
 
 	return e.Spec.AdditionalResourceAttributes
+}
+
+func (e *ExporterConfiguration) GetNamespaceSelector() *metav1.LabelSelector {
+	if e.Spec == nil {
+		return nil
+	}
+
+	return &e.Spec.NamespaceSelector
 }

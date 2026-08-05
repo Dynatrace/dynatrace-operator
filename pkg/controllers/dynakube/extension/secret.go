@@ -22,7 +22,7 @@ import (
 )
 
 // TODO: Remove in future release when migration is no longer needed
-const DeprecatedOtelcTokenSecretKey = "otelc.token"
+const DeprecatedOTelColTokenSecretKey = "otelc.token"
 
 func (r *Reconciler) reconcileSecret(ctx context.Context, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
@@ -70,7 +70,7 @@ func (r *Reconciler) reconcileSecret(ctx context.Context, dk *dynakube.DynaKube)
 			return err
 		}
 
-		newOtelcToken, err := dttoken.New(consts.DatasourceTokenSecretValuePrefix)
+		newOTelColToken, err := dttoken.New(consts.DatasourceTokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate otelc token")
 			k8sconditions.SetSecretGenFailed(dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating otelc token"))
@@ -78,7 +78,7 @@ func (r *Reconciler) reconcileSecret(ctx context.Context, dk *dynakube.DynaKube)
 			return err
 		}
 
-		newSecret, err := r.buildSecret(*newEECToken, *newOtelcToken, dk)
+		newSecret, err := r.buildSecret(*newEECToken, *newOTelColToken, dk)
 		if err != nil {
 			log.Info("failed to generate extension secret")
 			k8sconditions.SetSecretGenFailed(dk.Conditions(), secretConditionType, err)
@@ -122,7 +122,7 @@ func (r *Reconciler) removeDeprecatedSecretAndConditionIfNeeded(ctx context.Cont
 		return false
 	}
 
-	if _, exists := existingSecret.Data[DeprecatedOtelcTokenSecretKey]; !exists {
+	if _, exists := existingSecret.Data[DeprecatedOTelColTokenSecretKey]; !exists {
 		return false
 	}
 

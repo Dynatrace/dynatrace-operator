@@ -64,6 +64,9 @@ const (
 	defaultWebhookCertsRootDuration = 365 * 24 * time.Hour
 	minWebhookCertsRootDuration     = 7 * 24 * time.Hour
 	maxWebhookCertsRootDuration     = 10 * 365 * 24 * time.Hour
+
+	WebhookMetadataSizeLimitEnvVar       = "DT_METADATA_SIZE_LIMIT"
+	defaultWebhookMetadataSizeLimitValue = 24 * 1024
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
@@ -236,4 +239,35 @@ func getSafeDurationFromEnv(ctx context.Context, envVar string, defaultValue, mi
 	log.Info("using custom duration", "env", envVar, "value", duration)
 
 	return duration
+}
+
+func GetMetadaSizeLimit(ctx context.Context) int {
+	var log logd.Logger
+	if ctx != nil {
+		_, log = logd.NewFromContext(ctx, "k8senv")
+	}
+
+	rawValue := os.Getenv(WebhookMetadataSizeLimitEnvVar)
+	if rawValue == "" {
+		if ctx != nil {
+			log.Debug("no custom env set, using default", "env", WebhookMetadataSizeLimitEnvVar, "default", defaultWebhookMetadataSizeLimitValue)
+		}
+
+		return defaultWebhookMetadataSizeLimitValue
+	}
+
+	value, err := strconv.Atoi(rawValue)
+	if err != nil || value < 0 {
+		if ctx != nil {
+			log.Error(err, "invalid int value, using default", "env", WebhookMetadataSizeLimitEnvVar, "value", rawValue, "default", defaultWebhookMetadataSizeLimitValue)
+		}
+
+		return defaultWebhookMetadataSizeLimitValue
+	}
+
+	if ctx != nil {
+		log.Info("using custom int value", "env", WebhookMetadataSizeLimitEnvVar, "value", value)
+	}
+
+	return value
 }

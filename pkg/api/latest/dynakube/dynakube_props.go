@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtapiurl"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
@@ -194,4 +195,24 @@ func (dk *DynaKube) GetResourceAttributes() map[string]string {
 
 func (dk *DynaKube) PublicRegistryOverride() string {
 	return dk.Spec.PublicRegistryOverride
+}
+
+func (dk *DynaKube) OTelCollectorStatefulsetName() string {
+	return dk.Name + consts.OTelCollectorNameSuffix
+}
+
+func (dk *DynaKube) IsAGCertificateNeeded() bool {
+	if dk.ActiveGate().IsEnabled() && dk.ActiveGate().HasCaCert() {
+		return true
+	}
+
+	return false
+}
+
+func (dk *DynaKube) IsCACertificateNeeded() bool {
+	if !dk.ActiveGate().IsEnabled() && dk.Spec.TrustedCAs != "" {
+		return true
+	}
+
+	return false
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -97,4 +96,16 @@ func (km *KubeMon) GetDefaultImage(version string) string {
 	}
 
 	return km.apiURLHost + TenantRegistrySubPath + ":" + tag
+}
+
+func (km *Spec) IsRegistrationEnabled() bool {
+	return km != nil && km.Registration != nil
+}
+
+func (km *Spec) GetRegistrationClusterName() string {
+	if km == nil || km.Registration == nil {
+		return ""
+	}
+
+	return km.Registration.ClusterName
 }

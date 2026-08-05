@@ -67,7 +67,7 @@ func (r *Reconciler) addKubemonDeploymentMetadata(dk *dynakube.DynaKube, configM
 		return
 	}
 
-	configMapData[KubemonMetadataKey] = NewDeploymentMetadata(r.clusterID, KubemonMetadataKey).AsString()
+	configMapData[KubemonMetadataKey] = NewDeploymentMetadata(r.clusterID, ActiveGateMetadataKey).AsString()
 }
 
 func (r *Reconciler) addOperatorVersionInfo(dk *dynakube.DynaKube, configMapData map[string]string) {

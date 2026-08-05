@@ -29,6 +29,8 @@ const (
 
 	clientInternalSection = "[http.client.internal]"
 	noProxyFieldName      = "proxy-non-proxy-hosts"
+
+	customPropertiesConditionType string = "CustomPropertiesSecret"
 )
 
 type Reconciler struct {

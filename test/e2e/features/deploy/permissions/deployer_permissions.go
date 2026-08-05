@@ -3,7 +3,7 @@
 
 //go:build e2e
 
-package deployersamples
+package permissions
 
 import (
 	"context"
