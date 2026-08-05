@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
