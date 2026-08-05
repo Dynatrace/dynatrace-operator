@@ -55,6 +55,10 @@ type DTPrometheusSpec struct { //nolint:revive
 	// run stateful processors and export to Dynatrace via OTLP/HTTP.
 	// +kubebuilder:validation:Optional
 	Gateway GatewaySpec `json:"gateway,omitzero"`
+
+	// Overrides the default registry from which Dynatrace images are pulled.
+	// +kubebuilder:validation:Optional
+	PublicRegistryOverride string `json:"publicRegistryOverride,omitempty"`
 }
 
 // DynatracePresetSpec toggles the operator-managed annotation-based ScrapeConfig.

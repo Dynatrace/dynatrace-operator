@@ -9,6 +9,9 @@ spec:
   # settings (apiUrl, tokens, proxy, networkZone, trustedCAs, ActiveGate, etc.).
   dynaKubeName: dynakube
 
+  # Overrides the default registry from which Dynatrace images are pulled.
+  # publicRegistryOverride: my.custom.registry.com
+
   # Dynatrace preset
   # When enabled, the operator creates a built-in ScrapeConfig that discovers
   # pods annotated with metrics.dynatrace.com/scrape: "true" and reads the

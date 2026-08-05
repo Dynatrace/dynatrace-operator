@@ -1344,6 +1344,10 @@ spec:
                         type: string
                     type: object
                 type: object
+              publicRegistryOverride:
+                description: Overrides the default registry from which Dynatrace images
+                  are pulled.
+                type: string
               scraper:
                 description: |-
                   Configures the scraper pool (tier 1): a Deployment of OTel Collectors that
