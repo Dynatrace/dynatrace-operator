@@ -20,13 +20,6 @@ func (dtp *DTPrometheus) IsTLSEnabled() bool {
 	return dtp.Spec.TLS != nil
 }
 
-// IsSelfMonitoringEnabled reports whether the self-monitoring collector should be
-// deployed. The self-monitoring section defaults to an empty object (enabled)
-// when omitted; it is disabled only when explicitly set to null.
-func (dtp *DTPrometheus) IsSelfMonitoringEnabled() bool {
-	return dtp.Spec.SelfMonitoring != nil
-}
-
 // Conditions returns a pointer to the status conditions slice so callers can
 // use meta.SetStatusCondition and friends.
 func (dtp *DTPrometheus) Conditions() *[]metav1.Condition {

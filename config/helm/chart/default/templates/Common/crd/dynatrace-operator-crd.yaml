@@ -2645,13 +2645,6 @@ spec:
                         type: string
                     type: object
                 type: object
-              selfMonitoring:
-                default: {}
-                description: |-
-                  Send self-monitoring for the stack's own telemetry to Dynatrace.
-                  Enabled by default; set to null to opt out.
-                nullable: true
-                type: object
               targetAllocator:
                 description: |-
                   Configures the Target Allocator, which holds all Prometheus service

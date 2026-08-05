@@ -46,24 +46,6 @@ func TestDTPrometheus_IsTLSEnabled(t *testing.T) {
 	}
 }
 
-func TestDTPrometheus_IsSelfMonitoringEnabled(t *testing.T) {
-	tests := []struct {
-		name        string
-		selfMonSpec *SelfMonitoringSpec
-		expected    bool
-	}{
-		{"disabled when unset", nil, false},
-		{"enabled when present", &SelfMonitoringSpec{}, true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dtp := &DTPrometheus{Spec: DTPrometheusSpec{SelfMonitoring: tt.selfMonSpec}}
-			assert.Equal(t, tt.expected, dtp.IsSelfMonitoringEnabled())
-		})
-	}
-}
-
 func TestDTPrometheus_Conditions(t *testing.T) {
 	dtp := &DTPrometheus{}
 

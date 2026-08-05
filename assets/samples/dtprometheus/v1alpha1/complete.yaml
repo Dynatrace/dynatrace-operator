@@ -27,12 +27,6 @@ spec:
   # (TA -> scraper HTTPS, scraper -> gateway OTLP/TLS).
   tls: {}
 
-  # Self-monitoring
-  # When enabled, the operator deploys a dedicated self-monitoring collector that
-  # ships the stack's own telemetry to Dynatrace. The collector's configuration
-  # (replicas, image, resources, scheduling, ...) is set on the referenced DynaKube.
-  selfMonitoring: {}
-
   # Target Allocator
   # The TA holds all Prometheus service discovery metadata in memory and
   # distributes targets across the scraper pool via consistent hashing.
