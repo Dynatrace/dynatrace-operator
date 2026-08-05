@@ -71,7 +71,7 @@ func invalidOneAgentNamespaceSelector(ctx context.Context, _ *Validator, dk *dyn
 
 func invalidMetadataNamespaceSelectors(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	errs := validation.ValidateLabelSelector(
-		dk.MetadataEnrichment().GetNamespaceSelector(), validation.LabelSelectorValidationOptions{},
+		&dk.Spec.MetadataEnrichment.NamespaceSelector, validation.LabelSelectorValidationOptions{},
 		field.NewPath("spec", "metadataEnrichment", "namespaceSelector"),
 	)
 
@@ -85,8 +85,12 @@ func invalidMetadataNamespaceSelectors(ctx context.Context, _ *Validator, dk *dy
 }
 
 func invalidOTLPExporterNamespaceSelector(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.Spec.OTLPExporterConfiguration == nil {
+		return ""
+	}
+
 	errs := validation.ValidateLabelSelector(
-		dk.OTLPExporterConfiguration().GetNamespaceSelector(), validation.LabelSelectorValidationOptions{},
+		&dk.Spec.OTLPExporterConfiguration.NamespaceSelector, validation.LabelSelectorValidationOptions{},
 		field.NewPath("spec", "metadataEnrichment", "namespaceSelector"),
 	)
 
