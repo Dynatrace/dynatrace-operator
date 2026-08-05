@@ -109,5 +109,5 @@ func (dk *DynaKube) TelemetryIngest() *telemetryingest.TelemetryIngest {
 }
 
 func (dk *DynaKube) OTLPExporterConfiguration() *otlp.ExporterConfiguration {
-	return otlp.NewExporterConfiguration(dk.Spec.OTLPExporterConfiguration, dk.GetResourceAttributes())
+	return otlp.NewExporterConfiguration(dk.Spec.OTLPExporterConfiguration, dk.Spec.ResourceAttributes)
 }
