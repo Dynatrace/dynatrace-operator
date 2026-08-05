@@ -82,6 +82,10 @@ type connectionInfoJSONResponse struct {
 	CommunicationEndpoints string `json:"communicationEndpoints"`
 }
 
+func (cinf *connectionInfoJSONResponse) IsEmpty() bool {
+	return cinf.TenantUUID == "" || cinf.TenantToken == "" || cinf.CommunicationEndpoints == ""
+}
+
 func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
 	var resp connectionInfoJSONResponse
 
