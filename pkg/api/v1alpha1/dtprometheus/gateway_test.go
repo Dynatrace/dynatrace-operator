@@ -23,4 +23,3 @@ func TestGateway_GetStatefulSetName(t *testing.T) {
 
 	assert.Equal(t, "dtprom-gateway", gateway.GetStatefulSetName())
 }
-

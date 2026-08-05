@@ -22,11 +22,6 @@ spec:
   # automatically picked up by the Target Allocator without any extra config.
   dynatracePreset: {}
 
-  # TLS
-  # Controls TLS for internal component communication
-  # (TA -> scraper HTTPS, scraper -> gateway OTLP/TLS).
-  tls: {}
-
   # Target Allocator
   # The TA holds all Prometheus service discovery metadata in memory and
   # distributes targets across the scraper pool via consistent hashing.

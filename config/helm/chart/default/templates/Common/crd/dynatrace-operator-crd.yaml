@@ -4036,13 +4036,6 @@ spec:
                         type: string
                     type: object
                 type: object
-              tls:
-                default: {}
-                description: |-
-                  Controls TLS for internal component communication
-                  (TA -> scraper HTTPS, scraper -> gateway OTLP/TLS).
-                nullable: true
-                type: object
             required:
             - dynaKubeName
             type: object

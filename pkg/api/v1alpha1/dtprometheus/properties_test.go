@@ -28,24 +28,6 @@ func TestDTPrometheus_IsDynatracePresetEnabled(t *testing.T) {
 	}
 }
 
-func TestDTPrometheus_IsTLSEnabled(t *testing.T) {
-	tests := []struct {
-		name     string
-		tls      *TLSSpec
-		expected bool
-	}{
-		{"disabled when unset", nil, false},
-		{"enabled when present", &TLSSpec{}, true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dtp := &DTPrometheus{Spec: DTPrometheusSpec{TLS: tt.tls}}
-			assert.Equal(t, tt.expected, dtp.IsTLSEnabled())
-		})
-	}
-}
-
 func TestDTPrometheus_Conditions(t *testing.T) {
 	dtp := &DTPrometheus{}
 

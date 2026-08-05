@@ -23,4 +23,3 @@ func TestScraper_GetDeploymentName(t *testing.T) {
 
 	assert.Equal(t, "dtprom-scraper", scraper.GetDeploymentName())
 }
-

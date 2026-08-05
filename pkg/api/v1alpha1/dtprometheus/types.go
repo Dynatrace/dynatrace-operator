@@ -27,13 +27,6 @@ type DTPrometheusSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	DynatracePreset *DynatracePresetSpec `json:"dynatracePreset,omitzero"`
 
-	// Controls TLS for internal component communication
-	// (TA -> scraper HTTPS, scraper -> gateway OTLP/TLS).
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={}
-	// +nullable
-	TLS *TLSSpec `json:"tls"`
-
 	// Configures the Target Allocator, which holds all Prometheus service
 	// discovery metadata and distributes scrape targets across the scraper pool.
 	// +kubebuilder:validation:Optional
@@ -56,9 +49,6 @@ type DTPrometheusSpec struct { //nolint:revive
 
 // DynatracePresetSpec toggles the operator-managed annotation-based ScrapeConfig.
 type DynatracePresetSpec struct{}
-
-// TLSSpec configures operator-managed TLS between components.
-type TLSSpec struct{}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true

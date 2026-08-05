@@ -13,13 +13,6 @@ func (dtp *DTPrometheus) IsDynatracePresetEnabled() bool {
 	return dtp.Spec.DynatracePreset != nil
 }
 
-// IsTLSEnabled reports whether operator-managed TLS between components is
-// enabled. The TLS section defaults to an empty object (enabled) when omitted;
-// it is disabled only when explicitly set to null.
-func (dtp *DTPrometheus) IsTLSEnabled() bool {
-	return dtp.Spec.TLS != nil
-}
-
 // Conditions returns a pointer to the status conditions slice so callers can
 // use meta.SetStatusCondition and friends.
 func (dtp *DTPrometheus) Conditions() *[]metav1.Condition {
