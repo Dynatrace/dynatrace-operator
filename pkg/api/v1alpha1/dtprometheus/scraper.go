@@ -43,11 +43,6 @@ func NewScraper(spec *ScraperSpec, name string) *Scraper {
 	}
 }
 
-// SetName sets the owning DTPrometheus name.
-func (s *Scraper) SetName(name string) {
-	s.name = name
-}
-
 // GetDeploymentName returns the base name for the scraper's Deployment.
 func (s *Scraper) GetDeploymentName() string {
 	return s.name + ScraperNameSuffix

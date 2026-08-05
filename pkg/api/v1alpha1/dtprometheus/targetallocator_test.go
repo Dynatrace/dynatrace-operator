@@ -26,14 +26,6 @@ func TestTargetAllocator_GetDeploymentName(t *testing.T) {
 	assert.Equal(t, "dtprom-target-allocator", ta.GetDeploymentName())
 }
 
-func TestTargetAllocator_SetName(t *testing.T) {
-	ta := NewTargetAllocator(&TargetAllocatorSpec{}, "old")
-
-	ta.SetName("new")
-
-	assert.Equal(t, "new-target-allocator", ta.GetDeploymentName())
-}
-
 func TestTargetAllocator_GetScrapeCRSelector(t *testing.T) {
 	t.Run("unset returns default label selector", func(t *testing.T) {
 		ta := NewTargetAllocator(&TargetAllocatorSpec{}, "dtprom")

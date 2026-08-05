@@ -67,11 +67,6 @@ func NewTargetAllocator(spec *TargetAllocatorSpec, name string) *TargetAllocator
 	}
 }
 
-// SetName sets the owning DTPrometheus name.
-func (ta *TargetAllocator) SetName(name string) {
-	ta.name = name
-}
-
 // GetDeploymentName returns the base name for the Target Allocator's Deployment.
 func (ta *TargetAllocator) GetDeploymentName() string {
 	return ta.name + TargetAllocatorNameSuffix

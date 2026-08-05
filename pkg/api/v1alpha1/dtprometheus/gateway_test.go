@@ -24,10 +24,3 @@ func TestGateway_GetStatefulSetName(t *testing.T) {
 	assert.Equal(t, "dtprom-gateway", gateway.GetStatefulSetName())
 }
 
-func TestGateway_SetName(t *testing.T) {
-	gateway := NewGateway(&GatewaySpec{}, "old")
-
-	gateway.SetName("new")
-
-	assert.Equal(t, "new-gateway", gateway.GetStatefulSetName())
-}

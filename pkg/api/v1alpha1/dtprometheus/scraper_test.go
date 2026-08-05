@@ -24,10 +24,3 @@ func TestScraper_GetDeploymentName(t *testing.T) {
 	assert.Equal(t, "dtprom-scraper", scraper.GetDeploymentName())
 }
 
-func TestScraper_SetName(t *testing.T) {
-	scraper := NewScraper(&ScraperSpec{}, "old")
-
-	scraper.SetName("new")
-
-	assert.Equal(t, "new-scraper", scraper.GetDeploymentName())
-}

@@ -38,11 +38,6 @@ func NewGateway(spec *GatewaySpec, name string) *Gateway {
 	}
 }
 
-// SetName sets the owning DTPrometheus name.
-func (g *Gateway) SetName(name string) {
-	g.name = name
-}
-
 // GetStatefulSetName returns the base name for the gateway's StatefulSet.
 func (g *Gateway) GetStatefulSetName() string {
 	return g.name + GatewayNameSuffix
