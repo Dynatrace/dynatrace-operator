@@ -212,7 +212,8 @@ func findNodesWithUntoleratedTaints(nodes *corev1.NodeList, tolerations []corev1
 
 func isTaintTolerated(taint corev1.Taint, tolerations []corev1.Toleration) bool {
 	for i := range tolerations {
-		if tolerations[i].ToleratesTaint(klog.Background(), &taint, true /*enableComparisonOperators*/) {
+		// true = enableComparisonOperators, allows Lt/Gt operator matching
+		if tolerations[i].ToleratesTaint(klog.Background(), &taint, true) {
 			return true
 		}
 	}
