@@ -4,7 +4,6 @@
 package edgeconnect
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,21 +22,21 @@ import (
 func TestConvertFrom(t *testing.T) {
 	t.Run("migrate from edgeconnect v1alpha2 to v1alpha1", func(t *testing.T) {
 		from := edgeconnect.EdgeConnect{
-			ObjectMeta: getCurrentBase(),
-			Spec:       getCurrentSpec(),
-			Status:     getCurrentStatus(),
+			ObjectMeta: testGetCurrentBase(),
+			Spec:       testGetCurrentSpec(),
+			Status:     testGetCurrentStatus(),
 		}
 		to := EdgeConnect{}
 
-		to.ConvertFrom(&from)
+		require.NoError(t, to.ConvertFrom(&from))
 
-		assert.True(t, reflect.DeepEqual(from.ObjectMeta, to.ObjectMeta))
-		fromAreSpecsEqual(t, &from.Spec, &to.Spec)
-		fromAreStatusesEqual(t, &from.Status, &to.Status)
+		assert.Equal(t, from.ObjectMeta, to.ObjectMeta)
+		testFromAreSpecsEqual(t, &from.Spec, &to.Spec)
+		testFromAreStatusesEqual(t, &from.Status, &to.Status)
 	})
 }
 
-func getCurrentBase() metav1.ObjectMeta {
+func testGetCurrentBase() metav1.ObjectMeta {
 	deletionGracePeriodSeconds := int64(1)
 
 	return metav1.ObjectMeta{
@@ -62,7 +62,7 @@ func getCurrentBase() metav1.ObjectMeta {
 	}
 }
 
-func getCurrentSpec() edgeconnect.EdgeConnectSpec {
+func testGetCurrentSpec() edgeconnect.EdgeConnectSpec {
 	replicas := int32(1)
 
 	return edgeconnect.EdgeConnectSpec{
@@ -144,7 +144,7 @@ func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 	}
 }
 
-func getCurrentStatus() edgeconnect.EdgeConnectStatus {
+func testGetCurrentStatus() edgeconnect.EdgeConnectStatus {
 	return edgeconnect.EdgeConnectStatus{
 		Conditions: []metav1.Condition{
 			{
@@ -169,70 +169,74 @@ func getCurrentStatus() edgeconnect.EdgeConnectStatus {
 	}
 }
 
-func fromAreSpecsEqual(t *testing.T, src *edgeconnect.EdgeConnectSpec, dst *EdgeConnectSpec) {
-	assert.True(t, reflect.DeepEqual(src.Annotations, dst.Annotations), "Annotations")
+func testFromAreSpecsEqual(t *testing.T, src *edgeconnect.EdgeConnectSpec, dst *EdgeConnectSpec) {
+	t.Helper()
 
-	assert.True(t, reflect.DeepEqual(src.Labels, dst.Labels), "Labels")
+	assert.Equal(t, src.Annotations, dst.Annotations, "Annotations")
 
-	assert.True(t, reflect.DeepEqual(src.Replicas, dst.Replicas), "Replicas")
+	assert.Equal(t, src.Labels, dst.Labels, "Labels")
 
-	assert.True(t, reflect.DeepEqual(src.NodeSelector, dst.NodeSelector), "NodeSelector")
+	assert.Equal(t, src.Replicas, dst.Replicas, "Replicas")
 
-	assert.True(t, reflect.DeepEqual(src.KubernetesAutomation.Enabled, dst.KubernetesAutomation.Enabled), "KubernetesAutomation.Enabled")
+	assert.Equal(t, src.NodeSelector, dst.NodeSelector, "NodeSelector")
 
-	assert.True(t, reflect.DeepEqual(src.Proxy.Port, dst.Proxy.Port), "Proxy.Port")
+	assert.Equal(t, src.KubernetesAutomation.Enabled, dst.KubernetesAutomation.Enabled, "KubernetesAutomation.Enabled")
 
-	assert.True(t, reflect.DeepEqual(src.Proxy.NoProxy, dst.Proxy.NoProxy), "Proxy.NoProxy")
+	assert.Equal(t, src.Proxy.Port, dst.Proxy.Port, "Proxy.Port")
 
-	assert.True(t, reflect.DeepEqual(src.Proxy.Host, dst.Proxy.Host), "Proxy.Host")
+	assert.Equal(t, src.Proxy.NoProxy, dst.Proxy.NoProxy, "Proxy.NoProxy")
 
-	assert.True(t, reflect.DeepEqual(src.Proxy.AuthRef, dst.Proxy.AuthRef), "Proxy.AuthRef")
+	assert.Equal(t, src.Proxy.Host, dst.Proxy.Host, "Proxy.Host")
 
-	assert.True(t, reflect.DeepEqual(src.ImageRef.Repository, dst.ImageRef.Repository), "ImageRef.Repository")
+	assert.Equal(t, src.Proxy.AuthRef, dst.Proxy.AuthRef, "Proxy.AuthRef")
 
-	assert.True(t, reflect.DeepEqual(src.ImageRef.Tag, dst.ImageRef.Tag), "ImageRef.Tag")
+	assert.Equal(t, src.ImageRef.Repository, dst.ImageRef.Repository, "ImageRef.Repository")
 
-	assert.True(t, reflect.DeepEqual(src.APIServer, dst.ApiServer), "ApiServer")
+	assert.Equal(t, src.ImageRef.Tag, dst.ImageRef.Tag, "ImageRef.Tag")
+
+	assert.Equal(t, src.APIServer, dst.ApiServer, "ApiServer")
 
 	if len(src.HostRestrictions) == 0 {
 		assert.Empty(t, dst.HostRestrictions, "HostRestrictions")
 	} else {
-		assert.True(t, reflect.DeepEqual(src.HostRestrictions, strings.Split(dst.HostRestrictions, ",")), "HostRestrictions")
+		assert.Equal(t, src.HostRestrictions, strings.Split(dst.HostRestrictions, ","), "HostRestrictions")
 	}
 
-	assert.True(t, reflect.DeepEqual(src.CustomPullSecret, dst.CustomPullSecret), "CustomPullSecret")
+	assert.Equal(t, src.CustomPullSecret, dst.CustomPullSecret, "CustomPullSecret")
 
-	assert.True(t, reflect.DeepEqual(*src.ServiceAccountName, dst.ServiceAccountName), "ServiceAccountName")
+	assert.Equal(t, *src.ServiceAccountName, dst.ServiceAccountName, "ServiceAccountName")
 
-	assert.True(t, reflect.DeepEqual(src.OAuth.Provisioner, dst.OAuth.Provisioner), "OAuth.Provisioner")
+	assert.Equal(t, src.OAuth.Provisioner, dst.OAuth.Provisioner, "OAuth.Provisioner")
 
-	assert.True(t, reflect.DeepEqual(src.OAuth.Endpoint, dst.OAuth.Endpoint), "OAuth.Endpoint")
+	assert.Equal(t, src.OAuth.Endpoint, dst.OAuth.Endpoint, "OAuth.Endpoint")
 
-	assert.True(t, reflect.DeepEqual(src.OAuth.ClientSecret, dst.OAuth.ClientSecret), "OAuth.ClientSecret")
+	assert.Equal(t, src.OAuth.ClientSecret, dst.OAuth.ClientSecret, "OAuth.ClientSecret")
 
-	assert.True(t, reflect.DeepEqual(src.OAuth.Resource, dst.OAuth.Resource), "OAuth.Resource")
+	assert.Equal(t, src.OAuth.Resource, dst.OAuth.Resource, "OAuth.Resource")
 
-	assert.True(t, reflect.DeepEqual(src.Resources, dst.Resources), "Resources")
+	assert.Equal(t, src.Resources, dst.Resources, "Resources")
 
-	assert.True(t, reflect.DeepEqual(src.Env, dst.Env), "Env")
+	assert.Equal(t, src.Env, dst.Env, "Env")
 
-	assert.True(t, reflect.DeepEqual(src.Tolerations, dst.Tolerations), "Tolerations")
+	assert.Equal(t, src.Tolerations, dst.Tolerations, "Tolerations")
 
-	assert.True(t, reflect.DeepEqual(src.TopologySpreadConstraints, dst.TopologySpreadConstraints), "TopologySpreadConstraints")
+	assert.Equal(t, src.TopologySpreadConstraints, dst.TopologySpreadConstraints, "TopologySpreadConstraints")
 
-	assert.True(t, reflect.DeepEqual(src.HostPatterns, dst.HostPatterns), "HostPatterns")
+	assert.Equal(t, src.HostPatterns, dst.HostPatterns, "HostPatterns")
 
-	assert.True(t, reflect.DeepEqual(*src.AutoUpdate, dst.AutoUpdate), "AutoUpdate")
+	assert.Equal(t, *src.AutoUpdate, dst.AutoUpdate, "AutoUpdate")
 }
 
-func fromAreStatusesEqual(t *testing.T, src *edgeconnect.EdgeConnectStatus, dst *EdgeConnectStatus) {
-	assert.True(t, reflect.DeepEqual(src.Conditions, dst.Conditions), "Conditions")
+func testFromAreStatusesEqual(t *testing.T, src *edgeconnect.EdgeConnectStatus, dst *EdgeConnectStatus) {
+	t.Helper()
 
-	assert.True(t, reflect.DeepEqual(src.KubeSystemUID, dst.KubeSystemUID), "KubeSystemUID")
+	assert.Equal(t, src.Conditions, dst.Conditions, "Conditions")
 
-	assert.True(t, reflect.DeepEqual(src.DeploymentPhase, dst.DeploymentPhase), "DeploymentPhase")
+	assert.Equal(t, src.KubeSystemUID, dst.KubeSystemUID, "KubeSystemUID")
 
-	assert.True(t, reflect.DeepEqual(src.UpdatedTimestamp, dst.UpdatedTimestamp), "UpdatedTimestamp")
+	assert.Equal(t, src.DeploymentPhase, dst.DeploymentPhase, "DeploymentPhase")
 
-	assert.True(t, reflect.DeepEqual(src.Version, dst.Version), "Version")
+	assert.Equal(t, src.UpdatedTimestamp, dst.UpdatedTimestamp, "UpdatedTimestamp")
+
+	assert.Equal(t, src.Version, dst.Version, "Version")
 }
