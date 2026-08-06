@@ -4,7 +4,6 @@
 package secret
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -32,7 +31,7 @@ const (
 	testProxyAuthRef               = "proxy-auth-ref"
 )
 
-func Test_prepareEdgeConnectConfigFile(t *testing.T) {
+func TestPrepareConfigFile(t *testing.T) {
 	t.Run("Create basic config", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
@@ -51,7 +50,7 @@ func Test_prepareEdgeConnectConfigFile(t *testing.T) {
 
 		testSecretName := "test-secret"
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
-		cfg, err := PrepareConfigFile(context.Background(), ec, kubeReader, testToken)
+		cfg, err := PrepareConfigFile(t.Context(), ec, kubeReader, testToken)
 
 		require.NoError(t, err)
 
@@ -96,7 +95,7 @@ root_certificate_paths:
 			edgeconnect.ProxyAuthPasswordKey: "pass",
 		})
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace), authRef)
-		cfg, err := PrepareConfigFile(context.Background(), ec, kubeReader, testToken)
+		cfg, err := PrepareConfigFile(t.Context(), ec, kubeReader, testToken)
 
 		require.NoError(t, err)
 
@@ -140,7 +139,7 @@ proxy:
 		}
 		testSecretName := "test-secret"
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
-		cfg, err := PrepareConfigFile(context.Background(), ec, kubeReader, testToken)
+		cfg, err := PrepareConfigFile(t.Context(), ec, kubeReader, testToken)
 
 		require.NoError(t, err)
 
@@ -162,8 +161,10 @@ secrets:
 `
 		assert.Equal(t, expected, string(cfg))
 	})
+}
 
-	t.Run("safeEdgeConnectCfg", func(t *testing.T) {
+func Test_safeEdgeConnectCfg(t *testing.T) {
+	t.Run("secrets and credentials are redacted", func(t *testing.T) {
 		cfg := config.EdgeConnect{
 			Name:            "test",
 			APIEndpointHost: "test",

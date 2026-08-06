@@ -4,7 +4,6 @@
 package version
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -15,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewReconcile(t *testing.T) {
-	edgeConnect := createBasicEdgeConnect()
+func Test_Reconciler_Reconcile(t *testing.T) {
+	edgeConnect := createBasicEdgeConnect(t)
 	fakeRegistryClient := registrymock.NewImageGetter(t)
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
 	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
@@ -24,5 +23,5 @@ func TestNewReconcile(t *testing.T) {
 	reconciler := NewReconciler(fake.NewClient(), fakeRegistryClient, timeprovider.New(), edgeConnect)
 
 	require.NotNil(t, reconciler)
-	require.NoError(t, reconciler.Reconcile(context.Background()))
+	require.NoError(t, reconciler.Reconcile(t.Context()))
 }
