@@ -316,24 +316,24 @@ jobs:
         with:
           subject-name: ${{ matrix.url }}/${{ vars[matrix.repository] }}
           subject-digest: ${{ needs.build-push.outputs.digest }}
-      - name: Sign fips images for ${{matrix.registry}}
+      - name: Sign FIPS images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
           image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Download SBOM artifact
+      - name: Download FIPS SBOM artifact
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: release-fips-sbom-${{ matrix.registry }}
-      - name: Upload sbom to ${{matrix.registry}} fips
+      - name: Upload FIPS sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
           image: ${{ matrix.url }}/${{ vars[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Add build provenance attestation for ${{ matrix.registry }} fips
+      - name: Add FIPS build provenance attestation for ${{ matrix.registry }}
         uses: ./.github/actions/attest-artifact
         with:
           subject-name: ${{ matrix.url }}/${{ vars[matrix.repository] }}
