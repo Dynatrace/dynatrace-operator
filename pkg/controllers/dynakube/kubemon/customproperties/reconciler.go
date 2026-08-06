@@ -78,8 +78,10 @@ func (r *Reconciler) resolveData(ctx context.Context, dk *dynakube.DynaKube) ([]
 	}
 
 	data, ok := referenced.Data[DataKey]
-	if !ok || len(data) == 0 {
+	if !ok {
 		return nil, errors.Errorf("secret %q has no %q key", src.ValueFrom, DataKey)
+	} else if len(data) == 0 {
+		return nil, errors.Errorf("secret %q has empty value under %q key", src.ValueFrom, DataKey)
 	}
 
 	return data, nil
