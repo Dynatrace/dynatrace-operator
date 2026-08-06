@@ -37,11 +37,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-var (
-	NoOneAgentCommunicationEndpointsError = errors.New("no communication endpoints for OneAgent are available")
-	StaleNetworkZoneEndpointsError        = errors.New("OneAgent endpoints do not contain the local ActiveGate Service IP, waiting for the ActiveGate to register itself")
-)
-
 func (r *Reconciler) Reconcile(ctx context.Context, oaClient oneagent.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "connectioninfo")
 
@@ -82,7 +77,7 @@ func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, oaClient oneag
 	log := logd.FromContext(ctx)
 
 	connectionInfo, err := oaClient.GetConnectionInfo(ctx, getRequiredEndpoints(dk))
-	if err != nil && !errors.As(err, new(oneagent.MissingIPs)) {
+	if err != nil && !IsPostponedError(err) {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), oaConnectionInfoConditionType, err)
 
 		return errors.WithMessage(err, "failed to get OneAgent connection info")
@@ -91,21 +86,21 @@ func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, oaClient oneag
 	r.setDynakubeStatus(dk, connectionInfo)
 	log.Info("OneAgent connection info updated")
 
-	if len(connectionInfo.Endpoints) == 0 {
+	if errors.Is(err, oneagent.NoCommunicationEndpointsError) {
 		log.Info("no received OneAgent connection info, tenant API requests not yet throttled", "tenant", connectionInfo.TenantUUID)
 		setEmptyCommunicationHostsCondition(dk.Conditions())
 
-		return NoOneAgentCommunicationEndpointsError
+		return oneagent.NoCommunicationEndpointsError
 	}
 
-	if errors.As(err, new(oneagent.MissingIPs)) {
+	if errors.Is(err, oneagent.StaleNetworkZoneEndpointsError) {
 		log.Info("OneAgent endpoints do not contain the local ActiveGate Service IP yet, postponing OneAgent deployment",
 			"tenant", connectionInfo.TenantUUID,
 			"endpoints", connectionInfo.Endpoints,
 			"serviceIPs", dk.Status.ActiveGate.ServiceIPs)
 		setStaleNetworkZoneEndpointsCondition(dk.Conditions())
 
-		return StaleNetworkZoneEndpointsError
+		return oneagent.StaleNetworkZoneEndpointsError
 	}
 
 	err = r.createTenantTokenSecret(ctx, dk, dk.OneAgent().GetTenantSecret(), connectionInfo)
@@ -121,6 +116,14 @@ func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, oaClient oneag
 	log.Info("received OneAgent connection info", "communication endpoints", connectionInfo.Endpoints, "tenant", connectionInfo.TenantUUID)
 
 	return nil
+}
+
+// IsPostponedError reports whether the error indicates a transient
+// OneAgent connection-info state that resolves itself once the local ActiveGate is
+// ready or has re-registered. Callers treat these as "not yet ready" and trigger a
+// fast requeue instead of surfacing them as reconcile failures.
+func IsPostponedError(err error) bool {
+	return errors.Is(err, oneagent.NoCommunicationEndpointsError) || errors.Is(err, oneagent.StaleNetworkZoneEndpointsError)
 }
 
 func (r *Reconciler) createTenantTokenSecret(ctx context.Context, dk *dynakube.DynaKube, secretName string, connectionInfo oneagent.ConnectionInfo) error {

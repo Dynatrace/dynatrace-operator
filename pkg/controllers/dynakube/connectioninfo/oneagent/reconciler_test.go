@@ -127,10 +127,10 @@ func TestReconcile(t *testing.T) {
 				TenantUUID:  testTenantUUID,
 				TenantToken: testTenantToken,
 				Endpoints:   testTenantEndpoints,
-			}, oneagentclient.MissingIPs{}).Once()
+			}, oneagentclient.StaleNetworkZoneEndpointsError).Once()
 		r := NewReconciler(fakeClient, fakeClient)
 		err := r.Reconcile(ctx, dtClient, dk)
-		require.ErrorIs(t, err, StaleNetworkZoneEndpointsError)
+		require.ErrorIs(t, err, oneagentclient.StaleNetworkZoneEndpointsError)
 
 		assertCondition(t, dk, metav1.ConditionFalse, StaleNetworkZoneEndpointsReason)
 	})
@@ -252,12 +252,12 @@ func TestReconcile_StaleNetworkZoneEndpoints(t *testing.T) {
 				TenantUUID:  testTenantUUID,
 				TenantToken: testTenantToken,
 				Endpoints:   staleClusterEndpoints,
-			}, oneagentclient.MissingIPs{}).Once()
+			}, oneagentclient.StaleNetworkZoneEndpointsError).Once()
 		fakeClient := fake.NewClient(dk)
 
 		r := NewReconciler(fakeClient, fakeClient)
 		err := r.Reconcile(ctx, dtClient, dk)
-		require.ErrorIs(t, err, StaleNetworkZoneEndpointsError)
+		require.ErrorIs(t, err, oneagentclient.StaleNetworkZoneEndpointsError)
 
 		// Endpoints in status are left untouched so downstream consumers do not
 		// propagate the stale IP to the OneAgent ConfigMap / DaemonSet.
@@ -291,12 +291,12 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
 			Endpoints:   "",
-		}, nil).Once()
+		}, oneagentclient.NoCommunicationEndpointsError).Once()
 	fakeClient := fake.NewClient(dk)
 
 	r := NewReconciler(fakeClient, fakeClient)
 	err := r.Reconcile(ctx, dtClient, dk)
-	require.ErrorIs(t, err, NoOneAgentCommunicationEndpointsError)
+	require.ErrorIs(t, err, oneagentclient.NoCommunicationEndpointsError)
 
 	assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
 	assert.Empty(t, dk.Status.OneAgent.ConnectionInfo.Endpoints)

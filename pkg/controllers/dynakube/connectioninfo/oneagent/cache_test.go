@@ -122,9 +122,9 @@ func newConnectionInfoOAClient(t *testing.T, transport http.RoundTripper, ttl ti
 
 // --- Response body helpers ---------------------------------------------------
 
-func connectionInfoBody(tenantUUID, tenantToken, endpoints string) string {
+func connectionInfoBody(tenantUUID, tenantToken, endpoint string) string {
 	return fmt.Sprintf(
-		`{"tenantUUID":%q,"tenantToken":%q,"formattedCommunicationEndpoints":%q}`,
-		tenantUUID, tenantToken, endpoints,
+		`{"tenantUUID":%q,"tenantToken":%q,"communicationEndpoints":[%q]}`,
+		tenantUUID, tenantToken, endpoint,
 	)
 }

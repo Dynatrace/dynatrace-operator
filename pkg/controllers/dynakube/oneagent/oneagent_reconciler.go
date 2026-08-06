@@ -16,7 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
-	oaClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	oaclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -50,7 +50,7 @@ const (
 )
 
 type connectionInfoReconciler interface {
-	Reconcile(ctx context.Context, oaClient oaClient.Client, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, oaClient oaclient.Client, dk *dynakube.DynaKube) error
 }
 
 type versionReconciler interface {
@@ -102,7 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 	}
 
 	err = r.connectionInfoReconciler.Reconcile(ctx, dtClient.OneAgent, dk)
-	if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) { // This only informational
+	if errors.Is(err, oaclient.NoCommunicationEndpointsError) { // This only informational
 		log.Info("OneAgents are not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
 
 		if dk.Spec.NetworkZone != "" {
@@ -110,7 +110,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		}
 	}
 
-	if errors.Is(err, oaconnectioninfo.StaleNetworkZoneEndpointsError) { // This only informational
+	if errors.Is(err, oaclient.StaleNetworkZoneEndpointsError) { // This only informational
 		log.Info("OneAgent endpoints do not yet advertise every local ActiveGate Service IP, postponing OneAgent deployment until the ActiveGate has re-registered")
 	}
 
