@@ -27,10 +27,10 @@ const (
 
 func Test_GetConnectionInfo(t *testing.T) {
 	ctx := t.Context()
-	response := &ConnectionInfo{
-		TenantUUID:  testTenantUUID,
-		TenantToken: testTenantToken,
-		Endpoints:   testCommunicationEndpoint,
+	response := &connectionInfoResponse{
+		TenantUUID:             testTenantUUID,
+		TenantToken:            testTenantToken,
+		CommunicationEndpoints: []string{testCommunicationEndpoint},
 	}
 
 	expectedResponse := ConnectionInfo{
@@ -39,17 +39,17 @@ func Test_GetConnectionInfo(t *testing.T) {
 		Endpoints:   testCommunicationEndpoint,
 	}
 
-	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *ConnectionInfo, err error) *ClientImpl {
+	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *connectionInfoResponse, err error) *ClientImpl {
 		req := coremock.NewRequest(t)
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(params).Return(req).Once()
 		req.EXPECT().
-			Execute(&ConnectionInfo{}).
+			Execute(&connectionInfoResponse{}).
 			Run(func(model any) {
-				resp := model.(*ConnectionInfo)
+				resp := model.(*connectionInfoResponse)
 				resp.TenantUUID = response.TenantUUID
 				resp.TenantToken = response.TenantToken
-				resp.Endpoints = response.Endpoints
+				resp.CommunicationEndpoints = response.CommunicationEndpoints
 			}).
 			Return(err).Once()
 		coreClient := coremock.NewClient(t)
@@ -80,16 +80,42 @@ func Test_GetConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedResponse, connectionInfo)
 	})
 
-	t.Run("no communication endpoints", func(t *testing.T) {
-		response.Endpoints = ""
-		expectedResponse.Endpoints = ""
+	t.Run("endpoints are derived from the deduplicated communicationEndpoints slice", func(t *testing.T) {
+		dupResponse := &connectionInfoResponse{
+			TenantUUID:             testTenantUUID,
+			TenantToken:            testTenantToken,
+			CommunicationEndpoints: []string{testCommunicationEndpoint, testCommunicationEndpoint},
+		}
+		expected := ConnectionInfo{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+			Endpoints:   testCommunicationEndpoint,
+		}
 
-		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
+		oaClient := setupMockedClient(t, map[string]string{}, "", dupResponse, nil)
+		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
+		require.NoError(t, err)
+
+		assert.Equal(t, expected, connectionInfo)
+	})
+
+	t.Run("no communication endpoints", func(t *testing.T) {
+		emptyResponse := &connectionInfoResponse{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+		}
+		expected := ConnectionInfo{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+			Endpoints:   "",
+		}
+
+		oaClient := setupMockedClient(t, map[string]string{}, "", emptyResponse, nil)
 		connectionInfo, err := oaClient.GetConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
-		assert.Equal(t, expectedResponse, connectionInfo)
+		assert.Equal(t, expected, connectionInfo)
 	})
 
 	t.Run("bad request error", func(t *testing.T) {
@@ -107,4 +133,70 @@ func Test_GetConnectionInfo(t *testing.T) {
 		_, err := oaClient.GetConnectionInfo(ctx)
 		assert.ErrorIs(t, err, expectErr)
 	})
+}
+
+func Test_deduplicateEndpoints(t *testing.T) {
+	const (
+		epA = "https://tenant.dev.dynatracelabs.com:443"
+		epB = "https://other.dev.dynatracelabs.com:8443"
+		epC = "https://third.dev.dynatracelabs.com:443"
+	)
+
+	tests := []struct {
+		name     string
+		input    []string
+		expected string
+	}{
+		{
+			name:     "nil slice",
+			input:    nil,
+			expected: "",
+		},
+		{
+			name:     "empty slice",
+			input:    []string{},
+			expected: "",
+		},
+		{
+			name:     "single endpoint",
+			input:    []string{epA},
+			expected: epA,
+		},
+		{
+			name:     "no duplicates is a no-op, order preserved",
+			input:    []string{epA, epB, epC},
+			expected: epA + ";" + epB + ";" + epC,
+		},
+		{
+			name:     "some duplicates preserve first-occurrence order",
+			input:    []string{epB, epA, epB, epC, epA},
+			expected: epB + ";" + epA + ";" + epC,
+		},
+		{
+			name:     "all duplicates collapse to one",
+			input:    []string{epA, epA, epA},
+			expected: epA,
+		},
+		{
+			name:     "entries differing only by surrounding whitespace are trimmed and deduplicated",
+			input:    []string{epA, " " + epA, epA + "\t"},
+			expected: epA,
+		},
+		{
+			name:     "empty and whitespace-only entries are dropped",
+			input:    []string{epA, "", "   ", epB},
+			expected: epA + ";" + epB,
+		},
+		{
+			name:     "entries differing only by case are kept as distinct",
+			input:    []string{epA, "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443"},
+			expected: epA + ";" + "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, deduplicateEndpoints(tt.input))
+		})
+	}
 }
