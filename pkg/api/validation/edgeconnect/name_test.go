@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestNameTooLong(t *testing.T) {
+func Test_nameTooLong(t *testing.T) {
 	type testCase struct {
 		name         string
 		crNameLength int
@@ -57,7 +57,7 @@ func TestNameTooLong(t *testing.T) {
 				},
 			}
 			if test.allow {
-				assertAllowed(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
+				assertAllowed(t, ec, prepareTestServiceAccount(t, testServiceAccountName, testNamespace))
 			} else {
 				errorMessage := fmt.Sprintf(errorNameTooLong, edgeconnect.MaxNameLength)
 				assertDenied(t, []string{errorMessage}, ec)
