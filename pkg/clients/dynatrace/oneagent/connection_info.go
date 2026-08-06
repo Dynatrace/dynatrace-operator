@@ -94,17 +94,23 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredIPs []string
 		return ConnectionInfo{}, errors.WithStack(err)
 	}
 
-	if missingIPs(resp.Endpoints, requiredIPs) {
-		err := MissingIPs{endpoints: resp.Endpoints, requiredIPs: requiredIPs}
+	endpoints := deduplicateEndpoints(resp.CommunicationEndpoints)
+
+	if missingIPs(endpoints, requiredIPs) {
+		err := MissingIPs{endpoints: endpoints, requiredIPs: requiredIPs}
 		log.Debug(err.Error())
 
-		return resp, err
+		return ConnectionInfo{
+			TenantUUID:  resp.TenantUUID,
+			TenantToken: resp.TenantToken,
+			Endpoints:   endpoints,
+		}, err
 	}
 
 	return ConnectionInfo{
 		TenantUUID:  resp.TenantUUID,
 		TenantToken: resp.TenantToken,
-		Endpoints:   deduplicateEndpoints(resp.CommunicationEndpoints),
+		Endpoints:   endpoints,
 	}, nil
 }
 
