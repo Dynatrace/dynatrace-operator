@@ -226,7 +226,7 @@ func formatToleration(t corev1.Toleration) string {
 		key = "*"
 	}
 
-	if t.Operator == corev1.TolerationOpExists || t.Operator == "" && t.Value == "" {
+	if t.Operator == corev1.TolerationOpExists || (t.Operator == "" && t.Value == "") {
 		if t.Effect == "" {
 			return key
 		}
@@ -234,11 +234,22 @@ func formatToleration(t corev1.Toleration) string {
 		return fmt.Sprintf("%s:%s", key, t.Effect)
 	}
 
-	if t.Effect == "" {
-		return fmt.Sprintf("%s=%s", key, t.Value)
+	var op string
+
+	switch t.Operator {
+	case corev1.TolerationOpLt:
+		op = "<"
+	case corev1.TolerationOpGt:
+		op = ">"
+	default:
+		op = "="
 	}
 
-	return fmt.Sprintf("%s=%s:%s", key, t.Value, t.Effect)
+	if t.Effect == "" {
+		return fmt.Sprintf("%s%s%s", key, op, t.Value)
+	}
+
+	return fmt.Sprintf("%s%s%s:%s", key, op, t.Value, t.Effect)
 }
 
 func formatTaint(t corev1.Taint) string {

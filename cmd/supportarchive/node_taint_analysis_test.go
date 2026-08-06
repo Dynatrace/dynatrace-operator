@@ -119,6 +119,23 @@ func TestNodeTaintAnalysisCollector_WildcardToleration(t *testing.T) {
 	assert.NotContains(t, content, "WARNING")
 }
 
+func TestNodeTaintAnalysisCollector_PreferNoScheduleIgnored(t *testing.T) {
+	nodes := []corev1.Node{
+		createNode("node-1",
+			corev1.Taint{Key: "soft", Value: "hint", Effect: corev1.TaintEffectPreferNoSchedule},
+		),
+	}
+
+	dk := createTestDynaKube("dk")
+	oaDS := createDaemonSet("dk-oneagent", testOperatorNamespace, 1, 1)
+	csiDS := createDaemonSet(dtcsi.DaemonSetName, testOperatorNamespace, 1, 1)
+
+	content := runNodeTaintAnalysis(t, nodes, []dynakube.DynaKube{dk}, []appsv1.DaemonSet{oaDS, csiDS})
+
+	assert.Contains(t, content, "All node taints are tolerated")
+	assert.NotContains(t, content, "WARNING")
+}
+
 func TestNodeTaintAnalysisCollector_PartialToleration(t *testing.T) {
 	nodes := []corev1.Node{
 		createNode("node-1",
