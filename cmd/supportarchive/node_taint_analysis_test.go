@@ -222,6 +222,18 @@ func TestTolerationMatching(t *testing.T) {
 	}
 }
 
+func TestFormatToleration_LtGt(t *testing.T) {
+	assert.Equal(t, "cpu-score<25:NoSchedule", formatToleration(corev1.Toleration{
+		Key: "cpu-score", Operator: corev1.TolerationOpLt, Value: "25", Effect: corev1.TaintEffectNoSchedule,
+	}))
+	assert.Equal(t, "memory-pressure>100:NoExecute", formatToleration(corev1.Toleration{
+		Key: "memory-pressure", Operator: corev1.TolerationOpGt, Value: "100", Effect: corev1.TaintEffectNoExecute,
+	}))
+	assert.Equal(t, "cpu-score<25", formatToleration(corev1.Toleration{
+		Key: "cpu-score", Operator: corev1.TolerationOpLt, Value: "25",
+	}))
+}
+
 func runNodeTaintAnalysis(t *testing.T, nodes []corev1.Node, dks []dynakube.DynaKube, daemonSets []appsv1.DaemonSet) string {
 	t.Helper()
 
