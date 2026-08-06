@@ -27,7 +27,7 @@ const (
 	duplicatedConditionErrorMessage = `EdgeConnect.dynatrace.com "edgeconnect" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
 )
 
-func TestStatus(t *testing.T) {
+func Test_EdgeConnect_UpdateStatus(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	clt.Create(t.Context(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -91,6 +91,8 @@ func createObject(t *testing.T, clt client.Client, obj client.Object) {
 }
 
 func createEdgeConnect(t *testing.T, clt client.Client, ec *edgeconnect.EdgeConnect) {
+	t.Helper()
+
 	status := ec.Status
 	createObject(t, clt, ec)
 	ec.Status = status
