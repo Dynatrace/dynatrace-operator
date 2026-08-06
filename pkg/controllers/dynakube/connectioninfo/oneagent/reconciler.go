@@ -76,7 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, oaClient oneagent.Client, dk
 func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, oaClient oneagent.Client, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
-	connectionInfo, err := oaClient.GetConnectionInfo(ctx, getRequiredEndpoints(dk))
+	connectionInfo, err := oaClient.GetConnectionInfo(ctx, getRequiredActiveGateServiceIPs(dk))
 	if err != nil && !IsPostponedError(err) {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), oaConnectionInfoConditionType, err)
 
@@ -152,7 +152,7 @@ func (r *Reconciler) setDynakubeStatus(dk *dynakube.DynaKube, connectionInfo one
 	dk.Status.OneAgent.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 }
 
-func getRequiredEndpoints(dk *dynakube.DynaKube) []string {
+func getRequiredActiveGateServiceIPs(dk *dynakube.DynaKube) []string {
 	if dk == nil || dk.Spec.NetworkZone == "" || !dk.ActiveGate().IsRoutingEnabled() || len(dk.Status.ActiveGate.ServiceIPs) == 0 {
 		return nil
 	}
