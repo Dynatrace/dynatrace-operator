@@ -106,8 +106,8 @@ func (_c *Client_Get_Call) RunAndReturn(run func(ctx context.Context, args oneag
 }
 
 // GetConnectionInfo provides a mock function for the type Client
-func (_mock *Client) GetConnectionInfo(ctx context.Context, mandatoryEndpoints []string) (oneagent.ConnectionInfo, error) {
-	ret := _mock.Called(ctx, mandatoryEndpoints)
+func (_mock *Client) GetConnectionInfo(ctx context.Context, requiredIPs []string) (oneagent.ConnectionInfo, error) {
+	ret := _mock.Called(ctx, requiredIPs)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetConnectionInfo")
@@ -116,15 +116,15 @@ func (_mock *Client) GetConnectionInfo(ctx context.Context, mandatoryEndpoints [
 	var r0 oneagent.ConnectionInfo
 	var r1 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) (oneagent.ConnectionInfo, error)); ok {
-		return returnFunc(ctx, mandatoryEndpoints)
+		return returnFunc(ctx, requiredIPs)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, []string) oneagent.ConnectionInfo); ok {
-		r0 = returnFunc(ctx, mandatoryEndpoints)
+		r0 = returnFunc(ctx, requiredIPs)
 	} else {
 		r0 = ret.Get(0).(oneagent.ConnectionInfo)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, []string) error); ok {
-		r1 = returnFunc(ctx, mandatoryEndpoints)
+		r1 = returnFunc(ctx, requiredIPs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -138,12 +138,12 @@ type Client_GetConnectionInfo_Call struct {
 
 // GetConnectionInfo is a helper method to define mock.On call
 //   - ctx context.Context
-//   - mandatoryEndpoints []string
-func (_e *Client_Expecter) GetConnectionInfo(ctx any, mandatoryEndpoints any) *Client_GetConnectionInfo_Call {
-	return &Client_GetConnectionInfo_Call{Call: _e.mock.On("GetConnectionInfo", ctx, mandatoryEndpoints)}
+//   - requiredIPs []string
+func (_e *Client_Expecter) GetConnectionInfo(ctx any, requiredIPs any) *Client_GetConnectionInfo_Call {
+	return &Client_GetConnectionInfo_Call{Call: _e.mock.On("GetConnectionInfo", ctx, requiredIPs)}
 }
 
-func (_c *Client_GetConnectionInfo_Call) Run(run func(ctx context.Context, mandatoryEndpoints []string)) *Client_GetConnectionInfo_Call {
+func (_c *Client_GetConnectionInfo_Call) Run(run func(ctx context.Context, requiredIPs []string)) *Client_GetConnectionInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -166,7 +166,7 @@ func (_c *Client_GetConnectionInfo_Call) Return(connectionInfo oneagent.Connecti
 	return _c
 }
 
-func (_c *Client_GetConnectionInfo_Call) RunAndReturn(run func(ctx context.Context, mandatoryEndpoints []string) (oneagent.ConnectionInfo, error)) *Client_GetConnectionInfo_Call {
+func (_c *Client_GetConnectionInfo_Call) RunAndReturn(run func(ctx context.Context, requiredIPs []string) (oneagent.ConnectionInfo, error)) *Client_GetConnectionInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }
