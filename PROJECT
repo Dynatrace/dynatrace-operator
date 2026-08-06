@@ -43,4 +43,12 @@ resources:
   webhooks:
     conversion: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  group: dynatrace
+  domain: com
+  kind: DTPrometheus
+  path: github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus
+  version: v1alpha1
 version: "3"

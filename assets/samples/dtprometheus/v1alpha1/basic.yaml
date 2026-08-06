@@ -1,0 +1,12 @@
+apiVersion: dynatrace.com/v1alpha1
+kind: DTPrometheus
+metadata:
+  name: dtprometheus
+  namespace: dynatrace
+spec:
+  # Required: Name of the DynaKube in the same namespace that provides all
+  # connection settings (apiUrl, tokens, proxy, networkZone, trustedCAs,
+  # ActiveGate, etc.).
+  #
+  # All other fields default. See complete.yaml for the full set of options.
+  dynaKubeName: dynakube

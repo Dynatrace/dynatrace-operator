@@ -34,6 +34,10 @@ mv "${SOURCE_CRD_DIR}/tmp_crd" "${SOURCE_CRD_FILE}"
 awk 'BEGIN{inserted=0} /name: edgeconnects.dynatrace.com/ && !inserted {print "  labels:"; print "    {{- include \"dynatrace-operator.commonLabels\" . | nindent 4 }}"; inserted=1} {print}' "${SOURCE_CRD_FILE}" > "${SOURCE_CRD_DIR}/tmp_crd"
 mv "${SOURCE_CRD_DIR}/tmp_crd" "${SOURCE_CRD_FILE}"
 
+# Add the common labels by finding the line 'name: dtprometheuses.dynatrace.com' and inserting labels before it
+awk 'BEGIN{inserted=0} /name: dtprometheuses.dynatrace.com/ && !inserted {print "  labels:"; print "    {{- include \"dynatrace-operator.commonLabels\" . | nindent 4 }}"; inserted=1} {print}' "${SOURCE_CRD_FILE}" > "${SOURCE_CRD_DIR}/tmp_crd"
+mv "${SOURCE_CRD_DIR}/tmp_crd" "${SOURCE_CRD_FILE}"
+
 # Define the header for the helm yaml file
 HELM_HEADER="{{ if .Values.installCRD }}"
 

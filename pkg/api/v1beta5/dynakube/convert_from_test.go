@@ -163,15 +163,44 @@ func TestConvertFrom(t *testing.T) {
 	})
 
 	t.Run("migrate kspm from latest to v1beta5", func(t *testing.T) {
-		from := getNewDynakubeBase()
-		from.Spec.KSPM = &kspmlatest.Spec{}
-		to := DynaKube{}
+		testCases := []struct {
+			name            string
+			mappedHostPaths []string
+		}{
+			{
+				name:            "single entry is preserved",
+				mappedHostPaths: []string{"/boot"},
+			},
+			{
+				name:            "multiple entries are preserved",
+				mappedHostPaths: []string{"/boot", "/etc"},
+			},
+			{
+				name:            "empty slice is preserved",
+				mappedHostPaths: []string{},
+			},
+			{
+				name:            "nil slice is preserved",
+				mappedHostPaths: nil,
+			},
+		}
 
-		err := to.ConvertFrom(&from)
-		require.NoError(t, err)
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				from := getNewDynakubeBase()
+				from.Spec.KSPM = &kspmlatest.Spec{
+					MappedHostPaths: tc.mappedHostPaths,
+				}
+				to := DynaKube{}
 
-		assert.NotNil(t, to.Spec.Kspm)
-		compareBase(t, to, from)
+				err := to.ConvertFrom(&from)
+				require.NoError(t, err)
+
+				require.NotNil(t, to.Spec.Kspm)
+				assert.Equal(t, tc.mappedHostPaths, to.Spec.Kspm.MappedHostPaths)
+				compareBase(t, to, from)
+			})
+		}
 	})
 
 	t.Run("migrate extensions templates from latest to v1beta5", func(t *testing.T) {

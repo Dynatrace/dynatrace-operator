@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
@@ -159,16 +160,49 @@ func TestConvertTo(t *testing.T) {
 	})
 
 	t.Run("migrate kspm from v1beta5 to latest", func(t *testing.T) {
-		from := getOldDynakubeBase()
-		from.Spec.Kspm = &kspm.Spec{}
-		to := dynakubelatest.DynaKube{}
+		testCases := []struct {
+			name            string
+			mappedHostPaths []string
+			expected        []string
+		}{
+			{
+				name:            "single entry is preserved, not loosened to root",
+				mappedHostPaths: []string{"/boot"},
+				expected:        []string{"/boot"},
+			},
+			{
+				name:            "multiple entries are preserved",
+				mappedHostPaths: []string{"/boot", "/etc"},
+				expected:        []string{"/boot", "/etc"},
+			},
+			{
+				name:            "empty slice is preserved, not loosened to root",
+				mappedHostPaths: []string{},
+				expected:        []string{},
+			},
+			{
+				name:            "nil slice is preserved, not loosened to root",
+				mappedHostPaths: nil,
+				expected:        nil,
+			},
+		}
 
-		err := from.ConvertTo(&to)
-		require.NoError(t, err)
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				from := getOldDynakubeBase()
+				from.Spec.Kspm = &kspm.Spec{
+					MappedHostPaths: tc.mappedHostPaths,
+				}
+				to := dynakubelatest.DynaKube{}
 
-		assert.NotNil(t, to.Spec.KSPM)
-		assert.Equal(t, []string{"/"}, to.Spec.KSPM.MappedHostPaths)
-		compareBase(t, from, to)
+				err := from.ConvertTo(&to)
+				require.NoError(t, err)
+
+				require.NotNil(t, to.Spec.KSPM)
+				assert.Equal(t, tc.expected, to.Spec.KSPM.MappedHostPaths)
+				compareBase(t, from, to)
+			})
+		}
 	})
 
 	t.Run("migrate extensions templates from v1beta5 to latest", func(t *testing.T) {
@@ -341,6 +375,55 @@ func TestConvertTo(t *testing.T) {
 		assert.Equal(t, from.Spec.TelemetryIngest.Protocols, to.Spec.TelemetryIngest.Protocols)
 		assert.Equal(t, from.Spec.TelemetryIngest.ServiceName, to.Spec.TelemetryIngest.ServiceName)
 		assert.Equal(t, from.Spec.TelemetryIngest.TLSRefName, to.Spec.TelemetryIngest.TLSRefName)
+	})
+
+	t.Run("migrate kspm MappedHostPaths from v1beta5 to latest and back", func(t *testing.T) {
+		testCases := []struct {
+			name            string
+			mappedHostPaths []string
+			expected        []string
+		}{
+			{
+				name:            "single entry is preserved",
+				mappedHostPaths: []string{"/boot"},
+				expected:        []string{"/boot"},
+			},
+			{
+				name:            "multiple entries are preserved",
+				mappedHostPaths: []string{"/boot", "/etc"},
+				expected:        []string{"/boot", "/etc"},
+			},
+			{
+				name:            "empty slice is preserved",
+				mappedHostPaths: []string{},
+				expected:        []string{},
+			},
+			{
+				name:            "nil slice is preserved",
+				mappedHostPaths: nil,
+				expected:        nil,
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				original := getNewDynakubeBase()
+				original.Spec.KSPM = &kspmlatest.Spec{
+					MappedHostPaths: tc.mappedHostPaths,
+				}
+
+				// latest -> v1beta5
+				intermediateDk := DynaKube{}
+				require.NoError(t, intermediateDk.ConvertFrom(&original))
+
+				// v1beta5 -> latest
+				migratedDk := dynakubelatest.DynaKube{}
+				require.NoError(t, intermediateDk.ConvertTo(&migratedDk))
+
+				require.NotNil(t, migratedDk.Spec.KSPM)
+				assert.Equal(t, tc.expected, migratedDk.Spec.KSPM.MappedHostPaths)
+			})
+		}
 	})
 }
 
