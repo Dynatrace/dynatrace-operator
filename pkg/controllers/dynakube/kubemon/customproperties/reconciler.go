@@ -40,7 +40,8 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 }
 
 // Ensures the kubemon custom-properties Secret matches Spec.CustomProperties.
-// If kubemon is disabled, CustomProperties is nil, or the resolved payload is empty, the secret is deleted.
+// If kubemon is disabled or CustomProperties is nil, the secret is deleted.
+// Returns an error if CustomProperties is set but both value and valueFrom are empty.
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
 	ctx, _ = logd.NewFromContext(ctx, "customproperties")
 
@@ -54,7 +55,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	}
 
 	if len(data) == 0 {
-		return r.cleanup(ctx, dk)
+		return errors.New("customProperties has neither value nor valueFrom set")
 	}
 
 	return r.ensureSecret(ctx, dk, data)
