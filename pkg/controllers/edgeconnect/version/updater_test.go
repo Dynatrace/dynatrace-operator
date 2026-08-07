@@ -4,6 +4,7 @@
 package version
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -25,13 +26,15 @@ const (
 	expectedDefaultImage = "docker.io/dynatrace/edgeconnect:latest@" + fakeDigest
 )
 
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func Test_updater_Update(t *testing.T) {
 	t.Run("default image => registry used", func(t *testing.T) {
 		ctx := t.Context()
 		edgeConnect := createBasicEdgeConnect(t)
 		fakeRegistryClient := registrymock.NewImageGetter(t)
 		fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-		fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+		fakeRegistryClient.EXPECT().GetImageVersion(anyCtx, mock.Anything).Return(fakeImageVersion, nil)
 
 		updater := newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
 
@@ -43,7 +46,7 @@ func Test_updater_Update(t *testing.T) {
 
 		// check invalid digest
 		invalidImageVersion := registry.ImageVersion{Digest: "invaliddigest"}
-		fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(invalidImageVersion, nil)
+		fakeRegistryClient.EXPECT().GetImageVersion(anyCtx, mock.Anything).Return(invalidImageVersion, nil)
 
 		updater = newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
 
@@ -61,7 +64,7 @@ func Test_updater_Update(t *testing.T) {
 		edgeConnect.Spec.ImageRef.Tag = customTag
 		fakeRegistryClient := registrymock.NewImageGetter(t)
 		fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-		fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+		fakeRegistryClient.EXPECT().GetImageVersion(anyCtx, mock.Anything).Return(fakeImageVersion, nil)
 
 		updater := newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
 

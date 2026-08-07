@@ -18,7 +18,7 @@ func Test_Reconciler_Reconcile(t *testing.T) {
 	edgeConnect := createBasicEdgeConnect(t)
 	fakeRegistryClient := registrymock.NewImageGetter(t)
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+	fakeRegistryClient.EXPECT().GetImageVersion(anyCtx, mock.Anything).Return(fakeImageVersion, nil)
 
 	reconciler := NewReconciler(fake.NewClient(), fakeRegistryClient, timeprovider.New(), edgeConnect)
 

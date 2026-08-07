@@ -13,10 +13,9 @@ import (
 
 func Test_isInvalidServiceName(t *testing.T) {
 	t.Run("intentionally empty name", func(t *testing.T) {
-		empty := ""
 		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
-				ServiceAccountName: &empty,
+				ServiceAccountName: new(""),
 			},
 		}
 		assertDenied(t, []string{errorInvalidServiceName}, ec)

@@ -37,8 +37,6 @@ func TestConvertFrom(t *testing.T) {
 }
 
 func testGetCurrentBase() metav1.ObjectMeta {
-	deletionGracePeriodSeconds := int64(1)
-
 	return metav1.ObjectMeta{
 		Name:                       "a",
 		GenerateName:               "b",
@@ -49,7 +47,7 @@ func testGetCurrentBase() metav1.ObjectMeta {
 		Generation:                 1,
 		CreationTimestamp:          metav1.Time{Time: time.Now()},
 		DeletionTimestamp:          &metav1.Time{Time: time.Now()},
-		DeletionGracePeriodSeconds: &deletionGracePeriodSeconds,
+		DeletionGracePeriodSeconds: new(int64(1)),
 		Labels: map[string]string{
 			"a": "b",
 		},
@@ -63,8 +61,6 @@ func testGetCurrentBase() metav1.ObjectMeta {
 }
 
 func testGetCurrentSpec() edgeconnect.EdgeConnectSpec {
-	replicas := int32(1)
-
 	return edgeconnect.EdgeConnectSpec{
 		Annotations: map[string]string{
 			"a": "b",
@@ -72,7 +68,7 @@ func testGetCurrentSpec() edgeconnect.EdgeConnectSpec {
 		Labels: map[string]string{
 			"c": "d",
 		},
-		Replicas:     &replicas,
+		Replicas:     new(int32(1)),
 		NodeSelector: nil,
 		KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{
 			Enabled: true,
