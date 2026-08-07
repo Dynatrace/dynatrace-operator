@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
-	oaClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	dtoneagent "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -37,11 +37,15 @@ type versionReconciler interface {
 }
 
 type connectionInfoReconciler interface {
-	Reconcile(ctx context.Context, oaClient oaClient.Client, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, oaClient dtoneagent.Client, dk *dynakube.DynaKube) error
 }
 
 type enrichmentRulesReconciler interface {
 	Reconcile(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error
+}
+
+type secretGenerator interface {
+	GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error
 }
 
 type Reconciler struct {
@@ -51,6 +55,18 @@ type Reconciler struct {
 	versionReconciler         versionReconciler
 	connectionInfoReconciler  connectionInfoReconciler
 	enrichmentRulesReconciler enrichmentRulesReconciler
+}
+
+var newBootstrapSecretGenerator = newDefaultBootstrapperSecretGenerator
+
+func newDefaultBootstrapperSecretGenerator(client client.Client, apiReader client.Reader, dtClient dtoneagent.Client) secretGenerator {
+	return bootstrapperconfig.NewSecretGenerator(client, apiReader, dtClient)
+}
+
+var newExporterSecretGenerator = newDefaultExporterSecretGenerator
+
+func newDefaultExporterSecretGenerator(client client.Client, apiReader client.Reader) secretGenerator {
+	return exporterconfig.NewSecretGenerator(client, apiReader)
 }
 
 func NewReconciler(
@@ -77,8 +93,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, 
 
 	var setupErrors []error
 
+	var bootstrapNamespaces, otlpNamespaces []corev1.Namespace
+
 	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled() && !dk.OTLPExporterConfiguration().IsEnabled() {
 		defer r.unmap(ctx, dk)
+
+		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
+		if err != nil {
+			return err
+		}
+
+		bootstrapNamespaces, otlpNamespaces = namespaces, namespaces
 	} else {
 		dkMapper := r.createDynakubeMapper(ctx, dk)
 
@@ -86,19 +111,26 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, 
 			log.Info("update of a map of namespaces failed")
 
 			setupErrors = append(setupErrors, err)
+
+			// Fall back to the last successfully-persisted label-based list rather than trusting a
+			// possibly-partially-populated in-memory view from an aborted matching run.
+			namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
+			if err != nil {
+				return err
+			}
+
+			bootstrapNamespaces, otlpNamespaces = namespaces, namespaces
+		} else {
+			bootstrapNamespaces = dkMapper.BootstrapNamespaces()
+			otlpNamespaces = dkMapper.OTLPNamespaces()
 		}
 	}
 
-	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
-	if err != nil {
-		return err
-	}
-
-	if err := r.setupInitSecret(ctx, dtClient, namespaces, dk); err != nil {
+	if err := r.setupInitSecret(ctx, dtClient, bootstrapNamespaces, dk); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
-	if err := r.setupOTLPSecret(ctx, namespaces, dk); err != nil {
+	if err := r.setupOTLPSecret(ctx, otlpNamespaces, dk); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
@@ -140,12 +172,10 @@ func (r *Reconciler) setupOTLPSecret(ctx context.Context, namespaces []corev1.Na
 
 func (r *Reconciler) setupInitSecret(ctx context.Context, dtClient *dynatrace.Client, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
 	if bootstrapperconfig.NeedsPGC(dk) || dk.MetadataEnrichment().IsEnabled() {
-		if err := r.generateInitSecret(ctx, dtClient, namespaces, dk); err != nil {
-			return err
-		}
-	} else {
-		r.cleanupInitSecret(ctx, namespaces, dk)
+		return r.generateInitSecret(ctx, dtClient, namespaces, dk)
 	}
+
+	r.cleanupInitSecret(ctx, namespaces, dk)
 
 	return nil
 }
@@ -196,7 +226,7 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context, dk *dynakube.Dy
 }
 
 func (r *Reconciler) generateInitSecret(ctx context.Context, dtClient *dynatrace.Client, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	err := bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, dtClient.OneAgent).GenerateForDynakube(ctx, dk, namespaces)
+	err := newBootstrapSecretGenerator(r.client, r.apiReader, dtClient.OneAgent).GenerateForDynakube(ctx, dk, namespaces)
 	if err != nil {
 		if k8sconditions.IsKubeAPIError(err) {
 			k8sconditions.SetKubeAPIError(dk.Conditions(), codeModulesInjectionConditionType, err)
@@ -209,7 +239,7 @@ func (r *Reconciler) generateInitSecret(ctx context.Context, dtClient *dynatrace
 }
 
 func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	err := exporterconfig.NewSecretGenerator(r.client, r.apiReader).GenerateForDynakube(ctx, dk, namespaces)
+	err := newExporterSecretGenerator(r.client, r.apiReader).GenerateForDynakube(ctx, dk, namespaces)
 	if err != nil {
 		if k8sconditions.IsKubeAPIError(err) {
 			k8sconditions.SetKubeAPIError(dk.Conditions(), otlpExporterConfigurationConditionType, err)

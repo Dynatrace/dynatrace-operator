@@ -151,6 +151,7 @@ func TestReconciler(t *testing.T) {
 		assertSecretFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
 	})
+
 	t.Run("remove injection", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -201,6 +202,7 @@ func TestReconciler(t *testing.T) {
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType))
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType))
 	})
+
 	t.Run("failure is logged in condition", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 		dk := &dynakube.DynaKube{
@@ -223,17 +225,23 @@ func TestReconciler(t *testing.T) {
 				},
 			},
 		}
-		boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
-			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-				return k8serrors.NewInternalError(errors.New("test-error"))
+
+		boomClient := fake.NewClientWithInterceptors(
+			interceptor.Funcs{
+				Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+					return k8serrors.NewInternalError(errors.New("test-error"))
+				},
 			},
-		})
+			clientNotInjectedNamespace(testNamespace, testDynakube),
+			dk,
+		)
 
 		oneAgentClient := oneagentclientmock.NewClient(t)
 		settingsClient := settingsmock.NewClient(t)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
-			Settings: settingsClient}
+			Settings: settingsClient,
+		}
 
 		fakeConnInfoReconciler := newMockConnectionInfoReconciler(t)
 		fakeConnInfoReconciler.EXPECT().Reconcile(anyCtx, oneAgentClient, dk).Return(nil).Once()
@@ -251,6 +259,133 @@ func TestReconciler(t *testing.T) {
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
+}
+
+// Verify that GenerateForDynaKube is called only with the namespaces that OA/ME/OTLP selectors actually match.
+// If none match, it should still be called with an empty list.
+func TestRegressionSecretReplication(t *testing.T) {
+	tests := []struct {
+		name       string
+		oneAgent   metav1.LabelSelector
+		metadata   metav1.LabelSelector
+		otlp       metav1.LabelSelector
+		expectInit []string
+		expectOTLP []string
+	}{
+		{
+			name:       "match all",
+			expectInit: []string{testNamespace, testNamespace2},
+			expectOTLP: []string{testNamespace, testNamespace2},
+		},
+		{
+			name:     "match nothing",
+			oneAgent: metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: "notfound"}},
+			metadata: metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: "notfound"}},
+			otlp:     metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: "notfound"}},
+		},
+		{
+			name:       "limit oneagent",
+			oneAgent:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			expectInit: []string{testNamespace, testNamespace2},
+			expectOTLP: []string{testNamespace, testNamespace2},
+		},
+		{
+			name:       "limit metadata",
+			metadata:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			expectInit: []string{testNamespace, testNamespace2},
+			expectOTLP: []string{testNamespace, testNamespace2},
+		},
+		{
+			name:       "limit oneagent and metadata",
+			oneAgent:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			metadata:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			expectInit: []string{testNamespace},
+			expectOTLP: []string{testNamespace, testNamespace2},
+		},
+		{
+			name:       "limit otlp",
+			otlp:       metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			expectInit: []string{testNamespace, testNamespace2},
+			expectOTLP: []string{testNamespace},
+		},
+		{
+			name:       "limit all",
+			oneAgent:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			metadata:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			otlp:       metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube2}},
+			expectInit: []string{testNamespace},
+			expectOTLP: []string{testNamespace2},
+		},
+		{
+			name:       "invalid oneagent selector is ignored",
+			oneAgent:   metav1.LabelSelector{MatchLabels: map[string]string{"invalid ": ""}},
+			metadata:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			expectInit: []string{testNamespace},
+			expectOTLP: []string{testNamespace, testNamespace2},
+		},
+		{
+			name:       "invalid metadata selector is ignored",
+			oneAgent:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			metadata:   metav1.LabelSelector{MatchLabels: map[string]string{"invalid ": ""}},
+			expectInit: []string{testNamespace},
+			expectOTLP: []string{testNamespace, testNamespace2},
+		},
+		{
+			name:       "invalid otlp selector drops namespaces",
+			otlp:       metav1.LabelSelector{MatchLabels: map[string]string{"invalid ": ""}},
+			expectInit: []string{testNamespace, testNamespace2},
+			expectOTLP: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := testDynaKubeWithSelectors(tt.oneAgent, tt.metadata, tt.otlp)
+			clt := fake.NewClientWithIndex(
+				clientNotInjectedNamespace(testNamespace, testDynakube),
+				clientNotInjectedNamespace(testNamespace2, testDynakube2),
+				clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.APIKey: []byte(testAPIToken), token.DataIngestKey: []byte(testDataIngestToken)}),
+				dk,
+			)
+
+			matchNamespaces := func(expect []string) any {
+				return mock.MatchedBy(func(namespaces []corev1.Namespace) bool {
+					got := make([]string, len(namespaces))
+					for i, ns := range namespaces {
+						got[i] = ns.Name
+					}
+
+					return assert.ElementsMatch(t, expect, got)
+				})
+			}
+
+			mockInitGen := newMockSecretGenerator(t)
+			mockInitGen.EXPECT().GenerateForDynakube(anyCtx, dk, matchNamespaces(tt.expectInit)).Return(nil).Once()
+			newBootstrapSecretGenerator = func(client.Client, client.Reader, oneagentclient.Client) secretGenerator {
+				return mockInitGen
+			}
+
+			mockOTLPGen := newMockSecretGenerator(t)
+			mockOTLPGen.EXPECT().GenerateForDynakube(anyCtx, dk, matchNamespaces(tt.expectOTLP)).Return(nil).Once()
+			newExporterSecretGenerator = func(client.Client, client.Reader) secretGenerator {
+				return mockOTLPGen
+			}
+
+			t.Cleanup(func() {
+				newBootstrapSecretGenerator = newDefaultBootstrapperSecretGenerator
+				newExporterSecretGenerator = newDefaultExporterSecretGenerator
+			})
+
+			rec := NewReconciler(clt, clt)
+			rec.versionReconciler = createVersionReconcilerMock(t)
+			rec.istioReconciler = createIstioReconcilerMock(t, dk)
+			rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
+			rec.enrichmentRulesReconciler = createEnrichmentRulesReconcilerMock(t)
+
+			err := rec.Reconcile(t.Context(), &dynatrace.Client{}, dk)
+			require.NoError(t, err)
+		})
+	}
 }
 
 func TestRemoveAppInjection(t *testing.T) {
@@ -749,10 +884,6 @@ func clientEnrichmentInjection() client.Client {
 
 func clientInjectedNamespace(namespaceName string, dynakubeName string) *corev1.Namespace {
 	return &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "corev1",
-			Kind:       "Namespace",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespaceName,
 			Labels: map[string]string{
@@ -764,10 +895,6 @@ func clientInjectedNamespace(namespaceName string, dynakubeName string) *corev1.
 
 func clientNotInjectedNamespace(namespaceName string, dynakubeName string) *corev1.Namespace {
 	return &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "corev1",
-			Kind:       "Namespace",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespaceName,
 			Labels: map[string]string{
@@ -779,10 +906,6 @@ func clientNotInjectedNamespace(namespaceName string, dynakubeName string) *core
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "core/v1",
-			Kind:       "Secret",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: namespaceName,
@@ -792,12 +915,14 @@ func clientSecret(secretName string, namespaceName string, data map[string][]byt
 }
 
 func assertSecretFound(t *testing.T, clt client.Client, secretName string, secretNamespace string) {
+	t.Helper()
 	var secret corev1.Secret
 	err := clt.Get(t.Context(), client.ObjectKey{Name: secretName, Namespace: secretNamespace}, &secret)
 	require.NoError(t, err, "%s.%s secret not found, error: %s", secretName, secretNamespace, err)
 }
 
 func assertSecretNotFound(t *testing.T, clt client.Client, secretName string, secretNamespace string) {
+	t.Helper()
 	var secret corev1.Secret
 	err := clt.Get(t.Context(), client.ObjectKey{Name: secretName, Namespace: secretNamespace}, &secret)
 	require.Error(t, err, "%s.%s secret found, error: %s ", secretName, secretNamespace, err)
@@ -831,4 +956,26 @@ func createIstioReconcilerMock(t *testing.T, dk *dynakube.DynaKube) istioReconci
 	rec.EXPECT().ReconcileCodeModules(anyCtx, dk).Return(nil).Once()
 
 	return rec
+}
+
+func testDynaKubeWithSelectors(oneAgent, metadataEnrichment, otlpExporter metav1.LabelSelector) *dynakube.DynaKube {
+	return &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+					AppInjectionSpec: oneagent.AppInjectionSpec{NamespaceSelector: oneAgent},
+				},
+			},
+			MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true), NamespaceSelector: metadataEnrichment},
+			OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+				NamespaceSelector: otlpExporter, Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}},
+			},
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubernetesClusterMEID: testKubernetesMEID,
+			APIToken:              dynakube.APITokenStatus{Platform: new(true)},
+		},
+	}
 }
