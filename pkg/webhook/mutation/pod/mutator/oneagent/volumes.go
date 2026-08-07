@@ -24,7 +24,8 @@ const (
 )
 
 func addVolumeMounts(container *corev1.Container, installPath string) {
-	container.VolumeMounts = append(container.VolumeMounts,
+	container.VolumeMounts = append(
+		container.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      BinVolumeName,
 			MountPath: installPath,
@@ -34,12 +35,14 @@ func addVolumeMounts(container *corev1.Container, installPath string) {
 			Name:      volumes.ConfigVolumeName,
 			MountPath: ldPreloadPath,
 			SubPath:   ldPreloadSubPath,
+			ReadOnly:  true,
 		},
 	)
 }
 
 func addInitBinMount(initContainer *corev1.Container, readonly bool) {
-	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
+	initContainer.VolumeMounts = append(
+		initContainer.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      BinVolumeName,
 			MountPath: consts.AgentInitBinDirMount,
@@ -77,7 +80,8 @@ func addEmptyDirBinVolume(pod *corev1.Pod, log logd.Logger) error {
 		EmptyDir: &emptyDirVS,
 	}
 
-	pod.Spec.Volumes = append(pod.Spec.Volumes,
+	pod.Spec.Volumes = append(
+		pod.Spec.Volumes,
 		corev1.Volume{
 			Name:         BinVolumeName,
 			VolumeSource: volumeSource,
@@ -111,7 +115,8 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) error {
 		},
 	}
 
-	pod.Spec.Volumes = append(pod.Spec.Volumes,
+	pod.Spec.Volumes = append(
+		pod.Spec.Volumes,
 		corev1.Volume{
 			Name:         BinVolumeName,
 			VolumeSource: volumeSource,
