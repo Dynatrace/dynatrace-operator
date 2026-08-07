@@ -147,7 +147,7 @@ jobs:
 
   create-sbom-fips:
     if: github.repository_owner == 'Dynatrace'
-    needs: [copy-image-to-artifact]
+    needs: [copy-image-to-artifact-fips]
     permissions:
       actions: write
     uses: ./.github/workflows/create-sbom.yaml
@@ -202,7 +202,7 @@ jobs:
       - name: Sign FIPS image
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Download FIPS SBOM artifact
