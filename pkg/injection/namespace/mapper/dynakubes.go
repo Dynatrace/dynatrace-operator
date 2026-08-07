@@ -4,6 +4,7 @@
 package mapper
 
 import (
+	"cmp"
 	"context"
 	goerrors "errors"
 	"slices"
@@ -28,7 +29,13 @@ type DynakubeMapper struct {
 	operatorNs string
 	secrets    k8ssecret.QueryObject
 
-	matchedNamespaces map[string]matchFlags
+	matchedNamespaces map[string]namespaceMatch
+	invalidSelectors  matchFlags
+}
+
+type namespaceMatch struct {
+	namespace *corev1.Namespace
+	flags     matchFlags
 }
 
 type matchFlags int
@@ -55,7 +62,7 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 		operatorNs:        operatorNs,
 		dk:                dk,
 		secrets:           k8ssecret.Query(clt, apiReader),
-		matchedNamespaces: make(map[string]matchFlags),
+		matchedNamespaces: make(map[string]namespaceMatch),
 	}
 }
 
@@ -78,21 +85,54 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 		return errors.WithMessage(err, "delete replicated secrets")
 	}
 
-	oaActive := dm.dk.OneAgent().IsAppInjectionNeeded()
-	meActive := dm.dk.MetadataEnrichment().IsEnabled()
-	otlpActive := dm.dk.OTLPExporterConfiguration().IsEnabled()
-	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType, oaActive, dm.getMatchedNamespacesFor(flagOneAgent))
-	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType, meActive, dm.getMatchedNamespacesFor(flagMetadata))
-	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType, otlpActive, dm.getMatchedNamespacesFor(flagOTLP))
+	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType, selectorMatchStatus{
+		configured: dm.dk.OneAgent().IsAppInjectionNeeded(),
+		invalid:    dm.invalidSelectors.isOneAgent(),
+		names:      dm.namespaceNamesFor(flagOneAgent),
+	})
+	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType, selectorMatchStatus{
+		configured: dm.dk.MetadataEnrichment().IsEnabled(),
+		invalid:    dm.invalidSelectors.isMetadata(),
+		names:      dm.namespaceNamesFor(flagMetadata),
+	})
+	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType, selectorMatchStatus{
+		configured: dm.dk.OTLPExporterConfiguration().IsEnabled(),
+		invalid:    dm.invalidSelectors.isOTLP(),
+		names:      dm.namespaceNamesFor(flagOTLP),
+	})
 
 	return nil
 }
 
-func (dm *DynakubeMapper) getMatchedNamespacesFor(query matchFlags) []string {
+// BootstrapNamespaces returns the namespaces the bootstrapper init secret should be replicated to.
+func (dm *DynakubeMapper) BootstrapNamespaces() []corev1.Namespace {
+	return dm.namespacesFor(flagOneAgent | flagMetadata)
+}
+
+// OTLPNamespaces returns the namespaces the OTLP exporter secret should be replicated to.
+func (dm *DynakubeMapper) OTLPNamespaces() []corev1.Namespace {
+	return dm.namespacesFor(flagOTLP)
+}
+
+func (dm *DynakubeMapper) namespacesFor(query matchFlags) []corev1.Namespace {
+	var namespaces []corev1.Namespace
+
+	for _, entry := range dm.matchedNamespaces {
+		if entry.flags&query != 0 {
+			namespaces = append(namespaces, *entry.namespace)
+		}
+	}
+
+	slices.SortFunc(namespaces, func(a, b corev1.Namespace) int { return cmp.Compare(a.Name, b.Name) })
+
+	return namespaces
+}
+
+func (dm *DynakubeMapper) namespaceNamesFor(query matchFlags) []string {
 	var namespaces []string
 
-	for namespace, flags := range dm.matchedNamespaces {
-		if flags&query != 0 {
+	for namespace, entry := range dm.matchedNamespaces {
+		if entry.flags&query != 0 {
 			namespaces = append(namespaces, namespace)
 		}
 	}
@@ -138,10 +178,10 @@ func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error
 }
 
 func (dm *DynakubeMapper) deleteUnmatchedReplicatedSecrets() error {
-	for namespace, flags := range dm.matchedNamespaces {
+	for namespace, entry := range dm.matchedNamespaces {
 		var errs []error
 
-		if !flags.isBootstrap() {
+		if !entry.flags.isBootstrap() {
 			errs = append(
 				errs,
 				dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, namespace),
@@ -149,7 +189,7 @@ func (dm *DynakubeMapper) deleteUnmatchedReplicatedSecrets() error {
 			)
 		}
 
-		if !flags.isOTLP() {
+		if !entry.flags.isOTLP() {
 			errs = append(
 				errs,
 				dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterSecretName, namespace),
@@ -192,10 +232,24 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 		dkList.Items = append(dkList.Items, *dm.dk)
 	}
 
+	selectors, invalidSelectors := compileSelectors(dm.dk)
+	dm.invalidSelectors = invalidSelectors
+
 	for i := range nsList.Items {
 		namespace := &nsList.Items[i]
 
-		updated, err := dm.mapNamespace(namespace, dkList)
+		previouslyInjected := namespace.Labels[dtwebhook.InjectionInstanceLabel] == dm.dk.Name
+
+		flags := match(dm.dk, namespace, selectors)
+
+		if previouslyInjected || flags.isAny() {
+			entry := dm.matchedNamespaces[namespace.Name]
+			entry.namespace = namespace
+			entry.flags |= flags
+			dm.matchedNamespaces[namespace.Name] = entry
+		}
+
+		updated, err := updateNamespace(dm.ctx, namespace, dkList)
 		if err != nil {
 			return nil, err
 		}
@@ -206,24 +260,4 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 	}
 
 	return modifiedNs, nil
-}
-
-func (dm *DynakubeMapper) mapNamespace(namespace *corev1.Namespace, dkList *dynakube.DynaKubeList) (bool, error) {
-	previouslyInjected := namespace.Labels[dtwebhook.InjectionInstanceLabel] == dm.dk.Name
-
-	flags, err := match(dm.dk, namespace)
-	if err != nil {
-		return false, err
-	}
-
-	if previouslyInjected || flags.isAny() {
-		dm.matchedNamespaces[namespace.Name] |= flags
-	}
-
-	updated, err := updateNamespace(dm.ctx, namespace, dkList)
-	if err != nil {
-		return false, err
-	}
-
-	return updated, nil
 }

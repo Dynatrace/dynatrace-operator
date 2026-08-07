@@ -331,10 +331,10 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.getMatchedNamespacesFor(flagOneAgent), 1)
-		require.Len(t, dm.getMatchedNamespacesFor(flagMetadata), 1)
-		assert.Equal(t, "ns-a", dm.getMatchedNamespacesFor(flagOneAgent)[0])
-		assert.Equal(t, "ns-a", dm.getMatchedNamespacesFor(flagMetadata)[0])
+		require.Len(t, dm.namespaceNamesFor(flagOneAgent), 1)
+		require.Len(t, dm.namespaceNamesFor(flagMetadata), 1)
+		assert.Equal(t, "ns-a", dm.namespaceNamesFor(flagOneAgent)[0])
+		assert.Equal(t, "ns-a", dm.namespaceNamesFor(flagMetadata)[0])
 	})
 
 	t.Run("OneAgent and MetadataEnrichment with different selectors", func(t *testing.T) {
@@ -360,19 +360,19 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.getMatchedNamespacesFor(flagOneAgent), 2)
-		require.Len(t, dm.getMatchedNamespacesFor(flagMetadata), 2)
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-a")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-b")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-a")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-c")
+		require.Len(t, dm.namespaceNamesFor(flagOneAgent), 2)
+		require.Len(t, dm.namespaceNamesFor(flagMetadata), 2)
+		assert.Contains(t, dm.namespaceNamesFor(flagOneAgent), "ns-a")
+		assert.Contains(t, dm.namespaceNamesFor(flagOneAgent), "ns-b")
+		assert.Contains(t, dm.namespaceNamesFor(flagMetadata), "ns-a")
+		assert.Contains(t, dm.namespaceNamesFor(flagMetadata), "ns-c")
 
-		require.Len(t, dm.getMatchedNamespacesFor(flagOneAgent), 2)
-		require.Len(t, dm.getMatchedNamespacesFor(flagMetadata), 2)
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-a")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-b")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-a")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-c")
+		require.Len(t, dm.namespaceNamesFor(flagOneAgent), 2)
+		require.Len(t, dm.namespaceNamesFor(flagMetadata), 2)
+		assert.Contains(t, dm.namespaceNamesFor(flagOneAgent), "ns-a")
+		assert.Contains(t, dm.namespaceNamesFor(flagOneAgent), "ns-b")
+		assert.Contains(t, dm.namespaceNamesFor(flagMetadata), "ns-a")
+		assert.Contains(t, dm.namespaceNamesFor(flagMetadata), "ns-c")
 	})
 
 	t.Run("Only OneAgent enabled with multiple matching namespaces", func(t *testing.T) {
@@ -395,10 +395,10 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.getMatchedNamespacesFor(flagOneAgent), 2)
-		require.Empty(t, dm.getMatchedNamespacesFor(flagMetadata))
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-dev-1")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-dev-2")
+		require.Len(t, dm.namespaceNamesFor(flagOneAgent), 2)
+		require.Empty(t, dm.namespaceNamesFor(flagMetadata))
+		assert.Contains(t, dm.namespaceNamesFor(flagOneAgent), "ns-dev-1")
+		assert.Contains(t, dm.namespaceNamesFor(flagOneAgent), "ns-dev-2")
 	})
 
 	t.Run("Only MetadataEnrichment enabled with multiple matching namespaces", func(t *testing.T) {
@@ -421,10 +421,10 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Empty(t, dm.getMatchedNamespacesFor(flagOneAgent))
-		require.Len(t, dm.getMatchedNamespacesFor(flagMetadata), 2)
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-mon-1")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-mon-2")
+		require.Empty(t, dm.namespaceNamesFor(flagOneAgent))
+		require.Len(t, dm.namespaceNamesFor(flagMetadata), 2)
+		assert.Contains(t, dm.namespaceNamesFor(flagMetadata), "ns-mon-1")
+		assert.Contains(t, dm.namespaceNamesFor(flagMetadata), "ns-mon-2")
 	})
 
 	t.Run("no matching namespaces for selector", func(t *testing.T) {
@@ -446,11 +446,11 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Empty(t, dm.getMatchedNamespacesFor(flagOneAgent))
-		require.Empty(t, dm.getMatchedNamespacesFor(flagMetadata))
+		require.Empty(t, dm.namespaceNamesFor(flagOneAgent))
+		require.Empty(t, dm.namespaceNamesFor(flagMetadata))
 
-		require.Empty(t, dm.getMatchedNamespacesFor(flagOneAgent))
-		require.Empty(t, dm.getMatchedNamespacesFor(flagMetadata))
+		require.Empty(t, dm.namespaceNamesFor(flagOneAgent))
+		require.Empty(t, dm.namespaceNamesFor(flagMetadata))
 	})
 
 	t.Run("Track OTLP matched namespaces in DynakubeMapper", func(t *testing.T) {
@@ -471,8 +471,8 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.getMatchedNamespacesFor(flagOTLP), 1)
-		assert.Equal(t, "ns-with-otlp", dm.getMatchedNamespacesFor(flagOTLP)[0])
+		require.Len(t, dm.namespaceNamesFor(flagOTLP), 1)
+		assert.Equal(t, "ns-with-otlp", dm.namespaceNamesFor(flagOTLP)[0])
 	})
 
 	t.Run("OTLP with empty namespace selector matches all namespaces", func(t *testing.T) {
@@ -493,9 +493,9 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.getMatchedNamespacesFor(flagOTLP), 3)
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagOTLP), "ns-a")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagOTLP), "ns-b")
-		assert.Contains(t, dm.getMatchedNamespacesFor(flagOTLP), "ns-c")
+		require.Len(t, dm.namespaceNamesFor(flagOTLP), 3)
+		assert.Contains(t, dm.namespaceNamesFor(flagOTLP), "ns-a")
+		assert.Contains(t, dm.namespaceNamesFor(flagOTLP), "ns-b")
+		assert.Contains(t, dm.namespaceNamesFor(flagOTLP), "ns-c")
 	})
 }

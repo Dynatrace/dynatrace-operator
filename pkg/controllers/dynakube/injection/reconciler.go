@@ -25,8 +25,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -95,8 +93,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, 
 
 	var setupErrors []error
 
+	var bootstrapNamespaces, otlpNamespaces []corev1.Namespace
+
 	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled() && !dk.OTLPExporterConfiguration().IsEnabled() {
 		defer r.unmap(ctx, dk)
+
+		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
+		if err != nil {
+			return err
+		}
+
+		bootstrapNamespaces, otlpNamespaces = namespaces, namespaces
 	} else {
 		dkMapper := r.createDynakubeMapper(ctx, dk)
 
@@ -104,19 +111,26 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, 
 			log.Info("update of a map of namespaces failed")
 
 			setupErrors = append(setupErrors, err)
+
+			// Fall back to the last successfully-persisted label-based list rather than trusting a
+			// possibly-partially-populated in-memory view from an aborted matching run.
+			namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
+			if err != nil {
+				return err
+			}
+
+			bootstrapNamespaces, otlpNamespaces = namespaces, namespaces
+		} else {
+			bootstrapNamespaces = dkMapper.BootstrapNamespaces()
+			otlpNamespaces = dkMapper.OTLPNamespaces()
 		}
 	}
 
-	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, dk.Name)
-	if err != nil {
-		return err
-	}
-
-	if err := r.setupInitSecret(ctx, dtClient, namespaces, dk); err != nil {
+	if err := r.setupInitSecret(ctx, dtClient, bootstrapNamespaces, dk); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
-	if err := r.setupOTLPSecret(ctx, namespaces, dk); err != nil {
+	if err := r.setupOTLPSecret(ctx, otlpNamespaces, dk); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
@@ -144,8 +158,6 @@ func (r *Reconciler) reconcileSubReconcilers(ctx context.Context, dtClient *dyna
 
 func (r *Reconciler) setupOTLPSecret(ctx context.Context, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
 	if dk.OTLPExporterConfiguration().IsEnabled() {
-		namespaces := filterNamespaces(ctx, namespaces, &dk.Spec.OTLPExporterConfiguration.NamespaceSelector)
-
 		if err := r.generateOTLPSecret(ctx, namespaces, dk); err != nil {
 			return err
 		}
@@ -160,8 +172,6 @@ func (r *Reconciler) setupOTLPSecret(ctx context.Context, namespaces []corev1.Na
 
 func (r *Reconciler) setupInitSecret(ctx context.Context, dtClient *dynatrace.Client, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
 	if bootstrapperconfig.NeedsPGC(dk) || dk.MetadataEnrichment().IsEnabled() {
-		namespaces := filterNamespaces(ctx, namespaces, dk.OneAgent().GetNamespaceSelector(), dk.MetadataEnrichment().GetNamespaceSelector())
-
 		return r.generateInitSecret(ctx, dtClient, namespaces, dk)
 	}
 
@@ -299,56 +309,4 @@ func (r *Reconciler) cleanupOTLPSecret(ctx context.Context, namespaces []corev1.
 	}
 
 	meta.RemoveStatusCondition(dk.Conditions(), otlpExporterConfigurationConditionType)
-}
-
-// Returns a copy of namespaces that only contains items that match the provided label selectors. The label selectors are ORed.
-// If no label selectors were provided or any label selector matches all values (empty), the original list is returned unmodified.
-// If an invalid label selector is encountered returns an empty list.
-func filterNamespaces(ctx context.Context, namespaces []corev1.Namespace, labelSelectors ...*metav1.LabelSelector) []corev1.Namespace {
-	selectors := make([]labels.Selector, 0, len(labelSelectors))
-
-	var matchEverything bool
-
-	for _, labelSelector := range labelSelectors {
-		selector, err := metav1.LabelSelectorAsSelector(labelSelector)
-		if err != nil {
-			// This should've been caught by validation. The operator might be in an invalid state. Do not replicate anything.
-			// We do not need to report this error here, since the DynaKube mapper will already expose it to the user.
-			logd.FromContext(ctx).Info("skipping secret replication for due to invalid selector", "selector", labelSelector)
-
-			return nil
-		}
-
-		if selector.Empty() {
-			matchEverything = true
-
-			continue
-		}
-
-		if labels.MatchesNothing(selector) {
-			continue
-		}
-
-		selectors = append(selectors, selector)
-	}
-
-	if matchEverything {
-		return namespaces
-	}
-
-	var result []corev1.Namespace
-
-	if len(selectors) > 0 {
-		for _, ns := range namespaces {
-			for _, selector := range selectors {
-				if selector.Matches(labels.Set(ns.Labels)) {
-					result = append(result, ns)
-
-					break // continue with the next namespace
-				}
-			}
-		}
-	}
-
-	return result
 }

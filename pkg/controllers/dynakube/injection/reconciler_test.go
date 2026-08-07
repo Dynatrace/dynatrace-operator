@@ -316,6 +316,26 @@ func TestRegressionSecretReplication(t *testing.T) {
 			expectInit: []string{testNamespace},
 			expectOTLP: []string{testNamespace2},
 		},
+		{
+			name:       "invalid oneagent selector is ignored",
+			oneAgent:   metav1.LabelSelector{MatchLabels: map[string]string{"invalid ": ""}},
+			metadata:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			expectInit: []string{testNamespace},
+			expectOTLP: []string{testNamespace, testNamespace2},
+		},
+		{
+			name:       "invalid metadata selector is ignored",
+			oneAgent:   metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+			metadata:   metav1.LabelSelector{MatchLabels: map[string]string{"invalid ": ""}},
+			expectInit: []string{testNamespace},
+			expectOTLP: []string{testNamespace, testNamespace2},
+		},
+		{
+			name:       "invalid otlp selector drops namespaces",
+			otlp:       metav1.LabelSelector{MatchLabels: map[string]string{"invalid ": ""}},
+			expectInit: []string{testNamespace, testNamespace2},
+			expectOTLP: []string{},
+		},
 	}
 
 	for _, tt := range tests {
