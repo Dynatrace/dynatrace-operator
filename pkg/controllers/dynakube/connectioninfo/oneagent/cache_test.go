@@ -13,7 +13,6 @@ package oaconnectioninfo
 // synthetic time and the cache TTL check sees the same fake clock.
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -62,11 +61,11 @@ func TestReconcile_ConnectionInfoCache(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient)
 
 		synctest.Test(t, func(t *testing.T) {
-			require.NoError(t, r.Reconcile(context.Background(), oaClient, dk))
+			require.NoError(t, r.Reconcile(t.Context(), oaClient, dk))
 
 			time.Sleep(testConnectionInfoCacheTTL + time.Second)
 
-			require.NoError(t, r.Reconcile(context.Background(), oaClient, dk))
+			require.NoError(t, r.Reconcile(t.Context(), oaClient, dk))
 		})
 
 		assert.Equal(t, updatedUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
