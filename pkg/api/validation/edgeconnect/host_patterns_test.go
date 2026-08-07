@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestHostPatternsRequired(t *testing.T) {
+func Test_checkHostPatternsValue(t *testing.T) {
 	t.Run("hostPatters optional - no error when provisioner false", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
@@ -26,7 +26,7 @@ func TestHostPatternsRequired(t *testing.T) {
 				},
 			},
 		}
-		assertAllowed(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
+		assertAllowed(t, ec, prepareTestServiceAccount(t, testServiceAccountName, testNamespace))
 	})
 
 	t.Run("hostPatters is required - error when provisioner true", func(t *testing.T) {

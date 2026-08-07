@@ -4,15 +4,14 @@
 package validation
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsModuleDisabled(t *testing.T) {
-	ctx := context.Background()
+func Test_isModuleDisabled(t *testing.T) {
+	ctx := t.Context()
 
 	t.Run("module disabled => error", func(t *testing.T) {
 		errMsg := isModuleDisabled(ctx, &Validator{modules: installconfig.Modules{EdgeConnect: false}}, nil)

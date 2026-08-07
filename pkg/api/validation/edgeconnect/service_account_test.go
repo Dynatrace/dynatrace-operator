@@ -11,12 +11,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestServiceAccountName(t *testing.T) {
+func Test_isInvalidServiceName(t *testing.T) {
 	t.Run("intentionally empty name", func(t *testing.T) {
-		empty := ""
 		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
-				ServiceAccountName: &empty,
+				ServiceAccountName: new(""),
 			},
 		}
 		assertDenied(t, []string{errorInvalidServiceName}, ec)
@@ -35,7 +34,9 @@ func TestServiceAccountName(t *testing.T) {
 	})
 }
 
-func prepareTestServiceAccount(name string, namespace string) *corev1.ServiceAccount {
+func prepareTestServiceAccount(t *testing.T, name string, namespace string) *corev1.ServiceAccount {
+	t.Helper()
+
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

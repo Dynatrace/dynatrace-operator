@@ -94,13 +94,13 @@ func TestUpdateEnvironmentSetting(t *testing.T) {
 		require.ErrorIs(t, err, errTest)
 	})
 
-	t.Run("No object id given", func(t *testing.T) {
+	t.Run("empty environment setting", func(t *testing.T) {
 		_, _, mockClient := newTestSetup(t)
 		err := mockClient.UpdateEnvironmentSetting(t.Context(), EnvironmentSetting{})
 		require.ErrorIs(t, err, errNoEnvSettingObjectID)
 	})
 
-	t.Run("No object id given", func(t *testing.T) {
+	t.Run("empty object id", func(t *testing.T) {
 		_, _, mockClient := newTestSetup(t)
 		err := mockClient.UpdateEnvironmentSetting(t.Context(), EnvironmentSetting{ObjectID: ""})
 		require.ErrorIs(t, err, errNoEnvSettingObjectID)
