@@ -216,7 +216,9 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context, dk *dynakube.Dy
 }
 
 func (r *Reconciler) generateInitSecret(ctx context.Context, dtClient *dynatrace.Client, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	if len(namespaces) > 0 {
+	// The OneAgent mounts the bootstrapper secret when hostMonitoring is enabled.
+	// The namespace selector is only available for appmon/CNFS, so hostmon without metadata enrichment will always have 0 namespaces here.
+	if len(namespaces) > 0 || dk.OneAgent().IsHostMonitoringMode() {
 		err := newBootstrapSecretGenerator(r.client, r.apiReader, dtClient.OneAgent).GenerateForDynakube(ctx, dk, namespaces)
 		if err != nil {
 			if k8sconditions.IsKubeAPIError(err) {
@@ -311,6 +313,8 @@ func (r *Reconciler) cleanupOTLPSecret(ctx context.Context, namespaces []corev1.
 func filterNamespaces(ctx context.Context, namespaces []corev1.Namespace, labelSelectors ...*metav1.LabelSelector) []corev1.Namespace {
 	selectors := make([]labels.Selector, 0, len(labelSelectors))
 
+	var matchEverything bool
+
 	for _, labelSelector := range labelSelectors {
 		selector, err := metav1.LabelSelectorAsSelector(labelSelector)
 		if err != nil {
@@ -322,8 +326,9 @@ func filterNamespaces(ctx context.Context, namespaces []corev1.Namespace, labelS
 		}
 
 		if selector.Empty() {
-			// This selector matches everything, so there's no need to filter.
-			return namespaces
+			matchEverything = true
+
+			continue
 		}
 
 		if labels.MatchesNothing(selector) {
@@ -331,6 +336,10 @@ func filterNamespaces(ctx context.Context, namespaces []corev1.Namespace, labelS
 		}
 
 		selectors = append(selectors, selector)
+	}
+
+	if matchEverything {
+		return namespaces
 	}
 
 	var result []corev1.Namespace

@@ -26,16 +26,6 @@ type ConflictChecker struct {
 	alreadyUsed bool
 }
 
-type matchResult struct {
-	IsOA   bool
-	IsME   bool
-	IsOTLP bool
-}
-
-func (m matchResult) IsAny() bool {
-	return m.IsOA || m.IsME || m.IsOTLP
-}
-
 func (c *ConflictChecker) check(dk *dynakube.DynaKube) error {
 	metadataEnrichment := dk.MetadataEnrichment()
 	otlpExporterConfig := dk.OTLPExporterConfiguration()
@@ -77,35 +67,32 @@ func addNamespaceInjectLabel(dkName string, ns *corev1.Namespace) {
 	ns.Labels[dtwebhook.InjectionInstanceLabel] = dkName
 }
 
-func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (matchResult, error) {
-	var result matchResult
+func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (matchFlags, error) {
+	var flags matchFlags
 
 	if isIgnoredNamespace(dk, namespace.Name) {
-		return result, nil
+		return flags, nil
 	}
 
-	matchOA, err := matchOneAgent(dk, namespace)
-	if err != nil {
-		return result, err
+	if matchOA, err := matchOneAgent(dk, namespace); err != nil {
+		return flags, err
+	} else if matchOA {
+		flags |= flagOneAgent
 	}
 
-	result.IsOA = matchOA
-
-	matchME, err := matchMetadataEnrichment(dk, namespace)
-	if err != nil {
-		return result, err
+	if matchME, err := matchMetadataEnrichment(dk, namespace); err != nil {
+		return flags, err
+	} else if matchME {
+		flags |= flagMetadata
 	}
 
-	result.IsME = matchME
-
-	matchOTLP, err := matchOTLPExporterConfiguration(dk, namespace)
-	if err != nil {
-		return result, err
+	if matchOTLP, err := matchOTLPExporterConfiguration(dk, namespace); err != nil {
+		return flags, err
+	} else if matchOTLP {
+		flags |= flagOTLP
 	}
 
-	result.IsOTLP = matchOTLP
-
-	return result, nil
+	return flags, nil
 }
 
 // matchOneAgent uses the namespace selector in the dynakube to check if it matches a given namespace
@@ -165,18 +152,18 @@ func updateNamespace(ctx context.Context, namespace *corev1.Namespace, deployedD
 	for i := range deployedDynakubes.Items {
 		dk := &deployedDynakubes.Items[i]
 
-		matches, err := match(dk, namespace)
+		flags, err := match(dk, namespace)
 		if err != nil {
 			return namespaceUpdated, err
 		}
 
-		if matches.IsAny() {
+		if flags.isAny() {
 			if err := conflict.check(dk); err != nil {
 				return namespaceUpdated, err
 			}
 		}
 
-		labelsUpdated := updateLabels(ctx, matches.IsAny(), dk, namespace)
+		labelsUpdated := updateLabels(ctx, flags.isAny(), dk, namespace)
 		namespaceUpdated = labelsUpdated || namespaceUpdated
 	}
 

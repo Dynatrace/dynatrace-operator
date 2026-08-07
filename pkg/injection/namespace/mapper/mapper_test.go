@@ -30,7 +30,8 @@ func createBaseDynakube(name string, appInjection bool, metadataEnrichment bool)
 
 	if appInjection {
 		dk.Spec.OneAgent = oneagent.Spec{
-			ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}
+			ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+		}
 	}
 
 	return dk
@@ -325,15 +326,15 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		}
 
 		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
-		dm := DynakubeMapper{dk: dk}
+		dm := NewDynakubeMapper(t.Context(), nil, nil, "", dk)
 
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.matchedOANamespaces, 1)
-		require.Len(t, dm.matchedMENamespaces, 1)
-		assert.Equal(t, "ns-a", dm.matchedOANamespaces[0])
-		assert.Equal(t, "ns-a", dm.matchedMENamespaces[0])
+		require.Len(t, dm.getMatchedNamespacesFor(flagOneAgent), 1)
+		require.Len(t, dm.getMatchedNamespacesFor(flagMetadata), 1)
+		assert.Equal(t, "ns-a", dm.getMatchedNamespacesFor(flagOneAgent)[0])
+		assert.Equal(t, "ns-a", dm.getMatchedNamespacesFor(flagMetadata)[0])
 	})
 
 	t.Run("OneAgent and MetadataEnrichment with different selectors", func(t *testing.T) {
@@ -354,24 +355,24 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		}
 
 		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
-		dm := DynakubeMapper{dk: dk}
+		dm := NewDynakubeMapper(t.Context(), nil, nil, "", dk)
 
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.matchedOANamespaces, 2)
-		require.Len(t, dm.matchedMENamespaces, 2)
-		assert.Contains(t, dm.matchedOANamespaces, "ns-a")
-		assert.Contains(t, dm.matchedOANamespaces, "ns-b")
-		assert.Contains(t, dm.matchedMENamespaces, "ns-a")
-		assert.Contains(t, dm.matchedMENamespaces, "ns-c")
+		require.Len(t, dm.getMatchedNamespacesFor(flagOneAgent), 2)
+		require.Len(t, dm.getMatchedNamespacesFor(flagMetadata), 2)
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-a")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-b")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-a")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-c")
 
-		require.Len(t, dm.matchedOANamespaces, 2)
-		require.Len(t, dm.matchedMENamespaces, 2)
-		assert.Contains(t, dm.matchedOANamespaces, "ns-a")
-		assert.Contains(t, dm.matchedOANamespaces, "ns-b")
-		assert.Contains(t, dm.matchedMENamespaces, "ns-a")
-		assert.Contains(t, dm.matchedMENamespaces, "ns-c")
+		require.Len(t, dm.getMatchedNamespacesFor(flagOneAgent), 2)
+		require.Len(t, dm.getMatchedNamespacesFor(flagMetadata), 2)
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-a")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-b")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-a")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-c")
 	})
 
 	t.Run("Only OneAgent enabled with multiple matching namespaces", func(t *testing.T) {
@@ -389,15 +390,15 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		}
 
 		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
-		dm := DynakubeMapper{dk: dk}
+		dm := NewDynakubeMapper(t.Context(), nil, nil, "", dk)
 
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.matchedOANamespaces, 2)
-		require.Empty(t, dm.matchedMENamespaces)
-		assert.Contains(t, dm.matchedOANamespaces, "ns-dev-1")
-		assert.Contains(t, dm.matchedOANamespaces, "ns-dev-2")
+		require.Len(t, dm.getMatchedNamespacesFor(flagOneAgent), 2)
+		require.Empty(t, dm.getMatchedNamespacesFor(flagMetadata))
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-dev-1")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagOneAgent), "ns-dev-2")
 	})
 
 	t.Run("Only MetadataEnrichment enabled with multiple matching namespaces", func(t *testing.T) {
@@ -415,15 +416,15 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		}
 
 		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
-		dm := DynakubeMapper{dk: dk}
+		dm := NewDynakubeMapper(t.Context(), nil, nil, "", dk)
 
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Empty(t, dm.matchedOANamespaces)
-		require.Len(t, dm.matchedMENamespaces, 2)
-		assert.Contains(t, dm.matchedMENamespaces, "ns-mon-1")
-		assert.Contains(t, dm.matchedMENamespaces, "ns-mon-2")
+		require.Empty(t, dm.getMatchedNamespacesFor(flagOneAgent))
+		require.Len(t, dm.getMatchedNamespacesFor(flagMetadata), 2)
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-mon-1")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagMetadata), "ns-mon-2")
 	})
 
 	t.Run("no matching namespaces for selector", func(t *testing.T) {
@@ -440,16 +441,16 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		}
 
 		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
-		dm := DynakubeMapper{dk: dk}
+		dm := NewDynakubeMapper(t.Context(), nil, nil, "", dk)
 
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Empty(t, dm.matchedOANamespaces)
-		require.Empty(t, dm.matchedMENamespaces)
+		require.Empty(t, dm.getMatchedNamespacesFor(flagOneAgent))
+		require.Empty(t, dm.getMatchedNamespacesFor(flagMetadata))
 
-		require.Empty(t, dm.matchedOANamespaces)
-		require.Empty(t, dm.matchedMENamespaces)
+		require.Empty(t, dm.getMatchedNamespacesFor(flagOneAgent))
+		require.Empty(t, dm.getMatchedNamespacesFor(flagMetadata))
 	})
 
 	t.Run("Track OTLP matched namespaces in DynakubeMapper", func(t *testing.T) {
@@ -465,13 +466,13 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		}
 
 		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
-		dm := DynakubeMapper{dk: dk, matchedOTLPNamespaces: []string{}}
+		dm := NewDynakubeMapper(t.Context(), nil, nil, "", dk)
 
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.matchedOTLPNamespaces, 1)
-		assert.Equal(t, "ns-with-otlp", dm.matchedOTLPNamespaces[0])
+		require.Len(t, dm.getMatchedNamespacesFor(flagOTLP), 1)
+		assert.Equal(t, "ns-with-otlp", dm.getMatchedNamespacesFor(flagOTLP)[0])
 	})
 
 	t.Run("OTLP with empty namespace selector matches all namespaces", func(t *testing.T) {
@@ -487,14 +488,14 @@ func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
 		}
 
 		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
-		dm := DynakubeMapper{dk: dk, matchedOTLPNamespaces: []string{}}
+		dm := NewDynakubeMapper(t.Context(), nil, nil, "", dk)
 
 		_, err := dm.mapFromDynakube(nsList, dkList)
 		require.NoError(t, err)
 
-		require.Len(t, dm.matchedOTLPNamespaces, 3)
-		assert.Contains(t, dm.matchedOTLPNamespaces, "ns-a")
-		assert.Contains(t, dm.matchedOTLPNamespaces, "ns-b")
-		assert.Contains(t, dm.matchedOTLPNamespaces, "ns-c")
+		require.Len(t, dm.getMatchedNamespacesFor(flagOTLP), 3)
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagOTLP), "ns-a")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagOTLP), "ns-b")
+		assert.Contains(t, dm.getMatchedNamespacesFor(flagOTLP), "ns-c")
 	})
 }
