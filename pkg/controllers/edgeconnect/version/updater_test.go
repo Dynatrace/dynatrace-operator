@@ -127,8 +127,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect(t)
 		updater := newUpdater(fake.NewClient(), currentTime, fakeRegistryClient, edgeConnect)
 
-		edgeConnectTime := metav1.Now()
-		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
+		edgeConnect.Status.Version.LastProbeTimestamp = new(metav1.Now())
 		edgeConnect.Spec.AutoUpdate = new(true)
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
 
@@ -139,8 +138,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect(t)
 		updater := newUpdater(fake.NewClient(), currentTime, fakeRegistryClient, edgeConnect)
 
-		edgeConnectTime := metav1.NewTime(currentTime.Now().Add(-time.Hour))
-		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
+		edgeConnect.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Now().Add(-time.Hour)))
 		edgeConnect.Spec.AutoUpdate = new(true)
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
 
@@ -151,8 +149,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect(t)
 		updater := newUpdater(fake.NewClient(), currentTime, fakeRegistryClient, edgeConnect)
 
-		edgeConnectTime := metav1.Now()
-		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
+		edgeConnect.Status.Version.LastProbeTimestamp = new(metav1.Now())
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
 		edgeConnect.Spec.ImageRef = image.Ref{
 			Repository: "docker.io/dynatrace/superfancynew",
