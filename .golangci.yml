@@ -342,8 +342,6 @@ linters:
           - godot
         path-except: pkg/api/(.+)\.go
     paths:
-      - pkg/api/v1alpha1/edgeconnect
-      - pkg/api/v1beta5/dynakube
       - third_party$
       - builtin$
       - examples$
