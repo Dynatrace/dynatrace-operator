@@ -5,11 +5,20 @@ package connectioninfo_test
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core/middleware"
 	sharedconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -218,4 +227,113 @@ func assertManagedLabels(t *testing.T, labels map[string]string, dk *dynakube.Dy
 
 	assert.Equal(t, k8slabel.KubeMonComponentLabel, labels[k8slabel.AppComponentLabel])
 	assert.Equal(t, dk.Name, labels[k8slabel.AppCreatedByLabel])
+}
+
+// TestConnectionInfoCache verifies that the HTTP-level response cache used by the AG
+// client prevents redundant API calls when the reconciler is called multiple times.
+// envtest has real goroutines doing I/O, so synctest is not used; the expiry subtest
+// uses a short TTL with a real time.Sleep instead.
+func TestConnectionInfoCache(t *testing.T) {
+	clt := integrationtests.SetupTestEnvironment(t)
+	ctx := t.Context()
+	reconciler := connectioninfo.NewReconciler(clt)
+
+	integrationtests.CreateNamespace(t, ctx, clt, integrationNamespace)
+
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      integrationDynaKubeName,
+			Namespace: integrationNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL:               integrationAPIURL,
+			KubernetesMonitoring: &kubemonapi.Spec{},
+		},
+	}
+	integrationtests.CreateDynakube(t, ctx, clt, dk)
+
+	t.Run("uses cached connection info within TTL", func(t *testing.T) {
+		transport := newFakeCITransport(
+			kubemonConnectionInfoBody(integrationTenantUUID, integrationTenantToken, integrationEndpoints),
+		)
+		agClient := newKubemonConnectionInfoClient(t, transport, time.Minute)
+
+		require.NoError(t, reconciler.Reconcile(t.Context(), agClient, dk))
+		require.NoError(t, reconciler.Reconcile(t.Context(), agClient, dk))
+
+		transport.assertCalls(t, 1, "second reconcile must be served from cache")
+	})
+
+	t.Run("fetches fresh connection info after cache TTL expires", func(t *testing.T) {
+		const shortTTL = 10 * time.Millisecond
+		transport := newFakeCITransport(
+			kubemonConnectionInfoBody(integrationTenantUUID, integrationTenantToken, integrationEndpoints),
+			kubemonConnectionInfoBody(integrationTenantUUID, integrationTenantToken, integrationRotatedEndpoints),
+		)
+		agClient := newKubemonConnectionInfoClient(t, transport, shortTTL)
+
+		require.NoError(t, reconciler.Reconcile(t.Context(), agClient, dk))
+
+		time.Sleep(2 * shortTTL)
+
+		require.NoError(t, reconciler.Reconcile(t.Context(), agClient, dk))
+
+		assert.Equal(t, integrationRotatedEndpoints, dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints)
+		transport.assertCalls(t, 2)
+	})
+}
+
+// --- Fake transport ----------------------------------------------------------
+
+type fakeCITransport struct {
+	calls  atomic.Int64
+	bodies []string
+}
+
+func newFakeCITransport(bodies ...string) *fakeCITransport {
+	return &fakeCITransport{bodies: bodies}
+}
+
+func (ft *fakeCITransport) assertCalls(t *testing.T, expected int64, msgAndArgs ...any) {
+	t.Helper()
+	assert.Equal(t, expected, ft.calls.Load(), msgAndArgs...)
+}
+
+func (ft *fakeCITransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	idx := int(ft.calls.Add(1)) - 1
+	body := ft.bodies[min(idx, len(ft.bodies)-1)]
+
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": {"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(body)),
+		Request:    r,
+	}, nil
+}
+
+// --- Client constructor ------------------------------------------------------
+
+// newKubemonConnectionInfoClient builds a real agclient.ClientImpl whose HTTP transport
+// is the given fakeCITransport wrapped in a cache round-tripper with the specified TTL.
+// PaasToken is set to t.Name() so each subtest has an isolated namespace in the global cache.
+func newKubemonConnectionInfoClient(t *testing.T, transport http.RoundTripper, ttl time.Duration) agclient.Client {
+	t.Helper()
+
+	u, err := url.Parse("https://fake-dt.test")
+	require.NoError(t, err)
+
+	return agclient.NewClient(core.NewClient(core.Config{
+		BaseURL:    u,
+		HTTPClient: &http.Client{Transport: middleware.NewCacheRoundTripper(transport, ttl)},
+		PaasToken:  t.Name(),
+	}))
+}
+
+// --- Response body helpers ---------------------------------------------------
+
+func kubemonConnectionInfoBody(tenantUUID, tenantToken, endpoints string) string {
+	return fmt.Sprintf(
+		`{"tenantUUID":%q,"tenantToken":%q,"communicationEndpoints":%q}`,
+		tenantUUID, tenantToken, endpoints,
+	)
 }

@@ -5,9 +5,11 @@ package oneagent
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
@@ -16,12 +18,22 @@ const (
 	connectionInfoPath = "/v1/deployment/installer/agent/connectioninfo"
 )
 
+var (
+	NoCommunicationEndpointsError  = errors.New("no communication endpoints for OneAgent are available")
+	StaleNetworkZoneEndpointsError = errors.New("OneAgent endpoints do not contain the local ActiveGate Service IP, waiting for the ActiveGate to register itself")
+)
+
 // connectionInfoResponse is the raw shape returned by the connectioninfo API.
 // It is unmarshalled directly from JSON and never exposed outside this package.
+// It implements core.Cacheable so that Execute opts the request into the HTTP-layer cache.
 type connectionInfoResponse struct {
 	TenantUUID             string   `json:"tenantUUID"`
 	TenantToken            string   `json:"tenantToken"`
 	CommunicationEndpoints []string `json:"communicationEndpoints"`
+}
+
+func (r *connectionInfoResponse) IsEmpty() bool {
+	return r.TenantUUID == "" || r.TenantToken == "" || len(r.CommunicationEndpoints) == 0
 }
 
 // ConnectionInfo is the public result of GetConnectionInfo. Endpoints is
@@ -33,7 +45,11 @@ type ConnectionInfo struct {
 	Endpoints   string
 }
 
-func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
+func (cinf *ConnectionInfo) IsEmpty() bool {
+	return cinf.TenantUUID == "" || cinf.TenantToken == "" || cinf.Endpoints == ""
+}
+
+func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredHosts []string) (ConnectionInfo, error) {
 	ctx, log := logd.NewFromContext(ctx, loggerName)
 
 	var resp connectionInfoResponse
@@ -59,23 +75,28 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, err
 		return ConnectionInfo{}, errors.WithStack(err)
 	}
 
-	return ConnectionInfo{
+	endpoints, err := buildEndpoints(resp.CommunicationEndpoints, requiredHosts)
+
+	result := ConnectionInfo{
 		TenantUUID:  resp.TenantUUID,
 		TenantToken: resp.TenantToken,
-		Endpoints:   deduplicateEndpoints(resp.CommunicationEndpoints),
-	}, nil
+		Endpoints:   endpoints,
+	}
+
+	return result, err
 }
 
-// deduplicateEndpoints removes duplicate entries from the communication
-// endpoints returned by the API and joins the unique ones into a single,
-// comma-separated string. The order of first occurrence is preserved,
-// surrounding whitespace is trimmed and empty entries are dropped.
-func deduplicateEndpoints(endpoints []string) string {
+func buildEndpoints(rawEndpoints []string, requiredHosts []string) (string, error) {
+	if len(rawEndpoints) == 0 {
+		return "", NoCommunicationEndpointsError
+	}
+
 	seen := make(map[string]struct{})
+	missing := len(requiredHosts) > 0
 
 	var unique []string
 
-	for _, endpoint := range endpoints {
+	for _, endpoint := range rawEndpoints {
 		endpoint = strings.TrimSpace(endpoint)
 		if endpoint == "" {
 			continue
@@ -87,7 +108,19 @@ func deduplicateEndpoints(endpoints []string) string {
 
 		seen[endpoint] = struct{}{}
 		unique = append(unique, endpoint)
+
+		if missing {
+			if ch, err := connectioninfo.NewCommunicationHost(endpoint); err == nil {
+				missing = !slices.Contains(requiredHosts, ch.Host)
+			}
+		}
 	}
 
-	return strings.Join(unique, ";")
+	joined := strings.Join(unique, ";")
+
+	if missing {
+		return joined, StaleNetworkZoneEndpointsError
+	}
+
+	return joined, nil
 }

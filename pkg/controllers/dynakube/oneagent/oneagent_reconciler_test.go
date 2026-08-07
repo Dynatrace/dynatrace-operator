@@ -12,8 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	oaclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -136,7 +136,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		connInfoReconciler := newMockConnectionInfoReconciler(t)
-		connInfoReconciler.On("Reconcile", anyCtx, mock.Anything, mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
+		connInfoReconciler.On("Reconcile", anyCtx, mock.Anything, mock.Anything).Return(oaclient.NoCommunicationEndpointsError).Once()
 
 		fakeClient := fake.NewClient()
 		reconciler := &Reconciler{
@@ -149,7 +149,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		err := reconciler.Reconcile(ctx, &dk, &dynatrace.Client{}, createTokens())
-		require.ErrorIs(t, err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError)
+		require.ErrorIs(t, err, oaclient.NoCommunicationEndpointsError)
 	})
 
 	t.Run("version reconcile fail => return immediately and bubble up error", func(t *testing.T) {
