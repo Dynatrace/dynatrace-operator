@@ -62,6 +62,10 @@ func (km *KubeMon) GetAuthTokenSecretName() string {
 	return km.name + NameSuffix + "-authtoken-secret"
 }
 
+func (km *KubeMon) GetCustomPropertiesSecretName() string {
+	return km.name + NameSuffix + "-custom-properties"
+}
+
 // GetCustomImage returns the user-provided image override, or "" if unset.
 func (km *Spec) GetCustomImage() string {
 	if km == nil {

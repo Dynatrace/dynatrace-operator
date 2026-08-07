@@ -36,11 +36,13 @@ func TestReconcileDisabled(t *testing.T) {
 		authTokenReconciler := newMockAuthTokenReconciler(t)
 		statefulSetReconciler := newMockStatefulsetReconciler(t)
 		pullSecretReconciler := newMockPullSecretReconciler(t)
+		customPropertiesReconciler := newMockCustomPropertiesReconciler(t)
 		reconciler := &Reconciler{
-			connectionInfoReconciler: connInfoReconciler,
-			authTokenReconciler:      authTokenReconciler,
-			statefulsetReconciler:    statefulSetReconciler,
-			pullSecretReconciler:     pullSecretReconciler,
+			connectionInfoReconciler:   connInfoReconciler,
+			authTokenReconciler:        authTokenReconciler,
+			statefulsetReconciler:      statefulSetReconciler,
+			pullSecretReconciler:       pullSecretReconciler,
+			customPropertiesReconciler: customPropertiesReconciler,
 		}
 		dk := newTestDynaKube(false)
 
@@ -48,6 +50,7 @@ func TestReconcileDisabled(t *testing.T) {
 		connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+		customPropertiesReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
 		err := reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
@@ -62,92 +65,135 @@ func TestReconcileDisabled(t *testing.T) {
 // root-cause message.
 func TestReconcileConditionMapping(t *testing.T) {
 	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true") // remove with gate
-	tests := []struct {
-		name           string
-		connInfoErr    error
-		authTokenErr   error
-		statefulSetErr error
-		wantStatus     metav1.ConditionStatus
-		wantReason     string
-		wantMessage    string
-	}{
-		{
-			name:        "all succeed -> available",
-			wantStatus:  metav1.ConditionTrue,
-			wantReason:  reasonAvailable,
-			wantMessage: messageAvailable,
-		},
-		{
-			name:        "connection info not ready -> reconciling",
-			connInfoErr: kubemonconnectioninfo.ErrConnectionInfoNotReady,
-			wantStatus:  metav1.ConditionFalse,
-			wantReason:  reasonReconciling,
-			wantMessage: kubemonconnectioninfo.ErrConnectionInfoNotReady.Error(),
-		},
-		{
-			name:         "auth token error -> error",
-			authTokenErr: errors.New("api error"),
-			wantStatus:   metav1.ConditionFalse,
-			wantReason:   reasonError,
-			wantMessage:  "api error",
-		},
-		{
-			name:           "rollout in progress -> reconciling",
-			statefulSetErr: k8sstatefulset.ErrRolloutInProgress,
-			wantStatus:     metav1.ConditionFalse,
-			wantReason:     reasonReconciling,
-			wantMessage:    k8sstatefulset.ErrRolloutInProgress.Error(),
-		},
-		{
-			name:           "unexpected error -> error",
-			statefulSetErr: errors.New("boom"),
-			wantStatus:     metav1.ConditionFalse,
-			wantReason:     reasonError,
-			wantMessage:    "boom",
-		},
+
+	type reconcilerMocks struct {
+		reconciler       *Reconciler
+		connInfo         *mockConnectionInfoReconciler
+		authToken        *mockAuthTokenReconciler
+		pullSecret       *mockPullSecretReconciler
+		customProperties *mockCustomPropertiesReconciler
+		statefulSet      *mockStatefulsetReconciler
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			connInfoReconciler := newMockConnectionInfoReconciler(t)
-			authTokenReconciler := newMockAuthTokenReconciler(t)
-			statefulSetReconciler := newMockStatefulsetReconciler(t)
-			pullSecretReconciler := newMockPullSecretReconciler(t)
-			reconciler := &Reconciler{
-				connectionInfoReconciler: connInfoReconciler,
-				authTokenReconciler:      authTokenReconciler,
-				statefulsetReconciler:    statefulSetReconciler,
-				pullSecretReconciler:     pullSecretReconciler,
-			}
-			dk := newTestDynaKube(true)
+	newMocks := func(t *testing.T) reconcilerMocks {
+		t.Helper()
+		m := reconcilerMocks{
+			connInfo:         newMockConnectionInfoReconciler(t),
+			authToken:        newMockAuthTokenReconciler(t),
+			pullSecret:       newMockPullSecretReconciler(t),
+			customProperties: newMockCustomPropertiesReconciler(t),
+			statefulSet:      newMockStatefulsetReconciler(t),
+		}
+		m.reconciler = &Reconciler{
+			connectionInfoReconciler:   m.connInfo,
+			authTokenReconciler:        m.authToken,
+			pullSecretReconciler:       m.pullSecret,
+			customPropertiesReconciler: m.customProperties,
+			statefulsetReconciler:      m.statefulSet,
+		}
 
-			connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(test.connInfoErr).Once()
-			if test.connInfoErr == nil {
-				authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(test.authTokenErr).Once()
-			}
-			if test.connInfoErr == nil && test.authTokenErr == nil {
-				pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
-				statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(test.statefulSetErr).Once()
-			}
-
-			err := reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
-
-			wantErr := test.connInfoErr
-			if wantErr == nil {
-				wantErr = test.authTokenErr
-			}
-			if wantErr == nil {
-				wantErr = test.statefulSetErr
-			}
-			require.ErrorIs(t, err, wantErr)
-
-			condition := meta.FindStatusCondition(*dk.Conditions(), kubemonapi.KubeMonAvailableConditionType)
-			require.NotNil(t, condition)
-			assert.Equal(t, test.wantStatus, condition.Status)
-			assert.Equal(t, test.wantReason, condition.Reason)
-			assert.Equal(t, test.wantMessage, condition.Message)
-		})
+		return m
 	}
+
+	assertCondition := func(t *testing.T, dk *dynakube.DynaKube, wantStatus metav1.ConditionStatus, wantReason, wantMessage string) {
+		t.Helper()
+		condition := meta.FindStatusCondition(*dk.Conditions(), kubemonapi.KubeMonAvailableConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, wantStatus, condition.Status)
+		assert.Equal(t, wantReason, condition.Reason)
+		assert.Equal(t, wantMessage, condition.Message)
+	}
+
+	t.Run("all reconcilers succeed -> available", func(t *testing.T) {
+		mocks := newMocks(t)
+		dk := newTestDynaKube(true)
+
+		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
+
+		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
+
+		require.NoError(t, err)
+		assertCondition(t, dk, metav1.ConditionTrue, reasonAvailable, messageAvailable)
+	})
+
+	t.Run("connection info not ready -> reconciling", func(t *testing.T) {
+		mocks := newMocks(t)
+		dk := newTestDynaKube(true)
+
+		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(kubemonconnectioninfo.ErrConnectionInfoNotReady).Once()
+
+		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
+
+		require.ErrorIs(t, err, kubemonconnectioninfo.ErrConnectionInfoNotReady)
+		assertCondition(t, dk, metav1.ConditionFalse, reasonReconciling, kubemonconnectioninfo.ErrConnectionInfoNotReady.Error())
+	})
+
+	t.Run("auth token error -> error", func(t *testing.T) {
+		mocks := newMocks(t)
+		dk := newTestDynaKube(true)
+		apiErr := errors.New("api error")
+
+		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(apiErr).Once()
+
+		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
+
+		require.ErrorIs(t, err, apiErr)
+		assertCondition(t, dk, metav1.ConditionFalse, reasonError, "api error")
+	})
+
+	t.Run("custom properties error -> error", func(t *testing.T) {
+		mocks := newMocks(t)
+		dk := newTestDynaKube(true)
+		cpErr := errors.New("custom properties api error")
+
+		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(cpErr).Once()
+
+		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
+
+		require.ErrorIs(t, err, cpErr)
+		assertCondition(t, dk, metav1.ConditionFalse, reasonError, "custom properties api error")
+	})
+
+	t.Run("rollout in progress -> reconciling", func(t *testing.T) {
+		mocks := newMocks(t)
+		dk := newTestDynaKube(true)
+
+		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(k8sstatefulset.ErrRolloutInProgress).Once()
+
+		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
+
+		require.ErrorIs(t, err, k8sstatefulset.ErrRolloutInProgress)
+		assertCondition(t, dk, metav1.ConditionFalse, reasonReconciling, k8sstatefulset.ErrRolloutInProgress.Error())
+	})
+
+	t.Run("unexpected stateful set error -> error", func(t *testing.T) {
+		mocks := newMocks(t)
+		dk := newTestDynaKube(true)
+		boomErr := errors.New("boom")
+
+		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(boomErr).Once()
+
+		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
+
+		require.ErrorIs(t, err, boomErr)
+		assertCondition(t, dk, metav1.ConditionFalse, reasonError, "boom")
+	})
 }
 
 // TestIsTransientError covers the shared classifier used both by reconcileCondition and by the

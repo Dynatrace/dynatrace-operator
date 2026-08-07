@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
@@ -20,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
+	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -252,6 +254,39 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		assert.True(t, container.VolumeMounts[1].ReadOnly)
 		assert.True(t, hasAuthTokenVolume(sts, dk))
 		assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationAuthTokenHash])
+	})
+
+	t.Run("no custom properties volume when CustomProperties is nil", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.False(t, hasCustomPropertiesVolume(sts, dk))
+		assert.Empty(t, sts.Spec.Template.Annotations[statefulset.AnnotationCustomPropertiesHash])
+	})
+
+	t.Run("custom properties volume included and required when CustomProperties is set", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KubernetesMonitoring.CustomProperties = &value.Source{Value: "key=value"}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		container := sts.Spec.Template.Spec.Containers[0]
+
+		require.Len(t, container.VolumeMounts, 4)
+		assert.Equal(t, kubemoncustomproperties.VolumeName, container.VolumeMounts[3].Name)
+		assert.Equal(t, kubemoncustomproperties.MountPath, container.VolumeMounts[3].MountPath)
+		assert.Equal(t, kubemoncustomproperties.DataKey, container.VolumeMounts[3].SubPath)
+		assert.True(t, container.VolumeMounts[3].ReadOnly)
+		assert.True(t, hasCustomPropertiesVolume(sts, dk))
+	})
+
+	t.Run("custom properties hash annotation is added when a secret exists", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk), newTestCustomPropertiesSecret(dk))
+		require.ErrorIs(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t)), k8sstatefulset.ErrRolloutInProgress)
+
+		sts := requireTestStatefulSet(t, t.Context(), fakeClient, dk)
+		assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationCustomPropertiesHash])
 	})
 
 	t.Run("update strategy with rolling partition", func(t *testing.T) {
@@ -554,6 +589,18 @@ func newTestAuthTokenSecret(dk *dynakube.DynaKube) *corev1.Secret {
 	}
 }
 
+func newTestCustomPropertiesSecret(dk *dynakube.DynaKube) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.KubernetesMonitoring().GetCustomPropertiesSecretName(),
+			Namespace: dk.Namespace,
+		},
+		Data: map[string][]byte{
+			kubemoncustomproperties.DataKey: []byte("[section]\nkey=value"),
+		},
+	}
+}
+
 func hasTenantSecretVolume(sts *appsv1.StatefulSet, dk *dynakube.DynaKube) bool {
 	return slices.ContainsFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
 		return v.Name == connectioninfo.TenantSecretVolumeName &&
@@ -567,5 +614,14 @@ func hasAuthTokenVolume(sts *appsv1.StatefulSet, dk *dynakube.DynaKube) bool {
 		return v.Name == statefulset.AuthTokenVolumeName &&
 			v.Secret != nil &&
 			v.Secret.SecretName == dk.KubernetesMonitoring().GetAuthTokenSecretName()
+	})
+}
+
+func hasCustomPropertiesVolume(sts *appsv1.StatefulSet, dk *dynakube.DynaKube) bool {
+	return slices.ContainsFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
+		return v.Name == kubemoncustomproperties.VolumeName &&
+			v.Secret != nil &&
+			v.Secret.SecretName == dk.KubernetesMonitoring().GetCustomPropertiesSecretName() &&
+			v.Secret.Optional != nil && !*v.Secret.Optional
 	})
 }
