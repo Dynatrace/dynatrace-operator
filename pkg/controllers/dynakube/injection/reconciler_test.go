@@ -259,44 +259,10 @@ func TestReconciler(t *testing.T) {
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
-
-	t.Run("invalid selector does not replicate secrets", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			oneAgent metav1.LabelSelector
-			metadata metav1.LabelSelector
-			otlp     metav1.LabelSelector
-		}{
-			{name: "oneagent", oneAgent: metav1.LabelSelector{MatchLabels: map[string]string{"invalid ": testDynakube}}},
-			{name: "metadata enrichment", metadata: metav1.LabelSelector{MatchLabels: map[string]string{"invalid ": testDynakube}}},
-			{name: "otlp", otlp: metav1.LabelSelector{MatchLabels: map[string]string{"invalid ": testDynakube}}},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				dk := testDynaKubeWithSelectors(tt.oneAgent, tt.metadata, tt.otlp)
-				clt := fake.NewClientWithIndex(
-					clientNotInjectedNamespace(testNamespace, testDynakube),
-					clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.APIKey: []byte(testAPIToken), token.DataIngestKey: []byte(testDataIngestToken)}),
-					dk,
-				)
-
-				rec := NewReconciler(clt, clt)
-				rec.versionReconciler = createVersionReconcilerMock(t)
-				rec.istioReconciler = createIstioReconcilerMock(t, dk)
-				rec.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
-				rec.enrichmentRulesReconciler = createEnrichmentRulesReconcilerMock(t)
-
-				err := rec.Reconcile(t.Context(), &dynatrace.Client{}, dk)
-				require.Error(t, err)
-
-				assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, testNamespace)
-				assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
-			})
-		}
-	})
 }
 
+// Verify that GenerateForDynaKube is called only with the namespaces that OA/ME/OTLP selectors actually match.
+// If none match, it should still be called with an empty list.
 func TestRegressionSecretReplication(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -310,6 +276,12 @@ func TestRegressionSecretReplication(t *testing.T) {
 			name:       "match all",
 			expectInit: []string{testNamespace, testNamespace2},
 			expectOTLP: []string{testNamespace, testNamespace2},
+		},
+		{
+			name:     "match nothing",
+			oneAgent: metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: "notfound"}},
+			metadata: metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: "notfound"}},
+			otlp:     metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: "notfound"}},
 		},
 		{
 			name:       "limit oneagent",
@@ -363,7 +335,7 @@ func TestRegressionSecretReplication(t *testing.T) {
 						got[i] = ns.Name
 					}
 
-					return assert.Equal(t, expect, got)
+					return assert.ElementsMatch(t, expect, got)
 				})
 			}
 

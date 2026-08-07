@@ -216,32 +216,26 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context, dk *dynakube.Dy
 }
 
 func (r *Reconciler) generateInitSecret(ctx context.Context, dtClient *dynatrace.Client, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	// The OneAgent mounts the bootstrapper secret when hostMonitoring is enabled.
-	// The namespace selector is only available for appmon/CNFS, so hostmon without metadata enrichment will always have 0 namespaces here.
-	if len(namespaces) > 0 || dk.OneAgent().IsHostMonitoringMode() {
-		err := newBootstrapSecretGenerator(r.client, r.apiReader, dtClient.OneAgent).GenerateForDynakube(ctx, dk, namespaces)
-		if err != nil {
-			if k8sconditions.IsKubeAPIError(err) {
-				k8sconditions.SetKubeAPIError(dk.Conditions(), codeModulesInjectionConditionType, err)
-			}
-
-			return err
+	err := newBootstrapSecretGenerator(r.client, r.apiReader, dtClient.OneAgent).GenerateForDynakube(ctx, dk, namespaces)
+	if err != nil {
+		if k8sconditions.IsKubeAPIError(err) {
+			k8sconditions.SetKubeAPIError(dk.Conditions(), codeModulesInjectionConditionType, err)
 		}
+
+		return err
 	}
 
 	return nil
 }
 
 func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	if len(namespaces) > 0 {
-		err := newExporterSecretGenerator(r.client, r.apiReader).GenerateForDynakube(ctx, dk, namespaces)
-		if err != nil {
-			if k8sconditions.IsKubeAPIError(err) {
-				k8sconditions.SetKubeAPIError(dk.Conditions(), otlpExporterConfigurationConditionType, err)
-			}
-
-			return err
+	err := newExporterSecretGenerator(r.client, r.apiReader).GenerateForDynakube(ctx, dk, namespaces)
+	if err != nil {
+		if k8sconditions.IsKubeAPIError(err) {
+			k8sconditions.SetKubeAPIError(dk.Conditions(), otlpExporterConfigurationConditionType, err)
 		}
+
+		return err
 	}
 
 	return nil
