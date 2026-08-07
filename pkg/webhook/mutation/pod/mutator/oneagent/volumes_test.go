@@ -35,6 +35,7 @@ func TestAddVolumeMounts(t *testing.T) {
 		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[1].Name)
 		assert.Equal(t, ldPreloadPath, container.VolumeMounts[1].MountPath)
 		assert.Equal(t, ldPreloadSubPath, container.VolumeMounts[1].SubPath)
+		assert.True(t, container.VolumeMounts[1].ReadOnly)
 	})
 }
 
