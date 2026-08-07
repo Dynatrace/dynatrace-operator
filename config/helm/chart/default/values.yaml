@@ -68,7 +68,7 @@ webhook:
   nodeSelector: {}
   tolerations: []
   labels: {}
-  annotations: {}
+  annotations: {} # applied to the webhook deployment, its pods and the dynatrace-webhook service
   apparmor: false
   securityContext:
     privileged: false
