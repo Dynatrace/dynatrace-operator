@@ -44,7 +44,7 @@ func Test_GetConnectionInfo(t *testing.T) {
 		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(params).Return(req).Once()
 		req.EXPECT().
-			Execute(&connectionInfoResponse{}).
+			Execute(&connectionInfoResponse{requiredHosts: response.requiredHosts}).
 			Run(func(model any) {
 				resp := model.(*connectionInfoResponse)
 				resp.TenantUUID = response.TenantUUID
@@ -117,8 +117,15 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 
 	t.Run("required IPs missing from response → StaleNetworkZoneEndpointsError", func(t *testing.T) {
+		requiredHosts := []string{"192.0.2.1"}
+		response := &connectionInfoResponse{
+			TenantUUID:             testTenantUUID,
+			TenantToken:            testTenantToken,
+			CommunicationEndpoints: []string{testCommunicationEndpoint},
+			requiredHosts:          requiredHosts,
+		}
 		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
-		_, err := oaClient.GetConnectionInfo(ctx, []string{"192.0.2.1"})
+		_, err := oaClient.GetConnectionInfo(ctx, requiredHosts)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, StaleNetworkZoneEndpointsError)
 	})
@@ -140,143 +147,53 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 }
 
-func Test_buildEndpoints(t *testing.T) {
+func Test_deduplicateEndpoints(t *testing.T) {
 	const (
-		epA              = "https://tenant.dev.dynatracelabs.com:443"
-		epB              = "https://other.dev.dynatracelabs.com:8443"
-		epC              = "https://third.dev.dynatracelabs.com:443"
-		localServiceHost = "test-dk-activegate.dynatrace"
+		epA = "https://tenant.dev.dynatracelabs.com:443"
+		epB = "https://other.dev.dynatracelabs.com:8443"
+		epC = "https://third.dev.dynatracelabs.com:443"
 	)
 
-	t.Run("deduplication", func(t *testing.T) {
-		tests := []struct {
-			name      string
-			input     []string
-			expected  string
-			expectErr error
-		}{
-			{name: "nil slice", input: nil, expected: "", expectErr: NoCommunicationEndpointsError},
-			{name: "empty slice", input: []string{}, expected: "", expectErr: NoCommunicationEndpointsError},
-			{name: "single endpoint", input: []string{epA}, expected: epA},
-			{
-				name:     "no duplicates is a no-op, order preserved",
-				input:    []string{epA, epB, epC},
-				expected: epA + ";" + epB + ";" + epC,
-			},
-			{
-				name:     "some duplicates preserve first-occurrence order",
-				input:    []string{epB, epA, epB, epC, epA},
-				expected: epB + ";" + epA + ";" + epC,
-			},
-			{name: "all duplicates collapse to one", input: []string{epA, epA, epA}, expected: epA},
-			{
-				name:     "entries differing only by surrounding whitespace are trimmed and deduplicated",
-				input:    []string{epA, " " + epA, epA + "\t"},
-				expected: epA,
-			},
-			{
-				name:     "empty and whitespace-only entries are dropped",
-				input:    []string{epA, "", "   ", epB},
-				expected: epA + ";" + epB,
-			},
-			{
-				name:     "entries differing only by case are kept as distinct",
-				input:    []string{epA, "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443"},
-				expected: epA + ";" + "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443",
-			},
-		}
+	tests := []struct {
+		name     string
+		input    []string
+		expected string
+	}{
+		{name: "nil slice", input: nil, expected: ""},
+		{name: "empty slice", input: []string{}, expected: ""},
+		{name: "single endpoint", input: []string{epA}, expected: epA},
+		{
+			name:     "no duplicates is a no-op, order preserved",
+			input:    []string{epA, epB, epC},
+			expected: epA + ";" + epB + ";" + epC,
+		},
+		{
+			name:     "some duplicates preserve first-occurrence order",
+			input:    []string{epB, epA, epB, epC, epA},
+			expected: epB + ";" + epA + ";" + epC,
+		},
+		{name: "all duplicates collapse to one", input: []string{epA, epA, epA}, expected: epA},
+		{
+			name:     "entries differing only by surrounding whitespace are trimmed and deduplicated",
+			input:    []string{epA, " " + epA, epA + "\t"},
+			expected: epA,
+		},
+		{
+			name:     "empty and whitespace-only entries are dropped",
+			input:    []string{epA, "", "   ", epB},
+			expected: epA + ";" + epB,
+		},
+		{
+			name:     "entries differing only by case are kept as distinct",
+			input:    []string{epA, "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443"},
+			expected: epA + ";" + "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443",
+		},
+	}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				got, err := buildEndpoints(tt.input, nil)
-				assert.Equal(t, tt.expected, got)
-				assert.ErrorIs(t, err, tt.expectErr)
-			})
-		}
-	})
-
-	t.Run("missing IPs", func(t *testing.T) {
-		agEP := "https://" + localServiceHost + ":443/communication"
-
-		tests := []struct {
-			name        string
-			endpoints   []string
-			requiredIPs []string
-			expect      error
-		}{
-			{
-				name:        "no required IPs → not missing",
-				endpoints:   []string{"anything"},
-				requiredIPs: nil,
-				expect:      nil,
-			},
-			{
-				name:        "empty required IPs → not missing",
-				endpoints:   []string{"anything"},
-				requiredIPs: []string{},
-				expect:      nil,
-			},
-			{
-				name:        "required IP present alongside local AG DNS endpoint → not missing",
-				endpoints:   []string{"https://10.0.0.1:443/communication", agEP},
-				requiredIPs: []string{"10.0.0.1"},
-				expect:      nil,
-			},
-			{
-				name:        "required IP present alongside unrelated endpoints → not missing",
-				endpoints:   []string{"https://1.2.3.4:443/communication", "https://10.0.0.1:443/communication", agEP},
-				requiredIPs: []string{"10.0.0.1"},
-				expect:      nil,
-			},
-			{
-				name:        "IPv6 required IP present (bracketed in endpoint URL) → not missing",
-				endpoints:   []string{"https://[2001:db8::1]:443/communication", agEP},
-				requiredIPs: []string{"2001:db8::1"},
-				expect:      nil,
-			},
-			{
-				name:        "required IP missing from endpoints → missing",
-				endpoints:   []string{"https://10.0.0.1:443/communication", agEP},
-				requiredIPs: []string{"10.0.0.2"},
-				expect:      StaleNetworkZoneEndpointsError,
-			},
-			{
-				name:        "empty endpoints with required IPs → missing",
-				endpoints:   []string{},
-				requiredIPs: []string{"10.0.0.1"},
-				expect:      NoCommunicationEndpointsError,
-			},
-			{
-				name:        "endpoints contain no IP-based entries at all → missing",
-				endpoints:   []string{"https://other-activegate.dynatrace:443/communication", agEP},
-				requiredIPs: []string{"10.0.0.1"},
-				expect:      StaleNetworkZoneEndpointsError,
-			},
-			{
-				name:        "dual-stack: all required IPs present → not missing",
-				endpoints:   []string{"https://10.0.0.1:443/communication", "https://[2001:db8::1]:443/communication", agEP},
-				requiredIPs: []string{"10.0.0.1", "2001:db8::1"},
-				expect:      nil,
-			},
-			{
-				name:        "dual-stack: one required IP missing → not missing",
-				endpoints:   []string{"https://10.0.0.1:443/communication", "https://[2001:db8::2]:443/communication", agEP},
-				requiredIPs: []string{"10.0.0.1", "2001:db8::1"},
-				expect:      nil,
-			},
-			{
-				name:        "unparseable entry is skipped, required IP still found → not missing",
-				endpoints:   []string{"garbage", "https://10.0.0.1:443/communication", agEP},
-				requiredIPs: []string{"10.0.0.1"},
-				expect:      nil,
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				_, err := buildEndpoints(tt.endpoints, tt.requiredIPs)
-				assert.ErrorIs(t, err, tt.expect)
-			})
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := deduplicateEndpoints(tt.input)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
 }

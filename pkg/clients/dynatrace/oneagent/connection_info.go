@@ -7,6 +7,7 @@ import (
 	"context"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -30,10 +31,30 @@ type connectionInfoResponse struct {
 	TenantUUID             string   `json:"tenantUUID"`
 	TenantToken            string   `json:"tenantToken"`
 	CommunicationEndpoints []string `json:"communicationEndpoints"`
+
+	requiredHosts []string
+	once          sync.Once
+	missing       bool
 }
 
 func (r *connectionInfoResponse) IsEmpty() bool {
-	return r.TenantUUID == "" || r.TenantToken == "" || len(r.CommunicationEndpoints) == 0
+	return r.TenantUUID == "" || r.TenantToken == "" || len(r.CommunicationEndpoints) == 0 || r.missingRequiredHosts()
+}
+
+func (r *connectionInfoResponse) missingRequiredHosts() bool {
+	r.once.Do(func() {
+		r.missing = len(r.requiredHosts) > 0
+
+		for _, endpoint := range r.CommunicationEndpoints {
+			if r.missing {
+				if ch, err := connectioninfo.NewCommunicationHost(endpoint); err == nil {
+					r.missing = !slices.Contains(r.requiredHosts, ch.Host)
+				}
+			}
+		}
+	})
+
+	return r.missing
 }
 
 // ConnectionInfo is the public result of GetConnectionInfo. Endpoints is
@@ -45,14 +66,12 @@ type ConnectionInfo struct {
 	Endpoints   string
 }
 
-func (cinf *ConnectionInfo) IsEmpty() bool {
-	return cinf.TenantUUID == "" || cinf.TenantToken == "" || cinf.Endpoints == ""
-}
-
 func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredHosts []string) (ConnectionInfo, error) {
 	ctx, log := logd.NewFromContext(ctx, loggerName)
 
-	var resp connectionInfoResponse
+	resp := connectionInfoResponse{
+		requiredHosts: requiredHosts,
+	}
 
 	params := map[string]string{}
 	if c.networkZone != "" {
@@ -75,7 +94,13 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredHosts []stri
 		return ConnectionInfo{}, errors.WithStack(err)
 	}
 
-	endpoints, err := buildEndpoints(resp.CommunicationEndpoints, requiredHosts)
+	endpoints := deduplicateEndpoints(resp.CommunicationEndpoints)
+
+	if len(endpoints) == 0 {
+		err = NoCommunicationEndpointsError
+	} else if resp.missingRequiredHosts() {
+		err = StaleNetworkZoneEndpointsError
+	}
 
 	result := ConnectionInfo{
 		TenantUUID:  resp.TenantUUID,
@@ -86,13 +111,8 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredHosts []stri
 	return result, err
 }
 
-func buildEndpoints(rawEndpoints []string, requiredHosts []string) (string, error) {
-	if len(rawEndpoints) == 0 {
-		return "", NoCommunicationEndpointsError
-	}
-
+func deduplicateEndpoints(rawEndpoints []string) string {
 	seen := make(map[string]struct{})
-	missing := len(requiredHosts) > 0
 
 	var unique []string
 
@@ -108,19 +128,9 @@ func buildEndpoints(rawEndpoints []string, requiredHosts []string) (string, erro
 
 		seen[endpoint] = struct{}{}
 		unique = append(unique, endpoint)
-
-		if missing {
-			if ch, err := connectioninfo.NewCommunicationHost(endpoint); err == nil {
-				missing = !slices.Contains(requiredHosts, ch.Host)
-			}
-		}
 	}
 
 	joined := strings.Join(unique, ";")
 
-	if missing {
-		return joined, StaleNetworkZoneEndpointsError
-	}
-
-	return joined, nil
+	return joined
 }
