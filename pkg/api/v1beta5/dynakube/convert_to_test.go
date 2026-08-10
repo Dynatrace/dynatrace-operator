@@ -189,7 +189,7 @@ func TestConvertTo(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				from := getOldDynakubeBase()
-				from.Spec.Kspm = &kspm.Spec{
+				from.Spec.KSPM = &kspm.Spec{
 					MappedHostPaths: tc.mappedHostPaths,
 				}
 				to := dynakubelatest.DynaKube{}
@@ -329,14 +329,14 @@ func TestConvertTo(t *testing.T) {
 
 	t.Run("migrate kspm templates from v1beta5 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		from.Spec.Templates.KspmNodeConfigurationCollector = getOldNodeConfigurationCollectorTemplateSpec()
+		from.Spec.Templates.KSPMNodeConfigurationCollector = getOldNodeConfigurationCollectorTemplateSpec()
 
 		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
 
-		compareNodeConfigurationCollectorTemplateSpec(t, from.Spec.Templates.KspmNodeConfigurationCollector, to.Spec.Templates.KSPMNodeConfigurationCollector)
+		compareNodeConfigurationCollectorTemplateSpec(t, from.Spec.Templates.KSPMNodeConfigurationCollector, to.Spec.Templates.KSPMNodeConfigurationCollector)
 		compareBase(t, from, to)
 	})
 
@@ -412,15 +412,15 @@ func TestConvertTo(t *testing.T) {
 				}
 
 				// latest -> v1beta5
-				intermediateDk := DynaKube{} //nolint:revive
-				require.NoError(t, intermediateDk.ConvertFrom(&original))
+				intermediateDK := DynaKube{}
+				require.NoError(t, intermediateDK.ConvertFrom(&original))
 
 				// v1beta5 -> latest
-				migratedDk := dynakubelatest.DynaKube{} //nolint:revive
-				require.NoError(t, intermediateDk.ConvertTo(&migratedDk))
+				migratedDK := dynakubelatest.DynaKube{}
+				require.NoError(t, intermediateDK.ConvertTo(&migratedDK))
 
-				require.NotNil(t, migratedDk.Spec.KSPM)
-				assert.Equal(t, tc.expected, migratedDk.Spec.KSPM.MappedHostPaths)
+				require.NotNil(t, migratedDK.Spec.KSPM)
+				assert.Equal(t, tc.expected, migratedDK.Spec.KSPM.MappedHostPaths)
 			})
 		}
 	})

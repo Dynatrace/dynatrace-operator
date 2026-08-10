@@ -28,7 +28,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.fromBase(src)
 	dst.fromMetadataEnrichment(src)
 	dst.fromLogMonitoringSpec(src)
-	dst.fromKspmSpec(src)
+	dst.fromKSPMSpec(src)
 	dst.fromExtensionsSpec(src)
 	dst.fromOneAgentSpec(src)
 	dst.fromActiveGateSpec(src)
@@ -71,9 +71,9 @@ func (dst *DynaKube) fromLogMonitoringSpec(src *dynakubelatest.DynaKube) {
 	}
 }
 
-func (dst *DynaKube) fromKspmSpec(src *dynakubelatest.DynaKube) { //nolint:revive
+func (dst *DynaKube) fromKSPMSpec(src *dynakubelatest.DynaKube) {
 	if src.Spec.KSPM != nil {
-		dst.Spec.Kspm = &kspm.Spec{
+		dst.Spec.KSPM = &kspm.Spec{
 			MappedHostPaths: src.Spec.KSPM.MappedHostPaths,
 		}
 	}
@@ -109,7 +109,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 
 func (dst *DynaKube) fromTemplatesSpec(src *dynakubelatest.DynaKube) {
 	dst.Spec.Templates.LogMonitoring = fromLogMonitoringTemplate(src.Spec.Templates.LogMonitoring)
-	dst.Spec.Templates.KspmNodeConfigurationCollector = fromKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KSPMNodeConfigurationCollector)
+	dst.Spec.Templates.KSPMNodeConfigurationCollector = fromKSPMNodeConfigurationCollectorTemplate(src.Spec.Templates.KSPMNodeConfigurationCollector)
 	dst.Spec.Templates.OpenTelemetryCollector = fromOpenTelemetryCollectorTemplate(src, src.Spec.Templates.OpenTelemetryCollector)
 	dst.Spec.Templates.ExtensionExecutionController = fromExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
 }
@@ -135,7 +135,7 @@ func fromLogMonitoringTemplate(src *logmonitoringlatest.TemplateSpec) *logmonito
 	return dst
 }
 
-func fromKspmNodeConfigurationCollectorTemplate(src kspmlatest.NodeConfigurationCollectorSpec) kspm.NodeConfigurationCollectorSpec { //nolint:revive
+func fromKSPMNodeConfigurationCollectorTemplate(src kspmlatest.NodeConfigurationCollectorSpec) kspm.NodeConfigurationCollectorSpec {
 	dst := kspm.NodeConfigurationCollectorSpec{}
 
 	dst.UpdateStrategy = src.UpdateStrategy
@@ -239,7 +239,7 @@ func (dst *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
 		}
 	}
 
-	dst.Status.Kspm.TokenSecretHash = src.Status.KSPM.TokenSecretHash
+	dst.Status.KSPM.TokenSecretHash = src.Status.KSPM.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID

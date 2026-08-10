@@ -52,8 +52,8 @@ func trustedCAsTester(t *testing.T) {
 	require.Error(t, err)
 	assert.Empty(t, trustedCAs)
 
-	emptyDk := dynakube.DynaKube{} //nolint:revive
-	trustedCAs, err = emptyDk.TrustedCAs(context.TODO(), kubeReader)
+	emptyDK := dynakube.DynaKube{}
+	trustedCAs, err = emptyDK.TrustedCAs(context.TODO(), kubeReader)
 	require.NoError(t, err)
 	assert.Empty(t, trustedCAs)
 }
@@ -74,8 +74,8 @@ func activeGateTLSNoCertificateTester(t *testing.T) {
 	require.Error(t, err)
 	assert.Empty(t, tlsCert)
 
-	emptyDk := dynakube.DynaKube{} //nolint:revive
-	tlsCert, err = emptyDk.ActiveGateTLSCert(context.TODO(), kubeReader)
+	emptyDK := dynakube.DynaKube{}
+	tlsCert, err = emptyDK.ActiveGateTLSCert(context.TODO(), kubeReader)
 
 	require.NoError(t, err)
 	assert.Empty(t, tlsCert)
