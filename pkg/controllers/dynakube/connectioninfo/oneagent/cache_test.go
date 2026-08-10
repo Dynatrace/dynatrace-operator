@@ -100,6 +100,36 @@ func TestReconcile_ConnectionInfoCache(t *testing.T) {
 		transport.assertCalls(t, 2, "cache must be invalidated on each call when required host is absent")
 	})
 
+	t.Run("invalidates cache when required host changes and new host is absent from cached response", func(t *testing.T) {
+		const (
+			knownHost     = "10.0.0.1"
+			knownEndpoint = "https://" + knownHost + ":443/communication"
+			newHost       = "10.0.0.2"
+			newEndpoint   = "https://" + newHost + ":443/communication"
+		)
+		transport := newFakeCITransport(
+			connectionInfoBody(testTenantUUID, testTenantToken, knownEndpoint),
+			connectionInfoBody(testTenantUUID, testTenantToken, newEndpoint),
+		)
+		oaClient := newConnectionInfoOAClient(t, transport, testConnectionInfoCacheTTL)
+
+		_, err := oaClient.GetConnectionInfo(t.Context(), nil)
+		require.NoError(t, err)
+		transport.assertCalls(t, 1, "first call must fetch from server")
+
+		// cache hit but IsEmpty() returns true for the new required host, so cache is invalidated.
+		// this is due to how the caching works, as `IsEmpty` invalidates based on the response, or if the request changes.
+		// it may look suboptimal, but the likelihood of this scenario is very low, and it will fix it self as the error is returned correctly.
+		_, err = oaClient.GetConnectionInfo(t.Context(), []string{newHost})
+		require.ErrorIs(t, err, oneagentclient.StaleNetworkZoneEndpointsError)
+		transport.assertCalls(t, 1, "second call must be served from cache before invalidation")
+
+		// cache was invalidated, so a new fetch occurs, now no error
+		_, err = oaClient.GetConnectionInfo(t.Context(), []string{newHost})
+		require.NoError(t, err)
+		transport.assertCalls(t, 2, "cache must be invalidated after required host change")
+	})
+
 	t.Run("keeps cache when required host is present in response", func(t *testing.T) {
 		const (
 			knownHost     = "10.0.0.1"
