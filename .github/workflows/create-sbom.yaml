@@ -1,0 +1,37 @@
+name: Create SBOM
+on:
+  workflow_call:
+    inputs:
+      sbom-artifact-name:
+        description: name for the uploaded SBOM artifact
+        required: true
+        type: string
+      image-artifact-name:
+        description: name of the uploaded image artifact to scan locally
+        required: true
+        type: string
+permissions:
+  actions: write
+jobs:
+  create-sbom:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download image artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ inputs.image-artifact-name }}
+          path: image
+      - name: Create SBOM
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          input: image/${{ inputs.image-artifact-name }}.tar
+          format: 'cyclonedx'
+          output: 'result.json'
+          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
+          skip-files: '/usr/local/bin/dynatrace-operator'
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.sbom-artifact-name }}
+          path: result.json
+          retention-days: 1

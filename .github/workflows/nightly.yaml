@@ -87,11 +87,79 @@ jobs:
     outputs:
       fips-digest: ${{ steps.build-fips-image.outputs.digest }}
 
+  copy-image-to-artifact:
+    if: github.repository_owner == 'Dynatrace'
+    name: Create image artifacts
+    environment: Release
+    needs: [prepare, build-push]
+    permissions:
+      contents: read
+      actions: write
+      packages: read
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Copy image to artifact
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          artifact-name: nightly-image
+          registry: ${{ env.IMAGE_REGISTRY }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-username: ${{ github.repository_owner }}
+
+  copy-image-to-artifact-fips:
+    if: github.repository_owner == 'Dynatrace'
+    name: Create image artifacts
+    environment: Release
+    needs: [prepare, build-push-fips]
+    permissions:
+      contents: read
+      actions: write
+      packages: read
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Copy image to artifact
+        uses: ./.github/actions/copy-image-to-artifact
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
+          artifact-name: nightly-image-fips
+          registry: ${{ env.IMAGE_REGISTRY }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-username: ${{ github.repository_owner }}
+
+  create-sbom:
+    if: github.repository_owner == 'Dynatrace'
+    needs: [copy-image-to-artifact]
+    permissions:
+      actions: write
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      sbom-artifact-name:  nightly-sbom
+      image-artifact-name: nightly-image
+
+  create-sbom-fips:
+    if: github.repository_owner == 'Dynatrace'
+    needs: [copy-image-to-artifact-fips]
+    permissions:
+      actions: write
+    uses: ./.github/workflows/create-sbom.yaml
+    with:
+      sbom-artifact-name:  nightly-sbom-fips
+      image-artifact-name: nightly-image-fips
+
   signing:
     if: github.repository_owner == 'Dynatrace'
     name: Sign the image index/manifests + Add SBOM
     environment: Release
-    needs: [prepare, build-push, build-push-fips]
+    needs: [prepare, build-push, build-push-fips, create-sbom, create-sbom-fips]
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -109,21 +177,16 @@ jobs:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Sign images
+      - name: Sign image
         uses: ./.github/actions/sign-image
         with:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Create SBOM
-        id: sbom
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
-          format: 'cyclonedx'
-          output: 'result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-          skip-files: '/usr/local/bin/dynatrace-operator'
+          name: nightly-sbom
       - name: Upload SBOM
         uses: ./.github/actions/upload-sbom
         with:
@@ -142,20 +205,15 @@ jobs:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Create FIPS SBOM
-        id: sbom-fips
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - name: Download FIPS SBOM artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
-          format: 'cyclonedx'
-          output: 'fips-result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-          skip-files: '/usr/local/bin/dynatrace-operator'
+          name: nightly-sbom-fips
       - name: Upload FIPS SBOM
         uses: ./.github/actions/upload-sbom
         with:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push-fips.outputs.fips-digest }}
-          sbom: 'fips-result.json'
+          sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Add FIPS build provenance attestation
@@ -167,7 +225,7 @@ jobs:
   release:
     if: github.repository_owner == 'Dynatrace'
     name: Create release
-    needs: [prepare, build-push, signing]
+    needs: [prepare, build-push, build-push-fips, signing]
     environment: Release
     permissions:
       id-token: write

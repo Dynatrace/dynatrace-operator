@@ -1,0 +1,54 @@
+name: Copy an image to artifact
+description: Copy an image to artifact
+inputs:
+  image:
+    description: Full image reference to pull (e.g. registry/repo:tag@sha256:...)
+    required: true
+  artifact-name:
+    description: Artifact name to upload the image to
+    required: true
+  registry:
+    description: registry to authenticate against before scanning (optional)
+    required: false
+    default: ''
+  registry-token:
+    description: Password/token for registry auth; for public.ecr.aws provide the role ARN to assume
+    required: false
+  registry-username:
+    description: username for registry authentication
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - name: Login to Registry
+      if: ${{ inputs.registry != '' && inputs.registry != 'public.ecr.aws' }}
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-token }}
+    - name: Configure aws credentials
+      if: ${{ inputs.registry == 'public.ecr.aws' }}
+      uses: aws-actions/configure-aws-credentials@99214aa6889fcddfa57764031d71add364327e59 # v6.1.3
+      with:
+        role-to-assume: ${{ inputs.registry-token }}
+        aws-region: us-east-1
+    - name: Login to Amazon ECR
+      if: ${{ inputs.registry == 'public.ecr.aws' }}
+      uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2.1.5
+      with:
+        registry-type: public
+    - name: Save docker image
+      shell: bash
+      env:
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        IMAGE: ${{ inputs.image }}
+      run: |
+        docker pull "${IMAGE}"
+        docker save -o "/tmp/${ARTIFACT_NAME}.tar" "${IMAGE}"
+    - name: Upload image artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: /tmp/${{ inputs.artifact-name }}.tar
+        retention-days: 1
