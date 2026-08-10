@@ -3,14 +3,6 @@
 
 package activegate
 
-// Tests for the HTTP-level response cache used by the ActiveGate connection-info client.
-//
-// The reconciler delegates unconditionally to the ActiveGate client, which relies on the
-// HTTP middleware cache (middleware.NewCacheRoundTripper). The tests below exercise that
-// end-to-end path with a real client backed by an in-process fake transport (no network
-// I/O). synctest.Test is used for cache-expiry subtests so that time.Sleep advances
-// synthetic time and the cache TTL check sees the same fake clock.
-
 import (
 	"fmt"
 	"io"
@@ -72,8 +64,6 @@ func TestReconcile_ConnectionInfoCache(t *testing.T) {
 	})
 }
 
-// --- Fake transport ----------------------------------------------------------
-
 type fakeCITransport struct {
 	calls  atomic.Int64
 	bodies []string
@@ -100,11 +90,6 @@ func (ft *fakeCITransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-// --- Client constructor ------------------------------------------------------
-
-// newConnectionInfoAGClient builds a real agclient.ClientImpl whose HTTP transport is
-// the given fakeCITransport wrapped in a cache round-tripper with the specified TTL.
-// PaasToken is set to t.Name() so each subtest has an isolated namespace in the global cache.
 func newConnectionInfoAGClient(t *testing.T, transport http.RoundTripper, ttl time.Duration) agclient.Client {
 	t.Helper()
 
@@ -117,8 +102,6 @@ func newConnectionInfoAGClient(t *testing.T, transport http.RoundTripper, ttl ti
 		PaasToken:  t.Name(),
 	}))
 }
-
-// --- Response body helpers ---------------------------------------------------
 
 func agConnectionInfoBody(tenantUUID, tenantToken, endpoints string) string {
 	return fmt.Sprintf(
