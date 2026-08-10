@@ -1,0 +1,19 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.rbac.prometheus.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-target-allocator
+  labels:
+    {{- include "dynatrace-operator.targetAllocatorLabels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-target-allocator
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-target-allocator
+    namespace: {{ .Release.Namespace }}
+{{- end }}

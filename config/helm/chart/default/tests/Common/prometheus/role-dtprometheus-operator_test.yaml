@@ -62,3 +62,10 @@ tests:
             kind: Role
             name: dynatrace-dtprometheus-operator
             apiGroup: rbac.authorization.k8s.io
+
+  - it: shouldn't exist if prometheus rbac is turned off
+    set:
+      rbac.prometheus.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
