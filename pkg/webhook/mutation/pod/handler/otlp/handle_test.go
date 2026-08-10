@@ -50,7 +50,7 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		// Mutator disabled - no injection should occur
-		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
+		mockEnvVarMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(false)
 
 		h := createTestHandler(
 			mockEnvVarMutator,
@@ -78,11 +78,11 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
+		mockEnvVarMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().IsInjected(mock.Anything, mock.Anything).Return(false)
 
-		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
-		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
+		mockEnvVarMutator.EXPECT().Mutate(mock.Anything).Return(nil)
+		mockResourceAttributeMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		h := createTestHandler(
 			mockEnvVarMutator,
@@ -105,12 +105,12 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
 
-		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
+		mockEnvVarMutator.EXPECT().IsInjected(mock.Anything, mock.Anything).Return(false)
 
-		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
-		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
+		mockEnvVarMutator.EXPECT().Mutate(mock.Anything).Return(nil)
+		mockResourceAttributeMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		h := createTestHandler(
 			mockEnvVarMutator,
@@ -136,12 +136,12 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
 
-		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().IsInjected(mock.Anything, mock.Anything).Return(true)
 
-		mockEnvVarMutator.On("Reinvoke", mock.Anything, mock.Anything).Return(true)
-		mockResourceAttributeMutator.On("Reinvoke", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().Reinvoke(mock.Anything, mock.Anything).Return(true)
+		mockResourceAttributeMutator.EXPECT().Reinvoke(mock.Anything, mock.Anything).Return(true)
 
 		h := createTestHandler(
 			mockEnvVarMutator,
@@ -164,9 +164,9 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
-		mockEnvVarMutator.On("Mutate", mock.Anything).Return(errors.New("error"))
+		mockEnvVarMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().IsInjected(mock.Anything, mock.Anything).Return(false)
+		mockEnvVarMutator.EXPECT().Mutate(mock.Anything).Return(errors.New("error"))
 
 		h := createTestHandler(
 			mockEnvVarMutator,
@@ -185,11 +185,11 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
-		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
+		mockEnvVarMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().IsInjected(mock.Anything, mock.Anything).Return(false)
+		mockEnvVarMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
-		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(errors.New("error"))
+		mockResourceAttributeMutator.EXPECT().Mutate(mock.Anything).Return(errors.New("error"))
 
 		h := createTestHandler(
 			mockEnvVarMutator,
@@ -209,7 +209,7 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		// enable env var mutator so that secret presence is checked
-		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
 
 		// create handler with NO secrets present
 		h := createTestHandler(
@@ -232,7 +232,7 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		// enable env var mutator so that secret presence is checked
-		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
 
 		// create handler with NO cert secret present
 		h := createTestHandler(
@@ -260,10 +260,10 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-		mockEnvVarMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		mockEnvVarMutator.On("IsInjected", mock.Anything, mock.Anything).Return(false)
-		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
-		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
+		mockEnvVarMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
+		mockEnvVarMutator.EXPECT().IsInjected(mock.Anything, mock.Anything).Return(false)
+		mockEnvVarMutator.EXPECT().Mutate(mock.Anything).Return(nil)
+		mockResourceAttributeMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		dk := getTestDynakube()
 
@@ -336,6 +336,8 @@ func createTestHandler(envVarMutator, resourceAttributeMutator mutator.Mutator, 
 }
 
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *mutator.MutationRequest {
+	t.Helper()
+
 	return mutator.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
 
