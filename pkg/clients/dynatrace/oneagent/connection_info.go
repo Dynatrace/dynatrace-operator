@@ -17,6 +17,8 @@ import (
 
 const (
 	connectionInfoPath = "/v1/deployment/installer/agent/connectioninfo"
+
+	endpointsSeparator = ";"
 )
 
 var (
@@ -43,9 +45,14 @@ func (r *connectionInfoResponse) IsEmpty() bool {
 	return r.TenantUUID == "" || r.TenantToken == "" || len(r.uniqueEndpoints()) == 0 || r.missingRequiredHosts()
 }
 
+// uniqueEndpoints deduplicates the CommunicationEndpoints and returns them.
+// It doesn't use "k8s.io/apimachinery/pkg/util/sets", as we want to:
+// 1. Strip whitespace.
+// 2. Maintain the order of the endpoints. `set.UnsortedList()` would put them in random order.
+// The non-deduplicated version of CommunicationEndpoints are not kept, as they serve no purpose.
 func (r *connectionInfoResponse) uniqueEndpoints() []string {
 	r.dedupOnce.Do(func() {
-		seen := make(map[string]struct{})
+		seen := map[string]bool{}
 
 		var uniqueEndpoints []string
 
@@ -55,11 +62,11 @@ func (r *connectionInfoResponse) uniqueEndpoints() []string {
 				continue
 			}
 
-			if _, ok := seen[endpoint]; ok {
+			if seen[endpoint] {
 				continue
 			}
 
-			seen[endpoint] = struct{}{}
+			seen[endpoint] = true
 			uniqueEndpoints = append(uniqueEndpoints, endpoint)
 		}
 
@@ -69,6 +76,9 @@ func (r *connectionInfoResponse) uniqueEndpoints() []string {
 	return r.CommunicationEndpoints
 }
 
+// missingRequiredHosts validates if the requested endpoints contain atleast on of the `requiredHosts`.
+// This is needed to support the (strict) network-zone scenario where the OA should only talk to the local ActiveGate.
+// To make sure this happens, this func is ment to invalidate the cache until the local ActiveGate successfully registered itself.
 func (r *connectionInfoResponse) missingRequiredHosts() bool {
 	r.validateOnce.Do(func() {
 		r.missing = len(r.requiredHosts) > 0
@@ -131,7 +141,7 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredHosts []stri
 	result := ConnectionInfo{
 		TenantUUID:  resp.TenantUUID,
 		TenantToken: resp.TenantToken,
-		Endpoints:   strings.Join(resp.uniqueEndpoints(), ";"),
+		Endpoints:   strings.Join(resp.uniqueEndpoints(), endpointsSeparator),
 	}
 
 	return result, err

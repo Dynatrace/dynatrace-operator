@@ -263,12 +263,12 @@ func Test_connectionInfoResponse_uniqueEndpoints(t *testing.T) {
 		{
 			name:     "no duplicates is a no-op, order preserved",
 			input:    []string{epA, epB, epC},
-			expected: epA + ";" + epB + ";" + epC,
+			expected: epA + endpointsSeparator + epB + endpointsSeparator + epC,
 		},
 		{
 			name:     "some duplicates preserve first-occurrence order",
 			input:    []string{epB, epA, epB, epC, epA},
-			expected: epB + ";" + epA + ";" + epC,
+			expected: epB + endpointsSeparator + epA + endpointsSeparator + epC,
 		},
 		{name: "all duplicates collapse to one", input: []string{epA, epA, epA}, expected: epA},
 		{
@@ -279,19 +279,19 @@ func Test_connectionInfoResponse_uniqueEndpoints(t *testing.T) {
 		{
 			name:     "empty and whitespace-only entries are dropped",
 			input:    []string{epA, "", "   ", epB},
-			expected: epA + ";" + epB,
+			expected: epA + endpointsSeparator + epB,
 		},
 		{
 			name:     "entries differing only by case are kept as distinct",
 			input:    []string{epA, "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443"},
-			expected: epA + ";" + "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443",
+			expected: epA + endpointsSeparator + "HTTPS://TENANT.DEV.DYNATRACELABS.COM:443",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &connectionInfoResponse{CommunicationEndpoints: tt.input}
-			got := strings.Join(r.uniqueEndpoints(), ";")
+			got := strings.Join(r.uniqueEndpoints(), endpointsSeparator)
 			assert.Equal(t, tt.expected, got)
 		})
 	}
