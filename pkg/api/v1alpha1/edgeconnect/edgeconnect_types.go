@@ -149,14 +149,6 @@ type EdgeConnectStatus struct { //nolint:revive
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// SetPhase sets the status phase on the EdgeConnect object.
-func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
-	upd := phase != dk.DeploymentPhase
-	dk.DeploymentPhase = phase
-
-	return upd
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true

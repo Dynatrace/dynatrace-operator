@@ -10,10 +10,6 @@ import (
 
 type Extensions struct {
 	*ExecutionControllerSpec
-
-	name      string
-	namespace string
-	enabled   bool
 }
 
 // +kubebuilder:object:generate=true

@@ -353,7 +353,6 @@ formatters:
   exclusions:
     generated: lax
     paths:
-      - pkg/api/v1alpha1/edgeconnect
       - third_party$
       - builtin$
       - examples$

@@ -18,8 +18,6 @@ type KSPM struct {
 	*Spec
 	*Status
 	*NodeConfigurationCollectorSpec
-
-	name string
 }
 
 // +kubebuilder:object:generate=true

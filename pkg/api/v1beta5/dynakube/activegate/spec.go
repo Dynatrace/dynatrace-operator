@@ -58,15 +58,6 @@ type ActiveGate struct {
 	*Status
 }
 
-// dependencies is a collection of possible other feature/components that need an ActiveGate, but is not directly configured in the ActiveGate section.
-type dependencies struct {
-	extensions bool
-}
-
-func (d dependencies) Any() bool {
-	return d.extensions // kspm is a dependency too, but blocked by validation webhook to not run standalone
-}
-
 // +kubebuilder:object:generate=true
 
 type Spec struct {
@@ -83,9 +74,6 @@ type Spec struct {
 	// Configures the terminationGracePeriodSeconds parameter of the ActiveGate pod. Kubernetes defaults and rules apply.
 	// +kubebuild:validation:Optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
-
-	name   string
-	apiURL string
 
 	// The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
 	// server.p12: certificate+key pair in pkcs12 format
@@ -109,10 +97,6 @@ type Spec struct {
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
-
-	enabledDependencies dependencies
-
-	automaticTLSCertificateEnabled bool
 
 	// UseEphemeralVolume
 	UseEphemeralVolume *bool `json:"useEphemeralVolume,omitempty"`
