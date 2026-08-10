@@ -215,6 +215,7 @@ func (in *PodSpec) DeepCopy() *PodSpec {
 func (in *ScraperSpec) DeepCopyInto(out *ScraperSpec) {
 	*out = *in
 	in.PodSpec.DeepCopyInto(&out.PodSpec)
+	out.TargetsPollInterval = in.TargetsPollInterval
 	in.UpdateStrategy.DeepCopyInto(&out.UpdateStrategy)
 }
 
@@ -232,6 +233,7 @@ func (in *ScraperSpec) DeepCopy() *ScraperSpec {
 func (in *TargetAllocatorSpec) DeepCopyInto(out *TargetAllocatorSpec) {
 	*out = *in
 	in.PodSpec.DeepCopyInto(&out.PodSpec)
+	out.ScrapeInterval = in.ScrapeInterval
 	if in.ScrapeCRSelector != nil {
 		in, out := &in.ScrapeCRSelector, &out.ScrapeCRSelector
 		*out = new(metav1.LabelSelector)
