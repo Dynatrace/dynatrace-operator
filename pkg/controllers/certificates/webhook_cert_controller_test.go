@@ -35,83 +35,85 @@ const (
 	strategyWebhook = "webhook"
 )
 
-func TestReconcileCertificate_Create(t *testing.T) {
-	clt := newFakeClientBuilder().WithCRD().Build()
-	controller, request := prepareController(t, clt)
+func TestReconcileCertificate(t *testing.T) {
+	t.Run("create", func(t *testing.T) {
+		clt := newFakeClientBuilder().WithCRD().Build()
+		controller, request := prepareController(t, clt)
 
-	res, err := controller.Reconcile(t.Context(), request)
-	require.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
+		res, err := controller.Reconcile(t.Context(), request)
+		require.NoError(t, err)
+		assert.NotNil(t, res)
+		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
 
-	secret := &corev1.Secret{}
-	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
-	require.NoError(t, err)
+		secret := &corev1.Secret{}
+		err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+		require.NoError(t, err)
 
-	assert.NotNil(t, secret.Data)
-	assert.NotEmpty(t, secret.Data)
-	assert.Contains(t, secret.Data, RootKey)
-	assert.Contains(t, secret.Data, RootCert)
-	assert.Contains(t, secret.Data, RootCertOld)
-	assert.Contains(t, secret.Data, ServerKey)
-	assert.Contains(t, secret.Data, ServerCert)
-	assert.NotNil(t, secret.Data[RootCert])
-	assert.NotEmpty(t, secret.Data[RootCert])
-	assert.Empty(t, secret.Data[RootCertOld])
+		assert.NotNil(t, secret.Data)
+		assert.NotEmpty(t, secret.Data)
+		assert.Contains(t, secret.Data, RootKey)
+		assert.Contains(t, secret.Data, RootCert)
+		assert.Contains(t, secret.Data, RootCertOld)
+		assert.Contains(t, secret.Data, ServerKey)
+		assert.Contains(t, secret.Data, ServerCert)
+		assert.NotNil(t, secret.Data[RootCert])
+		assert.NotEmpty(t, secret.Data[RootCert])
+		assert.Empty(t, secret.Data[RootCertOld])
 
-	verifyCertificates(t, secret, clt, false)
-}
+		verifyCertificates(t, secret, clt, false)
+	})
 
-func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
-	clt := newFakeClientBuilder().Build()
-	controller, request := prepareController(t, clt)
+	t.Run("create without CRD returns error", func(t *testing.T) {
+		clt := newFakeClientBuilder().Build()
+		controller, request := prepareController(t, clt)
 
-	res, err := controller.Reconcile(t.Context(), request)
-	require.Error(t, err)
-	assert.Equal(t, reconcile.Result{}, res)
-}
+		res, err := controller.Reconcile(t.Context(), request)
+		require.Error(t, err)
+		assert.Equal(t, reconcile.Result{}, res)
+	})
 
-func TestReconcileCertificate_Update(t *testing.T) {
-	clt := newFakeClientBuilder().WithInvalidCertificateSecret().WithCRD().Build()
-	controller, request := prepareController(t, clt)
+	t.Run("update", func(t *testing.T) {
+		clt := newFakeClientBuilder().WithInvalidCertificateSecret().WithCRD().Build()
+		controller, request := prepareController(t, clt)
 
-	res, err := controller.Reconcile(t.Context(), request)
-	require.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
+		res, err := controller.Reconcile(t.Context(), request)
+		require.NoError(t, err)
+		assert.NotNil(t, res)
+		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
 
-	secret := &corev1.Secret{}
-	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
-	require.NoError(t, err)
+		secret := &corev1.Secret{}
+		err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+		require.NoError(t, err)
 
-	assert.NotNil(t, secret.Data)
-	assert.NotEmpty(t, secret.Data)
-	assert.Contains(t, secret.Data, RootKey)
-	assert.Contains(t, secret.Data, RootCert)
-	assert.Contains(t, secret.Data, RootCertOld)
-	assert.Contains(t, secret.Data, ServerKey)
-	assert.Contains(t, secret.Data, ServerCert)
-	assert.NotNil(t, secret.Data[RootCert])
-	assert.NotEmpty(t, secret.Data[RootCert])
-	assert.Equal(t, []byte{testBytes}, secret.Data[RootCertOld])
+		assert.NotNil(t, secret.Data)
+		assert.NotEmpty(t, secret.Data)
+		assert.Contains(t, secret.Data, RootKey)
+		assert.Contains(t, secret.Data, RootCert)
+		assert.Contains(t, secret.Data, RootCertOld)
+		assert.Contains(t, secret.Data, ServerKey)
+		assert.Contains(t, secret.Data, ServerCert)
+		assert.NotNil(t, secret.Data[RootCert])
+		assert.NotEmpty(t, secret.Data[RootCert])
+		assert.Equal(t, []byte{testBytes}, secret.Data[RootCertOld])
 
-	verifyCertificates(t, secret, clt, true)
-}
+		verifyCertificates(t, secret, clt, true)
+	})
 
-func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
-	clt := newFakeClientBuilder().WithValidCertificateSecret().WithCRD().Build()
-	controller, request := prepareController(t, clt)
+	t.Run("existing secret with valid certificate", func(t *testing.T) {
+		clt := newFakeClientBuilder().WithValidCertificateSecret().WithCRD().Build()
+		controller, request := prepareController(t, clt)
 
-	res, err := controller.Reconcile(t.Context(), request)
-	require.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
+		res, err := controller.Reconcile(t.Context(), request)
+		require.NoError(t, err)
+		assert.NotNil(t, res)
+		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
 
-	secret := &corev1.Secret{}
-	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
-	require.NoError(t, err)
+		secret := &corev1.Secret{}
+		err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+		require.NoError(t, err)
 
-	verifyCertificates(t, secret, clt, false)
+		verifyCertificates(t, secret, clt, false)
+	})
 }
 
 func TestReconcile(t *testing.T) {

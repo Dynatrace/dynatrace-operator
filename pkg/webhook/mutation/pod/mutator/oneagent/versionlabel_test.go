@@ -85,6 +85,8 @@ func TestAddVersionDetectionEnvs(t *testing.T) {
 }
 
 func doTestMappings(t *testing.T, namespaceAnnotations map[string]string, expectedMappings map[string]string, unexpectedMappingsKeys []string) {
+	t.Helper()
+
 	container := corev1.Container{}
 
 	addVersionDetectionEnvs(&container, getTestNamespace(namespaceAnnotations))
@@ -94,6 +96,8 @@ func doTestMappings(t *testing.T, namespaceAnnotations map[string]string, expect
 }
 
 func assertContainsMappings(t *testing.T, expectedMappings map[string]string, container corev1.Container) {
+	t.Helper()
+
 	for envName, fieldPath := range expectedMappings {
 		assert.Contains(t, container.Env, corev1.EnvVar{
 			Name: envName,
@@ -108,6 +112,8 @@ func assertContainsMappings(t *testing.T, expectedMappings map[string]string, co
 }
 
 func assertNotContainsMappings(t *testing.T, unexpectedMappingKeys []string, container corev1.Container) {
+	t.Helper()
+
 	for _, env := range container.Env {
 		assert.NotContains(t, unexpectedMappingKeys, env.Name)
 	}
