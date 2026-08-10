@@ -26,7 +26,6 @@ func (m *MetadataEnrichment) IsEnabled() bool {
 	return m.Enabled != nil && *m.Enabled
 }
 
-// GetNamespaceSelector returns the namespace label selector if metadata enrichment is enabled, otherwise nil,.
 func (m *MetadataEnrichment) GetNamespaceSelector() *metav1.LabelSelector {
 	if m.IsEnabled() {
 		return &m.NamespaceSelector
