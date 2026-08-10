@@ -3,15 +3,6 @@
 
 package oaconnectioninfo
 
-// Tests for the HTTP-level response cache used by the oneagent connection-info client.
-//
-// The reconciler no longer performs its own timestamp-based caching: every Reconcile call
-// delegates unconditionally to the oneagent.Client, which in turn relies on the HTTP
-// middleware cache (middleware.NewCacheRoundTripper). The tests below exercise that
-// end-to-end path with a real client backed by an in-process fake transport (no network
-// I/O). synctest.Test is used for cache-expiry subtests so that time.Sleep advances
-// synthetic time and the cache TTL check sees the same fake clock.
-
 import (
 	"fmt"
 	"io"
@@ -71,9 +62,63 @@ func TestReconcile_ConnectionInfoCache(t *testing.T) {
 		assert.Equal(t, updatedUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
 		transport.assertCalls(t, 2)
 	})
-}
 
-// --- Fake transport ----------------------------------------------------------
+	t.Run("invalidates cache when enpoints are absent from response", func(t *testing.T) {
+		transport := newFakeCITransport(
+			connectionInfoEmptyEndpointsBody(testTenantUUID, testTenantToken),
+			connectionInfoEmptyEndpointsBody(testTenantUUID, testTenantToken),
+		)
+		oaClient := newConnectionInfoOAClient(t, transport, testConnectionInfoCacheTTL)
+
+		_, err := oaClient.GetConnectionInfo(t.Context(), nil)
+		require.ErrorIs(t, err, oneagentclient.NoCommunicationEndpointsError)
+
+		_, err = oaClient.GetConnectionInfo(t.Context(), nil)
+		require.ErrorIs(t, err, oneagentclient.NoCommunicationEndpointsError)
+
+		transport.assertCalls(t, 2, "cache must be invalidated on each call when endpoints absent")
+	})
+
+	t.Run("invalidates cache when required host is absent from response", func(t *testing.T) {
+		const (
+			knownHost     = "10.0.0.1"
+			knownEndpoint = "https://" + knownHost + ":443/communication"
+			requiredHost  = "10.0.0.2"
+		)
+		transport := newFakeCITransport(
+			connectionInfoBody(testTenantUUID, testTenantToken, knownEndpoint),
+			connectionInfoBody(testTenantUUID, testTenantToken, knownEndpoint),
+		)
+		oaClient := newConnectionInfoOAClient(t, transport, testConnectionInfoCacheTTL)
+
+		_, err := oaClient.GetConnectionInfo(t.Context(), []string{requiredHost})
+		require.ErrorIs(t, err, oneagentclient.StaleNetworkZoneEndpointsError)
+
+		_, err = oaClient.GetConnectionInfo(t.Context(), []string{requiredHost})
+		require.ErrorIs(t, err, oneagentclient.StaleNetworkZoneEndpointsError)
+
+		transport.assertCalls(t, 2, "cache must be invalidated on each call when required host is absent")
+	})
+
+	t.Run("keeps cache when required host is present in response", func(t *testing.T) {
+		const (
+			knownHost     = "10.0.0.1"
+			knownEndpoint = "https://" + knownHost + ":443/communication"
+		)
+		transport := newFakeCITransport(
+			connectionInfoBody(testTenantUUID, testTenantToken, knownEndpoint),
+		)
+		oaClient := newConnectionInfoOAClient(t, transport, testConnectionInfoCacheTTL)
+
+		_, err := oaClient.GetConnectionInfo(t.Context(), []string{knownHost})
+		require.NoError(t, err)
+
+		_, err = oaClient.GetConnectionInfo(t.Context(), []string{knownHost})
+		require.NoError(t, err)
+
+		transport.assertCalls(t, 1, "cache must be kept when required host is present")
+	})
+}
 
 type fakeCITransport struct {
 	calls  atomic.Int64
@@ -101,8 +146,6 @@ func (ft *fakeCITransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-// --- Client constructor ------------------------------------------------------
-
 // newConnectionInfoOAClient builds a real oneagent.ClientImpl whose HTTP transport
 // is the given fakeCITransport wrapped in a cache round-tripper with the specified TTL.
 // PaasToken is set to t.Name() so each subtest has an isolated namespace in the global cache.
@@ -119,11 +162,15 @@ func newConnectionInfoOAClient(t *testing.T, transport http.RoundTripper, ttl ti
 	}), "", "")
 }
 
-// --- Response body helpers ---------------------------------------------------
-
 func connectionInfoBody(tenantUUID, tenantToken, endpoint string) string {
 	return fmt.Sprintf(
 		`{"tenantUUID":%q,"tenantToken":%q,"communicationEndpoints":[%q]}`,
 		tenantUUID, tenantToken, endpoint,
+	)
+}
+func connectionInfoEmptyEndpointsBody(tenantUUID, tenantToken string) string {
+	return fmt.Sprintf(
+		`{"tenantUUID":%q,"tenantToken":%q}`,
+		tenantUUID, tenantToken,
 	)
 }

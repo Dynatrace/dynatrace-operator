@@ -147,6 +147,103 @@ func Test_GetConnectionInfo(t *testing.T) {
 	})
 }
 
+func Test_connectionInfoResponse_IsEmpty(t *testing.T) {
+	const (
+		validUUID     = "uuid"
+		validToken    = "token"
+		validEndpoint = "https://10.0.0.1:443/communication"
+		validHost     = "10.0.0.1"
+		otherEndpoint = "https://10.0.0.2:443/communication"
+		otherHost     = "10.0.0.2"
+	)
+
+	tests := []struct {
+		name     string
+		response *connectionInfoResponse
+		want     bool
+	}{
+		{
+			name: "all fields set, no required hosts",
+			response: &connectionInfoResponse{
+				TenantUUID:             validUUID,
+				TenantToken:            validToken,
+				CommunicationEndpoints: []string{validEndpoint},
+			},
+			want: false,
+		},
+		{
+			name: "missing TenantUUID",
+			response: &connectionInfoResponse{
+				TenantToken:            validToken,
+				CommunicationEndpoints: []string{validEndpoint},
+			},
+			want: true,
+		},
+		{
+			name: "missing TenantToken",
+			response: &connectionInfoResponse{
+				TenantUUID:             validUUID,
+				CommunicationEndpoints: []string{validEndpoint},
+			},
+			want: true,
+		},
+		{
+			name: "no communication endpoints",
+			response: &connectionInfoResponse{
+				TenantUUID:  validUUID,
+				TenantToken: validToken,
+			},
+			want: true,
+		},
+		{
+			name: "required host present in endpoints",
+			response: &connectionInfoResponse{
+				TenantUUID:             validUUID,
+				TenantToken:            validToken,
+				CommunicationEndpoints: []string{validEndpoint},
+				requiredHosts:          []string{validHost},
+			},
+			want: false,
+		},
+		{
+			name: "required host absent from endpoints",
+			response: &connectionInfoResponse{
+				TenantUUID:             validUUID,
+				TenantToken:            validToken,
+				CommunicationEndpoints: []string{validEndpoint},
+				requiredHosts:          []string{otherHost},
+			},
+			want: true,
+		},
+		{
+			name: "required host found in one of multiple endpoints",
+			response: &connectionInfoResponse{
+				TenantUUID:             validUUID,
+				TenantToken:            validToken,
+				CommunicationEndpoints: []string{validEndpoint, otherEndpoint},
+				requiredHosts:          []string{otherHost},
+			},
+			want: false,
+		},
+		{
+			name: "unparseable endpoint with required host counts as missing",
+			response: &connectionInfoResponse{
+				TenantUUID:             validUUID,
+				TenantToken:            validToken,
+				CommunicationEndpoints: []string{"not-a-url"},
+				requiredHosts:          []string{validHost},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.response.IsEmpty())
+		})
+	}
+}
+
 func Test_deduplicateEndpoints(t *testing.T) {
 	const (
 		epA = "https://tenant.dev.dynatracelabs.com:443"
