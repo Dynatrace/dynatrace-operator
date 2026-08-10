@@ -17,7 +17,7 @@ import (
 const (
 	OneAgentTenantSecretSuffix            = "-oneagent-tenant-secret"
 	OneAgentConnectionInfoConfigMapSuffix = "-oneagent-connection-info"
-	PodNameOsAgent                        = "oneagent"
+	PodNameOsAgent                        = "oneagent" //nolint:revive
 	DefaultOneAgentImageRegistrySubPath   = "/linux/oneagent"
 	StorageVolumeDefaultHostPath          = "/var/opt/dynatrace"
 )

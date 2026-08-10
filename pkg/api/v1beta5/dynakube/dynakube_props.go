@@ -73,7 +73,7 @@ func (dk *DynaKube) GetDynatraceAPIRequestThreshold() uint16 {
 	return *dk.Spec.DynatraceAPIRequestThreshold
 }
 
-func (dk *DynaKube) APIRequestThreshold() time.Duration {
+func (dk *DynaKube) APIRequestThreshold() time.Duration { //nolint:staticcheck
 	return time.Duration(dk.GetDynatraceAPIRequestThreshold()) * time.Minute
 }
 

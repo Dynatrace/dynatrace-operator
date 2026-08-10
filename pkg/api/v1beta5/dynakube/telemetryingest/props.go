@@ -19,9 +19,7 @@ func (spec *Spec) GetProtocols() otelcgen.Protocols {
 	}
 
 	protocols := make(otelcgen.Protocols, len(spec.Protocols))
-	for i, proto := range spec.Protocols {
-		protocols[i] = otelcgen.Protocol(proto)
-	}
+	copy(protocols, spec.Protocols)
 
 	return protocols
 }

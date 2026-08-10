@@ -14,7 +14,7 @@ const (
 	NodeCollectorNameSuffix = "node-config-collector"
 )
 
-type Kspm struct {
+type Kspm struct { //nolint:revive
 	*Spec
 	*Status
 	*NodeConfigurationCollectorSpec

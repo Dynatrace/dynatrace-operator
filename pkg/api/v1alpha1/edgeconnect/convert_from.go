@@ -11,7 +11,7 @@ import (
 )
 
 // ConvertFrom converts v1alpha2 to v1alpha1.
-func (dst *EdgeConnect) ConvertFrom(srcRaw conversion.Hub) error {
+func (dst *EdgeConnect) ConvertFrom(srcRaw conversion.Hub) error { //nolint:staticcheck
 	src := srcRaw.(*edgeconnect.EdgeConnect)
 	dst.fromBase(src)
 	dst.fromSpec(src)

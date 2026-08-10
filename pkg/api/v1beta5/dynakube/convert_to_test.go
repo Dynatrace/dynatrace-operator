@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 var testTime = metav1.Now()
@@ -413,11 +412,11 @@ func TestConvertTo(t *testing.T) {
 				}
 
 				// latest -> v1beta5
-				intermediateDk := DynaKube{}
+				intermediateDk := DynaKube{} //nolint:revive
 				require.NoError(t, intermediateDk.ConvertFrom(&original))
 
 				// v1beta5 -> latest
-				migratedDk := dynakubelatest.DynaKube{}
+				migratedDk := dynakubelatest.DynaKube{} //nolint:revive
 				require.NoError(t, intermediateDk.ConvertTo(&migratedDk))
 
 				require.NotNil(t, migratedDk.Spec.KSPM)
@@ -460,8 +459,8 @@ func getOldDynakubeBase() DynaKube {
 			APIURL:           "api-url",
 			Tokens:           "token",
 			CustomPullSecret: "pull-secret",
-			EnableIstio:      ptr.To(true),
-			SkipCertCheck:    ptr.To(true),
+			EnableIstio:      new(true),
+			SkipCertCheck:    new(true),
 			Proxy: &value.Source{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
@@ -699,7 +698,7 @@ func getOldExtensionExecutionControllerSpec() extensions.ExecutionControllerSpec
 		},
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
-		UseEphemeralVolume:          ptr.To(true),
+		UseEphemeralVolume:          new(true),
 	}
 }
 

@@ -36,7 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 func TestConvertFrom(t *testing.T) {
@@ -326,7 +325,7 @@ func TestConvertFrom(t *testing.T) {
 	})
 }
 
-func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
+func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) { //nolint:revive
 	require.NotEmpty(t, oldDk)
 	require.NotEmpty(t, newDk)
 
@@ -372,7 +371,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
 func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentlatest.HostInjectSpec, removedFields *conversion.RemovedFields) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
-	assert.Equal(t, *oldSpec.AutoUpdate, *removedFields.AutoUpdate.Get())
+	assert.Equal(t, *oldSpec.AutoUpdate, *removedFields.AutoUpdate.Get()) //nolint:staticcheck
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
 	assert.Equal(t, oldSpec.Image, newSpec.Image)
@@ -381,7 +380,7 @@ func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpe
 	assert.Equal(t, oldSpec.OneAgentResources, newSpec.OneAgentResources)
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
-	assert.Equal(t, oldSpec.Version, newSpec.Version)
+	assert.Equal(t, oldSpec.Version, newSpec.Version) //nolint:staticcheck
 	assert.Equal(t, oldSpec.SecCompProfile, newSpec.SecCompProfile)
 }
 
@@ -397,7 +396,7 @@ func compareCloudNativeSpec(t *testing.T, oldSpec oneagent.CloudNativeFullStackS
 }
 
 func compareApplicationMonitoringSpec(t *testing.T, oldSpec oneagent.ApplicationMonitoringSpec, newSpec oneagentlatest.ApplicationMonitoringSpec) {
-	assert.Equal(t, oldSpec.Version, newSpec.Version)
+	assert.Equal(t, oldSpec.Version, newSpec.Version) //nolint:staticcheck
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 }
 
@@ -574,8 +573,8 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			CustomPullSecret:             "pull-secret",
-			SkipCertCheck:                ptr.To(true),
-			EnableIstio:                  ptr.To(true),
+			SkipCertCheck:                new(true),
+			EnableIstio:                  new(true),
 			MetadataEnrichment: metadataenrichmentlatest.Spec{
 				Enabled:           new(true),
 				NamespaceSelector: getTestNamespaceSelector(),
@@ -808,7 +807,7 @@ func getNewExtensionExecutionControllerSpec() extensionslatest.ExecutionControll
 		},
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
-		UseEphemeralVolume:          ptr.To(true),
+		UseEphemeralVolume:          new(true),
 	}
 }
 

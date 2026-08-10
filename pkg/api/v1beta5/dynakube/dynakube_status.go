@@ -34,7 +34,7 @@ type DynaKubeStatus struct { //nolint:revive
 	MetadataEnrichment MetadataEnrichmentStatus `json:"metadataEnrichment,omitempty"`
 
 	// Observed state of Kspm
-	Kspm kspm.Status `json:"kspm,omitempty"`
+	Kspm kspm.Status `json:"kspm,omitempty"` //nolint:revive
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true

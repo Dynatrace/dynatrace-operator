@@ -5,6 +5,7 @@ package activegate
 
 import (
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -49,13 +50,7 @@ func (ag *Spec) IsEnabled() bool {
 }
 
 func (ag *Spec) IsMode(mode CapabilityDisplayName) bool {
-	for _, capability := range ag.Capabilities {
-		if capability == mode {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(ag.Capabilities, mode)
 }
 
 func (ag *Spec) GetServiceAccountOwner() string {
