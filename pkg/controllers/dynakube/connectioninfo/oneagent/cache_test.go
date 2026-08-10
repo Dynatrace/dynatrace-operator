@@ -65,8 +65,8 @@ func TestReconcile_ConnectionInfoCache(t *testing.T) {
 
 	t.Run("invalidates cache when enpoints are absent from response", func(t *testing.T) {
 		transport := newFakeCITransport(
-			connectionInfoEmptyEndpointsBody(testTenantUUID, testTenantToken),
-			connectionInfoEmptyEndpointsBody(testTenantUUID, testTenantToken),
+			connectionInfoBody(testTenantUUID, testTenantToken, ""),
+			connectionInfoBody(testTenantUUID, testTenantToken, ""),
 		)
 		oaClient := newConnectionInfoOAClient(t, transport, testConnectionInfoCacheTTL)
 
@@ -166,11 +166,5 @@ func connectionInfoBody(tenantUUID, tenantToken, endpoint string) string {
 	return fmt.Sprintf(
 		`{"tenantUUID":%q,"tenantToken":%q,"communicationEndpoints":[%q]}`,
 		tenantUUID, tenantToken, endpoint,
-	)
-}
-func connectionInfoEmptyEndpointsBody(tenantUUID, tenantToken string) string {
-	return fmt.Sprintf(
-		`{"tenantUUID":%q,"tenantToken":%q}`,
-		tenantUUID, tenantToken,
 	)
 }

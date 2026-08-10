@@ -6,6 +6,7 @@ package oneagent
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -244,7 +245,7 @@ func Test_connectionInfoResponse_IsEmpty(t *testing.T) {
 	}
 }
 
-func Test_deduplicateEndpoints(t *testing.T) {
+func Test_connectionInfoResponse_uniqueEndpoints(t *testing.T) {
 	const (
 		epA = "https://tenant.dev.dynatracelabs.com:443"
 		epB = "https://other.dev.dynatracelabs.com:8443"
@@ -289,7 +290,8 @@ func Test_deduplicateEndpoints(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := deduplicateEndpoints(tt.input)
+			r := &connectionInfoResponse{CommunicationEndpoints: tt.input}
+			got := strings.Join(r.uniqueEndpoints(), ";")
 			assert.Equal(t, tt.expected, got)
 		})
 	}

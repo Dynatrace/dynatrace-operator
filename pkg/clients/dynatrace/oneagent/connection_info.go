@@ -32,17 +32,45 @@ type connectionInfoResponse struct {
 	TenantToken            string   `json:"tenantToken"`
 	CommunicationEndpoints []string `json:"communicationEndpoints"`
 
+	dedupOnce sync.Once
+
 	requiredHosts []string
-	once          sync.Once
+	validateOnce  sync.Once
 	missing       bool
 }
 
 func (r *connectionInfoResponse) IsEmpty() bool {
-	return r.TenantUUID == "" || r.TenantToken == "" || len(r.CommunicationEndpoints) == 0 || r.missingRequiredHosts()
+	return r.TenantUUID == "" || r.TenantToken == "" || len(r.uniqueEndpoints()) == 0 || r.missingRequiredHosts()
+}
+
+func (r *connectionInfoResponse) uniqueEndpoints() []string {
+	r.dedupOnce.Do(func() {
+		seen := make(map[string]struct{})
+
+		var uniqueEndpoints []string
+
+		for _, endpoint := range r.CommunicationEndpoints {
+			endpoint = strings.TrimSpace(endpoint)
+			if endpoint == "" {
+				continue
+			}
+
+			if _, ok := seen[endpoint]; ok {
+				continue
+			}
+
+			seen[endpoint] = struct{}{}
+			uniqueEndpoints = append(uniqueEndpoints, endpoint)
+		}
+
+		r.CommunicationEndpoints = uniqueEndpoints
+	})
+
+	return r.CommunicationEndpoints
 }
 
 func (r *connectionInfoResponse) missingRequiredHosts() bool {
-	r.once.Do(func() {
+	r.validateOnce.Do(func() {
 		r.missing = len(r.requiredHosts) > 0
 
 		for _, endpoint := range r.CommunicationEndpoints {
@@ -94,9 +122,7 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredHosts []stri
 		return ConnectionInfo{}, errors.WithStack(err)
 	}
 
-	endpoints := deduplicateEndpoints(resp.CommunicationEndpoints)
-
-	if len(endpoints) == 0 {
+	if len(resp.uniqueEndpoints()) == 0 {
 		err = NoCommunicationEndpointsError
 	} else if resp.missingRequiredHosts() {
 		err = StaleNetworkZoneEndpointsError
@@ -105,32 +131,8 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredHosts []stri
 	result := ConnectionInfo{
 		TenantUUID:  resp.TenantUUID,
 		TenantToken: resp.TenantToken,
-		Endpoints:   endpoints,
+		Endpoints:   strings.Join(resp.uniqueEndpoints(), ";"),
 	}
 
 	return result, err
-}
-
-func deduplicateEndpoints(rawEndpoints []string) string {
-	seen := make(map[string]struct{})
-
-	var unique []string
-
-	for _, endpoint := range rawEndpoints {
-		endpoint = strings.TrimSpace(endpoint)
-		if endpoint == "" {
-			continue
-		}
-
-		if _, ok := seen[endpoint]; ok {
-			continue
-		}
-
-		seen[endpoint] = struct{}{}
-		unique = append(unique, endpoint)
-	}
-
-	joined := strings.Join(unique, ";")
-
-	return joined
 }
