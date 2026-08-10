@@ -21,8 +21,9 @@ const (
 	errorKSPMRelativeHostPath = `The Dynakube's specification specifies KSPM, relative path found on the MappedHostPath list. Use absolute paths only. Relative path: %s`
 )
 
+// TODO check if needed to look for env variable
 func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.KSPM().IsEnabled() && dk.ActiveGate().GetReplicas() > 1 {
+	if dk.KSPM().IsEnabled() && (dk.KubernetesMonitoring().GetReplicas() > 1 || dk.ActiveGate().GetReplicas() > 1) {
 		return errorTooManyAGReplicas
 	}
 
@@ -30,7 +31,7 @@ func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) s
 }
 
 func kspmWithoutK8SMonitoring(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.KSPM().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticK8sAPIMonitoring()) {
+	if dk.KSPM().IsEnabled() && !dk.KubernetesMonitoring().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticK8sAPIMonitoring()) {
 		return errorKSPMMissingKubemon
 	}
 

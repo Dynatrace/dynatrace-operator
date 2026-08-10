@@ -101,3 +101,11 @@ func (km *Spec) GetRegistrationClusterName() string {
 
 	return km.Registration.ClusterName
 }
+
+func (km *Spec) GetReplicas() int32 {
+	if km == nil || km.Replicas == nil {
+		return 0
+	}
+
+	return *km.Replicas
+}
