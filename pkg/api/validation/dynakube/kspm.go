@@ -13,15 +13,15 @@ import (
 )
 
 const (
-	errorTooManyAGReplicas    = `The Dynakube's specification specifies KSPM, but has more than one ActiveGate replica. Only one ActiveGate replica is allowed in combination with KSPM.`
-	errorKSPMMissingKubemon   = "The Dynakube's specification specifies KSPM, but requires an ActiveGate with `kubernetes-monitoring` enabled and the `automatic-kubernetes-api-monitoring` feature flag set to `true`."
+	errorTooManyAGReplicas    = `The Dynakube's specification specifies KSPM, but has more than one replica. Only one replica is allowed in combination with KSPM.`
+	errorKSPMMissingKubemon   = "The Dynakube's specification specifies KSPM, but requires either a `kubernetesMonitoring` spec or an ActiveGate with `kubernetes-monitoring` enabled and the `automatic-kubernetes-api-monitoring` feature flag set to `true`."
 	errorKSPMMissingImage     = `The Dynakube's specification specifies KSPM, but no image repository/tag is configured.`
 	warningKSPMNoHostPaths    = `The Dynakube's specification specifies KSPM, but no MappedHostPaths are configured.`
 	errorKSPMRootHostPath     = `The Dynakube's specification specifies KSPM, use either '/' or specific path(s) on the MappedHostPath list.`
 	errorKSPMRelativeHostPath = `The Dynakube's specification specifies KSPM, relative path found on the MappedHostPath list. Use absolute paths only. Relative path: %s`
 )
 
-// TODO check if needed to look for env variable
+// TODO check if needed to look for env variable.
 func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.KSPM().IsEnabled() && (dk.KubernetesMonitoring().GetReplicas() > 1 || dk.ActiveGate().GetReplicas() > 1) {
 		return errorTooManyAGReplicas
