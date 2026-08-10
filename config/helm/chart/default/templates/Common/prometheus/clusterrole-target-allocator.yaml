@@ -7,14 +7,14 @@ kind: ClusterRole
 metadata:
   name: dynatrace-target-allocator
   labels:
-    {{- include "dynatrace-operator.commonLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.targetAllocatorLabels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources: ["namespaces", "pods", "services", "endpoints", "nodes", "nodes/metrics", "secrets"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["monitoring.coreos.com"]
     resources: ["servicemonitors", "podmonitors", "scrapeconfigs", "probes"]
-    verbs: ["*"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: ["discovery.k8s.io"]
     resources: ["endpointslices"]
     verbs: ["get", "list", "watch"]
