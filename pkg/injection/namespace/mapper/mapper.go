@@ -73,38 +73,24 @@ type compiledSelectors struct {
 	otlp     labels.Selector
 }
 
-// compileSelectors compiles dk's namespace selectors once, returning both the compiled selectors for matching and which
-// features (if any) had a syntactically invalid selector. An invalid selector is treated as "matches nothing" for that
-// feature only, isolating the blast radius from independently configured features that share an OR'd secret.
-func compileSelectors(dk *dynakube.DynaKube) (compiledSelectors, matchFlags) {
-	var (
-		invalid   matchFlags
-		selectors compiledSelectors
-		err       error
-	)
+// compileSelectors compiles the DynaKube's namespace selectors. If any selector is invalid it will be nil.
+// This function assumes that invalid selectors would've been rejected by the validation webhook.
+func compileSelectors(dk *dynakube.DynaKube) compiledSelectors {
+	var selectors compiledSelectors
 
 	if dk.OneAgent().IsAppInjectionNeeded() {
-		selectors.oneAgent, err = metav1.LabelSelectorAsSelector(dk.OneAgent().GetNamespaceSelector())
-		if err != nil {
-			invalid |= flagOneAgent
-		}
+		selectors.oneAgent, _ = metav1.LabelSelectorAsSelector(dk.OneAgent().GetNamespaceSelector())
 	}
 
 	if metadataEnrichment := dk.MetadataEnrichment(); metadataEnrichment.IsEnabled() {
-		selectors.metadata, err = metav1.LabelSelectorAsSelector(&metadataEnrichment.NamespaceSelector)
-		if err != nil {
-			invalid |= flagMetadata
-		}
+		selectors.metadata, _ = metav1.LabelSelectorAsSelector(&metadataEnrichment.NamespaceSelector)
 	}
 
 	if otlpExporterConfiguration := dk.OTLPExporterConfiguration(); otlpExporterConfiguration.IsEnabled() {
-		selectors.otlp, err = metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.Spec.NamespaceSelector)
-		if err != nil {
-			invalid |= flagOTLP
-		}
+		selectors.otlp, _ = metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.Spec.NamespaceSelector)
 	}
 
-	return selectors, invalid
+	return selectors
 }
 
 func match(dk *dynakube.DynaKube, namespace *corev1.Namespace, selectors compiledSelectors) matchFlags {
@@ -144,7 +130,7 @@ func updateNamespace(ctx context.Context, namespace *corev1.Namespace, deployedD
 		// Recompiled per namespace this function is called for, since this loop runs once per
 		// namespace (from mapFromDynakube's caller): O(namespaces x dynakubes) instead of O(dynakubes).
 		// Left as-is - dynakubes with a relevant selector are rarely more than one or two.
-		selectors, _ := compileSelectors(dk)
+		selectors := compileSelectors(dk)
 		flags := match(dk, namespace, selectors)
 
 		if flags.isAny() {

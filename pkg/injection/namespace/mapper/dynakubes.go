@@ -30,7 +30,6 @@ type DynakubeMapper struct {
 	secrets    k8ssecret.QueryObject
 
 	matchedNamespaces map[string]namespaceMatch
-	invalidSelectors  matchFlags
 }
 
 type namespaceMatch struct {
@@ -85,21 +84,12 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 		return errors.WithMessage(err, "delete replicated secrets")
 	}
 
-	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType, selectorMatchStatus{
-		configured: dm.dk.OneAgent().IsAppInjectionNeeded(),
-		invalid:    dm.invalidSelectors.isOneAgent(),
-		names:      dm.namespaceNamesFor(flagOneAgent),
-	})
-	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType, selectorMatchStatus{
-		configured: dm.dk.MetadataEnrichment().IsEnabled(),
-		invalid:    dm.invalidSelectors.isMetadata(),
-		names:      dm.namespaceNamesFor(flagMetadata),
-	})
-	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType, selectorMatchStatus{
-		configured: dm.dk.OTLPExporterConfiguration().IsEnabled(),
-		invalid:    dm.invalidSelectors.isOTLP(),
-		names:      dm.namespaceNamesFor(flagOTLP),
-	})
+	oaActive := dm.dk.OneAgent().IsAppInjectionNeeded()
+	meActive := dm.dk.MetadataEnrichment().IsEnabled()
+	otlpActive := dm.dk.OTLPExporterConfiguration().IsEnabled()
+	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType, oaActive, dm.namespaceNamesFor(flagOneAgent))
+	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType, meActive, dm.namespaceNamesFor(flagMetadata))
+	setNamespacesMonitoredSelectorCondition(dm.ctx, dm.dk.Conditions(), otlpExporterNamespacesMonitoredConditionType, otlpActive, dm.namespaceNamesFor(flagOTLP))
 
 	return nil
 }
@@ -232,8 +222,8 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 		dkList.Items = append(dkList.Items, *dm.dk)
 	}
 
-	selectors, invalidSelectors := compileSelectors(dm.dk)
-	dm.invalidSelectors = invalidSelectors
+	// Compile the selectors once instead of per amount of namespaces
+	selectors := compileSelectors(dm.dk)
 
 	for i := range nsList.Items {
 		namespace := &nsList.Items[i]

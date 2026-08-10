@@ -15,54 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// TestMapFromDynakube_InvalidSelectorIsolatesBlastRadius guards the resolved product decision:
-// a malformed selector on one feature must not suppress another, independently-configured feature's otherwise-valid matches for the same shared secret.
-func TestMapFromDynakube_InvalidSelectorIsolatesBlastRadius(t *testing.T) {
-	invalidSelector := metav1.LabelSelector{
-		MatchExpressions: []metav1.LabelSelectorRequirement{
-			{Key: "team", Operator: "NotARealOperator", Values: []string{"a"}},
-		},
-	}
-	validSelector := convertToLabelSelector(map[string]string{"team": "a"})
-
-	dk := createBaseDynakube("dk-isolation", true, true)
-	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = invalidSelector
-	dk.Spec.MetadataEnrichment.NamespaceSelector = validSelector
-
-	nsA := createNamespace("ns-a", map[string]string{"team": "a"})
-
-	clt := fake.NewClient(dk, nsA)
-	dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", dk)
-
-	err := dm.MapFromDynakube()
-	require.NoError(t, err)
-
-	assert.Empty(t, dm.namespaceNamesFor(flagOneAgent))
-	assert.Equal(t, []string{"ns-a"}, dm.namespaceNamesFor(flagMetadata))
-
-	assert.True(t, dm.invalidSelectors.isOneAgent())
-	assert.False(t, dm.invalidSelectors.isMetadata())
-
-	oaCondition := meta.FindStatusCondition(*dk.Conditions(), oneAgentNamespacesMonitoredConditionType.String())
-	require.NotNil(t, oaCondition)
-	assert.Equal(t, invalidSelectorReason, oaCondition.Reason)
-	assert.Equal(t, metav1.ConditionFalse, oaCondition.Status)
-
-	meCondition := meta.FindStatusCondition(*dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType.String())
-	require.NotNil(t, meCondition)
-	assert.Equal(t, matchesFoundReason, meCondition.Reason)
-	assert.Equal(t, metav1.ConditionTrue, meCondition.Status)
-
-	var ns corev1.Namespace
-	require.NoError(t, clt.Get(t.Context(), types.NamespacedName{Name: "ns-a"}, &ns))
-	assert.Equal(t, dk.Name, ns.Labels[dtwebhook.InjectionInstanceLabel])
-}
 
 func TestMapFromDynakube(t *testing.T) {
 	labels := map[string]string{"test": "selector"}

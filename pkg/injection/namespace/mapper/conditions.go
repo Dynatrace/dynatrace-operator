@@ -14,9 +14,8 @@ import (
 )
 
 const (
-	matchesFoundReason    = "MatchesFound"
-	noMatchesReason       = "NoMatches"
-	invalidSelectorReason = "InvalidSelector"
+	matchesFoundReason = "MatchesFound"
+	noMatchesReason    = "NoMatches"
 
 	maxNamesInMsg = 10
 )
@@ -33,42 +32,29 @@ const (
 	otlpExporterNamespacesMonitoredConditionType       conditionType = "OTLPExporterConfigurationNamespacesMonitored"
 )
 
-// selectorMatchStatus bundles the inputs setNamespacesMonitoredSelectorCondition needs to decide a
-// condition's Status/Reason/Message for one feature (OneAgent, MetadataEnrichment, or OTLP).
-type selectorMatchStatus struct {
-	configured bool
-	invalid    bool
-	names      []string
-}
-
-func setNamespacesMonitoredSelectorCondition(ctx context.Context, conditions *[]metav1.Condition, condType conditionType, status selectorMatchStatus) {
+func setNamespacesMonitoredSelectorCondition(ctx context.Context, conditions *[]metav1.Condition, condType conditionType, configured bool, names []string) {
 	log := logd.FromContext(ctx)
 	log.Info("namespaces monitored",
 		"condition", condType,
-		"count", len(status.names),
-		"namespaces (max 10 listed)", status.names,
-		"selectorInvalid", status.invalid,
+		"count", len(names),
+		"namespaces (max 10 listed)", names,
 	)
 
 	cond := metav1.Condition{Type: condType.String()}
 
 	switch {
-	case !status.configured:
+	case !configured:
 		_ = meta.RemoveStatusCondition(conditions, condType.String())
 
 		return
-	case status.invalid:
-		cond.Status = metav1.ConditionFalse
-		cond.Reason = invalidSelectorReason
-		cond.Message = "namespaceSelector is invalid; treated as matching no namespaces until fixed"
-	case len(status.names) == 0:
+	case len(names) == 0:
 		cond.Status = metav1.ConditionFalse
 		cond.Reason = noMatchesReason
 		cond.Message = "0 namespaces match"
 	default:
 		cond.Status = metav1.ConditionTrue
 		cond.Reason = matchesFoundReason
-		msg := formatMatchMessage(status.names, maxNamesInMsg)
+		msg := formatMatchMessage(names, maxNamesInMsg)
 		cond.Message = msg
 	}
 
