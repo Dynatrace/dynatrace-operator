@@ -5840,6 +5840,10 @@ spec:
                     type: object
                   image:
                     type: string
+                  serviceIPs:
+                    items:
+                      type: string
+                    type: array
                 type: object
               metadataEnrichment:
                 properties:
