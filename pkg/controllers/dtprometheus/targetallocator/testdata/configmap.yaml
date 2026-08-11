@@ -1,0 +1,45 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: dtp-target-allocator
+  namespace: dynatrace
+  labels:
+    app.kubernetes.io/component: otel-allocator
+    app.kubernetes.io/created-by: dtp
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelementry-target-allocator
+    app.kubernetes.io/version: ""
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DTPrometheus
+    name: dtp
+    uid: dtp-uid
+data:
+  targetallocator.yaml: |
+    allocation_strategy: consistent-hashing
+    collector_namespace: dynatrace
+    collector_selector:
+      matchLabels:
+        foo: bar
+    filter_strategy: relabel-config
+    https:
+      ca_cert_file_path: ""
+      enabled: false
+      listen_addr: :8443
+      tls_cert_file_path: ""
+      tls_keyt_file_path: ""
+    listen_addr: :8080
+    prometheus_cr:
+      enabled: true
+      pod_monitor_selector:
+        matchLabels:
+          foo: bar
+      scrape_config_selector:
+        matchLabels:
+          foo: bar
+      scrape_interval: 5m0s
+      service_monitor_selector:
+        matchLabels:
+          foo: bar

@@ -15,6 +15,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func IsRolloutComplete(deploy *appsv1.Deployment) bool {
+	if deploy == nil {
+		return false
+	}
+
+	if deploy.Generation != deploy.Status.ObservedGeneration {
+		return false
+	}
+
+	if ptr.Deref(deploy.Status.TerminatingReplicas, 0) > 0 {
+		return false
+	}
+
+	return deploy.Spec.Replicas != nil && *deploy.Spec.Replicas == deploy.Status.ReadyReplicas
+}
+
 // GetDeployment returns the Deployment object who is the owner of this pod.
 // not doable using generics
 func GetDeployment(c client.Client, podName, namespace string) (*appsv1.Deployment, error) {

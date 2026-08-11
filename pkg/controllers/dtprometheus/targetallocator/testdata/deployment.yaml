@@ -1,0 +1,99 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: dtp-target-allocator
+  namespace: dynatrace
+  labels:
+    app.kubernetes.io/component: otel-allocator
+    app.kubernetes.io/created-by: dtp
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelementry-target-allocator
+    app.kubernetes.io/version: ""
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DTPrometheus
+    name: dtp
+    uid: dtp-uid
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/created-by: dtp
+      app.kubernetes.io/managed-by: dynatrace-operator
+      app.kubernetes.io/name: opentelementry-target-allocator
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        config/checksum: deadbeef
+        custom: annotation
+      labels:
+        app.kubernetes.io/created-by: dtp
+        app.kubernetes.io/managed-by: dynatrace-operator
+        app.kubernetes.io/name: opentelementry-target-allocator
+        custom: label
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - env:
+        - name: OTELCOL_NAMESPACE
+          value: dynatrace
+        image: registry.example.com/target-allocator:1.2.3
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: http-port
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: targetallocator
+        ports:
+        - containerPort: 8080
+          name: http-port
+          protocol: TCP
+        - containerPort: 8443
+          name: https-port
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http-port
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /conf
+          name: config
+          readOnly: true
+      nodeSelector:
+        disk: ssd
+      priorityClassName: high-priority
+      serviceAccountName: dynatrace-target-allocator
+      tolerations:
+      - key: k
+        operator: Exists
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: targetallocator.yaml
+            path: targetallocator.yaml
+          name: dtp-target-allocator
+        name: config
+status: {}

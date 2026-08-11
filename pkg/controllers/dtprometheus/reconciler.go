@@ -11,6 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/targetallocator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -34,6 +36,7 @@ func Add(mgr manager.Manager, _ string) error {
 func NewReconciler(c client.Client) *Reconciler {
 	return &Reconciler{
 		Client:             c,
+		targetAllocator:    &targetallocator.Reconciler{Client: c},
 		newDynatraceClient: dynatrace.NewClientFromDynakube,
 	}
 }
@@ -41,7 +44,13 @@ func NewReconciler(c client.Client) *Reconciler {
 type Reconciler struct {
 	client.Client
 
+	targetAllocator targetAllocatorReconciler
+
 	newDynatraceClient dynatrace.ClientFactory
+}
+
+type targetAllocatorReconciler interface {
+	Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, reterr error) {
@@ -92,12 +101,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		return ctrl.Result{}, nil
 	}
 
-	_, err := r.buildDynatraceClient(ctx, dk)
+	dtClient, err := r.buildDynatraceClient(ctx, dk)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("build dynatrace client: %w", err)
 	}
 
-	// TODO: reconcile
+	if err := r.targetAllocator.Reconcile(ctx, dtp, dk, dtClient.Images); err != nil {
+		return ctrl.Result{}, fmt.Errorf("reconcile target allocator: %w", err)
+	}
 
 	return ctrl.Result{}, nil
 }
