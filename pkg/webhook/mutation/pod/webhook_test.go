@@ -28,7 +28,6 @@ import (
 const (
 	testWebhookImage  = "test-wh-image"
 	testNamespaceName = "test-namespace"
-	testClusterID     = "test-cluster-id"
 	testPodName       = "test-pod"
 	testDynakubeName  = "test-dynakube"
 )

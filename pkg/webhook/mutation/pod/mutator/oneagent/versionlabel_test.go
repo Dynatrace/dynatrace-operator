@@ -13,10 +13,6 @@ import (
 
 func TestAddVersionDetectionEnvs(t *testing.T) {
 	const (
-		customVersionValue               = "my awesome custom version"
-		customProductValue               = "my awesome custom product"
-		customReleaseStageValue          = "my awesome custom stage"
-		customBuildVersionValue          = "my awesome custom build version"
 		customVersionAnnotationName      = "custom-version"
 		customProductAnnotationName      = "custom-product"
 		customStageAnnotationName        = "custom-stage"

@@ -4,6 +4,7 @@
 package injection
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -24,6 +25,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestHandleImpl(t *testing.T) {
 	initSecret := corev1.Secret{
@@ -96,11 +99,11 @@ func TestHandleImpl(t *testing.T) {
 		}
 
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
 		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(false)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
@@ -146,11 +149,11 @@ func TestHandleImpl(t *testing.T) {
 		}
 
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
 		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
@@ -179,11 +182,11 @@ func TestHandleImpl(t *testing.T) {
 
 	t.Run("happy path", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
 		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
@@ -207,10 +210,10 @@ func TestHandleImpl(t *testing.T) {
 
 	t.Run("happy path - nothing is enabled", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(false)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(false)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
 
@@ -233,8 +236,8 @@ func TestHandleImpl(t *testing.T) {
 
 	t.Run("happy path - reinvoke", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.EXPECT().IsEnabled(mock.Anything, mock.Anything).Return(true)
-		oaMutator.EXPECT().Reinvoke(mock.Anything, mock.Anything).Return(true)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+		oaMutator.EXPECT().Reinvoke(anyCtx, mock.Anything).Return(true)
 
 		metaMutator := webhookmock.NewMutator(t)
 
