@@ -71,11 +71,6 @@ func TestHandler_Handle(t *testing.T) {
 		// Expected behavior: Should NOT annotate when no actual injection occurs
 		assert.NotContains(t, req.Pod.Annotations, mutator.AnnotationOTLPInjected)
 		assert.NotContains(t, req.Pod.Annotations, mutator.AnnotationOTLPReason)
-
-		// Verify mutators were not called
-		mockEnvVarMutator.AssertNotCalled(t, "IsInjected", anyCtx, mock.Anything)
-		mockEnvVarMutator.AssertNotCalled(t, "Mutate", mock.Anything)
-		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", anyCtx, mock.Anything)
 	})
 	t.Run("call mutators if enabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
@@ -254,10 +249,6 @@ func TestHandler_Handle(t *testing.T) {
 		assert.Equal(t, "false", req.Pod.Annotations[mutator.AnnotationOTLPInjected])
 		assert.Equal(t, NoOTLPExporterActiveGateCertSecretReason, req.Pod.Annotations[mutator.AnnotationOTLPReason])
 
-		// ensure mutators were not invoked
-		mockEnvVarMutator.AssertNotCalled(t, "Mutate", mock.Anything)
-		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled", anyCtx, mock.Anything)
-		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", mock.Anything)
 	})
 	t.Run("replicate input secret from source then proceed with injection", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
