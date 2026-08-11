@@ -2641,6 +2641,7 @@ spec:
                     type: object
                 type: object
               targetAllocator:
+                default: {}
                 description: |-
                   Configures the Target Allocator, which holds all Prometheus service
                   discovery metadata and distributes scrape targets across the scraper pool.
@@ -3665,6 +3666,9 @@ spec:
                         type: object
                     type: object
                   scrapeCRNamespaceSelector:
+                    default:
+                      matchLabels:
+                        prometheus.dynatrace.com: "true"
                     description: |-
                       Restricts which namespaces the TA watches for CRDs. An empty selector {}
                       matches all namespaces.
@@ -3713,6 +3717,9 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                   scrapeCRSelector:
+                    default:
+                      matchLabels:
+                        prometheus.dynatrace.com: "true"
                     description: |-
                       Label selector applied to all Prometheus Operator CRDs (ServiceMonitor,
                       PodMonitor, ScrapeConfig, Probe). The TA only picks up CRDs whose labels

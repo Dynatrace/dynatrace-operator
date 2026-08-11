@@ -30,7 +30,8 @@ type DTPrometheusSpec struct { //nolint:revive
 	// Configures the Target Allocator, which holds all Prometheus service
 	// discovery metadata and distributes scrape targets across the scraper pool.
 	// +kubebuilder:validation:Optional
-	TargetAllocator TargetAllocatorSpec `json:"targetAllocator,omitzero"`
+	// +kubebuilder:default={}
+	TargetAllocator TargetAllocatorSpec `json:"targetAllocator"`
 
 	// Configures the scraper pool (tier 1): a Deployment of OTel Collectors that
 	// scrape their assigned targets and forward OTLP to the gateway pool.

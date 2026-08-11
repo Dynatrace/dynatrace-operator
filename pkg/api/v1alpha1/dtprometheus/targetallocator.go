@@ -50,11 +50,13 @@ type TargetAllocatorSpec struct {
 	// match. When omitted, the operator defaults to matching
 	// prometheus.dynatrace.com: "true". An empty selector {} matches all CRDs.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={"matchLabels":{"prometheus.dynatrace.com":"true"}}
 	ScrapeCRSelector *metav1.LabelSelector `json:"scrapeCRSelector,omitempty"`
 
 	// Restricts which namespaces the TA watches for CRDs. An empty selector {}
 	// matches all namespaces.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={"matchLabels":{"prometheus.dynatrace.com":"true"}}
 	ScrapeCRNamespaceSelector *metav1.LabelSelector `json:"scrapeCRNamespaceSelector,omitempty"`
 
 	// Deployment update strategy for the Target Allocator.
@@ -73,16 +75,4 @@ func NewTargetAllocator(spec *TargetAllocatorSpec, name string) *TargetAllocator
 // GetDeploymentName returns the base name for the Target Allocator's Deployment.
 func (ta *TargetAllocator) GetDeploymentName() string {
 	return ta.name + TargetAllocatorNameSuffix
-}
-
-// GetScrapeCRSelector returns the configured CRD label selector. When none is set
-// it defaults to matching prometheus.dynatrace.com: "true", as documented on the field.
-func (ta *TargetAllocator) GetScrapeCRSelector() *metav1.LabelSelector {
-	if ta.ScrapeCRSelector != nil {
-		return ta.ScrapeCRSelector
-	}
-
-	return &metav1.LabelSelector{
-		MatchLabels: map[string]string{DefaultScrapeCRSelectorLabel: "true"},
-	}
 }
