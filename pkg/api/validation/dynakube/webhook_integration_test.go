@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -38,31 +37,6 @@ func TestWebhook(t *testing.T) {
 						Name: "dynatrace-webhook",
 					},
 					Webhooks: []admissionregistrationv1.ValidatingWebhook{
-						{
-							Name: "v1beta4.dynakube.webhook.dynatrace.com",
-							ClientConfig: admissionregistrationv1.WebhookClientConfig{
-								Service: &admissionregistrationv1.ServiceReference{
-									Path: new("/validate-dynatrace-com-v1beta4-dynakube"),
-								},
-							},
-							Rules: []admissionregistrationv1.RuleWithOperations{
-								{
-									Operations: []admissionregistrationv1.OperationType{
-										admissionregistrationv1.Create,
-										admissionregistrationv1.Update,
-									},
-									Rule: admissionregistrationv1.Rule{
-										APIGroups:   []string{"dynatrace.com"},
-										APIVersions: []string{"v1beta4"},
-										Resources:   []string{"dynakubes"},
-									},
-								},
-							},
-							MatchPolicy:             new(admissionregistrationv1.Exact),
-							SideEffects:             new(admissionregistrationv1.SideEffectClassNone),
-							TimeoutSeconds:          new(int32(10)),
-							AdmissionReviewVersions: []string{"v1"},
-						},
 						{
 							Name: "v1beta5.dynakube.webhook.dynatrace.com",
 							ClientConfig: admissionregistrationv1.WebhookClientConfig{
@@ -128,18 +102,6 @@ func TestWebhook(t *testing.T) {
 	for _, version := range servedVersions {
 		t.Run(version, func(t *testing.T) {
 			compareWebhookResult(t, clt, version, "default", seenGVKs)
-		})
-	}
-
-	unServedVersions := []string{
-		"v1beta4",
-	}
-	for _, version := range unServedVersions {
-		t.Run(version, func(t *testing.T) {
-			oldObj := readTestData(t, version, "default")
-
-			err := clt.Create(t.Context(), oldObj)
-			require.True(t, meta.IsNoMatchError(err))
 		})
 	}
 

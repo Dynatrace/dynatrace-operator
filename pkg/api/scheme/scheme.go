@@ -23,8 +23,6 @@ import (
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
-	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
@@ -42,7 +40,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(Scheme))
 	utilruntime.Must(v1alpha2.AddToScheme(Scheme))
-	utilruntime.Must(v1beta4.AddToScheme(Scheme))
 	utilruntime.Must(v1beta5.AddToScheme(Scheme))
 	utilruntime.Must(latest.AddToScheme(Scheme))
 	utilruntime.Must(istiov1beta1.AddToScheme(Scheme))
