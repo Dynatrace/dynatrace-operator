@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	kubemonservice "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/service"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -49,7 +50,13 @@ func getEnvs(dk dynakube.DynaKube, tenantUUID string) []corev1.EnvVar {
 
 func getActiveGateEndpointTemplate(dk dynakube.DynaKube, tenantUUID string) string {
 	activeGateEndpointTemplate := "https://%s.%s/e/%s/api/v2/kubernetes/node-config"
-	serviceName := capability.BuildServiceName(dk.Name)
+
+	var serviceName string
+	if dk.KubernetesMonitoring().IsEnabled() {
+		serviceName = kubemonservice.BuildServiceName(dk.Name)
+	} else {
+		serviceName = capability.BuildServiceName(dk.Name)
+	}
 
 	return fmt.Sprintf(activeGateEndpointTemplate, serviceName, dk.Namespace, tenantUUID)
 }

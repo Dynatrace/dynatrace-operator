@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -62,6 +63,37 @@ func TestGetEnvs(t *testing.T) {
 
 		for _, env := range dk.KSPM().Env {
 			assert.Contains(t, envs, env)
+		}
+	})
+
+	t.Run("adds activegate service env", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		dk.Name = "dk-name-test"
+		dk.Namespace = "test"
+		tenant := "test-tenant"
+
+		envs := getEnvs(dk, tenant)
+
+		for _, env := range envs {
+			if env.Name == activeGateEndpointEnv {
+				assert.Equal(t, "https://dk-name-test-activegate.test/e/test-tenant/api/v2/kubernetes/node-config", env.Value)
+			}
+		}
+	})
+
+	t.Run("adds kubemon service env", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		dk.Name = "dk-name-test"
+		dk.Namespace = "test"
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+		tenant := "test-tenant"
+
+		envs := getEnvs(dk, tenant)
+
+		for _, env := range envs {
+			if env.Name == activeGateEndpointEnv {
+				assert.Equal(t, "https://dk-name-test-kubemon-activegate.test/e/test-tenant/api/v2/kubernetes/node-config", env.Value)
+			}
 		}
 	})
 }

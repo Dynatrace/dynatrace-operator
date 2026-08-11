@@ -17,4 +17,7 @@ type Status struct {
 	// Information about KubernetesMonitoring's connections.
 	// +kubebuilder:validation:Optional
 	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitzero"`
+
+	// The ClusterIPs set by Kubernetes on the Kubemon ActiveGate Service created by the Operator
+	ServiceIPs []string `json:"serviceIPs,omitempty"`
 }

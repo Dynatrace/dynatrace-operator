@@ -54,6 +54,8 @@ var (
 		tooManyAGReplicas,
 		missingKSPMImage,
 		kspmWithoutK8SMonitoring,
+		kspmWithoutAutomaticK8sAPIMonitoring,
+		kspmWithoutRegistration,
 		mappedHostPathsWithRootPath,
 		relativeMappedHostPaths,
 		missingLogMonitoringImage,
