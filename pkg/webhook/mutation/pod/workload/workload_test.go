@@ -20,7 +20,7 @@ import (
 )
 
 func TestFindRootOwnerOfPod(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	resourceName := "test"
 	namespaceName := "test"
 

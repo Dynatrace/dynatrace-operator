@@ -524,6 +524,8 @@ func TestAddOneAgentToContainer(t *testing.T) {
 }
 
 func createTestMutationRequestWithoutInjectedContainers(t *testing.T) *dtwebhook.MutationRequest {
+	t.Helper()
+
 	return &dtwebhook.MutationRequest{
 		Context: t.Context(),
 		InstallContainer: &corev1.Container{
@@ -570,6 +572,8 @@ func createTestMutationRequestWithoutInjectedContainers(t *testing.T) *dtwebhook
 }
 
 func createTestMutationRequestWithInjectedContainers(t *testing.T) *dtwebhook.MutationRequest {
+	t.Helper()
+
 	request := createTestMutationRequestWithoutInjectedContainers(t)
 
 	i := 0
