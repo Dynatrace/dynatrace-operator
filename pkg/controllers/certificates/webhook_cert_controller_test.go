@@ -4,7 +4,6 @@
 package certificates
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -100,7 +99,7 @@ func TestReconcileCertificate(t *testing.T) {
 	})
 
 	t.Run("existing secret with valid certificate", func(t *testing.T) {
-		clt := newFakeClientBuilder().WithValidCertificateSecret().WithCRD().Build()
+		clt := newFakeClientBuilder().WithValidCertificateSecret(t).WithCRD().Build()
 		controller, request := prepareController(t, clt)
 
 		res, err := controller.Reconcile(t.Context(), request)
@@ -255,8 +254,8 @@ func createInvalidTestCertData() map[string][]byte {
 	}
 }
 
-func createValidTestCertData() map[string][]byte {
-	ctx := context.Background()
+func createValidTestCertData(t *testing.T) map[string][]byte {
+	ctx := t.Context()
 	cert := Certs{
 		Domain:             testDomain,
 		Now:                time.Now(),
@@ -377,8 +376,8 @@ func newFakeClientBuilder() *fakeClientBuilder {
 	return &fakeClientBuilder{objs: objs}
 }
 
-func (builder *fakeClientBuilder) WithValidCertificateSecret() *fakeClientBuilder {
-	builder.objs = append(builder.objs, createTestSecret(createValidTestCertData()))
+func (builder *fakeClientBuilder) WithValidCertificateSecret(t *testing.T) *fakeClientBuilder {
+	builder.objs = append(builder.objs, createTestSecret(createValidTestCertData(t)))
 
 	return builder
 }
