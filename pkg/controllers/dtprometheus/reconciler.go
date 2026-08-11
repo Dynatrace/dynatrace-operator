@@ -50,23 +50,6 @@ type Reconciler struct {
 	newDynatraceClient dynatrace.ClientFactory
 }
 
-// +kubebuilder:rbac:groups=dtprometheuses.dynatrace.com,resources=dtprometheuses,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=dtprometheuses.dynatrace.com,resources=dtprometheuses/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=dtprometheuses.dynatrace.com,resources=dtprometheuses/finalizers,verbs=update
-
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Frigate object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.24.1/pkg/reconcile
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, reterr error) {
 	log := logd.FromContext(ctx)
 
