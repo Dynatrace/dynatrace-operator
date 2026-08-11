@@ -11,12 +11,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	kspmapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -288,6 +290,46 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 
 		sts := requireTestStatefulSet(t, t.Context(), fakeClient, dk)
 		assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationCustomPropertiesHash])
+	})
+
+	t.Run("KSPM disabled, no token volume or annotation", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.Empty(t, sts.Spec.Template.Annotations[statefulset.AnnotationKSPMTokenHash])
+		assert.False(t, slices.ContainsFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
+			return v.Secret != nil && v.Secret.SecretName == dk.KSPM().GetTokenSecretName()
+		}))
+	})
+
+	t.Run("KSPM enabled, token volume and mount are added", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KSPM = &kspmapi.Spec{}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		kspmVolume := slices.IndexFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
+			return v.Secret != nil && v.Secret.SecretName == dk.KSPM().GetTokenSecretName()
+		})
+		require.NotEqual(t, -1, kspmVolume, "KSPM token volume not found")
+		assert.EqualValues(t, 0o640, *sts.Spec.Template.Spec.Volumes[kspmVolume].Secret.DefaultMode)
+
+		container := sts.Spec.Template.Spec.Containers[0]
+		kspmMount := slices.IndexFunc(container.VolumeMounts, func(m corev1.VolumeMount) bool {
+			return m.Name == sts.Spec.Template.Spec.Volumes[kspmVolume].Name
+		})
+		require.NotEqual(t, -1, kspmMount, "KSPM token volume mount not found")
+		assert.True(t, container.VolumeMounts[kspmMount].ReadOnly)
+		assert.Equal(t, operatorconsts.DTComponentsSecretsRootDir+"/tokens/kspm/node-configuration-collector", container.VolumeMounts[kspmMount].MountPath)
+		assert.Equal(t, kspmapi.TokenSecretKey, container.VolumeMounts[kspmMount].SubPath)
+	})
+
+	t.Run("KSPM enabled, token hash annotation is set on pod", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		dk.Spec.KSPM = &kspmapi.Spec{}
+		dk.Status.KSPM.TokenSecretHash = "abc123"
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.Equal(t, "abc123", sts.Spec.Template.Annotations[statefulset.AnnotationKSPMTokenHash])
 	})
 
 	t.Run("update strategy with rolling partition", func(t *testing.T) {
