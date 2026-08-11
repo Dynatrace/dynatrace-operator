@@ -248,7 +248,6 @@ func TestHandler_Handle(t *testing.T) {
 		// should be annotated as not injected due to missing input secret
 		assert.Equal(t, "false", req.Pod.Annotations[mutator.AnnotationOTLPInjected])
 		assert.Equal(t, NoOTLPExporterActiveGateCertSecretReason, req.Pod.Annotations[mutator.AnnotationOTLPReason])
-
 	})
 	t.Run("replicate input secret from source then proceed with injection", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
