@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
@@ -423,6 +424,14 @@ func WithKSPM() Option {
 func WithKSPMImageRef(t *testing.T, imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
 		applyImageRef(t, dk, &dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef, imageURI, defaultKSPMRepo)
+	}
+}
+
+func WithKubernetesMonitoring() Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{
+			Registration: &kubemon.Registration{},
+		}
 	}
 }
 

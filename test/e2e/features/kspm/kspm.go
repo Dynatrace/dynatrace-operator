@@ -6,13 +6,18 @@
 package kspm
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	componentOperator "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	componentKspm "github.com/Dynatrace/dynatrace-operator/test/helpers/components/kspm"
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -39,6 +44,38 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, &testDynakube))
+
+	return builder.Feature()
+}
+
+func FeatureWithKubemon(t *testing.T) features.Feature {
+	builder := features.New("kspm-with-kubernetes-monitoring")
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	builder.Setup(componentKspm.DeleteKSPMSettingsFromTenant(secretConfig))
+
+	options := []componentDynakube.Option{
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
+		componentDynakube.WithKSPM(),
+		componentDynakube.WithKSPMImageRef(t, componentDynakube.GetLatestKSPMImageTagURI(t)),
+		componentDynakube.WithKubernetesMonitoring(),
+	}
+
+	testDynakube := *componentDynakube.New(options...)
+
+	builder.Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+		ctx, err := componentOperator.EnableKubemonOperand(ctx, cfg)
+		require.NoError(t, err)
+
+		return ctx
+	})
+
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("kubemon statefulset is ready", k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
+
+	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
 	return builder.Feature()
 }
