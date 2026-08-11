@@ -153,6 +153,57 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 	return clt
 }
 
+// SetupManagerTestEnvironment starts envtest and a Manager (no webhook server), calls managerSetup
+// (typically Reconciler.SetupWithManager) on it, starts the Manager, and waits for its cache to sync
+// so that any Owns/Watches registered by managerSetup are ready to receive events.
+func SetupManagerTestEnvironment(t *testing.T, managerSetup func(ctrl.Manager) error) client.Client {
+	setupBaseTestEnv(t)
+
+	cfg, err := testEnv.Start()
+	if err != nil {
+		t.Fatal(err, "start environment")
+	}
+
+	t.Cleanup(func() {
+		err := testEnv.Stop()
+		if err != nil {
+			// test is already ending, no need to explicitly fail test
+			t.Error(err, "stop env")
+		}
+	})
+
+	clt, err := client.New(cfg, client.Options{})
+	if err != nil {
+		t.Fatal(err, "new client")
+	}
+
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:         scheme.Scheme,
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
+	})
+	if err != nil {
+		t.Fatal(err, "new manager")
+	}
+
+	if err := managerSetup(mgr); err != nil {
+		t.Fatal(err, "manager setup")
+	}
+
+	go func() {
+		if err := mgr.Start(t.Context()); err != nil {
+			// don't call t.Fatal in a goroutine
+			t.Error(err, "run manager")
+		}
+	}()
+
+	if !mgr.GetCache().WaitForCacheSync(t.Context()) {
+		t.Fatal("cache did not sync")
+	}
+
+	return clt
+}
+
 func setupBaseTestEnv(t testing.TB) {
 	t.Helper()
 
