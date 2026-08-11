@@ -639,6 +639,8 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 }
 
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
+	t.Helper()
+
 	if dk == nil {
 		dk = &dynakube.DynaKube{}
 	}

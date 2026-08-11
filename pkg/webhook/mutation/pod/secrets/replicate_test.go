@@ -18,6 +18,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 const (
@@ -71,7 +72,11 @@ func TestEnsureReplicated(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(errGet), "target secret should not be created on failure")
 	})
 	t.Run("target get returns error other than not found -> returns error", func(t *testing.T) {
-		clt := &errorClient{fake.NewClient()}
+		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				return errors.New("error")
+			},
+		})
 		req := newRequest(t)
 
 		err := EnsureReplicated(req, clt, clt, sourceSecret, targetSecret, logger)
@@ -81,18 +86,11 @@ func TestEnsureReplicated(t *testing.T) {
 }
 
 func newRequest(t *testing.T) *mutator.MutationRequest {
+	t.Helper()
+
 	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod", Namespace: testNamespace}}
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
 	dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: testNamespace}}
 
 	return mutator.NewMutationRequest(t.Context(), *ns, nil, pod, *dk)
-}
-
-type errorClient struct {
-	client.Client
-}
-
-// override Get to always return a generic error
-func (e *errorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	return errors.New("error")
 }

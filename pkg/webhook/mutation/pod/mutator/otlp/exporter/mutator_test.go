@@ -834,6 +834,8 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 }
 
 func assertTokenEnvVarIsSet(t *testing.T, containerEnvVars []corev1.EnvVar) {
+	t.Helper()
+
 	var dtTokenVar *corev1.EnvVar
 	for i := range containerEnvVars {
 		if containerEnvVars[i].Name == DynatraceAPITokenEnv {
@@ -925,6 +927,8 @@ func Test_addActiveGateCertVolume(t *testing.T) {
 }
 
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *mutator.MutationRequest {
+	t.Helper()
+
 	return mutator.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
 

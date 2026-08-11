@@ -4,7 +4,6 @@
 package namespace
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -71,7 +70,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Create,
 			},
 		}
-		resp := inj.Handle(context.Background(), req)
+		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
@@ -96,7 +95,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Create,
 			},
 		}
-		resp := inj.Handle(context.Background(), req)
+		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
@@ -116,7 +115,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Create,
 			},
 		}
-		resp := inj.Handle(context.Background(), req)
+		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
@@ -155,7 +154,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Update,
 			},
 		}
-		resp := inj.Handle(context.Background(), req)
+		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
@@ -196,7 +195,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Update,
 			},
 		}
-		resp := inj.Handle(context.Background(), req)
+		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
@@ -232,7 +231,7 @@ func TestInjection(t *testing.T) {
 			},
 		}
 
-		resp := inj.Handle(context.Background(), req)
+		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 		assert.Empty(t, resp.Patch)

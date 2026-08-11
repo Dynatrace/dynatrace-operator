@@ -1350,10 +1350,12 @@ func createObject(t *testing.T, clt client.Client, obj client.Object) {
 }
 
 func createDynaKube(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
+	t.Helper()
+
 	status := dk.Status
 	createObject(t, clt, dk)
 	dk.Status = status
-	dk.UpdateStatus(t.Context(), clt)
+	require.NoError(t, dk.UpdateStatus(t.Context(), clt))
 }
 func getDummyWebhookPod() *corev1.Pod {
 	return &corev1.Pod{
