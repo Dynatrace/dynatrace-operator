@@ -1,0 +1,31 @@
+{{- if .Values.rbac.prometheus.create }}
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynatrace-target-allocator
+  labels:
+    {{- include "dynatrace-operator.targetAllocatorLabels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "services", "endpoints", "nodes", "nodes/metrics", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["servicemonitors", "podmonitors", "scrapeconfigs", "probes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+  {{- if (include "dynatrace-operator.openshiftOrOlm" .) }}
+  - apiGroups: ["security.openshift.io"]
+    resourceNames: ["nonroot-v2"]
+    resources: ["securitycontextconstraints"]
+    verbs: ["use"]
+  {{- end }}
+{{- end }}
