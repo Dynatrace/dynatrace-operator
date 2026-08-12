@@ -158,13 +158,19 @@ func (r *Reconciler) patchStatus(ctx context.Context, dtp *dtprometheus.DTPromet
 	dtp.ManagedFields = nil
 	// Disable optimistic locking
 	dtp.ResourceVersion = ""
+
+	var opts []client.SubResourcePatchOption
+
 	if dtp.Kind == "" || dtp.APIVersion == "" {
 		// Set these values for unit tests
 		dtp.Kind = "DTPrometheus"
 		dtp.APIVersion = "dynatrace.com/v1alpha1"
+		// The fake client cannot set the field owner, but it's a required field.
+		opts = []client.SubResourcePatchOption{client.FieldOwner("dynatrace-operator")}
 	}
+
 	//nolint:staticcheck // client.Apply is deprecated, but our repo does not support generating ApplyConfiguration
-	return r.SubResource("status").Patch(ctx, dtp, client.Apply, client.FieldOwner("dtprometheus-reconciler"))
+	return r.SubResource("status").Patch(ctx, dtp, client.Apply, opts...)
 }
 
 // SetupWithManager sets up the controller with the Manager.
