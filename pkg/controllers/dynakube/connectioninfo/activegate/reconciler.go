@@ -15,26 +15,22 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const activeGateConnectionInfoConditionType string = "ActiveGateConnectionInfo"
 
 type Reconciler struct {
-	timeProvider *timeprovider.Provider
-	secrets      k8ssecret.QueryObject
+	secrets k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader),
+		secrets: k8ssecret.Query(clt, apiReader),
 	}
 }
 
@@ -68,26 +64,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 
 func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client) error {
 	log := logd.FromContext(ctx)
-	secretNamespacedName := types.NamespacedName{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace}
-
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, activeGateConnectionInfoConditionType) {
-		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName)
-		if err != nil {
-			return err
-		}
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), activeGateConnectionInfoConditionType)
-		if isSecretPresent {
-			log.Info(dynakube.GetCacheValidMessage(
-				"activegate connection info update",
-				condition.LastTransitionTime,
-				dk.APIRequestThreshold()))
-
-			return nil
-		}
-	}
-
-	k8sconditions.SetSecretOutdated(dk.Conditions(), activeGateConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 	connectionInfo, err := agClient.GetConnectionInfo(ctx)
 	if err != nil {
