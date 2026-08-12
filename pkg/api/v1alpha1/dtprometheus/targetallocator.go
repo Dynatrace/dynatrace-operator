@@ -16,6 +16,9 @@ const (
 	// DefaultScrapeCRSelectorLabel is the label key the Target Allocator matches
 	// on Prometheus CRDs when no explicit scrapeCRSelector is configured.
 	DefaultScrapeCRSelectorLabel = "prometheus.dynatrace.com"
+
+	// TargetAllocatorAvailable indicates whether the Target Allocator is available.
+	TargetAllocatorAvailable = "TargetAllocatorAvailable"
 )
 
 // +kubebuilder:object:generate=false
@@ -40,7 +43,7 @@ type TargetAllocatorSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="60s"
 	// +kubebuilder:validation:Format=duration
-	ScrapeInterval string `json:"scrapeInterval,omitempty"`
+	ScrapeInterval metav1.Duration `json:"scrapeInterval,omitempty"`
 
 	// Label selector applied to all Prometheus Operator CRDs (ServiceMonitor,
 	// PodMonitor, ScrapeConfig, Probe). The TA only picks up CRDs whose labels

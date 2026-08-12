@@ -4107,10 +4107,6 @@ spec:
                 description: Defines the current state (Running, Deploying, Error,
                   ...)
                 type: string
-              updatedTimestamp:
-                description: Indicates when the resource was last updated
-                format: date-time
-                type: string
             type: object
         required:
         - spec

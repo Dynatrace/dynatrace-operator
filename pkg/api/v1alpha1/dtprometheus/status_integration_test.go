@@ -43,7 +43,7 @@ func TestDTPrometheusUpdateStatus(t *testing.T) {
 
 		// append first condition
 		*dtp.Conditions() = append(*dtp.Conditions(), dummyCondition)
-		require.NoError(t, dtp.UpdateStatus(t.Context(), clt))
+		require.NoError(t, clt.Status().Update(t.Context(), dtp))
 
 		// check that condition was added
 		clt.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp)
@@ -51,7 +51,7 @@ func TestDTPrometheusUpdateStatus(t *testing.T) {
 
 		// append duplicated condition
 		*dtp.Conditions() = append(*dtp.Conditions(), dummyCondition)
-		require.ErrorContains(t, dtp.UpdateStatus(t.Context(), clt), duplicatedConditionErrorMessageDtp)
+		require.ErrorContains(t, clt.Status().Update(t.Context(), dtp), duplicatedConditionErrorMessageDtp)
 
 		// check that condition count is still 1
 		clt.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp)
@@ -90,5 +90,5 @@ func createDTPrometheus(t *testing.T, clt client.Client, dtp *dtprometheus.DTPro
 		assert.NoError(t, clt.Delete(context.Background(), dtp))
 	})
 	dtp.Status = status
-	require.NoError(t, dtp.UpdateStatus(t.Context(), clt))
+	require.NoError(t, clt.Status().Update(t.Context(), dtp))
 }
