@@ -7,7 +7,6 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"testing"
@@ -24,14 +23,18 @@ import (
 )
 
 func TestLogCollector(t *testing.T) {
-	testLogCollection(t, true)
-}
+	t.Run("collect managed-by logs", func(t *testing.T) {
+		testLogCollection(t, true)
+	})
 
-func TestManagedByLogsIgnored(t *testing.T) {
-	testLogCollection(t, false)
+	t.Run("ignore managed-by logs", func(t *testing.T) {
+		testLogCollection(t, false)
+	})
 }
 
 func testLogCollection(t *testing.T, collectManagedLogs bool) {
+	t.Helper()
+
 	fakeClientSet := fake.NewClientset(
 		createPod("pod1", k8slabel.AppNameLabel),
 		createPod("pod2", k8slabel.AppNameLabel),
@@ -58,7 +61,7 @@ func testLogCollection(t *testing.T, collectManagedLogs bool) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	logCollector := newLogCollector(context.TODO(),
+	logCollector := newLogCollector(t.Context(),
 		newSupportArchiveLogger(&logBuffer),
 		supportArchive,
 		fakeClientSet.CoreV1().Pods("dynatrace"),
@@ -101,7 +104,7 @@ func testLogCollection(t *testing.T, collectManagedLogs bool) {
 }
 
 func TestLogCollectorPodListError(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	logBuffer := bytes.Buffer{}
 	buffer := bytes.Buffer{}
 
@@ -123,11 +126,12 @@ func TestLogCollectorPodListError(t *testing.T) {
 }
 
 func assertNoErrorOnClose(t *testing.T, closer io.Closer) {
+	t.Helper()
 	require.NoError(t, closer.Close())
 }
 
 func TestLogCollectorGetPodFail(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	fakeClientSet := fake.NewClientset(
 		createPod("pod1", k8slabel.AppNameLabel),
@@ -166,7 +170,7 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 }
 
 func TestLogCollectorGetLogsFail(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	fakeClientSet := fake.NewClientset(
 		createPod("pod1", k8slabel.AppNameLabel),
@@ -244,7 +248,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 }
 
 func TestLogCollectorNoAbortOnError(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	fakeClientSet := fake.NewClientset(
 		createPod("pod1", k8slabel.AppNameLabel),

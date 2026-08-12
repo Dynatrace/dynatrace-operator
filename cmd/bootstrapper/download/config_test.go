@@ -85,8 +85,12 @@ func TestConfigFromFs(t *testing.T) {
 	t.Run("not json -> error", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		inputDir := filepath.Join(tmpDir, "input")
+		err := os.MkdirAll(inputDir, os.ModePerm)
+		require.NoError(t, err)
+
 		inputFile := filepath.Join(inputDir, InputFileName)
-		os.WriteFile(inputFile, []byte("-------"), 0600)
+		err = os.WriteFile(inputFile, []byte("-------"), 0600)
+		require.NoError(t, err)
 
 		config, err := configFromFs(inputDir)
 		require.Error(t, err)
@@ -126,12 +130,16 @@ func setupConfig(t *testing.T, inputDir string, config Config) {
 	raw, err := json.Marshal(config)
 	require.NoError(t, err)
 
-	os.Mkdir(inputDir, os.ModePerm)
+	err = os.Mkdir(inputDir, os.ModePerm)
+	require.NoError(t, err)
+
 	err = os.WriteFile(filepath.Join(inputDir, InputFileName), raw, 0600)
 	require.NoError(t, err)
 }
 
 func compareDTOptions(t *testing.T, opts1 []dynatrace.Option, opts2 []dynatrace.Option) {
+	t.Helper()
+
 	require.Len(t, opts1, len(opts2))
 	for i := range opts1 {
 		expected := getNameOfCalledFunc(t, opts1[i])

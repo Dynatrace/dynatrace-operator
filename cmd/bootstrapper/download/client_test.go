@@ -103,12 +103,12 @@ func TestDo(t *testing.T) {
 			OS:   "os",
 			Arch: "arch",
 		}
-		os.MkdirAll(inputDir, os.ModePerm)
+
+		setupConfig(t, inputDir, config)
+
 		cert := fakeCert(t)
 		err := os.WriteFile(filepath.Join(inputDir, ca.TrustedCertsInputFile), cert, 0600)
 		require.NoError(t, err)
-
-		setupConfig(t, inputDir, config)
 
 		opts := []Option{
 			WithInstaller(installerTester(t, props, func(i *installermock.Installer) {

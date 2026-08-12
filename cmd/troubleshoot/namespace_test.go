@@ -4,7 +4,6 @@
 package troubleshoot
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -33,7 +32,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		require.NoErrorf(t, checkNamespace(context.Background(), getNullLogger(t), clt, testNamespace), "'%s' namespace not found", testNamespace)
+		require.NoErrorf(t, checkNamespace(t.Context(), getNullLogger(t), clt, testNamespace), "'%s' namespace not found", testNamespace)
 	})
 	t.Run("namespace does not exist in cluster", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -46,7 +45,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		require.Errorf(t, checkNamespace(context.Background(), getNullLogger(t), clt, testNamespace), "'%s' namespace found", testNamespace)
+		require.Errorf(t, checkNamespace(t.Context(), getNullLogger(t), clt, testNamespace), "'%s' namespace found", testNamespace)
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -59,6 +58,6 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		require.Errorf(t, checkNamespace(context.Background(), getNullLogger(t), clt, testOtherNamespace), "'%s' namespace found", testNamespace)
+		require.Errorf(t, checkNamespace(t.Context(), getNullLogger(t), clt, testOtherNamespace), "'%s' namespace found", testNamespace)
 	})
 }
