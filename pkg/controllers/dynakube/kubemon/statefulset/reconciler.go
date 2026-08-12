@@ -23,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -324,9 +325,10 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), km.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, map[string]string{
-			AnnotationTenantTokenHash:      tokenHash,
-			AnnotationAuthTokenHash:        authTokenHash,
-			AnnotationCustomPropertiesHash: customPropertiesHash,
+			AnnotationTenantTokenHash:              tokenHash,
+			AnnotationAuthTokenHash:                authTokenHash,
+			AnnotationCustomPropertiesHash:         customPropertiesHash,
+			mutator.AnnotationInjectionSplitMounts: "true",
 		})),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
