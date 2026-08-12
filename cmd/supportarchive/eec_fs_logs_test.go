@@ -20,6 +20,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 const (
 	eecPodName   = "dynakube-extension-controller-0"
 	eecNamespace = "dynatrace"
@@ -71,7 +73,7 @@ func TestFsLog(t *testing.T) {
 
 	lsStdOut := &bytes.Buffer{}
 	lsStdOut.WriteString(lsOutput)
-	rce.On("Exec", mock.Anything, mock.Anything, eecPodName, eecNamespace, eecContainerName, []string{
+	rce.EXPECT().Exec(anyCtx, mock.Anything, eecPodName, eecNamespace, eecContainerName, []string{
 		"/usr/bin/sh",
 		"-c",
 		"if [ -d '" + eecExtensionsPath + "' ]; then ls -R1 '" + eecExtensionsPath + "' ; else echo '<NOT FOUND>' ; fi",
@@ -79,13 +81,13 @@ func TestFsLog(t *testing.T) {
 
 	diagStdOut := &bytes.Buffer{}
 	diagStdOut.WriteString(diagExecutorOutput)
-	rce.On("Exec", mock.Anything, mock.Anything, eecPodName, eecNamespace, eecContainerName, []string{
+	rce.EXPECT().Exec(anyCtx, mock.Anything, eecPodName, eecNamespace, eecContainerName, []string{
 		"/usr/bin/sh",
 		"-c",
 		"[ -e " + eecExtensionsPath + "/diagnostics/diag_executor.log ] && cat " + eecExtensionsPath + "/diagnostics/diag_executor.log || echo '<NOT FOUND>'",
 	}).Return(diagStdOut, stdErr, nil)
 
-	logCollector := newFsLogCollector(context.Background(),
+	logCollector := newFsLogCollector(t.Context(),
 		nil,
 		rce,
 		newSupportArchiveLogger(&logBuffer),

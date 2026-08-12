@@ -132,6 +132,8 @@ func setupConfig(t *testing.T, inputDir string, config Config) {
 }
 
 func compareDTOptions(t *testing.T, opts1 []dynatrace.Option, opts2 []dynatrace.Option) {
+	t.Helper()
+
 	require.Len(t, opts1, len(opts2))
 	for i := range opts1 {
 		expected := getNameOfCalledFunc(t, opts1[i])

@@ -7,7 +7,6 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
-	"context"
 	"fmt"
 	"slices"
 	"testing"
@@ -136,7 +135,7 @@ func TestManifestCollector_Success(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	require.NoError(t, newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do())
+	require.NoError(t, newK8sObjectCollector(t.Context(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do())
 	assertNoErrorOnClose(t, supportArchive)
 
 	expectedFiles := []string{
@@ -184,7 +183,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	err := newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do()
+	err := newK8sObjectCollector(t.Context(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do()
 	require.NoError(t, err)
 	assertNoErrorOnClose(t, supportArchive)
 
@@ -261,7 +260,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	collector := newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt)
+	collector := newK8sObjectCollector(t.Context(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt)
 	require.NoError(t, collector.Do())
 	assertNoErrorOnClose(t, supportArchive)
 

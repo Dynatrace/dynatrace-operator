@@ -22,6 +22,8 @@ func runWithTestLogger(function func(log logd.Logger)) string {
 }
 
 func getNullLogger(t *testing.T) logd.Logger {
+	t.Helper()
+
 	devNull, err := os.Open(os.DevNull)
 	require.NoError(t, err)
 
