@@ -18,13 +18,18 @@ rules:
       - get
       - list
       - watch
-      - update
   - apiGroups:
       - dynatrace.com
     resources:
       - dtprometheuses/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - dynatrace.com
+    resources:
       - dtprometheuses/status
     verbs:
+      - patch
       - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
