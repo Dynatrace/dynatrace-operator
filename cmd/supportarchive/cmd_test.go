@@ -4,7 +4,6 @@
 package supportarchive
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -43,7 +42,7 @@ func TestGetAppName(t *testing.T) {
 		})
 
 	t.Setenv(k8senv.PodName, alternativeOperatorName)
-	assert.Equal(t, alternativeOperatorName, getAppNameLabel(context.TODO(), fakeClientSet.CoreV1().Pods(alternativeNamespace)))
+	assert.Equal(t, alternativeOperatorName, getAppNameLabel(t.Context(), fakeClientSet.CoreV1().Pods(alternativeNamespace)))
 }
 
 func TestStdoutArgMissing(t *testing.T) {

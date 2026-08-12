@@ -4,7 +4,6 @@
 package troubleshoot
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -21,7 +20,8 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTPS_PROXY", "")
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, nil, &dynakube.DynaKube{})
+			err := checkProxySettings(t.Context(), logger, nil, &dynakube.DynaKube{})
+			require.NoError(t, err)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -35,7 +35,8 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTPS_PROXY", "")
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, nil, &dynakube.DynaKube{})
+			err := checkProxySettings(t.Context(), logger, nil, &dynakube.DynaKube{})
+			require.NoError(t, err)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -49,7 +50,8 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTPS_PROXY", "foobar:1234")
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, nil, &dynakube.DynaKube{})
+			err := checkProxySettings(t.Context(), logger, nil, &dynakube.DynaKube{})
+			require.NoError(t, err)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -67,7 +69,8 @@ func TestCheckProxySettings(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, nil, &dk)
+			err := checkProxySettings(t.Context(), logger, nil, &dk)
+			require.NoError(t, err)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -97,7 +100,8 @@ func TestCheckProxySettings(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, clt, &dk)
+			err := checkProxySettings(t.Context(), logger, clt, &dk)
+			require.NoError(t, err)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -115,7 +119,8 @@ func TestCheckProxySettings(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, nil, &dk)
+			err := checkProxySettings(t.Context(), logger, nil, &dk)
+			require.NoError(t, err)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")

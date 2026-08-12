@@ -12,3 +12,9 @@ const (
 	Deploying DeploymentPhase = "Deploying"
 	Error     DeploymentPhase = "Error"
 )
+
+const (
+	ReasonError       = "Error"
+	ReasonAvailable   = "Available"
+	ReasonReconciling = "Reconciling"
+)
