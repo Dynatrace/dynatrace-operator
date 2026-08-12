@@ -34,9 +34,9 @@ rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["create", "get", "update", "patch", "delete", "list", "watch"]
-  # --- DynaKube / EdgeConnect custom resources (namespace-scoped) ---
+  # --- DynaKube / EdgeConnect / DtPrometheus custom resources (namespace-scoped) ---
   - apiGroups: ["dynatrace.com"]
-    resources: ["dynakubes", "edgeconnects"]
+    resources: ["dynakubes", "dtprometheuses", "edgeconnects"]
     verbs: ["create", "get", "update", "patch", "delete", "list"]
   # --- Platform-specific (only needed if the API exists on the cluster) ---
   - apiGroups: ["auto.gke.io"]
@@ -106,6 +106,9 @@ rules:
   - apiGroups: ["events.k8s.io"]
     resources: ["events"]
     verbs: ["create", "get", "list", "patch"]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["podmonitors", "probes", "scrapeconfigs", "servicemonitors"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: ["networking.istio.io"]
     resources: ["serviceentries", "virtualservices"]
     verbs: ["create", "delete", "get", "list", "update"]

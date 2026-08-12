@@ -28,14 +28,20 @@ tests:
               verbs:
                 - get
                 - list
-                - watch
                 - update
+                - watch
             - apiGroups:
                 - dynatrace.com
               resources:
                 - dtprometheuses/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - dynatrace.com
+              resources:
                 - dtprometheuses/status
               verbs:
+                - patch
                 - update
 
   - it: RoleBinding should exist with correct subjects and roleRef
@@ -62,3 +68,10 @@ tests:
             kind: Role
             name: dynatrace-dtprometheus-operator
             apiGroup: rbac.authorization.k8s.io
+
+  - it: shouldn't exist if prometheus rbac is turned off
+    set:
+      rbac.prometheus.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

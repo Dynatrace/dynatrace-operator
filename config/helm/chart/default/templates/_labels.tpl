@@ -148,3 +148,27 @@ Database Extensions Executor labels
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: dynatrace-sql-extension-executor
 {{- end -}}
+
+{{/*
+Prometheus Target Allocator labels
+*/}}
+{{- define "dynatrace-operator.targetAllocatorLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: dynatrace-target-allocator
+{{- end -}}
+
+{{/*
+Prometheus Scraper labels
+*/}}
+{{- define "dynatrace-operator.scraperLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: dynatrace-prometheus-scraper
+{{- end -}}
+
+{{/*
+Prometheus Gateway labels
+*/}}
+{{- define "dynatrace-operator.gatewayLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: dynatrace-prometheus-gateway
+{{- end -}}
