@@ -190,7 +190,7 @@ func testFromAreSpecsEqual(t *testing.T, src *edgeconnect.EdgeConnectSpec, dst *
 
 	assert.Equal(t, src.ImageRef.Tag, dst.ImageRef.Tag, "ImageRef.Tag")
 
-	assert.Equal(t, src.APIServer, dst.ApiServer, "ApiServer")
+	assert.Equal(t, src.APIServer, dst.APIServer, "ApiServer")
 
 	if len(src.HostRestrictions) == 0 {
 		assert.Empty(t, dst.HostRestrictions, "HostRestrictions")

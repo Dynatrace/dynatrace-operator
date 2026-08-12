@@ -43,7 +43,7 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// Location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required
-	ApiServer string `json:"apiServer"` //nolint:revive,staticcheck
+	APIServer string `json:"apiServer"`
 
 	// Restrict outgoing HTTP requests to your internal resources to specified hosts
 	// +kubebuilder:example:="internal.example.org,*.dev.example.org"

@@ -90,7 +90,7 @@ func testGetV1alpha1Spec() EdgeConnectSpec {
 			Repository: "h",
 			Tag:        "i",
 		},
-		ApiServer:          "j",
+		APIServer:          "j",
 		HostRestrictions:   "k,l",
 		CustomPullSecret:   "m",
 		CaCertsRef:         "n",
@@ -194,7 +194,7 @@ func testToAreSpecsEqual(t *testing.T, src *EdgeConnectSpec, dst *edgeconnect.Ed
 
 	assert.Equal(t, src.ImageRef.Tag, dst.ImageRef.Tag, "ImageRef.Tag")
 
-	assert.Equal(t, src.ApiServer, dst.APIServer, "ApiServer")
+	assert.Equal(t, src.APIServer, dst.APIServer, "ApiServer")
 
 	assert.Equal(t, strings.Split(src.HostRestrictions, ","), dst.HostRestrictions, "HostRestrictions")
 
