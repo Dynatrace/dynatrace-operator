@@ -28,6 +28,7 @@ tests:
               verbs:
                 - get
                 - list
+                - update
                 - watch
             - apiGroups:
                 - dynatrace.com
