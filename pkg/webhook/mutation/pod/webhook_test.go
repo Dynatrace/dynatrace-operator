@@ -4,7 +4,6 @@
 package pod
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -29,13 +28,12 @@ import (
 const (
 	testWebhookImage  = "test-wh-image"
 	testNamespaceName = "test-namespace"
-	testClusterID     = "test-cluster-id"
 	testPodName       = "test-pod"
 	testDynakubeName  = "test-dynakube"
 )
 
 func TestHandle(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("can't get NS ==> no inject, err in message", func(t *testing.T) {
 		wh := createTestWebhook(t, handlermock.NewHandler(t), handlermock.NewHandler(t))
@@ -139,10 +137,10 @@ func TestHandle(t *testing.T) {
 	})
 	t.Run("Arbitrary Error in OTLP handler ==> revert all modifications and include message", func(t *testing.T) {
 		injectionHandler := handlermock.NewHandler(t)
-		injectionHandler.On("Handle", mock.Anything).Return(nil)
+		injectionHandler.EXPECT().Handle(mock.Anything).Return(nil)
 
 		otlpHandler := handlermock.NewHandler(t)
-		otlpHandler.On("Handle", mock.Anything).Return(errors.New("err"))
+		otlpHandler.EXPECT().Handle(mock.Anything).Return(errors.New("err"))
 
 		wh := createTestWebhook(t,
 			injectionHandler,
@@ -160,12 +158,12 @@ func TestHandle(t *testing.T) {
 	})
 	t.Run("MutatorError in OTLP handler ==> revert all modifications", func(t *testing.T) {
 		injectionHandler := handlermock.NewHandler(t)
-		injectionHandler.On("Handle", mock.Anything).Return(nil)
+		injectionHandler.EXPECT().Handle(mock.Anything).Return(nil)
 
 		otlpHandler := handlermock.NewHandler(t)
 
 		annotated := false
-		otlpHandler.On("Handle", mock.Anything).Return(podwebhook.MutatorError{
+		otlpHandler.EXPECT().Handle(mock.Anything).Return(podwebhook.MutatorError{
 			Err: errors.New("err"),
 			Annotate: func(_ *corev1.Pod) {
 				annotated = true

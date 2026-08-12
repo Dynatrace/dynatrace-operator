@@ -1,0 +1,41 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+suite: test ClusterRoleBinding for prometheus scraper
+templates:
+  - Common/prometheus/clusterrolebinding-prometheus-scraper.yaml
+tests:
+  - it: should exist with correct name and labels
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-prometheus-scraper
+      - isNotEmpty:
+          path: metadata.labels
+
+  - it: should reference the correct ClusterRole
+    asserts:
+      - equal:
+          path: roleRef
+          value:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: dynatrace-prometheus-scraper
+
+  - it: should reference the correct ServiceAccount
+    asserts:
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-prometheus-scraper
+            namespace: NAMESPACE
+
+  - it: shouldn't exist if prometheus rbac is turned off
+    set:
+      rbac.prometheus.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

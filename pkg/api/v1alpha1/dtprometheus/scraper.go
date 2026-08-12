@@ -3,7 +3,10 @@
 
 package dtprometheus
 
-import appsv1 "k8s.io/api/apps/v1"
+import (
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // ScraperNameSuffix is appended to the owning DTPrometheus name to derive the base
 // name of the scraper's Kubernetes resources.
@@ -28,7 +31,7 @@ type ScraperSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="60s"
 	// +kubebuilder:validation:Format=duration
-	TargetsPollInterval string `json:"targetsPollInterval,omitempty"`
+	TargetsPollInterval metav1.Duration `json:"targetsPollInterval,omitempty"`
 
 	// Deployment update strategy for the scraper pool.
 	// +kubebuilder:validation:Optional

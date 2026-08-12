@@ -343,7 +343,6 @@ linters:
         path-except: pkg/api/(.+)\.go
     paths:
       - pkg/api/v1alpha1/edgeconnect
-      - pkg/api/v1beta4/dynakube
       - pkg/api/v1beta5/dynakube
       - third_party$
       - builtin$

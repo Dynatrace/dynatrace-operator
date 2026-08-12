@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func TestHandleImpl(t *testing.T) {
 	initSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -97,12 +99,12 @@ func TestHandleImpl(t *testing.T) {
 		}
 
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		oaMutator.On("Mutate", mock.Anything).Return(nil)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
-		metaMutator.On("Mutate", mock.Anything).Return(nil)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
+		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
 
@@ -110,12 +112,12 @@ func TestHandleImpl(t *testing.T) {
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
-		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
+		err = wh.apiReader.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
 		require.NoError(t, err)
 		assert.Equal(t, source.Data, replicated.Data)
 
 		var replicatedCerts corev1.Secret
-		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
+		err = wh.apiReader.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
 		require.NoError(t, err)
 		assert.Equal(t, sourceCerts.Data, replicatedCerts.Data)
 
@@ -147,12 +149,12 @@ func TestHandleImpl(t *testing.T) {
 		}
 
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		oaMutator.On("Mutate", mock.Anything).Return(nil)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		metaMutator.On("Mutate", mock.Anything).Return(nil)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
 
@@ -160,12 +162,12 @@ func TestHandleImpl(t *testing.T) {
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
-		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
+		err = wh.apiReader.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
 		require.NoError(t, err)
 		assert.Equal(t, source.Data, replicated.Data)
 
 		var replicatedCerts corev1.Secret
-		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
+		err = wh.apiReader.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
 		require.Error(t, err)
 		require.True(t, k8sErrors.IsNotFound(err))
 		assert.Empty(t, replicatedCerts.Data)
@@ -180,12 +182,12 @@ func TestHandleImpl(t *testing.T) {
 
 	t.Run("happy path", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		oaMutator.On("Mutate", mock.Anything).Return(nil)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		metaMutator.On("Mutate", mock.Anything).Return(nil)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
 
@@ -208,10 +210,10 @@ func TestHandleImpl(t *testing.T) {
 
 	t.Run("happy path - nothing is enabled", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
 
@@ -234,8 +236,8 @@ func TestHandleImpl(t *testing.T) {
 
 	t.Run("happy path - reinvoke", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		oaMutator.On("Reinvoke", mock.Anything, mock.Anything).Return(true)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+		oaMutator.EXPECT().Reinvoke(anyCtx, mock.Anything).Return(true)
 
 		metaMutator := webhookmock.NewMutator(t)
 
@@ -357,6 +359,8 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 }
 
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
+	t.Helper()
+
 	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
 

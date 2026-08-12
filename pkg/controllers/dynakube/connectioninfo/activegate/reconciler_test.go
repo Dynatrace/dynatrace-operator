@@ -6,7 +6,6 @@ package activegate
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -104,8 +103,6 @@ func TestReconcile(t *testing.T) {
 		}
 
 		r := NewReconciler(fakeClient, fakeClient)
-		r.timeProvider.Set(r.timeProvider.Now().Add(time.Minute * 20))
-
 		err := r.Reconcile(ctx, dtClient, dk)
 		require.NoError(t, err)
 
@@ -119,35 +116,6 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 		assert.Equal(t, tenantTokenHash, dk.Status.ActiveGate.ConnectionInfo.TenantTokenHash)
-
-		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: testNamespace}, &actualSecret)
-		require.NoError(t, err)
-		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
-	})
-	t.Run("update ActiveGate connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
-		dk := getTestDynakube()
-
-		dtClient := agclientmock.NewClient(t)
-		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
-
-		fakeClient := fake.NewClient(dk)
-
-		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{
-			TenantUUID: testOutdated,
-			Endpoints:  testOutdated,
-		}
-
-		r := NewReconciler(fakeClient, fakeClient)
-		err := r.Reconcile(ctx, dtClient, dk)
-		require.NoError(t, err)
-
-		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateConnectionInfoConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
-
-		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
-		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: testNamespace}, &actualSecret)

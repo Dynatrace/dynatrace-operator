@@ -13,6 +13,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_connectionInfoJSONResponse_IsEmpty(t *testing.T) {
+	tests := []struct {
+		name     string
+		response connectionInfoJSONResponse
+		want     bool
+	}{
+		{
+			name:     "all fields set",
+			response: connectionInfoJSONResponse{TenantUUID: "uuid", TenantToken: "token", CommunicationEndpoints: "endpoints"},
+			want:     false,
+		},
+		{
+			name:     "missing TenantUUID",
+			response: connectionInfoJSONResponse{TenantToken: "token", CommunicationEndpoints: "endpoints"},
+			want:     true,
+		},
+		{
+			name:     "missing TenantToken",
+			response: connectionInfoJSONResponse{TenantUUID: "uuid", CommunicationEndpoints: "endpoints"},
+			want:     true,
+		},
+		{
+			name:     "missing CommunicationEndpoints",
+			response: connectionInfoJSONResponse{TenantUUID: "uuid", TenantToken: "token"},
+			want:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.response.IsEmpty())
+		})
+	}
+}
+
 func TestGetAuthToken(t *testing.T) {
 	ctx := t.Context()
 

@@ -300,6 +300,8 @@ rbac:
   kspm:
     create: true
     annotations: {}
+  prometheus:
+    create: true
   supportability: true
 
 experimental:

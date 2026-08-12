@@ -125,7 +125,7 @@ func TestReconciler(t *testing.T) {
 			dk,
 		)
 		oneAgentClient := oneagentclientmock.NewClient(t)
-		oneAgentClient.EXPECT().GetConnectionInfo(anyCtx).Return(expectedOneAgentConnectionInfo, nil).Once()
+		oneAgentClient.EXPECT().GetConnectionInfo(anyCtx, mock.Anything).Return(expectedOneAgentConnectionInfo, nil).Once()
 		versionClient := versionclientmock.NewClient(t)
 		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
