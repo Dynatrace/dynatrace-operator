@@ -6,7 +6,6 @@
 package kspm
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
@@ -16,8 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	componentKspm "github.com/Dynatrace/dynatrace-operator/test/helpers/components/kspm"
-	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -64,12 +61,8 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	builder.Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-		ctx, err := componentOperator.EnableKubemonOperand(ctx, cfg)
-		require.NoError(t, err)
-
-		return ctx
-	})
+	builder.Setup(componentOperator.SetKubemonOperand(true))
+	builder.Teardown(componentOperator.SetKubemonOperand(false))
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 

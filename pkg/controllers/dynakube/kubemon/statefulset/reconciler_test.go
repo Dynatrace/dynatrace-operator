@@ -182,6 +182,21 @@ func TestReconcileResolveReplicasReadFailure(t *testing.T) {
 // TestReconcileBuildsStatefulSet covers the shape of the produced StatefulSet. The fake client has
 // no StatefulSet controller, so reconcile always reports rollout in progress.
 func TestReconcileBuildsStatefulSet(t *testing.T) {
+	t.Run("container has named https and http ports for service routing", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		container := sts.Spec.Template.Spec.Containers[0]
+
+		assert.True(t, slices.ContainsFunc(container.Ports, func(p corev1.ContainerPort) bool {
+			return p.Name == "https" && p.ContainerPort == 9999
+		}), "expected https:9999 container port")
+
+		assert.True(t, slices.ContainsFunc(container.Ports, func(p corev1.ContainerPort) bool {
+			return p.Name == "http" && p.ContainerPort == 9998
+		}), "expected http:9998 container port")
+	})
+
 	t.Run("container identity and service account", func(t *testing.T) {
 		dk := newTestDynaKube(true)
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))

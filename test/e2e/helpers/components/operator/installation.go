@@ -13,7 +13,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
@@ -21,12 +23,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
@@ -322,30 +329,24 @@ func getImageRef(rootDir string, fips140 bool) (string, error) {
 	return imageRef, nil
 }
 
-// EnableKubemonOperand patches the operator deployment to set EXPERIMENTAL_ENABLE_KUBEMON_OPERAND=true
+// SetKubemonOperand patches the operator deployment to enable or disable EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
 // TODO: remove once the feature gate is gone.
-func EnableKubemonOperand(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-	resource := envConfig.Client().Resources()
-	deploy := &appsv1.Deployment{}
+func SetKubemonOperand(enabled bool) features.Func {
+	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+		t.Helper()
 
-	if err := resource.Get(ctx, DeploymentName, DefaultNamespace, deploy); err != nil {
-		return ctx, err
+		patch := fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
+			ContainerName, k8senv.ExperimentalEnableKubemonOperand, strconv.FormatBool(enabled))
+
+		deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: DeploymentName, Namespace: DefaultNamespace}}
+		require.NoError(t, cfg.Client().Resources().Patch(ctx, deploy, k8s.Patch{
+			PatchType: types.StrategicMergePatchType,
+			Data:      []byte(patch),
+		}))
+
+		ctx, err := WaitForDeployment(DefaultNamespace)(ctx, cfg)
+		require.NoError(t, err)
+
+		return ctx
 	}
-
-	for i, c := range deploy.Spec.Template.Spec.Containers {
-		if c.Name == ContainerName {
-			deploy.Spec.Template.Spec.Containers[i].Env = append(deploy.Spec.Template.Spec.Containers[i].Env, corev1.EnvVar{
-				Name:  k8senv.ExperimentalEnableKubemonOperand,
-				Value: "true",
-			})
-
-			break
-		}
-	}
-
-	if err := resource.Update(ctx, deploy); err != nil {
-		return ctx, err
-	}
-
-	return WaitForDeployment(DefaultNamespace)(ctx, envConfig)
 }

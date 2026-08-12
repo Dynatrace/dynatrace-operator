@@ -92,6 +92,30 @@ func TestKubemonEnabled(t *testing.T) {
 		assert.Equal(t, intstr.FromString(agconsts.HTTPServicePortName), httpPort.TargetPort)
 	})
 
+	t.Run("selector matches kubemon pod labels", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dk",
+				Namespace: "dynatrace",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				KubernetesMonitoring: &kubemonapi.Spec{},
+			},
+		}
+		fakeClient := fake.NewClient(dk)
+
+		require.NoError(t, service.NewReconciler(fakeClient).Reconcile(t.Context(), dk))
+
+		svc := &corev1.Service{}
+		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: service.BuildServiceName(dk.Name), Namespace: dk.Namespace}, svc))
+
+		assert.Equal(t, map[string]string{
+			"app.kubernetes.io/name":       "kubemon",
+			"app.kubernetes.io/created-by": "test-dk",
+			"app.kubernetes.io/managed-by": "dynatrace-operator",
+		}, svc.Spec.Selector)
+	})
+
 	t.Run("ClusterIPs assigned by Kubernetes are reflected in DynaKube status", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{

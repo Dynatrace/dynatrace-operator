@@ -104,7 +104,7 @@ func agService(dk *dynakube.DynaKube) *corev1.Service {
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: k8slabel.NewAppLabels(k8slabel.KubeMonComponentLabel, dk.Name, "", "").BuildMatchLabels(),
+			Selector: k8slabel.NewAppLabels(k8slabel.KubeMonComponentLabel, dk.Name, k8slabel.KubeMonComponentLabel, "").BuildMatchLabels(),
 			Ports:    ports,
 		},
 	}

@@ -357,14 +357,18 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		VolumeMounts:    buildVolumeMounts(dk),
 		ReadinessProbe:  probe.Readiness(),
 		LivenessProbe:   probe.Liveness(),
+		Ports: []corev1.ContainerPort{
+			{Name: agconsts.HTTPSServicePortName, ContainerPort: agconsts.HTTPSContainerPort},
+			{Name: agconsts.HTTPServicePortName, ContainerPort: agconsts.HTTPContainerPort},
+		},
 	}
 
 	km := dk.KubernetesMonitoring()
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KubeMonComponentLabel)
+	appLabels := k8slabel.NewAppLabels(k8slabel.KubeMonComponentLabel, dk.Name, k8slabel.KubeMonComponentLabel, "")
 
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
-		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), km.Labels),
+		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), km.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash))),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
