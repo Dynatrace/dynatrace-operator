@@ -6,7 +6,6 @@ package dtprometheus
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -108,16 +107,6 @@ func Test_setPhase(t *testing.T) {
 		expectedPhase status.DeploymentPhase
 		expectedErr   error
 	}{
-		{
-			name:          "missing dynakube",
-			err:           fmt.Errorf("wrap %w", errMissingDynaKube),
-			expectedPhase: status.Deploying,
-		},
-		{
-			name:          "dynakube not ready",
-			err:           fmt.Errorf("wrap %w", errDynaKubeNotReady),
-			expectedPhase: status.Deploying,
-		},
 		{
 			name:          "generic error without conditions",
 			err:           boom,

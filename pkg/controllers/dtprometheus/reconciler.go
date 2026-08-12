@@ -5,7 +5,6 @@ package dtprometheus
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -26,11 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-)
-
-var (
-	errMissingDynaKube  = errors.New("missing dynakube")
-	errDynaKubeNotReady = errors.New("dynakube is not running")
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -126,12 +120,6 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 }
 
 func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
-	if errors.Is(err, errMissingDynaKube) || errors.Is(err, errDynaKubeNotReady) {
-		dtp.Status.Phase = status.Deploying
-
-		return nil
-	}
-
 	if len(dtp.Status.Conditions) == 0 {
 		if err != nil {
 			dtp.Status.Phase = status.Error
@@ -248,10 +236,13 @@ func newDynaKubePhaseChangedPredicate() predicate.Funcs {
 		},
 		UpdateFunc: func(e event.TypedUpdateEvent[client.Object]) bool {
 			oldDK, _ := e.ObjectOld.(*dynakube.DynaKube)
-
 			newDK, _ := e.ObjectNew.(*dynakube.DynaKube)
+
 			if oldDK == nil || newDK == nil {
-				panic(fmt.Sprintf("unexpected objects: %T, %T", e.ObjectOld, e.ObjectNew))
+				// Don't need to drag a context or logger variable into this closure for this unexpected case.
+				logd.Get().WithName("dtprometheus-predicate").Error(nil, fmt.Sprintf("expected DynaKube, but got old:%T, new:%T", e.ObjectOld, e.ObjectNew))
+
+				return false
 			}
 
 			return oldDK.Status.Phase != newDK.Status.Phase
