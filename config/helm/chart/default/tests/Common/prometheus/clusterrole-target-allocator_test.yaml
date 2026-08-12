@@ -1,0 +1,101 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+suite: test ClusterRole for target allocator
+templates:
+  - Common/prometheus/clusterrole-target-allocator.yaml
+tests:
+  - it: should exist with correct name and labels
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-target-allocator
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: dynatrace-target-allocator
+
+  - it: should have correct core permissions
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - namespaces
+              - pods
+              - services
+              - endpoints
+              - nodes
+              - nodes/metrics
+              - secrets
+            verbs:
+              - get
+              - list
+              - watch
+
+  - it: should have Prometheus CRD permissions
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - monitoring.coreos.com
+            resources:
+              - servicemonitors
+              - podmonitors
+              - scrapeconfigs
+              - probes
+            verbs:
+              - get
+              - list
+              - watch
+
+  - it: should have metrics non-resource URL permission
+    asserts:
+      - contains:
+          path: rules
+          content:
+            nonResourceURLs:
+              - /metrics
+            verbs:
+              - get
+
+  - it: should have OpenShift SCC permission on openshift platform
+    set:
+      platform: openshift
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
+  - it: shouldn't have OpenShift SCC permission on default platform
+    asserts:
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
+  - it: shouldn't exist if prometheus rbac is turned off
+    set:
+      rbac.prometheus.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
