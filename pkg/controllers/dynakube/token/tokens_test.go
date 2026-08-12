@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
@@ -337,6 +338,41 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeSettingsWrite: false,
 			},
 			shouldError: false,
+		},
+		{
+			title: "kubernetesMonitoring operand with registration enabled, optional scopes present",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					KubernetesMonitoring: &kubemon.Spec{
+						Registration: &kubemon.Registration{},
+					},
+				},
+			},
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite,
+				tokenclient.ScopeInstallerDownload,
+			},
+			expectedOptional: map[string]bool{
+				tokenclient.ScopeSettingsRead:  true,
+				tokenclient.ScopeSettingsWrite: true,
+			},
+			shouldError: false,
+		},
+		{
+			title: "kubernetesMonitoring operand without registration, optional scopes missing",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					KubernetesMonitoring: &kubemon.Spec{},
+				},
+			},
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeInstallerDownload,
+			},
+			expectedOptional: map[string]bool{},
+			shouldError:      false,
 		},
 		{
 			title: "metadataEnrichment - all scopes present",
