@@ -16,6 +16,8 @@ redcross="❌  "
 # TODO: we can use renovate to update these image versions
 # DAQ-15444
 # based on release page https://github.com/kubernetes-sigs/kind/releases
+KIND_IMAGE_K8S_129=docker.io/kindest/node:v1.29.14@sha256:8703bd94ee24e51b778d5556ae310c6c0fa67d761fae6379c8e0bb480e6fea29
+KIND_IMAGE_K8S_130=docker.io/kindest/node:v1.30.13@sha256:397209b3d947d154f6641f2d0ce8d473732bd91c87d9575ade99049aa33cd648
 KIND_IMAGE_K8S_131=docker.io/kindest/node:v1.31.14@sha256:6f86cf509dbb42767b6e79debc3f2c32e4ee01386f0489b3b2be24b0a55aac2b
 KIND_IMAGE_K8S_132=docker.io/kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8
 KIND_IMAGE_K8S_133=docker.io/kindest/node:v1.33.12@sha256:3f5c8443c620245e4d355cfe09e96a91ead32ceaa569d3f1ca9edf0cb2fe2ff4
@@ -30,6 +32,8 @@ if printenv K8S_VERSION >/dev/null && [ -n "$K8S_VERSION" ]; then
 fi
 
 case "$k8s_version" in
+1.29*) image=$KIND_IMAGE_K8S_129 ;;
+1.30*) image=$KIND_IMAGE_K8S_130 ;;
 1.31*) image=$KIND_IMAGE_K8S_131 ;;
 1.32*) image=$KIND_IMAGE_K8S_132 ;;
 1.33*) image=$KIND_IMAGE_K8S_133 ;;
