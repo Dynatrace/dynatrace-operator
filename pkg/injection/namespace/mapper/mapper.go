@@ -26,16 +26,6 @@ type ConflictChecker struct {
 	alreadyUsed bool
 }
 
-type matchResult struct {
-	IsOA   bool
-	IsME   bool
-	IsOTLP bool
-}
-
-func (m matchResult) IsAny() bool {
-	return m.IsOA || m.IsME || m.IsOTLP
-}
-
 func (c *ConflictChecker) check(dk *dynakube.DynaKube) error {
 	metadataEnrichment := dk.MetadataEnrichment()
 	otlpExporterConfig := dk.OTLPExporterConfiguration()
@@ -77,84 +67,54 @@ func addNamespaceInjectLabel(dkName string, ns *corev1.Namespace) {
 	ns.Labels[dtwebhook.InjectionInstanceLabel] = dkName
 }
 
-func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (matchResult, error) {
-	var result matchResult
+type compiledSelectors struct {
+	oneAgent labels.Selector
+	metadata labels.Selector
+	otlp     labels.Selector
+}
+
+// compileSelectors compiles the DynaKube's namespace selectors. If any selector is invalid it will be nil.
+// This function assumes that invalid selectors would've been rejected by the validation webhook.
+func compileSelectors(dk *dynakube.DynaKube) compiledSelectors {
+	var selectors compiledSelectors
+
+	if dk.OneAgent().IsAppInjectionNeeded() {
+		selectors.oneAgent, _ = metav1.LabelSelectorAsSelector(dk.OneAgent().GetNamespaceSelector())
+	}
+
+	if metadataEnrichment := dk.MetadataEnrichment(); metadataEnrichment.IsEnabled() {
+		selectors.metadata, _ = metav1.LabelSelectorAsSelector(&metadataEnrichment.NamespaceSelector)
+	}
+
+	if otlpExporterConfiguration := dk.OTLPExporterConfiguration(); otlpExporterConfiguration.IsEnabled() {
+		selectors.otlp, _ = metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.Spec.NamespaceSelector)
+	}
+
+	return selectors
+}
+
+func match(dk *dynakube.DynaKube, namespace *corev1.Namespace, selectors compiledSelectors) matchFlags {
+	var flags matchFlags
 
 	if isIgnoredNamespace(dk, namespace.Name) {
-		return result, nil
+		return flags
 	}
 
-	matchOA, err := matchOneAgent(dk, namespace)
-	if err != nil {
-		return result, err
+	set := labels.Set(namespace.Labels)
+
+	if selectors.oneAgent != nil && selectors.oneAgent.Matches(set) {
+		flags |= flagOneAgent
 	}
 
-	result.IsOA = matchOA
-
-	matchME, err := matchMetadataEnrichment(dk, namespace)
-	if err != nil {
-		return result, err
+	if selectors.metadata != nil && selectors.metadata.Matches(set) {
+		flags |= flagMetadata
 	}
 
-	result.IsME = matchME
-
-	matchOTLP, err := matchOTLPExporterConfiguration(dk, namespace)
-	if err != nil {
-		return result, err
+	if selectors.otlp != nil && selectors.otlp.Matches(set) {
+		flags |= flagOTLP
 	}
 
-	result.IsOTLP = matchOTLP
-
-	return result, nil
-}
-
-// matchOneAgent uses the namespace selector in the dynakube to check if it matches a given namespace
-// if the namespace selector is not set on the dynakube its an automatic match
-func matchOneAgent(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
-	if !dk.OneAgent().IsAppInjectionNeeded() {
-		return false, nil
-	} else if dk.OneAgent().GetNamespaceSelector() == nil {
-		return true, nil
-	}
-
-	selector, err := metav1.LabelSelectorAsSelector(dk.OneAgent().GetNamespaceSelector())
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-
-	return selector.Matches(labels.Set(namespace.Labels)), nil
-}
-
-func matchMetadataEnrichment(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
-	metadataEnrichment := dk.MetadataEnrichment()
-	if !metadataEnrichment.IsEnabled() {
-		return false, nil
-	} else if metadataEnrichment.GetNamespaceSelector() == nil {
-		return true, nil
-	}
-
-	metadataEnrichmentSelector, err := metav1.LabelSelectorAsSelector(metadataEnrichment.GetNamespaceSelector())
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-
-	return metadataEnrichmentSelector.Matches(labels.Set(namespace.Labels)), nil
-}
-
-func matchOTLPExporterConfiguration(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
-	otlpExporterConfiguration := dk.OTLPExporterConfiguration()
-	if !otlpExporterConfiguration.IsEnabled() {
-		return false, nil
-	} else if otlpExporterConfiguration.Spec.NamespaceSelector.Size() == 0 {
-		return true, nil
-	}
-
-	namespaceSelector, err := metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.Spec.NamespaceSelector)
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-
-	return namespaceSelector.Matches(labels.Set(namespace.Labels)), nil
+	return flags
 }
 
 // updateNamespace tries to match the namespace to every dynakube with codeModules
@@ -167,41 +127,35 @@ func updateNamespace(ctx context.Context, namespace *corev1.Namespace, deployedD
 	for i := range deployedDynakubes.Items {
 		dk := &deployedDynakubes.Items[i]
 
-		matches, err := match(dk, namespace)
-		if err != nil {
-			return namespaceUpdated, err
-		}
+		// Recompiled per namespace this function is called for, since this loop runs once per
+		// namespace (from mapFromDynakube's caller): O(namespaces x dynakubes) instead of O(dynakubes).
+		// Left as-is - dynakubes with a relevant selector are rarely more than one or two.
+		selectors := compileSelectors(dk)
+		flags := match(dk, namespace, selectors)
 
-		if matches.IsAny() {
+		if flags.isAny() {
 			if err := conflict.check(dk); err != nil {
 				return namespaceUpdated, err
 			}
 		}
 
-		labelsUpdated := updateLabels(ctx, matches.IsAny(), dk, namespace)
+		labelsUpdated := updateLabels(ctx, dk, namespace, flags.isAny())
 		namespaceUpdated = labelsUpdated || namespaceUpdated
 	}
 
 	return namespaceUpdated, nil
 }
 
-func updateLabels(ctx context.Context, matches bool, dk *dynakube.DynaKube, namespace *corev1.Namespace) bool {
-	log := logd.FromContext(ctx)
-
-	updated := false
-
-	if namespace.Labels == nil {
-		namespace.Labels = make(map[string]string)
-	}
-
+func updateLabels(ctx context.Context, dk *dynakube.DynaKube, namespace *corev1.Namespace, matches bool) bool {
 	associatedDynakubeName, instanceLabelFound := namespace.Labels[dtwebhook.InjectionInstanceLabel]
+	updated := false
 
 	if matches {
 		if !instanceLabelFound || associatedDynakubeName != dk.Name {
 			updated = true
 
 			addNamespaceInjectLabel(dk.Name, namespace)
-			log.Info("started monitoring namespace", "namespace", namespace.Name)
+			logd.FromContext(ctx).Info("started monitoring namespace", "namespace", namespace.Name)
 		}
 	} else if instanceLabelFound && associatedDynakubeName == dk.Name {
 		updated = true
