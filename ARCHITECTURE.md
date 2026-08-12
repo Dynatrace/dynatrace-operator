@@ -242,7 +242,7 @@ This command [`cmd/metadata/`](./cmd/metadata/) generates metadata files contain
 
 - [**`latest/`**](./pkg/api/latest/): Current API version
   - the purpose of this "hack" is to make the codebase easier to maintain, so when we introduce a new API version, we don't have to update the imports for every single file.
-- [**`v1alpha1/`**](./pkg/api/v1alpha1/), [**`v1alpha2/`**](./pkg/api/v1alpha2/), [**`v1beta4/`**](./pkg/api/v1beta4/), etc. - Versioned APIs
+- [**`v1alpha1/`**](./pkg/api/v1alpha1/), [**`v1alpha2/`**](./pkg/api/v1alpha2/), [**`v1beta5/`**](./pkg/api/v1beta5/), etc. - Versioned APIs
 - [**`conversion/`**](./pkg/api/conversion/): API version conversion logic
 - [**`validation/`**](./pkg/api/validation/): CR validation logic
 - [**`scheme/`**](./pkg/api/scheme/): Kubernetes scheme registration
