@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,7 +87,7 @@ func TestReconcileSecretReplicationLifecycle(t *testing.T) {
 	})
 
 	oneAgentClient := oneagentclientmock.NewClient(t)
-	oneAgentClient.EXPECT().GetConnectionInfo(anyCtx).Return(oneagentclient.ConnectionInfo{
+	oneAgentClient.EXPECT().GetConnectionInfo(anyCtx, mock.Anything).Return(oneagentclient.ConnectionInfo{
 		TenantUUID:  "test-uuid",
 		TenantToken: "test-tenant-token",
 		Endpoints:   "https://tenant.live.dynatrace.com:443",
