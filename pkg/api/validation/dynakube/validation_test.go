@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	v1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
@@ -191,25 +190,6 @@ func Test_getDynakube(t *testing.T) {
 		assert.Equal(t, v1beta5Dk.Name, dk.Name)
 		assert.Equal(t, v1beta5Dk.Namespace, dk.Namespace)
 		assert.Equal(t, v1beta5Dk.Spec.APIURL, dk.Spec.APIURL)
-	})
-
-	t.Run("v1beta4 to latest", func(t *testing.T) {
-		v1beta4Dk := &v1beta4.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: v1beta4.DynaKubeSpec{
-				APIURL: testAPIURL,
-			},
-		}
-
-		dk, err := getDynakube(v1beta4Dk)
-		require.NoError(t, err)
-
-		assert.Equal(t, v1beta4Dk.Name, dk.Name)
-		assert.Equal(t, v1beta4Dk.Namespace, dk.Namespace)
-		assert.Equal(t, v1beta4Dk.Spec.APIURL, dk.Spec.APIURL)
 	})
 }
 
