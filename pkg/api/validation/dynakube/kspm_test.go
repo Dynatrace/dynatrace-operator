@@ -72,7 +72,7 @@ func TestTooManyAGReplicas(t *testing.T) {
 
 		activeGate.Replicas = &replicas
 		assertDenied(t,
-			[]string{errorTooManyAGReplicas},
+			[]string{errorTooManyKubernetesMonitoringReplicas},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
@@ -93,7 +93,7 @@ func TestTooManyAGReplicas(t *testing.T) {
 
 	t.Run("kubemon with more than 1 replica and kspm enabled", func(t *testing.T) {
 		assertDenied(t,
-			[]string{errorTooManyAGReplicas},
+			[]string{errorTooManyKubernetesMonitoringReplicas},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{

@@ -68,6 +68,15 @@ func (dk *DynaKube) KubernetesMonitoring() *kubemon.KubeMon {
 	return km
 }
 
+func (dk *DynaKube) IsKubernetesMonitoringEnabled() bool {
+	return dk.Spec.KubernetesMonitoring.IsEnabled() || dk.Spec.ActiveGate.IsKubernetesMonitoringEnabled()
+}
+
+func (dk *DynaKube) IsKubernetesMonitoringRegistrationEnabled() bool {
+	return (dk.Spec.KubernetesMonitoring.IsEnabled() && dk.Spec.KubernetesMonitoring.IsRegistrationEnabled()) ||
+		(dk.Spec.ActiveGate.IsKubernetesMonitoringEnabled() && dk.FF().IsAutomaticK8sAPIMonitoring())
+}
+
 func (dk *DynaKube) LogMonitoring() *logmonitoring.LogMonitoring {
 	lm := &logmonitoring.LogMonitoring{
 		Spec:         dk.Spec.LogMonitoring,

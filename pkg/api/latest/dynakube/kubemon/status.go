@@ -18,6 +18,6 @@ type Status struct {
 	// +kubebuilder:validation:Optional
 	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitzero"`
 
-	// The ClusterIPs set by Kubernetes on the Kubemon ActiveGate Service created by the Operator
+	// Parity with ActiveGate ServiceIPs, to be used with TLS.
 	ServiceIPs []string `json:"serviceIPs,omitempty"`
 }

@@ -572,7 +572,7 @@ func TestIsRegistrationEnabled(t *testing.T) {
 			if tt.kubemonOp {
 				enableKubemonRegistration(dk)
 			}
-			assert.Equal(t, tt.expect, isRegistrationEnabled(dk))
+			assert.Equal(t, tt.expect, dk.IsKubernetesMonitoringRegistrationEnabled())
 		})
 	}
 }
