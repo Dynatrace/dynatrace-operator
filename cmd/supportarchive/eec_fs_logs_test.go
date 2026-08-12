@@ -111,13 +111,15 @@ func TestFsLog(t *testing.T) {
 	require.NoError(t, err)
 	contents, err := io.ReadAll(f)
 	require.NoError(t, err)
-	f.Close()
+	err = f.Close()
+	require.NoError(t, err)
 	assert.Equal(t, lsOutput, string(contents))
 
 	f, err = zipReader.Open(zipDiagExecutorFileName)
 	require.NoError(t, err)
 	contents, err = io.ReadAll(f)
 	require.NoError(t, err)
-	f.Close()
+	err = f.Close()
+	require.NoError(t, err)
 	assert.Equal(t, diagExecutorOutput, string(contents))
 }

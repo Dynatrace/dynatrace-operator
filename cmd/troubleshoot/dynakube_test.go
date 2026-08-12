@@ -21,9 +21,6 @@ import (
 )
 
 const (
-	testRegistry              = "testing.dev.dynatracelabs.com"
-	testAPIURL                = "https://" + testRegistry + "/api"
-	testOtherAPIURL           = "https://" + testRegistry + "/otherapi"
 	testDynatraceSecret       = testDynakube
 	testOtherDynatraceSecret  = "otherDynatraceSecret"
 	testAPIToken              = "apiTokenValue"
@@ -207,23 +204,21 @@ func TestProxySecret(t *testing.T) {
 		require.Errorf(t, err, "proxy secret found, should not exist")
 	})
 	t.Run("proxy secret has required tokens", func(t *testing.T) {
-		proxySecret := *testNewSecretBuilder(testNamespace, dynakube.ProxyKey).
-			dataAppend(dynakube.ProxyKey, testCustomPullSecretToken).
-			build()
 		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(dynakube.ProxyKey).build()
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			dk,
-			&proxySecret).
+			new(*testNewSecretBuilder(testNamespace, dynakube.ProxyKey).
+				dataAppend(dynakube.ProxyKey, testCustomPullSecretToken).
+				build())).
 			Build()
 		_, err := getProxyURL(t.Context(), clt, dk)
 		require.NoErrorf(t, err, "proxy secret does not have required tokens")
 	})
 	t.Run("proxy secret does not have required tokens", func(t *testing.T) {
-		secret := *testNewSecretBuilder(testNamespace, testSecretName).build()
 		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(dynakube.ProxyKey).build()
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			dk,
-			&secret).
+			new(*testNewSecretBuilder(testNamespace, testSecretName).build())).
 			Build()
 		_, err := getProxyURL(t.Context(), clt, dk)
 		require.Errorf(t, err, "proxy secret has required tokens")

@@ -105,9 +105,8 @@ func TestTokens(t *testing.T) {
 	}
 
 	t.Run("empty dynakube, all permissions in api token, but paas => should fail", func(t *testing.T) {
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissions)
 		tokens := Tokens{
-			APIKey: &apiToken,
+			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions), dynakube.DynaKube{})
@@ -120,11 +119,9 @@ func TestTokens(t *testing.T) {
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("empty dynakube, all permissions in api token, but paas + paas token => should work", func(t *testing.T) {
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissions)
-		paasToken := newToken(PaaSKey, fakeTokenPaas)
 		tokens := Tokens{
-			APIKey:  &apiToken,
-			PaaSKey: &paasToken,
+			APIKey:  new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
+			PaaSKey: new(newToken(PaaSKey, fakeTokenPaas)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenPaas), dynakube.DynaKube{})
@@ -135,9 +132,8 @@ func TestTokens(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("empty dynakube, all permissions in api token => should work", func(t *testing.T) {
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
 		tokens := Tokens{
-			APIKey: &apiToken,
+			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS), dynakube.DynaKube{})
@@ -153,9 +149,8 @@ func TestTokens(t *testing.T) {
 			activegate.KubeMonCapability.DisplayName,
 		}
 
-		apiToken := newToken(APIKey, fakeTokenNoPermissions)
 		tokens := Tokens{
-			APIKey: &apiToken,
+			APIKey: new(newToken(APIKey, fakeTokenNoPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenNoPermissions), dk)
@@ -170,11 +165,9 @@ func TestTokens(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		enableKubernetesMonitoringAndMetricsIngest(&dk)
 
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(DataIngestKey, fakeTokenNoPermissions)
 		tokens := Tokens{
-			APIKey:        &apiToken,
-			DataIngestKey: &dataingestToken,
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			DataIngestKey: new(newToken(DataIngestKey, fakeTokenNoPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenNoPermissions), dk)
@@ -186,11 +179,9 @@ func TestTokens(t *testing.T) {
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'Data Ingest' is missing scope 'metrics.ingest']")
 	})
 	t.Run("data ingest enabled => dataingest token has rights => success", func(t *testing.T) {
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(DataIngestKey, fakeTokenAllDataIngestPermissions)
 		tokens := Tokens{
-			APIKey:        &apiToken,
-			DataIngestKey: &dataingestToken,
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			DataIngestKey: new(newToken(DataIngestKey, fakeTokenAllDataIngestPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllDataIngestPermissions), dynakube.DynaKube{})
@@ -213,11 +204,9 @@ func TestTokens(t *testing.T) {
 			},
 		}
 
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(DataIngestKey, fakeTokenNoPermissions)
 		tokens := Tokens{
-			APIKey:        &apiToken,
-			DataIngestKey: &dataingestToken,
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			DataIngestKey: new(newToken(DataIngestKey, fakeTokenNoPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenNoPermissions), dk)
@@ -241,11 +230,9 @@ func TestTokens(t *testing.T) {
 			},
 		}
 
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(DataIngestKey, fakeTokenAllOTLPExporterPermissions)
 		tokens := Tokens{
-			APIKey:        &apiToken,
-			DataIngestKey: &dataingestToken,
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			DataIngestKey: new(newToken(DataIngestKey, fakeTokenAllOTLPExporterPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllOTLPExporterPermissions), dk)
@@ -450,9 +437,8 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			mockedTokenClient := tokenclientmock.NewClient(t)
 			mockedTokenClient.EXPECT().GetScopes(anyCtx, tokenValue).Return(c.availableScopes, nil).Once()
 
-			apiToken := newToken(APIKey, tokenValue)
 			tokens := Tokens{
-				APIKey: &apiToken,
+				APIKey: new(newToken(APIKey, tokenValue)),
 			}
 			tokens = tokens.AddFeatureScopesToTokens()
 			optionalScopes, err := tokens.VerifyScopes(t.Context(), mockedTokenClient, c.dk)
@@ -464,14 +450,11 @@ func TestTokens_VerifyScopes(t *testing.T) {
 }
 
 func TestTokens_VerifyValues(t *testing.T) {
-	validToken := newToken(APIKey, "valid-value")
-	invalidToken := newToken(APIKey, " invalid-value ")
-
 	validTokens := Tokens{
-		APIKey: &validToken,
+		APIKey: new(newToken(APIKey, "valid-value")),
 	}
 	invalidTokens := Tokens{
-		APIKey: &invalidToken,
+		APIKey: new(newToken(APIKey, " invalid-value ")),
 	}
 
 	require.NoError(t, validTokens.VerifyValues())
