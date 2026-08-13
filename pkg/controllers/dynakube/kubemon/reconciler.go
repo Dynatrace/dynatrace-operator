@@ -117,8 +117,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtcli
 		return err
 	}
 
-	if err = r.istioReconciler.ReconcileActiveGate(ctx, dk); err != nil {
-		return err
+	if !dk.ActiveGate().IsEnabled() {
+		if err = r.istioReconciler.ReconcileActiveGate(ctx, dk); err != nil {
+			return err
+		}
 	}
 
 	if err = r.authTokenReconciler.Reconcile(ctx, dtclient.ActiveGate, dk); err != nil {

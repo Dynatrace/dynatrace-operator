@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
@@ -116,6 +117,22 @@ func TestReconcileConditionMapping(t *testing.T) {
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.istio.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(nil).Once()
+		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
+		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
+
+		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
+
+		require.NoError(t, err)
+		assertCondition(t, dk, metav1.ConditionTrue, reasonAvailable, messageAvailable)
+	})
+	t.Run("AG enabled: istio reconciliation skipped (handled by AG reconciler)", func(t *testing.T) {
+		mocks := newMocks(t)
+		dk := newTestDynaKube(true)
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
+
+		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
