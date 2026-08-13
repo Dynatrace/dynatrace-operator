@@ -29,7 +29,7 @@ const (
 type TargetAllocator struct {
 	*TargetAllocatorSpec
 
-	name string
+	namePrefix string
 }
 
 // TargetAllocatorSpec configures the Target Allocator Deployment, which holds all
@@ -67,11 +67,11 @@ type TargetAllocatorSpec struct {
 func NewTargetAllocator(spec *TargetAllocatorSpec, name string) *TargetAllocator {
 	return &TargetAllocator{
 		TargetAllocatorSpec: spec,
-		name:                name,
+		namePrefix:          name,
 	}
 }
 
 // GetDeploymentName returns the base name for the Target Allocator's Deployment.
 func (ta *TargetAllocator) GetDeploymentName() string {
-	return ta.name + TargetAllocatorNameSuffix
+	return ta.namePrefix + TargetAllocatorNameSuffix
 }
