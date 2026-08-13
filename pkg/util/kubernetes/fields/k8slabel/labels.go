@@ -46,12 +46,6 @@ type coreMatchLabels struct {
 	Component string
 }
 
-type AppLabels struct {
-	AppMatchLabels
-	Component string
-	Version   string
-}
-
 type Labels struct {
 	Name           string
 	CreatedBy      string
@@ -59,6 +53,12 @@ type Labels struct {
 	Component      string
 	Version        string
 	ManagerVersion string
+}
+
+type AppLabels struct {
+	AppMatchLabels
+	Component string
+	Version   string
 }
 
 type CoreLabels struct {
