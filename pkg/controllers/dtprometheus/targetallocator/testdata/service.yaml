@@ -26,5 +26,9 @@ spec:
     port: 80
     protocol: TCP
     targetPort: http-port
+  selector:
+    app.kubernetes.io/created-by: dtp
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-target-allocator
 status:
   loadBalancer: {}

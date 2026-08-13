@@ -240,6 +240,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 
 		maps.Copy(svc.Labels, s.AppLabels.BuildLabels())
 
+		svc.Spec.Selector = s.AppLabels.BuildMatchLabels()
 		svc.Spec.Ports = []corev1.ServicePort{
 			{
 				Name:       securePortName,
