@@ -26,7 +26,7 @@ func TestAddVolumeMounts(t *testing.T) {
 		}
 		installPath := "test/path"
 
-		addVolumeMounts(container, installPath)
+		addVolumeMounts(container, installPath, false)
 		require.Len(t, container.VolumeMounts, 2)
 		assert.Equal(t, BinVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, installPath, container.VolumeMounts[0].MountPath)

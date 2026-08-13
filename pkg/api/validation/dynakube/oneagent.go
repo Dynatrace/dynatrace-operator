@@ -341,8 +341,16 @@ func findDuplicates[S ~[]E, E comparable](s S) []E {
 	return duplicates
 }
 
+func conflictingImageMode(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if dk.FF().IsNodeImagePull() && dk.FF().IsImageVolume() {
+		return "node-image-pull and OCI image volume are mutually exclusive"
+	}
+
+	return ""
+}
+
 func missingCodeModulesImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() {
+	if dk.OneAgent().IsAppInjectionNeeded() && (dk.FF().IsNodeImagePull() || dk.FF().IsImageVolume()) {
 		if dk.OneAgent().GetCustomCodeModulesImage() == "" && !dk.FF().IsPublicRegistry() {
 			return errorImagePullRequiresCodeModulesImage
 		}

@@ -82,6 +82,7 @@ var (
 		invalidOneAgentArguments,
 		invalidLogmonArguments,
 		missingCodeModulesImage,
+		conflictingImageMode,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
