@@ -5,10 +5,6 @@ package telemetryingest
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 
-type TelemetryIngest struct {
-	*Spec
-}
-
 // +kubebuilder:object:generate=true
 
 type Spec struct {

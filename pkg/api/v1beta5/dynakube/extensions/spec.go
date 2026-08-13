@@ -8,10 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type Extensions struct {
-	*ExecutionControllerSpec
-}
-
 // +kubebuilder:object:generate=true
 
 type Spec struct {

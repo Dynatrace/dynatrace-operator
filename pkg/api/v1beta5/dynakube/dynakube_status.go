@@ -67,14 +67,6 @@ type DynatraceAPIStatus struct {
 
 type EnrichmentRuleType string
 
-const (
-	EnrichmentLabelRule          EnrichmentRuleType = "LABEL"
-	EnrichmentAnnotationRule     EnrichmentRuleType = "ANNOTATION"
-	MetadataAnnotation           string             = "metadata.dynatrace.com"
-	MetadataPrefix               string             = MetadataAnnotation + "/"
-	enrichmentNamespaceKeyPrefix string             = "k8s.namespace."
-)
-
 type MetadataEnrichmentStatus struct {
 	Rules []EnrichmentRule `json:"rules,omitempty"`
 }

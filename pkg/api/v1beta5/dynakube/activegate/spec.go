@@ -20,11 +20,6 @@ type Capability struct {
 }
 
 var (
-	RoutingCapability = Capability{
-		DisplayName:  "routing",
-		ArgumentName: "MSGrouter",
-	}
-
 	KubeMonCapability = Capability{
 		DisplayName:  "kubernetes-monitoring",
 		ArgumentName: "kubernetes_monitoring",
@@ -39,24 +34,7 @@ var (
 		DisplayName:  "dynatrace-api",
 		ArgumentName: "restInterface",
 	}
-	DebuggingCapability = Capability{
-		DisplayName:  "debugging",
-		ArgumentName: "debugging",
-	}
 )
-
-var CapabilityDisplayNames = map[CapabilityDisplayName]struct{}{
-	RoutingCapability.DisplayName:       {},
-	KubeMonCapability.DisplayName:       {},
-	MetricsIngestCapability.DisplayName: {},
-	DynatraceAPICapability.DisplayName:  {},
-	DebuggingCapability.DisplayName:     {},
-}
-
-type ActiveGate struct {
-	*Spec
-	*Status
-}
 
 // +kubebuilder:object:generate=true
 

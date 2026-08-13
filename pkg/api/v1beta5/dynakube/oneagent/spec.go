@@ -22,8 +22,6 @@ type OneAgent struct {
 	featureOneAgentSkipLivenessProbe bool
 }
 
-type Mode string
-
 // +kubebuilder:object:generate=true
 
 type Spec struct {
