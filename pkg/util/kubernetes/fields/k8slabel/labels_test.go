@@ -79,82 +79,82 @@ func TestLongVersion(t *testing.T) {
 
 func TestLabels(t *testing.T) {
 	const (
-		labelsName           = "labels-test-app"
-		labelsCreatedBy      = "labels-test-created-by"
-		labelsVersion        = "labels-test-version"
-		labelsManagerVersion = "labels-test-manager-version"
+		labelsName            = "labels-test-app"
+		labelsInstance        = "labels-test-instance"
+		labelsVersion         = "labels-test-version"
+		labelsOperatorVersion = "labels-test-operator-version"
 	)
 
 	tests := []struct {
-		name           string
-		appVersion     string
-		managerVersion string
-		expectedLabels map[string]string
-		expectedMatch  map[string]string
+		name            string
+		appVersion      string
+		operatorVersion string
+		expectedLabels  map[string]string
+		expectedMatch   map[string]string
 	}{
 		{
-			name:           "all labels",
-			appVersion:     labelsVersion,
-			managerVersion: labelsManagerVersion,
+			name:            "all labels",
+			appVersion:      labelsVersion,
+			operatorVersion: labelsOperatorVersion,
 			expectedLabels: map[string]string{
-				AppNameLabel:           labelsName,
-				AppCreatedByLabel:      labelsCreatedBy,
-				AppManagedByLabel:      version.AppName,
-				AppVersionLabel:        labelsVersion,
-				AppManagerVersionLabel: labelsManagerVersion,
+				AppNameLabel:         labelsName,
+				AppInstanceLabel:     labelsInstance,
+				AppManagedByLabel:    version.AppName,
+				AppVersionLabel:      labelsVersion,
+				OperatorVersionLabel: labelsOperatorVersion,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
-				AppCreatedByLabel: labelsCreatedBy,
+				AppInstanceLabel:  labelsInstance,
 				AppManagedByLabel: version.AppName,
 			},
 		},
 		{
-			name:           "empty workload version",
-			appVersion:     "",
-			managerVersion: labelsManagerVersion,
+			name:            "empty workload version",
+			appVersion:      "",
+			operatorVersion: labelsOperatorVersion,
 			expectedLabels: map[string]string{
-				AppNameLabel:           labelsName,
-				AppCreatedByLabel:      labelsCreatedBy,
-				AppManagedByLabel:      version.AppName,
-				AppManagerVersionLabel: labelsManagerVersion,
+				AppNameLabel:         labelsName,
+				AppInstanceLabel:     labelsInstance,
+				AppManagedByLabel:    version.AppName,
+				OperatorVersionLabel: labelsOperatorVersion,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
-				AppCreatedByLabel: labelsCreatedBy,
+				AppInstanceLabel:  labelsInstance,
 				AppManagedByLabel: version.AppName,
 			},
 		},
 		{
-			name:           "empty manager version",
-			appVersion:     labelsVersion,
-			managerVersion: "",
+			name:            "empty operator version",
+			appVersion:      labelsVersion,
+			operatorVersion: "",
 			expectedLabels: map[string]string{
 				AppNameLabel:      labelsName,
-				AppCreatedByLabel: labelsCreatedBy,
+				AppInstanceLabel:  labelsInstance,
 				AppManagedByLabel: version.AppName,
 				AppVersionLabel:   labelsVersion,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
-				AppCreatedByLabel: labelsCreatedBy,
+				AppInstanceLabel:  labelsInstance,
 				AppManagedByLabel: version.AppName,
 			},
 		},
 		{
-			name:           "long versions",
-			appVersion:     strings.Repeat("a", 64),
-			managerVersion: strings.Repeat("b", 64),
+			name:            "long versions",
+			appVersion:      strings.Repeat("a", 64),
+			operatorVersion: strings.Repeat("b", 64),
 			expectedLabels: map[string]string{
-				AppNameLabel:           labelsName,
-				AppCreatedByLabel:      labelsCreatedBy,
-				AppManagedByLabel:      version.AppName,
-				AppVersionLabel:        strings.Repeat("a", 63),
-				AppManagerVersionLabel: strings.Repeat("b", 63),
+				AppNameLabel:         labelsName,
+				AppInstanceLabel:     labelsInstance,
+				AppManagedByLabel:    version.AppName,
+				AppVersionLabel:      strings.Repeat("a", 63),
+				OperatorVersionLabel: strings.Repeat("b", 63),
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
-				AppCreatedByLabel: labelsCreatedBy,
+				AppInstanceLabel:  labelsInstance,
 				AppManagedByLabel: version.AppName,
 			},
 		},
@@ -166,9 +166,9 @@ func TestLabels(t *testing.T) {
 			t.Cleanup(func() {
 				version.Version = oldVersion
 			})
-			version.Version = tt.managerVersion
+			version.Version = tt.operatorVersion
 
-			labels := New(labelsName, labelsCreatedBy, tt.appVersion)
+			labels := New(labelsName, labelsInstance, tt.appVersion)
 
 			assert.Equal(t, tt.expectedLabels, labels.AsMap())
 			assert.Equal(t, tt.expectedMatch, labels.AsSelector())

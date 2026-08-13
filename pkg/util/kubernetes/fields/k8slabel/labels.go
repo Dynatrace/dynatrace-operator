@@ -12,12 +12,14 @@ import (
 )
 
 const (
-	AppNameLabel           = "app.kubernetes.io/name"
-	AppCreatedByLabel      = "app.kubernetes.io/created-by"
-	AppManagedByLabel      = "app.kubernetes.io/managed-by"
-	AppComponentLabel      = "app.kubernetes.io/component"
-	AppVersionLabel        = "app.kubernetes.io/version"
-	AppManagerVersionLabel = "app.kubernetes.io/manager-version"
+	AppNameLabel     = "app.kubernetes.io/name"
+	AppInstanceLabel = "app.kubernetes.io/instance"
+	// Deprecated: Use AppInstanceLabel instead. See https://kubernetes.io/docs/reference/labels-annotations-taints/#app-kubernetes-io-created-by-deprecated
+	AppCreatedByLabel    = "app.kubernetes.io/created-by"
+	AppManagedByLabel    = "app.kubernetes.io/managed-by"
+	AppComponentLabel    = "app.kubernetes.io/component"
+	AppVersionLabel      = "app.kubernetes.io/version"
+	OperatorVersionLabel = "internal.dynatrace.com/operator-version"
 
 	OneAgentComponentLabel      = "oneagent"
 	CodeModuleComponentLabel    = "codemodule"
@@ -47,11 +49,11 @@ type coreMatchLabels struct {
 }
 
 type Labels struct {
-	Name           string
-	CreatedBy      string
-	ManagedBy      string
-	Version        string
-	ManagerVersion string
+	Name            string
+	Instance        string
+	ManagedBy       string
+	Version         string
+	OperatorVersion string
 }
 
 type AppLabels struct {
@@ -68,13 +70,13 @@ type CoreLabels struct {
 // New will return a simplified Labels struct that contains all the necessary info related to the ownership of a resource.
 // It should be used instead of NewAppLabels and NewCoreLabels, as those are overcomplicating things.
 // If appVersion is empty the related `version` label will be omitted. This should be done for resources that have no version in general, like a `Secret`.
-func New(appName, createdBy, appVersion string) *Labels {
+func New(appName, instanceName, appVersion string) *Labels {
 	return &Labels{
-		Name:           appName,
-		CreatedBy:      createdBy,
-		ManagedBy:      version.AppName,
-		Version:        truncateVersion(appVersion),
-		ManagerVersion: truncateVersion(version.Version),
+		Name:            appName,
+		Instance:        instanceName,
+		ManagedBy:       version.AppName,
+		Version:         truncateVersion(appVersion),
+		OperatorVersion: truncateVersion(version.Version),
 	}
 }
 
@@ -128,8 +130,8 @@ func (labels *Labels) AsMap() map[string]string {
 		labelsMap[AppVersionLabel] = labels.Version
 	}
 
-	if labels.ManagerVersion != "" {
-		labelsMap[AppManagerVersionLabel] = labels.ManagerVersion
+	if labels.OperatorVersion != "" {
+		labelsMap[OperatorVersionLabel] = labels.OperatorVersion
 	}
 
 	return labelsMap
@@ -139,7 +141,7 @@ func (labels *Labels) AsMap() map[string]string {
 func (labels *Labels) AsSelector() map[string]string {
 	return map[string]string{
 		AppNameLabel:      labels.Name,
-		AppCreatedByLabel: labels.CreatedBy,
+		AppInstanceLabel:  labels.Instance,
 		AppManagedByLabel: labels.ManagedBy,
 	}
 }
