@@ -120,6 +120,7 @@ func NewCoreLabels(dynakubeName, component string) *CoreLabels {
 	}
 }
 
+// AsMap returns all labels, including version metadata
 func (labels *Labels) AsMap() map[string]string {
 	labelsMap := labels.AsSelector()
 
@@ -134,6 +135,7 @@ func (labels *Labels) AsMap() map[string]string {
 	return labelsMap
 }
 
+// AsSelector returns the stable labels used to select resources
 func (labels *Labels) AsSelector() map[string]string {
 	return map[string]string{
 		AppNameLabel:      labels.Name,
