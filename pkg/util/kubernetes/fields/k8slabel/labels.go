@@ -50,7 +50,6 @@ type Labels struct {
 	Name           string
 	CreatedBy      string
 	ManagedBy      string
-	Component      string
 	Version        string
 	ManagerVersion string
 }
@@ -66,12 +65,11 @@ type CoreLabels struct {
 	Version string
 }
 
-func New(appName, createdBy, component, appVersion string) *Labels {
+func New(appName, createdBy, appVersion string) *Labels {
 	return &Labels{
 		Name:           appName,
 		CreatedBy:      createdBy,
 		ManagedBy:      version.AppName,
-		Component:      component,
 		Version:        truncateVersion(appVersion),
 		ManagerVersion: truncateVersion(version.Version),
 	}
@@ -134,7 +132,6 @@ func (labels *Labels) BuildMatch() map[string]string {
 		AppNameLabel:      labels.Name,
 		AppCreatedByLabel: labels.CreatedBy,
 		AppManagedByLabel: labels.ManagedBy,
-		AppComponentLabel: labels.Component,
 	}
 }
 

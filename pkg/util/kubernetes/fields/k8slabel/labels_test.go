@@ -81,14 +81,12 @@ func TestLabels(t *testing.T) {
 	const (
 		labelsName           = "labels-test-app"
 		labelsCreatedBy      = "labels-test-created-by"
-		labelsComponent      = "labels-test-component"
 		labelsVersion        = "labels-test-version"
 		labelsManagerVersion = "labels-test-manager-version"
 	)
 
 	tests := []struct {
 		name           string
-		component      string
 		appVersion     string
 		managerVersion string
 		expectedLabels map[string]string
@@ -96,14 +94,12 @@ func TestLabels(t *testing.T) {
 	}{
 		{
 			name:           "all labels",
-			component:      labelsComponent,
 			appVersion:     labelsVersion,
 			managerVersion: labelsManagerVersion,
 			expectedLabels: map[string]string{
 				AppNameLabel:           labelsName,
 				AppCreatedByLabel:      labelsCreatedBy,
 				AppManagedByLabel:      version.AppName,
-				AppComponentLabel:      labelsComponent,
 				AppVersionLabel:        labelsVersion,
 				AppManagerVersionLabel: labelsManagerVersion,
 			},
@@ -111,57 +107,48 @@ func TestLabels(t *testing.T) {
 				AppNameLabel:      labelsName,
 				AppCreatedByLabel: labelsCreatedBy,
 				AppManagedByLabel: version.AppName,
-				AppComponentLabel: labelsComponent,
 			},
 		},
 		{
 			name:           "empty workload version",
-			component:      labelsComponent,
 			appVersion:     "",
 			managerVersion: labelsManagerVersion,
 			expectedLabels: map[string]string{
 				AppNameLabel:           labelsName,
 				AppCreatedByLabel:      labelsCreatedBy,
 				AppManagedByLabel:      version.AppName,
-				AppComponentLabel:      labelsComponent,
 				AppManagerVersionLabel: labelsManagerVersion,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
 				AppCreatedByLabel: labelsCreatedBy,
 				AppManagedByLabel: version.AppName,
-				AppComponentLabel: labelsComponent,
 			},
 		},
 		{
 			name:           "empty manager version",
-			component:      labelsComponent,
 			appVersion:     labelsVersion,
 			managerVersion: "",
 			expectedLabels: map[string]string{
 				AppNameLabel:      labelsName,
 				AppCreatedByLabel: labelsCreatedBy,
 				AppManagedByLabel: version.AppName,
-				AppComponentLabel: labelsComponent,
 				AppVersionLabel:   labelsVersion,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
 				AppCreatedByLabel: labelsCreatedBy,
 				AppManagedByLabel: version.AppName,
-				AppComponentLabel: labelsComponent,
 			},
 		},
 		{
 			name:           "long versions",
-			component:      labelsComponent,
 			appVersion:     strings.Repeat("a", 64),
 			managerVersion: strings.Repeat("b", 64),
 			expectedLabels: map[string]string{
 				AppNameLabel:           labelsName,
 				AppCreatedByLabel:      labelsCreatedBy,
 				AppManagedByLabel:      version.AppName,
-				AppComponentLabel:      labelsComponent,
 				AppVersionLabel:        strings.Repeat("a", 63),
 				AppManagerVersionLabel: strings.Repeat("b", 63),
 			},
@@ -169,7 +156,6 @@ func TestLabels(t *testing.T) {
 				AppNameLabel:      labelsName,
 				AppCreatedByLabel: labelsCreatedBy,
 				AppManagedByLabel: version.AppName,
-				AppComponentLabel: labelsComponent,
 			},
 		},
 	}
@@ -182,7 +168,7 @@ func TestLabels(t *testing.T) {
 			})
 			version.Version = tt.managerVersion
 
-			labels := New(labelsName, labelsCreatedBy, tt.component, tt.appVersion)
+			labels := New(labelsName, labelsCreatedBy, tt.appVersion)
 
 			assert.Equal(t, tt.expectedLabels, labels.Build())
 			assert.Equal(t, tt.expectedMatch, labels.BuildMatch())
