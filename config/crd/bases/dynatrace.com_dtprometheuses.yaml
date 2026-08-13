@@ -1349,6 +1349,7 @@ spec:
                   are pulled.
                 type: string
               scraper:
+                default: {}
                 description: |-
                   Configures the scraper pool (tier 1): a Deployment of OTel Collectors that
                   scrape their assigned targets and forward OTLP to the gateway pool.

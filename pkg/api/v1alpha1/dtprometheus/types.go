@@ -36,7 +36,8 @@ type DTPrometheusSpec struct { //nolint:revive
 	// Configures the scraper pool (tier 1): a Deployment of OTel Collectors that
 	// scrape their assigned targets and forward OTLP to the gateway pool.
 	// +kubebuilder:validation:Optional
-	Scraper ScraperSpec `json:"scraper,omitzero"`
+	// +kubebuilder:default={}
+	Scraper ScraperSpec `json:"scraper"`
 
 	// Configures the gateway pool (tier 2): a StatefulSet of OTel Collectors that
 	// run stateful processors and export to Dynatrace via OTLP/HTTP.
