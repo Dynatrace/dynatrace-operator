@@ -105,7 +105,7 @@ rules:
     verbs: ["update"]
   - apiGroups: ["dynatrace.com"]
     resources: ["dtprometheuses/status"]
-    verbs: ["patch", "update"]
+    verbs: ["patch"]
   - apiGroups: ["events.k8s.io"]
     resources: ["events"]
     verbs: ["create", "get", "list", "patch"]
