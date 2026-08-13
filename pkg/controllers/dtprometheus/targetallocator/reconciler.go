@@ -89,7 +89,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 		Owner:       dtp,
 		DynaKube:    dk,
 		Spec:        dtp.TargetAllocator(),
-		AppLabels:   k8slabel.NewAppLabels("opentelementry-target-allocator", dtp.Name, "otel-allocator", ""),
+		AppLabels:   k8slabel.NewAppLabels("opentelemetry-target-allocator", dtp.Name, "otel-allocator", ""),
 		ImageClient: imageClient,
 	}
 
@@ -117,7 +117,7 @@ func (r *Reconciler) reconcileCondition(s *reconcileScope, err error) {
 
 	switch {
 	case err != nil:
-		condition.Status = metav1.ConditionTrue
+		condition.Status = metav1.ConditionFalse
 		condition.Reason = status.ReasonError
 		condition.Message = safeUnwrap(err).Error()
 	case k8sdeployment.IsRolloutComplete(s.Deployment):

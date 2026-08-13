@@ -60,7 +60,7 @@ func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
 		Spec:      dtp.TargetAllocator(),
-		AppLabels: k8slabel.NewAppLabels("opentelementry-target-allocator", dtp.Name, "otel-allocator", ""),
+		AppLabels: k8slabel.NewAppLabels("opentelemetry-target-allocator", dtp.Name, "otel-allocator", ""),
 	}
 }
 
@@ -82,8 +82,8 @@ func TestReconcileCondition(t *testing.T) {
 	}{
 		{"deployment not rolled out -> reconciling", nil, nil, metav1.ConditionFalse, status.ReasonReconciling, "target allocator is pending"},
 		{"rollout complete -> available", nil, completeDeployment, metav1.ConditionTrue, status.ReasonAvailable, "target allocator is ready"},
-		{"error -> error", boom, nil, metav1.ConditionTrue, status.ReasonError, "boom"},
-		{"error takes precedence over complete rollout", boom, completeDeployment, metav1.ConditionTrue, status.ReasonError, "boom"},
+		{"error -> error", boom, nil, metav1.ConditionFalse, status.ReasonError, "boom"},
+		{"error takes precedence over complete rollout", boom, completeDeployment, metav1.ConditionFalse, status.ReasonError, "boom"},
 	}
 
 	for _, test := range tests {

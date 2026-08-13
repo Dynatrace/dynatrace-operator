@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/component: otel-allocator
     app.kubernetes.io/created-by: dtp
     app.kubernetes.io/managed-by: dynatrace-operator
-    app.kubernetes.io/name: opentelementry-target-allocator
+    app.kubernetes.io/name: opentelemetry-target-allocator
     app.kubernetes.io/version: ""
   ownerReferences:
   - apiVersion: dynatrace.com/v1alpha1
@@ -22,7 +22,7 @@ spec:
     matchLabels:
       app.kubernetes.io/created-by: dtp
       app.kubernetes.io/managed-by: dynatrace-operator
-      app.kubernetes.io/name: opentelementry-target-allocator
+      app.kubernetes.io/name: opentelemetry-target-allocator
   strategy: {}
   template:
     metadata:
@@ -32,7 +32,7 @@ spec:
       labels:
         app.kubernetes.io/created-by: dtp
         app.kubernetes.io/managed-by: dynatrace-operator
-        app.kubernetes.io/name: opentelementry-target-allocator
+        app.kubernetes.io/name: opentelemetry-target-allocator
         custom: label
     spec:
       automountServiceAccountToken: true
