@@ -21,9 +21,18 @@ const (
 )
 
 func TestConstructors(t *testing.T) {
+	labels := New(testComponent, testName, testComponentFeature, testComponentVersion)
 	appLabels := NewAppLabels(testComponent, testName, testComponentFeature, testComponentVersion)
 	coreLabels := NewCoreLabels(testName, testComponent)
 
+	expectedLabels := map[string]string{
+		AppNameLabel:           testComponent,
+		AppCreatedByLabel:      testName,
+		AppManagedByLabel:      testAppName,
+		AppComponentLabel:      testComponentFeature,
+		AppVersionLabel:        testComponentVersion,
+		AppManagerVersionLabel: testAppVersion,
+	}
 	expectedCoreMatchLabels := map[string]string{
 		AppNameLabel:      testAppName,
 		AppCreatedByLabel: testName,
@@ -54,6 +63,17 @@ func TestConstructors(t *testing.T) {
 	t.Run("verify labels for statefulsetreconciler", func(t *testing.T) {
 		assert.Equal(t, expectedCoreLabels, coreLabels.BuildLabels())
 	})
+	t.Run("verify matchLabels for labels", func(t *testing.T) {
+		assert.Equal(t, map[string]string{
+			AppNameLabel:      testComponent,
+			AppCreatedByLabel: testName,
+			AppManagedByLabel: testAppName,
+			AppComponentLabel: testComponentFeature,
+		}, labels.BuildMatchLabels())
+	})
+	t.Run("verify labels", func(t *testing.T) {
+		assert.Equal(t, expectedLabels, labels.BuildLabels())
+	})
 
 	t.Run("verify matchLabels for app", func(t *testing.T) {
 		assert.Equal(t, expectedAppMatchLabels, appLabels.BuildMatchLabels())
@@ -69,10 +89,19 @@ func TestLongVersion(t *testing.T) {
 	oldVersion := version.Version
 	version.Version = testLongVersion
 
+	labels := New(testComponent, testName, testComponentFeature, testLongVersion)
 	coreLabels := NewCoreLabels(testName, testComponent)
 
 	version.Version = oldVersion
 
 	assert.Len(t, appLabels.Version, 63)
+	assert.Len(t, labels.Version, 63)
+	assert.Len(t, labels.ManagerVersion, 63)
 	assert.Len(t, coreLabels.Version, 63)
+}
+
+func TestEmptyVersion(t *testing.T) {
+	labels := New(testComponent, testName, testComponentFeature, "")
+
+	assert.NotContains(t, labels.BuildLabels(), AppVersionLabel)
 }

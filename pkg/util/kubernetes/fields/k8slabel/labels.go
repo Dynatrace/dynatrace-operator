@@ -12,11 +12,12 @@ import (
 )
 
 const (
-	AppNameLabel      = "app.kubernetes.io/name"
-	AppCreatedByLabel = "app.kubernetes.io/created-by"
-	AppManagedByLabel = "app.kubernetes.io/managed-by"
-	AppComponentLabel = "app.kubernetes.io/component"
-	AppVersionLabel   = "app.kubernetes.io/version"
+	AppNameLabel           = "app.kubernetes.io/name"
+	AppCreatedByLabel      = "app.kubernetes.io/created-by"
+	AppManagedByLabel      = "app.kubernetes.io/managed-by"
+	AppComponentLabel      = "app.kubernetes.io/component"
+	AppVersionLabel        = "app.kubernetes.io/version"
+	AppManagerVersionLabel = "app.kubernetes.io/manager-version"
 
 	OneAgentComponentLabel      = "oneagent"
 	CodeModuleComponentLabel    = "codemodule"
@@ -51,9 +52,29 @@ type AppLabels struct {
 	Version   string
 }
 
+type Labels struct {
+	Name           string
+	CreatedBy      string
+	ManagedBy      string
+	Component      string
+	Version        string
+	ManagerVersion string
+}
+
 type CoreLabels struct {
 	coreMatchLabels
 	Version string
+}
+
+func New(appName, createdBy, component, appVersion string) *Labels {
+	return &Labels{
+		Name:           appName,
+		CreatedBy:      createdBy,
+		ManagedBy:      version.AppName,
+		Component:      component,
+		Version:        truncateVersion(appVersion),
+		ManagerVersion: truncateVersion(version.Version),
+	}
 }
 
 // NewAppLabels abstracts labels that are specific to an application managed by the operator
@@ -91,6 +112,29 @@ func NewCoreLabels(dynakubeName, component string) *CoreLabels {
 			Component: component,
 		},
 		Version: ver,
+	}
+}
+
+func (labels *Labels) BuildLabels() map[string]string {
+	labelsMap := labels.BuildMatchLabels()
+
+	if labels.Version != "" {
+		labelsMap[AppVersionLabel] = labels.Version
+	}
+
+	if labels.ManagerVersion != "" {
+		labelsMap[AppManagerVersionLabel] = labels.ManagerVersion
+	}
+
+	return labelsMap
+}
+
+func (labels *Labels) BuildMatchLabels() map[string]string {
+	return map[string]string{
+		AppNameLabel:      labels.Name,
+		AppCreatedByLabel: labels.CreatedBy,
+		AppManagedByLabel: labels.ManagedBy,
+		AppComponentLabel: labels.Component,
 	}
 }
 
@@ -132,7 +176,14 @@ func (labels *AppLabels) BuildMatchLabels() map[string]string {
 		AppManagedByLabel: labels.ManagedBy,
 	}
 }
-
 func NotEqual(currentLabels, desiredLabels map[string]string) bool {
 	return !maps.Equal(currentLabels, desiredLabels)
+}
+
+func truncateVersion(ver string) string {
+	if len(ver) > validation.DNS1035LabelMaxLength {
+		return ver[:validation.DNS1035LabelMaxLength]
+	}
+
+	return ver
 }
