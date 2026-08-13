@@ -115,8 +115,8 @@ func NewCoreLabels(dynakubeName, component string) *CoreLabels {
 	}
 }
 
-func (labels *Labels) BuildLabels() map[string]string {
-	labelsMap := labels.BuildMatchLabels()
+func (labels *Labels) Build() map[string]string {
+	labelsMap := labels.BuildMatch()
 
 	if labels.Version != "" {
 		labelsMap[AppVersionLabel] = labels.Version
@@ -129,7 +129,7 @@ func (labels *Labels) BuildLabels() map[string]string {
 	return labelsMap
 }
 
-func (labels *Labels) BuildMatchLabels() map[string]string {
+func (labels *Labels) BuildMatch() map[string]string {
 	return map[string]string{
 		AppNameLabel:      labels.Name,
 		AppCreatedByLabel: labels.CreatedBy,

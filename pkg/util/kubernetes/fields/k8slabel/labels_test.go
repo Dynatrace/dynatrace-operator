@@ -4,6 +4,7 @@
 package k8slabel
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -21,18 +22,9 @@ const (
 )
 
 func TestConstructors(t *testing.T) {
-	labels := New(testComponent, testName, testComponentFeature, testComponentVersion)
 	appLabels := NewAppLabels(testComponent, testName, testComponentFeature, testComponentVersion)
 	coreLabels := NewCoreLabels(testName, testComponent)
 
-	expectedLabels := map[string]string{
-		AppNameLabel:           testComponent,
-		AppCreatedByLabel:      testName,
-		AppManagedByLabel:      testAppName,
-		AppComponentLabel:      testComponentFeature,
-		AppVersionLabel:        testComponentVersion,
-		AppManagerVersionLabel: testAppVersion,
-	}
 	expectedCoreMatchLabels := map[string]string{
 		AppNameLabel:      testAppName,
 		AppCreatedByLabel: testName,
@@ -63,18 +55,6 @@ func TestConstructors(t *testing.T) {
 	t.Run("verify labels for statefulsetreconciler", func(t *testing.T) {
 		assert.Equal(t, expectedCoreLabels, coreLabels.BuildLabels())
 	})
-	t.Run("verify matchLabels for labels", func(t *testing.T) {
-		assert.Equal(t, map[string]string{
-			AppNameLabel:      testComponent,
-			AppCreatedByLabel: testName,
-			AppManagedByLabel: testAppName,
-			AppComponentLabel: testComponentFeature,
-		}, labels.BuildMatchLabels())
-	})
-	t.Run("verify labels", func(t *testing.T) {
-		assert.Equal(t, expectedLabels, labels.BuildLabels())
-	})
-
 	t.Run("verify matchLabels for app", func(t *testing.T) {
 		assert.Equal(t, expectedAppMatchLabels, appLabels.BuildMatchLabels())
 	})
@@ -89,19 +69,123 @@ func TestLongVersion(t *testing.T) {
 	oldVersion := version.Version
 	version.Version = testLongVersion
 
-	labels := New(testComponent, testName, testComponentFeature, testLongVersion)
 	coreLabels := NewCoreLabels(testName, testComponent)
 
 	version.Version = oldVersion
 
 	assert.Len(t, appLabels.Version, 63)
-	assert.Len(t, labels.Version, 63)
-	assert.Len(t, labels.ManagerVersion, 63)
 	assert.Len(t, coreLabels.Version, 63)
 }
 
-func TestEmptyVersion(t *testing.T) {
-	labels := New(testComponent, testName, testComponentFeature, "")
+func TestLabels(t *testing.T) {
+	const (
+		labelsName           = "labels-test-app"
+		labelsCreatedBy      = "labels-test-created-by"
+		labelsComponent      = "labels-test-component"
+		labelsVersion        = "labels-test-version"
+		labelsManagerVersion = "labels-test-manager-version"
+	)
 
-	assert.NotContains(t, labels.BuildLabels(), AppVersionLabel)
+	tests := []struct {
+		name           string
+		component      string
+		appVersion     string
+		managerVersion string
+		expectedLabels map[string]string
+		expectedMatch  map[string]string
+	}{
+		{
+			name:           "all labels",
+			component:      labelsComponent,
+			appVersion:     labelsVersion,
+			managerVersion: labelsManagerVersion,
+			expectedLabels: map[string]string{
+				AppNameLabel:           labelsName,
+				AppCreatedByLabel:      labelsCreatedBy,
+				AppManagedByLabel:      version.AppName,
+				AppComponentLabel:      labelsComponent,
+				AppVersionLabel:        labelsVersion,
+				AppManagerVersionLabel: labelsManagerVersion,
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppCreatedByLabel: labelsCreatedBy,
+				AppManagedByLabel: version.AppName,
+				AppComponentLabel: labelsComponent,
+			},
+		},
+		{
+			name:           "empty workload version",
+			component:      labelsComponent,
+			appVersion:     "",
+			managerVersion: labelsManagerVersion,
+			expectedLabels: map[string]string{
+				AppNameLabel:           labelsName,
+				AppCreatedByLabel:      labelsCreatedBy,
+				AppManagedByLabel:      version.AppName,
+				AppComponentLabel:      labelsComponent,
+				AppManagerVersionLabel: labelsManagerVersion,
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppCreatedByLabel: labelsCreatedBy,
+				AppManagedByLabel: version.AppName,
+				AppComponentLabel: labelsComponent,
+			},
+		},
+		{
+			name:           "empty manager version",
+			component:      labelsComponent,
+			appVersion:     labelsVersion,
+			managerVersion: "",
+			expectedLabels: map[string]string{
+				AppNameLabel:      labelsName,
+				AppCreatedByLabel: labelsCreatedBy,
+				AppManagedByLabel: version.AppName,
+				AppComponentLabel: labelsComponent,
+				AppVersionLabel:   labelsVersion,
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppCreatedByLabel: labelsCreatedBy,
+				AppManagedByLabel: version.AppName,
+				AppComponentLabel: labelsComponent,
+			},
+		},
+		{
+			name:           "long versions",
+			component:      labelsComponent,
+			appVersion:     strings.Repeat("a", 64),
+			managerVersion: strings.Repeat("b", 64),
+			expectedLabels: map[string]string{
+				AppNameLabel:           labelsName,
+				AppCreatedByLabel:      labelsCreatedBy,
+				AppManagedByLabel:      version.AppName,
+				AppComponentLabel:      labelsComponent,
+				AppVersionLabel:        strings.Repeat("a", 63),
+				AppManagerVersionLabel: strings.Repeat("b", 63),
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppCreatedByLabel: labelsCreatedBy,
+				AppManagedByLabel: version.AppName,
+				AppComponentLabel: labelsComponent,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			oldVersion := version.Version
+			t.Cleanup(func() {
+				version.Version = oldVersion
+			})
+			version.Version = tt.managerVersion
+
+			labels := New(labelsName, labelsCreatedBy, tt.component, tt.appVersion)
+
+			assert.Equal(t, tt.expectedLabels, labels.Build())
+			assert.Equal(t, tt.expectedMatch, labels.BuildMatch())
+		})
+	}
 }
