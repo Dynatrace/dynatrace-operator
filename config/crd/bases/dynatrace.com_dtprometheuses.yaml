@@ -3666,9 +3666,6 @@ spec:
                         type: object
                     type: object
                   scrapeCRNamespaceSelector:
-                    default:
-                      matchLabels:
-                        prometheus.dynatrace.com: "true"
                     description: |-
                       Restricts which namespaces the TA watches for CRDs. An empty selector {}
                       matches all namespaces.

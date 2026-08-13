@@ -56,7 +56,6 @@ type TargetAllocatorSpec struct {
 	// Restricts which namespaces the TA watches for CRDs. An empty selector {}
 	// matches all namespaces.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={"matchLabels":{"prometheus.dynatrace.com":"true"}}
 	ScrapeCRNamespaceSelector *metav1.LabelSelector `json:"scrapeCRNamespaceSelector,omitempty"`
 
 	// Deployment update strategy for the Target Allocator.
