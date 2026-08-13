@@ -27,7 +27,11 @@ func (m *MetadataEnrichment) IsEnabled() bool {
 }
 
 func (m *MetadataEnrichment) GetNamespaceSelector() *metav1.LabelSelector {
-	return &m.NamespaceSelector
+	if m.IsEnabled() {
+		return &m.NamespaceSelector
+	}
+
+	return nil
 }
 
 func (m *MetadataEnrichment) GetInitResources() *corev1.ResourceRequirements {

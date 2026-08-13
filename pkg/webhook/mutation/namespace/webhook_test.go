@@ -158,15 +158,7 @@ func TestInjection(t *testing.T) {
 		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
-		patch, err := jsonpatch.DecodePatch(resp.Patch)
-		require.NoError(t, err)
-
-		updNsBytes, err := patch.Apply(baseNsBytes)
-		require.NoError(t, err)
-
-		var updNs corev1.Namespace
-
-		require.NoError(t, json.Unmarshal(updNsBytes, &updNs))
+		updNs := applyNamespacePatch(t, resp.Patch, baseNsBytes)
 
 		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
 		assert.True(t, ok)
@@ -199,15 +191,7 @@ func TestInjection(t *testing.T) {
 		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
-		patch, err := jsonpatch.DecodePatch(resp.Patch)
-		require.NoError(t, err)
-
-		updNsBytes, err := patch.Apply(baseNsBytes)
-		require.NoError(t, err)
-
-		var updNs corev1.Namespace
-
-		require.NoError(t, json.Unmarshal(updNsBytes, &updNs))
+		updNs := applyNamespacePatch(t, resp.Patch, baseNsBytes)
 
 		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
 		assert.True(t, ok)
@@ -236,4 +220,85 @@ func TestInjection(t *testing.T) {
 		assert.True(t, resp.Allowed)
 		assert.Empty(t, resp.Patch)
 	})
+}
+
+func TestInvalidSelectorOnOtherDynakubeDoesNotBlockAdmission(t *testing.T) {
+	brokenDK := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "broken-dk", Namespace: "dynatrace"},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+					AppInjectionSpec: oneagent.AppInjectionSpec{
+						NamespaceSelector: metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{Key: "team", Operator: "NotARealOperator", Values: []string{"a"}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	healthyDK := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "healthy-dk", Namespace: "dynatrace"},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+					AppInjectionSpec: oneagent.AppInjectionSpec{
+						NamespaceSelector: metav1.LabelSelector{
+							MatchLabels: map[string]string{"inject": "true"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	baseNs := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "test-namespace",
+			Labels: map[string]string{"inject": "true"},
+		},
+	}
+
+	clt := fake.NewClient(brokenDK, healthyDK)
+	inj := newNamespaceMutator(clt, clt, "dynatrace")
+
+	origBytes, err := json.Marshal(&baseNs)
+	require.NoError(t, err)
+
+	req := admission.Request{
+		AdmissionRequest: admissionv1.AdmissionRequest{
+			Object:    runtime.RawExtension{Raw: origBytes},
+			Name:      baseNs.Name,
+			Namespace: baseNs.Name,
+			Operation: admissionv1.Create,
+		},
+	}
+
+	resp := inj.Handle(t.Context(), req)
+	require.NoError(t, resp.Complete(req))
+	assert.True(t, resp.Allowed, "an unrelated DynaKube's invalid selector must not block admission for a namespace matched by a healthy one")
+
+	updNs := applyNamespacePatch(t, resp.Patch, origBytes)
+
+	dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
+	assert.True(t, ok)
+	assert.Equal(t, healthyDK.Name, dkName)
+}
+
+func applyNamespacePatch(t *testing.T, patchData, origBytes []byte) *corev1.Namespace {
+	t.Helper()
+
+	patch, err := jsonpatch.DecodePatch(patchData)
+	require.NoError(t, err)
+
+	updatedBytes, err := patch.Apply(origBytes)
+	require.NoError(t, err)
+
+	namespace := &corev1.Namespace{}
+
+	require.NoError(t, json.Unmarshal(updatedBytes, namespace))
+
+	return namespace
 }
