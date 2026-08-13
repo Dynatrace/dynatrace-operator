@@ -166,8 +166,8 @@ func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 		return nil
 	}
 
-	// We shouldn't reconcile this separatly, as the endpoints of the Generic AG and the Kubemon AG will be the same.
-	// If we reconciled this separatly, then we would duplicate the endpoints in ServiceEntries, which is not something Istio recommends.
+	// We shouldn't reconcile this separately, as the endpoints of the Generic AG and the Kubemon AG will be the same.
+	// If we reconciled this separately, then we would duplicate the endpoints in ServiceEntries, which is not something Istio recommends.
 	endpoints := dk.Status.ActiveGate.ConnectionInfo.Endpoints
 	if len(endpoints) == 0 && isKubemonEnabled {
 		endpoints = dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints
