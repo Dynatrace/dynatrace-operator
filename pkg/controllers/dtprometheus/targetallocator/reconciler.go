@@ -68,6 +68,7 @@ type ScrapeConfig struct {
 	PodMonitorSelector     *metav1.LabelSelector `json:"pod_monitor_selector,omitempty"`
 	ScrapeConfigSelector   *metav1.LabelSelector `json:"scrape_config_selector,omitempty"`
 	ServiceMonitorSelector *metav1.LabelSelector `json:"service_monitor_selector,omitempty"`
+	ProbeSelector          *metav1.LabelSelector `json:"probe_selector,omitempty"`
 }
 
 type reconcileScope struct {
@@ -154,6 +155,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 			PodMonitorSelector:     s.Spec.ScrapeCRSelector,
 			ScrapeConfigSelector:   s.Spec.ScrapeCRSelector,
 			ServiceMonitorSelector: s.Spec.ScrapeCRSelector,
+			ProbeSelector:          s.Spec.ScrapeCRSelector,
 		},
 	}
 

@@ -36,6 +36,9 @@ data:
       pod_monitor_selector:
         matchLabels:
           foo: bar
+      probe_selector:
+        matchLabels:
+          foo: bar
       scrape_config_selector:
         matchLabels:
           foo: bar
