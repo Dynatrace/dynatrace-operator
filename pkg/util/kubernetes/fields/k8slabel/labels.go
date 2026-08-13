@@ -12,11 +12,14 @@ import (
 )
 
 const (
-	AppNameLabel      = "app.kubernetes.io/name"
-	AppCreatedByLabel = "app.kubernetes.io/created-by"
-	AppManagedByLabel = "app.kubernetes.io/managed-by"
-	AppComponentLabel = "app.kubernetes.io/component"
-	AppVersionLabel   = "app.kubernetes.io/version"
+	AppNameLabel     = "app.kubernetes.io/name"
+	AppInstanceLabel = "app.kubernetes.io/instance"
+	// Deprecated: Use AppInstanceLabel instead. See https://kubernetes.io/docs/reference/labels-annotations-taints/#app-kubernetes-io-created-by-deprecated
+	AppCreatedByLabel    = "app.kubernetes.io/created-by"
+	AppManagedByLabel    = "app.kubernetes.io/managed-by"
+	AppComponentLabel    = "app.kubernetes.io/component"
+	AppVersionLabel      = "app.kubernetes.io/version"
+	OperatorVersionLabel = "internal.dynatrace.com/operator-version"
 
 	OneAgentComponentLabel      = "oneagent"
 	CodeModuleComponentLabel    = "codemodule"
@@ -45,6 +48,14 @@ type coreMatchLabels struct {
 	Component string
 }
 
+type Labels struct {
+	Name            string
+	Instance        string
+	ManagedBy       string
+	Version         string
+	OperatorVersion string
+}
+
 type AppLabels struct {
 	AppMatchLabels
 	Component string
@@ -56,9 +67,24 @@ type CoreLabels struct {
 	Version string
 }
 
+// New will return a simplified Labels struct that contains all the necessary info related to the ownership of a resource.
+// It should be used instead of NewAppLabels and NewCoreLabels, as those are overcomplicating things.
+// If appVersion is empty the related `version` label will be omitted. This should be done for resources that have no version in general, like a `Secret`.
+func New(appName, instanceName, appVersion string) *Labels {
+	return &Labels{
+		Name:            appName,
+		Instance:        instanceName,
+		ManagedBy:       version.AppName,
+		Version:         truncateVersion(appVersion),
+		OperatorVersion: truncateVersion(version.Version),
+	}
+}
+
 // NewAppLabels abstracts labels that are specific to an application managed by the operator
 // which have their own version separate from the operator version.
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
+//
+// Deprecated: Use New instead.
 func NewAppLabels(appName, name, component, ver string) *AppLabels {
 	if len(ver) > validation.DNS1035LabelMaxLength {
 		ver = ver[:validation.DNS1035LabelMaxLength]
@@ -78,6 +104,8 @@ func NewAppLabels(appName, name, component, ver string) *AppLabels {
 // NewCoreLabels abstracts labels that are used for statefulsetreconciler functionality in the operator
 // which are not specific to an application's version
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
+//
+// Deprecated: Use New instead.
 func NewCoreLabels(dynakubeName, component string) *CoreLabels {
 	ver := version.Version
 	if len(ver) > validation.DNS1035LabelMaxLength {
@@ -91,6 +119,30 @@ func NewCoreLabels(dynakubeName, component string) *CoreLabels {
 			Component: component,
 		},
 		Version: ver,
+	}
+}
+
+// AsMap returns all labels, including version metadata
+func (labels *Labels) AsMap() map[string]string {
+	labelsMap := labels.AsSelector()
+
+	if labels.Version != "" {
+		labelsMap[AppVersionLabel] = labels.Version
+	}
+
+	if labels.OperatorVersion != "" {
+		labelsMap[OperatorVersionLabel] = labels.OperatorVersion
+	}
+
+	return labelsMap
+}
+
+// AsSelector returns the stable labels used to select resources
+func (labels *Labels) AsSelector() map[string]string {
+	return map[string]string{
+		AppNameLabel:      labels.Name,
+		AppInstanceLabel:  labels.Instance,
+		AppManagedByLabel: labels.ManagedBy,
 	}
 }
 
@@ -132,7 +184,14 @@ func (labels *AppLabels) BuildMatchLabels() map[string]string {
 		AppManagedByLabel: labels.ManagedBy,
 	}
 }
-
 func NotEqual(currentLabels, desiredLabels map[string]string) bool {
 	return !maps.Equal(currentLabels, desiredLabels)
+}
+
+func truncateVersion(ver string) string {
+	if len(ver) > validation.DNS1035LabelMaxLength {
+		return ver[:validation.DNS1035LabelMaxLength]
+	}
+
+	return ver
 }
