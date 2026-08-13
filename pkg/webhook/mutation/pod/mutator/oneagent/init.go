@@ -5,6 +5,7 @@ package oneagent
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
@@ -38,7 +39,8 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	}
 
-	if isCSIVolume(mutationRequest.BaseRequest) {
+	switch {
+	case isCSIVolume(mutationRequest.BaseRequest):
 		log.Info("configuring init-container with CSI bin volume", "name", mutationRequest.PodName())
 
 		if err := addCSIBinVolume(
@@ -54,7 +56,17 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		if customInitResources != nil {
 			mutationRequest.InstallContainer.Resources = *customInitResources
 		}
-	} else {
+	case mutationRequest.DynaKube.FF().IsImageVolume():
+		log.Info("configuring init-container with OCI bin volume", "name", mutationRequest.PodName())
+		addOCIBinVolume(mutationRequest.Pod, mutationRequest.DynaKube.OneAgent().GetCodeModulesImage())
+
+		customInitResources := mutationRequest.DynaKube.OneAgent().GetInitResources()
+		if customInitResources != nil {
+			mutationRequest.InstallContainer.Resources = *customInitResources
+		}
+
+		addInitBinMount(mutationRequest.InstallContainer, true)
+	default:
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
 
 		if err := addEmptyDirBinVolume(mutationRequest.Pod, log); err != nil {
@@ -102,9 +114,14 @@ func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 }
 
 func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string, log logd.Logger) error {
+	targetFolder := arg.Arg{Name: k8sinit.TargetFolderFlag, Value: consts.AgentInitBinDirMount}
+	if dk.FF().IsImageVolume() {
+		targetFolder = arg.Arg{Name: k8sinit.TargetFolderFlag, Value: filepath.Join(consts.AgentInitBinDirMount, AgentCodeModuleSource)}
+	}
+
 	args := []arg.Arg{
 		{Name: k8sinit.SourceFolderFlag, Value: AgentCodeModuleSource},
-		{Name: k8sinit.TargetFolderFlag, Value: consts.AgentInitBinDirMount},
+		targetFolder,
 		{Name: configure.InstallPathFlag, Value: installPath},
 	}
 

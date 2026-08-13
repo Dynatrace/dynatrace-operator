@@ -365,7 +365,7 @@ func TestMutate(t *testing.T) {
 	t.Run("no change => no update", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers(t)
 		for i := range request.Pod.Spec.Containers {
-			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
+			addVolumeMounts(&request.Pod.Spec.Containers[i], "test", false)
 		}
 
 		err := mut.Mutate(request)
@@ -464,7 +464,7 @@ func TestReinvoke(t *testing.T) {
 	t.Run("no change => no update", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers(t)
 		for i := range request.Pod.Spec.Containers {
-			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
+			addVolumeMounts(&request.Pod.Spec.Containers[i], "test", false)
 		}
 
 		updated := mut.Reinvoke(t.Context(), request.ToReinvocationRequest())
@@ -577,7 +577,7 @@ func createTestMutationRequestWithInjectedContainers(t *testing.T) *dtwebhook.Mu
 	request := createTestMutationRequestWithoutInjectedContainers(t)
 
 	i := 0
-	addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
+	addVolumeMounts(&request.Pod.Spec.Containers[i], "test", false)
 
 	return request
 }

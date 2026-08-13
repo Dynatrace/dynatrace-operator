@@ -13,8 +13,8 @@ const (
 	OAPrivilegedKey          = FFPrefix + "oneagent-privileged"
 	OASkipLivenessProbeKey   = FFPrefix + "oneagent-skip-liveness-probe"
 	OAClassicNonRootKey      = FFPrefix + "oneagent-classic-nonroot"
-
-	OANodeImagePullKey = FFPrefix + "node-image-pull"
+	OAImageVolumeKey         = FFPrefix + "mount-code-modules-via-image-volume"
+	OANodeImagePullKey       = FFPrefix + "node-image-pull"
 	// OANodeImagePullTechnologiesKey can be set on a Pod or DynaKube to configure which code module technologies to download. It's set to
 	// "all" if not set.
 	OANodeImagePullTechnologiesKey = "oneagent.dynatrace.com/technologies"
@@ -59,6 +59,10 @@ func (ff *FeatureFlags) IsClassicOneAgentNonRoot() bool {
 
 func (ff *FeatureFlags) SkipOneAgentLivenessProbe() bool {
 	return ff.getBoolWithDefault(OASkipLivenessProbeKey, false)
+}
+
+func (ff *FeatureFlags) IsImageVolume() bool {
+	return ff.getBoolWithDefault(OAImageVolumeKey, false)
 }
 
 func (ff *FeatureFlags) IsNodeImagePull() bool {

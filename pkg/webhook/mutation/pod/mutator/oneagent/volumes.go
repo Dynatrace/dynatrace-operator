@@ -23,14 +23,17 @@ const (
 	ldPreloadSubPath = preload.ConfigPath
 )
 
-func addVolumeMounts(container *corev1.Container, installPath string) {
-	container.VolumeMounts = append(
-		container.VolumeMounts,
-		corev1.VolumeMount{
-			Name:      BinVolumeName,
-			MountPath: installPath,
-			ReadOnly:  true,
-		},
+func addVolumeMounts(container *corev1.Container, installPath string, isImageVolume bool) {
+	binMount := corev1.VolumeMount{
+		Name:      BinVolumeName,
+		MountPath: installPath,
+		ReadOnly:  true,
+	}
+	if isImageVolume {
+		binMount.MountPath = AgentCodeModuleSource
+	}
+
+	container.VolumeMounts = append(container.VolumeMounts, binMount,
 		corev1.VolumeMount{
 			Name:      volumes.ConfigVolumeName,
 			MountPath: ldPreloadPath,
@@ -124,4 +127,24 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) error {
 	)
 
 	return nil
+}
+
+func addOCIBinVolume(pod *corev1.Pod, imageName string) {
+	if k8svolume.Contains(pod.Spec.Volumes, BinVolumeName) {
+		return
+	}
+
+	volumeSource := corev1.VolumeSource{
+		Image: &corev1.ImageVolumeSource{
+			Reference:  imageName,
+			PullPolicy: corev1.PullIfNotPresent,
+		},
+	}
+
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name:         BinVolumeName,
+			VolumeSource: volumeSource,
+		},
+	)
 }
