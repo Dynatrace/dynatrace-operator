@@ -170,8 +170,8 @@ func TestLabels(t *testing.T) {
 
 			labels := New(labelsName, labelsCreatedBy, tt.appVersion)
 
-			assert.Equal(t, tt.expectedLabels, labels.Build())
-			assert.Equal(t, tt.expectedMatch, labels.BuildMatch())
+			assert.Equal(t, tt.expectedLabels, labels.AsMap())
+			assert.Equal(t, tt.expectedMatch, labels.MatchAsMap())
 		})
 	}
 }

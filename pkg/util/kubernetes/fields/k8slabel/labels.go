@@ -65,6 +65,9 @@ type CoreLabels struct {
 	Version string
 }
 
+// New will return a simplified Labels struct that contains all the necessary info related to the ownership of a resource.
+// It should be used instead of NewAppLabels and NewCoreLabels, as those are overcomplicating things.
+// If appVersion is empty the related `version` label will be omitted. This should be done for resources that have no version in general, like a `Secret`.
 func New(appName, createdBy, appVersion string) *Labels {
 	return &Labels{
 		Name:           appName,
@@ -78,6 +81,8 @@ func New(appName, createdBy, appVersion string) *Labels {
 // NewAppLabels abstracts labels that are specific to an application managed by the operator
 // which have their own version separate from the operator version.
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
+//
+// Deprecated: Use New instead.
 func NewAppLabels(appName, name, component, ver string) *AppLabels {
 	if len(ver) > validation.DNS1035LabelMaxLength {
 		ver = ver[:validation.DNS1035LabelMaxLength]
@@ -97,6 +102,8 @@ func NewAppLabels(appName, name, component, ver string) *AppLabels {
 // NewCoreLabels abstracts labels that are used for statefulsetreconciler functionality in the operator
 // which are not specific to an application's version
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
+//
+// Deprecated: Use New instead.
 func NewCoreLabels(dynakubeName, component string) *CoreLabels {
 	ver := version.Version
 	if len(ver) > validation.DNS1035LabelMaxLength {
@@ -113,8 +120,8 @@ func NewCoreLabels(dynakubeName, component string) *CoreLabels {
 	}
 }
 
-func (labels *Labels) Build() map[string]string {
-	labelsMap := labels.BuildMatch()
+func (labels *Labels) AsMap() map[string]string {
+	labelsMap := labels.MatchAsMap()
 
 	if labels.Version != "" {
 		labelsMap[AppVersionLabel] = labels.Version
@@ -127,7 +134,7 @@ func (labels *Labels) Build() map[string]string {
 	return labelsMap
 }
 
-func (labels *Labels) BuildMatch() map[string]string {
+func (labels *Labels) MatchAsMap() map[string]string {
 	return map[string]string{
 		AppNameLabel:      labels.Name,
 		AppCreatedByLabel: labels.CreatedBy,
