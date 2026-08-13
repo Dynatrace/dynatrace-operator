@@ -26,6 +26,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
@@ -69,6 +70,10 @@ type customPropertiesReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
+type istioReconciler interface {
+	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 // Reconciler orchestrates the kubemon operand. Sub-reconciler fields are interfaces so they
 // can be mocked in tests.
 type Reconciler struct {
@@ -77,6 +82,7 @@ type Reconciler struct {
 	statefulsetReconciler      statefulsetReconciler
 	pullSecretReconciler       pullSecretReconciler
 	customPropertiesReconciler customPropertiesReconciler
+	istioReconciler            istioReconciler
 }
 
 func NewReconciler(kubeClient client.Client) *Reconciler {
@@ -86,6 +92,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 		statefulsetReconciler:      kubemonstatefulset.NewReconciler(kubeClient),
 		pullSecretReconciler:       dtpullsecret.NewReconciler(kubeClient, kubeClient),
 		customPropertiesReconciler: kubemoncustomproperties.NewReconciler(kubeClient),
+		istioReconciler:            istio.NewReconciler(kubeClient, kubeClient),
 	}
 }
 
@@ -107,6 +114,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtcli
 	defer func() { r.reconcileCondition(dk, err) }()
 
 	if err = r.connectionInfoReconciler.Reconcile(ctx, dtclient.ActiveGate, dk); err != nil {
+		return err
+	}
+
+	if err = r.istioReconciler.ReconcileActiveGate(ctx, dk); err != nil {
 		return err
 	}
 

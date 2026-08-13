@@ -37,17 +37,20 @@ func TestReconcileDisabled(t *testing.T) {
 		statefulSetReconciler := newMockStatefulsetReconciler(t)
 		pullSecretReconciler := newMockPullSecretReconciler(t)
 		customPropertiesReconciler := newMockCustomPropertiesReconciler(t)
+		istioRec := newMockIstioReconciler(t)
 		reconciler := &Reconciler{
 			connectionInfoReconciler:   connInfoReconciler,
 			authTokenReconciler:        authTokenReconciler,
 			statefulsetReconciler:      statefulSetReconciler,
 			pullSecretReconciler:       pullSecretReconciler,
 			customPropertiesReconciler: customPropertiesReconciler,
+			istioReconciler:            istioRec,
 		}
 		dk := newTestDynaKube(false)
 
 		meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: kubemonapi.KubeMonAvailableConditionType, Status: metav1.ConditionTrue, Reason: reasonAvailable})
 		connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		istioRec.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(nil).Once()
 		authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		customPropertiesReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
@@ -73,6 +76,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		pullSecret       *mockPullSecretReconciler
 		customProperties *mockCustomPropertiesReconciler
 		statefulSet      *mockStatefulsetReconciler
+		istio            *mockIstioReconciler
 	}
 
 	newMocks := func(t *testing.T) reconcilerMocks {
@@ -83,6 +87,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 			pullSecret:       newMockPullSecretReconciler(t),
 			customProperties: newMockCustomPropertiesReconciler(t),
 			statefulSet:      newMockStatefulsetReconciler(t),
+			istio:            newMockIstioReconciler(t),
 		}
 		m.reconciler = &Reconciler{
 			connectionInfoReconciler:   m.connInfo,
@@ -90,6 +95,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 			pullSecretReconciler:       m.pullSecret,
 			customPropertiesReconciler: m.customProperties,
 			statefulsetReconciler:      m.statefulSet,
+			istioReconciler:            m.istio,
 		}
 
 		return m
@@ -109,6 +115,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		dk := newTestDynaKube(true)
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.istio.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(nil).Once()
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
@@ -132,12 +139,27 @@ func TestReconcileConditionMapping(t *testing.T) {
 		assertCondition(t, dk, metav1.ConditionFalse, reasonReconciling, kubemonconnectioninfo.ErrConnectionInfoNotReady.Error())
 	})
 
+	t.Run("istio error -> error", func(t *testing.T) {
+		mocks := newMocks(t)
+		dk := newTestDynaKube(true)
+		istioErr := errors.New("istio error")
+
+		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.istio.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(istioErr).Once()
+
+		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
+
+		require.ErrorIs(t, err, istioErr)
+		assertCondition(t, dk, metav1.ConditionFalse, reasonError, "istio error")
+	})
+
 	t.Run("auth token error -> error", func(t *testing.T) {
 		mocks := newMocks(t)
 		dk := newTestDynaKube(true)
 		apiErr := errors.New("api error")
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.istio.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(nil).Once()
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(apiErr).Once()
 
 		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
@@ -152,6 +174,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		cpErr := errors.New("custom properties api error")
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.istio.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(nil).Once()
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(cpErr).Once()
@@ -167,6 +190,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		dk := newTestDynaKube(true)
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.istio.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(nil).Once()
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
@@ -184,6 +208,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		boomErr := errors.New("boom")
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
+		mocks.istio.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(nil).Once()
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()

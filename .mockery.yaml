@@ -111,6 +111,7 @@ packages:
       customPropertiesReconciler:
       pullSecretReconciler:
       statefulsetReconciler:
+      istioReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
