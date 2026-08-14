@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sserviceentry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8svirtualservice"
@@ -141,13 +142,15 @@ func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
-	log.Info("reconciling istio components for activegate communication hosts")
+	log.Debug("reconciling istio components for activegate communication hosts")
 
 	if dk == nil {
 		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
-	if !ptr.Deref(dk.Spec.EnableIstio, false) || !dk.ActiveGate().IsEnabled() {
+	isKubemonEnabled := k8senv.IsKubemonOperandEnabled() && dk.KubernetesMonitoring().IsEnabled()
+
+	if !ptr.Deref(dk.Spec.EnableIstio, false) || (!dk.ActiveGate().IsEnabled() && !isKubemonEnabled) {
 		if isIstioConfigured(dk, activeGateConditionName) {
 			log.Info("activegate disabled, cleaning up")
 
@@ -163,7 +166,18 @@ func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 		return nil
 	}
 
-	agCommunicationHosts, err := connectioninfo.ParseAGCommunicationHosts(dk.Status.ActiveGate.ConnectionInfo.Endpoints)
+	// We shouldn't reconcile this separately, as the endpoints of the Generic AG and the Kubemon AG will be the same.
+	// If we reconciled this separately, then we would duplicate the endpoints in ServiceEntries, which is not something Istio recommends.
+	var endpoints string
+
+	switch {
+	case dk.ActiveGate().IsEnabled():
+		endpoints = dk.Status.ActiveGate.ConnectionInfo.Endpoints
+	case isKubemonEnabled:
+		endpoints = dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints
+	}
+
+	agCommunicationHosts, err := connectioninfo.ParseAGCommunicationHosts(endpoints)
 	if err != nil {
 		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName)
 
