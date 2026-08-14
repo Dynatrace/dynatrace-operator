@@ -4,11 +4,10 @@ metadata:
   name: dtp-target-allocator
   namespace: dynatrace
   labels:
-    app.kubernetes.io/component: otel-allocator
-    app.kubernetes.io/created-by: dtp
+    app.kubernetes.io/instance: otel-allocator
     app.kubernetes.io/managed-by: dynatrace-operator
     app.kubernetes.io/name: opentelemetry-target-allocator
-    app.kubernetes.io/version: ""
+    internal.dynatrace.com/operator-version: snapshot
   ownerReferences:
   - apiVersion: dynatrace.com/v1alpha1
     blockOwnerDeletion: true
@@ -27,7 +26,7 @@ spec:
     protocol: TCP
     targetPort: http-port
   selector:
-    app.kubernetes.io/created-by: dtp
+    app.kubernetes.io/instance: otel-allocator
     app.kubernetes.io/managed-by: dynatrace-operator
     app.kubernetes.io/name: opentelemetry-target-allocator
 status:

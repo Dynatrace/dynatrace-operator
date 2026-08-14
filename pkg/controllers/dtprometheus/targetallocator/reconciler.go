@@ -76,7 +76,7 @@ type reconcileScope struct {
 	Owner       *dtprometheus.DTPrometheus
 	DynaKube    *dynakube.DynaKube
 	Spec        *dtprometheus.TargetAllocator
-	AppLabels   *k8slabel.AppLabels
+	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
 	// Computed during reconcile
 	ConfigMapHash string
@@ -90,7 +90,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 		Owner:       dtp,
 		DynaKube:    dk,
 		Spec:        dtp.TargetAllocator(),
-		AppLabels:   k8slabel.NewAppLabels("opentelemetry-target-allocator", dtp.Name, "otel-allocator", ""),
+		AppLabels:   k8slabel.New("opentelemetry-target-allocator", "otel-allocator", ""),
 		ImageClient: imageClient,
 	}
 
@@ -171,7 +171,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 			cm.Labels = make(map[string]string)
 		}
 
-		maps.Copy(cm.Labels, s.AppLabels.BuildLabels())
+		maps.Copy(cm.Labels, s.AppLabels.AsMap())
 
 		cm.Data = map[string]string{configFile: string(data)}
 
@@ -238,9 +238,9 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 			svc.Labels = make(map[string]string)
 		}
 
-		maps.Copy(svc.Labels, s.AppLabels.BuildLabels())
+		maps.Copy(svc.Labels, s.AppLabels.AsMap())
 
-		svc.Spec.Selector = s.AppLabels.BuildMatchLabels()
+		svc.Spec.Selector = s.AppLabels.AsSelector()
 		svc.Spec.Ports = []corev1.ServicePort{
 			{
 				Name:       securePortName,
@@ -277,14 +277,14 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 		deploy.Labels = make(map[string]string)
 	}
 
-	maps.Copy(deploy.Labels, s.AppLabels.BuildLabels())
+	maps.Copy(deploy.Labels, s.AppLabels.AsMap())
 
 	deploy.Spec.Template.Labels = s.Spec.Labels
 	if s.Spec.Labels == nil {
 		deploy.Spec.Template.Labels = make(map[string]string)
 	}
 
-	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.BuildMatchLabels())
+	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.AsMap())
 
 	deploy.Spec.Template.Annotations = s.Spec.Annotations
 	if deploy.Spec.Template.Annotations == nil {
@@ -297,7 +297,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 		deploy.Spec.Replicas = s.Spec.Replicas
 	}
 
-	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.BuildMatchLabels()}
+	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
 	deploy.Spec.Template.Spec.ServiceAccountName = serviceAccount
 	deploy.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 	deploy.Spec.Template.Spec.Affinity = s.Spec.Affinity

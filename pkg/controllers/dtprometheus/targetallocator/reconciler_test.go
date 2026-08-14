@@ -60,7 +60,7 @@ func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
 		Spec:      dtp.TargetAllocator(),
-		AppLabels: k8slabel.NewAppLabels("opentelemetry-target-allocator", dtp.Name, "otel-allocator", ""),
+		AppLabels: k8slabel.New("opentelemetry-target-allocator", "otel-allocator", ""),
 	}
 }
 
@@ -130,7 +130,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
 			Namespace: dtp.Namespace,
-			Labels:    map[string]string{"custom": "value", k8slabel.AppCreatedByLabel: "override"},
+			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
 		}}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
@@ -140,7 +140,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		cm := &corev1.ConfigMap{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
-		assert.Equal(t, dtp.Name, cm.Labels[k8slabel.AppCreatedByLabel])
+		assert.Equal(t, "otel-allocator", cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -241,7 +241,7 @@ func TestReconcileService(t *testing.T) {
 		existing := &corev1.Service{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
 			Namespace: dtp.Namespace,
-			Labels:    map[string]string{"custom": "value", k8slabel.AppCreatedByLabel: "override"},
+			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
 		}}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
@@ -251,7 +251,7 @@ func TestReconcileService(t *testing.T) {
 		svc := &corev1.Service{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, svc))
 		assert.Equal(t, "value", svc.Labels["custom"])
-		assert.Equal(t, dtp.Name, svc.Labels[k8slabel.AppCreatedByLabel])
+		assert.Equal(t, "otel-allocator", svc.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
