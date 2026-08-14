@@ -106,6 +106,27 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		assert.Equal(t, verifiedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	})
+	t.Run("invalid version from Dynatrace => error returned", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				CodeModules: oldCodeModulesStatus(),
+			},
+		}
+		mockImageClient := imageclientmock.NewClient(t)
+		mockVersionClient := versionclientmock.NewClient(t)
+		mockLatestAgentVersion(mockVersionClient, "not-a-version", 1)
+
+		updater := newCodeModulesUpdater(dk, mockImageClient, mockVersionClient)
+
+		err := updater.UseTenantRegistry(ctx)
+		require.Error(t, err)
+		assert.Equal(t, "prev", dk.Status.CodeModules.ImageID)
+	})
 	t.Run("problem with Dynatrace request => visible in conditions", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
