@@ -26,7 +26,9 @@ import (
 	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
@@ -418,6 +420,29 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		assert.Contains(t, names, dk.TenantRegistryPullSecretName())
 		assert.Contains(t, names, "my-custom-pull-secret")
 	})
+}
+
+func TestReconcileMetadata(t *testing.T) {
+	dk := newTestDynaKube(true)
+
+	sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+	expectedLabels := map[string]string{
+		k8slabel.AppNameLabel:         k8slabel.KubeMonAppLabel,
+		k8slabel.AppInstanceLabel:     dk.Name,
+		k8slabel.AppManagedByLabel:    operatorversion.AppName,
+		k8slabel.AppVersionLabel:      "1.2.3",
+		k8slabel.OperatorVersionLabel: operatorversion.Version,
+	}
+	expectedSelector := map[string]string{
+		k8slabel.AppNameLabel:      k8slabel.KubeMonAppLabel,
+		k8slabel.AppInstanceLabel:  dk.Name,
+		k8slabel.AppManagedByLabel: operatorversion.AppName,
+	}
+
+	assert.Equal(t, expectedLabels, sts.Labels)
+	assert.Equal(t, expectedLabels, sts.Spec.Template.Labels)
+	assert.Equal(t, expectedSelector, sts.Spec.Selector.MatchLabels)
 }
 
 // TestResolveImage verifies all three image resolution paths and their error handling.

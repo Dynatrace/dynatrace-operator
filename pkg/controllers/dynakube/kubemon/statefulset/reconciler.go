@@ -25,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -105,9 +106,9 @@ func ensureReady(dk *dynakube.DynaKube) error {
 
 func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash string) map[string]string {
 	annotations := map[string]string{
-		AnnotationTenantTokenHash:      tokenHash,
-		AnnotationAuthTokenHash:        authTokenHash,
-		AnnotationCustomPropertiesHash: customPropertiesHash,
+		AnnotationTenantTokenHash:              tokenHash,
+		AnnotationAuthTokenHash:                authTokenHash,
+		AnnotationCustomPropertiesHash:         customPropertiesHash,
 		mutator.AnnotationInjectionSplitMounts: "true",
 	}
 
@@ -364,11 +365,13 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	}
 
 	km := dk.KubernetesMonitoring()
-	appLabels := k8slabel.NewAppLabels(k8slabel.KubeMonComponentLabel, dk.Name, k8slabel.KubeMonComponentLabel, "")
+
+	imageVersion := oci.ParseImageReference(imageURI).Tag
+	labels := k8slabel.New(k8slabel.KubeMonAppLabel, dk.GetName(), imageVersion)
 
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
-		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), km.Labels),
+		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsMap(), km.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash))),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),

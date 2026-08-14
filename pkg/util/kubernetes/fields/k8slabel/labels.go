@@ -36,6 +36,10 @@ const (
 	OperatorComponentLabel      = "operator"
 )
 
+const (
+	KubeMonAppLabel = "kubemon"
+)
+
 func OTelTargetAllocator() *Labels {
 	return New("opentelemetry-target-allocator", "otel-allocator", "")
 }
