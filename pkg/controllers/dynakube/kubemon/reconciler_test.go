@@ -6,13 +6,19 @@ package kubemon
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
+	kubemonservice "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/service"
+	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -22,8 +28,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8slabels "k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Unit tests for the kubemon orchestrator. All sub-reconcilers are mocked, so these tests own only
@@ -269,6 +279,61 @@ func TestIsTransientError(t *testing.T) {
 	}
 }
 
+func TestServiceStatefulSetContract(t *testing.T) {
+	dk := newTestDynaKube(true)
+	dk.Status.KubeSystemUUID = "test-cluster-uuid" // set by the parent controller before any operand reconciler runs
+
+	clt := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
+
+	_ = kubemonservice.NewReconciler(clt).Reconcile(t.Context(), dk)
+	_ = kubemonstatefulset.NewReconciler(clt).
+		Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+	svc := &corev1.Service{}
+	require.NoError(t, clt.Get(t.Context(), client.ObjectKey{
+		Name:      kubemonservice.BuildServiceName(dk.Name),
+		Namespace: dk.Namespace,
+	}, svc))
+
+	sts := &appsv1.StatefulSet{}
+	require.NoError(t, clt.Get(t.Context(), client.ObjectKey{
+		Name:      dk.KubernetesMonitoring().GetStatefulSetName(),
+		Namespace: dk.Namespace,
+	}, sts))
+
+	t.Run("service selector matches the statefulset pod labels", func(t *testing.T) {
+		require.NotEmpty(t, svc.Spec.Selector, "matches every pod in the namespace")
+
+		assert.True(t,
+			k8slabels.SelectorFromSet(svc.Spec.Selector).Matches(k8slabels.Set(sts.Spec.Template.Labels)),
+			"service selector %v does not match pod labels %v", svc.Spec.Selector, sts.Spec.Template.Labels)
+	})
+
+	t.Run("service only selects pods owned by the statefulset", func(t *testing.T) {
+		require.NotEmpty(t, svc.Spec.Selector, "matches every pod in the namespace")
+
+		assert.True(t,
+			k8slabels.SelectorFromSet(svc.Spec.Selector).Matches(k8slabels.Set(sts.Spec.Selector.MatchLabels)),
+			"service selector %v is not implied by statefulset selector %v", svc.Spec.Selector, sts.Spec.Selector.MatchLabels)
+	})
+
+	t.Run("every service target port resolves to a container port", func(t *testing.T) {
+		require.NotEmpty(t, svc.Spec.Ports, "service targets no ports")
+
+		index := slices.IndexFunc(sts.Spec.Template.Spec.Containers, func(container corev1.Container) bool {
+			return container.Name == kubemonstatefulset.ContainerName
+		})
+
+		require.NotEqual(t, -1, index, "statefulset has no %q container", kubemonstatefulset.ContainerName)
+
+		for _, port := range svc.Spec.Ports {
+			assert.True(t, slices.ContainsFunc(sts.Spec.Template.Spec.Containers[index].Ports, func(containerPort corev1.ContainerPort) bool {
+				return containerPort.Name == port.TargetPort.StrVal
+			}), "service port %q targets %q, which no container port declares", port.Name, port.TargetPort.StrVal)
+		}
+	})
+}
+
 func newTestDynaKube(enabled bool) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -294,5 +359,29 @@ func newTestDTClient(t *testing.T) *dynatrace.Client {
 		ActiveGate: agclientmock.NewClient(t),
 		Images:     imageclientmock.NewClient(t),
 		Version:    versionclientmock.NewClient(t),
+	}
+}
+
+func newTestTenantSecret(dk *dynakube.DynaKube) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
+			Namespace: dk.Namespace,
+		},
+		Data: map[string][]byte{
+			connectioninfo.TenantTokenKey: []byte("test-tenant-token"),
+		},
+	}
+}
+
+func newTestAuthTokenSecret(dk *dynakube.DynaKube) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
+			Namespace: dk.Namespace,
+		},
+		Data: map[string][]byte{
+			kubemonauthtoken.SecretKey: []byte("test-auth-token"),
+		},
 	}
 }
