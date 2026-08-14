@@ -22,3 +22,6 @@ WARNING: Golang profiling endpoint is enabled. Make sure to restrict external ac
 {{- if (.Values.experimental).enableKubemonOperand }}
 WARNING: The kubemon operand is enabled. It is under development and not ready for production use.
 {{- end }}
+{{- if .Values.dtClientLogLevel }}
+WARNING: Enabled extended Dynatrace API logging verbosity. This may expose confidential information to your logging infrastructure.
+{{- end }}
