@@ -13,7 +13,7 @@ metadata:
   {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 spec:
   selector:
-  {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
+  {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 4 }}
   ports:
     - port: 443
       protocol: TCP
