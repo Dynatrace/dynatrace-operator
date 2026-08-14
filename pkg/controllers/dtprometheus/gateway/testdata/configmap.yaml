@@ -1,0 +1,54 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: dtp-gateway
+  namespace: dynatrace
+  labels:
+    app.kubernetes.io/instance: otel-gateway
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-gateway
+    internal.dynatrace.com/operator-version: snapshot
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DTPrometheus
+    name: dtp
+    uid: dtp-uid
+data:
+  relay: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
+
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
+      metric_start_time: {}
+      cumulativetodelta: {}
+      k8s_attributes: {}
+      transform: {}
+
+    exporters:
+      otlphttp:
+        endpoint: https://abc12345.live.dynatrace.com/api/v2/otlp
+        headers:
+          Authorization: "Api-Token ${env:DT_API_TOKEN}"
+
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
+    service:
+      extensions: [health_check]
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, metric_start_time, cumulativetodelta, k8s_attributes, transform]
+          exporters: [otlphttp]

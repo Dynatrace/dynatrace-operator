@@ -9,6 +9,8 @@ import appsv1 "k8s.io/api/apps/v1"
 // name of the gateway's Kubernetes resources.
 const GatewayNameSuffix = "-gateway"
 
+const GatewayAvailable = "GatewayAvailable"
+
 // +kubebuilder:object:generate=false
 
 // Gateway wraps the gateway Spec together with the owning DTPrometheus name so
