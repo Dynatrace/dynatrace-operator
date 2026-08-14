@@ -18,6 +18,7 @@ type Status struct {
 	// +kubebuilder:validation:Optional
 	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitzero"`
 
-	// Parity with ActiveGate ServiceIPs, to be used with TLS.
+	// The IP addresses of the KubernetesMonitoring Service
+	// +kubebuilder:validation:Optional
 	ServiceIPs []string `json:"serviceIPs,omitempty"`
 }
