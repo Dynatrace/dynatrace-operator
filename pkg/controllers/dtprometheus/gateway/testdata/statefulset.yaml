@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/instance: otel-gateway
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-gateway
+    internal.dynatrace.com/operator-version: snapshot
+  name: dtp-gateway
+  namespace: dynatrace
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DTPrometheus
+    name: dtp
+    uid: dtp-uid
+spec:
+  podManagementPolicy: Parallel
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: otel-gateway
+      app.kubernetes.io/managed-by: dynatrace-operator
+      app.kubernetes.io/name: opentelemetry-gateway
+  serviceName: dtp-gateway
+  template:
+    metadata:
+      annotations:
+        custom: annotation
+        internal.operator.dynatrace.com/gateway-config-hash: deadbeef
+      labels:
+        app.kubernetes.io/instance: otel-gateway
+        app.kubernetes.io/managed-by: dynatrace-operator
+        app.kubernetes.io/name: opentelemetry-gateway
+        custom: label
+        internal.dynatrace.com/operator-version: snapshot
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - --config=/conf/relay.yaml
+        command:
+        - /dynatrace-otel-collector
+        env:
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DT_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: apiToken
+              name: dk
+        - name: K8S_CLUSTER_NAME
+          value: test-cluster
+        - name: DT_ENTITY_KUBERNETES_CLUSTER
+          value: KUBERNETES_CLUSTER-ABC123
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: K8S_NAMESPACE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: K8S_POD_UID
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.uid
+        - name: GOMEMLIMIT
+          value: "471859200"
+        image: registry.example.com/gateway:1.2.3
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: gateway
+        ports:
+        - containerPort: 4317
+          name: otlp
+          protocol: TCP
+        - containerPort: 4318
+          name: otlp-http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 13133
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            memory: 500Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /conf
+          name: opentelemetry-collector-configmap
+          readOnly: true
+      nodeSelector:
+        disk: ssd
+      priorityClassName: high-priority
+      serviceAccountName: dynatrace-prometheus-gateway
+      tolerations:
+      - key: k
+        operator: Exists
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: relay
+            path: relay.yaml
+          name: dtp-gateway
+        name: opentelemetry-collector-configmap
+  updateStrategy:
+    type: RollingUpdate
+status:
+  availableReplicas: 0
+  replicas: 0
