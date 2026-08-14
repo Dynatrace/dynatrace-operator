@@ -5,6 +5,7 @@
 package sanitize
 
 import (
+	"os"
 	"strings"
 	"sync"
 )
@@ -42,4 +43,22 @@ func CommandLineArgs(args []string) []string {
 	}
 
 	return sanitized
+}
+
+var filePathSanitizer = strings.NewReplacer("..", "", "//", "/", ",", "", ":", "")
+
+// FilePath removes characters that are unsafe to use as a filesystem path component: "..", "//", ",", and ":".
+// Sanitization runs before the root-separator check so that inputs that disguise a bare separator
+// (e.g. "../" → "/" after stripping "..") are also stripped.
+//
+// [filepath.Clean] is not used here because it normalizes a full path rather than stripping characters
+// from an untrusted name component. A relative input such as "../secret" passes through Clean unchanged.
+func FilePath(path string) string {
+	path = filePathSanitizer.Replace(path)
+
+	if path == string(os.PathSeparator) {
+		return ""
+	}
+
+	return path
 }

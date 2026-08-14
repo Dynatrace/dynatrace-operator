@@ -27,4 +27,40 @@ func TestGetTargetDir(t *testing.T) {
 		targetDir := prov.getTargetDir(dk)
 		require.Contains(t, targetDir, expectedDir)
 	})
+
+	t.Run("version with double-dot => double-dot stripped from dir", func(t *testing.T) {
+		prov := createProvisioner(t)
+		dk := createDynaKubeWithVersion(t)
+		dk.Status.CodeModules.Version = "1.0../evil"
+
+		targetDir := prov.getTargetDir(dk)
+		require.NotContains(t, targetDir, "..")
+	})
+
+	t.Run("version with colon => colon stripped from dir", func(t *testing.T) {
+		prov := createProvisioner(t)
+		dk := createDynaKubeWithVersion(t)
+		dk.Status.CodeModules.Version = "version:1.0"
+
+		targetDir := prov.getTargetDir(dk)
+		require.NotContains(t, targetDir, ":")
+	})
+
+	t.Run("version with comma => comma stripped from dir", func(t *testing.T) {
+		prov := createProvisioner(t)
+		dk := createDynaKubeWithVersion(t)
+		dk.Status.CodeModules.Version = "v1,0"
+
+		targetDir := prov.getTargetDir(dk)
+		require.NotContains(t, targetDir, ",")
+	})
+
+	t.Run("version disguising root separator => dir name is empty", func(t *testing.T) {
+		prov := createProvisioner(t)
+		dk := createDynaKubeWithVersion(t)
+		dk.Status.CodeModules.Version = "../"
+
+		targetDir := prov.getTargetDir(dk)
+		require.Equal(t, prov.path.AgentSharedBinaryDirBase(), targetDir)
+	})
 }

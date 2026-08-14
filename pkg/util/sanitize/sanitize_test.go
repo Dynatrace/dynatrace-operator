@@ -42,6 +42,36 @@ func TestCommandLineArg(t *testing.T) {
 	}
 }
 
+func TestFilePath(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		out  string
+	}{
+		{name: "empty string", in: "", out: ""},
+		{name: "root separator returns empty", in: "/", out: ""},
+		{name: "clean path is unchanged", in: "/foo/bar", out: "/foo/bar"},
+		{name: "removes double dots", in: "/foo..bar", out: "/foobar"},
+		{name: "removes double dots standalone", in: "..", out: ""},
+		{name: "converts double slash", in: "/foo//bar", out: "/foo/bar"},
+		{name: "removes comma", in: "/foo,bar", out: "/foobar"},
+		{name: "removes colon", in: "/foo:bar", out: "/foobar"},
+		{name: "removes all invalid patterns at once", in: "/foo:bar,baz//qux..end", out: "/foobarbaz/quxend"},
+		{name: "./ is ok", in: "./", out: "./"},
+		// inputs that reduce to the path separator after sanitization must also return empty
+		{name: "double-dot prefix disguising root", in: "../", out: ""},
+		{name: "comma prefix disguising root", in: ",/", out: ""},
+		{name: "colon prefix disguising root", in: ":/", out: ""},
+		{name: "multiple tricks disguising root", in: ",..:/", out: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.out, FilePath(tt.in))
+		})
+	}
+}
+
 func TestCommandLineArgs(t *testing.T) {
 	t.Run("nil slice returns empty slice", func(t *testing.T) {
 		assert.Equal(t, []string{}, CommandLineArgs(nil))

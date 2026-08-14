@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/helmconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
 const (
@@ -122,6 +123,8 @@ func (provisioner *OneAgentProvisioner) getTargetDir(dk *dynakube.DynaKube) stri
 	} else {
 		dirName = dk.OneAgent().GetCodeModulesVersion()
 	}
+
+	dirName = sanitize.FilePath(dirName)
 
 	return provisioner.path.AgentSharedBinaryDirForAgent(dirName)
 }
