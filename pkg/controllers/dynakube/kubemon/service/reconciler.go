@@ -97,17 +97,17 @@ func agService(dk *dynakube.DynaKube) *corev1.Service {
 		},
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KubeMonComponentLabel)
+	labels := k8slabel.New(k8slabel.KubeMonAppLabel, dk.Name, "")
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceName(dk.Name),
 			Namespace: dk.Namespace,
-			Labels:    coreLabels.BuildLabels(),
+			Labels:    labels.AsMap(),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: k8slabel.NewAppLabels(k8slabel.KubeMonComponentLabel, dk.Name, k8slabel.KubeMonComponentLabel, "").BuildMatchLabels(),
+			Selector: labels.AsSelector(),
 			Ports:    ports,
 		},
 	}

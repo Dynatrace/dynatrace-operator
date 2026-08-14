@@ -110,8 +110,14 @@ func TestKubemonEnabled(t *testing.T) {
 		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: service.BuildServiceName(dk.Name), Namespace: dk.Namespace}, svc))
 
 		assert.Equal(t, map[string]string{
+			"app.kubernetes.io/name":                  "kubemon",
+			"app.kubernetes.io/instance":              "test-dk",
+			"app.kubernetes.io/managed-by":            "dynatrace-operator",
+			"internal.dynatrace.com/operator-version": "snapshot",
+		}, svc.Labels)
+		assert.Equal(t, map[string]string{
 			"app.kubernetes.io/name":       "kubemon",
-			"app.kubernetes.io/created-by": "test-dk",
+			"app.kubernetes.io/instance":   "test-dk",
 			"app.kubernetes.io/managed-by": "dynatrace-operator",
 		}, svc.Spec.Selector)
 	})
