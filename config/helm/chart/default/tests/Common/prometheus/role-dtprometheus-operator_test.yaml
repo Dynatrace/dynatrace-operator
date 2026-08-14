@@ -42,7 +42,6 @@ tests:
                 - dtprometheuses/status
               verbs:
                 - patch
-                - update
 
   - it: RoleBinding should exist with correct subjects and roleRef
     documentIndex: 1
