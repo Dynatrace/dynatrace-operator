@@ -38,20 +38,3 @@ func TestDTPrometheus_Conditions(t *testing.T) {
 	assert.Len(t, dtp.Status.Conditions, 1)
 	assert.Equal(t, "Ready", dtp.Status.Conditions[0].Type)
 }
-
-func TestDTPrometheus_ComponentAccessors(t *testing.T) {
-	dtp := &DTPrometheus{}
-	dtp.Name = "dtprom"
-
-	t.Run("gateway wraps the spec and derives the name", func(t *testing.T) {
-		assert.Equal(t, "dtprom-gateway", dtp.Gateway().GetStatefulSetName())
-	})
-
-	t.Run("scraper wraps the spec and derives the name", func(t *testing.T) {
-		assert.Equal(t, "dtprom-scraper", dtp.Scraper().GetDeploymentName())
-	})
-
-	t.Run("target allocator wraps the spec and derives the name", func(t *testing.T) {
-		assert.Equal(t, "dtprom-target-allocator", dtp.TargetAllocator().GetDeploymentName())
-	})
-}

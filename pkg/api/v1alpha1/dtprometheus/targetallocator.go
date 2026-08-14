@@ -11,7 +11,7 @@ import (
 const (
 	// TargetAllocatorNameSuffix is appended to the owning DTPrometheus name to derive
 	// the base name of the Target Allocator's Kubernetes resources.
-	TargetAllocatorNameSuffix = "-target-allocator"
+	TargetAllocatorNameSuffix = "-prometheus-allocator"
 
 	// DefaultScrapeCRSelectorLabel is the label key the Target Allocator matches
 	// on Prometheus CRDs when no explicit scrapeCRSelector is configured.
