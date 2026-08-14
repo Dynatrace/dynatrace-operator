@@ -4,10 +4,7 @@
 package dynakube
 
 import (
-	"net/url"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -27,18 +24,4 @@ func (dk *DynaKube) FF() *exp.FeatureFlags {
 // APIURL is a getter for dk.Spec.APIURL.
 func (dk *DynaKube) APIURL() string { //nolint:staticcheck
 	return dk.Spec.APIURL
-}
-
-func (dk *DynaKube) Conditions() *[]metav1.Condition { return &dk.Status.Conditions }
-
-// APIURLHost returns the host of dk.Spec.APIURL
-// E.g. if the APIURL is set to "https://my-tenant.dynatrace.com/api", it returns "my-tenant.dynatrace.com"
-// If the URL cannot be parsed, it returns an empty string.
-func (dk *DynaKube) APIURLHost() string {
-	parsedURL, err := url.Parse(dk.APIURL())
-	if err != nil {
-		return ""
-	}
-
-	return parsedURL.Host
 }

@@ -14,12 +14,7 @@ type OneAgent struct {
 	*Status
 	*CodeModulesStatus
 
-	name       string
-	apiURLHost string
-
-	featureOneAgentPrivileged        bool
-	featureBootstrapperInjection     bool
-	featureOneAgentSkipLivenessProbe bool
+	name string
 }
 
 // +kubebuilder:object:generate=true

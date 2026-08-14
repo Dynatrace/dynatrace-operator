@@ -17,20 +17,13 @@ const (
 	StorageVolumeDefaultHostPath          = "/var/opt/dynatrace"
 )
 
-func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
-	name, apiURLHost string,
-	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool) *OneAgent {
+func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, name string) *OneAgent {
 	return &OneAgent{
 		Spec:              spec,
 		Status:            status,
 		CodeModulesStatus: codeModulesStatus,
 
-		name:       name,
-		apiURLHost: apiURLHost,
-
-		featureOneAgentPrivileged:        featureOneAgentPrivileged,
-		featureOneAgentSkipLivenessProbe: featureOneAgentSkipLivenessProbe,
-		featureBootstrapperInjection:     featureBootstrapperInjection,
+		name: name,
 	}
 }
 

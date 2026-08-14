@@ -14,25 +14,19 @@ type Capability struct {
 
 	// The name of the capability known by the user, mainly used in the CR
 	DisplayName CapabilityDisplayName
-
-	// The string passed to the active gate image to enable a given capability
-	ArgumentName string
 }
 
 var (
 	KubeMonCapability = Capability{
-		DisplayName:  "kubernetes-monitoring",
-		ArgumentName: "kubernetes_monitoring",
+		DisplayName: "kubernetes-monitoring",
 	}
 
 	MetricsIngestCapability = Capability{
-		DisplayName:  "metrics-ingest",
-		ArgumentName: "metrics_ingest",
+		DisplayName: "metrics-ingest",
 	}
 
 	DynatraceAPICapability = Capability{
-		DisplayName:  "dynatrace-api",
-		ArgumentName: "restInterface",
+		DisplayName: "dynatrace-api",
 	}
 )
 
