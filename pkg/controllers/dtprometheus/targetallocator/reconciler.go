@@ -17,7 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
-	k8sobjects "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -166,7 +166,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 
 	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
-	result, err := k8sobjects.RetryCreateOrUpdate(ctx, r, cm, func() error {
+	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
 		if cm.Labels == nil {
 			cm.Labels = make(map[string]string)
 		}
@@ -206,7 +206,7 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 
 	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
-	result, err := k8sobjects.RetryCreateOrUpdate(ctx, r, deploy, func() error {
+	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
 		mutateDeployment(deploy, s)
 
 		return controllerutil.SetControllerReference(s.Owner, deploy, r.Scheme())
@@ -233,7 +233,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 
 	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
-	result, err := k8sobjects.RetryCreateOrUpdate(ctx, r, svc, func() error {
+	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
 		if svc.Labels == nil {
 			svc.Labels = make(map[string]string)
 		}

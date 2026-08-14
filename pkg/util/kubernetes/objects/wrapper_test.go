@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package k8sobjects
+package k8sobject
 
 import (
 	"context"

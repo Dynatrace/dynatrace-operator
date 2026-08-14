@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -70,15 +71,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	defer func() {
 		reterr = setPhase(dtp, reterr)
 
-		if patchErr := r.patchStatus(ctx, dtp); patchErr != nil {
+		if applyErr := k8sobject.ApplyStatus(ctx, r, dtp); applyErr != nil {
 			if reterr != nil {
 				// The reconciler error has higher precedence than updating the status, but the information should not be lost.
-				log.Error(patchErr, "failed patching status")
+				log.Error(applyErr, "failed applying status")
 
 				return
 			}
 
-			reterr = patchErr
+			reterr = applyErr
 		}
 	}()
 
@@ -130,6 +131,13 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 	)
 }
 
+// setPhase calculates the phase according to the conditions and the error.
+// The error is only used when the conditions are empty and results in phases Deploying or Error.
+//
+// To accurately calculate the phase the reconcilers are expect to follow the following rules:
+//   - Reconciliation successful: condition status True
+//   - Reconciliation ongoing: condition status False/Unknown and reason Reconciling
+//   - Reconciliation failed: anything that does not fit the above
 func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
 	if len(dtp.Status.Conditions) == 0 {
 		if err != nil {
@@ -162,26 +170,6 @@ func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
 	dtp.Status.Phase = phase
 
 	return err
-}
-
-func (r *Reconciler) patchStatus(ctx context.Context, dtp *dtprometheus.DTPrometheus) error {
-	// Apply complains if these fields are set
-	dtp.ManagedFields = nil
-	// Disable optimistic locking
-	dtp.ResourceVersion = ""
-
-	var opts []client.SubResourcePatchOption
-
-	if dtp.Kind == "" || dtp.APIVersion == "" {
-		// Set these values for unit tests
-		dtp.Kind = "DTPrometheus"
-		dtp.APIVersion = "dynatrace.com/v1alpha1"
-		// The fake client cannot set the field owner, but it's a required field.
-		opts = []client.SubResourcePatchOption{client.FieldOwner("dynatrace-operator")}
-	}
-
-	//nolint:staticcheck // client.Apply is deprecated, but our repo does not support generating ApplyConfiguration
-	return r.SubResource("status").Patch(ctx, dtp, client.Apply, opts...)
 }
 
 // SetupWithManager sets up the controller with the Manager.
