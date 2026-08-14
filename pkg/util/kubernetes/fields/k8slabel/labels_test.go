@@ -4,6 +4,7 @@
 package k8slabel
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -54,7 +55,6 @@ func TestConstructors(t *testing.T) {
 	t.Run("verify labels for statefulsetreconciler", func(t *testing.T) {
 		assert.Equal(t, expectedCoreLabels, coreLabels.BuildLabels())
 	})
-
 	t.Run("verify matchLabels for app", func(t *testing.T) {
 		assert.Equal(t, expectedAppMatchLabels, appLabels.BuildMatchLabels())
 	})
@@ -75,4 +75,103 @@ func TestLongVersion(t *testing.T) {
 
 	assert.Len(t, appLabels.Version, 63)
 	assert.Len(t, coreLabels.Version, 63)
+}
+
+func TestLabels(t *testing.T) {
+	const (
+		labelsName            = "labels-test-app"
+		labelsInstance        = "labels-test-instance"
+		labelsVersion         = "labels-test-version"
+		labelsOperatorVersion = "labels-test-operator-version"
+	)
+
+	tests := []struct {
+		name            string
+		appVersion      string
+		operatorVersion string
+		expectedLabels  map[string]string
+		expectedMatch   map[string]string
+	}{
+		{
+			name:            "all labels",
+			appVersion:      labelsVersion,
+			operatorVersion: labelsOperatorVersion,
+			expectedLabels: map[string]string{
+				AppNameLabel:         labelsName,
+				AppInstanceLabel:     labelsInstance,
+				AppManagedByLabel:    version.AppName,
+				AppVersionLabel:      labelsVersion,
+				OperatorVersionLabel: labelsOperatorVersion,
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppInstanceLabel:  labelsInstance,
+				AppManagedByLabel: version.AppName,
+			},
+		},
+		{
+			name:            "empty workload version",
+			appVersion:      "",
+			operatorVersion: labelsOperatorVersion,
+			expectedLabels: map[string]string{
+				AppNameLabel:         labelsName,
+				AppInstanceLabel:     labelsInstance,
+				AppManagedByLabel:    version.AppName,
+				OperatorVersionLabel: labelsOperatorVersion,
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppInstanceLabel:  labelsInstance,
+				AppManagedByLabel: version.AppName,
+			},
+		},
+		{
+			name:            "empty operator version",
+			appVersion:      labelsVersion,
+			operatorVersion: "",
+			expectedLabels: map[string]string{
+				AppNameLabel:      labelsName,
+				AppInstanceLabel:  labelsInstance,
+				AppManagedByLabel: version.AppName,
+				AppVersionLabel:   labelsVersion,
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppInstanceLabel:  labelsInstance,
+				AppManagedByLabel: version.AppName,
+			},
+		},
+		{
+			name:            "long versions",
+			appVersion:      strings.Repeat("a", 64),
+			operatorVersion: strings.Repeat("b", 64),
+			expectedLabels: map[string]string{
+				AppNameLabel:         labelsName,
+				AppInstanceLabel:     labelsInstance,
+				AppManagedByLabel:    version.AppName,
+				AppVersionLabel:      strings.Repeat("a", 63),
+				OperatorVersionLabel: strings.Repeat("b", 63),
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppInstanceLabel:  labelsInstance,
+				AppManagedByLabel: version.AppName,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			oldVersion := version.Version
+			t.Cleanup(func() {
+				version.Version = oldVersion
+			})
+			version.Version = tt.operatorVersion
+
+			labels := New(labelsName, labelsInstance, tt.appVersion)
+
+			assert.Equal(t, tt.expectedLabels, labels.AsMap())
+			assert.Equal(t, tt.expectedMatch, labels.AsSelector())
+		})
+	}
 }

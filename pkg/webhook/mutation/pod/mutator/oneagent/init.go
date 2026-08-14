@@ -60,7 +60,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		if err := addEmptyDirBinVolume(mutationRequest.Pod, log); err != nil {
 			return err
 		}
-		// in case of no CSI, the the emptyDir can't be readonly for the init-container, as it first has to download/move the agent into it
+		// in case of no CSI, the emptyDir can't be readonly for the init-container, as it first has to download/move the agent into it
 		addInitBinMount(mutationRequest.InstallContainer, false)
 
 		// in case of no CSI, the default init resources will not work, so we must overwrite them to the custom ones from `spec.oneAgent.<mode>.initResources`, or unset them

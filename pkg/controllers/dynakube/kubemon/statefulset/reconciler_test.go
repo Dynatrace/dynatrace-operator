@@ -25,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/pkg/errors"
@@ -338,6 +339,13 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		assert.Empty(t, sts.Spec.Template.Spec.ImagePullSecrets)
+	})
+
+	t.Run("injection split-mounts annotation is always set to true", func(t *testing.T) {
+		dk := newTestDynaKube(true)
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.Equal(t, "true", sts.Spec.Template.Annotations[mutator.AnnotationInjectionSplitMounts])
 	})
 
 	t.Run("image pull secrets: custom pull secret is included alongside the tenant registry secret", func(t *testing.T) {

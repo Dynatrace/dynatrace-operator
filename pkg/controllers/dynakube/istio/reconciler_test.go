@@ -9,10 +9,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -483,6 +485,49 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.Error(t, err)
+	})
+	t.Run("kubemon enabled but AG disabled: uses kubemon endpoints", func(t *testing.T) {
+		ctx := t.Context()
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+		dk := createTestDynaKube()
+		dk.Spec.ActiveGate = activegate.Spec{}
+		dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
+		dk.Status.ActiveGate.ConnectionInfo.Endpoints = ""
+		dk.Status.KubernetesMonitoring = kubemonapi.Status{
+			ConnectionInfo: communication.ConnectionInfo{
+				Endpoints: "https://kubemon.some.endpoint.com:443",
+			},
+		}
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
+
+		err := reconciler.ReconcileActiveGate(ctx, dk)
+		require.NoError(t, err)
+
+		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
+		expectedVirtualService := &istiov1beta1.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+				Namespace: dk.GetNamespace(),
+			},
+		}
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
+		require.NoError(t, err)
+		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "kubemon.some.endpoint.com")
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.NoError(t, err)
+		assert.NotNil(t, expectedVirtualService)
+
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 	})
 }
 

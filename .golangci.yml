@@ -341,6 +341,9 @@ linters:
       - linters:
           - godot
         path-except: pkg/api/(.+)\.go
+      - linters:
+          - staticcheck
+        text: "SA1019:.*(NewAppLabels|NewCoreLabels|AppCreatedByLabel)"
     paths:
       - pkg/api/v1alpha1/edgeconnect
       - pkg/api/v1beta5/dynakube
