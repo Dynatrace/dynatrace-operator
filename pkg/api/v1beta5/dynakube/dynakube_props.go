@@ -4,13 +4,7 @@
 package dynakube
 
 import (
-	"net/url"
-	"time"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -28,55 +22,6 @@ func (dk *DynaKube) FF() *exp.FeatureFlags {
 }
 
 // APIURL is a getter for dk.Spec.APIURL.
-func (dk *DynaKube) APIURL() string {
+func (dk *DynaKube) APIURL() string { //nolint:staticcheck
 	return dk.Spec.APIURL
-}
-
-func (dk *DynaKube) Conditions() *[]metav1.Condition { return &dk.Status.Conditions }
-
-// APIURLHost returns the host of dk.Spec.APIURL
-// E.g. if the APIURL is set to "https://my-tenant.dynatrace.com/api", it returns "my-tenant.dynatrace.com"
-// If the URL cannot be parsed, it returns an empty string.
-func (dk *DynaKube) APIURLHost() string {
-	parsedURL, err := url.Parse(dk.APIURL())
-	if err != nil {
-		return ""
-	}
-
-	return parsedURL.Host
-}
-
-// Tokens returns the name of the Secret to be used for tokens.
-func (dk *DynaKube) Tokens() string {
-	if tkns := dk.Spec.Tokens; tkns != "" {
-		return tkns
-	}
-
-	return dk.Name
-}
-
-func (dk *DynaKube) TenantUUID() (string, error) {
-	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
-		return dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID, nil
-	} else if dk.Status.ActiveGate.ConnectionInfo.TenantUUID != "" {
-		return dk.Status.ActiveGate.ConnectionInfo.TenantUUID, nil
-	}
-
-	return "", errors.New("tenant UUID not available")
-}
-
-func (dk *DynaKube) GetDynatraceAPIRequestThreshold() uint16 {
-	if dk.Spec.DynatraceAPIRequestThreshold == nil {
-		return DefaultMinRequestThresholdMinutes
-	}
-
-	return *dk.Spec.DynatraceAPIRequestThreshold
-}
-
-func (dk *DynaKube) APIRequestThreshold() time.Duration {
-	return time.Duration(dk.GetDynatraceAPIRequestThreshold()) * time.Minute
-}
-
-func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceAPI.LastTokenScopeRequest, dk.APIRequestThreshold())
 }

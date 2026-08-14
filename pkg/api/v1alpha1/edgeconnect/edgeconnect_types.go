@@ -43,7 +43,7 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// Location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required
-	ApiServer string `json:"apiServer"`
+	APIServer string `json:"apiServer"`
 
 	// Restrict outgoing HTTP requests to your internal resources to specified hosts
 	// +kubebuilder:example:="internal.example.org,*.dev.example.org"
@@ -149,14 +149,6 @@ type EdgeConnectStatus struct { //nolint:revive
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// SetPhase sets the status phase on the EdgeConnect object.
-func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
-	upd := phase != dk.DeploymentPhase
-	dk.DeploymentPhase = phase
-
-	return upd
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
@@ -166,7 +158,7 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// EdgeConnect is the Schema for the EdgeConnect API
+// EdgeConnect is the Schema for the EdgeConnect API.
 type EdgeConnect struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -179,7 +171,7 @@ type EdgeConnect struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 
-// EdgeConnectList contains a list of EdgeConnect
+// EdgeConnectList contains a list of EdgeConnect.
 type EdgeConnectList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

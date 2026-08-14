@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/ptr"
 )
 
 var testTime = metav1.Now()
@@ -190,7 +189,7 @@ func TestConvertTo(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				from := getOldDynakubeBase()
-				from.Spec.Kspm = &kspm.Spec{
+				from.Spec.KSPM = &kspm.Spec{
 					MappedHostPaths: tc.mappedHostPaths,
 				}
 				to := dynakubelatest.DynaKube{}
@@ -330,14 +329,14 @@ func TestConvertTo(t *testing.T) {
 
 	t.Run("migrate kspm templates from v1beta5 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		from.Spec.Templates.KspmNodeConfigurationCollector = getOldNodeConfigurationCollectorTemplateSpec()
+		from.Spec.Templates.KSPMNodeConfigurationCollector = getOldNodeConfigurationCollectorTemplateSpec()
 
 		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
 
-		compareNodeConfigurationCollectorTemplateSpec(t, from.Spec.Templates.KspmNodeConfigurationCollector, to.Spec.Templates.KSPMNodeConfigurationCollector)
+		compareNodeConfigurationCollectorTemplateSpec(t, from.Spec.Templates.KSPMNodeConfigurationCollector, to.Spec.Templates.KSPMNodeConfigurationCollector)
 		compareBase(t, from, to)
 	})
 
@@ -413,15 +412,15 @@ func TestConvertTo(t *testing.T) {
 				}
 
 				// latest -> v1beta5
-				intermediateDk := DynaKube{}
-				require.NoError(t, intermediateDk.ConvertFrom(&original))
+				intermediateDK := DynaKube{}
+				require.NoError(t, intermediateDK.ConvertFrom(&original))
 
 				// v1beta5 -> latest
-				migratedDk := dynakubelatest.DynaKube{}
-				require.NoError(t, intermediateDk.ConvertTo(&migratedDk))
+				migratedDK := dynakubelatest.DynaKube{}
+				require.NoError(t, intermediateDK.ConvertTo(&migratedDK))
 
-				require.NotNil(t, migratedDk.Spec.KSPM)
-				assert.Equal(t, tc.expected, migratedDk.Spec.KSPM.MappedHostPaths)
+				require.NotNil(t, migratedDK.Spec.KSPM)
+				assert.Equal(t, tc.expected, migratedDK.Spec.KSPM.MappedHostPaths)
 			})
 		}
 	})
@@ -460,8 +459,8 @@ func getOldDynakubeBase() DynaKube {
 			APIURL:           "api-url",
 			Tokens:           "token",
 			CustomPullSecret: "pull-secret",
-			EnableIstio:      ptr.To(true),
-			SkipCertCheck:    ptr.To(true),
+			EnableIstio:      new(true),
+			SkipCertCheck:    new(true),
 			Proxy: &value.Source{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
@@ -559,9 +558,9 @@ func getOldActiveGateSpec() activegate.Spec {
 		TLSSecretName:       "activegate-tls-secret-name",
 		PriorityClassName:   "activegate-priority-class-name",
 		Capabilities: []activegate.CapabilityDisplayName{
-			activegate.DynatraceAPICapability.DisplayName,
-			activegate.KubeMonCapability.DisplayName,
-			activegate.MetricsIngestCapability.DisplayName,
+			"dynatrace-api",
+			"kubernetes-monitoring",
+			"metrics-ingest",
 		},
 		CapabilityProperties: activegate.CapabilityProperties{
 			Labels: map[string]string{
@@ -699,7 +698,7 @@ func getOldExtensionExecutionControllerSpec() extensions.ExecutionControllerSpec
 		},
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
-		UseEphemeralVolume:          ptr.To(true),
+		UseEphemeralVolume:          new(true),
 	}
 }
 

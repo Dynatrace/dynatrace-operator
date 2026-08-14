@@ -4,17 +4,11 @@
 package dynakube
 
 import (
-	"context"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // DynaKubeStatus defines the observed state of DynaKube
@@ -33,8 +27,8 @@ type DynaKubeStatus struct { //nolint:revive
 	// Observed state of Metadata-Enrichment
 	MetadataEnrichment MetadataEnrichmentStatus `json:"metadataEnrichment,omitempty"`
 
-	// Observed state of Kspm
-	Kspm kspm.Status `json:"kspm,omitempty"`
+	// Observed state of KSPM
+	KSPM kspm.Status `json:"kspm,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
@@ -73,14 +67,6 @@ type DynatraceAPIStatus struct {
 
 type EnrichmentRuleType string
 
-const (
-	EnrichmentLabelRule          EnrichmentRuleType = "LABEL"
-	EnrichmentAnnotationRule     EnrichmentRuleType = "ANNOTATION"
-	MetadataAnnotation           string             = "metadata.dynatrace.com"
-	MetadataPrefix               string             = MetadataAnnotation + "/"
-	enrichmentNamespaceKeyPrefix string             = "k8s.namespace."
-)
-
 type MetadataEnrichmentStatus struct {
 	Rules []EnrichmentRule `json:"rules,omitempty"`
 }
@@ -89,34 +75,4 @@ type EnrichmentRule struct {
 	Type   EnrichmentRuleType `json:"type,omitempty"`
 	Source string             `json:"source,omitempty"`
 	Target string             `json:"target,omitempty"`
-}
-
-func (rule EnrichmentRule) ToAnnotationKey() string {
-	if rule.Target == "" {
-		return ""
-	}
-
-	return MetadataPrefix + rule.Target
-}
-
-// SetPhase sets the status phase on the DynaKube object.
-func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
-	upd := phase != dk.Phase
-	dk.Phase = phase
-
-	return upd
-}
-
-func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) error {
-	_, log := logd.NewFromContext(ctx, "v1beta5")
-	dk.Status.UpdatedTimestamp = metav1.Now()
-	err := client.Status().Update(ctx, dk)
-
-	if err != nil && k8serrors.IsConflict(err) {
-		log.Info("could not update dynakube due to conflict")
-
-		return nil
-	}
-
-	return errors.WithStack(err)
 }

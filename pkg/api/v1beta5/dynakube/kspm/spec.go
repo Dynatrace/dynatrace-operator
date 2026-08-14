@@ -9,19 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	TokenSecretKey          = "kspm-token"
-	NodeCollectorNameSuffix = "node-config-collector"
-)
-
-type Kspm struct {
-	*Spec
-	*Status
-	*NodeConfigurationCollectorSpec
-
-	name string
-}
-
 // +kubebuilder:object:generate=true
 
 type Spec struct {

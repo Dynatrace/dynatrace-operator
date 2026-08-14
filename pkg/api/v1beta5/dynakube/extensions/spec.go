@@ -8,14 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type Extensions struct {
-	*ExecutionControllerSpec
-
-	name      string
-	namespace string
-	enabled   bool
-}
-
 // +kubebuilder:object:generate=true
 
 type Spec struct {

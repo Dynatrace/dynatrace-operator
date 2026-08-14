@@ -345,8 +345,7 @@ linters:
           - staticcheck
         text: "SA1019:.*(NewAppLabels|NewCoreLabels|AppCreatedByLabel)"
     paths:
-      - pkg/api/v1alpha1/edgeconnect
-      - pkg/api/v1beta5/dynakube
+      - pkg/api/v1beta4/dynakube
       - third_party$
       - builtin$
       - examples$
@@ -357,7 +356,6 @@ formatters:
   exclusions:
     generated: lax
     paths:
-      - pkg/api/v1alpha1/edgeconnect
       - third_party$
       - builtin$
       - examples$

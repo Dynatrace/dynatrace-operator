@@ -91,8 +91,8 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 		*out = new(logmonitoring.Spec)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Kspm != nil {
-		in, out := &in.Kspm, &out.Kspm
+	if in.KSPM != nil {
+		in, out := &in.KSPM, &out.KSPM
 		*out = new(kspm.Spec)
 		(*in).DeepCopyInto(*out)
 	}
@@ -143,7 +143,7 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
 	in.CodeModules.DeepCopyInto(&out.CodeModules)
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
-	out.Kspm = in.Kspm
+	out.KSPM = in.KSPM
 	in.UpdatedTimestamp.DeepCopyInto(&out.UpdatedTimestamp)
 	in.DynatraceAPI.DeepCopyInto(&out.DynatraceAPI)
 	if in.Conditions != nil {
@@ -295,7 +295,7 @@ func (in *TemplatesSpec) DeepCopyInto(out *TemplatesSpec) {
 		*out = new(logmonitoring.TemplateSpec)
 		(*in).DeepCopyInto(*out)
 	}
-	in.KspmNodeConfigurationCollector.DeepCopyInto(&out.KspmNodeConfigurationCollector)
+	in.KSPMNodeConfigurationCollector.DeepCopyInto(&out.KSPMNodeConfigurationCollector)
 	in.OpenTelemetryCollector.DeepCopyInto(&out.OpenTelemetryCollector)
 	in.ExtensionExecutionController.DeepCopyInto(&out.ExtensionExecutionController)
 }
