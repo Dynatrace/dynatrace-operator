@@ -427,11 +427,12 @@ func WithKSPMImageRef(t *testing.T, imageURI string) Option {
 	}
 }
 
-func WithKubernetesMonitoring() Option {
+func WithKubernetesMonitoringRegistration() Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.KubernetesMonitoring = &kubemon.Spec{
-			Registration: &kubemon.Registration{},
+		if dk.Spec.KubernetesMonitoring == nil {
+			dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
 		}
+		dk.Spec.KubernetesMonitoring.Registration = &kubemon.Registration{}
 	}
 }
 

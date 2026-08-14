@@ -56,7 +56,7 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKSPM(),
 		componentDynakube.WithKSPMImageRef(t, componentDynakube.GetLatestKSPMImageTagURI(t)),
-		componentDynakube.WithKubernetesMonitoring(),
+		componentDynakube.WithKubernetesMonitoringRegistration(),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
