@@ -558,9 +558,9 @@ func getOldActiveGateSpec() activegate.Spec {
 		TLSSecretName:       "activegate-tls-secret-name",
 		PriorityClassName:   "activegate-priority-class-name",
 		Capabilities: []activegate.CapabilityDisplayName{
-			activegate.DynatraceAPICapability.DisplayName,
-			activegate.KubeMonCapability.DisplayName,
-			activegate.MetricsIngestCapability.DisplayName,
+			"dynatrace-api",
+			"kubernetes-monitoring",
+			"metrics-ingest",
 		},
 		CapabilityProperties: activegate.CapabilityProperties{
 			Labels: map[string]string{

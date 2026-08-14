@@ -16,20 +16,6 @@ type Capability struct {
 	DisplayName CapabilityDisplayName
 }
 
-var (
-	KubeMonCapability = Capability{
-		DisplayName: "kubernetes-monitoring",
-	}
-
-	MetricsIngestCapability = Capability{
-		DisplayName: "metrics-ingest",
-	}
-
-	DynatraceAPICapability = Capability{
-		DisplayName: "dynatrace-api",
-	}
-)
-
 // +kubebuilder:object:generate=true
 
 type Spec struct {
