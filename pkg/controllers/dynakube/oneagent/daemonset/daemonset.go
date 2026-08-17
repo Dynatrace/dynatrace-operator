@@ -371,11 +371,13 @@ func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 	}
 
 	if b.dk.OneAgent().IsReadOnlyFSSupported() {
-		securityContext.RunAsNonRoot = new(true)
-		securityContext.RunAsUser = new(userGroupID)
-		securityContext.RunAsGroup = new(userGroupID)
+		setNonroot(securityContext)
 		securityContext.ReadOnlyRootFilesystem = new(b.isRootFsReadonly(ctx))
 	} else {
+		if b.dk.FF().IsClassicOneAgentNonroot() {
+			setNonroot(securityContext)
+		}
+
 		securityContext.ReadOnlyRootFilesystem = new(false)
 	}
 
@@ -396,6 +398,12 @@ func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(annotations, containerName)
 
 	return securityContext
+}
+
+func setNonroot(sc *corev1.SecurityContext) {
+	sc.RunAsNonRoot = new(true)
+	sc.RunAsUser = new(userGroupID)
+	sc.RunAsGroup = new(userGroupID)
 }
 
 func defaultSecurityContextCapabilities() *corev1.Capabilities {

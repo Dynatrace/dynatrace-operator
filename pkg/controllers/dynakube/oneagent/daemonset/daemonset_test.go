@@ -265,11 +265,13 @@ func TestSecurityContextCapabilities(t *testing.T) {
 func TestHostMonitoring_SecurityContext(t *testing.T) {
 	t.Cleanup(k8sversion.DisableCacheForTest(123))
 
-	t.Run("returns default context if instance is nil", func(t *testing.T) {
+	t.Run("returns empty context if dk or hostInjectSpec is nil", func(t *testing.T) {
 		dsBuilder := builder{}
 		securityContext := dsBuilder.securityContext(t.Context())
 
-		assert.Equal(t, defaultSecurityContextCapabilities(), securityContext.Capabilities)
+		assert.Nil(t, securityContext.Capabilities)
+		assert.Nil(t, securityContext.Privileged)
+		assert.Nil(t, securityContext.RunAsUser)
 	})
 	t.Run("User and group id set when read only mode is enabled", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -385,6 +387,35 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Equal(t, new(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
+	})
+
+	t.Run("nonroot security context when classic nonroot feature flag is enabled", func(t *testing.T) {
+		dk := dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					exp.OAClassicNonrootKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
+				},
+			},
+		}
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
+		require.NoError(t, err)
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContext)
+		assert.Equal(t, new(true), securityContext.RunAsNonRoot)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsUser)
+		assert.Equal(t, new(userGroupID), securityContext.RunAsGroup)
+		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
+		assert.False(t, *securityContext.ReadOnlyRootFilesystem)
+		assert.Nil(t, securityContext.Privileged)
 	})
 
 	t.Run("privileged security context when feature flag is enabled for classic fullstack", func(t *testing.T) {
