@@ -21,7 +21,9 @@ data:
     collector_namespace: dynatrace
     collector_selector:
       matchLabels:
-        foo: bar
+        app.kubernetes.io/instance: otel-allocator
+        app.kubernetes.io/managed-by: dynatrace-operator
+        app.kubernetes.io/name: opentelemetry-target-allocator
     filter_strategy: relabel-config
     https:
       ca_cert_file_path: ""
@@ -32,16 +34,28 @@ data:
     listen_addr: :8080
     prometheus_cr:
       enabled: true
+      pod_monitor_namespace_selector:
+        matchLabels:
+          bar: foo
       pod_monitor_selector:
         matchLabels:
           foo: bar
+      probe_namespace_selector:
+        matchLabels:
+          bar: foo
       probe_selector:
         matchLabels:
           foo: bar
+      scrape_config_namespace_selector:
+        matchLabels:
+          bar: foo
       scrape_config_selector:
         matchLabels:
           foo: bar
       scrape_interval: 5m0s
+      service_monitor_namespace_selector:
+        matchLabels:
+          bar: foo
       service_monitor_selector:
         matchLabels:
           foo: bar

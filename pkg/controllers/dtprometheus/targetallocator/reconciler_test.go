@@ -107,7 +107,7 @@ func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		dtp.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
-		dtp.Spec.TargetAllocator.ScrapeCRNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
+		dtp.Spec.TargetAllocator.ScrapeCRNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
 		dtp.Spec.TargetAllocator.ScrapeCRSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
 		s := newTestScope(dtp)
 		c := fake.NewClient()

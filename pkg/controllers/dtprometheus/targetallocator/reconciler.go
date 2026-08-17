@@ -44,6 +44,9 @@ type Reconciler struct {
 	client.Client
 }
 
+// Config is the subset of configurations that can be configured by the operator.
+//
+// https://github.com/open-telemetry/opentelemetry-operator/blob/v0.157.0/cmd/otel-allocator/internal/config/config.go
 type Config struct {
 	ListenAddr         string                `json:"listen_addr"`
 	AllocationStrategy string                `json:"allocation_strategy"`
@@ -63,12 +66,16 @@ type HTTPSConfig struct {
 }
 
 type ScrapeConfig struct {
-	Enabled                bool                  `json:"enabled"`
-	ScrapeInterval         metav1.Duration       `json:"scrape_interval"`
-	PodMonitorSelector     *metav1.LabelSelector `json:"pod_monitor_selector,omitempty"`
-	ScrapeConfigSelector   *metav1.LabelSelector `json:"scrape_config_selector,omitempty"`
-	ServiceMonitorSelector *metav1.LabelSelector `json:"service_monitor_selector,omitempty"`
-	ProbeSelector          *metav1.LabelSelector `json:"probe_selector,omitempty"`
+	Enabled                         bool                  `json:"enabled"`
+	ScrapeInterval                  metav1.Duration       `json:"scrape_interval"`
+	PodMonitorSelector              *metav1.LabelSelector `json:"pod_monitor_selector,omitempty"`
+	PodMonitorNamespaceSelector     *metav1.LabelSelector `json:"pod_monitor_namespace_selector,omitempty"`
+	ServiceMonitorSelector          *metav1.LabelSelector `json:"service_monitor_selector,omitempty"`
+	ServiceMonitorNamespaceSelector *metav1.LabelSelector `json:"service_monitor_namespace_selector,omitempty"`
+	ScrapeConfigSelector            *metav1.LabelSelector `json:"scrape_config_selector,omitempty"`
+	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `json:"scrape_config_namespace_selector,omitempty"`
+	ProbeSelector                   *metav1.LabelSelector `json:"probe_selector,omitempty"`
+	ProbeNamespaceSelector          *metav1.LabelSelector `json:"probe_namespace_selector,omitempty"`
 }
 
 type reconcileScope struct {
@@ -142,20 +149,26 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 		ListenAddr:         ":8080",
 		AllocationStrategy: "consistent-hashing",
 		CollectorNamespace: s.Owner.Namespace,
-		CollectorSelector:  s.Spec.ScrapeCRNamespaceSelector,
-		FilterStrategy:     "relabel-config",
+		CollectorSelector: &metav1.LabelSelector{
+			MatchLabels: s.AppLabels.AsSelector(),
+		},
+		FilterStrategy: "relabel-config",
 		HTTPS: &HTTPSConfig{
 			Enabled:    false,
 			ListenAddr: ":8443",
 			// TODO: add cert mounts
 		},
 		PrometheusCR: ScrapeConfig{
-			Enabled:                true,
-			ScrapeInterval:         s.Spec.ScrapeInterval,
-			PodMonitorSelector:     s.Spec.ScrapeCRSelector,
-			ScrapeConfigSelector:   s.Spec.ScrapeCRSelector,
-			ServiceMonitorSelector: s.Spec.ScrapeCRSelector,
-			ProbeSelector:          s.Spec.ScrapeCRSelector,
+			Enabled:                         true,
+			ScrapeInterval:                  s.Spec.ScrapeInterval,
+			PodMonitorSelector:              s.Spec.ScrapeCRSelector,
+			PodMonitorNamespaceSelector:     s.Spec.ScrapeCRNamespaceSelector,
+			ServiceMonitorSelector:          s.Spec.ScrapeCRSelector,
+			ServiceMonitorNamespaceSelector: s.Spec.ScrapeCRNamespaceSelector,
+			ScrapeConfigSelector:            s.Spec.ScrapeCRSelector,
+			ScrapeConfigNamespaceSelector:   s.Spec.ScrapeCRNamespaceSelector,
+			ProbeSelector:                   s.Spec.ScrapeCRSelector,
+			ProbeNamespaceSelector:          s.Spec.ScrapeCRNamespaceSelector,
 		},
 	}
 
