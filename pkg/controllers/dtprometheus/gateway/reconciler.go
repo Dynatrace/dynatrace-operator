@@ -21,8 +21,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	otlpendpoint "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
@@ -46,15 +46,11 @@ const (
 	// userManagedAnnotation on the ConfigMap opts it out of operator-managed updates.
 	userManagedAnnotation = "internal.operator.dynatrace.com/user-managed"
 
-	trustedCAVolumeMountPath      = "/tls/custom/cacerts"
-	trustedCAFile                 = "rootca.pem"
-	activeGateCertVolumeMountPath = "/tls/custom/activegate"
-	activeGateCertFile            = "cert.pem"
+	trustedCAVolumeMountPath = "/tls/custom/cacerts"
+	trustedCAFile            = "rootca.pem"
 
-	otlpPortName     = "otlp"
-	otlpPort         = 4317
-	otlpHTTPPortName = "otlp-http"
-	otlpHTTPPort     = 4318
+	otlpPortName = "otlp"
+	otlpPort     = 4317
 
 	healthCheckPort = 13133
 
@@ -63,7 +59,6 @@ const (
 	configVolumeName  = "opentelemetry-collector-configmap"
 	configMountDir    = "/conf"
 	relayConfigFile   = "relay.yaml"
-	agCertVolumeName  = "activegate-cert"
 	cacertsVolumeName = "cacerts"
 
 	// configHashAnnotation on the pod template drives rolling restarts when the rendered
@@ -116,16 +111,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 	return err
 }
 
-// resolveImage requires an explicit image for now: the fleet image API is not ready yet for
-// the gateway component (same caveat as the target allocator reconciler).
-func (r *Reconciler) resolveImage(s *reconcileScope) error {
-	if s.Spec.Image == "" {
-		// TODO: fix this once the gateway image is available from the fleet management API
-		// imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
-		return errors.New("missing image")
+// resolveImage uses the explicit image from .spec.gateway.image when set, otherwise resolves
+// the latest gateway image from the fleet management API. The resolved image is also stamped
+// onto .status.gateway.image, for informational purposes only.
+func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
+	imageURI := s.Spec.Image
+
+	if imageURI == "" {
+		var err error
+
+		imageURI, err = registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
+		if err != nil {
+			return err
+		}
 	}
 
-	s.resolvedImage = s.Spec.Image
+	s.resolvedImage = imageURI
+	s.Owner.Status.Gateway.ResolvedImage = imageURI
 
 	return nil
 }
@@ -256,23 +258,17 @@ type gatewayConfigData struct {
 }
 
 // buildGatewayConfigData resolves the DynaKube-derived inputs to the relay.yaml template.
-// The endpoint and CA-trust decisions (AG-routed vs. direct, which CA to mount) are reused
-// from the DynaKube's own otelc component (otelc/endpoint.BuildOTLPEndpoint,
-// dk.IsAGCertificateNeeded/IsCACertificateNeeded) so both components stay in lockstep on
-// that decision; the config rendering itself is a plain template, not otelcgen.
+// Routing decision is based specifically on the routing ActiveGate capability, not just "any AG
+// enabled" — customCA/proxy only apply in the no-routing-AG (direct-to-tenant) case, per the story.
 func buildGatewayConfigData(dk *dynakube.DynaKube) (gatewayConfigData, error) {
-	dtEndpoint, err := otlpendpoint.BuildOTLPEndpoint(*dk)
+	endpoint, err := gatewayEndpoint(dk)
 	if err != nil {
 		return gatewayConfigData{}, err
 	}
 
-	data := gatewayConfigData{Endpoint: dtEndpoint}
+	data := gatewayConfigData{Endpoint: endpoint}
 
-	switch {
-	case dk.IsAGCertificateNeeded():
-		data.HasCustomCA = true
-		data.CustomCAPath = activeGateCertVolumeMountPath + "/" + activeGateCertFile
-	case dk.IsCACertificateNeeded():
+	if !dk.ActiveGate().IsRoutingEnabled() && dk.Spec.TrustedCAs != "" {
 		data.HasCustomCA = true
 		data.CustomCAPath = trustedCAVolumeMountPath + "/" + trustedCAFile
 	}
@@ -285,26 +281,156 @@ func buildGatewayConfigData(dk *dynakube.DynaKube) (gatewayConfigData, error) {
 	return data, nil
 }
 
-// gatewayConfigTemplate is a best-effort relay.yaml skeleton: receiver/exporter/extension
-// wiring and the conditional branches (custom CA, resource attributes) are solid, but the
-// exact k8s_attributes/transform sub-config is a placeholder pending the real POC config.
+// gatewayEndpoint routes through the routing ActiveGate when configured, otherwise sends
+// directly to the tenant. Both paths are always HTTPS — "plain HTTP" in the story refers to the
+// gateway's own inbound OTLP receiver, not this egress.
+func gatewayEndpoint(dk *dynakube.DynaKube) (string, error) {
+	if !dk.ActiveGate().IsRoutingEnabled() {
+		return dk.APIURL() + "/v2/otlp", nil
+	}
+
+	tenantUUID, err := dk.TenantUUID()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/otlp", capability.BuildServiceName(dk.Name), dk.Namespace, tenantUUID), nil
+}
+
+// gatewayConfigTemplate renders the OTel Collector relay.yaml for the gateway StatefulSet.
+// Derived from the POC (tier2-gateway.rendered.yaml), adapted to meet AC:
+//   - No TLS on the inbound receiver (plain HTTP story; TLS in a later story).
+//   - No self-monitoring telemetry section.
+//   - Cluster-name and dt.entity.kubernetes_cluster enrichment omitted (AC: "not enriched with
+//     cluster name or kubernetes meid").
+//   - customCA/proxy applied only when no routing ActiveGate is configured.
 const gatewayConfigTemplate = `receivers:
   otlp:
     protocols:
       grpc:
         endpoint: ${env:MY_POD_IP}:4317
-      http:
-        endpoint: ${env:MY_POD_IP}:4318
 
 processors:
   memory_limiter:
     check_interval: 1s
-    limit_percentage: 80
-    spike_limit_percentage: 20
+    limit_percentage: 95
+    spike_limit_percentage: 5
   metric_start_time: {}
-  cumulativetodelta: {}
-  k8s_attributes: {}
-  transform: {}
+  cumulativetodelta:
+    initial_value: drop
+    max_staleness: 10m
+  k8s_attributes:
+    extract:
+      annotations:
+      - from: pod
+        key_regex: metadata.dynatrace.com/(.*)
+        tag_name: $$1
+      - from: pod
+        key: metadata.dynatrace.com
+        tag_name: metadata.dynatrace.com
+      metadata:
+      - k8s.pod.name
+      - k8s.pod.uid
+      - k8s.pod.ip
+      - k8s.deployment.name
+      - k8s.replicaset.name
+      - k8s.statefulset.name
+      - k8s.daemonset.name
+      - k8s.job.name
+      - k8s.cronjob.name
+      - k8s.namespace.name
+      - k8s.node.name
+      - k8s.cluster.uid
+      - k8s.container.name
+      - k8s.deployment.uid
+      - k8s.replicaset.uid
+      - k8s.statefulset.uid
+      - k8s.daemonset.uid
+      - k8s.job.uid
+      - k8s.cronjob.uid
+    pod_association:
+    - sources:
+      - from: resource_attribute
+        name: server.address
+    - sources:
+      - from: resource_attribute
+        name: k8s.pod.name
+      - from: resource_attribute
+        name: k8s.namespace.name
+    - sources:
+      - from: resource_attribute
+        name: k8s.pod.ip
+    - sources:
+      - from: resource_attribute
+        name: k8s.pod.uid
+    - sources:
+      - from: connection
+  transform:
+    metric_statements:
+    - context: datapoint
+      statements:
+      - set(attributes["http.request.method"], attributes["http_request_method"]) where attributes["http_request_method"] != nil
+      - delete_key(attributes, "http_request_method")
+      - set(attributes["http.response.status_code"], attributes["http_response_status_code"]) where attributes["http_response_status_code"] != nil
+      - delete_key(attributes, "http_response_status_code")
+      - set(attributes["network.protocol.name"], attributes["network_protocol_name"]) where attributes["network_protocol_name"] != nil
+      - delete_key(attributes, "network_protocol_name")
+      - set(attributes["network.protocol.version"], attributes["network_protocol_version"]) where attributes["network_protocol_version"] != nil
+      - delete_key(attributes, "network_protocol_version")
+      - set(attributes["rpc.method"], attributes["rpc_method"]) where attributes["rpc_method"] != nil
+      - delete_key(attributes, "rpc_method")
+      - set(attributes["rpc.response.status_code"], attributes["rpc_response_status_code"]) where attributes["rpc_response_status_code"] != nil
+      - delete_key(attributes, "rpc_response_status_code")
+      - set(attributes["rpc.system.name"], attributes["rpc_system_name"]) where attributes["rpc_system_name"] != nil
+      - delete_key(attributes, "rpc_system_name")
+      - set(attributes["server.address"], attributes["server_address"]) where attributes["server_address"] != nil
+      - delete_key(attributes, "server_address")
+      - set(attributes["server.port"], attributes["server_port"]) where attributes["server_port"] != nil
+      - delete_key(attributes, "server_port")
+      - set(attributes["url.scheme"], attributes["url_scheme"]) where attributes["url_scheme"] != nil
+      - delete_key(attributes, "url_scheme")
+    - context: resource
+      statements:
+      - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
+      - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
+      - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])
+      - set(attributes["k8s.workload.name"], attributes["k8s.deployment.name"]) where IsString(attributes["k8s.deployment.name"])
+      - set(attributes["k8s.workload.name"], attributes["k8s.daemonset.name"]) where IsString(attributes["k8s.daemonset.name"])
+      - set(attributes["k8s.workload.name"], attributes["k8s.cronjob.name"]) where IsString(attributes["k8s.cronjob.name"])
+      - set(attributes["k8s.workload.kind"], "statefulset") where IsString(attributes["k8s.statefulset.name"])
+      - set(attributes["k8s.workload.kind"], "replicaset") where IsString(attributes["k8s.replicaset.name"])
+      - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"])
+      - set(attributes["k8s.workload.kind"], "deployment") where IsString(attributes["k8s.deployment.name"])
+      - set(attributes["k8s.workload.kind"], "daemonset") where IsString(attributes["k8s.daemonset.name"])
+      - set(attributes["k8s.workload.kind"], "cronjob") where IsString(attributes["k8s.cronjob.name"])
+      - set(attributes["k8s.workload.uid"], attributes["k8s.statefulset.uid"]) where IsString(attributes["k8s.statefulset.uid"])
+      - set(attributes["k8s.workload.uid"], attributes["k8s.replicaset.uid"]) where IsString(attributes["k8s.replicaset.uid"])
+      - set(attributes["k8s.workload.uid"], attributes["k8s.job.uid"]) where IsString(attributes["k8s.job.uid"])
+      - set(attributes["k8s.workload.uid"], attributes["k8s.deployment.uid"]) where IsString(attributes["k8s.deployment.uid"])
+      - set(attributes["k8s.workload.uid"], attributes["k8s.daemonset.uid"]) where IsString(attributes["k8s.daemonset.uid"])
+      - set(attributes["k8s.workload.uid"], attributes["k8s.cronjob.uid"]) where IsString(attributes["k8s.cronjob.uid"])
+      - delete_key(attributes, "k8s.statefulset.name")
+      - delete_key(attributes, "k8s.replicaset.name")
+      - delete_key(attributes, "k8s.job.name")
+      - delete_key(attributes, "k8s.deployment.name")
+      - delete_key(attributes, "k8s.daemonset.name")
+      - delete_key(attributes, "k8s.cronjob.name")
+      - delete_key(attributes, "k8s.statefulset.uid")
+      - delete_key(attributes, "k8s.replicaset.uid")
+      - delete_key(attributes, "k8s.deployment.uid")
+      - delete_key(attributes, "k8s.daemonset.uid")
+      - delete_key(attributes, "k8s.job.uid")
+      - delete_key(attributes, "k8s.cronjob.uid")
+    - context: resource
+      statements:
+      - delete_key(attributes, "processor")
+      - delete_key(attributes, "otel.signal")
+      - delete_key(attributes, "otel.scope.name")
+      - delete_key(attributes, "otel.scope.version")
+    - context: resource
+      statements:
+      - merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")
+      - delete_key(attributes, "metadata.dynatrace.com")
 {{- if .HasResourceAttributes }}
   resource/dynakube:
     attributes:
@@ -320,6 +446,11 @@ exporters:
     endpoint: {{ .Endpoint }}
     headers:
       Authorization: "Api-Token ${env:DT_API_TOKEN}"
+    sending_queue:
+      batch:
+        flush_timeout: 10s
+        max_size: 5000
+        min_size: 500
 {{- if .HasCustomCA }}
     tls:
       ca_file: {{ .CustomCAPath }}
@@ -327,7 +458,7 @@ exporters:
 
 extensions:
   health_check:
-    endpoint: 0.0.0.0:13133
+    endpoint: ${env:MY_POD_IP}:13133
 
 service:
   extensions: [health_check]
@@ -350,7 +481,7 @@ func renderGatewayConfig(data gatewayConfigData) (string, error) {
 }
 
 func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope) error {
-	if err := r.resolveImage(s); err != nil {
+	if err := r.resolveImage(ctx, s); err != nil {
 		return fmt.Errorf("resolve image: %w", err)
 	}
 
@@ -407,15 +538,18 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Spec.Containers = []corev1.Container{buildContainer(s, getContainer(sts))}
 }
 
-// resolveUpdateStrategy defaults to plain RollingUpdate when unset. Not setting maxUnavailable
-// explicitly: at least one supported apiserver version silently drops it (comes back as just
-// partition: 0), so setting it unconditionally causes a permanent reconcile diff.
+// resolveUpdateStrategy defaults to RollingUpdate/partition:0 when unset, per the story. Not
+// setting maxUnavailable explicitly: at least one supported apiserver version silently drops it
+// (comes back as just partition: 0), so setting it unconditionally causes a permanent reconcile diff.
 func resolveUpdateStrategy(strategy appsv1.StatefulSetUpdateStrategy) appsv1.StatefulSetUpdateStrategy {
 	if strategy.Type != "" {
 		return strategy
 	}
 
-	return appsv1.StatefulSetUpdateStrategy{Type: appsv1.RollingUpdateStatefulSetStrategyType}
+	return appsv1.StatefulSetUpdateStrategy{
+		Type:          appsv1.RollingUpdateStatefulSetStrategyType,
+		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(0))},
+	}
 }
 
 // getContainer returns the current (first) container of the StatefulSet, so buildContainer can
@@ -448,7 +582,6 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Args:            []string{"--config=" + configMountDir + "/" + relayConfigFile},
 		Ports: []corev1.ContainerPort{
 			{Name: otlpPortName, ContainerPort: otlpPort, Protocol: corev1.ProtocolTCP},
-			{Name: otlpHTTPPortName, ContainerPort: otlpHTTPPort, Protocol: corev1.ProtocolTCP},
 		},
 		Env:          buildEnv(s),
 		VolumeMounts: buildVolumeMounts(s),
@@ -488,41 +621,34 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 	}
 }
 
-// fieldRef sets APIVersion explicitly to "v1" — the value the apiserver defaults it to when
-// omitted, so a freshly-built selector compares equal to the stored, already-defaulted one.
-func fieldRef(fieldPath string) *corev1.ObjectFieldSelector {
-	return &corev1.ObjectFieldSelector{APIVersion: "v1", FieldPath: fieldPath}
-}
-
-// fieldRefEnv builds a Downward-API-sourced env var: k8s populates the value at pod start, we
-// just declare which field goes where.
-func fieldRefEnv(name, fieldPath string) corev1.EnvVar {
-	return corev1.EnvVar{Name: name, ValueFrom: &corev1.EnvVarSource{FieldRef: fieldRef(fieldPath)}}
-}
-
 // buildEnv builds the gateway container's environment variables.
 func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	dk := s.DynaKube
 
 	envs := []corev1.EnvVar{
-		fieldRefEnv("MY_POD_IP", "status.podIP"),
+		// MY_POD_IP is used in the relay.yaml config to bind the OTLP receiver and health-check
+		// endpoint to the pod IP rather than 0.0.0.0, matching the POC pattern.
+		{
+			Name: "MY_POD_IP",
+			ValueFrom: &corev1.EnvVarSource{
+				// APIVersion must be set explicitly: the API server defaults it to "v1" on
+				// storage, so omitting it here would cause a reconcile diff on every iteration.
+				FieldRef: &corev1.ObjectFieldSelector{APIVersion: "v1", FieldPath: "status.podIP"},
+			},
+		},
 		{Name: "DT_API_TOKEN", ValueFrom: &corev1.EnvVarSource{SecretKeyRef: &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
 			Key:                  token.APIKey,
 		}}},
-		{Name: "K8S_CLUSTER_NAME", Value: dk.Status.KubernetesClusterName},
-		{Name: "DT_ENTITY_KUBERNETES_CLUSTER", Value: dk.Status.KubernetesClusterMEID},
-		fieldRefEnv("K8S_NODE_NAME", "spec.nodeName"),
-		fieldRefEnv("K8S_POD_NAME", "metadata.name"),
-		fieldRefEnv("K8S_NAMESPACE_NAME", "metadata.namespace"),
-		fieldRefEnv("K8S_POD_UID", "metadata.uid"),
 	}
 
 	if memLimitEnv, ok := goMemLimitEnv(s.Spec.Resources); ok {
 		envs = append(envs, memLimitEnv)
 	}
 
-	if dk.HasProxy() {
+	// Proxy only applies when sending directly to the tenant: a routing ActiveGate handles its
+	// own egress, the gateway never talks to the internet directly in that case.
+	if !dk.ActiveGate().IsRoutingEnabled() && dk.HasProxy() {
 		envs = append(envs,
 			proxyEnv("HTTPS_PROXY", dk.Spec.Proxy),
 			proxyEnv("HTTP_PROXY", dk.Spec.Proxy),
@@ -573,15 +699,14 @@ func noProxyValue(dk *dynakube.DynaKube) string {
 	return strings.Join(values, ",")
 }
 
-// buildVolumes always mounts the rendered relay.yaml ConfigMap, plus whichever CA the exporter
-// needs to trust (AG's cert when routed through it, the user-provided trusted CA otherwise).
+// buildVolumes always mounts the rendered relay.yaml ConfigMap, plus the user-provided trusted CA
+// when sending directly to the tenant (no routing ActiveGate configured).
 func buildVolumes(s *reconcileScope) []corev1.Volume {
 	dk := s.DynaKube
 
-	// DefaultMode is set explicitly everywhere below (matching what the apiserver defaults it
-	// to) so a freshly-built Volume compares equal to the stored, already-defaulted one on the
-	// next reconcile — otherwise every reconcile sees a nil-vs-0644 diff and issues a spurious
-	// Update.
+	// DefaultMode is set explicitly (matching what the apiserver defaults it to) so a freshly-built
+	// Volume compares equal to the stored, already-defaulted one on the next reconcile — otherwise
+	// every reconcile sees a nil-vs-0644 diff and issues a spurious Update.
 	defaultMode := new(int32(0o644))
 
 	volumes := []corev1.Volume{
@@ -597,19 +722,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 		},
 	}
 
-	switch {
-	case dk.IsAGCertificateNeeded():
-		volumes = append(volumes, corev1.Volume{
-			Name: agCertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  dk.ActiveGate().GetTLSSecretName(),
-					Items:       []corev1.KeyToPath{{Key: dynakube.ServerCertKey, Path: activeGateCertFile}},
-					DefaultMode: defaultMode,
-				},
-			},
-		})
-	case dk.IsCACertificateNeeded():
+	if !dk.ActiveGate().IsRoutingEnabled() && dk.Spec.TrustedCAs != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: cacertsVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -632,10 +745,7 @@ func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
 	}
 
-	switch {
-	case dk.IsAGCertificateNeeded():
-		mounts = append(mounts, corev1.VolumeMount{Name: agCertVolumeName, MountPath: activeGateCertVolumeMountPath, ReadOnly: true})
-	case dk.IsCACertificateNeeded():
+	if !dk.ActiveGate().IsRoutingEnabled() && dk.Spec.TrustedCAs != "" {
 		mounts = append(mounts, corev1.VolumeMount{Name: cacertsVolumeName, MountPath: trustedCAVolumeMountPath, ReadOnly: true})
 	}
 
@@ -656,12 +766,6 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 				Port:        otlpPort,
 				AppProtocol: new("grpc"),
 				TargetPort:  intstr.FromString(otlpPortName),
-			},
-			{
-				Name:       otlpHTTPPortName,
-				Protocol:   corev1.ProtocolTCP,
-				Port:       otlpHTTPPort,
-				TargetPort: intstr.FromString(otlpHTTPPortName),
 			},
 		}
 

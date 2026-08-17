@@ -53,30 +53,6 @@ spec:
             secretKeyRef:
               key: apiToken
               name: dk
-        - name: K8S_CLUSTER_NAME
-          value: test-cluster
-        - name: DT_ENTITY_KUBERNETES_CLUSTER
-          value: KUBERNETES_CLUSTER-ABC123
-        - name: K8S_NODE_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: spec.nodeName
-        - name: K8S_POD_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.name
-        - name: K8S_NAMESPACE_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-        - name: K8S_POD_UID
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.uid
         - name: GOMEMLIMIT
           value: "471859200"
         image: registry.example.com/gateway:1.2.3
@@ -92,9 +68,6 @@ spec:
         ports:
         - containerPort: 4317
           name: otlp
-          protocol: TCP
-        - containerPort: 4318
-          name: otlp-http
           protocol: TCP
         readinessProbe:
           httpGet:
@@ -136,6 +109,8 @@ spec:
           name: dtp-gateway
         name: opentelemetry-collector-configmap
   updateStrategy:
+    rollingUpdate:
+      partition: 0
     type: RollingUpdate
 status:
   availableReplicas: 0

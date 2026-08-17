@@ -4123,6 +4123,11 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              gateway:
+                properties:
+                  resolvedImage:
+                    type: string
+                type: object
               phase:
                 description: Defines the current state (Running, Deploying, Error,
                   ...)

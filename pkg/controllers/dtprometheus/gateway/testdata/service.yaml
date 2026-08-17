@@ -22,10 +22,6 @@ spec:
     protocol: TCP
     appProtocol: grpc
     targetPort: otlp
-  - name: otlp-http
-    port: 4318
-    protocol: TCP
-    targetPort: otlp-http
   selector:
     app.kubernetes.io/instance: otel-gateway
     app.kubernetes.io/managed-by: dynatrace-operator
