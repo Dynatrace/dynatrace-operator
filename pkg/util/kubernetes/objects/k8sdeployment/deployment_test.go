@@ -35,6 +35,66 @@ func createTestDeploymentWithMatchLabels(name, namespace string, annotations, ma
 	}
 }
 
+func TestIsRolloutComplete(t *testing.T) {
+	tests := []struct {
+		name   string
+		deploy *appsv1.Deployment
+		want   bool
+	}{
+		{
+			name:   "nil deployment",
+			deploy: nil,
+			want:   false,
+		},
+		{
+			name: "stale observed generation",
+			deploy: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Generation: 2},
+				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(2))},
+				Status:     appsv1.DeploymentStatus{ObservedGeneration: 1, ReadyReplicas: 2},
+			},
+			want: false,
+		},
+		{
+			name: "terminating replicas present",
+			deploy: &appsv1.Deployment{
+				Spec:   appsv1.DeploymentSpec{Replicas: new(int32(2))},
+				Status: appsv1.DeploymentStatus{ReadyReplicas: 2, TerminatingReplicas: new(int32(1))},
+			},
+			want: false,
+		},
+		{
+			name: "nil spec replicas",
+			deploy: &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{ReadyReplicas: 0},
+			},
+			want: false,
+		},
+		{
+			name: "ready replicas below desired replicas",
+			deploy: &appsv1.Deployment{
+				Spec:   appsv1.DeploymentSpec{Replicas: new(int32(2))},
+				Status: appsv1.DeploymentStatus{ReadyReplicas: 1},
+			},
+			want: false,
+		},
+		{
+			name: "generation observed and replicas ready",
+			deploy: &appsv1.Deployment{
+				Spec:   appsv1.DeploymentSpec{Replicas: new(int32(2))},
+				Status: appsv1.DeploymentStatus{ReadyReplicas: 2},
+			},
+			want: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, IsRolloutComplete(test.deploy))
+		})
+	}
+}
+
 // GetDeployment returns the Deployment object who is the owner of this pod.
 func TestGetDeployment(t *testing.T) {
 	trueVar := true

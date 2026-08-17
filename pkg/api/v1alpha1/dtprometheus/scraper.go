@@ -19,7 +19,7 @@ const ScraperNameSuffix = "-scraper"
 type Scraper struct {
 	*ScraperSpec
 
-	name string
+	namePrefix string
 }
 
 // ScraperSpec configures the scraper pool (tier 1): a Deployment of OTel Collectors
@@ -42,11 +42,11 @@ type ScraperSpec struct {
 func NewScraper(spec *ScraperSpec, name string) *Scraper {
 	return &Scraper{
 		ScraperSpec: spec,
-		name:        name,
+		namePrefix:  name,
 	}
 }
 
 // GetDeploymentName returns the base name for the scraper's Deployment.
 func (s *Scraper) GetDeploymentName() string {
-	return s.name + ScraperNameSuffix
+	return s.namePrefix + ScraperNameSuffix
 }

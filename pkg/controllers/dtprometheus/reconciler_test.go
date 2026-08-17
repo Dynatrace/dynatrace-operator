@@ -7,12 +7,17 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -82,12 +87,52 @@ func TestReconcile(t *testing.T) {
 		require.Equal(t, status.Deploying, dtp.Status.Phase)
 	})
 
-	t.Run("build client error", func(t *testing.T) {
+	t.Run("no token secret", func(t *testing.T) {
 		dtp := &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: dtprometheus.DTPrometheusSpec{DynaKubeName: "dk"}}
 		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
 		c := fake.NewClient(dtp, dk)
 		_, err := NewReconciler(c).Reconcile(t.Context(), req)
 		require.Error(t, err)
+		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp))
+		require.Equal(t, status.Error, dtp.Status.Phase)
+	})
+
+	t.Run("build client error", func(t *testing.T) {
+		dtp := &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: dtprometheus.DTPrometheusSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, StringData: map[string]string{token.APIKey: "api-token"}}
+		c := fake.NewClient(dtp, dk, secret)
+		r := NewReconciler(c)
+		expectErr := errors.New("boom")
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+			return nil, expectErr
+		}
+
+		_, err := r.Reconcile(t.Context(), req)
+
+		require.ErrorIs(t, err, expectErr)
+		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp))
+		require.Equal(t, status.Error, dtp.Status.Phase)
+	})
+
+	t.Run("target allocator error", func(t *testing.T) {
+		dtp := &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: dtprometheus.DTPrometheusSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, StringData: map[string]string{token.APIKey: "api-token"}}
+
+		expectErr := errors.New("boom")
+		m := newMockTargetAllocatorReconciler(t)
+		m.EXPECT().Reconcile(t.Context(), dtp, dk, image.Client(nil)).Return(expectErr).Once()
+		c := fake.NewClient(dtp, dk, secret)
+		r := NewReconciler(c)
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+			return &dynatrace.Client{}, nil
+		}
+		r.targetAllocator = m
+
+		_, err := r.Reconcile(t.Context(), req)
+
+		require.ErrorIs(t, err, expectErr)
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp))
 		require.Equal(t, status.Error, dtp.Status.Phase)
 	})

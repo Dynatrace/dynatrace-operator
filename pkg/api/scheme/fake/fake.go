@@ -32,6 +32,11 @@ func NewClient(objs ...client.Object) client.Client {
 	return fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).WithStatusSubresource(objs...).Build()
 }
 
+// NewClientWithManagedFields returns a fake client that populates the managed fields of returned objects.
+func NewClientWithManagedFields(objs ...client.Object) client.Client {
+	return fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).WithStatusSubresource(objs...).WithReturnManagedFields().Build()
+}
+
 // NewClientWithIndex returns a fake client with common indexes already configured.
 func NewClientWithIndex(objs ...client.Object) client.Client {
 	clientBuilder := fake.NewClientBuilder().

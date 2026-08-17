@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -71,6 +72,10 @@ func createOperatorManager(cfg *rest.Config, namespace string, isOLM bool) (mana
 
 func createOptions(namespace string) ctrl.Options {
 	return ctrl.Options{
+		Client: client.Options{
+			// For apply patch the owner is not inferred from the binary name, so we have to set this explicitly.
+			FieldOwner: "dynatrace-operator",
+		},
 		Cache: cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
 				namespace: {},
