@@ -5,13 +5,17 @@ package gateway_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/gateway"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
+	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,10 +37,11 @@ const (
 )
 
 type lifecycleDeps struct {
-	clt        client.Client
-	reconciler *gateway.Reconciler
-	dtp        *dtprometheus.DTPrometheus
-	dk         *dynakube.DynaKube
+	clt         client.Client
+	reconciler  *gateway.Reconciler
+	dtp         *dtprometheus.DTPrometheus
+	dk          *dynakube.DynaKube
+	imageClient image.Client
 }
 
 // TestReconcileLifecycle walks the phases in order: missing image -> provision -> stabilize -> update.
@@ -50,11 +55,18 @@ func TestReconcileLifecycle(t *testing.T) {
 	}
 	integrationtests.CreateKubernetesObject(t, t.Context(), clt, dtp)
 
+	// The fleet image API isn't reachable here; only the missing-image phase (no .spec.gateway.image
+	// set) actually calls it, and it's expected to fail there.
+	imageClient := imagemock.NewClient(t)
+	imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).
+		Return(nil, errors.New("fleet image API unavailable")).Maybe()
+
 	deps := &lifecycleDeps{
-		clt:        clt,
-		reconciler: &gateway.Reconciler{Client: clt},
-		dtp:        dtp,
-		dk:         &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeName, Namespace: integrationNamespace}},
+		clt:         clt,
+		reconciler:  &gateway.Reconciler{Client: clt},
+		dtp:         dtp,
+		dk:          &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeName, Namespace: integrationNamespace}},
+		imageClient: imageClient,
 	}
 
 	t.Run("missing-image", func(t *testing.T) { runMissingImagePhase(t, deps) })
@@ -68,7 +80,7 @@ func TestReconcileLifecycle(t *testing.T) {
 func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
 
 	getConfigMap(t, deps)
 	assertStatefulSetAbsent(t, deps)
@@ -80,7 +92,7 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
 	deps.dtp.Spec.Gateway.Image = integrationImage
-	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
 
 	cm := getConfigMap(t, deps)
 	sts := getStatefulSet(t, deps)
@@ -110,7 +122,7 @@ func runStabilizePhase(t *testing.T, deps *lifecycleDeps) {
 	reconciler := &gateway.Reconciler{Client: counting}
 
 	for range 3 {
-		require.NoError(t, reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+		require.NoError(t, reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.Equal(t, stsRV, getStatefulSet(t, deps).ResourceVersion)
@@ -143,7 +155,7 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		svcRV := getService(t, deps).ResourceVersion
 
 		deps.dk.Spec.APIURL = "https://changed.example.com/api"
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
 
 		assert.NotEqual(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, stsRV, getStatefulSet(t, deps).ResourceVersion)
@@ -157,7 +169,7 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		svcRV := getService(t, deps).ResourceVersion
 
 		deps.dtp.Spec.Gateway.Replicas = new(int32(2))
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, stsRV, getStatefulSet(t, deps).ResourceVersion)
