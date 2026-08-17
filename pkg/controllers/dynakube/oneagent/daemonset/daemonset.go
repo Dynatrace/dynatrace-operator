@@ -366,8 +366,11 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 
 func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 	securityContext := &corev1.SecurityContext{}
+	if b.dk == nil || b.hostInjectSpec == nil {
+		return securityContext
+	}
 
-	if b.dk != nil && b.dk.OneAgent().IsReadOnlyFSSupported() {
+	if b.dk.OneAgent().IsReadOnlyFSSupported() {
 		securityContext.RunAsNonRoot = new(true)
 		securityContext.RunAsUser = new(userGroupID)
 		securityContext.RunAsGroup = new(userGroupID)
@@ -376,39 +379,21 @@ func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 		securityContext.ReadOnlyRootFilesystem = new(false)
 	}
 
-	if b.dk != nil && b.dk.OneAgent().IsPrivilegedNeeded() {
+	if b.dk.OneAgent().IsPrivilegedNeeded() {
 		securityContext.Privileged = new(true)
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
 
-		if b.dk != nil {
-			switch {
-			case b.dk.OneAgent().IsHostMonitoringMode() && b.dk.Spec.OneAgent.HostMonitoring.SecCompProfile != "":
-				secCompName := b.dk.Spec.OneAgent.HostMonitoring.SecCompProfile
-				securityContext.SeccompProfile = &corev1.SeccompProfile{
-					Type:             corev1.SeccompProfileTypeLocalhost,
-					LocalhostProfile: &secCompName,
-				}
-			case b.dk.OneAgent().IsClassicFullStackMode() && b.dk.Spec.OneAgent.ClassicFullStack.SecCompProfile != "":
-				secCompName := b.dk.Spec.OneAgent.ClassicFullStack.SecCompProfile
-				securityContext.SeccompProfile = &corev1.SeccompProfile{
-					Type:             corev1.SeccompProfileTypeLocalhost,
-					LocalhostProfile: &secCompName,
-				}
-			case b.dk.OneAgent().IsCloudNativeFullstackMode() && b.dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile != "":
-				secCompName := b.dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
-				securityContext.SeccompProfile = &corev1.SeccompProfile{
-					Type:             corev1.SeccompProfileTypeLocalhost,
-					LocalhostProfile: &secCompName,
-				}
+		if secompName := b.dk.OneAgent().GetSecCompProfile(); secompName != "" {
+			securityContext.SeccompProfile = &corev1.SeccompProfile{
+				Type:             corev1.SeccompProfileTypeLocalhost,
+				LocalhostProfile: &secompName,
 			}
 		}
 	}
 
-	if b.hostInjectSpec != nil {
-		annotations := maputils.MergeMap(map[string]string{appArmorAnnotation: appArmorUnconfined}, b.hostInjectSpec.Annotations)
-		securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(annotations, containerName)
-	}
+	annotations := maputils.MergeMap(map[string]string{appArmorAnnotation: appArmorUnconfined}, b.hostInjectSpec.Annotations)
+	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(annotations, containerName)
 
 	return securityContext
 }
