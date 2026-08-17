@@ -21,50 +21,51 @@ const (
 	errorInvalidNoProxy            = "The DynaKube's specification has an invalid value set using the " + exp.NoProxyKey + " annotation. Make sure to remove forbidden characters (newline, tab, carriage return, null) from the value in your custom resource."
 )
 
-var deprecatedFeatureFlags = []string{
-	exp.OAProxyIgnoredKey,   //nolint:staticcheck
-	exp.AGUpdatesKey,        //nolint:staticcheck
-	exp.AGDisableUpdatesKey, //nolint:staticcheck
-	exp.OAMaxUnavailableKey, //nolint:staticcheck
-	exp.AGK8sAppEnabledKey,  //nolint:staticcheck
-}
+var (
+	deprecatedFeatureFlags = []string{
+		// oneagent.go
+		exp.OAProxyIgnoredKey,   //nolint:staticcheck
+		exp.OAMaxUnavailableKey, //nolint:staticcheck
+		// activegate.go
+		exp.AGK8sAppEnabledKey,  //nolint:staticcheck
+		exp.AGUpdatesKey,        //nolint:staticcheck
+		exp.AGDisableUpdatesKey, //nolint:staticcheck
+		exp.AGIgnoreProxyKey,    //nolint:staticcheck
+		// injection.go
+		exp.InjectionSeccompKey, //nolint:staticcheck
+	}
 
-var knownFeatureFlags = []string{
-	// flag.go
-	exp.NoProxyKey,
-	exp.UseEECLegacyMountsKey,
-	exp.UsePublicRegistryKey,
-	// activegate.go
-	exp.AGDisableUpdatesKey, //nolint:staticcheck
-	exp.AGIgnoreProxyKey,    //nolint:staticcheck
-	exp.AGUpdatesKey,        //nolint:staticcheck
-	exp.AGAppArmorKey,
-	exp.AGAutomaticK8sAPIMonitoringKey,
-	exp.AGAutomaticK8sAPIMonitoringClusterNameKey,
-	exp.AGK8sAppEnabledKey, //nolint:staticcheck
-	exp.AGAutomaticTLSCertificateKey,
-	// csi.go
-	exp.CSIMaxFailedMountAttemptsKey,
-	exp.CSIMaxMountTimeoutKey,
-	// enrichment.go
-	exp.EnrichmentEnableAttributesDTKubernetes,
-	// injection.go
-	exp.InjectionIgnoredNamespacesKey,
-	exp.InjectionAutomaticKey,
-	exp.InjectionLabelVersionDetectionKey,
-	exp.InjectionFailurePolicyKey,
-	exp.InjectionSeccompKey, //nolint:staticcheck
-	// oneagent.go
-	exp.OAProxyIgnoredKey,   //nolint:staticcheck
-	exp.OAMaxUnavailableKey, //nolint:staticcheck
-	exp.OAInitialConnectRetryKey,
-	exp.OAPrivilegedKey,
-	exp.OASkipLivenessProbeKey,
-	exp.OANodeImagePullKey,
-	exp.OANodeImagePullTechnologiesKey,
-	// otlp.go
-	exp.OTLPInjectionSetNoProxy,
-}
+	knownFeatureFlags = append([]string{
+		// flag.go
+		exp.NoProxyKey,
+		exp.UseEECLegacyMountsKey,
+		exp.UsePublicRegistryKey,
+		// activegate.go
+		exp.AGAppArmorKey,
+		exp.AGAutomaticK8sAPIMonitoringKey,
+		exp.AGAutomaticK8sAPIMonitoringClusterNameKey,
+		exp.AGAutomaticTLSCertificateKey,
+		// csi.go
+		exp.CSIMaxFailedMountAttemptsKey,
+		exp.CSIMaxMountTimeoutKey,
+		// enrichment.go
+		exp.EnrichmentEnableAttributesDTKubernetes,
+		// injection.go
+		exp.InjectionIgnoredNamespacesKey,
+		exp.InjectionAutomaticKey,
+		exp.InjectionLabelVersionDetectionKey,
+		exp.InjectionFailurePolicyKey,
+		// oneagent.go
+		exp.OAInitialConnectRetryKey,
+		exp.OAPrivilegedKey,
+		exp.OAClassicNonrootKey,
+		exp.OASkipLivenessProbeKey,
+		exp.OANodeImagePullKey,
+		exp.OANodeImagePullTechnologiesKey,
+		// otlp.go
+		exp.OTLPInjectionSetNoProxy,
+	}, deprecatedFeatureFlags...)
+)
 
 func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	var results []string
