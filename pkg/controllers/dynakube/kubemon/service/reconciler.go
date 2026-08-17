@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,14 +20,12 @@ import (
 )
 
 type Reconciler struct {
-	client   client.Client
-	services k8sservice.QueryObject
+	client client.Client
 }
 
 func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
-		client:   kubeClient,
-		services: k8sservice.Query(kubeClient, kubeClient),
+		client: kubeClient,
 	}
 }
 
@@ -36,7 +33,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	ctx, _ = logd.NewFromContext(ctx, "service")
 
 	if !dk.KubernetesMonitoring().IsEnabled() {
-		return r.services.Delete(ctx, agService(dk))
+		return client.IgnoreNotFound(r.client.Delete(ctx, agService(dk)))
 	}
 
 	if err := r.createService(ctx, dk); err != nil {
@@ -51,13 +48,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) error {
-	svc := agService(dk)
-
-	if err := controllerutil.SetControllerReference(dk, svc, r.client.Scheme()); err != nil {
-		return err
+	desired := agService(dk)
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      desired.Name,
+			Namespace: desired.Namespace,
+		},
 	}
 
-	_, err := r.services.CreateOrUpdate(ctx, svc)
+	_, err := controllerutil.CreateOrPatch(ctx, r.client, svc, func() error {
+		svc.Labels = desired.Labels
+		svc.Spec.Type = desired.Spec.Type
+		svc.Spec.Selector = desired.Spec.Selector
+		svc.Spec.Ports = desired.Spec.Ports
+
+		return controllerutil.SetControllerReference(dk, svc, r.client.Scheme())
+	})
 
 	return err
 }
@@ -66,7 +72,9 @@ func (r *Reconciler) setStatusIPs(ctx context.Context, dk *dynakube.DynaKube) er
 	svc := agService(dk)
 
 	return retry.OnError(retry.DefaultBackoff, k8serrors.IsNotFound, func() error {
-		currSvc, err := r.services.Get(ctx, client.ObjectKey{Name: svc.Name, Namespace: svc.Namespace})
+		currSvc := &corev1.Service{}
+
+		err := r.client.Get(ctx, client.ObjectKeyFromObject(svc), currSvc)
 		if err != nil {
 			return err
 		}
