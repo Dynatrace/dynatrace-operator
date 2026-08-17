@@ -21,9 +21,9 @@ data:
     collector_namespace: dynatrace
     collector_selector:
       matchLabels:
-        app.kubernetes.io/instance: otel-allocator
+        app.kubernetes.io/instance: otel-scraper
         app.kubernetes.io/managed-by: dynatrace-operator
-        app.kubernetes.io/name: opentelemetry-target-allocator
+        app.kubernetes.io/name: opentelemetry-collector
     filter_strategy: relabel-config
     https:
       ca_cert_file_path: ""

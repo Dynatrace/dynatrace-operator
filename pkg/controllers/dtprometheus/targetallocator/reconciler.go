@@ -97,7 +97,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 		Owner:       dtp,
 		DynaKube:    dk,
 		Spec:        dtp.TargetAllocator(),
-		AppLabels:   k8slabel.New("opentelemetry-target-allocator", "otel-allocator", ""),
+		AppLabels:   k8slabel.OTelTargetAllocator(),
 		ImageClient: imageClient,
 	}
 
@@ -150,7 +150,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 		AllocationStrategy: "consistent-hashing",
 		CollectorNamespace: s.Owner.Namespace,
 		CollectorSelector: &metav1.LabelSelector{
-			MatchLabels: s.AppLabels.AsSelector(),
+			MatchLabels: k8slabel.OTelScraper().AsSelector(),
 		},
 		FilterStrategy: "relabel-config",
 		HTTPS: &HTTPSConfig{

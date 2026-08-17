@@ -60,7 +60,7 @@ func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
 		Spec:      dtp.TargetAllocator(),
-		AppLabels: k8slabel.New("opentelemetry-target-allocator", "otel-allocator", ""),
+		AppLabels: k8slabel.OTelTargetAllocator(),
 	}
 }
 
@@ -140,7 +140,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		cm := &corev1.ConfigMap{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
-		assert.Equal(t, "otel-allocator", cm.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, k8slabel.OTelTargetAllocator().Instance, cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -251,7 +251,7 @@ func TestReconcileService(t *testing.T) {
 		svc := &corev1.Service{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, svc))
 		assert.Equal(t, "value", svc.Labels["custom"])
-		assert.Equal(t, "otel-allocator", svc.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, k8slabel.OTelTargetAllocator().Instance, svc.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
