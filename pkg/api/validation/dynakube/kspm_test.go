@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestTooManyAGReplicas(t *testing.T) {
+func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 	t.Run("activegate with 1 (per default) replica and kspm enabled", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
@@ -50,6 +50,34 @@ func TestTooManyAGReplicas(t *testing.T) {
 					APIURL:               testAPIURL,
 					KSPM:                 &kspm.Spec{},
 					KubernetesMonitoring: &kubemon.Spec{Registration: &kubemon.Registration{}},
+					Templates: dynakube.TemplatesSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+								Tag:        "version",
+							},
+						},
+					},
+				},
+			})
+	})
+
+	t.Run("kubemon with unrelated activegate replicas and kspm enabled", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:               testAPIURL,
+					KSPM:                 &kspm.Spec{},
+					KubernetesMonitoring: &kubemon.Spec{Registration: &kubemon.Registration{}},
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.RoutingCapability.DisplayName,
+						},
+						CapabilityProperties: activegate.CapabilityProperties{
+							Replicas: new(int32(3)),
+						},
+					},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
 							ImageRef: image.Ref{

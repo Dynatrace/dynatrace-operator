@@ -36,6 +36,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	withKubemon    = true
+	withoutKubemon = false
+)
+
 // Unit tests for the kubemon orchestrator. All sub-reconcilers are mocked, so these tests own only
 // the orchestration logic; sub-reconciler internals are covered in their own packages.
 
@@ -59,7 +64,7 @@ func TestReconcileDisabled(t *testing.T) {
 			serviceReconciler:          serviceReconciler,
 			istioReconciler:            istioRec,
 		}
-		dk := newTestDynaKube(false)
+		dk := newTestDynaKube(withoutKubemon)
 
 		meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: kubemonapi.KubeMonAvailableConditionType, Status: metav1.ConditionTrue, Reason: reasonAvailable})
 		connInfoReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
@@ -129,7 +134,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 
 	t.Run("all reconcilers succeed -> available", func(t *testing.T) {
 		mocks := newMocks(t)
-		dk := newTestDynaKube(true)
+		dk := newTestDynaKube(withKubemon)
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.istio.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(nil).Once()
@@ -145,7 +150,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 	})
 	t.Run("AG enabled: istio reconciliation skipped (handled by AG reconciler)", func(t *testing.T) {
 		mocks := newMocks(t)
-		dk := newTestDynaKube(true)
+		dk := newTestDynaKube(withKubemon)
 		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
@@ -163,7 +168,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 
 	t.Run("connection info not ready -> reconciling", func(t *testing.T) {
 		mocks := newMocks(t)
-		dk := newTestDynaKube(true)
+		dk := newTestDynaKube(withKubemon)
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(kubemonconnectioninfo.ErrConnectionInfoNotReady).Once()
 
@@ -175,7 +180,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 
 	t.Run("istio error -> error", func(t *testing.T) {
 		mocks := newMocks(t)
-		dk := newTestDynaKube(true)
+		dk := newTestDynaKube(withKubemon)
 		istioErr := errors.New("istio error")
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
@@ -189,7 +194,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 
 	t.Run("auth token error -> error", func(t *testing.T) {
 		mocks := newMocks(t)
-		dk := newTestDynaKube(true)
+		dk := newTestDynaKube(withKubemon)
 		apiErr := errors.New("api error")
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
@@ -204,7 +209,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 
 	t.Run("custom properties error -> error", func(t *testing.T) {
 		mocks := newMocks(t)
-		dk := newTestDynaKube(true)
+		dk := newTestDynaKube(withKubemon)
 		cpErr := errors.New("custom properties api error")
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
@@ -221,7 +226,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 
 	t.Run("rollout in progress -> reconciling", func(t *testing.T) {
 		mocks := newMocks(t)
-		dk := newTestDynaKube(true)
+		dk := newTestDynaKube(withKubemon)
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.istio.EXPECT().ReconcileActiveGate(mock.Anything, dk).Return(nil).Once()
@@ -239,7 +244,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 
 	t.Run("unexpected stateful set error -> error", func(t *testing.T) {
 		mocks := newMocks(t)
-		dk := newTestDynaKube(true)
+		dk := newTestDynaKube(withKubemon)
 		boomErr := errors.New("boom")
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
@@ -280,9 +285,7 @@ func TestIsTransientError(t *testing.T) {
 }
 
 func TestServiceStatefulSetContract(t *testing.T) {
-	dk := newTestDynaKube(true)
-	dk.Status.KubeSystemUUID = "test-cluster-uuid" // set by the parent controller before any operand reconciler runs
-
+	dk := newTestDynaKube(withKubemon)
 	clt := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 
 	_ = kubemonservice.NewReconciler(clt).Reconcile(t.Context(), dk)
@@ -342,6 +345,9 @@ func newTestDynaKube(enabled bool) *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://tenant.live.dynatrace.com/api",
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID: "test-cluster-uuid", // set by the parent controller before any kubemon reconciler runs
 		},
 	}
 

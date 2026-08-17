@@ -24,7 +24,10 @@ const (
 )
 
 func tooManyKubernetesMonitoringReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.KSPM().IsEnabled() && (dk.KubernetesMonitoring().GetReplicas() > 1 || dk.ActiveGate().GetReplicas() > 1) {
+	kubemonHasTooManyReplicas := dk.KubernetesMonitoring().IsEnabled() && dk.KubernetesMonitoring().GetReplicas() > 1
+	activeGateHasTooManyReplicas := dk.ActiveGate().IsKubernetesMonitoringEnabled() && dk.ActiveGate().GetReplicas() > 1
+
+	if dk.KSPM().IsEnabled() && (kubemonHasTooManyReplicas || activeGateHasTooManyReplicas) {
 		return errorTooManyKubernetesMonitoringReplicas
 	}
 

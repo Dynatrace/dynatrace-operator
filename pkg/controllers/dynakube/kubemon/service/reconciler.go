@@ -33,7 +33,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	ctx, _ = logd.NewFromContext(ctx, "service")
 
 	if !dk.KubernetesMonitoring().IsEnabled() {
-		return client.IgnoreNotFound(r.client.Delete(ctx, agService(dk)))
+		return client.IgnoreNotFound(r.client.Delete(ctx, kubemonService(dk)))
 	}
 
 	if err := r.createService(ctx, dk); err != nil {
@@ -48,7 +48,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) error {
-	desired := agService(dk)
+	desired := kubemonService(dk)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      desired.Name,
@@ -69,7 +69,7 @@ func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) e
 }
 
 func (r *Reconciler) setStatusIPs(ctx context.Context, dk *dynakube.DynaKube) error {
-	svc := agService(dk)
+	svc := kubemonService(dk)
 
 	return retry.OnError(retry.DefaultBackoff, k8serrors.IsNotFound, func() error {
 		currSvc := &corev1.Service{}
@@ -89,7 +89,7 @@ func BuildServiceName(dynakubeName string) string {
 	return dynakubeName + "-kubemon-activegate"
 }
 
-func agService(dk *dynakube.DynaKube) *corev1.Service {
+func kubemonService(dk *dynakube.DynaKube) *corev1.Service {
 	ports := []corev1.ServicePort{
 		{
 			Name:       consts.HTTPSServicePortName,
