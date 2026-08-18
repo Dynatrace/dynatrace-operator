@@ -41,7 +41,7 @@ spec:
         image: registry.example.com/target-allocator:1.2.3
         imagePullPolicy: Always
         args:
-        - '--config="yaml:exporters::debug::verbosity: normal"'
+        - "--foo=bar"
         env:
         - name: OTELCOL_NAMESPACE
           value: dynatrace
