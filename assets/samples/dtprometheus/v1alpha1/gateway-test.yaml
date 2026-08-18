@@ -1,0 +1,110 @@
+# In-cluster test manifest for the gateway fleet (tier 2 only).
+# Copied from dynakube (22).yaml; DTPrometheus added below.
+#
+# Apply:
+#   kubectl apply -f assets/samples/dtprometheus/v1alpha1/gateway-test.yaml
+#
+# Verify:
+#   kubectl get cm,sts,svc -l app.kubernetes.io/name=opentelemetry-gateway -n dynatrace
+#   kubectl get pods -n dynatrace -l app.kubernetes.io/name=opentelemetry-gateway
+#   kubectl exec -n dynatrace <pod> -- curl -s http://localhost:13133/
+#   kubectl logs -n dynatrace <pod>
+---
+apiVersion: v1
+data:
+  apiToken: ZHQwczE2LkJRVlhMWko2Lk00SjdPSFFGUlM1VzJYSDdCREkzT1pNSU5OQzZYM1RBUUdGVlpENVRBS0RQU1AzR0hNN1hGVDVYTVZDQUJENzI=
+  dataIngestToken: ZHQwczE2LkFWM1lPSkxKLllINTJJT1RPTkM2NkczVllYSDVFSVJQTFQ1N0ZZRFdLVVIzSExINlE2Ujc2NDNJT1lKRFczNUVaR01RU0pMUlU=
+kind: Secret
+metadata:
+  name: gke-k8s-2026-07-27
+  namespace: dynatrace
+  labels:
+    dynatrace.com/created-by: "dynatrace.kubernetes"
+type: Opaque
+---
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: gke-k8s-2026-07-27
+  namespace: dynatrace
+  labels:
+    dynatrace.com/created-by: "dynatrace.kubernetes"
+  annotations:
+    feature.dynatrace.com/use-public-registry: "true"
+spec:
+  customPullSecret: "ecr-token"
+  apiUrl: https://jaq9750d.dev.dynatracelabs.com/api
+  tokens: gke-k8s-2026-07-27
+  activeGate:
+    capabilities:
+      - kubernetes-monitoring
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 10Gi
+      limits:
+        cpu: 2000m
+        memory: 10Gi
+    replicas: 1
+---
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: gke-k8s-2026-07-27-agents
+  namespace: dynatrace
+  labels:
+    dynatrace.com/created-by: "dynatrace.kubernetes"
+  annotations:
+    feature.dynatrace.com/use-public-registry: "true"
+spec:
+  customPullSecret: "ecr-token"
+  metadataEnrichment:
+    enabled: true
+  apiUrl: https://jaq9750d.dev.dynatracelabs.com/api
+  tokens: gke-k8s-2026-07-27
+  oneAgent:
+    cloudNativeFullStack:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+  activeGate:
+    capabilities:
+      - routing
+      - debugging
+    resources:
+      requests:
+        cpu: 500m
+        memory: 4Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    replicas: 3
+  logMonitoring: {}
+---
+# DTPrometheus — gateway fleet only (tier 2 reconciler under test).
+# References gke-k8s-2026-07-27 for apiUrl + tokens.
+# Tier 1 (scraper + target allocator) omitted; send test metrics directly
+# to a gateway pod's port 4317 to verify the OTel pipeline.
+apiVersion: dynatrace.com/v1alpha1
+kind: DTPrometheus
+metadata:
+  name: prom-gw
+  namespace: dynatrace
+spec:
+  dynaKubeName: gke-k8s-2026-07-27
+
+  gateway:
+    # Fleet API has no gateway component for this tenant; image must be pinned.
+    image: ghcr.io/dynatrace/dynatrace-otel-collector/dynatrace-otel-collector:0.51.0
+    replicas: 2
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi

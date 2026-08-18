@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -198,8 +199,21 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 		if existing.Annotations[userManagedAnnotation] == "true" {
 			log.Info("skipping user-managed configmap")
 
-			checksum := sha256.Sum256([]byte(existing.Data[gatewayConfigKey]))
-			s.ConfigMapHash = hex.EncodeToString(checksum[:])
+			// Hash all data values (sorted by key) so any key change triggers a pod restart,
+			// not just changes to the operator-managed "relay" key.
+			keys := make([]string, 0, len(existing.Data))
+			for k := range existing.Data {
+				keys = append(keys, k)
+			}
+
+			slices.Sort(keys)
+
+			h := sha256.New()
+			for _, k := range keys {
+				h.Write([]byte(existing.Data[k]))
+			}
+
+			s.ConfigMapHash = hex.EncodeToString(h.Sum(nil))
 
 			return nil
 		}
@@ -310,7 +324,7 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	mergeAppLabels(sts, s.AppLabels)
 
-	sts.Spec.Template.Labels = s.Spec.Labels
+	sts.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
 	if sts.Spec.Template.Labels == nil {
 		sts.Spec.Template.Labels = make(map[string]string)
 	}
