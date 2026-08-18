@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -50,7 +51,7 @@ func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) e
 		},
 	}
 
-	_, err := controllerutil.CreateOrPatch(ctx, r.client, svc, func() error {
+	_, err := k8sobject.RetryCreateOrUpdate(ctx, r.client, svc, func() error {
 		svc.Labels = desired.Labels
 		svc.Spec.Type = desired.Spec.Type
 		svc.Spec.Selector = desired.Spec.Selector
