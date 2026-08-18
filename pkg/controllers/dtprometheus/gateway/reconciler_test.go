@@ -146,32 +146,6 @@ func TestReconcileConfigMap(t *testing.T) {
 		assert.Contains(t, cm.Data[gatewayConfigKey], "value: prod")
 	})
 
-	t.Run("user-managed configmap is left untouched", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
-		existing := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        s.Spec.GetStatefulSetName(),
-				Namespace:   dtp.Namespace,
-				Annotations: map[string]string{userManagedAnnotation: "true"},
-			},
-			Data: map[string]string{gatewayConfigKey: "custom: config"},
-		}
-		c := fake.NewClientWithInterceptors(interceptor.Funcs{
-			Update: func(ctx context.Context, clt client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-				t.Fatal("must not update user-managed configmap")
-
-				return nil
-			},
-		}, existing)
-		r := &Reconciler{Client: c}
-
-		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
-
-		sum := sha256.Sum256([]byte("custom: config"))
-		assert.Equal(t, hex.EncodeToString(sum[:]), s.ConfigMapHash)
-	})
-
 	t.Run("merge labels", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		s := newTestScope(dtp)

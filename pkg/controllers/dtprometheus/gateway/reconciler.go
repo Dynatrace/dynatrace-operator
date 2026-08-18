@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -28,7 +27,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -40,9 +38,8 @@ import (
 const (
 	// gatewayConfigKey is the ConfigMap data key holding the rendered OTel Collector config,
 	// mounted as relay.yaml (see --config=/conf/relay.yaml on the container).
-	gatewayConfigKey      = "relay"
-	userManagedAnnotation = "internal.operator.dynatrace.com/user-managed"
-	configHashAnnotation  = "internal.operator.dynatrace.com/gateway-config-hash"
+	gatewayConfigKey     = "relay"
+	configHashAnnotation = "internal.operator.dynatrace.com/gateway-config-hash"
 
 	trustedCAVolumeMountPath = "/tls/custom/cacerts"
 	trustedCAFile            = "rootca.pem"
@@ -190,36 +187,7 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, owner metav1.Object, ob
 }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
-	log := logd.FromContext(ctx)
-
 	name := s.Spec.GetStatefulSetName()
-
-	existing := &corev1.ConfigMap{}
-	if err := r.Get(ctx, client.ObjectKey{Name: name, Namespace: s.Owner.Namespace}, existing); err == nil {
-		if existing.Annotations[userManagedAnnotation] == "true" {
-			log.Info("skipping user-managed configmap")
-
-			// Hash all data values (sorted by key) so any key change triggers a pod restart,
-			// not just changes to the operator-managed "relay" key.
-			keys := make([]string, 0, len(existing.Data))
-			for k := range existing.Data {
-				keys = append(keys, k)
-			}
-
-			slices.Sort(keys)
-
-			h := sha256.New()
-			for _, k := range keys {
-				h.Write([]byte(existing.Data[k]))
-			}
-
-			s.ConfigMapHash = hex.EncodeToString(h.Sum(nil))
-
-			return nil
-		}
-	} else if !k8serrors.IsNotFound(err) {
-		return fmt.Errorf("get configmap: %w", err)
-	}
 
 	data, err := buildGatewayConfigData(s.DynaKube)
 	if err != nil {
