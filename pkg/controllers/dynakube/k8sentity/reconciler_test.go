@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
@@ -143,6 +144,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("kubemon registration path: creates settings", func(t *testing.T) {
 		// Gen3 SaaS: FF not set, no app-transition calls expected.
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := newDynaKube()
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
 		enableKubemonRegistration(dk)
@@ -171,6 +173,7 @@ func TestReconcile(t *testing.T) {
 		// On Gen3 SaaS the GetSettingsForMonitoredEntity call returns 404 (schema absent)
 		// and is handled gracefully — this test covers the Gen2/Managed case where the
 		// schema exists and the app setting is created.
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := newDynaKube()
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
 		enableKubemonRegistration(dk)
@@ -205,6 +208,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("kubemon registration path with app FF on gen3: schema absent, no app setting created", func(t *testing.T) {
 		// Gen3 SaaS: FF is set but builtin:app-transition.kubernetes schema does not exist.
 		// GetSettingsForMonitoredEntity returns 404 — operator skips gracefully.
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := newDynaKube()
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
 		enableKubemonRegistration(dk)
@@ -251,6 +255,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("no app setting reconcile without FF", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := newDynaKube()
 		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
 		enableAGKubeMonCapability(dk)
@@ -570,6 +575,7 @@ func TestIsRegistrationEnabled(t *testing.T) {
 				enableAGKubeMonCapability(dk)
 			}
 			if tt.kubemonOp {
+				t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 				enableKubemonRegistration(dk)
 			}
 			assert.Equal(t, tt.expect, dk.IsKubernetesMonitoringRegistrationEnabled())
@@ -600,6 +606,7 @@ func TestGetRegistrationClusterName(t *testing.T) {
 				setClusterNameFF(dk, tt.ffClusterName)
 			}
 			if tt.kubemonClusterName != "" {
+				t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 				enableKubemonRegistration(dk)
 				setKubemonRegistrationClusterName(dk, tt.kubemonClusterName)
 			}

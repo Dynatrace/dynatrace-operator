@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -43,6 +44,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 	})
 
 	t.Run("kubemon with 1 (per default) replica and kspm enabled", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -63,6 +65,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 	})
 
 	t.Run("kubemon with unrelated activegate replicas and kspm enabled", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -120,6 +123,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 	})
 
 	t.Run("kubemon with more than 1 replica and kspm enabled", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertDenied(t,
 			[]string{errorTooManyKubernetesMonitoringReplicas},
 			&dynakube.DynaKube{
@@ -148,6 +152,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 
 func TestMissingKSPMDependency(t *testing.T) {
 	t.Run("both kspm and kubemon enabled", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -163,7 +168,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 		})
 	})
 
-	t.Run("both kspm and activegate kubemon enabled", func(t *testing.T) {
+	t.Run("both kspm and activegate kubernetes-monitoring enabled", func(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -182,7 +187,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 	})
 
 	t.Run("kspm enabled without k8s monitoring", func(t *testing.T) {
-		assertDenied(t, []string{errorKSPMMissingKubemon}, &dynakube.DynaKube{
+		assertDenied(t, []string{errorKSPMMissingKubernetesMonitoring}, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
@@ -199,6 +204,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 
 func TestKSPMWithoutRegistration(t *testing.T) {
 	t.Run("kubemon with registration and kspm enabled", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -215,6 +221,7 @@ func TestKSPMWithoutRegistration(t *testing.T) {
 	})
 
 	t.Run("kubemon without registration and kspm enabled", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertDenied(t, []string{errorKSPMMissingRegistration}, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -230,7 +237,7 @@ func TestKSPMWithoutRegistration(t *testing.T) {
 		})
 	})
 
-	t.Run("activegate kubemon without kubemon spec is unaffected", func(t *testing.T) {
+	t.Run("activegate kubernetes-monitoring without kubemon spec is unaffected", func(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -260,7 +267,7 @@ func TestKSPMWithoutRegistration(t *testing.T) {
 }
 
 func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
-	t.Run("activegate kubemon with automatic k8s api monitoring and kspm enabled", func(t *testing.T) {
+	t.Run("activegate kubernetes-monitoring with automatic k8s api monitoring and kspm enabled", func(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -278,7 +285,7 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 		})
 	})
 
-	t.Run("activegate kubemon without automatic k8s api monitoring and kspm enabled", func(t *testing.T) {
+	t.Run("activegate kubernetes-monitoring without automatic k8s api monitoring and kspm enabled", func(t *testing.T) {
 		assertDenied(t, []string{errorKSPMMissingAutomaticK8sAPIMonitoring}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -302,7 +309,8 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 		})
 	})
 
-	t.Run("kubemon spec without activegate kubemon is unaffected", func(t *testing.T) {
+	t.Run("kubemon spec without activegate kubernetes-monitoring is unaffected", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -324,7 +332,7 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 		})
 	})
 
-	t.Run("activegate kubemon without automatic k8s api monitoring but kspm disabled", func(t *testing.T) {
+	t.Run("activegate kubernetes-monitoring without automatic k8s api monitoring but kspm disabled", func(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,

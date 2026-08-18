@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sserviceentry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8svirtualservice"
@@ -148,9 +147,7 @@ func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
-	isKubemonEnabled := k8senv.IsKubemonOperandEnabled() && dk.KubernetesMonitoring().IsEnabled()
-
-	if !ptr.Deref(dk.Spec.EnableIstio, false) || (!dk.ActiveGate().IsEnabled() && !isKubemonEnabled) {
+	if !ptr.Deref(dk.Spec.EnableIstio, false) || (!dk.ActiveGate().IsEnabled() && !dk.IsKubemonEnabled()) {
 		if isIstioConfigured(dk, activeGateConditionName) {
 			log.Info("activegate disabled, cleaning up")
 
@@ -173,7 +170,7 @@ func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 	switch {
 	case dk.ActiveGate().IsEnabled():
 		endpoints = dk.Status.ActiveGate.ConnectionInfo.Endpoints
-	case isKubemonEnabled:
+	case dk.IsKubemonEnabled():
 		endpoints = dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints
 	}
 

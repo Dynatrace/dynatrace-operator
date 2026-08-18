@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -469,6 +470,10 @@ func TestTokens_VerifyScopes(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
+			if c.dk.KubernetesMonitoring().IsEnabled() {
+				t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+			}
+
 			tokenValue := "test-token"
 			mockedTokenClient := tokenclientmock.NewClient(t)
 			mockedTokenClient.EXPECT().GetScopes(anyCtx, tokenValue).Return(c.availableScopes, nil).Once()
