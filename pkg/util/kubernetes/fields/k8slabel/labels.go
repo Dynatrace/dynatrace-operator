@@ -36,12 +36,12 @@ const (
 	OperatorComponentLabel      = "operator"
 )
 
-func OTelTargetAllocator() *Labels {
-	return New("opentelemetry-target-allocator", "otel-allocator", "")
+func OTelTargetAllocator(instance string) *Labels {
+	return New("opentelemetry-target-allocator", instance, "")
 }
 
-func OTelScraper() *Labels {
-	return New("opentelemetry-collector", "otel-scraper", "")
+func OTelScraper(instance string) *Labels {
+	return New("opentelemetry-collector", instance, "")
 }
 
 type AppMatchLabels struct {

@@ -32,8 +32,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
-	return &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")}}
+const dtpName = "dtp"
+
+func newTestDTP() *dtprometheus.DTPrometheus {
+	return &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: dtpName, Namespace: "dynatrace", UID: types.UID("dtp-uid")}}
 }
 
 // assertGolden compares obj, marshaled to YAML, against testdata/name. The fake
@@ -60,7 +62,7 @@ func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
 		Spec:      dtp.TargetAllocator(),
-		AppLabels: k8slabel.OTelTargetAllocator(),
+		AppLabels: k8slabel.OTelTargetAllocator(dtp.TargetAllocator().GetDeploymentName()),
 	}
 }
 
@@ -88,7 +90,7 @@ func TestReconcileCondition(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dtp := newTestDTP("dtp", "dynatrace")
+			dtp := newTestDTP()
 			s := &reconcileScope{Owner: dtp, Deployment: test.deployment}
 			r := &Reconciler{}
 
@@ -105,7 +107,7 @@ func TestReconcileCondition(t *testing.T) {
 
 func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		dtp := newTestDTP()
 		dtp.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
 		dtp.Spec.TargetAllocator.ScrapeCRNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
 		dtp.Spec.TargetAllocator.ScrapeCRSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
@@ -125,7 +127,7 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		dtp := newTestDTP()
 		s := newTestScope(dtp)
 		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
@@ -140,19 +142,19 @@ func TestReconcileConfigMap(t *testing.T) {
 		cm := &corev1.ConfigMap{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
-		assert.Equal(t, k8slabel.OTelTargetAllocator().Instance, cm.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, k8slabel.OTelTargetAllocator(s.Spec.GetDeploymentName()).Instance, cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("dtp", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP()))
 		require.ErrorIs(t, err, expectErr)
 	})
 }
 
 func TestReconcileDeployment(t *testing.T) {
 	t.Run("missing image", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		dtp := newTestDTP()
 		s := newTestScope(dtp)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
@@ -167,7 +169,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		dtp := newTestDTP()
 		dtp.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
 		dtp.Spec.TargetAllocator.ImagePullPolicy = corev1.PullAlways
 		dtp.Spec.TargetAllocator.Replicas = new(int32(3))
@@ -191,7 +193,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("preserve existing replicas", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		dtp := newTestDTP()
 		dtp.Spec.TargetAllocator.Image = "img:1"
 		s := newTestScope(dtp)
 		existing := &appsv1.Deployment{
@@ -209,7 +211,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		dtp := newTestDTP()
 		dtp.Spec.TargetAllocator.Image = "img:1"
 		expectErr := errors.New("boom")
 		r := &Reconciler{Client: createErrorClient(expectErr)}
@@ -222,7 +224,7 @@ func TestReconcileDeployment(t *testing.T) {
 
 func TestReconcileService(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		dtp := newTestDTP()
 		s := newTestScope(dtp)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
@@ -236,7 +238,7 @@ func TestReconcileService(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		dtp := newTestDTP()
 		s := newTestScope(dtp)
 		existing := &corev1.Service{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
@@ -251,12 +253,12 @@ func TestReconcileService(t *testing.T) {
 		svc := &corev1.Service{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, svc))
 		assert.Equal(t, "value", svc.Labels["custom"])
-		assert.Equal(t, k8slabel.OTelTargetAllocator().Instance, svc.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, k8slabel.OTelTargetAllocator(s.Spec.GetDeploymentName()).Instance, svc.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestDTP("dtp", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestDTP()))
 		require.ErrorIs(t, err, expectErr)
 	})
 }

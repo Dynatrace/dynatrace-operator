@@ -4,7 +4,7 @@ metadata:
   name: dtp-prometheus-allocator
   namespace: dynatrace
   labels:
-    app.kubernetes.io/instance: otel-allocator
+    app.kubernetes.io/instance: dtp-prometheus-allocator
     app.kubernetes.io/managed-by: dynatrace-operator
     app.kubernetes.io/name: opentelemetry-target-allocator
     internal.dynatrace.com/operator-version: snapshot
@@ -19,7 +19,7 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app.kubernetes.io/instance: otel-allocator
+      app.kubernetes.io/instance: dtp-prometheus-allocator
       app.kubernetes.io/managed-by: dynatrace-operator
       app.kubernetes.io/name: opentelemetry-target-allocator
   strategy: {}
@@ -29,7 +29,7 @@ spec:
         config/checksum: deadbeef
         custom: annotation
       labels:
-        app.kubernetes.io/instance: otel-allocator
+        app.kubernetes.io/instance: dtp-prometheus-allocator
         app.kubernetes.io/managed-by: dynatrace-operator
         app.kubernetes.io/name: opentelemetry-target-allocator
         internal.dynatrace.com/operator-version: snapshot
