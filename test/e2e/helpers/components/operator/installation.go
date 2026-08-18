@@ -13,27 +13,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
-	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
@@ -57,7 +48,7 @@ func Install(releaseTag string, withCSI bool) env.Func {
 }
 
 // InstallLocal deploys the operator helm chart from filesystem.
-func InstallLocal(withCSI bool) env.Func {
+func InstallLocal(withCSI bool, extraOpts ...helm.Option) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		if os.Getenv("OLM") == "true" {
 			if withCSI {
@@ -71,7 +62,7 @@ func InstallLocal(withCSI bool) env.Func {
 				return ctx, err
 			}
 		} else {
-			err := InstallViaHelm("", withCSI)
+			err := InstallViaHelm("", withCSI, extraOpts...)
 			if err != nil {
 				return ctx, err
 			}
@@ -327,26 +318,4 @@ func getImageRef(rootDir string, fips140 bool) (string, error) {
 	}
 
 	return imageRef, nil
-}
-
-// SetKubemonOperand patches the operator deployment to enable or disable EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
-// TODO: remove once the feature gate is gone.
-func SetKubemonOperand(enabled bool) features.Func {
-	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-		t.Helper()
-
-		patch := fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
-			ContainerName, k8senv.ExperimentalEnableKubemonOperand, strconv.FormatBool(enabled))
-
-		deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: DeploymentName, Namespace: DefaultNamespace}}
-		require.NoError(t, cfg.Client().Resources().Patch(ctx, deploy, k8s.Patch{
-			PatchType: types.StrategicMergePatchType,
-			Data:      []byte(patch),
-		}))
-
-		ctx, err := WaitForDeployment(DefaultNamespace)(ctx, cfg)
-		require.NoError(t, err)
-
-		return ctx
-	}
 }

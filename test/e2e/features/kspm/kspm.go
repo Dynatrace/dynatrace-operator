@@ -8,6 +8,7 @@ package kspm
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	componentOperator "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
@@ -16,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	componentKspm "github.com/Dynatrace/dynatrace-operator/test/helpers/components/kspm"
 	"sigs.k8s.io/e2e-framework/pkg/features"
+	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
 func Feature(t *testing.T) features.Feature {
@@ -51,6 +53,11 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	builder.Setup(componentKspm.DeleteKSPMSettingsFromTenant(secretConfig))
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(
+		false,
+		helm.WithArgs("--reuse-values"),
+		helm.WithArgs("--set", "experimental.enableKubemonOperand=true"),
+	), true))
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -61,14 +68,17 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	builder.Setup(componentOperator.SetKubemonOperand(true))
-	builder.Teardown(componentOperator.SetKubemonOperand(false))
-
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("kubemon statefulset is ready", k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
+
+	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(
+		false,
+		helm.WithArgs("--reuse-values"),
+		helm.WithArgs("--set", "experimental.enableKubemonOperand=false"),
+	), false))
 
 	return builder.Feature()
 }
