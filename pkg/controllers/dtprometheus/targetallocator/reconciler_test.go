@@ -176,7 +176,7 @@ func TestReconcileDeployment(t *testing.T) {
 		dtp.Spec.TargetAllocator.Tolerations = []corev1.Toleration{{Key: "k", Operator: corev1.TolerationOpExists}}
 		dtp.Spec.TargetAllocator.Annotations = map[string]string{"custom": "annotation"}
 		dtp.Spec.TargetAllocator.Labels = map[string]string{"custom": "label"}
-		dtp.Spec.TargetAllocator.Args = []string{"--set", "foo=bar"}
+		dtp.Spec.TargetAllocator.Args = []string{`--config="yaml:exporters::debug::verbosity: normal"`}
 		s := newTestScope(dtp)
 		s.ConfigMapHash = "deadbeef"
 		c := fake.NewClient()

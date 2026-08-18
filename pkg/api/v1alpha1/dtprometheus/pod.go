@@ -67,7 +67,6 @@ type PodSpec struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
-// GetArgs returns sanitized command-line arguments.
-func (s PodSpec) GetArgs() []string {
+func (s PodSpec) SanitizedArgs() []string {
 	return sanitize.CommandLineArgs(s.Args)
 }

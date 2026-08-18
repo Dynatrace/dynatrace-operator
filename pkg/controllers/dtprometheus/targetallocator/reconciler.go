@@ -338,7 +338,7 @@ func buildContainer(spec *dtprometheus.TargetAllocator, namespace string, curren
 		Name:            "targetallocator",
 		Image:           spec.Image, // TODO: allow using image from fleetmanagement API
 		ImagePullPolicy: imagePullPolicy,
-		Args:            spec.GetArgs(),
+		Args:            spec.SanitizedArgs(),
 		Ports: []corev1.ContainerPort{
 			{Name: insecurePortName, ContainerPort: 8080, Protocol: corev1.ProtocolTCP},
 			{Name: securePortName, ContainerPort: 8443, Protocol: corev1.ProtocolTCP},

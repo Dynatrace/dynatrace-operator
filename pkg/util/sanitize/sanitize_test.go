@@ -52,6 +52,7 @@ func TestCommandLineArgs(t *testing.T) {
 		{"preserve nil", nil, nil},
 		{"empty slice", []string{}, []string{}},
 		{"sanitize", []string{"foo\nbar", "clean", "a\tb\x00c"}, []string{"foobar", "clean", "abc"}},
+		{"keep valid values", []string{"foo", "bar", "baz"}, []string{"foo", "bar", "baz"}},
 	}
 
 	for _, tt := range tests {
