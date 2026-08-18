@@ -17,9 +17,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
+	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -339,7 +338,7 @@ func buildContainer(spec *dtprometheus.TargetAllocator, namespace string, curren
 		Name:            "targetallocator",
 		Image:           spec.Image, // TODO: allow using image from fleetmanagement API
 		ImagePullPolicy: imagePullPolicy,
-		Args:            sanitize.CommandLineArgs(spec.Args),
+		Args:            spec.GetArgs(),
 		Ports: []corev1.ContainerPort{
 			{Name: insecurePortName, ContainerPort: 8080, Protocol: corev1.ProtocolTCP},
 			{Name: securePortName, ContainerPort: 8443, Protocol: corev1.ProtocolTCP},

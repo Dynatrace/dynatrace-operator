@@ -36,6 +36,10 @@ func CommandLineArg(arg string) string {
 
 // CommandLineArgs returns a copy of args where each element was sanitized with [CommandLineArg].
 func CommandLineArgs(args []string) []string {
+	if args == nil {
+		return nil
+	}
+
 	sanitized := make([]string, len(args))
 	for i, arg := range args {
 		sanitized[i] = CommandLineArg(arg)
