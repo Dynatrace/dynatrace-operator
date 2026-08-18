@@ -22,7 +22,9 @@ type DTPrometheusStatus struct { //nolint:revive
 }
 
 type GatewayStatus struct {
-	ResolvedImage string `json:"resolvedImage,omitempty"`
+	// the json tag is `image` to follow k8s conventions;
+	// the field is `ResolvedImage` to not conflict with the `Image` field in spec.
+	ResolvedImage string `json:"image,omitempty"`
 }
 
 // SetPhase sets the status phase on the DTPrometheus object.
