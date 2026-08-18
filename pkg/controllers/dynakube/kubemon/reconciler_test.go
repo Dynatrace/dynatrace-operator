@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -285,6 +286,7 @@ func TestIsTransientError(t *testing.T) {
 
 func TestServiceStatefulSetMatchSelectors(t *testing.T) {
 	dk := newTestDynaKube(withKubemon)
+	dk.Spec.KSPM = &kspm.Spec{}
 	clt := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 
 	_ = gateway.NewReconciler(clt).Reconcile(t.Context(), dk)

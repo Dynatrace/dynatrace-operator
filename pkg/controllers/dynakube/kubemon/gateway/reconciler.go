@@ -30,7 +30,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
 	ctx, _ = logd.NewFromContext(ctx, "gateway")
 
-	if !dk.KubernetesMonitoring().IsEnabled() {
+	if !dk.KubernetesMonitoring().IsEnabled() || !dk.KSPM().IsEnabled() {
 		return client.IgnoreNotFound(r.client.Delete(ctx, kubemonService(dk)))
 	}
 

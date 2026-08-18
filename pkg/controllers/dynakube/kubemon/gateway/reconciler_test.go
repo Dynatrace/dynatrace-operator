@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -62,6 +63,50 @@ func TestKubemonDisabled(t *testing.T) {
 }
 
 func TestKubemonEnabled(t *testing.T) {
+	t.Run("no service is created when KSPM is disabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dk",
+				Namespace: "dynatrace",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				KubernetesMonitoring: &kubemonapi.Spec{},
+			},
+		}
+		fakeClient := fake.NewClient(dk)
+
+		require.NoError(t, gateway.NewReconciler(fakeClient).Reconcile(t.Context(), dk))
+
+		svc := &corev1.Service{}
+		svcMissing := k8serrors.IsNotFound(fakeClient.Get(t.Context(), client.ObjectKey{Name: gateway.ServiceName(dk.Name), Namespace: dk.Namespace}, svc))
+		assert.True(t, svcMissing, "service should not have been created")
+	})
+
+	t.Run("existing service is removed when KSPM is disabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dk",
+				Namespace: "dynatrace",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				KubernetesMonitoring: &kubemonapi.Spec{},
+			},
+		}
+		existingSvc := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      gateway.ServiceName(dk.Name),
+				Namespace: dk.Namespace,
+			},
+		}
+		fakeClient := fake.NewClient(dk, existingSvc)
+
+		require.NoError(t, gateway.NewReconciler(fakeClient).Reconcile(t.Context(), dk))
+
+		svc := &corev1.Service{}
+		svcMissing := k8serrors.IsNotFound(fakeClient.Get(t.Context(), client.ObjectKey{Name: gateway.ServiceName(dk.Name), Namespace: dk.Namespace}, svc))
+		assert.True(t, svcMissing, "service should have been removed from the cluster")
+	})
+
 	t.Run("ClusterIP service is created with HTTPS and HTTP ports", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -70,6 +115,7 @@ func TestKubemonEnabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{},
+				KSPM:                 &kspm.Spec{},
 			},
 		}
 		fakeClient := fake.NewClient(dk)
@@ -100,6 +146,7 @@ func TestKubemonEnabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{},
+				KSPM:                 &kspm.Spec{},
 			},
 		}
 		fakeClient := fake.NewClient(dk)
@@ -130,6 +177,7 @@ func TestKubemonEnabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{},
+				KSPM:                 &kspm.Spec{},
 			},
 		}
 		createErr := errors.New("kube api error")
