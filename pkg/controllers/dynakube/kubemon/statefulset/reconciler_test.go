@@ -27,6 +27,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -324,20 +326,19 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		dk.Spec.KSPM = &kspmapi.Spec{}
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
-		kspmVolume := slices.IndexFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
-			return v.Secret != nil && v.Secret.SecretName == dk.KSPM().GetTokenSecretName()
-		})
-		require.NotEqual(t, -1, kspmVolume, "KSPM token volume not found")
-		assert.EqualValues(t, 0o640, *sts.Spec.Template.Spec.Volumes[kspmVolume].Secret.DefaultMode)
+		kspmVolume := k8svolume.FindByName(sts.Spec.Template.Spec.Volumes, "kspm-token")
+		require.NotNil(t, kspmVolume, "KSPM token volume not found")
+		require.NotNil(t, kspmVolume.Secret)
+		require.NotNil(t, kspmVolume.Secret.DefaultMode)
+		assert.Equal(t, dk.KSPM().GetTokenSecretName(), kspmVolume.Secret.SecretName)
+		assert.EqualValues(t, 0o640, *kspmVolume.Secret.DefaultMode)
 
 		container := sts.Spec.Template.Spec.Containers[0]
-		kspmMount := slices.IndexFunc(container.VolumeMounts, func(m corev1.VolumeMount) bool {
-			return m.Name == sts.Spec.Template.Spec.Volumes[kspmVolume].Name
-		})
-		require.NotEqual(t, -1, kspmMount, "KSPM token volume mount not found")
-		assert.True(t, container.VolumeMounts[kspmMount].ReadOnly)
-		assert.Equal(t, operatorconsts.DTComponentsSecretsRootDir+"/tokens/kspm/node-configuration-collector", container.VolumeMounts[kspmMount].MountPath)
-		assert.Equal(t, kspmapi.TokenSecretKey, container.VolumeMounts[kspmMount].SubPath)
+		kspmMount, err := k8smount.Find(container.VolumeMounts, kspmVolume.Name)
+		require.NoError(t, err)
+		assert.True(t, kspmMount.ReadOnly)
+		assert.Equal(t, operatorconsts.DTComponentsSecretsRootDir+"/tokens/kspm/node-configuration-collector", kspmMount.MountPath)
+		assert.Equal(t, kspmapi.TokenSecretKey, kspmMount.SubPath)
 	})
 
 	t.Run("KSPM enabled, token hash annotation is set on pod", func(t *testing.T) {
