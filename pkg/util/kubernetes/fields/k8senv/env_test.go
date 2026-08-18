@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 const (
@@ -361,6 +362,32 @@ func TestGetDTExtractCodeModulesImageLinks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv(DTExtractCodeModulesImageLinksEnvVar, tt.env)
 			got := GetDTExtractCodeModulesImageLinks(t.Context())
+			assert.Equal(t, tt.expect, got)
+		})
+	}
+}
+
+func TestAppendMemoryLimit(t *testing.T) {
+	memoryLimit := func(quantity string) corev1.ResourceRequirements {
+		return corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse(quantity)},
+		}
+	}
+
+	tests := []struct {
+		name      string
+		envs      []corev1.EnvVar
+		resources corev1.ResourceRequirements
+		expect    []corev1.EnvVar
+	}{
+		{"no resources", nil, corev1.ResourceRequirements{}, nil},
+		{"zero memory limit", nil, memoryLimit("0"), nil},
+		{"binary memory limit", []corev1.EnvVar{{Name: "a"}}, memoryLimit("512Mi"), []corev1.EnvVar{{Name: "a"}, {Name: "GOMEMLIMIT", Value: "483183819"}}},
+		{"decimal memory limit", []corev1.EnvVar{{Name: "a"}}, memoryLimit("100M"), []corev1.EnvVar{{Name: "a"}, {Name: "GOMEMLIMIT", Value: "90000000"}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := AppendMemoryLimit(tt.envs, tt.resources)
 			assert.Equal(t, tt.expect, got)
 		})
 	}
