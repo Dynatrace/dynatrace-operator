@@ -393,7 +393,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.OAClassicNonrootKey: "true",
+					exp.OAClassicNonRootKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

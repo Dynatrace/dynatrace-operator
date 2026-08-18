@@ -12,7 +12,7 @@ const (
 	OAInitialConnectRetryKey = FFPrefix + "oneagent-initial-connect-retry-ms"
 	OAPrivilegedKey          = FFPrefix + "oneagent-privileged"
 	OASkipLivenessProbeKey   = FFPrefix + "oneagent-skip-liveness-probe"
-	OAClassicNonrootKey      = FFPrefix + "oneagent-classic-nonroot"
+	OAClassicNonRootKey      = FFPrefix + "oneagent-classic-nonroot"
 
 	OANodeImagePullKey = FFPrefix + "node-image-pull"
 	// OANodeImagePullTechnologiesKey can be set on a Pod or DynaKube to configure which code module technologies to download. It's set to
@@ -53,8 +53,8 @@ func (ff *FeatureFlags) IsOneAgentPrivileged() bool {
 	return ff.getBoolWithDefault(OAPrivilegedKey, false)
 }
 
-func (ff *FeatureFlags) IsClassicOneAgentNonroot() bool {
-	return ff.getBoolWithDefault(OAClassicNonrootKey, false)
+func (ff *FeatureFlags) IsClassicOneAgentNonRoot() bool {
+	return ff.getBoolWithDefault(OAClassicNonRootKey, false)
 }
 
 func (ff *FeatureFlags) SkipOneAgentLivenessProbe() bool {

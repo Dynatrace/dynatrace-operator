@@ -212,10 +212,10 @@ func TestIsClassicOneAgentNonroot(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				OAClassicNonrootKey: c.in,
+				OAClassicNonRootKey: c.in,
 			}}
 
-			out := ff.IsClassicOneAgentNonroot()
+			out := ff.IsClassicOneAgentNonRoot()
 
 			assert.Equal(t, c.out, out)
 		})

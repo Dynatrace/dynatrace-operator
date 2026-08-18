@@ -58,7 +58,7 @@ var (
 		// oneagent.go
 		exp.OAInitialConnectRetryKey,
 		exp.OAPrivilegedKey,
-		exp.OAClassicNonrootKey,
+		exp.OAClassicNonRootKey,
 		exp.OASkipLivenessProbeKey,
 		exp.OANodeImagePullKey,
 		exp.OANodeImagePullTechnologiesKey,
