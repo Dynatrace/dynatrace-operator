@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	"k8s.io/apimachinery/pkg/api/validate/content"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -199,11 +198,7 @@ func NotEqual(currentLabels, desiredLabels map[string]string) bool {
 
 func truncateVersion(ver string) string {
 	if len(ver) > validation.DNS1035LabelMaxLength {
-		ver = ver[:validation.DNS1035LabelMaxLength]
-	}
-
-	if len(content.IsLabelValue(ver)) > 0 {
-		return ""
+		return ver[:validation.DNS1035LabelMaxLength]
 	}
 
 	return ver

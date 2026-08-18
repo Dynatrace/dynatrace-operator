@@ -158,54 +158,6 @@ func TestLabels(t *testing.T) {
 				AppManagedByLabel: version.AppName,
 			},
 		},
-		{
-			name:            "version with invalid leading character",
-			appVersion:      "_debug",
-			operatorVersion: labelsOperatorVersion,
-			expectedLabels: map[string]string{
-				AppNameLabel:         labelsName,
-				AppInstanceLabel:     labelsInstance,
-				AppManagedByLabel:    version.AppName,
-				OperatorVersionLabel: labelsOperatorVersion,
-			},
-			expectedMatch: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
-			},
-		},
-		{
-			name:            "version with invalid trailing character",
-			appVersion:      "debug_",
-			operatorVersion: labelsOperatorVersion,
-			expectedLabels: map[string]string{
-				AppNameLabel:         labelsName,
-				AppInstanceLabel:     labelsInstance,
-				AppManagedByLabel:    version.AppName,
-				OperatorVersionLabel: labelsOperatorVersion,
-			},
-			expectedMatch: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
-			},
-		},
-		{
-			name:            "version invalid after truncation",
-			appVersion:      strings.Repeat("a", 62) + "-suffix",
-			operatorVersion: labelsOperatorVersion,
-			expectedLabels: map[string]string{
-				AppNameLabel:         labelsName,
-				AppInstanceLabel:     labelsInstance,
-				AppManagedByLabel:    version.AppName,
-				OperatorVersionLabel: labelsOperatorVersion,
-			},
-			expectedMatch: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
-			},
-		},
 	}
 
 	for _, tt := range tests {
