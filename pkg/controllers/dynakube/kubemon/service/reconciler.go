@@ -105,7 +105,7 @@ func kubemonService(dk *dynakube.DynaKube) *corev1.Service {
 		},
 	}
 
-	labels := k8slabel.New(k8slabel.KubeMonAppLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

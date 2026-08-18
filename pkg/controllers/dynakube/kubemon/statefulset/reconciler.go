@@ -367,7 +367,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	km := dk.KubernetesMonitoring()
 
 	imageVersion := oci.ParseImageReference(imageURI).Tag
-	labels := k8slabel.New(k8slabel.KubeMonAppLabel, dk.GetName(), imageVersion)
+	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.GetName(), imageVersion)
 
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),

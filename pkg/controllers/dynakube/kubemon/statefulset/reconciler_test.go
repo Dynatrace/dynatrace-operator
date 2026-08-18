@@ -428,14 +428,14 @@ func TestReconcileMetadata(t *testing.T) {
 	sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 	expectedLabels := map[string]string{
-		k8slabel.AppNameLabel:         k8slabel.KubeMonAppLabel,
+		k8slabel.AppNameLabel:         k8slabel.KubeMonComponentLabel,
 		k8slabel.AppInstanceLabel:     dk.Name,
 		k8slabel.AppManagedByLabel:    operatorversion.AppName,
 		k8slabel.AppVersionLabel:      "1.2.3",
 		k8slabel.OperatorVersionLabel: operatorversion.Version,
 	}
 	expectedSelector := map[string]string{
-		k8slabel.AppNameLabel:      k8slabel.KubeMonAppLabel,
+		k8slabel.AppNameLabel:      k8slabel.KubeMonComponentLabel,
 		k8slabel.AppInstanceLabel:  dk.Name,
 		k8slabel.AppManagedByLabel: operatorversion.AppName,
 	}
