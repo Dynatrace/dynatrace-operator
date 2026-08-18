@@ -999,6 +999,11 @@ spec:
                       type: string
                     description: Extra annotations merged into the pod template metadata.
                     type: object
+                  args:
+                    description: Command-line arguments for the main application container.
+                    items:
+                      type: string
+                    type: array
                   image:
                     description: |-
                       Overrides the default component image (full reference including tag or digest).
@@ -2280,6 +2285,11 @@ spec:
                       type: string
                     description: Extra annotations merged into the pod template metadata.
                     type: object
+                  args:
+                    description: Command-line arguments for the main application container.
+                    items:
+                      type: string
+                    type: array
                   image:
                     description: |-
                       Overrides the default component image (full reference including tag or digest).
@@ -3573,6 +3583,11 @@ spec:
                       type: string
                     description: Extra annotations merged into the pod template metadata.
                     type: object
+                  args:
+                    description: Command-line arguments for the main application container.
+                    items:
+                      type: string
+                    type: array
                   image:
                     description: |-
                       Overrides the default component image (full reference including tag or digest).

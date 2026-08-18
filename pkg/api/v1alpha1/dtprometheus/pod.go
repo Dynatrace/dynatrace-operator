@@ -27,6 +27,10 @@ type PodSpec struct {
 	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
+	// Command-line arguments for the main application container.
+	// +kubebuilder:validation:Optional
+	Args []string `json:"args,omitempty"`
+
 	// Resource requests and limits for each component pod.
 	// +kubebuilder:validation:Optional
 	Resources corev1.ResourceRequirements `json:"resources,omitzero"`

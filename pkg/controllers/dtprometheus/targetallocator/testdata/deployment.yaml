@@ -37,11 +37,15 @@ spec:
     spec:
       automountServiceAccountToken: true
       containers:
-      - env:
-        - name: OTELCOL_NAMESPACE
-          value: dynatrace
+      - name: targetallocator
         image: registry.example.com/target-allocator:1.2.3
         imagePullPolicy: Always
+        args:
+        - --set
+        - foo=bar
+        env:
+        - name: OTELCOL_NAMESPACE
+          value: dynatrace
         livenessProbe:
           httpGet:
             path: /livez
@@ -49,7 +53,6 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 15
           periodSeconds: 20
-        name: targetallocator
         ports:
         - containerPort: 8080
           name: http-port
