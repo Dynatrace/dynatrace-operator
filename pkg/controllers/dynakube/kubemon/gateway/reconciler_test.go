@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package service_test
+package gateway_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/service"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/gateway"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +32,7 @@ func TestKubemonDisabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{},
 		}
-		err := service.NewReconciler(fake.NewClient(dk)).Reconcile(t.Context(), dk)
+		err := gateway.NewReconciler(fake.NewClient(dk)).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 	})
 
@@ -46,17 +46,17 @@ func TestKubemonDisabled(t *testing.T) {
 		}
 		existingSvc := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      service.BuildServiceName(dk.Name),
+				Name:      gateway.ServiceName(dk.Name),
 				Namespace: dk.Namespace,
 			},
 		}
 		fakeClient := fake.NewClient(dk, existingSvc)
 
-		err := service.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
+		err := gateway.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		svc := &corev1.Service{}
-		getErr := fakeClient.Get(t.Context(), client.ObjectKey{Name: service.BuildServiceName(dk.Name), Namespace: dk.Namespace}, svc)
+		getErr := fakeClient.Get(t.Context(), client.ObjectKey{Name: gateway.ServiceName(dk.Name), Namespace: dk.Namespace}, svc)
 		assert.True(t, k8serrors.IsNotFound(getErr), "service should have been removed from the cluster")
 	})
 }
@@ -74,11 +74,11 @@ func TestKubemonEnabled(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(dk)
 
-		err := service.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
+		err := gateway.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		svc := &corev1.Service{}
-		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: service.BuildServiceName(dk.Name), Namespace: dk.Namespace}, svc))
+		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: gateway.ServiceName(dk.Name), Namespace: dk.Namespace}, svc))
 		assert.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
 
 		httpsPort := requirePort(t, svc, agconsts.HTTPSServicePortName)
@@ -104,10 +104,10 @@ func TestKubemonEnabled(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(dk)
 
-		require.NoError(t, service.NewReconciler(fakeClient).Reconcile(t.Context(), dk))
+		require.NoError(t, gateway.NewReconciler(fakeClient).Reconcile(t.Context(), dk))
 
 		svc := &corev1.Service{}
-		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: service.BuildServiceName(dk.Name), Namespace: dk.Namespace}, svc))
+		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: gateway.ServiceName(dk.Name), Namespace: dk.Namespace}, svc))
 
 		assert.Equal(t, map[string]string{
 			"app.kubernetes.io/name":                  "kubemon",
@@ -134,12 +134,12 @@ func TestKubemonEnabled(t *testing.T) {
 		}
 		wantIPs := []string{"10.0.0.1", "fd00::1"}
 		fakeClient := fake.NewClient(dk)
-		reconciler := service.NewReconciler(fakeClient)
+		reconciler := gateway.NewReconciler(fakeClient)
 
 		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
 
 		svc := &corev1.Service{}
-		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: service.BuildServiceName(dk.Name), Namespace: dk.Namespace}, svc))
+		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: gateway.ServiceName(dk.Name), Namespace: dk.Namespace}, svc))
 		svc.Spec.ClusterIPs = wantIPs
 		require.NoError(t, fakeClient.Update(t.Context(), svc))
 
@@ -168,7 +168,7 @@ func TestKubemonEnabled(t *testing.T) {
 			},
 		}, dk)
 
-		err := service.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
+		err := gateway.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
 		require.ErrorIs(t, err, createErr)
 	})
 }

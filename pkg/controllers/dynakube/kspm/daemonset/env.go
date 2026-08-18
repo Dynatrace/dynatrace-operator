@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	kubemonservice "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/service"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/gateway"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -53,7 +53,7 @@ func getActiveGateEndpointTemplate(dk dynakube.DynaKube, tenantUUID string) stri
 
 	serviceName := capability.BuildServiceName(dk.Name)
 	if dk.KubernetesMonitoring().IsEnabled() {
-		serviceName = kubemonservice.BuildServiceName(dk.Name)
+		serviceName = gateway.ServiceName(dk.Name)
 	}
 
 	return fmt.Sprintf(activeGateEndpointTemplate, serviceName, dk.Namespace, tenantUUID)

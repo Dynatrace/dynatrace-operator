@@ -16,7 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
-	kubemonservice "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/service"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/gateway"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -51,7 +51,7 @@ func TestReconcileDisabled(t *testing.T) {
 		statefulSetReconciler := newMockStatefulsetReconciler(t)
 		pullSecretReconciler := newMockPullSecretReconciler(t)
 		customPropertiesReconciler := newMockCustomPropertiesReconciler(t)
-		serviceReconciler := newMockServiceReconciler(t)
+		gatewayReconciler := newMockGatewayReconciler(t)
 		istioRec := newMockIstioReconciler(t)
 		reconciler := &Reconciler{
 			connectionInfoReconciler:   connInfoReconciler,
@@ -59,7 +59,7 @@ func TestReconcileDisabled(t *testing.T) {
 			statefulsetReconciler:      statefulSetReconciler,
 			pullSecretReconciler:       pullSecretReconciler,
 			customPropertiesReconciler: customPropertiesReconciler,
-			serviceReconciler:          serviceReconciler,
+			gatewayReconciler:          gatewayReconciler,
 			istioReconciler:            istioRec,
 		}
 		dk := newTestDynaKube(withoutKubemon)
@@ -70,7 +70,7 @@ func TestReconcileDisabled(t *testing.T) {
 		authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		customPropertiesReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
-		serviceReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		gatewayReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
 		err := reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
@@ -92,7 +92,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		authToken        *mockAuthTokenReconciler
 		pullSecret       *mockPullSecretReconciler
 		customProperties *mockCustomPropertiesReconciler
-		service          *mockServiceReconciler
+		gateway          *mockGatewayReconciler
 		statefulSet      *mockStatefulsetReconciler
 		istio            *mockIstioReconciler
 	}
@@ -104,7 +104,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 			authToken:        newMockAuthTokenReconciler(t),
 			pullSecret:       newMockPullSecretReconciler(t),
 			customProperties: newMockCustomPropertiesReconciler(t),
-			service:          newMockServiceReconciler(t),
+			gateway:          newMockGatewayReconciler(t),
 			statefulSet:      newMockStatefulsetReconciler(t),
 			istio:            newMockIstioReconciler(t),
 		}
@@ -113,7 +113,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 			authTokenReconciler:        m.authToken,
 			pullSecretReconciler:       m.pullSecret,
 			customPropertiesReconciler: m.customProperties,
-			serviceReconciler:          m.service,
+			gatewayReconciler:          m.gateway,
 			statefulsetReconciler:      m.statefulSet,
 			istioReconciler:            m.istio,
 		}
@@ -139,6 +139,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
 		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
@@ -155,7 +156,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
-		mocks.service.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
 		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
@@ -231,7 +232,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
-		mocks.service.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(k8sstatefulset.ErrRolloutInProgress).Once()
 
 		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
@@ -250,7 +251,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
-		mocks.service.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(boomErr).Once()
 
 		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
@@ -286,13 +287,13 @@ func TestServiceStatefulSetMatchSelectors(t *testing.T) {
 	dk := newTestDynaKube(withKubemon)
 	clt := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 
-	_ = kubemonservice.NewReconciler(clt).Reconcile(t.Context(), dk)
+	_ = gateway.NewReconciler(clt).Reconcile(t.Context(), dk)
 	_ = kubemonstatefulset.NewReconciler(clt).
 		Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 	svc := &corev1.Service{}
 	require.NoError(t, clt.Get(t.Context(), client.ObjectKey{
-		Name:      kubemonservice.BuildServiceName(dk.Name),
+		Name:      gateway.ServiceName(dk.Name),
 		Namespace: dk.Namespace,
 	}, svc))
 

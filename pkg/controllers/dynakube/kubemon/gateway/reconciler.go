@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package service
+package gateway
 
 import (
 	"context"
@@ -30,7 +30,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	ctx, _ = logd.NewFromContext(ctx, "service")
+	ctx, _ = logd.NewFromContext(ctx, "gateway")
 
 	if !dk.KubernetesMonitoring().IsEnabled() {
 		return client.IgnoreNotFound(r.client.Delete(ctx, kubemonService(dk)))
@@ -85,7 +85,7 @@ func (r *Reconciler) setStatusIPs(ctx context.Context, dk *dynakube.DynaKube) er
 	})
 }
 
-func BuildServiceName(dynakubeName string) string {
+func ServiceName(dynakubeName string) string {
 	return dynakubeName + "-kubemon-activegate"
 }
 
@@ -109,7 +109,7 @@ func kubemonService(dk *dynakube.DynaKube) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      BuildServiceName(dk.Name),
+			Name:      ServiceName(dk.Name),
 			Namespace: dk.Namespace,
 			Labels:    labels.AsMap(),
 		},
