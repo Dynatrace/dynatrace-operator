@@ -1,9 +1,9 @@
+{{- if .Values.crdStorageMigrationJob }}
 # Copyright Dynatrace LLC
 # SPDX-License-Identifier: Apache-2.0
 
 # For more information why the individual permissions are required see
 # https://github.com/Dynatrace/dynatrace-operator/blob/main/doc/roles/operator-roles.md
-{{- if .Values.crdStorageMigrationJob }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

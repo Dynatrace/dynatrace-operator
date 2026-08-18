@@ -49,8 +49,8 @@ HELM_FOOTER="{{- end -}}"
 
 # Overwrite the previously generated CRD
 {
-	yaml_license_header
 	echo "$HELM_HEADER"
+	yaml_license_header
 	echo "$CRD_CONTENT"
 	echo "$HELM_FOOTER"
 } >"${HELM_CRD_DIR}/${DYNATRACE_OPERATOR_CRD_YAML}"
