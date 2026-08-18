@@ -10,6 +10,7 @@ import (
 	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -24,7 +25,7 @@ const (
 )
 
 func tooManyKubernetesMonitoringReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	kubemonHasTooManyReplicas := dk.IsKubemonEnabled() && dk.KubernetesMonitoring().GetReplicas() > 1
+	kubemonHasTooManyReplicas := dk.IsKubemonEnabled() && ptr.Deref(dk.KubernetesMonitoring().Replicas, 0) > 1
 	activeGateHasTooManyReplicas := dk.ActiveGate().IsKubernetesMonitoringEnabled() && dk.ActiveGate().GetReplicas() > 1
 
 	if dk.KSPM().IsEnabled() && (kubemonHasTooManyReplicas || activeGateHasTooManyReplicas) {

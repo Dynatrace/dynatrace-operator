@@ -98,10 +98,10 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 			Capabilities: []activegate.CapabilityDisplayName{
 				activegate.KubeMonCapability.DisplayName,
 			},
+			CapabilityProperties: activegate.CapabilityProperties{
+				Replicas: new(int32(3)),
+			},
 		}
-		replicas := int32(3)
-
-		activeGate.Replicas = &replicas
 		assertDenied(t,
 			[]string{errorTooManyKubernetesMonitoringReplicas},
 			&dynakube.DynaKube{
