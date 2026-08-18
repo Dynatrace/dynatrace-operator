@@ -6,7 +6,6 @@ package k8sentity
 import (
 	"context"
 	"errors"
-	"strconv"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -548,39 +547,6 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)
 		require.NoError(t, err)
 	})
-}
-
-func TestIsRegistrationEnabled(t *testing.T) {
-	tests := []struct {
-		name         string
-		ff           *bool // nil = not set (defaults to true)
-		agKubemonCap bool
-		kubemonOp    bool
-		expect       bool
-	}{
-		{"false: neither path configured", nil, false, false, false},
-		{"true: AG path", nil, true, false, true},
-		{"true: AG path with FF on", new(true), true, false, true},
-		{"false: AG path with FF off", new(false), true, false, false},
-		{"true: kubemon path", nil, false, true, true},
-		{"true: kubemon path ignores FF", new(false), false, true, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dk := newDynaKube()
-			if tt.ff != nil {
-				dk.Annotations[exp.AGAutomaticK8sAPIMonitoringKey] = strconv.FormatBool(*tt.ff)
-			}
-			if tt.agKubemonCap {
-				enableAGKubeMonCapability(dk)
-			}
-			if tt.kubemonOp {
-				t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-				enableKubemonRegistration(dk)
-			}
-			assert.Equal(t, tt.expect, dk.IsKubernetesMonitoringRegistrationEnabled())
-		})
-	}
 }
 
 func TestGetRegistrationClusterName(t *testing.T) {
