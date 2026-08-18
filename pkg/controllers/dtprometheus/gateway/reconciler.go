@@ -41,10 +41,9 @@ import (
 const (
 	// gatewayConfigKey is the ConfigMap data key holding the rendered OTel Collector config,
 	// mounted as relay.yaml (see --config=/conf/relay.yaml on the container).
-	gatewayConfigKey = "relay"
-
-	// userManagedAnnotation on the ConfigMap opts it out of operator-managed updates.
+	gatewayConfigKey      = "relay"
 	userManagedAnnotation = "internal.operator.dynatrace.com/user-managed"
+	configHashAnnotation  = "internal.operator.dynatrace.com/gateway-config-hash"
 
 	trustedCAVolumeMountPath = "/tls/custom/cacerts"
 	trustedCAFile            = "rootca.pem"
@@ -60,10 +59,6 @@ const (
 	configMountDir    = "/conf"
 	relayConfigFile   = "relay.yaml"
 	cacertsVolumeName = "cacerts"
-
-	// configHashAnnotation on the pod template drives rolling restarts when the rendered
-	// config content changes.
-	configHashAnnotation = "internal.operator.dynatrace.com/gateway-config-hash"
 )
 
 type Reconciler struct {
@@ -112,8 +107,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 }
 
 // resolveImage uses the explicit image from .spec.gateway.image when set, otherwise resolves
-// the latest gateway image from the fleet management API. The resolved image is also stamped
-// onto .status.gateway.image, for informational purposes only.
+// the latest gateway image from the fleet management API.
 func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
 	imageURI := s.Spec.Image
 
@@ -153,8 +147,7 @@ func (r *Reconciler) reconcileCondition(s *reconcileScope, err error) {
 	_ = meta.SetStatusCondition(&s.Owner.Status.Conditions, condition)
 }
 
-// safeUnwrap returns the innermost wrapped error, so the condition message shows
-// the root cause instead of the "reconcile x: ..." wrapping added by the callers.
+// safeUnwrap returns the innermost wrapped error for cleaner condition messages.
 func safeUnwrap(err error) error {
 	if u := errors.Unwrap(err); u != nil {
 		return u
@@ -163,8 +156,6 @@ func safeUnwrap(err error) error {
 	return err
 }
 
-// mergeAppLabels merges the standard app labels onto obj's existing labels, keeping any
-// custom labels already present.
 func mergeAppLabels(obj client.Object, appLabels *k8slabel.Labels) {
 	labels := obj.GetLabels()
 	if labels == nil {
@@ -175,8 +166,6 @@ func mergeAppLabels(obj client.Object, appLabels *k8slabel.Labels) {
 	obj.SetLabels(labels)
 }
 
-// createOrUpdate wraps RetryCreateOrUpdate + SetControllerReference + created/updated logging,
-// shared by the configmap/statefulset/service reconcile steps.
 func (r *Reconciler) createOrUpdate(ctx context.Context, owner metav1.Object, obj client.Object, kind string, mutate func() error) error {
 	log := logd.FromContext(ctx)
 
@@ -248,7 +237,6 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 	return nil
 }
 
-// gatewayConfigData feeds the OTel Collector relay.yaml template.
 type gatewayConfigData struct {
 	Endpoint              string
 	HasCustomCA           bool
@@ -258,8 +246,7 @@ type gatewayConfigData struct {
 }
 
 // buildGatewayConfigData resolves the DynaKube-derived inputs to the relay.yaml template.
-// Routing decision is based specifically on the routing ActiveGate capability, not just "any AG
-// enabled" — customCA/proxy only apply in the no-routing-AG (direct-to-tenant) case, per the story.
+// customCA/proxy only apply when no routing ActiveGate is configured (direct-to-tenant path).
 func buildGatewayConfigData(dk *dynakube.DynaKube) (gatewayConfigData, error) {
 	endpoint, err := gatewayEndpoint(dk)
 	if err != nil {
@@ -281,9 +268,7 @@ func buildGatewayConfigData(dk *dynakube.DynaKube) (gatewayConfigData, error) {
 	return data, nil
 }
 
-// gatewayEndpoint routes through the routing ActiveGate when configured, otherwise sends
-// directly to the tenant. Both paths are always HTTPS — "plain HTTP" in the story refers to the
-// gateway's own inbound OTLP receiver, not this egress.
+// gatewayEndpoint routes through the routing ActiveGate when configured, otherwise sends directly to the tenant.
 func gatewayEndpoint(dk *dynakube.DynaKube) (string, error) {
 	if !dk.ActiveGate().IsRoutingEnabled() {
 		return dk.APIURL() + "/v2/otlp", nil
@@ -297,13 +282,6 @@ func gatewayEndpoint(dk *dynakube.DynaKube) (string, error) {
 	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/otlp", capability.BuildServiceName(dk.Name), dk.Namespace, tenantUUID), nil
 }
 
-// gatewayConfigTemplate renders the OTel Collector relay.yaml for the gateway StatefulSet.
-// Derived from the POC (tier2-gateway.rendered.yaml), adapted to meet AC:
-//   - No TLS on the inbound receiver (plain HTTP story; TLS in a later story).
-//   - No self-monitoring telemetry section.
-//   - Cluster-name and dt.entity.kubernetes_cluster enrichment omitted (AC: "not enriched with
-//     cluster name or kubernetes meid").
-//   - customCA/proxy applied only when no routing ActiveGate is configured.
 const gatewayConfigTemplate = `receivers:
   otlp:
     protocols:
@@ -519,7 +497,6 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
 
 	if s.Spec.Replicas != nil {
-		// Only override when a value is set
 		sts.Spec.Replicas = s.Spec.Replicas
 	}
 
@@ -538,9 +515,9 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Spec.Containers = []corev1.Container{buildContainer(s, getContainer(sts))}
 }
 
-// resolveUpdateStrategy defaults to RollingUpdate/partition:0 when unset, per the story. Not
-// setting maxUnavailable explicitly: at least one supported apiserver version silently drops it
-// (comes back as just partition: 0), so setting it unconditionally causes a permanent reconcile diff.
+// resolveUpdateStrategy defaults to RollingUpdate/partition:0 when unset.
+// maxUnavailable is intentionally not set: some apiserver versions silently drop it,
+// causing a permanent reconcile diff.
 func resolveUpdateStrategy(strategy appsv1.StatefulSetUpdateStrategy) appsv1.StatefulSetUpdateStrategy {
 	if strategy.Type != "" {
 		return strategy
@@ -552,9 +529,8 @@ func resolveUpdateStrategy(strategy appsv1.StatefulSetUpdateStrategy) appsv1.Sta
 	}
 }
 
-// getContainer returns the current (first) container of the StatefulSet, so buildContainer can
-// preserve values the apiserver defaults but we don't set explicitly (e.g. ImagePullPolicy,
-// probe timeouts), avoiding spurious diffs on every reconcile.
+// getContainer returns the current first container so buildContainer can preserve apiserver-defaulted
+// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.
 func getContainer(sts *appsv1.StatefulSet) corev1.Container {
 	if len(sts.Spec.Template.Spec.Containers) > 0 {
 		return sts.Spec.Template.Spec.Containers[0]
@@ -563,8 +539,6 @@ func getContainer(sts *appsv1.StatefulSet) corev1.Container {
 	return corev1.Container{}
 }
 
-// buildContainer builds the gateway container. Minimal security context: no privileged, no
-// privilege escalation, read-only root filesystem, all capabilities dropped.
 func buildContainer(s *reconcileScope, current corev1.Container) corev1.Container {
 	currentLivenessProbe := ptr.Deref(current.LivenessProbe, corev1.Probe{})
 	currentReadinessProbe := ptr.Deref(current.ReadinessProbe, corev1.Probe{})
@@ -623,13 +597,10 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 	}
 }
 
-// buildEnv builds the gateway container's environment variables.
 func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	dk := s.DynaKube
 
 	envs := []corev1.EnvVar{
-		// MY_POD_IP is used in the relay.yaml config to bind the OTLP receiver and health-check
-		// endpoint to the pod IP rather than 0.0.0.0, matching the POC pattern.
 		{
 			Name: "MY_POD_IP",
 			ValueFrom: &corev1.EnvVarSource{
@@ -648,8 +619,6 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 		envs = append(envs, memLimitEnv)
 	}
 
-	// Proxy only applies when sending directly to the tenant: a routing ActiveGate handles its
-	// own egress, the gateway never talks to the internet directly in that case.
 	if !dk.ActiveGate().IsRoutingEnabled() && dk.HasProxy() {
 		envs = append(envs,
 			proxyEnv("HTTPS_PROXY", dk.Spec.Proxy),
@@ -661,7 +630,7 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	return envs
 }
 
-// goMemLimitEnv sets GOMEMLIMIT to 90% of the configured memory limit; omitted when no limit is set.
+// goMemLimitEnv sets GOMEMLIMIT to 90% of the memory limit; omitted when no limit is set.
 func goMemLimitEnv(resources corev1.ResourceRequirements) (corev1.EnvVar, bool) {
 	limit, ok := resources.Limits[corev1.ResourceMemory]
 	if !ok {
@@ -689,8 +658,6 @@ func proxyEnv(name string, src *value.Source) corev1.EnvVar {
 	return corev1.EnvVar{Name: name, Value: src.Value}
 }
 
-// noProxyValue mirrors the NO_PROXY convention used by the DynaKube's own otelc component:
-// cluster-internal traffic plus the ActiveGate service, when routed through one.
 func noProxyValue(dk *dynakube.DynaKube) string {
 	values := []string{"$(KUBERNETES_SERVICE_HOST)", "kubernetes.default"}
 
@@ -701,8 +668,6 @@ func noProxyValue(dk *dynakube.DynaKube) string {
 	return strings.Join(values, ",")
 }
 
-// buildVolumes always mounts the rendered relay.yaml ConfigMap, plus the user-provided trusted CA
-// when sending directly to the tenant (no routing ActiveGate configured).
 func buildVolumes(s *reconcileScope) []corev1.Volume {
 	dk := s.DynaKube
 
