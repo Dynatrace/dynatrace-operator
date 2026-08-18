@@ -590,6 +590,8 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			Privileged:               new(false),
 			AllowPrivilegeEscalation: new(false),
 			RunAsNonRoot:             new(true),
+			RunAsUser:                new(int64(65532)),
+			RunAsGroup:               new(int64(65532)),
 			ReadOnlyRootFilesystem:   new(true),
 			SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
