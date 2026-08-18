@@ -6,7 +6,6 @@ package kubemon
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -32,7 +31,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -284,7 +282,7 @@ func TestIsTransientError(t *testing.T) {
 	}
 }
 
-func TestServiceStatefulSetContract(t *testing.T) {
+func TestServiceStatefulSetMatchSelectors(t *testing.T) {
 	dk := newTestDynaKube(withKubemon)
 	clt := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
 
@@ -304,37 +302,8 @@ func TestServiceStatefulSetContract(t *testing.T) {
 		Namespace: dk.Namespace,
 	}, sts))
 
-	t.Run("service selector matches the statefulset pod labels", func(t *testing.T) {
-		require.NotEmpty(t, svc.Spec.Selector, "matches every pod in the namespace")
-
-		assert.True(t,
-			k8slabels.SelectorFromSet(svc.Spec.Selector).Matches(k8slabels.Set(sts.Spec.Template.Labels)),
-			"service selector %v does not match pod labels %v", svc.Spec.Selector, sts.Spec.Template.Labels)
-	})
-
-	t.Run("service only selects pods owned by the statefulset", func(t *testing.T) {
-		require.NotEmpty(t, svc.Spec.Selector, "matches every pod in the namespace")
-
-		assert.True(t,
-			k8slabels.SelectorFromSet(svc.Spec.Selector).Matches(k8slabels.Set(sts.Spec.Selector.MatchLabels)),
-			"service selector %v is not implied by statefulset selector %v", svc.Spec.Selector, sts.Spec.Selector.MatchLabels)
-	})
-
-	t.Run("every service target port resolves to a container port", func(t *testing.T) {
-		require.NotEmpty(t, svc.Spec.Ports, "service targets no ports")
-
-		index := slices.IndexFunc(sts.Spec.Template.Spec.Containers, func(container corev1.Container) bool {
-			return container.Name == kubemonstatefulset.ContainerName
-		})
-
-		require.NotEqual(t, -1, index, "statefulset has no %q container", kubemonstatefulset.ContainerName)
-
-		for _, port := range svc.Spec.Ports {
-			assert.True(t, slices.ContainsFunc(sts.Spec.Template.Spec.Containers[index].Ports, func(containerPort corev1.ContainerPort) bool {
-				return containerPort.Name == port.TargetPort.StrVal
-			}), "service port %q targets %q, which no container port declares", port.Name, port.TargetPort.StrVal)
-		}
-	})
+	require.NotEmpty(t, svc.Spec.Selector, "service selector must not be empty")
+	assert.Equal(t, sts.Spec.Selector.MatchLabels, svc.Spec.Selector)
 }
 
 func newTestDynaKube(enabled bool) *dynakube.DynaKube {

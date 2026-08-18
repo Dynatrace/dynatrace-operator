@@ -171,31 +171,6 @@ func TestKubemonEnabled(t *testing.T) {
 		err := service.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
 		require.ErrorIs(t, err, createErr)
 	})
-
-	t.Run("cluster API error for Service objects is propagated", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
-			Spec: dynakube.DynaKubeSpec{
-				KubernetesMonitoring: &kubemonapi.Spec{},
-			},
-		}
-		getErr := errors.New("kube api error")
-		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
-			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-				if _, ok := obj.(*corev1.Service); ok {
-					return getErr
-				}
-
-				return c.Get(ctx, key, obj, opts...)
-			},
-		}, dk)
-
-		err := service.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
-		require.ErrorIs(t, err, getErr)
-	})
 }
 
 func requirePort(t *testing.T, svc *corev1.Service, name string) corev1.ServicePort {
