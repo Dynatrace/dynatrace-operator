@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -74,11 +75,9 @@ func TestGetEnvs(t *testing.T) {
 
 		envs := getEnvs(dk, tenant)
 
-		for _, env := range envs {
-			if env.Name == activeGateEndpointEnv {
-				assert.Equal(t, "https://dk-name-test-activegate.test/e/test-tenant/api/v2/kubernetes/node-config", env.Value)
-			}
-		}
+		envVar := k8senv.Find(envs, activeGateEndpointEnv)
+		require.NotNil(t, envVar)
+		assert.Equal(t, "https://dk-name-test-activegate.test/e/test-tenant/api/v2/kubernetes/node-config", envVar.Value)
 	})
 
 	t.Run("adds kubemon service env", func(t *testing.T) {
@@ -90,11 +89,9 @@ func TestGetEnvs(t *testing.T) {
 
 		envs := getEnvs(dk, tenant)
 
-		for _, env := range envs {
-			if env.Name == activeGateEndpointEnv {
-				assert.Equal(t, "https://dk-name-test-kubemon-activegate.test/e/test-tenant/api/v2/kubernetes/node-config", env.Value)
-			}
-		}
+		envVar := k8senv.Find(envs, activeGateEndpointEnv)
+		require.NotNil(t, envVar)
+		assert.Equal(t, "https://dk-name-test-kubemon-activegate.test/e/test-tenant/api/v2/kubernetes/node-config", envVar.Value)
 	})
 }
 
