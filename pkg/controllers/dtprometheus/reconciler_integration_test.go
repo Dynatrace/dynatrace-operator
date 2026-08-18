@@ -215,4 +215,20 @@ func TestSetupWithManager(t *testing.T) {
 			integrationtests.CreateDynakube(t, t.Context(), clt, unreferencedDK)
 		})
 	})
+
+	t.Run("DynaKube deletion triggers reconcile", func(t *testing.T) {
+		dtprom, key := createDTPrometheus(t, "dtprom-dynakube-delete", "dk-delete")
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeName, Namespace: dtprom.Namespace},
+			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
+		}
+
+		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+
+		assertReconcileTriggered(t, key, func() {
+			require.NoError(t, clt.Delete(t.Context(), dk))
+		})
+	})
 }

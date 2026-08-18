@@ -5,6 +5,7 @@ package dtprometheus
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -28,6 +29,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+)
+
+var (
+	errDynaKubeNotFound = errors.New("dynakube not found")
+	errDynaKubeNotReady = errors.New("dynakube not ready")
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -93,13 +99,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 
 		log.Info("skipping reconcile due to missing DynaKube")
 
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, errDynaKubeNotFound
 	}
 
 	if dk.Status.Phase != status.Running {
 		log.Info("skipping reconcile due to pending DynaKube", "phase", dk.Status.Phase)
 
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, errDynaKubeNotReady
 	}
 
 	dtClient, err := r.buildDynatraceClient(ctx, dk)
@@ -139,6 +145,22 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 //   - Reconciliation ongoing: condition status False/Unknown and reason Reconciling
 //   - Reconciliation failed: anything that does not fit the above
 func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
+	if errors.Is(errDynaKubeNotFound, err) {
+		if len(dtp.Status.Conditions) == 0 {
+			dtp.Status.Phase = status.Deploying
+		} else {
+			dtp.Status.Phase = status.Error
+		}
+
+		return nil
+	}
+
+	if errors.Is(errDynaKubeNotReady, err) {
+		dtp.Status.Phase = status.Deploying
+
+		return nil
+	}
+
 	if len(dtp.Status.Conditions) == 0 {
 		if err != nil {
 			dtp.Status.Phase = status.Error
@@ -237,7 +259,7 @@ func newDynaKubePhaseChangedPredicate() predicate.Funcs {
 			return false
 		},
 		DeleteFunc: func(event.TypedDeleteEvent[client.Object]) bool {
-			return false
+			return true
 		},
 		UpdateFunc: func(e event.TypedUpdateEvent[client.Object]) bool {
 			oldDK, _ := e.ObjectOld.(*dynakube.DynaKube)
