@@ -25,7 +25,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -366,8 +365,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 
 	km := dk.KubernetesMonitoring()
 
-	imageVersion := oci.ParseImageReference(imageURI).Tag
-	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.GetName(), imageVersion)
+	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.GetName(), "")
 
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),

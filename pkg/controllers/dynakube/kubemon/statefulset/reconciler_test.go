@@ -432,7 +432,6 @@ func TestReconcileMetadata(t *testing.T) {
 		k8slabel.AppNameLabel:         k8slabel.KubeMonComponentLabel,
 		k8slabel.AppInstanceLabel:     dk.Name,
 		k8slabel.AppManagedByLabel:    operatorversion.AppName,
-		k8slabel.AppVersionLabel:      "1.2.3",
 		k8slabel.OperatorVersionLabel: operatorversion.Version,
 	}
 	expectedSelector := map[string]string{
