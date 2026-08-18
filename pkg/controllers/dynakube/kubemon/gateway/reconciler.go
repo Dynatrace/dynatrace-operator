@@ -11,10 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -40,10 +38,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	if err := r.setStatusIPs(ctx, dk); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -66,23 +60,6 @@ func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) e
 	})
 
 	return err
-}
-
-func (r *Reconciler) setStatusIPs(ctx context.Context, dk *dynakube.DynaKube) error {
-	svc := kubemonService(dk)
-
-	return retry.OnError(retry.DefaultBackoff, k8serrors.IsNotFound, func() error {
-		currSvc := &corev1.Service{}
-
-		err := r.client.Get(ctx, client.ObjectKeyFromObject(svc), currSvc)
-		if err != nil {
-			return err
-		}
-
-		dk.Status.KubernetesMonitoring.ServiceIPs = currSvc.Spec.ClusterIPs
-
-		return nil
-	})
 }
 
 func ServiceName(dynakubeName string) string {

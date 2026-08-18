@@ -122,31 +122,6 @@ func TestKubemonEnabled(t *testing.T) {
 		}, svc.Spec.Selector)
 	})
 
-	t.Run("ClusterIPs assigned by Kubernetes are reflected in DynaKube status", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
-			Spec: dynakube.DynaKubeSpec{
-				KubernetesMonitoring: &kubemonapi.Spec{},
-			},
-		}
-		wantIPs := []string{"10.0.0.1", "fd00::1"}
-		fakeClient := fake.NewClient(dk)
-		reconciler := gateway.NewReconciler(fakeClient)
-
-		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
-
-		svc := &corev1.Service{}
-		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: gateway.ServiceName(dk.Name), Namespace: dk.Namespace}, svc))
-		svc.Spec.ClusterIPs = wantIPs
-		require.NoError(t, fakeClient.Update(t.Context(), svc))
-
-		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
-		assert.Equal(t, wantIPs, dk.Status.KubernetesMonitoring.ServiceIPs)
-	})
-
 	t.Run("service creation failure is propagated", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{

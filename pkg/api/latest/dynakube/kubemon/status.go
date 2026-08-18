@@ -17,8 +17,4 @@ type Status struct {
 	// Information about KubernetesMonitoring's connections.
 	// +kubebuilder:validation:Optional
 	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitzero"`
-
-	// The IP addresses of the KubernetesMonitoring Service
-	// +kubebuilder:validation:Optional
-	ServiceIPs []string `json:"serviceIPs,omitempty"`
 }
