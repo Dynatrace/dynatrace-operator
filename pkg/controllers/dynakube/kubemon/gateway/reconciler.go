@@ -64,7 +64,7 @@ func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) e
 }
 
 func ServiceName(dynakubeName string) string {
-	return dynakubeName + "-kubemon-activegate"
+	return dynakubeName + "-kubemon"
 }
 
 func kubemonService(dk *dynakube.DynaKube) *corev1.Service {

@@ -92,7 +92,7 @@ func TestGetEnvs(t *testing.T) {
 
 		envVar := k8senv.Find(envs, activeGateEndpointEnv)
 		require.NotNil(t, envVar)
-		assert.Equal(t, "https://dk-name-test-kubemon-activegate.test/e/test-tenant/api/v2/kubernetes/node-config", envVar.Value)
+		assert.Equal(t, "https://dk-name-test-kubemon.test/e/test-tenant/api/v2/kubernetes/node-config", envVar.Value)
 	})
 }
 
