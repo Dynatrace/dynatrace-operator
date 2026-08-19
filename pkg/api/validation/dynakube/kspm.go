@@ -10,28 +10,32 @@ import (
 	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"k8s.io/utils/ptr"
 )
 
 const (
-	errorTooManyAGReplicas    = `The Dynakube's specification specifies KSPM, but has more than one ActiveGate replica. Only one ActiveGate replica is allowed in combination with KSPM.`
-	errorKSPMMissingKubemon   = "The Dynakube's specification specifies KSPM, but requires an ActiveGate with `kubernetes-monitoring` enabled and the `automatic-kubernetes-api-monitoring` feature flag set to `true`."
-	errorKSPMMissingImage     = `The Dynakube's specification specifies KSPM, but no image repository/tag is configured.`
-	warningKSPMNoHostPaths    = `The Dynakube's specification specifies KSPM, but no MappedHostPaths are configured.`
-	errorKSPMRootHostPath     = `The Dynakube's specification specifies KSPM, use either '/' or specific path(s) on the MappedHostPath list.`
-	errorKSPMRelativeHostPath = `The Dynakube's specification specifies KSPM, relative path found on the MappedHostPath list. Use absolute paths only. Relative path: %s`
+	errorTooManyKubernetesMonitoringReplicas = `The Dynakube's specification specifies KSPM, but has more than one replica. Only one ActiveGate or kubernetesMonitoring replica is allowed in combination with KSPM.`
+	errorKSPMMissingKubernetesMonitoring     = "The Dynakube's specification specifies KSPM, but requires either a `kubernetesMonitoring` spec with `registration` configured or an ActiveGate with `kubernetes-monitoring` and `automatic-kubernetes-api-monitoring` enabled."
+	errorKSPMMissingImage                    = `The Dynakube's specification specifies KSPM, but no image repository/tag is configured.`
+	warningKSPMNoHostPaths                   = `The Dynakube's specification specifies KSPM, but no MappedHostPaths are configured.`
+	errorKSPMRootHostPath                    = `The Dynakube's specification specifies KSPM, use either '/' or specific path(s) on the MappedHostPath list.`
+	errorKSPMRelativeHostPath                = `The Dynakube's specification specifies KSPM, relative path found on the MappedHostPath list. Use absolute paths only. Relative path: %s`
 )
 
-func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.KSPM().IsEnabled() && dk.ActiveGate().GetReplicas() > 1 {
-		return errorTooManyAGReplicas
+func tooManyKubernetesMonitoringReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	kubemonHasTooManyReplicas := dk.IsKubemonEnabled() && ptr.Deref(dk.KubernetesMonitoring().Replicas, 0) > 1
+	activeGateHasTooManyReplicas := dk.ActiveGate().IsKubernetesMonitoringEnabled() && dk.ActiveGate().GetReplicas() > 1
+
+	if dk.KSPM().IsEnabled() && (kubemonHasTooManyReplicas || activeGateHasTooManyReplicas) {
+		return errorTooManyKubernetesMonitoringReplicas
 	}
 
 	return ""
 }
 
-func kspmWithoutK8SMonitoring(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.KSPM().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticK8sAPIMonitoring()) {
-		return errorKSPMMissingKubemon
+func kspmWithoutKubernetesMonitoringRegistration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.KSPM().IsEnabled() && !dk.IsKubernetesMonitoringRegistrationEnabled() {
+		return errorKSPMMissingKubernetesMonitoring
 	}
 
 	return ""
