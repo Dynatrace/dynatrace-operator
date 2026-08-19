@@ -12,23 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// newTestPodAttributes creates a PodAttributes with all maps initialized so tests can set
-// individual fields without triggering nil-map panics.
-func newTestPodAttributes() *Pod {
-	return &Pod{
-		rules:                make(map[string]string),
-		namespaceAnnotations: make(map[string]string),
-		podAnnotations:       make(map[string]string),
-		dynakube:             make(map[string]string),
-		custom:               make(map[string]string),
-		workloadInfo:         make(map[string]string),
-		clusterInfo:          make(map[string]string),
-		podInfo:              make(map[string]string),
-		deprecated:           make(map[string]string),
-		podEnvVars:           []corev1.EnvVar{},
-	}
-}
-
 // toResultMap converts the slice of "key=value" strings produced by Convert into a map.
 func toResultMap(pairs []string) map[string]string {
 	m := make(map[string]string, len(pairs))
@@ -45,7 +28,7 @@ func simpleConvertFunc(k, v string) string { return k + "=" + v }
 
 func TestSetCustomAttributes(t *testing.T) {
 	t.Run("bulk copies all entries into custom", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.SetCustomAttributes(map[string]string{"a": "1", "b": "2"})
 		assert.Equal(t, "1", attrs.custom["a"])
 		assert.Equal(t, "2", attrs.custom["b"])
@@ -54,7 +37,7 @@ func TestSetCustomAttributes(t *testing.T) {
 
 func TestGetPodEnvVars(t *testing.T) {
 	t.Run("returns the internal podEnvVars slice", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		env := corev1.EnvVar{Name: "FOO", Value: "bar"}
 		attrs.podEnvVars = append(attrs.podEnvVars, env)
 		result := attrs.GetPodEnvVars()
@@ -63,14 +46,14 @@ func TestGetPodEnvVars(t *testing.T) {
 	})
 
 	t.Run("returns empty slice when no env vars set", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		assert.Empty(t, attrs.GetPodEnvVars())
 	})
 }
 
 func TestConvert_Method(t *testing.T) {
 	t.Run("combines and converts attributes to key=value strings", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.workloadInfo["k8s.workload.kind"] = "deployment"
 		attrs.custom["my.attr"] = "custom-val"
 
@@ -82,7 +65,7 @@ func TestConvert_Method(t *testing.T) {
 	})
 
 	t.Run("passes ContainerAttributes into the result", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		container := Container{ContainerName: "my-container"}
 
 		result := attrs.Convert(simpleConvertFunc, container)
