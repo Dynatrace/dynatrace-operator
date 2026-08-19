@@ -101,8 +101,11 @@ func activeGateRollingUpdateWithOldK8sVersion(_ context.Context, _ *Validator, d
 func activeGateHasConflictingVolumes(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	log := logd.FromContext(ctx)
 
+	reservedVolumeNames := agconsts.VolumeNames
+	reservedMountPaths := agconsts.MainVolumeMountPaths
+
 	for _, volume := range dk.Spec.ActiveGate.Volumes {
-		if slices.Contains(agconsts.VolumeNames, volume.Name) {
+		if slices.Contains(reservedVolumeNames, volume.Name) {
 			log.Info("conflicting ActiveGate volume name detected", "volume", volume.Name)
 
 			return fmt.Sprintf(errorActiveGateConflictingVolumeName, volume.Name)
@@ -110,8 +113,8 @@ func activeGateHasConflictingVolumes(ctx context.Context, _ *Validator, dk *dyna
 	}
 
 	for _, volumeMount := range dk.Spec.ActiveGate.VolumeMounts {
-		for _, managedPath := range agconsts.VolumeMountPaths {
-			rel, err := filepath.Rel(managedPath, volumeMount.MountPath)
+		for _, reservedPath := range reservedMountPaths {
+			rel, err := filepath.Rel(reservedPath, volumeMount.MountPath)
 			if err != nil {
 				continue
 			}
@@ -127,8 +130,8 @@ func activeGateHasConflictingVolumes(ctx context.Context, _ *Validator, dk *dyna
 	return ""
 }
 
-// allowedInNonRootV2SCC are the volume types permitted by the OpenShift nonroot-v2 SCC.
-var allowedInNonRootV2SCC = []func(corev1.VolumeSource) bool{
+// allowedActiveGateVolumeSources lists predicates for volume source types compatible with OpenShift's nonroot-v2 SCC.
+var allowedActiveGateVolumeSources = []func(corev1.VolumeSource) bool{
 	func(s corev1.VolumeSource) bool { return s.ConfigMap != nil },
 	func(s corev1.VolumeSource) bool { return s.CSI != nil },
 	func(s corev1.VolumeSource) bool { return s.DownwardAPI != nil },
@@ -144,7 +147,7 @@ func activeGateHasDisallowedVolumeType(ctx context.Context, _ *Validator, dk *dy
 	log := logd.FromContext(ctx)
 
 	for _, volume := range dk.Spec.ActiveGate.Volumes {
-		if !slices.ContainsFunc(allowedInNonRootV2SCC, func(isAllowed func(corev1.VolumeSource) bool) bool {
+		if !slices.ContainsFunc(allowedActiveGateVolumeSources, func(isAllowed func(corev1.VolumeSource) bool) bool {
 			return isAllowed(volume.VolumeSource)
 		}) {
 			log.Info("ActiveGate volume uses a type disallowed by the OpenShift nonroot-v2 SCC", "volume", volume.Name)

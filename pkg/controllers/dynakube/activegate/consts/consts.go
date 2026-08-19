@@ -98,6 +98,9 @@ const (
 )
 
 var (
+
+	// VolumeNames lists all possible volume names used by the operator on the ActiveGate pod.
+	// Used to detect naming conflicts with user-defined volumes in the DynaKube spec.
 	VolumeNames = []string{
 		AuthTokenSecretVolumeName,
 		TenantSecretVolumeName,
@@ -118,7 +121,9 @@ var (
 		GatewayTmpVolumeName,
 	}
 
-	VolumeMountPaths = []string{
+	// MainVolumeMountPaths lists all possible mount paths used by the operator in the ActiveGate main container.
+	// Used to detect path conflicts with user-defined volume mounts in the DynaKube spec.
+	MainVolumeMountPaths = []string{
 		AuthTokenMountPoint,
 		TenantTokenMountPath,
 		CertsMountPath,
