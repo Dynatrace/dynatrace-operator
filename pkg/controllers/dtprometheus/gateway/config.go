@@ -89,7 +89,7 @@ func buildProcessorMap(data gatewayConfigData) (map[component.ID]component.Confi
 		transformID,
 	}
 
-	if data.HasResourceAttributes {
+	if len(data.ResourceAttributes) > 0 {
 		m[resourceDynakubeID] = buildResourceDynakubeConfig(data.ResourceAttributes)
 		ids = append(ids, resourceDynakubeID)
 	}
@@ -112,7 +112,7 @@ func buildOTLPHTTPExporter(data gatewayConfigData) component.Config {
 		},
 	}
 
-	if data.HasCustomCA {
+	if data.CustomCAPath != "" {
 		exp["tls"] = map[string]any{"ca_file": data.CustomCAPath}
 	}
 

@@ -189,12 +189,7 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, owner metav1.Object, ob
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
 	name := s.Spec.GetStatefulSetName()
 
-	data, err := buildGatewayConfigData(s.DynaKube)
-	if err != nil {
-		return fmt.Errorf("build gateway config data: %w", err)
-	}
-
-	rendered, err := renderGatewayConfig(data)
+	rendered, err := renderGatewayConfig(buildGatewayConfigData(s.DynaKube))
 	if err != nil {
 		return fmt.Errorf("render gateway config: %w", err)
 	}
@@ -218,48 +213,35 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 }
 
 type gatewayConfigData struct {
-	Endpoint              string
-	HasCustomCA           bool
-	CustomCAPath          string
-	ResourceAttributes    map[string]string
-	HasResourceAttributes bool
+	Endpoint           string
+	CustomCAPath       string
+	ResourceAttributes map[string]string
 }
 
 // buildGatewayConfigData resolves the DynaKube-derived inputs to the relay.yaml template.
-// customCA/proxy only apply when no routing ActiveGate is configured (direct-to-tenant path).
-func buildGatewayConfigData(dk *dynakube.DynaKube) (gatewayConfigData, error) {
-	endpoint, err := gatewayEndpoint(dk)
-	if err != nil {
-		return gatewayConfigData{}, err
-	}
-
-	data := gatewayConfigData{Endpoint: endpoint}
+// customCA only applies when no routing ActiveGate is configured (direct-to-tenant path).
+func buildGatewayConfigData(dk *dynakube.DynaKube) gatewayConfigData {
+	data := gatewayConfigData{Endpoint: gatewayEndpoint(dk)}
 
 	if !dk.ActiveGate().IsRoutingEnabled() && dk.Spec.TrustedCAs != "" {
-		data.HasCustomCA = true
 		data.CustomCAPath = trustedCAVolumeMountPath + "/" + trustedCAFile
 	}
 
-	if attrs := dk.GetResourceAttributes(); len(attrs) > 0 {
-		data.ResourceAttributes = attrs
-		data.HasResourceAttributes = true
-	}
+	data.ResourceAttributes = dk.GetResourceAttributes()
 
-	return data, nil
+	return data
 }
 
 // gatewayEndpoint routes through the routing ActiveGate when configured, otherwise sends directly to the tenant.
-func gatewayEndpoint(dk *dynakube.DynaKube) (string, error) {
+func gatewayEndpoint(dk *dynakube.DynaKube) string {
 	if !dk.ActiveGate().IsRoutingEnabled() {
-		return dk.APIURL() + "/v2/otlp", nil
+		return dk.APIURL() + "/v2/otlp"
 	}
 
-	tenantUUID, err := dk.TenantUUID()
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/otlp", capability.BuildServiceName(dk.Name), dk.Namespace, tenantUUID), nil
+	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/otlp",
+		capability.BuildServiceName(dk.Name),
+		dk.Namespace,
+		dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
 }
 
 func renderGatewayConfig(data gatewayConfigData) (string, error) {
@@ -311,8 +293,12 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	}
 
 	sts.Spec.ServiceName = s.Spec.GetStatefulSetName()
+
 	sts.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
-	sts.Spec.UpdateStrategy = resolveUpdateStrategy(s.Spec.UpdateStrategy)
+	if s.Spec.UpdateStrategy.Type != "" {
+		sts.Spec.UpdateStrategy = s.Spec.UpdateStrategy
+	}
+
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
 	sts.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	sts.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
@@ -323,20 +309,6 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	sts.Spec.Template.Spec.Volumes = buildVolumes(s)
 	sts.Spec.Template.Spec.Containers = []corev1.Container{buildContainer(s, getContainer(sts))}
-}
-
-// resolveUpdateStrategy defaults to RollingUpdate/partition:0 when unset.
-// maxUnavailable is intentionally not set: some apiserver versions silently drop it,
-// causing a permanent reconcile diff.
-func resolveUpdateStrategy(strategy appsv1.StatefulSetUpdateStrategy) appsv1.StatefulSetUpdateStrategy {
-	if strategy.Type != "" {
-		return strategy
-	}
-
-	return appsv1.StatefulSetUpdateStrategy{
-		Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(0))},
-	}
 }
 
 // getContainer returns the current first container so buildContainer can preserve apiserver-defaulted

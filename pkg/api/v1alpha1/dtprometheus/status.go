@@ -22,8 +22,7 @@ type DTPrometheusStatus struct { //nolint:revive
 }
 
 type GatewayStatus struct {
-	// the json tag is `image` to follow k8s conventions;
-	// the field is `ResolvedImage` to not conflict with the `Image` field in spec.
+	// Image URI of the gateway currently deployed.
 	ResolvedImage string `json:"image,omitempty"`
 }
 

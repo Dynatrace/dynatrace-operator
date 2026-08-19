@@ -110,10 +110,7 @@ spec:
             path: relay.yaml
           name: dtp-gateway
         name: opentelemetry-collector-configmap
-  updateStrategy:
-    rollingUpdate:
-      partition: 0
-    type: RollingUpdate
+  updateStrategy: {}
 status:
   availableReplicas: 0
   replicas: 0
