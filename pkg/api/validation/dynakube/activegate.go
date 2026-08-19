@@ -6,18 +6,14 @@ package validation
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"slices"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 )
 
@@ -34,8 +30,7 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 
 	errorActiveGateConflictingVolumeName      = `The DynaKube's ActiveGate specification uses a volume name that conflicts with an internally managed volume: %s. Please use a different name.`
 	errorActiveGateConflictingVolumeMountPath = `The DynaKube's ActiveGate specification uses a volume mount path that conflicts with an internally managed volume: %s. Please use a different path.`
-	errorActiveGateDisallowedVolumeType       = `The DynaKube's ActiveGate specification uses a volume "%s" with a type that is not allowed by the OpenShift nonroot-v2 SCC.`
-	errorActiveGateInvalidVolumes             = `The DynaKube's ActiveGate specification has invalid volume configuration: %s`
+	errorActiveGateDisallowedVolumeType       = `The DynaKube's ActiveGate specification uses a volume "%s" with a type that is not allowed.`
 
 	minK8sMinorVersionForRollingUpdate = 35
 )
@@ -101,11 +96,8 @@ func activeGateRollingUpdateWithOldK8sVersion(_ context.Context, _ *Validator, d
 func activeGateHasConflictingVolumes(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	log := logd.FromContext(ctx)
 
-	reservedVolumeNames := agconsts.VolumeNames
-	reservedMountPaths := agconsts.MainVolumeMountPaths
-
 	for _, volume := range dk.Spec.ActiveGate.Volumes {
-		if slices.Contains(reservedVolumeNames, volume.Name) {
+		if slices.Contains(agconsts.VolumeNames, volume.Name) {
 			log.Info("conflicting ActiveGate volume name detected", "volume", volume.Name)
 
 			return fmt.Sprintf(errorActiveGateConflictingVolumeName, volume.Name)
@@ -113,17 +105,10 @@ func activeGateHasConflictingVolumes(ctx context.Context, _ *Validator, dk *dyna
 	}
 
 	for _, volumeMount := range dk.Spec.ActiveGate.VolumeMounts {
-		for _, reservedPath := range reservedMountPaths {
-			rel, err := filepath.Rel(reservedPath, volumeMount.MountPath)
-			if err != nil {
-				continue
-			}
+		for slices.Contains(agconsts.MainVolumeMountPaths, volumeMount.MountPath) {
+			log.Info("conflicting ActiveGate volume mount path detected", "path", volumeMount.MountPath)
 
-			if !strings.HasPrefix(rel, "../") {
-				log.Info("conflicting ActiveGate volume mount path detected", "path", volumeMount.MountPath)
-
-				return fmt.Sprintf(errorActiveGateConflictingVolumeMountPath, volumeMount.MountPath)
-			}
+			return fmt.Sprintf(errorActiveGateConflictingVolumeMountPath, volumeMount.MountPath)
 		}
 	}
 
@@ -157,47 +142,4 @@ func activeGateHasDisallowedVolumeType(ctx context.Context, _ *Validator, dk *dy
 	}
 
 	return ""
-}
-
-func activeGateHasInvalidVolumes(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	log := logd.FromContext(ctx)
-
-	if err := validateVolumes(dk.Spec.ActiveGate.Volumes, dk.Spec.ActiveGate.VolumeMounts); err != nil {
-		log.Info("ActiveGate has invalid volume configuration", "error", err)
-
-		return fmt.Sprintf(errorActiveGateInvalidVolumes, err)
-	}
-
-	return ""
-}
-
-// validateVolumes checks that:
-//   - no two volumes share the same name
-//   - every VolumeMount references a volume that is defined
-//   - no two mounts share the same mount path
-func validateVolumes(volumes []corev1.Volume, mounts []corev1.VolumeMount) error {
-	definedVolumes := sets.New[string]()
-	definedPaths := sets.New[string]()
-
-	for _, v := range volumes {
-		if definedVolumes.Has(v.Name) {
-			return errors.New("duplicate volume name: " + v.Name)
-		}
-
-		definedVolumes.Insert(v.Name)
-	}
-
-	for _, m := range mounts {
-		if !definedVolumes.Has(m.Name) {
-			return errors.New("has volume mount without matching volume defined: " + m.Name)
-		}
-
-		if definedPaths.Has(m.MountPath) {
-			return errors.New("duplicate volume mount path: " + m.MountPath)
-		}
-
-		definedPaths.Insert(m.MountPath)
-	}
-
-	return nil
 }

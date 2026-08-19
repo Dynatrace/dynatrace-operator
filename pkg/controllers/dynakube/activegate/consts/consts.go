@@ -98,7 +98,6 @@ const (
 )
 
 var (
-
 	// VolumeNames lists all possible volume names used by the operator on the ActiveGate pod.
 	// Used to detect naming conflicts with user-defined volumes in the DynaKube spec.
 	VolumeNames = []string{

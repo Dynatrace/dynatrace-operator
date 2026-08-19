@@ -39,7 +39,6 @@ var (
 		invalidActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
 		activeGateHasConflictingVolumes,
-		activeGateHasInvalidVolumes,
 		activeGateHasDisallowedVolumeType,
 		invalidActiveGateProxyURL,
 		conflictingOneAgentConfiguration,
