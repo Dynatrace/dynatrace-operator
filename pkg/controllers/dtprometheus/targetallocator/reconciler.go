@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
@@ -347,9 +348,7 @@ func buildContainer(spec *dtprometheus.TargetAllocator, namespace string, curren
 			{Name: configVolume, MountPath: "/conf", ReadOnly: true},
 			// TODO: TLS volume
 		},
-		Env: []corev1.EnvVar{
-			{Name: "OTELCOL_NAMESPACE", Value: namespace},
-		},
+		Env:       k8senv.AppendGoMemoryLimit([]corev1.EnvVar{{Name: "OTELCOL_NAMESPACE", Value: namespace}}, spec.Resources),
 		Resources: spec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               new(false),
