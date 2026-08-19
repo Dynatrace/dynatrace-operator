@@ -39,7 +39,21 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	}
 
+	const (
+		readOnly = true
+	)
+
 	switch {
+	case hasOCIVolumeAnnotation(mutationRequest.BaseRequest) || mutationRequest.DynaKube.FF().IsImageVolume():
+		log.Info("configuring init-container with OCI image bin volume", "name", mutationRequest.PodName())
+		addOCIBinVolume(mutationRequest.Pod, mutationRequest.DynaKube.OneAgent().GetCodeModulesImage())
+
+		customInitResources := mutationRequest.DynaKube.OneAgent().GetInitResources()
+		if customInitResources != nil {
+			mutationRequest.InstallContainer.Resources = *customInitResources
+		}
+
+		addInitBinMountWithSubPath(mutationRequest.InstallContainer, readOnly)
 	case isCSIVolume(mutationRequest.BaseRequest):
 		log.Info("configuring init-container with CSI bin volume", "name", mutationRequest.PodName())
 
@@ -56,16 +70,6 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		if customInitResources != nil {
 			mutationRequest.InstallContainer.Resources = *customInitResources
 		}
-	case mutationRequest.DynaKube.FF().IsImageVolume():
-		log.Info("configuring init-container with OCI bin volume", "name", mutationRequest.PodName())
-		addOCIBinVolume(mutationRequest.Pod, mutationRequest.DynaKube.OneAgent().GetCodeModulesImage())
-
-		customInitResources := mutationRequest.DynaKube.OneAgent().GetInitResources()
-		if customInitResources != nil {
-			mutationRequest.InstallContainer.Resources = *customInitResources
-		}
-
-		addInitBinMount(mutationRequest.InstallContainer, true)
 	default:
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
 

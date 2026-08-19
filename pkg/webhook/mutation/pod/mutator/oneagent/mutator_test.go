@@ -489,17 +489,20 @@ func TestAddOneAgentToContainer(t *testing.T) {
 
 	t.Run("add everything", func(t *testing.T) {
 		container := corev1.Container{}
-		dk := dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent:    oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
-				NetworkZone: networkZone,
-			},
-			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: kubeSystemUUID,
+
+		baseReq := &dtwebhook.BaseRequest{
+			DynaKube: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					OneAgent:    oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
+					NetworkZone: networkZone,
+				},
+				Status: dynakube.DynaKubeStatus{
+					KubeSystemUUID: kubeSystemUUID,
+				},
 			},
 		}
 
-		addOneAgentToContainer(dk, &container, corev1.Namespace{}, installPath, logd.Get())
+		addOneAgentToContainer(baseReq, &container, corev1.Namespace{}, installPath, logd.Get())
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
