@@ -121,6 +121,21 @@ func TestPublicRegistryNotAllowedForClassic(t *testing.T) {
 		dk := newClassicDynakube()
 		assertAllowedWithoutWarnings(t, dk)
 	})
+
+	t.Run("classic mode with custom image and use-public-registry FF returns no error", func(t *testing.T) {
+		dk := newClassicDynakube()
+		dk.Spec.OneAgent.ClassicFullStack.Image = "my.custom.image.com/agent:latest"
+		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+
+		assertAllowedWithoutWarnings(t, dk)
+	})
+
+	t.Run("classic mode with custom image and platform token returns no error", func(t *testing.T) {
+		dk := newClassicDynakube()
+		dk.Spec.OneAgent.ClassicFullStack.Image = "my.custom.image.com/agent:latest"
+
+		assertAllowedWithoutWarnings(t, dk, platformTokenSecret())
+	})
 }
 
 func TestPublicRegistryFlagIgnoredForPlatformToken(t *testing.T) {

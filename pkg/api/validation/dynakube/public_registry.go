@@ -39,7 +39,7 @@ func publicRegistryFlagIgnoredForPlatformToken(ctx context.Context, dv *Validato
 }
 
 func publicRegistryNotAllowedForClassic(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !dk.OneAgent().IsClassicFullStackMode() {
+	if !dk.OneAgent().IsClassicFullStackMode() || dk.OneAgent().GetCustomImage() != "" {
 		return ""
 	}
 
