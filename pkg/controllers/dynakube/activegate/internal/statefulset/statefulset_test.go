@@ -682,7 +682,7 @@ func TestVolumeMounts(t *testing.T) {
 
 		expectedVolumeMount := corev1.VolumeMount{
 			Name:      consts.GatewayTmpVolumeName,
-			MountPath: consts.GatewayTmpMountPoint,
+			MountPath: consts.GatewayTmpMountPath,
 		}
 		require.Contains(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})

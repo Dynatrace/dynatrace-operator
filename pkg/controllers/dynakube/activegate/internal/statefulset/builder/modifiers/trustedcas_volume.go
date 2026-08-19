@@ -5,7 +5,6 @@ package modifiers
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
@@ -17,11 +16,7 @@ var _ volumeModifier = TrustedCAsModifier{}
 var _ volumeMountModifier = TrustedCAsModifier{}
 var _ builder.Modifier = TrustedCAsModifier{}
 
-const (
-	volumeName     = "trustedcas"
-	trustedCAsDir  = operatorconsts.DTComponentsSecretsRootDir + "/rootca"
-	trustedCAsFile = "rootca.pem"
-)
+const trustedCAsFile = "rootca.pem"
 
 func NewTrustedCAsVolumeModifier(dk dynakube.DynaKube) TrustedCAsModifier {
 	return TrustedCAsModifier{
@@ -48,7 +43,7 @@ func (mod TrustedCAsModifier) Modify(sts *appsv1.StatefulSet) error {
 func (mod TrustedCAsModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: volumeName,
+			Name: consts.TrustedCAsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -70,8 +65,8 @@ func (mod TrustedCAsModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			ReadOnly:  true,
-			Name:      volumeName,
-			MountPath: trustedCAsDir,
+			Name:      consts.TrustedCAsVolumeName,
+			MountPath: consts.TrustedCAsMountPath,
 		},
 	}
 }

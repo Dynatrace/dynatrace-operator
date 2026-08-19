@@ -12,6 +12,7 @@ const (
 	passwordField = "password"
 	schemeField   = "scheme"
 
+	secretSuffix     = "internal-proxy"
 	SecretMountPath  = consts.DTComponentsSecretsRootDir + "/internal-proxy"
 	SecretVolumeName = "internal-proxy-secret-volume"
 )

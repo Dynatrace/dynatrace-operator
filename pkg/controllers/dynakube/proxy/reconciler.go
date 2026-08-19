@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -136,5 +135,5 @@ func parseProxyURL(ctx context.Context, proxy string) (scheme, host, port, usern
 }
 
 func BuildSecretName(dynakubeName string) string {
-	return dynakubeName + "-" + consts.ProxySecretSuffix
+	return dynakubeName + "-" + secretSuffix
 }
