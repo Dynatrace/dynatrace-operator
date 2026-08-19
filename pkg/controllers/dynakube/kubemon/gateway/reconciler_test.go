@@ -11,15 +11,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/gateway"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -125,29 +124,7 @@ func TestKubemonEnabled(t *testing.T) {
 
 		svc := &corev1.Service{}
 		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: gateway.ServiceName(dk.Name), Namespace: dk.Namespace}, svc))
-		assert.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
-
-		httpsPort := requirePort(t, svc, agconsts.HTTPSServicePortName)
-		assert.Equal(t, int32(agconsts.HTTPSServicePort), httpsPort.Port)
-		assert.Equal(t, corev1.ProtocolTCP, httpsPort.Protocol)
-		assert.Equal(t, intstr.FromString(agconsts.HTTPSServicePortName), httpsPort.TargetPort)
-
-		httpPort := requirePort(t, svc, agconsts.HTTPServicePortName)
-		assert.Equal(t, int32(agconsts.HTTPServicePort), httpPort.Port)
-		assert.Equal(t, corev1.ProtocolTCP, httpPort.Protocol)
-		assert.Equal(t, intstr.FromString(agconsts.HTTPServicePortName), httpPort.TargetPort)
-
-		assert.Equal(t, map[string]string{
-			"app.kubernetes.io/name":                  "kubemon",
-			"app.kubernetes.io/instance":              "test-dk",
-			"app.kubernetes.io/managed-by":            "dynatrace-operator",
-			"internal.dynatrace.com/operator-version": "snapshot",
-		}, svc.Labels)
-		assert.Equal(t, map[string]string{
-			"app.kubernetes.io/name":       "kubemon",
-			"app.kubernetes.io/instance":   "test-dk",
-			"app.kubernetes.io/managed-by": "dynatrace-operator",
-		}, svc.Spec.Selector)
+		helpers.AssertGolden(t, "testdata/service.yaml", svc)
 	})
 
 	t.Run("service creation failure is propagated", func(t *testing.T) {
@@ -175,18 +152,4 @@ func TestKubemonEnabled(t *testing.T) {
 		err := gateway.NewReconciler(fakeClient).Reconcile(t.Context(), dk)
 		require.ErrorIs(t, err, createErr)
 	})
-}
-
-func requirePort(t *testing.T, svc *corev1.Service, name string) corev1.ServicePort {
-	t.Helper()
-
-	for _, p := range svc.Spec.Ports {
-		if p.Name == name {
-			return p
-		}
-	}
-
-	t.Fatalf("port %q not found in service spec", name)
-
-	return corev1.ServicePort{}
 }

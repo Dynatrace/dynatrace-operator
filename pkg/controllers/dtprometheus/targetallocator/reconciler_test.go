@@ -9,16 +9,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,31 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
-	"sigs.k8s.io/yaml"
 )
 
 func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
 	return &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")}}
-}
-
-// assertGolden compares obj, marshaled to YAML, against testdata/name. The fake
-// client is the only source of non-determinism (it stamps resourceVersion), so
-// that field is cleared before comparing.
-func assertGolden(t *testing.T, name string, obj client.Object) {
-	t.Helper()
-
-	obj.SetResourceVersion("")
-	// Ensure object has GVK so that TypeMeta is included
-	kinds, _, _ := scheme.Scheme.ObjectKinds(obj)
-	require.Len(t, kinds, 1)
-	obj.GetObjectKind().SetGroupVersionKind(kinds[0])
-
-	got, err := yaml.Marshal(obj)
-	require.NoError(t, err)
-
-	want, err := os.ReadFile(filepath.Join("testdata", name))
-	require.NoError(t, err)
-	assert.YAMLEq(t, string(want), string(got))
 }
 
 func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
@@ -118,7 +95,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		cm := &corev1.ConfigMap{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, cm))
 
-		assertGolden(t, "configmap.yaml", cm)
+		helpers.AssertGolden(t, "testdata/configmap.yaml", cm)
 
 		sum := sha256.Sum256([]byte(cm.Data[configFile]))
 		assert.Equal(t, hex.EncodeToString(sum[:]), s.ConfigMapHash)
@@ -187,7 +164,7 @@ func TestReconcileDeployment(t *testing.T) {
 		deploy := &appsv1.Deployment{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
 
-		assertGolden(t, "deployment.yaml", deploy)
+		helpers.AssertGolden(t, "testdata/deployment.yaml", deploy)
 	})
 
 	t.Run("preserve existing replicas", func(t *testing.T) {
@@ -232,7 +209,7 @@ func TestReconcileService(t *testing.T) {
 		svc := &corev1.Service{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, svc))
 
-		assertGolden(t, "service.yaml", svc)
+		helpers.AssertGolden(t, "testdata/service.yaml", svc)
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
