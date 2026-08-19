@@ -152,38 +152,16 @@ func Test_setPhase(t *testing.T) {
 		expectedPhase status.DeploymentPhase
 		expectedErr   error
 	}{
-		{
-			name:          "generic error without conditions",
-			err:           boom,
-			expectedPhase: status.Error,
-			expectedErr:   boom,
-		},
-		{
-			name:          "no error without conditions",
-			expectedPhase: status.Deploying,
-		},
-		{
-			name:          "no error with all conditions true",
-			conditions:    []metav1.Condition{conditionTrue, conditionTrue, conditionTrue},
-			expectedPhase: status.Running,
-		},
-		{
-			name:          "no error with reconciling condition",
-			conditions:    []metav1.Condition{conditionTrue, conditionReconciling, conditionTrue},
-			expectedPhase: status.Deploying,
-		},
-		{
-			name:          "error condition has highest precedence",
-			conditions:    []metav1.Condition{conditionTrue, conditionReconciling, conditionError},
-			expectedPhase: status.Error,
-		},
-		{
-			name:          "generic error alongside healthy conditions preserves both the error and the running phase",
-			err:           boom,
-			conditions:    []metav1.Condition{conditionTrue},
-			expectedPhase: status.Error,
-			expectedErr:   boom,
-		},
+		{"missing dynakube on creation", errDynaKubeNotFound, nil, status.Deploying, nil},
+		{"missing dynakube after creation", errDynaKubeNotFound, []metav1.Condition{conditionTrue}, status.Error, nil},
+		{"not ready dynakube on creation", errDynaKubeNotReady, nil, status.Deploying, nil},
+		{"not ready dynakube after creation", errDynaKubeNotReady, []metav1.Condition{conditionTrue}, status.Deploying, nil},
+		{"generic error without conditions", boom, nil, status.Error, boom},
+		{"no error without conditions", nil, nil, status.Deploying, nil},
+		{"no error with all conditions true", nil, []metav1.Condition{conditionTrue, conditionTrue, conditionTrue}, status.Running, nil},
+		{"no error with reconciling condition", nil, []metav1.Condition{conditionTrue, conditionReconciling, conditionTrue}, status.Deploying, nil},
+		{"error condition has highest precedence", nil, []metav1.Condition{conditionTrue, conditionReconciling, conditionError}, status.Error, nil},
+		{"generic error alongside healthy conditions preserves both the error and the running phase", boom, []metav1.Condition{conditionTrue}, status.Error, boom},
 	}
 
 	for _, tt := range tests {
