@@ -110,7 +110,8 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 
 	if hasOCIVolumeAnnotation(request.BaseRequest) || request.DynaKube.FF().IsImageVolume() {
-		installPath = filepath.Join(AgentCodeModuleSource, AgentCodeModuleSource)
+		installPath = AgentCodeModuleSource
+		//installPath = filepath.Join(AgentCodeModuleSource, AgentCodeModuleSource)
 	}
 
 	if err := validateInstallPath(installPath); err != nil {
@@ -158,7 +159,7 @@ func addOneAgentToContainer(request *dtwebhook.BaseRequest, container *corev1.Co
 	log.Info("adding OneAgent to container", "name", container.Name)
 
 	isImageVolume := hasOCIVolumeAnnotation(request) || request.DynaKube.FF().IsImageVolume()
-
+	log.Info("install path", "installPath", installPath, "isImageVolume", isImageVolume)
 	addVolumeMounts(container, installPath, isImageVolume)
 	addDeploymentMetadataEnv(container, request.DynaKube)
 	addPreloadEnv(container, installPath)
