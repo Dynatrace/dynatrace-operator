@@ -25,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +34,23 @@ import (
 )
 
 func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
-	return &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")}}
+	return &dtprometheus.DTPrometheus{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")},
+		Spec: dtprometheus.DTPrometheusSpec{
+			TargetAllocator: dtprometheus.TargetAllocatorSpec{
+				PodSpec: dtprometheus.PodSpec{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("250Mi"),
+						},
+						Requests: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("125Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
 // assertGolden compares obj, marshaled to YAML, against testdata/name. The fake

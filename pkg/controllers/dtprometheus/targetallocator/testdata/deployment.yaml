@@ -40,6 +40,8 @@ spec:
       - env:
         - name: OTELCOL_NAMESPACE
           value: dynatrace
+        - name: GOMEMLIMIT
+          value: "235929600"
         image: registry.example.com/target-allocator:1.2.3
         imagePullPolicy: Always
         livenessProbe:
@@ -64,7 +66,11 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
-        resources: {}
+        resources:
+          limits:
+            memory: 250Mi
+          requests:
+            memory: 125Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
