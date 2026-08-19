@@ -28,6 +28,7 @@ type GatewaySpec struct {
 
 	// StatefulSet update strategy for the gateway pool. partition: N means only
 	// pods with ordinal >= N are updated; set a non-zero value for canary rollouts.
+	// +kubebuilder:default={type: "RollingUpdate"}
 	// +kubebuilder:validation:Optional
 	UpdateStrategy appsv1.StatefulSetUpdateStrategy `json:"updateStrategy,omitzero"`
 }

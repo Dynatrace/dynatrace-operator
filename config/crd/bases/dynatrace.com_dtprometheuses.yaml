@@ -1312,6 +1312,8 @@ spec:
                       type: object
                     type: array
                   updateStrategy:
+                    default:
+                      type: RollingUpdate
                     description: |-
                       StatefulSet update strategy for the gateway pool. partition: N means only
                       pods with ordinal >= N are updated; set a non-zero value for canary rollouts.
@@ -4121,9 +4123,7 @@ spec:
               gateway:
                 properties:
                   image:
-                    description: |-
-                      the json tag is `image` to follow k8s conventions;
-                      the field is `ResolvedImage` to not conflict with the `Image` field in spec.
+                    description: Image URI of the gateway currently deployed.
                     type: string
                 type: object
               phase:
