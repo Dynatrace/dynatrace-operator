@@ -19,6 +19,7 @@ import (
 
 const (
 	BinVolumeName    = "oneagent-bin"
+	binVolumeSubPath = "opt/dynatrace/oneagent"
 	ldPreloadPath    = "/etc/ld.so.preload"
 	ldPreloadSubPath = preload.ConfigPath
 )
@@ -31,6 +32,7 @@ func addVolumeMounts(container *corev1.Container, installPath string, isImageVol
 	}
 	if isImageVolume {
 		binMount.MountPath = AgentCodeModuleSource
+		binMount.SubPath = binVolumeSubPath
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, binMount,
@@ -49,6 +51,18 @@ func addInitBinMount(initContainer *corev1.Container, readonly bool) {
 		corev1.VolumeMount{
 			Name:      BinVolumeName,
 			MountPath: consts.AgentInitBinDirMount,
+			ReadOnly:  readonly,
+		},
+	)
+}
+
+func addInitBinMountWithSubPath(initContainer *corev1.Container, readonly bool) {
+	initContainer.VolumeMounts = append(
+		initContainer.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      BinVolumeName,
+			MountPath: consts.AgentInitBinDirMount,
+			SubPath:   binVolumeSubPath,
 			ReadOnly:  readonly,
 		},
 	)

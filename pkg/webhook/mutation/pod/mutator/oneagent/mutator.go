@@ -11,7 +11,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -60,6 +59,14 @@ func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
 	return defaultVolumeType == CSIVolumeType
 }
 
+func hasOCIVolumeAnnotation(mutationRequest *dtwebhook.BaseRequest) bool {
+	if mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != "" {
+		return maputils.GetField(mutationRequest.Pod.Annotations, AnnotationVolumeType, EphemeralVolumeType) == OCIVolumeImageType
+	}
+
+	return false
+}
+
 func IsEnabled(request *dtwebhook.BaseRequest) bool {
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject, request.DynaKube.FF().IsAutomaticInjection())
 	enabledOnDynakube := request.DynaKube.OneAgent().GetNamespaceSelector() != nil
@@ -102,7 +109,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	_, log := logd.NewFromContext(request.Context, "oneagent")
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 
-	if request.DynaKube.FF().IsImageVolume() {
+	if hasOCIVolumeAnnotation(request.BaseRequest) || request.DynaKube.FF().IsImageVolume() {
 		installPath = filepath.Join(AgentCodeModuleSource, AgentCodeModuleSource)
 	}
 
@@ -141,25 +148,27 @@ func containerIsInjected(container corev1.Container, _ *dtwebhook.BaseRequest) b
 func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, log logd.Logger) bool {
 	newContainers := request.NewContainers(containerIsInjected)
 	for _, container := range newContainers {
-		addOneAgentToContainer(request.DynaKube, container, request.Namespace, installPath, log)
+		addOneAgentToContainer(request, container, request.Namespace, installPath, log)
 	}
 
 	return len(newContainers) > 0
 }
 
-func addOneAgentToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
+func addOneAgentToContainer(request *dtwebhook.BaseRequest, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
 	log.Info("adding OneAgent to container", "name", container.Name)
 
-	addVolumeMounts(container, installPath, dk.FF().IsImageVolume())
-	addDeploymentMetadataEnv(container, dk)
+	isImageVolume := hasOCIVolumeAnnotation(request) || request.DynaKube.FF().IsImageVolume()
+
+	addVolumeMounts(container, installPath, isImageVolume)
+	addDeploymentMetadataEnv(container, request.DynaKube)
 	addPreloadEnv(container, installPath)
 	addDTStorageEnv(container)
 
-	if dk.Spec.NetworkZone != "" {
-		addNetworkZoneEnv(container, dk.Spec.NetworkZone)
+	if request.DynaKube.Spec.NetworkZone != "" {
+		addNetworkZoneEnv(container, request.DynaKube.Spec.NetworkZone)
 	}
 
-	if dk.FF().IsLabelVersionDetection() {
+	if request.DynaKube.FF().IsLabelVersionDetection() {
 		addVersionDetectionEnvs(container, namespace)
 	}
 }
