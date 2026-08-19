@@ -202,7 +202,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 	})
 }
 
-func TestKSPMWithoutRegistration(t *testing.T) {
+func TestKSPMWithoutKubernetesMonitoringRegistration(t *testing.T) {
 	t.Run("kubemon with registration and kspm enabled", func(t *testing.T) {
 		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertAllowed(t, &dynakube.DynaKube{
@@ -222,7 +222,7 @@ func TestKSPMWithoutRegistration(t *testing.T) {
 
 	t.Run("kubemon without registration and kspm enabled", func(t *testing.T) {
 		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-		assertDenied(t, []string{errorKSPMMissingRegistration}, &dynakube.DynaKube{
+		assertDenied(t, []string{errorKSPMMissingKubernetesMonitoring}, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:               testAPIURL,
@@ -286,7 +286,7 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 	})
 
 	t.Run("activegate kubernetes-monitoring without automatic k8s api monitoring and kspm enabled", func(t *testing.T) {
-		assertDenied(t, []string{errorKSPMMissingAutomaticK8sAPIMonitoring}, &dynakube.DynaKube{
+		assertDenied(t, []string{errorKSPMMissingKubernetesMonitoring}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
