@@ -5,15 +5,19 @@ package dtprometheus
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/targetallocator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
+var (
+	errDynaKubeNotFound = errors.New("dynakube not found")
+	errDynaKubeNotReady = errors.New("dynakube not ready")
+)
+
 func Add(mgr manager.Manager, _ string) error {
 	return NewReconciler(mgr.GetClient()).SetupWithManager(mgr)
 }
@@ -34,6 +43,7 @@ func Add(mgr manager.Manager, _ string) error {
 func NewReconciler(c client.Client) *Reconciler {
 	return &Reconciler{
 		Client:             c,
+		targetAllocator:    &targetallocator.Reconciler{Client: c},
 		newDynatraceClient: dynatrace.NewClientFromDynakube,
 	}
 }
@@ -41,7 +51,13 @@ func NewReconciler(c client.Client) *Reconciler {
 type Reconciler struct {
 	client.Client
 
+	targetAllocator targetAllocatorReconciler
+
 	newDynatraceClient dynatrace.ClientFactory
+}
+
+type targetAllocatorReconciler interface {
+	Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, reterr error) {
@@ -61,15 +77,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	defer func() {
 		reterr = setPhase(dtp, reterr)
 
-		if patchErr := r.patchStatus(ctx, dtp); patchErr != nil {
+		if applyErr := k8sobject.ApplyStatus(ctx, r, dtp); applyErr != nil {
 			if reterr != nil {
 				// The reconciler error has higher precedence than updating the status, but the information should not be lost.
-				log.Error(patchErr, "failed patching status")
+				log.Error(applyErr, "failed applying status")
 
 				return
 			}
 
-			reterr = patchErr
+			reterr = applyErr
 		}
 	}()
 
@@ -83,21 +99,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 
 		log.Info("skipping reconcile due to missing DynaKube")
 
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, errDynaKubeNotFound
 	}
 
 	if dk.Status.Phase != status.Running {
 		log.Info("skipping reconcile due to pending DynaKube", "phase", dk.Status.Phase)
 
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, errDynaKubeNotReady
 	}
 
-	_, err := r.buildDynatraceClient(ctx, dk)
+	dtClient, err := r.buildDynatraceClient(ctx, dk)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("build dynatrace client: %w", err)
 	}
 
-	// TODO: reconcile
+	if err := r.targetAllocator.Reconcile(ctx, dtp, dk, dtClient.Images); err != nil {
+		return ctrl.Result{}, fmt.Errorf("reconcile target allocator: %w", err)
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -119,7 +137,30 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 	)
 }
 
+// setPhase calculates the phase according to the conditions and the error.
+// The error is only used when the conditions are empty and results in phases Deploying or Error.
+//
+// To accurately calculate the phase the reconcilers are expect to follow the following rules:
+//   - Reconciliation successful: condition status True
+//   - Reconciliation ongoing: condition status False/Unknown and reason Reconciling
+//   - Reconciliation failed: anything that does not fit the above
 func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
+	if errors.Is(errDynaKubeNotFound, err) {
+		if len(dtp.Status.Conditions) == 0 {
+			dtp.Status.Phase = status.Deploying
+		} else {
+			dtp.Status.Phase = status.Error
+		}
+
+		return nil
+	}
+
+	if errors.Is(errDynaKubeNotReady, err) {
+		dtp.Status.Phase = status.Deploying
+
+		return nil
+	}
+
 	if len(dtp.Status.Conditions) == 0 {
 		if err != nil {
 			dtp.Status.Phase = status.Error
@@ -151,20 +192,6 @@ func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
 	dtp.Status.Phase = phase
 
 	return err
-}
-
-func (r *Reconciler) patchStatus(ctx context.Context, dtp *dtprometheus.DTPrometheus) error {
-	// Apply complains if these fields are set
-	dtp.ManagedFields = nil
-	// Disable optimistic locking
-	dtp.ResourceVersion = ""
-	if dtp.Kind == "" || dtp.APIVersion == "" {
-		// Set these values for unit tests
-		dtp.Kind = "DTPrometheus"
-		dtp.APIVersion = "dynatrace.com/v1alpha1"
-	}
-	//nolint:staticcheck // client.Apply is deprecated, but our repo does not support generating ApplyConfiguration
-	return r.SubResource("status").Patch(ctx, dtp, client.Apply, client.FieldOwner("dtprometheus-reconciler"))
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -232,7 +259,7 @@ func newDynaKubePhaseChangedPredicate() predicate.Funcs {
 			return false
 		},
 		DeleteFunc: func(event.TypedDeleteEvent[client.Object]) bool {
-			return false
+			return true
 		},
 		UpdateFunc: func(e event.TypedUpdateEvent[client.Object]) bool {
 			oldDK, _ := e.ObjectOld.(*dynakube.DynaKube)

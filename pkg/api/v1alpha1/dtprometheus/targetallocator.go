@@ -11,7 +11,7 @@ import (
 const (
 	// TargetAllocatorNameSuffix is appended to the owning DTPrometheus name to derive
 	// the base name of the Target Allocator's Kubernetes resources.
-	TargetAllocatorNameSuffix = "-target-allocator"
+	TargetAllocatorNameSuffix = "-prometheus-allocator"
 
 	// DefaultScrapeCRSelectorLabel is the label key the Target Allocator matches
 	// on Prometheus CRDs when no explicit scrapeCRSelector is configured.
@@ -29,7 +29,7 @@ const (
 type TargetAllocator struct {
 	*TargetAllocatorSpec
 
-	name string
+	namePrefix string
 }
 
 // TargetAllocatorSpec configures the Target Allocator Deployment, which holds all
@@ -50,6 +50,7 @@ type TargetAllocatorSpec struct {
 	// match. When omitted, the operator defaults to matching
 	// prometheus.dynatrace.com: "true". An empty selector {} matches all CRDs.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={"matchLabels":{"prometheus.dynatrace.com":"true"}}
 	ScrapeCRSelector *metav1.LabelSelector `json:"scrapeCRSelector,omitempty"`
 
 	// Restricts which namespaces the TA watches for CRDs. An empty selector {}
@@ -66,23 +67,11 @@ type TargetAllocatorSpec struct {
 func NewTargetAllocator(spec *TargetAllocatorSpec, name string) *TargetAllocator {
 	return &TargetAllocator{
 		TargetAllocatorSpec: spec,
-		name:                name,
+		namePrefix:          name,
 	}
 }
 
 // GetDeploymentName returns the base name for the Target Allocator's Deployment.
 func (ta *TargetAllocator) GetDeploymentName() string {
-	return ta.name + TargetAllocatorNameSuffix
-}
-
-// GetScrapeCRSelector returns the configured CRD label selector. When none is set
-// it defaults to matching prometheus.dynatrace.com: "true", as documented on the field.
-func (ta *TargetAllocator) GetScrapeCRSelector() *metav1.LabelSelector {
-	if ta.ScrapeCRSelector != nil {
-		return ta.ScrapeCRSelector
-	}
-
-	return &metav1.LabelSelector{
-		MatchLabels: map[string]string{DefaultScrapeCRSelectorLabel: "true"},
-	}
+	return ta.namePrefix + TargetAllocatorNameSuffix
 }

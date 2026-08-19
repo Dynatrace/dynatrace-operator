@@ -7,12 +7,17 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -82,12 +87,52 @@ func TestReconcile(t *testing.T) {
 		require.Equal(t, status.Deploying, dtp.Status.Phase)
 	})
 
-	t.Run("build client error", func(t *testing.T) {
+	t.Run("no token secret", func(t *testing.T) {
 		dtp := &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: dtprometheus.DTPrometheusSpec{DynaKubeName: "dk"}}
 		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
 		c := fake.NewClient(dtp, dk)
 		_, err := NewReconciler(c).Reconcile(t.Context(), req)
 		require.Error(t, err)
+		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp))
+		require.Equal(t, status.Error, dtp.Status.Phase)
+	})
+
+	t.Run("build client error", func(t *testing.T) {
+		dtp := &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: dtprometheus.DTPrometheusSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, StringData: map[string]string{token.APIKey: "api-token"}}
+		c := fake.NewClient(dtp, dk, secret)
+		r := NewReconciler(c)
+		expectErr := errors.New("boom")
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+			return nil, expectErr
+		}
+
+		_, err := r.Reconcile(t.Context(), req)
+
+		require.ErrorIs(t, err, expectErr)
+		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp))
+		require.Equal(t, status.Error, dtp.Status.Phase)
+	})
+
+	t.Run("target allocator error", func(t *testing.T) {
+		dtp := &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: dtprometheus.DTPrometheusSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, StringData: map[string]string{token.APIKey: "api-token"}}
+
+		expectErr := errors.New("boom")
+		m := newMockTargetAllocatorReconciler(t)
+		m.EXPECT().Reconcile(t.Context(), dtp, dk, image.Client(nil)).Return(expectErr).Once()
+		c := fake.NewClient(dtp, dk, secret)
+		r := NewReconciler(c)
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+			return &dynatrace.Client{}, nil
+		}
+		r.targetAllocator = m
+
+		_, err := r.Reconcile(t.Context(), req)
+
+		require.ErrorIs(t, err, expectErr)
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp))
 		require.Equal(t, status.Error, dtp.Status.Phase)
 	})
@@ -107,38 +152,16 @@ func Test_setPhase(t *testing.T) {
 		expectedPhase status.DeploymentPhase
 		expectedErr   error
 	}{
-		{
-			name:          "generic error without conditions",
-			err:           boom,
-			expectedPhase: status.Error,
-			expectedErr:   boom,
-		},
-		{
-			name:          "no error without conditions",
-			expectedPhase: status.Deploying,
-		},
-		{
-			name:          "no error with all conditions true",
-			conditions:    []metav1.Condition{conditionTrue, conditionTrue, conditionTrue},
-			expectedPhase: status.Running,
-		},
-		{
-			name:          "no error with reconciling condition",
-			conditions:    []metav1.Condition{conditionTrue, conditionReconciling, conditionTrue},
-			expectedPhase: status.Deploying,
-		},
-		{
-			name:          "error condition has highest precedence",
-			conditions:    []metav1.Condition{conditionTrue, conditionReconciling, conditionError},
-			expectedPhase: status.Error,
-		},
-		{
-			name:          "generic error alongside healthy conditions preserves both the error and the running phase",
-			err:           boom,
-			conditions:    []metav1.Condition{conditionTrue},
-			expectedPhase: status.Error,
-			expectedErr:   boom,
-		},
+		{"missing dynakube on creation", errDynaKubeNotFound, nil, status.Deploying, nil},
+		{"missing dynakube after creation", errDynaKubeNotFound, []metav1.Condition{conditionTrue}, status.Error, nil},
+		{"not ready dynakube on creation", errDynaKubeNotReady, nil, status.Deploying, nil},
+		{"not ready dynakube after creation", errDynaKubeNotReady, []metav1.Condition{conditionTrue}, status.Deploying, nil},
+		{"generic error without conditions", boom, nil, status.Error, boom},
+		{"no error without conditions", nil, nil, status.Deploying, nil},
+		{"no error with all conditions true", nil, []metav1.Condition{conditionTrue, conditionTrue, conditionTrue}, status.Running, nil},
+		{"no error with reconciling condition", nil, []metav1.Condition{conditionTrue, conditionReconciling, conditionTrue}, status.Deploying, nil},
+		{"error condition has highest precedence", nil, []metav1.Condition{conditionTrue, conditionReconciling, conditionError}, status.Error, nil},
+		{"generic error alongside healthy conditions preserves both the error and the running phase", boom, []metav1.Condition{conditionTrue}, status.Error, boom},
 	}
 
 	for _, tt := range tests {

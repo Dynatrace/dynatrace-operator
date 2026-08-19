@@ -1,0 +1,33 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: dtp-prometheus-allocator
+  namespace: dynatrace
+  labels:
+    app.kubernetes.io/instance: otel-allocator
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-target-allocator
+    internal.dynatrace.com/operator-version: snapshot
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DTPrometheus
+    name: dtp
+    uid: dtp-uid
+spec:
+  ports:
+  - name: https-port
+    port: 443
+    protocol: TCP
+    targetPort: https-port
+  - name: http-port
+    port: 80
+    protocol: TCP
+    targetPort: http-port
+  selector:
+    app.kubernetes.io/instance: otel-allocator
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-target-allocator
+status:
+  loadBalancer: {}

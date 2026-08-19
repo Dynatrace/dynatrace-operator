@@ -16,7 +16,7 @@ const GatewayNameSuffix = "-gateway"
 type Gateway struct {
 	*GatewaySpec
 
-	name string
+	namePrefix string
 }
 
 // GatewaySpec configures the gateway pool StatefulSet (tier 2): a StatefulSet of
@@ -34,11 +34,11 @@ type GatewaySpec struct {
 func NewGateway(spec *GatewaySpec, name string) *Gateway {
 	return &Gateway{
 		GatewaySpec: spec,
-		name:        name,
+		namePrefix:  name,
 	}
 }
 
 // GetStatefulSetName returns the base name for the gateway's StatefulSet.
 func (g *Gateway) GetStatefulSetName() string {
-	return g.name + GatewayNameSuffix
+	return g.namePrefix + GatewayNameSuffix
 }
