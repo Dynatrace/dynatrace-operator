@@ -5,7 +5,6 @@ package oneagent
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
@@ -119,9 +118,6 @@ func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 
 func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string, log logd.Logger) error {
 	targetFolder := arg.Arg{Name: k8sinit.TargetFolderFlag, Value: consts.AgentInitBinDirMount}
-	if dk.FF().IsImageVolume() {
-		targetFolder = arg.Arg{Name: k8sinit.TargetFolderFlag, Value: filepath.Join(consts.AgentInitBinDirMount, AgentCodeModuleSource)}
-	}
 
 	args := []arg.Arg{
 		{Name: k8sinit.SourceFolderFlag, Value: AgentCodeModuleSource},

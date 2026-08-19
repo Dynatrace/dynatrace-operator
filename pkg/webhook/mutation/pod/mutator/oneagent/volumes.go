@@ -31,7 +31,6 @@ func addVolumeMounts(container *corev1.Container, installPath string, isImageVol
 		ReadOnly:  true,
 	}
 	if isImageVolume {
-		binMount.MountPath = AgentCodeModuleSource
 		binMount.SubPath = binVolumeSubPath
 	}
 
