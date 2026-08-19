@@ -387,7 +387,7 @@ func TestAppendMemoryLimit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := AppendMemoryLimit(tt.envs, tt.resources)
+			got := AppendGoMemoryLimit(tt.envs, tt.resources)
 			assert.Equal(t, tt.expect, got)
 		})
 	}

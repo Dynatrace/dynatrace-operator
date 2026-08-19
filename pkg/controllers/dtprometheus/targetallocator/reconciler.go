@@ -347,7 +347,7 @@ func buildContainer(spec *dtprometheus.TargetAllocator, namespace string, curren
 			{Name: configVolume, MountPath: "/conf", ReadOnly: true},
 			// TODO: TLS volume
 		},
-		Env:       k8senv.AppendMemoryLimit([]corev1.EnvVar{{Name: "OTELCOL_NAMESPACE", Value: namespace}}, spec.Resources),
+		Env:       k8senv.AppendGoMemoryLimit([]corev1.EnvVar{{Name: "OTELCOL_NAMESPACE", Value: namespace}}, spec.Resources),
 		Resources: spec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               new(false),

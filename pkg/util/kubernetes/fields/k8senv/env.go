@@ -272,8 +272,8 @@ func GetMetadaSizeLimit(ctx context.Context) int {
 	return value
 }
 
-// AppendMemoryLimit appends GOMEMLIMIT env var
-func AppendMemoryLimit(envs []corev1.EnvVar, resources corev1.ResourceRequirements) []corev1.EnvVar {
+// AppendGoMemoryLimit appends GOMEMLIMIT env var
+func AppendGoMemoryLimit(envs []corev1.EnvVar, resources corev1.ResourceRequirements) []corev1.EnvVar {
 	if memLimit := resources.Limits.Memory(); !memLimit.IsZero() {
 		gomemlimit := memLimit.Value() / 10 * 9 //nolint:mnd // 90%
 		envs = append(envs, corev1.EnvVar{Name: "GOMEMLIMIT", Value: strconv.FormatInt(gomemlimit, 10)})
