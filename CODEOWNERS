@@ -1,4 +1,20 @@
-# ── Fallback — not yet assigned to an area ─────────────────────────────────────
+# Ownership philosophy:
+# - Every area always has exactly 3 engineer owners — reviews aren't blocked by
+#   one person's absence, and the burden is split evenly across the team.
+# - Testing and Core get our most experienced engineers, since both are
+#   critical for stability. Other areas mix skill levels on purpose, to spread
+#   knowledge and ramp people up. Revisit and reassign periodically.
+# - The whole team stays as fallback owner: if an area turns out to be
+#   uncovered or misassigned, fix it as we go.
+# - Admins can always approve and override CODEOWNERS if all 3 owners of an
+#   area are out of office.
+# - Anyone can comment on any PR or request a specific reviewer, regardless of
+#   ownership; in a technical disagreement, the area's CODEOWNERS decide.
+#
+# TODO: every line below still points at the placeholder team; left on purpose
+# to review the area split first, before filling in actual per-area owners.
+
+# ── Fallback — not yet assigned to an area ───────────────────────────────────
 *                                                          @Dynatrace/kubernetes-operator
 
 # ── Testing — shared harness and cross-operand feature tests ─────────────────
@@ -6,87 +22,93 @@
 /.mockery.yaml                                             @Dynatrace/kubernetes-operator
 /.testcoverage.yml                                         @Dynatrace/kubernetes-operator
 
-# ── Core — all operator Go code no operand owns ──────────────────────────────
-# The CRD API and version conversion, the Dynatrace API clients, shared
-# libraries, and the DynaKube controller that calls the operand reconcilers.
+# ── Core — CRD API, DT clients, shared libs, and cross-cutting controllers ───
+# Older API versions (e.g. v1beta5) are frozen and stay here, not split per operand.
 /pkg/                                                      @Dynatrace/kubernetes-operator
 /cmd/                                                      @Dynatrace/kubernetes-operator
 
-# ── Shared controllers — serve the operator, not one operand ────────────────
-/pkg/controllers/dynakube/istio/                           @Dynatrace/kubernetes-operator
-/pkg/controllers/certificates/                             @Dynatrace/kubernetes-operator
-/pkg/controllers/crdstoragemigration/                      @Dynatrace/kubernetes-operator
-/pkg/controllers/eventfilter/                              @Dynatrace/kubernetes-operator
-/pkg/controllers/nodes/                                    @Dynatrace/kubernetes-operator
-/pkg/controllers/registry/                                 @Dynatrace/kubernetes-operator
-/pkg/controllers/dynakube/k8sentity/                       @Dynatrace/kubernetes-operator
-
 # ── Generic AG operand ───────────────────────────────────────────────────────
-/pkg/controllers/dynakube/activegate/                      @Dynatrace/kubernetes-operator
 /pkg/api/latest/dynakube/activegate/                       @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/activegate.go                 @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/activegate_test.go            @Dynatrace/kubernetes-operator
+/pkg/controllers/dynakube/activegate/                      @Dynatrace/kubernetes-operator
 /test/e2e/features/activegate/                             @Dynatrace/kubernetes-operator
 
-# ── Kubemon AG operand ────────────────────────────────────────────────
-/pkg/controllers/dynakube/kubemon/                         @Dynatrace/kubernetes-operator
+# ── Kubemon AG operand ───────────────────────────────────────────────────────
 /pkg/api/latest/dynakube/kubemon/                          @Dynatrace/kubernetes-operator
+/pkg/controllers/dynakube/kubemon/                         @Dynatrace/kubernetes-operator
 
 # ── OneAgent operand ─────────────────────────────────────────────────────────
-/pkg/controllers/dynakube/oneagent/                        @Dynatrace/kubernetes-operator
-/pkg/controllers/dynakube/deploymentmetadata/              @Dynatrace/kubernetes-operator
 /pkg/api/latest/dynakube/oneagent/                         @Dynatrace/kubernetes-operator
-/cmd/startupprobe/                                         @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/oneagent.go                   @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/oneagent_test.go              @Dynatrace/kubernetes-operator
+/pkg/controllers/dynakube/oneagent/                        @Dynatrace/kubernetes-operator
 /test/e2e/features/classic/                                @Dynatrace/kubernetes-operator
 /test/e2e/features/hostmonitoring/                         @Dynatrace/kubernetes-operator
 
 # ── OTel collector operand ───────────────────────────────────────────────────
+/pkg/api/latest/dynakube/telemetryingest/                  @Dynatrace/kubernetes-operator
+/pkg/api/latest/dynakube/otlp/                             @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/otelc/                           @Dynatrace/kubernetes-operator
 /pkg/otelcgen/                                             @Dynatrace/kubernetes-operator
 /pkg/injection/otlp/                                       @Dynatrace/kubernetes-operator
-/pkg/api/latest/dynakube/telemetryingest/                  @Dynatrace/kubernetes-operator
-/pkg/api/latest/dynakube/otlp/                             @Dynatrace/kubernetes-operator
+/pkg/webhook/mutation/pod/mutator/otlp/                    @Dynatrace/kubernetes-operator
 /test/e2e/features/telemetryingest/                        @Dynatrace/kubernetes-operator
 
 # ── Log monitoring operand ───────────────────────────────────────────────────
-/pkg/controllers/dynakube/logmonitoring/                   @Dynatrace/kubernetes-operator
 /pkg/api/latest/dynakube/logmonitoring/                    @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/logmonitoring.go              @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/logmonitoring_test.go         @Dynatrace/kubernetes-operator
+/pkg/controllers/dynakube/logmonitoring/                   @Dynatrace/kubernetes-operator
 /test/e2e/features/logmonitoring/                          @Dynatrace/kubernetes-operator
 
 # ── KSPM operand ─────────────────────────────────────────────────────────────
-/pkg/controllers/dynakube/kspm/                            @Dynatrace/kubernetes-operator
 /pkg/api/latest/dynakube/kspm/                             @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/kspm.go                       @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/kspm_test.go                  @Dynatrace/kubernetes-operator
+/pkg/controllers/dynakube/kspm/                            @Dynatrace/kubernetes-operator
 /test/e2e/features/kspm/                                   @Dynatrace/kubernetes-operator
 
 # ── EEC (Extensions) operand ─────────────────────────────────────────────────
-/pkg/controllers/dynakube/extension/                       @Dynatrace/kubernetes-operator
 /pkg/api/latest/dynakube/extensions/                       @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/eec.go                        @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/eec_test.go                   @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/extensions.go                 @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/extensions_test.go            @Dynatrace/kubernetes-operator
+/pkg/controllers/dynakube/extension/                       @Dynatrace/kubernetes-operator
 /test/e2e/features/extensions/                             @Dynatrace/kubernetes-operator
 
 # ── Edge Connect operand ─────────────────────────────────────────────────────
-/pkg/controllers/edgeconnect/                              @Dynatrace/kubernetes-operator
 /pkg/api/validation/edgeconnect/                           @Dynatrace/kubernetes-operator
-/api/oapi/                                                 @Dynatrace/kubernetes-operator
+/pkg/controllers/edgeconnect/                              @Dynatrace/kubernetes-operator
 /test/e2e/features/edgeconnect/                            @Dynatrace/kubernetes-operator
 
-# ── Code Modules (injection) operand ─────────────────────────────────────────────────────
-/pkg/webhook/                                              @Dynatrace/kubernetes-operator
+# ── Code Modules (injection) operand ─────────────────────────────────────────
+/pkg/api/latest/dynakube/metadataenrichment/               @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/metadata_enrichment.go        @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/metadata_enrichment_test.go   @Dynatrace/kubernetes-operator
+/pkg/webhook/mutation/pod/mutator/oneagent/                @Dynatrace/kubernetes-operator
 /pkg/injection/codemodule/                                 @Dynatrace/kubernetes-operator
 /pkg/injection/namespace/                                  @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/injection/                       @Dynatrace/kubernetes-operator
 /pkg/controllers/csi/                                      @Dynatrace/kubernetes-operator
-/pkg/api/latest/dynakube/metadataenrichment/               @Dynatrace/kubernetes-operator
-/cmd/csi/                                                  @Dynatrace/kubernetes-operator
-/cmd/bootstrapper/                                         @Dynatrace/kubernetes-operator
-/cmd/webhook/                                              @Dynatrace/kubernetes-operator
 /test/e2e/features/applicationmonitoring/                  @Dynatrace/kubernetes-operator
 /test/e2e/features/bootstrapper/                           @Dynatrace/kubernetes-operator
 /test/e2e/features/cloudnative/                            @Dynatrace/kubernetes-operator
-/test/e2e/features/resourceattributes/                     @Dynatrace/kubernetes-operator
 
 # ── Prometheus operand ───────────────────────────────────────────────────────
-/pkg/controllers/dtprometheus/                             @Dynatrace/kubernetes-operator
 /pkg/api/v1alpha1/dtprometheus/                            @Dynatrace/kubernetes-operator
+/pkg/controllers/dtprometheus/                             @Dynatrace/kubernetes-operator
 
-# ── Build — workflows, build files, linters and scanners ─────────────────────
+# ── Deployment — helm chart, OLM bundles ─────────────────────────────────────
+/config/                                                   @Dynatrace/kubernetes-operator
+/assets/                                                   @Dynatrace/kubernetes-operator
+
+# ── Docs ─────────────────────────────────────────────────────────────────────
+/doc/                                                      @Dynatrace/kubernetes-operator
+/*.md                                                      @Dynatrace/kubernetes-operator
+
+# ── Repo & CI — build, deps, workflows, linters, scanners, metadata ──────────
 /.github/                                                  @Dynatrace/kubernetes-operator
 /hack/                                                     @Dynatrace/kubernetes-operator
 /Dockerfile                                                @Dynatrace/kubernetes-operator
@@ -97,19 +119,7 @@
 /.markdownlint.json                                        @Dynatrace/kubernetes-operator
 /.markdownlintignore                                       @Dynatrace/kubernetes-operator
 /.snyk                                                     @Dynatrace/kubernetes-operator
-
-# ── Deployment — CRDs, manifests, OLM bundles, helm chart ────────────────────
-# The chart is one artifact, so per-operand templates live here, not with their
-# operand.
-/config/                                                   @Dynatrace/kubernetes-operator
-/assets/                                                   @Dynatrace/kubernetes-operator
 /PROJECT                                                   @Dynatrace/kubernetes-operator
-
-# ── Docs ──────────────────────────────────────────────────────────────────────
-/doc/                                                      @Dynatrace/kubernetes-operator
-/*.md                                                      @Dynatrace/kubernetes-operator
-
-# ── Repo — licence and repo metadata ─────────────────────────────────────────
 /LICENSE                                                   @Dynatrace/kubernetes-operator
 /.editorconfig                                             @Dynatrace/kubernetes-operator
 /.gitignore                                                @Dynatrace/kubernetes-operator
