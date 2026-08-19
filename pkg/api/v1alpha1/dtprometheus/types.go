@@ -42,6 +42,7 @@ type DTPrometheusSpec struct { //nolint:revive
 	// Configures the gateway pool (tier 2): a StatefulSet of OTel Collectors that
 	// run stateful processors and export to Dynatrace via OTLP/HTTP.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={}
 	Gateway GatewaySpec `json:"gateway,omitzero"`
 
 	// Overrides the default registry from which Dynatrace images are pulled.
