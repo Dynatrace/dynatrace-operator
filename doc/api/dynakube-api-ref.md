@@ -50,6 +50,8 @@
 |`tolerations`||-|array|
 |`topologySpreadConstraints`||-|array|
 |`useEphemeralVolume`||-|boolean|
+|`volumeMounts`||-|array|
+|`volumes`||-|array|
 
 ### .spec.extensions
 

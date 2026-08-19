@@ -187,4 +187,12 @@ type CapabilityProperties struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="topologySpreadConstraints",order=40,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+
+	// Adds additional Volumes to the ActiveGate pods
+	// +kubebuilder:validation:Optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// Adds additional VolumeMounts to the ActiveGate container
+	// +kubebuilder:validation:Optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 }
