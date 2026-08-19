@@ -41,7 +41,7 @@ var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 // Dynatrace API call and each missing field in the returned connection info.
 func TestReconcilePreconditionErrors(t *testing.T) {
 	t.Run("returns error when getting connection info fails", func(t *testing.T) {
-		dk := newTestDynaKube(true)
+		dk := newTestDynaKube()
 		fakeClient := fake.NewClient(dk)
 		r := connectioninfo.NewReconciler(fakeClient)
 
@@ -69,7 +69,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				dk := newTestDynaKube(true)
+				dk := newTestDynaKube()
 				fakeClient := fake.NewClient(dk)
 				r := connectioninfo.NewReconciler(fakeClient)
 
@@ -104,7 +104,7 @@ func TestReconcileWriteFailures(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dk := newTestDynaKube(true)
+			dk := newTestDynaKube()
 			errCreate := errors.New("kube api error")
 			fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 				Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
@@ -160,7 +160,7 @@ func TestReconcileRotationFailures(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dk := newTestDynaKube(true)
+			dk := newTestDynaKube()
 			errUpdate := errors.New("kube api error")
 			fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 				Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
@@ -195,7 +195,8 @@ func TestReconcileCleanupDeleteFailures(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dk := newTestDynaKube(false)
+			dk := newTestDynaKube()
+			dk.Spec.KubernetesMonitoring = nil
 			errDelete := errors.New("kube api error")
 			fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 				Delete: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
@@ -232,7 +233,8 @@ func TestReconcileCleanup(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dk := newTestDynaKube(false)
+			dk := newTestDynaKube()
+			dk.Spec.KubernetesMonitoring = nil
 			dk.Status.KubernetesMonitoring.ConnectionInfo.TenantUUID = testTenantUUID
 			dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints = testEndpoints
 
@@ -257,19 +259,16 @@ func TestReconcileCleanup(t *testing.T) {
 	}
 }
 
-func newTestDynaKube(enabled bool) *dynakube.DynaKube {
+func newTestDynaKube() *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: "https://tenant.live.dynatrace.com/api",
+			APIURL:               "https://tenant.live.dynatrace.com/api",
+			KubernetesMonitoring: &kubemonapi.Spec{},
 		},
-	}
-
-	if enabled {
-		dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 	}
 
 	return dk
