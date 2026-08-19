@@ -52,7 +52,7 @@ func getActiveGateEndpointTemplate(dk dynakube.DynaKube, tenantUUID string) stri
 	activeGateEndpointTemplate := "https://%s.%s/e/%s/api/v2/kubernetes/node-config"
 
 	serviceName := capability.BuildServiceName(dk.Name)
-	if dk.KubernetesMonitoring().IsEnabled() {
+	if dk.IsKubemonEnabled() {
 		serviceName = gateway.ServiceName(dk.Name)
 	}
 

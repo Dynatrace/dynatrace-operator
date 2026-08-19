@@ -81,6 +81,7 @@ func TestGetEnvs(t *testing.T) {
 	})
 
 	t.Run("adds kubemon service env", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		dk.Namespace = "test"
