@@ -10,11 +10,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -339,6 +341,41 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			shouldError: false,
 		},
 		{
+			title: "kubernetesMonitoring operand with registration enabled, optional scopes present",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					KubernetesMonitoring: &kubemon.Spec{
+						Registration: &kubemon.Registration{},
+					},
+				},
+			},
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite,
+				tokenclient.ScopeInstallerDownload,
+			},
+			expectedOptional: map[string]bool{
+				tokenclient.ScopeSettingsRead:  true,
+				tokenclient.ScopeSettingsWrite: true,
+			},
+			shouldError: false,
+		},
+		{
+			title: "kubernetesMonitoring operand without registration, optional scopes missing",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					KubernetesMonitoring: &kubemon.Spec{},
+				},
+			},
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeInstallerDownload,
+			},
+			expectedOptional: map[string]bool{},
+			shouldError:      false,
+		},
+		{
 			title: "metadataEnrichment - all scopes present",
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
@@ -433,6 +470,10 @@ func TestTokens_VerifyScopes(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
+			if c.dk.KubernetesMonitoring().IsEnabled() {
+				t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+			}
+
 			tokenValue := "test-token"
 			mockedTokenClient := tokenclientmock.NewClient(t)
 			mockedTokenClient.EXPECT().GetScopes(anyCtx, tokenValue).Return(c.availableScopes, nil).Once()
