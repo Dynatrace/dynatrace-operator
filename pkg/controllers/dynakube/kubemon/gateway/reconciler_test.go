@@ -107,7 +107,7 @@ func TestKubemonEnabled(t *testing.T) {
 		assert.True(t, svcMissing, "service should have been removed from the cluster")
 	})
 
-	t.Run("ClusterIP service is created with HTTPS and HTTP ports", func(t *testing.T) {
+	t.Run("service has expected configuration", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-dk",
@@ -136,25 +136,6 @@ func TestKubemonEnabled(t *testing.T) {
 		assert.Equal(t, int32(agconsts.HTTPServicePort), httpPort.Port)
 		assert.Equal(t, corev1.ProtocolTCP, httpPort.Protocol)
 		assert.Equal(t, intstr.FromString(agconsts.HTTPServicePortName), httpPort.TargetPort)
-	})
-
-	t.Run("selector matches kubemon pod labels", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
-			Spec: dynakube.DynaKubeSpec{
-				KubernetesMonitoring: &kubemonapi.Spec{},
-				KSPM:                 &kspm.Spec{},
-			},
-		}
-		fakeClient := fake.NewClient(dk)
-
-		require.NoError(t, gateway.NewReconciler(fakeClient).Reconcile(t.Context(), dk))
-
-		svc := &corev1.Service{}
-		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: gateway.ServiceName(dk.Name), Namespace: dk.Namespace}, svc))
 
 		assert.Equal(t, map[string]string{
 			"app.kubernetes.io/name":                  "kubemon",
