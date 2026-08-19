@@ -16,6 +16,10 @@ const (
 
 	K8sNamespaceLabelRule      RuleType = "K8S_NAMESPACE_LABEL"
 	K8sNamespaceAnnotationRule RuleType = "K8S_NAMESPACE_ANNOTATION"
+	K8sWorkloadLabelRule       RuleType = "K8S_WORKLOAD_LABEL"
+	K8sWorkloadAnnotationRule  RuleType = "K8S_WORKLOAD_ANNOTATION"
+	K8sPodLabelRule            RuleType = "K8S_POD_LABEL"
+	K8sPodAnnotationRule       RuleType = "K8S_POD_ANNOTATION"
 	CustomRule                 RuleType = "CUSTOM"
 
 	Annotation         = "metadata.dynatrace.com"
@@ -60,6 +64,10 @@ func IsSupportedType(ruleType RuleType) bool {
 		AnnotationRule,
 		K8sNamespaceLabelRule,
 		K8sNamespaceAnnotationRule,
+		K8sWorkloadLabelRule,
+		K8sWorkloadAnnotationRule,
+		K8sPodLabelRule,
+		K8sPodAnnotationRule,
 		CustomRule:
 		return true
 	}
