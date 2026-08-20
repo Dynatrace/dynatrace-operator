@@ -296,10 +296,9 @@ func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 			return err
 		}
 
-		virtualService := buildVirtualService(objectMeta, fqdnHosts)
-
-		_, err = r.virtualService.WithOwner(owner).CreateOrUpdate(ctx, virtualService)
-		if err != nil {
+		// ServiceEntry with protocol HTTPS auto-generates SNI routing — VirtualService is redundant.
+		// Delete any VS that may exist from a previous operator version.
+		if err := r.virtualService.DeleteForNamespace(ctx, entryName, owner.GetNamespace()); err != nil {
 			return err
 		}
 	} else {

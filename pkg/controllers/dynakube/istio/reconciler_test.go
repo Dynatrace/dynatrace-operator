@@ -171,8 +171,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		assert.NotNil(t, expectedServiceEntry)
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
-		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualService)
+		require.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		ctx := t.Context()
@@ -235,8 +234,7 @@ func TestReconcileAPIUrl(t *testing.T) {
 		assert.NotNil(t, expectedServiceEntry)
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
-		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualService)
+		require.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		ctx := t.Context()
@@ -292,8 +290,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "something.test.io")
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
-		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualService)
+		require.True(t, k8serrors.IsNotFound(err))
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntry), expectedIPServiceEntry)
 		require.NoError(t, err)
@@ -350,8 +347,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "something.test.io")
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
-		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualService)
+		require.True(t, k8serrors.IsNotFound(err))
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedIPServiceEntry), expectedIPServiceEntry)
 		require.NoError(t, err)
@@ -418,8 +414,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "abcd123.some.activegate.endpointurl.com")
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
-		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualService)
+		require.True(t, k8serrors.IsNotFound(err))
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
@@ -465,8 +460,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "abcd123.some.activegate.endpointurl.com")
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
-		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualService)
+		require.True(t, k8serrors.IsNotFound(err))
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
@@ -522,8 +516,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		assert.Contains(t, expectedFQDNServiceEntry.Spec.GetHosts(), "kubemon.some.endpoint.com")
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
-		require.NoError(t, err)
-		assert.NotNil(t, expectedVirtualService)
+		require.True(t, k8serrors.IsNotFound(err))
 
 		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
