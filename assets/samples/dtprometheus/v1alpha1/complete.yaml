@@ -62,8 +62,8 @@ spec:
     # --https-*, --enable-prometheus-cr-watcher or --kubeconfig-path: each one silently
     # overrides operator-managed config, and the port flags also break the probes and Service.
     args:
-      - --zap-log-level=debug
-      - --zap-encoder=console
+      # - --zap-log-level=debug
+      # - --zap-encoder=console
       # - --zap-stacktrace-level=panic   # default: error
       # - --zap-time-encoding=iso8601    # default: rfc3339
       # - --zap-devel                    # dev preset; overrides the flags above
@@ -151,7 +151,7 @@ spec:
     # contain dots (e.g. k8s.pod.name) cannot be set this way. --set always wins
     # over --config regardless of flag order.
     args:
-      - --set=service.telemetry.logs.level=debug
+      # - --set=service.telemetry.logs.level=debug
       # - --set=service.telemetry.metrics.level=detailed      # none|basic|normal|detailed
       # - --set=service.telemetry.logs.encoding=json          # default: console
       # - --set=service.telemetry.logs.sampling.enabled=false # default: 10 then 1-in-100 per 10s
@@ -232,9 +232,9 @@ spec:
     # contain dots (e.g. k8s.pod.name) cannot be set this way. --set always wins
     # over --config regardless of flag order.
     args:
-      - --set=service.telemetry.logs.level=debug
+      # - --set=service.telemetry.logs.level=debug
       # The gateway holds the cumulativetodelta state, so its own metrics matter most.
-      - --set=service.telemetry.metrics.level=detailed
+      # - --set=service.telemetry.metrics.level=detailed
       # - --set=service.telemetry.logs.encoding=json          # default: console
       # - --set=service.telemetry.logs.sampling.enabled=false # default: 10 then 1-in-100 per 10s
       # - --feature-gates=+telemetry.newPipelineTelemetry     # scope attrs on internal metrics
