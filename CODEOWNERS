@@ -76,6 +76,8 @@
 /pkg/api/latest/dynakube/extensions/                       @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/eec.go                        @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/eec_test.go                   @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/database.go                   @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/database_test.go              @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/extensions.go                 @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/extensions_test.go            @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/extension/                       @Dynatrace/kubernetes-operator
