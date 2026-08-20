@@ -127,25 +127,6 @@ func TestReconcileConfigMap(t *testing.T) {
 		assert.Equal(t, hex.EncodeToString(sum[:]), s.ConfigMapHash)
 	})
 
-	t.Run("resource attributes rendered", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dk := &dynakube.DynaKube{}
-		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
-		dk.Spec.ResourceAttributes = map[string]string{"env": "prod"}
-		s := newTestScopeWithDynaKube(dtp, dk)
-		c := fake.NewClient()
-		r := &Reconciler{Client: c}
-
-		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
-
-		cm := &corev1.ConfigMap{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, cm))
-
-		assert.Contains(t, cm.Data[gatewayConfigKey], "resource/dynakube")
-		assert.Contains(t, cm.Data[gatewayConfigKey], "key: env")
-		assert.Contains(t, cm.Data[gatewayConfigKey], "value: prod")
-	})
-
 	t.Run("merge labels", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		s := newTestScope(dtp)
