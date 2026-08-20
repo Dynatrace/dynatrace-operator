@@ -12,10 +12,10 @@
 NAMESPACE="${1:-dynatrace}"
 echo "Using namespace: $NAMESPACE"
 
-echo -e "\nRemoving DynaKube, EdgeConnect and DTPrometheus custom resources"
-kubectl delete dynakube --all -n "$NAMESPACE"
-kubectl delete edgeconnect --all -n "$NAMESPACE"
-kubectl delete dtprometheus --all -n "$NAMESPACE" || true
+echo -e "\nRemoving dyntrace.com custom resources"
+for crd in $(kubectl api-resources | grep dynatrace.com | awk '{print $1}'); do
+    kubectl delete $crd --all -n "$NAMESPACE" || true
+done
 kubectl -n "$NAMESPACE" wait pod --for=delete -l app.kubernetes.io/managed-by=dynatrace-operator --timeout=300s
 
 echo -e "\nDeleting Dynatrace namespace"
