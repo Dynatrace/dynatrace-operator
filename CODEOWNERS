@@ -70,7 +70,7 @@
 # ── EEC (Extensions) operand ─────────────────────────────────────────────────
 /pkg/api/latest/dynakube/extensions/                       @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/eec*                          @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/database*                     @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/databases*                    @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/extensions*                   @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/extension/                       @Dynatrace/kubernetes-operator
 /test/e2e/features/extensions/                             @Dynatrace/kubernetes-operator
