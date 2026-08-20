@@ -52,6 +52,7 @@
 /pkg/controllers/dynakube/otelc/                           @Dynatrace/kubernetes-operator
 /pkg/otelcgen/                                             @Dynatrace/kubernetes-operator
 /pkg/injection/otlp/                                       @Dynatrace/kubernetes-operator
+/pkg/webhook/mutation/pod/handler/otlp/                    @Dynatrace/kubernetes-operator
 /pkg/webhook/mutation/pod/mutator/otlp/                    @Dynatrace/kubernetes-operator
 /test/e2e/features/telemetryingest/                        @Dynatrace/kubernetes-operator
 
@@ -87,6 +88,7 @@
 /pkg/api/latest/dynakube/metadataenrichment/               @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/metadata_enrichment.go        @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/metadata_enrichment_test.go   @Dynatrace/kubernetes-operator
+/pkg/webhook/mutation/pod/handler/injection                @Dynatrace/kubernetes-operator
 /pkg/webhook/mutation/pod/mutator/oneagent/                @Dynatrace/kubernetes-operator
 /pkg/injection/codemodule/                                 @Dynatrace/kubernetes-operator
 /pkg/injection/namespace/                                  @Dynatrace/kubernetes-operator
