@@ -162,7 +162,6 @@ func TestWebhook(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: testMEID,
 				KubernetesClusterName: testClusterName,
-				MetadataEnrichment:    metadataEnrichmentRules,
 				KubeSystemUUID:        testClusterUUID,
 				OneAgent: oneagent.Status{
 					ConnectionInfo: communication.ConnectionInfo{
@@ -292,6 +291,226 @@ func TestWebhook(t *testing.T) {
 
 		assert.Contains(t, pod.Annotations, metadatamutator.AnnotationReason)
 	})
+
+	t.Run("metadata JSON", func(t *testing.T) {
+		// present in the "metadata.dynatrace.com" JSON annotation regardless of test case, since every
+		// test case uses the same pod/owner shape; merged with each test case's expect below.
+		commonExpected := map[string]string{
+			"k8s.workload.kind": "deployment",
+			"k8s.workload.name": "test-deployment",
+		}
+
+		tests := []struct {
+			name                 string
+			rules                []metadataenrichment.Rule
+			namespaceLabels      map[string]string
+			namespaceAnnotations map[string]string
+			workloadLabels       map[string]string
+			workloadAnnotations  map[string]string
+			podLabels            map[string]string
+			podAnnotations       map[string]string
+			expect               map[string]string
+		}{
+			// general functionality: one case per rule type/source
+			{
+				name:            "legacy LABEL rule without target uses namespace-label key",
+				rules:           []metadataenrichment.Rule{{Type: metadataenrichment.LabelRule, Source: "team"}},
+				namespaceLabels: map[string]string{"team": "payments"},
+				expect:          map[string]string{"k8s.namespace.label.team": "payments"},
+			},
+			{
+				name:                 "legacy ANNOTATION rule without target uses namespace-annotation key",
+				rules:                []metadataenrichment.Rule{{Type: metadataenrichment.AnnotationRule, Source: "cost-center"}},
+				namespaceAnnotations: map[string]string{"cost-center": "42"},
+				expect:               map[string]string{"k8s.namespace.annotation.cost-center": "42"},
+			},
+			{
+				name:            "LABEL rule with explicit target reads namespace label",
+				rules:           []metadataenrichment.Rule{{Type: metadataenrichment.LabelRule, Source: "env", Target: "custom.env"}},
+				namespaceLabels: map[string]string{"env": "prod"},
+				expect:          map[string]string{"custom.env": "prod"},
+			},
+			{
+				name:                 "ANNOTATION rule with explicit target reads namespace annotation",
+				rules:                []metadataenrichment.Rule{{Type: metadataenrichment.AnnotationRule, Source: "owner", Target: "custom.owner"}},
+				namespaceAnnotations: map[string]string{"owner": "team-a"},
+				expect:               map[string]string{"custom.owner": "team-a"},
+			},
+			{
+				name:            "K8S_NAMESPACE_LABEL rule reads namespace label",
+				rules:           []metadataenrichment.Rule{{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "tier", Target: "custom.tier"}},
+				namespaceLabels: map[string]string{"tier": "gold"},
+				expect:          map[string]string{"custom.tier": "gold"},
+			},
+			{
+				name:                 "K8S_NAMESPACE_ANNOTATION rule reads namespace annotation",
+				rules:                []metadataenrichment.Rule{{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "region", Target: "custom.region"}},
+				namespaceAnnotations: map[string]string{"region": "eu-west-1"},
+				expect:               map[string]string{"custom.region": "eu-west-1"},
+			},
+			{
+				name:           "K8S_WORKLOAD_LABEL rule reads workload label",
+				rules:          []metadataenrichment.Rule{{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "team", Target: "custom.team"}},
+				workloadLabels: map[string]string{"team": "checkout"},
+				expect:         map[string]string{"custom.team": "checkout"},
+			},
+			{
+				name:                "K8S_WORKLOAD_ANNOTATION rule reads workload annotation",
+				rules:               []metadataenrichment.Rule{{Type: metadataenrichment.K8sWorkloadAnnotationRule, Source: "release", Target: "custom.release"}},
+				workloadAnnotations: map[string]string{"release": "7"},
+				expect:              map[string]string{"custom.release": "7"},
+			},
+			{
+				name:      "K8S_POD_LABEL rule reads pod label",
+				rules:     []metadataenrichment.Rule{{Type: metadataenrichment.K8sPodLabelRule, Source: "version", Target: "custom.version"}},
+				podLabels: map[string]string{"version": "v2"},
+				expect:    map[string]string{"custom.version": "v2"},
+			},
+			{
+				name:           "K8S_POD_ANNOTATION rule reads pod annotation",
+				rules:          []metadataenrichment.Rule{{Type: metadataenrichment.K8sPodAnnotationRule, Source: "build", Target: "custom.build"}},
+				podAnnotations: map[string]string{"build": "123"},
+				expect:         map[string]string{"custom.build": "123"},
+			},
+			{
+				name:   "CUSTOM rule resolves to its literal source value",
+				rules:  []metadataenrichment.Rule{{Type: metadataenrichment.CustomRule, Source: "static-value", Target: "custom.literal"}},
+				expect: map[string]string{"custom.literal": "static-value"},
+			},
+			{
+				name:  "rule with unresolved source does not produce an attribute",
+				rules: []metadataenrichment.Rule{{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "missing", Target: "custom.missing"}},
+			},
+			{
+				name: "rules with different targets and source types do not interfere with each other",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "env", Target: "custom.env"},
+					{Type: metadataenrichment.K8sWorkloadAnnotationRule, Source: "release", Target: "custom.release"},
+					{Type: metadataenrichment.K8sPodLabelRule, Source: "version", Target: "custom.version"},
+				},
+				namespaceLabels:     map[string]string{"env": "prod"},
+				workloadAnnotations: map[string]string{"release": "7"},
+				podLabels:           map[string]string{"version": "v3"},
+				expect:              map[string]string{"custom.env": "prod", "custom.release": "7", "custom.version": "v3"},
+			},
+
+			// inter-rule precedence: first rule (in definition order) that resolves to a value wins
+			{
+				name: "first rule targeting a key wins, later resolvable rules targeting the same key are ignored",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.CustomRule, Source: "first-value", Target: "shared.key"},
+					{Type: metadataenrichment.CustomRule, Source: "second-value", Target: "shared.key"},
+					{Type: metadataenrichment.CustomRule, Source: "third-value", Target: "shared.key"},
+				},
+				expect: map[string]string{"shared.key": "first-value"},
+			},
+			{
+				name: "first-resolvable-rule-wins holds across different rule types, not by type priority",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "tier", Target: "shared.key"},
+					{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "tier", Target: "shared.key"},
+				},
+				namespaceAnnotations: map[string]string{"tier": "from-namespace"},
+				workloadLabels:       map[string]string{"tier": "from-workload"},
+				expect:               map[string]string{"shared.key": "from-workload"},
+			},
+			{
+				name: "reversing rule order changes which value wins, proving precedence is positional, not type-based",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "tier", Target: "shared.key"},
+					{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "tier", Target: "shared.key"},
+				},
+				namespaceAnnotations: map[string]string{"tier": "from-namespace"},
+				workloadLabels:       map[string]string{"tier": "from-workload"},
+				expect:               map[string]string{"shared.key": "from-namespace"},
+			},
+			{
+				name: "unresolved rule is skipped in favor of the next rule targeting the same key",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sPodLabelRule, Source: "missing", Target: "shared.key"},
+					{Type: metadataenrichment.CustomRule, Source: "fallback-value", Target: "shared.key"},
+				},
+				expect: map[string]string{"shared.key": "fallback-value"},
+			},
+
+			// hand-written metadata.dynatrace.com/ annotations: namespace < workload < pod, and the
+			// annotation layers as a whole take precedence over config rules
+			{
+				name:                 "namespace annotation propagates to the pod's resolved metadata",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/custom.namespace-key": "namespace-value"},
+				expect:               map[string]string{"custom.namespace-key": "namespace-value"},
+			},
+			{
+				name:                "workload annotation propagates to the pod's resolved metadata",
+				workloadAnnotations: map[string]string{"metadata.dynatrace.com/custom.workload-key": "workload-value"},
+				expect:              map[string]string{"custom.workload-key": "workload-value"},
+			},
+			{
+				name:                 "workload annotation overrides namespace annotation for the same key",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/tier": "from-namespace"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/tier": "from-workload"},
+				expect:               map[string]string{"tier": "from-workload"},
+			},
+			{
+				name:                "pod annotation overrides workload annotation for the same key",
+				workloadAnnotations: map[string]string{"metadata.dynatrace.com/tier": "from-workload"},
+				podAnnotations:      map[string]string{"metadata.dynatrace.com/tier": "from-pod"},
+				expect:              map[string]string{"tier": "from-pod"},
+			},
+			{
+				name:                 "pod annotation wins when namespace, workload and pod all set the same key",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/tier": "from-namespace"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/tier": "from-workload"},
+				podAnnotations:       map[string]string{"metadata.dynatrace.com/tier": "from-pod"},
+				expect:               map[string]string{"tier": "from-pod"},
+			},
+			{
+				name:                 "hand-written namespace annotation overrides a config rule targeting the same key",
+				rules:                []metadataenrichment.Rule{{Type: metadataenrichment.CustomRule, Source: "from-rule", Target: "tier"}},
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/tier": "from-annotation"},
+				expect:               map[string]string{"tier": "from-annotation"},
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				dk := &dynakube.DynaKube{
+					ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: testNamespace},
+					Spec:       dynakube.DynaKubeSpec{MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)}},
+					Status: dynakube.DynaKubeStatus{
+						KubernetesClusterMEID: testMEID,
+						KubernetesClusterName: testClusterName,
+						KubeSystemUUID:        testClusterUUID,
+						MetadataEnrichment:    metadataenrichment.Status{Rules: tt.rules},
+					},
+				}
+				integrationtests.CreateDynakube(t, clt, dk)
+
+				ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{GenerateName: "ingest-rule-test-"}}
+				ns.Labels = maputils.MergeMap(tt.namespaceLabels, map[string]string{podmutator.InjectionInstanceLabel: dk.Name})
+				ns.Annotations = tt.namespaceAnnotations
+				integrationtests.CreateKubernetesObject(t, clt, ns)
+				integrationtests.CreateKubernetesObject(t, clt, getBoostrapperSecret(ns.Name))
+
+				owner := getDummyOwnerDeployment()
+				owner.Namespace = ns.Name
+				owner.Labels = tt.workloadLabels
+				owner.Annotations = tt.workloadAnnotations
+				integrationtests.CreateKubernetesObject(t, clt, owner)
+
+				pod := createPod(t, clt, func(pod *corev1.Pod) {
+					pod.Namespace = ns.Name
+					pod.Labels = tt.podLabels
+					pod.Annotations = tt.podAnnotations
+					require.NoError(t, controllerutil.SetControllerReference(owner, pod, scheme.Scheme))
+				})
+
+				var metadataJSON map[string]string
+				require.NoError(t, json.Unmarshal([]byte(pod.Annotations["metadata.dynatrace.com"]), &metadataJSON))
+				assert.Equal(t, maputils.MergeMap(commonExpected, tt.expect), metadataJSON)
+			})
+		}
+	})
 }
 
 func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotations bool) {
@@ -346,13 +565,6 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 	require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
 	require.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
 	require.True(t, maputils.GetFieldBool(pod.Annotations, oneagentmutator.AnnotationInjected, false))
-	jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
-	require.NotEmpty(t, jsonAnnotation, "metadata.dynatrace.com JSON annotation must be set")
-	var jsonAttrs map[string]string
-	require.NoError(t, json.Unmarshal([]byte(jsonAnnotation), &jsonAttrs))
-	assert.Equal(t, "sales", jsonAttrs["dt.cost.costcenter"])
-	assert.Equal(t, "high", jsonAttrs["dt.security_context"])
-	assert.Equal(t, "custom-ns-meta-value", jsonAttrs["custom.ns-meta"])
 	require.Len(t, pod.Spec.InitContainers, 1)
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.kind", strings.ToLower(pod.OwnerReferences[0].Kind)))
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.name", strings.ToLower(pod.OwnerReferences[0].Name)))
@@ -636,16 +848,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				// verify mutation occurred by presence of OTLP env vars (annotation may not be set when no OneAgent injection)
 
 				appContainer := pod.Spec.Containers[0]
-				// Expect DT_API_TOKEN env var via secret ref
-				var dtTokenEnv *corev1.EnvVar
-				for i := range appContainer.Env {
-					if appContainer.Env[i].Name == exporter.DynatraceAPITokenEnv {
-						dtTokenEnv = &appContainer.Env[i]
-
-						break
-					}
-				}
-
+				dtTokenEnv := k8senv.Find(appContainer.Env, exporter.DynatraceAPITokenEnv)
 				require.NotNil(t, dtTokenEnv, "expected DT_API_TOKEN env var to be injected")
 				require.NotNil(t, dtTokenEnv.ValueFrom)
 				require.NotNil(t, dtTokenEnv.ValueFrom.SecretKeyRef)
@@ -757,7 +960,6 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: testMEID,
 				KubernetesClusterName: testClusterName,
-				MetadataEnrichment:    metadataEnrichmentRules,
 			},
 		}
 
@@ -929,8 +1131,6 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			"dynakube must win over enrichment rules in JSON annotation")
 		assert.Equal(t, "from-ns", jsonAttrs["conflict.ns.vs.dynakube"],
 			"namespace annotation must win over dynakube in JSON annotation")
-		assert.Equal(t, "from-pod", jsonAttrs["conflict.pod.vs.ns"],
-			"pod annotation must win over namespace annotation in JSON annotation")
 		// existing OTEL_RESOURCE_ATTRIBUTES (custom layer) is NOT included in the JSON annotation
 		assert.Equal(t, "from-pod", jsonAttrs["conflict.existing.vs.pod"],
 			"JSON annotation must reflect pod annotation, not the existing OTEL_RESOURCE_ATTRIBUTES value")
@@ -1387,7 +1587,6 @@ func getDummyOwnerDeployment() *appsv1.Deployment {
 				},
 			},
 		},
-		Status: appsv1.DeploymentStatus{},
 	}
 }
 
