@@ -105,7 +105,7 @@ func activeGateHasConflictingVolumes(ctx context.Context, _ *Validator, dk *dyna
 	}
 
 	for _, volumeMount := range dk.Spec.ActiveGate.VolumeMounts {
-		for slices.Contains(agconsts.MainVolumeMountPaths, volumeMount.MountPath) {
+		if slices.Contains(agconsts.MainVolumeMountPaths, volumeMount.MountPath) {
 			log.Info("conflicting ActiveGate volume mount path detected", "path", volumeMount.MountPath)
 
 			return fmt.Sprintf(errorActiveGateConflictingVolumeMountPath, volumeMount.MountPath)
