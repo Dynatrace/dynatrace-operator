@@ -1,0 +1,54 @@
+apiVersion: v1
+data:
+  apiToken: ZHQwczE2LkJRVlhMWko2Lk00SjdPSFFGUlM1VzJYSDdCREkzT1pNSU5OQzZYM1RBUUdGVlpENVRBS0RQU1AzR0hNN1hGVDVYTVZDQUJENzI=
+  dataIngestToken: ZHQwczE2LkFWM1lPSkxKLllINTJJT1RPTkM2NkczVllYSDVFSVJQTFQ1N0ZZRFdLVVIzSExINlE2Ujc2NDNJT1lKRFczNUVaR01RU0pMUlU=
+kind: Secret
+metadata:
+  name: gke-k8s-2026-07-27
+  namespace: dynatrace
+  labels:
+    dynatrace.com/created-by: "dynatrace.kubernetes"
+type: Opaque
+---
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: gke-k8s-2026-07-27-agents
+  namespace: dynatrace
+  labels:
+    dynatrace.com/created-by: "dynatrace.kubernetes"
+  annotations:
+    feature.dynatrace.com/use-public-registry: "true"
+# Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+spec:
+  customPullSecret: "ecr-token"
+  metadataEnrichment:
+    enabled: true
+  apiUrl: https://jaq9750d.dev.dynatracelabs.com/api
+  tokens: gke-k8s-2026-07-27
+  oneAgent:
+    cloudNativeFullStack:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+  activeGate:
+    capabilities:
+      - kubernetes-monitoring
+      - routing
+      - debugging
+    replicas: 1
+  logMonitoring: {}
+---
+apiVersion: dynatrace.com/v1alpha1
+kind: DTPrometheus
+metadata:
+  name: my-dtp
+  namespace: dynatrace
+spec:
+  dynaKubeName: gke-k8s-2026-07-27-agents
+  gateway:
+    image: ghcr.io/dynatrace/dynatrace-otel-collector/dynatrace-otel-collector:0.51.0
