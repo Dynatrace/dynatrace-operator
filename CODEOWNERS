@@ -49,6 +49,8 @@
 # ── OTel collector operand ───────────────────────────────────────────────────
 /pkg/api/latest/dynakube/telemetryingest/                  @Dynatrace/kubernetes-operator
 /pkg/api/latest/dynakube/otlp/                             @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/telemetryservice.go           @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/telemetryservice_test.go      @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/otelc/                           @Dynatrace/kubernetes-operator
 /pkg/otelcgen/                                             @Dynatrace/kubernetes-operator
 /pkg/injection/otlp/                                       @Dynatrace/kubernetes-operator
