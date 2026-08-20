@@ -5,7 +5,6 @@ package modifiers
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	eecconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
@@ -18,11 +17,7 @@ var _ volumeModifier = EECModifier{}
 var _ volumeMountModifier = EECModifier{}
 var _ builder.Modifier = EECModifier{}
 
-const (
-	eecVolumeName = "eec-token"
-	eecMountPath  = operatorconsts.DTComponentsSecretsRootDir + "/eec/token"
-	eecFile       = "eec.token"
-)
+const eecFile = "eec.token"
 
 func NewEECVolumeModifier(dk dynakube.DynaKube) EECModifier {
 	return EECModifier{
@@ -51,7 +46,7 @@ func (mod EECModifier) getVolumes() []corev1.Volume {
 
 	return []corev1.Volume{
 		{
-			Name: eecVolumeName,
+			Name: consts.EECVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  mod.dk.Extensions().GetTokenSecretName(),
@@ -73,8 +68,8 @@ func (mod EECModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			ReadOnly:  true,
-			Name:      eecVolumeName,
-			MountPath: eecMountPath,
+			Name:      consts.EECVolumeName,
+			MountPath: consts.EECMountPath,
 		},
 	}
 }

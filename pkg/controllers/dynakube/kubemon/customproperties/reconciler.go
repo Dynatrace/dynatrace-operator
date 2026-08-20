@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -26,7 +27,7 @@ const (
 	VolumeName = "kubemon-custom-properties"
 
 	// AG expected read location.
-	MountPath = "/var/lib/dynatrace/gateway/config_template/custom.properties"
+	MountPath = consts.CustomPropertiesMountPath
 )
 
 type Reconciler struct {

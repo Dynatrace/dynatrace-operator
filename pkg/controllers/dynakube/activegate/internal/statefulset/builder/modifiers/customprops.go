@@ -48,7 +48,7 @@ func (mod CustomPropertiesModifier) getVolumes() []corev1.Volume {
 	valueFrom := mod.determineCustomPropertiesSource()
 	volumes := []corev1.Volume{
 		{
-			Name: customproperties.VolumeName,
+			Name: consts.CustomPropertiesVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: valueFrom,
@@ -65,8 +65,8 @@ func (mod CustomPropertiesModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			ReadOnly:  true,
-			Name:      customproperties.VolumeName,
-			MountPath: customproperties.MountPath,
+			Name:      consts.CustomPropertiesVolumeName,
+			MountPath: consts.CustomPropertiesMountPath,
 			SubPath:   customproperties.DataPath,
 		},
 	}

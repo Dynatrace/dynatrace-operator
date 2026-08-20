@@ -38,6 +38,8 @@ var (
 		isInvalidAPIURL,
 		invalidActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
+		activeGateHasConflictingVolumes,
+		activeGateHasDisallowedVolumeType,
 		invalidActiveGateProxyURL,
 		conflictingOneAgentConfiguration,
 		conflictingOneAgentNodeSelector,

@@ -47,7 +47,7 @@ func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) error {
 func (mod RawImageModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: connectioninfo.TenantSecretVolumeName,
+			Name: consts.TenantSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  mod.dk.ActiveGate().GetTenantSecretName(),
@@ -61,9 +61,9 @@ func (mod RawImageModifier) getVolumes() []corev1.Volume {
 func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
-			Name:      connectioninfo.TenantSecretVolumeName,
+			Name:      consts.TenantSecretVolumeName,
 			ReadOnly:  true,
-			MountPath: connectioninfo.TenantTokenMountPoint,
+			MountPath: consts.TenantTokenMountPath,
 			SubPath:   connectioninfo.TenantTokenKey,
 		},
 	}

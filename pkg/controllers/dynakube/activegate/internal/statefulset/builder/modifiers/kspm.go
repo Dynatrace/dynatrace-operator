@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
-	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
@@ -19,11 +18,7 @@ var _ volumeModifier = KSPMModifier{}
 var _ volumeMountModifier = KSPMModifier{}
 var _ builder.Modifier = KSPMModifier{}
 
-const (
-	kspmTokenVolumeName           = "kspm-token"
-	kspmTokenMountPath            = operatorconsts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
-	kspmTokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
-)
+const kspmTokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
 
 func NewKSPMModifier(dk dynakube.DynaKube) KSPMModifier {
 	return KSPMModifier{
@@ -55,7 +50,7 @@ func (mod KSPMModifier) Modify(sts *appsv1.StatefulSet) error {
 func (mod KSPMModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: kspmTokenVolumeName,
+			Name: consts.KSPMTokenVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: mod.dk.KSPM().GetTokenSecretName(),
@@ -69,8 +64,8 @@ func (mod KSPMModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			ReadOnly:  true,
-			Name:      kspmTokenVolumeName,
-			MountPath: kspmTokenMountPath,
+			Name:      consts.KSPMTokenVolumeName,
+			MountPath: consts.KSPMTokenMountPath,
 			SubPath:   kspm.TokenSecretKey,
 		},
 	}
