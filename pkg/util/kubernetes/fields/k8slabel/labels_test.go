@@ -158,6 +158,36 @@ func TestLabels(t *testing.T) {
 				AppManagedByLabel: version.AppName,
 			},
 		},
+		{
+			name:            "versions with invalid character",
+			appVersion:      "_debug",
+			operatorVersion: "debug_",
+			expectedLabels: map[string]string{
+				AppNameLabel:      labelsName,
+				AppInstanceLabel:  labelsInstance,
+				AppManagedByLabel: version.AppName,
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppInstanceLabel:  labelsInstance,
+				AppManagedByLabel: version.AppName,
+			},
+		},
+		{
+			name:            "versions invalid after truncation",
+			appVersion:      strings.Repeat("a", 62) + "-suffix",
+			operatorVersion: strings.Repeat("a", 62) + "-suffix",
+			expectedLabels: map[string]string{
+				AppNameLabel:      labelsName,
+				AppInstanceLabel:  labelsInstance,
+				AppManagedByLabel: version.AppName,
+			},
+			expectedMatch: map[string]string{
+				AppNameLabel:      labelsName,
+				AppInstanceLabel:  labelsInstance,
+				AppManagedByLabel: version.AppName,
+			},
+		},
 	}
 
 	for _, tt := range tests {
