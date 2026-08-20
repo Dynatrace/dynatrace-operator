@@ -4,8 +4,6 @@
 package gateway
 
 import (
-	"slices"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pipeline"
@@ -22,7 +20,6 @@ var (
 	cumulativeToDeltaID = component.MustNewID("cumulativetodelta")
 	k8sAttributesID     = component.MustNewID("k8sattributes")
 	transformID         = component.MustNewID("transform")
-	resourceDynakubeID  = component.MustNewIDWithName("resource", "dynakube")
 	otlphttpID          = component.MustNewID("otlphttp")
 	healthCheckID       = component.MustNewID("health_check")
 	metricsSignalID     = pipeline.NewID(pipeline.SignalMetrics)
@@ -31,7 +28,7 @@ var (
 // buildGatewayOTelConfig assembles the OTel Collector relay config as an otelcgen.Config.
 // The caller marshals it to YAML via cfg.Marshal().
 func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
-	processors, processorIDs := buildProcessorMap(data)
+	processors, processorIDs := buildProcessorMap()
 
 	return &otelcgen.Config{
 		Receivers: map[component.ID]component.Config{
@@ -65,7 +62,7 @@ func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
 	}
 }
 
-func buildProcessorMap(data gatewayConfigData) (map[component.ID]component.Config, []component.ID) {
+func buildProcessorMap() (map[component.ID]component.Config, []component.ID) {
 	m := map[component.ID]component.Config{
 		memoryLimiterID: map[string]any{
 			"check_interval":         "1s",
@@ -87,11 +84,6 @@ func buildProcessorMap(data gatewayConfigData) (map[component.ID]component.Confi
 		cumulativeToDeltaID,
 		k8sAttributesID,
 		transformID,
-	}
-
-	if len(data.ResourceAttributes) > 0 {
-		m[resourceDynakubeID] = buildResourceDynakubeConfig(data.ResourceAttributes)
-		ids = append(ids, resourceDynakubeID)
 	}
 
 	return m, ids
@@ -268,25 +260,4 @@ func buildTransformConfig() component.Config {
 			},
 		},
 	}
-}
-
-func buildResourceDynakubeConfig(attrs map[string]string) component.Config {
-	// Sort keys for deterministic output.
-	keys := make([]string, 0, len(attrs))
-	for k := range attrs {
-		keys = append(keys, k)
-	}
-
-	slices.Sort(keys)
-
-	attributes := make([]map[string]any, 0, len(attrs))
-	for _, k := range keys {
-		attributes = append(attributes, map[string]any{
-			"action": "upsert",
-			"key":    k,
-			"value":  attrs[k],
-		})
-	}
-
-	return map[string]any{"attributes": attributes}
 }

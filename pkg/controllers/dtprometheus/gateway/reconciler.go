@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -213,9 +214,8 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 }
 
 type gatewayConfigData struct {
-	Endpoint           string
-	CustomCAPath       string
-	ResourceAttributes map[string]string
+	Endpoint     string
+	CustomCAPath string
 }
 
 // buildGatewayConfigData resolves the DynaKube-derived inputs to the relay.yaml template.
@@ -223,10 +223,8 @@ func buildGatewayConfigData(dk *dynakube.DynaKube) gatewayConfigData {
 	data := gatewayConfigData{Endpoint: dk.APIURL() + "/v2/otlp"}
 
 	if dk.Spec.TrustedCAs != "" {
-		data.CustomCAPath = trustedCAVolumeMountPath + "/" + trustedCAFile
+		data.CustomCAPath = filepath.Join(trustedCAVolumeMountPath, trustedCAFile)
 	}
-
-	data.ResourceAttributes = dk.GetResourceAttributes()
 
 	return data
 }
