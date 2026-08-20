@@ -135,7 +135,7 @@ func activeGateHasDisallowedVolumeType(ctx context.Context, _ *Validator, dk *dy
 		if !slices.ContainsFunc(allowedActiveGateVolumeSources, func(isAllowed func(corev1.VolumeSource) bool) bool {
 			return isAllowed(volume.VolumeSource)
 		}) {
-			log.Info("ActiveGate volume uses a type disallowed by the OpenShift nonroot-v2 SCC", "volume", volume.Name)
+			log.Info("ActiveGate volume uses a source disallowed by the OpenShift nonroot-v2 SCC", "volume", volume)
 
 			return fmt.Sprintf(errorActiveGateDisallowedVolumeType, volume.Name)
 		}

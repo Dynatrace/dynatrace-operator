@@ -10,7 +10,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -22,11 +21,9 @@ import (
 )
 
 const (
-	Suffix     = "custom-properties"
-	DataKey    = "customProperties"
-	DataPath   = "custom.properties"
-	VolumeName = consts.CustomPropertiesVolumeName
-	MountPath  = consts.CustomPropertiesMountPath
+	Suffix   = "custom-properties"
+	DataKey  = "customProperties"
+	DataPath = "custom.properties"
 
 	clientInternalSection = "[http.client.internal]"
 	noProxyFieldName      = "proxy-non-proxy-hosts"
