@@ -100,7 +100,6 @@
 /pkg/controllers/csi/                                      @Dynatrace/kubernetes-operator
 /test/e2e/features/applicationmonitoring/                  @Dynatrace/kubernetes-operator
 /test/e2e/features/bootstrapper/                           @Dynatrace/kubernetes-operator
-/test/e2e/features/cloudnative/                            @Dynatrace/kubernetes-operator
 
 # ── Prometheus operand ───────────────────────────────────────────────────────
 /pkg/api/v1alpha1/dtprometheus/                            @Dynatrace/kubernetes-operator
