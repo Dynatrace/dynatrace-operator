@@ -72,7 +72,7 @@ func buildProcessorMap(data gatewayConfigData) (map[component.ID]component.Confi
 			"limit_percentage":       95,
 			"spike_limit_percentage": 5,
 		},
-		metricStartTimeID: map[string]any{},
+		metricStartTimeID: nil,
 		cumulativeToDeltaID: map[string]any{
 			"initial_value": "drop",
 			"max_staleness": "10m",
