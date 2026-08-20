@@ -4,6 +4,7 @@
 package dtprometheus
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -26,6 +27,10 @@ type PodSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// Command-line arguments for the main application container.
+	// +kubebuilder:validation:Optional
+	Args []string `json:"args,omitempty"`
 
 	// Resource requests and limits for each component pod.
 	// +kubebuilder:validation:Optional
@@ -60,4 +65,8 @@ type PodSpec struct {
 	// Extra labels merged into the pod template metadata.
 	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels,omitempty"`
+}
+
+func (s PodSpec) SanitizedArgs() []string {
+	return sanitize.CommandLineArgs(s.Args)
 }

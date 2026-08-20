@@ -323,27 +323,27 @@ func assertReadOnlyVolumeMounts(t *testing.T, activeGatePod corev1.Pod) {
 		{
 			ReadOnly:  false,
 			Name:      consts.GatewayLibTempVolumeName,
-			MountPath: consts.GatewayLibTempMountPoint,
+			MountPath: consts.GatewayLibTempMountPath,
 		},
 		{
 			ReadOnly:  false,
 			Name:      consts.GatewayDataVolumeName,
-			MountPath: consts.GatewayDataMountPoint,
+			MountPath: consts.GatewayDataMountPath,
 		},
 		{
 			ReadOnly:  false,
 			Name:      consts.GatewayLogVolumeName,
-			MountPath: consts.GatewayLogMountPoint,
+			MountPath: consts.GatewayLogMountPath,
 		},
 		{
 			ReadOnly:  false,
 			Name:      consts.GatewayTmpVolumeName,
-			MountPath: consts.GatewayTmpMountPoint,
+			MountPath: consts.GatewayTmpMountPath,
 		},
 		{
 			ReadOnly:  false,
 			Name:      consts.GatewayConfigVolumeName,
-			MountPath: consts.GatewayConfigMountPoint,
+			MountPath: consts.GatewayConfigMountPath,
 		},
 	}
 

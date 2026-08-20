@@ -156,7 +156,7 @@ func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capa
 }
 
 func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
-	volumes := []corev1.Volume{}
+	volumes := statefulSetBuilder.capability.Properties().Volumes
 
 	if statefulSetBuilder.dynakube.Spec.ActiveGate.VolumeClaimTemplate == nil {
 		if !isDefaultPVCNeeded(statefulSetBuilder.dynakube) {
@@ -173,10 +173,12 @@ func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
 }
 
 func (statefulSetBuilder Builder) buildVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{{
+	mounts := statefulSetBuilder.capability.Properties().VolumeMounts
+
+	return append(mounts, corev1.VolumeMount{
 		Name:      consts.GatewayTmpVolumeName,
-		MountPath: consts.GatewayTmpMountPoint,
-	}}
+		MountPath: consts.GatewayTmpMountPath,
+	})
 }
 
 func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityContext {

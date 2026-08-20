@@ -6,9 +6,11 @@ package validation
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +27,10 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
 
 	warningActiveGateRollingUpdateOldK8sVersion = `ActiveGate rollingUpdate setting requires Kubernetes version 1.35 or higher. The current cluster version is below 1.35, so the rollingUpdate setting will be ignored.`
+
+	errorActiveGateConflictingVolumeName      = `The DynaKube's ActiveGate specification uses a volume name that conflicts with an internally managed volume: %s. Please use a different name.`
+	errorActiveGateConflictingVolumeMountPath = `The DynaKube's ActiveGate specification uses a volume mount path that conflicts with an internally managed volume: %s. Please use a different path.`
+	errorActiveGateDisallowedVolumeType       = `The DynaKube's ActiveGate specification uses a volume "%s" with a type that is not allowed.`
 
 	minK8sMinorVersionForRollingUpdate = 35
 )
@@ -82,6 +88,57 @@ func activeGateRollingUpdateWithOldK8sVersion(_ context.Context, _ *Validator, d
 
 	if k8sversion.GetMinorVersion() < minK8sMinorVersionForRollingUpdate {
 		return warningActiveGateRollingUpdateOldK8sVersion
+	}
+
+	return ""
+}
+
+func activeGateHasConflictingVolumes(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
+	for _, volume := range dk.Spec.ActiveGate.Volumes {
+		if slices.Contains(agconsts.VolumeNames, volume.Name) {
+			log.Info("conflicting ActiveGate volume name detected", "volume", volume.Name)
+
+			return fmt.Sprintf(errorActiveGateConflictingVolumeName, volume.Name)
+		}
+	}
+
+	for _, volumeMount := range dk.Spec.ActiveGate.VolumeMounts {
+		if slices.Contains(agconsts.MainVolumeMountPaths, volumeMount.MountPath) {
+			log.Info("conflicting ActiveGate volume mount path detected", "path", volumeMount.MountPath)
+
+			return fmt.Sprintf(errorActiveGateConflictingVolumeMountPath, volumeMount.MountPath)
+		}
+	}
+
+	return ""
+}
+
+// allowedActiveGateVolumeSources lists predicates for volume source types compatible with OpenShift's nonroot-v2 SCC.
+var allowedActiveGateVolumeSources = []func(corev1.VolumeSource) bool{
+	func(s corev1.VolumeSource) bool { return s.ConfigMap != nil },
+	func(s corev1.VolumeSource) bool { return s.CSI != nil },
+	func(s corev1.VolumeSource) bool { return s.DownwardAPI != nil },
+	func(s corev1.VolumeSource) bool { return s.EmptyDir != nil },
+	func(s corev1.VolumeSource) bool { return s.Ephemeral != nil },
+	func(s corev1.VolumeSource) bool { return s.PersistentVolumeClaim != nil },
+	func(s corev1.VolumeSource) bool { return s.Projected != nil },
+	func(s corev1.VolumeSource) bool { return s.Secret != nil },
+	func(s corev1.VolumeSource) bool { return s.Image != nil },
+}
+
+func activeGateHasDisallowedVolumeType(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
+	for _, volume := range dk.Spec.ActiveGate.Volumes {
+		if !slices.ContainsFunc(allowedActiveGateVolumeSources, func(isAllowed func(corev1.VolumeSource) bool) bool {
+			return isAllowed(volume.VolumeSource)
+		}) {
+			log.Info("ActiveGate volume uses a source disallowed by the OpenShift nonroot-v2 SCC", "volume", volume)
+
+			return fmt.Sprintf(errorActiveGateDisallowedVolumeType, volume.Name)
+		}
 	}
 
 	return ""

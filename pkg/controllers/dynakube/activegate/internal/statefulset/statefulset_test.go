@@ -682,9 +682,76 @@ func TestVolumeMounts(t *testing.T) {
 
 		expectedVolumeMount := corev1.VolumeMount{
 			Name:      consts.GatewayTmpVolumeName,
-			MountPath: consts.GatewayTmpMountPoint,
+			MountPath: consts.GatewayTmpMountPath,
 		}
 		require.Contains(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+	})
+
+	t.Run("user-provided volume mounts are included before managed mounts", func(t *testing.T) {
+		userMount := corev1.VolumeMount{
+			Name:      "my-custom-volume",
+			MountPath: "/my/custom/path",
+		}
+		managedMount := corev1.VolumeMount{
+			Name:      consts.GatewayTmpVolumeName,
+			MountPath: consts.GatewayTmpMountPath,
+		}
+
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.VolumeMounts = []corev1.VolumeMount{userMount}
+		multiCapability := capability.NewMultiCapability(&dk)
+		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts := statefulsetBuilder.getBase()
+
+		mounts := sts.Spec.Template.Spec.Containers[0].VolumeMounts
+		require.Contains(t, mounts, userMount)
+		require.Contains(t, mounts, managedMount)
+
+		userIdx := slices.IndexFunc(mounts, func(m corev1.VolumeMount) bool { return m.Name == userMount.Name })
+		managedIdx := slices.IndexFunc(mounts, func(m corev1.VolumeMount) bool { return m.Name == managedMount.Name })
+		assert.Less(t, userIdx, managedIdx, "user-provided mount should come before managed mount")
+	})
+}
+
+func TestBuildVolumes(t *testing.T) {
+	t.Run("user-provided volumes are included alongside managed volumes", func(t *testing.T) {
+		userVolume := corev1.Volume{
+			Name: "my-custom-volume",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}
+		managedVolume := corev1.Volume{
+			Name: consts.GatewayTmpVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}
+
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.Volumes = []corev1.Volume{userVolume}
+		multiCapability := capability.NewMultiCapability(&dk)
+		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts := statefulsetBuilder.getBase()
+
+		assert.Contains(t, sts.Spec.Template.Spec.Volumes, userVolume)
+		assert.Contains(t, sts.Spec.Template.Spec.Volumes, managedVolume)
+	})
+
+	t.Run("no user-provided volumes results in only managed volumes", func(t *testing.T) {
+		dk := getTestDynakube()
+		multiCapability := capability.NewMultiCapability(&dk)
+		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts := statefulsetBuilder.getBase()
+
+		managedVolume := corev1.Volume{
+			Name: consts.GatewayTmpVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}
+		assert.Contains(t, sts.Spec.Template.Spec.Volumes, managedVolume)
+		assert.Len(t, sts.Spec.Template.Spec.Volumes, 1)
 	})
 }
 

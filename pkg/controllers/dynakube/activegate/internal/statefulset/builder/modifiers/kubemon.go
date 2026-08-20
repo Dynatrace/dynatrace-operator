@@ -22,15 +22,9 @@ var _ initContainerModifier = KubernetesMonitoringModifier{}
 var _ builder.Modifier = KubernetesMonitoringModifier{}
 
 const (
-	trustStoreVolume          = "truststore-volume"
-	activeGateCacertsPath     = "/opt/dynatrace/gateway/jre/lib/security/cacerts"
 	k8sCertificateFile        = "k8s-local.jks"
 	k8scrt2jksPath            = "/opt/dynatrace/gateway/k8scrt2jks.sh"
-	activeGateSslPath         = "/var/lib/dynatrace/gateway/ssl"
-	k8scrt2jksWorkingDir      = "/var/lib/dynatrace/gateway"
 	initContainerTemplateName = "certificate-loader"
-
-	certLoaderWorkDirVolume = "cert-tmp"
 )
 
 func NewKubernetesMonitoringModifier(dk dynakube.DynaKube, capability capability.Capability) KubernetesMonitoringModifier {
@@ -63,8 +57,8 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 	volumeMounts := slices.Concat([]corev1.VolumeMount{
 		{
 			ReadOnly:  false,
-			Name:      trustStoreVolume,
-			MountPath: activeGateSslPath,
+			Name:      consts.TrustStoreVolumeName,
+			MountPath: consts.GatewaySslMountPath,
 		},
 	}, mod.getReadOnlyInitVolumeMounts())
 
@@ -76,7 +70,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 			Name:            initContainerTemplateName,
 			Image:           mod.dk.ActiveGate().GetImage(),
 			ImagePullPolicy: mod.dk.ActiveGate().ImagePullPolicy,
-			WorkingDir:      k8scrt2jksWorkingDir,
+			WorkingDir:      consts.InitCertLoaderWorkDirMountPath,
 			Command:         []string{"/bin/bash"},
 			Args:            []string{"-c", k8scrt2jksPath},
 			VolumeMounts:    volumeMounts,
@@ -89,7 +83,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
 	return slices.Concat([]corev1.Volume{
 		{
-			Name: trustStoreVolume,
+			Name: consts.TrustStoreVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -100,7 +94,7 @@ func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
 func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name:         certLoaderWorkDirVolume,
+			Name:         consts.InitCertLoaderWorkDirVolumeName,
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 		},
 	}
@@ -110,8 +104,8 @@ func (mod KubernetesMonitoringModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			ReadOnly:  true,
-			Name:      trustStoreVolume,
-			MountPath: activeGateCacertsPath,
+			Name:      consts.TrustStoreVolumeName,
+			MountPath: consts.TrustStoreCacertsMountPath,
 			SubPath:   k8sCertificateFile,
 		},
 	}
@@ -121,8 +115,8 @@ func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumeMounts() []corev1.V
 	return []corev1.VolumeMount{
 		{
 			ReadOnly:  false,
-			Name:      certLoaderWorkDirVolume,
-			MountPath: k8scrt2jksWorkingDir,
+			Name:      consts.InitCertLoaderWorkDirVolumeName,
+			MountPath: consts.InitCertLoaderWorkDirMountPath,
 		},
 	}
 }

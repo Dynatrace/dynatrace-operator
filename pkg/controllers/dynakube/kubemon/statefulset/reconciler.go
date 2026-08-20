@@ -251,7 +251,7 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		},
 		{
 			Name:      StorageVolumeName,
-			MountPath: agconsts.GatewayTmpMountPoint,
+			MountPath: agconsts.GatewayTmpMountPath,
 		},
 	}
 

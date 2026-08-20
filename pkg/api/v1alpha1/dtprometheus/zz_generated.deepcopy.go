@@ -157,6 +157,11 @@ func (in *PodSpec) DeepCopyInto(out *PodSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.Args != nil {
+		in, out := &in.Args, &out.Args
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector

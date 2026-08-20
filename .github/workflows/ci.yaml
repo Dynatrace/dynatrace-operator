@@ -36,6 +36,7 @@ jobs:
       is_snyk_authorized: ${{ steps.is-snyk-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       markdown_changed: ${{ steps.markdown.outputs.any_changed == 'true' && 'true' || '' }}
+      go_version: ${{ steps.go-version.outputs.go_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -124,6 +125,10 @@ jobs:
           CHANGED_HELM_CONFIG_FILES: ${{ steps.helm.outputs.all_changed_files }}
           CHANGED_MARKDOWN_FILES: ${{ steps.markdown.outputs.all_changed_files }}
           CHANGED_PREREQUISITES_MK_FILE: ${{ steps.prerequisites.outputs.all_changed_files }}
+      - name: Get Go version from Dockerfile
+        id: go-version
+        run: |
+          echo "go_version=$(grep -m1 'FROM.*golang:' Dockerfile | sed 's/.*golang:\([0-9.]*\).*/\1/')" >> "$GITHUB_OUTPUT"
 
   helm-test:
     needs: [detect-changes]
@@ -178,7 +183,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 'stable' # Latest stable version
+          go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
       - name: Run Unit tests and Integration tests
         id: unittest
@@ -202,7 +207,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 'stable' # Latest stable version
+          go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
       - name: Get golangci-lint version
         id: linter-version
@@ -228,7 +233,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 'stable' # Latest stable version
+          go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
       - name: Set up Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1

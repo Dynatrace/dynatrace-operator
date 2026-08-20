@@ -4,6 +4,7 @@
 package sanitize
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -43,22 +44,22 @@ func TestCommandLineArg(t *testing.T) {
 }
 
 func TestCommandLineArgs(t *testing.T) {
-	t.Run("nil slice returns empty slice", func(t *testing.T) {
-		assert.Equal(t, []string{}, CommandLineArgs(nil))
-	})
+	tests := []struct {
+		name   string
+		in     []string
+		expect []string
+	}{
+		{"preserve nil", nil, nil},
+		{"empty slice", []string{}, []string{}},
+		{"sanitize", []string{"foo\nbar", "clean", "a\tb\x00c"}, []string{"foobar", "clean", "abc"}},
+		{"keep valid values", []string{"foo", "bar", "baz"}, []string{"foo", "bar", "baz"}},
+	}
 
-	t.Run("empty slice returns empty slice", func(t *testing.T) {
-		assert.Equal(t, []string{}, CommandLineArgs([]string{}))
-	})
-
-	t.Run("sanitizes every element", func(t *testing.T) {
-		in := []string{"foo\nbar", "clean", "a\tb\x00c"}
-		assert.Equal(t, []string{"foobar", "clean", "abc"}, CommandLineArgs(in))
-	})
-
-	t.Run("does not mutate the input slice", func(t *testing.T) {
-		in := []string{"foo\nbar"}
-		_ = CommandLineArgs(in)
-		assert.Equal(t, []string{"foo\nbar"}, in)
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			old := slices.Clone(tt.in)
+			assert.Equal(t, tt.expect, CommandLineArgs(tt.in))
+			assert.Equal(t, old, tt.in, "input slice was mutated")
+		})
+	}
 }

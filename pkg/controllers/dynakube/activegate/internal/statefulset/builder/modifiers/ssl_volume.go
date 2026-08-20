@@ -54,7 +54,7 @@ func (mod SSLVolumeModifier) getVolumeMounts() []corev1.VolumeMount {
 		{
 			ReadOnly:  false,
 			Name:      consts.GatewaySslVolumeName,
-			MountPath: consts.GatewaySslMountPoint,
+			MountPath: consts.GatewaySslMountPath,
 		},
 	}
 }
