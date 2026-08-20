@@ -202,7 +202,7 @@ func truncateVersion(ver string) string {
 		ver = ver[:validation.DNS1035LabelMaxLength]
 	}
 
-	if len(content.IsLabelValue(ver)) > 0 {
+	if errs := content.IsLabelValue(ver); len(errs) > 0 {
 		return ""
 	}
 
