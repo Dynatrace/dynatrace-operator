@@ -12,9 +12,10 @@
 NAMESPACE="${1:-dynatrace}"
 echo "Using namespace: $NAMESPACE"
 
-echo -e "\nRemoving DynaKube and EdgeConnect custom resources"
+echo -e "\nRemoving DynaKube, EdgeConnect and DTPrometheus custom resources"
 kubectl delete dynakube --all -n "$NAMESPACE"
 kubectl delete edgeconnect --all -n "$NAMESPACE"
+kubectl delete dtprometheus --all -n "$NAMESPACE" || true
 kubectl -n "$NAMESPACE" wait pod --for=delete -l app.kubernetes.io/managed-by=dynatrace-operator --timeout=300s
 
 echo -e "\nDeleting Dynatrace namespace"
