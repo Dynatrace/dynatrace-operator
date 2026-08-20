@@ -48,7 +48,7 @@ func Install(releaseTag string, withCSI bool) env.Func {
 }
 
 // InstallLocal deploys the operator helm chart from filesystem.
-func InstallLocal(withCSI bool) env.Func {
+func InstallLocal(withCSI bool, extraOpts ...helm.Option) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		if os.Getenv("OLM") == "true" {
 			if withCSI {
@@ -62,7 +62,7 @@ func InstallLocal(withCSI bool) env.Func {
 				return ctx, err
 			}
 		} else {
-			err := InstallViaHelm("", withCSI)
+			err := InstallViaHelm("", withCSI, extraOpts...)
 			if err != nil {
 				return ctx, err
 			}

@@ -21,11 +21,9 @@ import (
 )
 
 const (
-	Suffix     = "custom-properties"
-	DataKey    = "customProperties"
-	DataPath   = "custom.properties"
-	VolumeName = "custom-properties"
-	MountPath  = "/var/lib/dynatrace/gateway/config_template/custom.properties"
+	Suffix   = "custom-properties"
+	DataKey  = "customProperties"
+	DataPath = "custom.properties"
 
 	clientInternalSection = "[http.client.internal]"
 	noProxyFieldName      = "proxy-non-proxy-hosts"

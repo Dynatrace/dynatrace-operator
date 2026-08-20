@@ -259,6 +259,10 @@ func TestNoCSI_kspm_with_optional_scopes(t *testing.T) {
 	testEnv.Test(t, kspm.OptionalScopes(t))
 }
 
+func TestNoCSI_kspm_with_kubemon(t *testing.T) {
+	testEnv.Test(t, kspm.FeatureWithKubemon(t))
+}
+
 func TestNoCSI_extensions_db_executor(t *testing.T) {
 	testEnv.Test(t, dbexecutor.Feature(t))
 }

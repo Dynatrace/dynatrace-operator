@@ -39,7 +39,8 @@ deploy: manifests/crd/helm
 			--set debug=$(DEBUG) \
 			--set enableInsecurePprofEndpoint=$(PROFILING) \
 			--set dtClientLogLevel=$(DT_CLIENT_LOG_LEVEL) \
-			--set imageRef.pullPolicy=$(IMAGE_PULL_POLICY)
+			--set imageRef.pullPolicy=$(IMAGE_PULL_POLICY) \
+			--set experimental.enableKubemonOperand=true
 
 ## Undeploy the current operator installation
 undeploy:

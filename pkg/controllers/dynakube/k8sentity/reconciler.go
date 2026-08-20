@@ -73,7 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		return handleMissingScope("settings:objects:read", err)
 	}
 
-	if !isRegistrationEnabled(dk) {
+	if !dk.IsKubernetesMonitoringRegistrationEnabled() {
 		return nil
 	}
 
@@ -217,14 +217,6 @@ func (r *Reconciler) createK8sAppSettingIfAbsent(ctx context.Context, dtClient s
 	}
 
 	return nil
-}
-
-func isRegistrationEnabled(dk *dynakube.DynaKube) bool {
-	if dk.KubernetesMonitoring().IsRegistrationEnabled() {
-		return true
-	}
-
-	return dk.FF().IsAutomaticK8sAPIMonitoring() && dk.ActiveGate().IsKubernetesMonitoringEnabled()
 }
 
 func getRegistrationClusterName(dk *dynakube.DynaKube) string {

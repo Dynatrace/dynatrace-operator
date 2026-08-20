@@ -404,7 +404,10 @@ test/e2e/telemetryingest/scaling:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_scaling" $(SKIPCLEANUP)
 
 test/e2e/kspm:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm.*" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "kspm.*" $(SKIPCLEANUP)
+
+test/e2e/kspm/kubemon:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm_with_kubemon" $(SKIPCLEANUP)
 
 test/e2e/kspm/optionalscopes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm_with_optional_scopes" $(SKIPCLEANUP)

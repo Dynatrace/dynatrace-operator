@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 )
 
 func (dk *DynaKube) ActiveGate() *activegate.ActiveGate {
@@ -66,6 +67,21 @@ func (dk *DynaKube) KubernetesMonitoring() *kubemon.KubeMon {
 	km.SetAPIURLHost(dk.APIURLHost())
 
 	return km
+}
+
+func (dk *DynaKube) IsKubemonEnabled() bool {
+	return k8senv.IsKubemonOperandEnabled() && dk.KubernetesMonitoring().IsEnabled()
+}
+
+func (dk *DynaKube) IsKubernetesMonitoringEnabled() bool {
+	return dk.IsKubemonEnabled() || dk.Spec.ActiveGate.IsKubernetesMonitoringEnabled()
+}
+
+func (dk *DynaKube) IsKubernetesMonitoringRegistrationEnabled() bool {
+	kubemonRegistrationEnabled := dk.IsKubemonEnabled() && dk.KubernetesMonitoring().IsRegistrationEnabled()
+	activeGateRegistrationEnabled := dk.Spec.ActiveGate.IsKubernetesMonitoringEnabled() && dk.FF().IsAutomaticK8sAPIMonitoring()
+
+	return kubemonRegistrationEnabled || activeGateRegistrationEnabled
 }
 
 func (dk *DynaKube) LogMonitoring() *logmonitoring.LogMonitoring {

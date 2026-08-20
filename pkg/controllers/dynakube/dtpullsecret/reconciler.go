@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
@@ -40,7 +39,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, token
 
 	anyRelevantOperandEnabled := dk.OneAgent().IsDaemonsetRequired() ||
 		dk.ActiveGate().IsEnabled() ||
-		(k8senv.IsKubemonOperandEnabled() && dk.KubernetesMonitoring().IsEnabled())
+		dk.IsKubemonEnabled()
 
 	if dk.FF().IsPublicRegistry() || !anyRelevantOperandEnabled {
 		if meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType) == nil {

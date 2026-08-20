@@ -9,9 +9,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/statefulset/probe"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -37,8 +39,11 @@ const (
 	AnnotationTenantTokenHash      = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
 	AnnotationAuthTokenHash        = api.InternalFlagPrefix + "kubemon-authtoken-hash"
 	AnnotationCustomPropertiesHash = api.InternalFlagPrefix + "kubemon-customproperties-hash"
+	AnnotationKSPMTokenHash        = api.InternalFlagPrefix + "kubemon-kspm-token-hash"
 	StorageVolumeName              = "kubemon-storage"
 	AuthTokenVolumeName            = "kubemon-authtoken-secret"
+	kspmTokenVolumeName            = "kspm-token"
+	kspmTokenMountPath             = operatorconsts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
 )
 
 var (
@@ -96,6 +101,21 @@ func ensureReady(dk *dynakube.DynaKube) error {
 	}
 
 	return nil
+}
+
+func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash string) map[string]string {
+	annotations := map[string]string{
+		AnnotationTenantTokenHash:              tokenHash,
+		AnnotationAuthTokenHash:                authTokenHash,
+		AnnotationCustomPropertiesHash:         customPropertiesHash,
+		mutator.AnnotationInjectionSplitMounts: "true",
+	}
+
+	if dk.KSPM().IsEnabled() {
+		annotations[AnnotationKSPMTokenHash] = dk.KSPM().TokenSecretHash
+	}
+
+	return annotations
 }
 
 // buildEnvs prepends the mandatory AG runtime env vars (and optional DT_GROUP) to any user-supplied vars.
@@ -199,6 +219,18 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		})
 	}
 
+	if dk.KSPM().IsEnabled() {
+		volumes = append(volumes, corev1.Volume{
+			Name: kspmTokenVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.KSPM().GetTokenSecretName(),
+					DefaultMode: new(int32(0o640)),
+				},
+			},
+		})
+	}
+
 	return volumes
 }
 
@@ -219,7 +251,7 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		},
 		{
 			Name:      StorageVolumeName,
-			MountPath: agconsts.GatewayTmpMountPoint,
+			MountPath: agconsts.GatewayTmpMountPath,
 		},
 	}
 
@@ -229,6 +261,15 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			ReadOnly:  true,
 			MountPath: kubemoncustomproperties.MountPath,
 			SubPath:   kubemoncustomproperties.DataKey,
+		})
+	}
+
+	if dk.KSPM().IsEnabled() {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      kspmTokenVolumeName,
+			ReadOnly:  true,
+			MountPath: kspmTokenMountPath,
+			SubPath:   kspm.TokenSecretKey,
 		})
 	}
 
@@ -316,20 +357,20 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		VolumeMounts:    buildVolumeMounts(dk),
 		ReadinessProbe:  probe.Readiness(),
 		LivenessProbe:   probe.Liveness(),
+		Ports: []corev1.ContainerPort{
+			{Name: agconsts.HTTPSServicePortName, ContainerPort: agconsts.HTTPSContainerPort},
+			{Name: agconsts.HTTPServicePortName, ContainerPort: agconsts.HTTPContainerPort},
+		},
 	}
 
 	km := dk.KubernetesMonitoring()
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KubeMonComponentLabel)
+
+	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.GetName(), "")
 
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
-		k8sstatefulset.SetAllLabels(coreLabels.BuildLabels(), coreLabels.BuildMatchLabels(), coreLabels.BuildLabels(), km.Labels),
-		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, map[string]string{
-			AnnotationTenantTokenHash:              tokenHash,
-			AnnotationAuthTokenHash:                authTokenHash,
-			AnnotationCustomPropertiesHash:         customPropertiesHash,
-			mutator.AnnotationInjectionSplitMounts: "true",
-		})),
+		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsMap(), km.Labels),
+		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash))),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
 		k8sstatefulset.SetTolerations(km.Tolerations),
