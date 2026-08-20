@@ -28,7 +28,7 @@ var (
 // buildGatewayOTelConfig assembles the OTel Collector relay config as an otelcgen.Config.
 // The caller marshals it to YAML via cfg.Marshal().
 func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
-	processors, processorIDs := buildProcessorMap(data)
+	processors, processorIDs := buildProcessorMap()
 
 	return &otelcgen.Config{
 		Receivers: map[component.ID]component.Config{
@@ -62,7 +62,7 @@ func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
 	}
 }
 
-func buildProcessorMap(data gatewayConfigData) (map[component.ID]component.Config, []component.ID) {
+func buildProcessorMap() (map[component.ID]component.Config, []component.ID) {
 	m := map[component.ID]component.Config{
 		memoryLimiterID: map[string]any{
 			"check_interval":         "1s",

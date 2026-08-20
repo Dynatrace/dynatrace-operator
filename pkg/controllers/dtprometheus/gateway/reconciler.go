@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -222,7 +223,7 @@ func buildGatewayConfigData(dk *dynakube.DynaKube) gatewayConfigData {
 	data := gatewayConfigData{Endpoint: dk.APIURL() + "/v2/otlp"}
 
 	if dk.Spec.TrustedCAs != "" {
-		data.CustomCAPath = trustedCAVolumeMountPath + "/" + trustedCAFile
+		data.CustomCAPath = filepath.Join(trustedCAVolumeMountPath, trustedCAFile)
 	}
 
 	return data
