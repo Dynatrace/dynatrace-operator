@@ -29,8 +29,7 @@
 
 # ── Generic AG operand ───────────────────────────────────────────────────────
 /pkg/api/latest/dynakube/activegate/                       @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/activegate.go                 @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/activegate_test.go            @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/activegate*                   @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/activegate/                      @Dynatrace/kubernetes-operator
 /test/e2e/features/activegate/                             @Dynatrace/kubernetes-operator
 
@@ -40,8 +39,7 @@
 
 # ── OneAgent operand ─────────────────────────────────────────────────────────
 /pkg/api/latest/dynakube/oneagent/                         @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/oneagent.go                   @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/oneagent_test.go              @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/oneagent*                     @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/oneagent/                        @Dynatrace/kubernetes-operator
 /test/e2e/features/classic/                                @Dynatrace/kubernetes-operator
 /test/e2e/features/hostmonitoring/                         @Dynatrace/kubernetes-operator
@@ -49,8 +47,7 @@
 # ── OTel collector operand ───────────────────────────────────────────────────
 /pkg/api/latest/dynakube/telemetryingest/                  @Dynatrace/kubernetes-operator
 /pkg/api/latest/dynakube/otlp/                             @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/telemetryservice.go           @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/telemetryservice_test.go      @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/telemetryservice*             @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/otelc/                           @Dynatrace/kubernetes-operator
 /pkg/otelcgen/                                             @Dynatrace/kubernetes-operator
 /pkg/injection/otlp/                                       @Dynatrace/kubernetes-operator
@@ -60,26 +57,21 @@
 
 # ── Log monitoring operand ───────────────────────────────────────────────────
 /pkg/api/latest/dynakube/logmonitoring/                    @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/logmonitoring.go              @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/logmonitoring_test.go         @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/logmonitoring*                @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/logmonitoring/                   @Dynatrace/kubernetes-operator
 /test/e2e/features/logmonitoring/                          @Dynatrace/kubernetes-operator
 
 # ── KSPM operand ─────────────────────────────────────────────────────────────
 /pkg/api/latest/dynakube/kspm/                             @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/kspm.go                       @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/kspm_test.go                  @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/kspm*                         @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/kspm/                            @Dynatrace/kubernetes-operator
 /test/e2e/features/kspm/                                   @Dynatrace/kubernetes-operator
 
 # ── EEC (Extensions) operand ─────────────────────────────────────────────────
 /pkg/api/latest/dynakube/extensions/                       @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/eec.go                        @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/eec_test.go                   @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/database.go                   @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/database_test.go              @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/extensions.go                 @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/extensions_test.go            @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/eec*                          @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/database*                     @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/extensions*                   @Dynatrace/kubernetes-operator
 /pkg/controllers/dynakube/extension/                       @Dynatrace/kubernetes-operator
 /test/e2e/features/extensions/                             @Dynatrace/kubernetes-operator
 
@@ -90,8 +82,7 @@
 
 # ── Code Modules (injection) operand ─────────────────────────────────────────
 /pkg/api/latest/dynakube/metadataenrichment/               @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/metadata_enrichment.go        @Dynatrace/kubernetes-operator
-/pkg/api/validation/dynakube/metadata_enrichment_test.go   @Dynatrace/kubernetes-operator
+/pkg/api/validation/dynakube/metadata_enrichment*          @Dynatrace/kubernetes-operator
 /pkg/webhook/mutation/pod/handler/injection                @Dynatrace/kubernetes-operator
 /pkg/webhook/mutation/pod/mutator/oneagent/                @Dynatrace/kubernetes-operator
 /pkg/injection/codemodule/                                 @Dynatrace/kubernetes-operator
