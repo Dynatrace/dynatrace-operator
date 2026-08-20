@@ -55,6 +55,19 @@ spec:
     image: docker.io/dynatrace/otel-target-allocator:latest
     pullPolicy: IfNotPresent
 
+    # Extra command-line flags for the Target Allocator.
+    # The operator owns the config file mounted at /conf/targetallocator.yaml, and
+    # CLI flags take precedence over it - so only logging flags are safe here.
+    # Do NOT set --config-file, --listen-addr, --enable-https-server, --listen-addr-https,
+    # --https-*, --enable-prometheus-cr-watcher or --kubeconfig-path: each one silently
+    # overrides operator-managed config, and the port flags also break the probes and Service.
+    args:
+      # - --zap-log-level=debug
+      # - --zap-encoder=console
+      # - --zap-stacktrace-level=panic   # default: error
+      # - --zap-time-encoding=iso8601    # default: rfc3339
+      # - --zap-devel                    # dev preset; overrides the flags above
+
     # Resource requests and limits for each TA pod.
     # Scale with the number of scrape targets, not metric volume.
     # Baseline: 10m CPU / 256 MiB covers up to ~200 scrape targets.
@@ -127,6 +140,24 @@ spec:
     image: docker.io/dynatrace/dynatrace-otel-collector:latest
     pullPolicy: IfNotPresent
 
+    # Extra command-line flags for the collector.
+    # The only flags accepted are --config, --set and --feature-gates.
+    # The operator already passes its own --config; additional --config URIs are
+    # deep-merged (later wins), so avoid them - a user config can silently clobber
+    # extensions.health_check.endpoint (the probe port) or the OTLP receiver endpoint
+    # (the Service target port). For the same reason do not --set receivers.*,
+    # exporters.*, service.pipelines.* or extensions.health_check.*.
+    # Note: --set rewrites every "." in the key to "::", so keys that legitimately
+    # contain dots (e.g. k8s.pod.name) cannot be set this way. --set always wins
+    # over --config regardless of flag order.
+    args:
+      # - --set=service.telemetry.logs.level=debug
+      # - --set=service.telemetry.metrics.level=detailed      # none|basic|normal|detailed
+      # - --set=service.telemetry.logs.encoding=json          # default: console
+      # - --set=service.telemetry.logs.sampling.enabled=false # default: 10 then 1-in-100 per 10s
+      # - --feature-gates=+telemetry.newPipelineTelemetry     # scope attrs on internal metrics
+      # - --feature-gates=-service.partialReloadReceivers     # disable a Beta-on-by-default gate
+
     # Baseline: 1 CPU / 6 GiB handles ~1M DPM with a 60s scrape interval.
     resources:
       requests:
@@ -189,6 +220,25 @@ spec:
     # When omitted the operator uses the image provided via the image endpoint.
     image: docker.io/dynatrace/dynatrace-otel-collector:latest
     pullPolicy: IfNotPresent
+
+    # Extra command-line flags for the collector.
+    # The only flags accepted are --config, --set and --feature-gates.
+    # The operator already passes its own --config; additional --config URIs are
+    # deep-merged (later wins), so avoid them - a user config can silently clobber
+    # extensions.health_check.endpoint (the probe port) or the OTLP receiver endpoint
+    # (the Service target port). For the same reason do not --set receivers.*,
+    # exporters.*, service.pipelines.* or extensions.health_check.*.
+    # Note: --set rewrites every "." in the key to "::", so keys that legitimately
+    # contain dots (e.g. k8s.pod.name) cannot be set this way. --set always wins
+    # over --config regardless of flag order.
+    args:
+      # - --set=service.telemetry.logs.level=debug
+      # The gateway holds the cumulativetodelta state, so its own metrics matter most.
+      # - --set=service.telemetry.metrics.level=detailed
+      # - --set=service.telemetry.logs.encoding=json          # default: console
+      # - --set=service.telemetry.logs.sampling.enabled=false # default: 10 then 1-in-100 per 10s
+      # - --feature-gates=+telemetry.newPipelineTelemetry     # scope attrs on internal metrics
+      # - --feature-gates=-service.partialReloadReceivers     # disable a Beta-on-by-default gate
 
     # Resource requests and limits per gateway pod.
     # Baseline: 2 CPUs / 8 GiB handles ~1M DPM with a 60s scrape interval.
