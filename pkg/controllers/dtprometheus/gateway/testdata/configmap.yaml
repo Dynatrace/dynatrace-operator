@@ -85,7 +85,7 @@ data:
             check_interval: 1s
             limit_percentage: 95
             spike_limit_percentage: 5
-        metric_start_time: {}
+        metric_start_time: null
         transform:
             metric_statements:
                 - context: datapoint

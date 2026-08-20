@@ -74,6 +74,7 @@ spec:
                   module annotation-based discovery workflow.
                 type: object
               gateway:
+                default: {}
                 description: |-
                   Configures the gateway pool (tier 2): a StatefulSet of OTel Collectors that
                   run stateful processors and export to Dynatrace via OTLP/HTTP.

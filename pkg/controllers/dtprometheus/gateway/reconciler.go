@@ -219,29 +219,16 @@ type gatewayConfigData struct {
 }
 
 // buildGatewayConfigData resolves the DynaKube-derived inputs to the relay.yaml template.
-// customCA only applies when no routing ActiveGate is configured (direct-to-tenant path).
 func buildGatewayConfigData(dk *dynakube.DynaKube) gatewayConfigData {
-	data := gatewayConfigData{Endpoint: gatewayEndpoint(dk)}
+	data := gatewayConfigData{Endpoint: dk.APIURL() + "/v2/otlp"}
 
-	if !dk.ActiveGate().IsRoutingEnabled() && dk.Spec.TrustedCAs != "" {
+	if dk.Spec.TrustedCAs != "" {
 		data.CustomCAPath = trustedCAVolumeMountPath + "/" + trustedCAFile
 	}
 
 	data.ResourceAttributes = dk.GetResourceAttributes()
 
 	return data
-}
-
-// gatewayEndpoint routes through the routing ActiveGate when configured, otherwise sends directly to the tenant.
-func gatewayEndpoint(dk *dynakube.DynaKube) string {
-	if !dk.ActiveGate().IsRoutingEnabled() {
-		return dk.APIURL() + "/v2/otlp"
-	}
-
-	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/otlp",
-		capability.BuildServiceName(dk.Name),
-		dk.Namespace,
-		dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
 }
 
 func renderGatewayConfig(data gatewayConfigData) (string, error) {
@@ -295,7 +282,9 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.ServiceName = s.Spec.GetStatefulSetName()
 
 	sts.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
-	sts.Spec.UpdateStrategy = s.Spec.UpdateStrategy
+	if s.Spec.UpdateStrategy.Type != "" {
+		sts.Spec.UpdateStrategy = s.Spec.UpdateStrategy
+	}
 
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
 	sts.Spec.Template.Spec.ServiceAccountName = serviceAccountName
@@ -399,7 +388,7 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 		envs = append(envs, memLimitEnv)
 	}
 
-	if !dk.ActiveGate().IsRoutingEnabled() && dk.HasProxy() {
+	if dk.HasProxy() {
 		envs = append(envs,
 			proxyEnv("HTTPS_PROXY", dk.Spec.Proxy),
 			proxyEnv("HTTP_PROXY", dk.Spec.Proxy),
@@ -469,7 +458,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 		},
 	}
 
-	if !dk.ActiveGate().IsRoutingEnabled() && dk.Spec.TrustedCAs != "" {
+	if dk.Spec.TrustedCAs != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: cacertsVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -492,7 +481,7 @@ func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
 	}
 
-	if !dk.ActiveGate().IsRoutingEnabled() && dk.Spec.TrustedCAs != "" {
+	if dk.Spec.TrustedCAs != "" {
 		mounts = append(mounts, corev1.VolumeMount{Name: cacertsVolumeName, MountPath: trustedCAVolumeMountPath, ReadOnly: true})
 	}
 
