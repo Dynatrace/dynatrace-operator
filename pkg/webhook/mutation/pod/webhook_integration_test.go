@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -47,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
@@ -334,11 +336,11 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 
 	integrationtests.CreateDynakube(t, clt, dk)
 
-	dummyOwner, ownerReference := getDummyOwnerDeployment()
+	dummyOwner := getDummyOwnerDeployment()
 	integrationtests.CreateKubernetesObject(t, clt, dummyOwner)
 	pod := createPod(t, clt, func(pod *corev1.Pod) {
 		pod.Annotations = podMetadataAnnotations
-		pod.OwnerReferences = ownerReference
+		require.NoError(t, controllerutil.SetControllerReference(dummyOwner, pod, scheme.Scheme))
 	})
 
 	require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
@@ -624,11 +626,11 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 
 				integrationtests.CreateDynakube(t, clt, dk)
 
-				dummyOwner, ownerReference := getDummyOwnerDeployment()
+				dummyOwner := getDummyOwnerDeployment()
 				integrationtests.CreateKubernetesObject(t, clt, dummyOwner)
 				pod := createPod(t, clt, func(pod *corev1.Pod) {
 					pod.Annotations = podMetadataAnnotations
-					pod.OwnerReferences = ownerReference
+					require.NoError(t, controllerutil.SetControllerReference(dummyOwner, pod, scheme.Scheme))
 				})
 
 				// verify mutation occurred by presence of OTLP env vars (annotation may not be set when no OneAgent injection)
@@ -1361,12 +1363,8 @@ func getDummyWebhookPod() *corev1.Pod {
 	}
 }
 
-func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
-	deploy := &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
-			APIVersion: "apps/v1",
-		},
+func getDummyOwnerDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-deployment",
 			Namespace: testNamespace,
@@ -1391,17 +1389,6 @@ func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
 		},
 		Status: appsv1.DeploymentStatus{},
 	}
-	ownerReference := []metav1.OwnerReference{
-		{
-			Name:       deploy.Name,
-			APIVersion: deploy.APIVersion,
-			Kind:       deploy.Kind,
-			Controller: new(true),
-			UID:        types.UID(uuid.NewString()),
-		},
-	}
-
-	return deploy, ownerReference
 }
 
 func getNamespace(name string) *corev1.Namespace {
