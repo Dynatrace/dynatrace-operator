@@ -27,37 +27,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// reconcileRecorder counts, per DTPrometheus key, how many times the
-// reconciler's (fake) client Get was called, which happens exactly once per Reconcile.
-type reconcileRecorder struct {
-	mu    sync.Mutex
-	calls map[client.ObjectKey]int
-}
-
-func newReconcileRecorder() *reconcileRecorder {
-	return &reconcileRecorder{calls: map[client.ObjectKey]int{}}
-}
-
-func (r *reconcileRecorder) record(key client.ObjectKey) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.calls[key]++
-}
-
-func (r *reconcileRecorder) count(key client.ObjectKey) int {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	return r.calls[key]
-}
-
-func (r *reconcileRecorder) reset(key client.ObjectKey) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	delete(r.calls, key)
-}
-
-func TestSetupWithManager(t *testing.T) {
+// Integration test entrypoint for the DTPrometheus reconciler.
+// Add any new tests as subtests here, instead of instantiating a new envtest environment to reduce test runtime.
+func TestReconciler(t *testing.T) {
 	recorder := newReconcileRecorder()
 	r := &Reconciler{
 		Client: fake.NewClientWithInterceptors(interceptor.Funcs{
@@ -73,6 +45,12 @@ func TestSetupWithManager(t *testing.T) {
 		return r.SetupWithManager(mgr)
 	})
 
+	t.Run("SetupWithManager", func(t *testing.T) {
+		testSetupWithManager(t, clt, recorder)
+	})
+}
+
+func testSetupWithManager(t *testing.T, clt client.Client, recorder *reconcileRecorder) {
 	const (
 		eventuallyTimeout  = 10 * time.Second
 		eventuallyInterval = 100 * time.Millisecond
@@ -231,4 +209,34 @@ func TestSetupWithManager(t *testing.T) {
 			require.NoError(t, clt.Delete(t.Context(), dk))
 		})
 	})
+}
+
+// reconcileRecorder counts, per DTPrometheus key, how many times the
+// reconciler's (fake) client Get was called, which happens exactly once per Reconcile.
+type reconcileRecorder struct {
+	mu    sync.Mutex
+	calls map[client.ObjectKey]int
+}
+
+func newReconcileRecorder() *reconcileRecorder {
+	return &reconcileRecorder{calls: map[client.ObjectKey]int{}}
+}
+
+func (r *reconcileRecorder) record(key client.ObjectKey) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.calls[key]++
+}
+
+func (r *reconcileRecorder) count(key client.ObjectKey) int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	return r.calls[key]
+}
+
+func (r *reconcileRecorder) reset(key client.ObjectKey) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.calls, key)
 }
