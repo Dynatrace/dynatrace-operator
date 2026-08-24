@@ -21,6 +21,65 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestHasOCIVolumeAnnotation(t *testing.T) {
+	const testImage = "test-registry/test-image:latest"
+
+	t.Run("OCI annotation + codeModulesImage set => true", func(t *testing.T) {
+		req := &dtwebhook.BaseRequest{
+			Pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationVolumeType: OCIVolumeImageType,
+					},
+				},
+			},
+			DynaKube: dynakube.DynaKube{
+				Status: dynakube.DynaKubeStatus{
+					CodeModules: oneagent.CodeModulesStatus{
+						VersionStatus: status.VersionStatus{ImageID: testImage},
+					},
+				},
+			},
+		}
+
+		assert.True(t, hasOCIVolumeAnnotation(req))
+	})
+
+	t.Run("OCI annotation + no codeModulesImage => false", func(t *testing.T) {
+		req := &dtwebhook.BaseRequest{
+			Pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationVolumeType: OCIVolumeImageType,
+					},
+				},
+			},
+			DynaKube: dynakube.DynaKube{},
+		}
+
+		assert.False(t, hasOCIVolumeAnnotation(req))
+	})
+
+	t.Run("no annotation + codeModulesImage set => false", func(t *testing.T) {
+		req := &dtwebhook.BaseRequest{
+			Pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+			},
+			DynaKube: dynakube.DynaKube{
+				Status: dynakube.DynaKubeStatus{
+					CodeModules: oneagent.CodeModulesStatus{
+						VersionStatus: status.VersionStatus{ImageID: testImage},
+					},
+				},
+			},
+		}
+
+		assert.False(t, hasOCIVolumeAnnotation(req))
+	})
+}
+
 func TestIsEnabled(t *testing.T) {
 	matchLabels := map[string]string{
 		"match": "me",

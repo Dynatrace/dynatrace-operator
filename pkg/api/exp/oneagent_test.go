@@ -255,6 +255,44 @@ func TestSkipOneAgentLivenessProbe(t *testing.T) {
 	}
 }
 
+func TestIsImageVolume(t *testing.T) {
+	type testCase struct {
+		title string
+		in    string
+		out   bool
+	}
+
+	cases := []testCase{
+		{
+			title: "default",
+			in:    "",
+			out:   false,
+		},
+		{
+			title: "overrule",
+			in:    "true",
+			out:   true,
+		},
+		{
+			title: "explicit false",
+			in:    "false",
+			out:   false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			ff := FeatureFlags{annotations: map[string]string{
+				OAImageVolumeKey: c.in,
+			}}
+
+			out := ff.IsImageVolume()
+
+			assert.Equal(t, c.out, out)
+		})
+	}
+}
+
 func TestIsNodeImagePull(t *testing.T) {
 	type testCase struct {
 		title string

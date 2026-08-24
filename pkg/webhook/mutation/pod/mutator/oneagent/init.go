@@ -38,21 +38,19 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	}
 
-	const (
-		readOnly = true
-	)
-
 	switch {
 	case hasOCIVolumeAnnotation(mutationRequest.BaseRequest) || mutationRequest.DynaKube.FF().IsImageVolume():
 		log.Info("configuring init-container with OCI image bin volume", "name", mutationRequest.PodName())
-		addOCIBinVolume(mutationRequest.Pod, mutationRequest.DynaKube.OneAgent().GetCodeModulesImage())
+		addOCIBinVolume(mutationRequest.Pod,
+			mutationRequest.DynaKube.OneAgent().GetCodeModulesImage(),
+			mutationRequest.DynaKube.OneAgent().GetCodeModulesImagePullPolicy())
 
 		customInitResources := mutationRequest.DynaKube.OneAgent().GetInitResources()
 		if customInitResources != nil {
 			mutationRequest.InstallContainer.Resources = *customInitResources
 		}
 
-		addInitBinMountWithSubPath(mutationRequest.InstallContainer, readOnly)
+		addInitBinMountWithSubPath(mutationRequest.InstallContainer)
 	case isCSIVolume(mutationRequest.BaseRequest):
 		log.Info("configuring init-container with CSI bin volume", "name", mutationRequest.PodName())
 

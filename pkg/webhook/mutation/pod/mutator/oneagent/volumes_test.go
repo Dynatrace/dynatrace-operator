@@ -31,11 +31,42 @@ func TestAddVolumeMounts(t *testing.T) {
 		assert.Equal(t, BinVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, installPath, container.VolumeMounts[0].MountPath)
 		assert.True(t, container.VolumeMounts[0].ReadOnly)
+		assert.Empty(t, container.VolumeMounts[0].SubPath)
 
 		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[1].Name)
 		assert.Equal(t, ldPreloadPath, container.VolumeMounts[1].MountPath)
 		assert.Equal(t, ldPreloadSubPath, container.VolumeMounts[1].SubPath)
 		assert.True(t, container.VolumeMounts[1].ReadOnly)
+	})
+
+	t.Run("should set SubPath when isImageVolume=true", func(t *testing.T) {
+		container := &corev1.Container{
+			Name: "test-container",
+		}
+		installPath := "test/path"
+		const isImageVolume = true
+
+		addVolumeMounts(container, installPath, isImageVolume)
+		require.Len(t, container.VolumeMounts, 2)
+		assert.Equal(t, BinVolumeName, container.VolumeMounts[0].Name)
+		assert.Equal(t, installPath, container.VolumeMounts[0].MountPath)
+		assert.True(t, container.VolumeMounts[0].ReadOnly)
+
+		// check subPath is present when isImageVolume=true
+		assert.Equal(t, binVolumeSubPath, container.VolumeMounts[0].SubPath)
+	})
+}
+
+func TestAddInitBinMountWithSubPath(t *testing.T) {
+	t.Run("should add init bin mount with subPath readonly", func(t *testing.T) {
+		container := &corev1.Container{}
+
+		addInitBinMountWithSubPath(container)
+		require.Len(t, container.VolumeMounts, 1)
+		assert.Equal(t, BinVolumeName, container.VolumeMounts[0].Name)
+		assert.Equal(t, consts.AgentInitBinDirMount, container.VolumeMounts[0].MountPath)
+		assert.Equal(t, binVolumeSubPath, container.VolumeMounts[0].SubPath)
+		assert.True(t, container.VolumeMounts[0].ReadOnly)
 	})
 }
 
@@ -192,5 +223,48 @@ func Test_addCSIBinVolume(t *testing.T) {
 		}
 
 		require.Error(t, addCSIBinVolume(pod, "test-dk", "10m"))
+	})
+}
+
+func TestAddOCIBinVolume(t *testing.T) {
+	const testImage = "test-registry/test-image:latest"
+
+	t.Run("should add OCI image volume", func(t *testing.T) {
+		pod := &corev1.Pod{}
+
+		addOCIBinVolume(pod, testImage, corev1.PullIfNotPresent)
+
+		require.Len(t, pod.Spec.Volumes, 1)
+		assert.Equal(t, corev1.Volume{
+			Name: BinVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Image: &corev1.ImageVolumeSource{
+					Reference:  testImage,
+					PullPolicy: corev1.PullIfNotPresent,
+				},
+			},
+		}, pod.Spec.Volumes[0])
+	})
+
+	t.Run("if volume name already exists inside volumes we do nothing", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{
+						Name: BinVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							Image: &corev1.ImageVolumeSource{
+								Reference:  testImage,
+								PullPolicy: corev1.PullIfNotPresent,
+							},
+						},
+					},
+				},
+			},
+		}
+		expectedPod := pod.DeepCopy()
+
+		addOCIBinVolume(pod, testImage, corev1.PullIfNotPresent)
+		assert.Equal(t, expectedPod, pod)
 	})
 }

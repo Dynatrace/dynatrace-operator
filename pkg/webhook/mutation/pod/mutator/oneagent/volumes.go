@@ -55,14 +55,14 @@ func addInitBinMount(initContainer *corev1.Container, readonly bool) {
 	)
 }
 
-func addInitBinMountWithSubPath(initContainer *corev1.Container, readonly bool) {
+func addInitBinMountWithSubPath(initContainer *corev1.Container) {
 	initContainer.VolumeMounts = append(
 		initContainer.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      BinVolumeName,
 			MountPath: consts.AgentInitBinDirMount,
 			SubPath:   binVolumeSubPath,
-			ReadOnly:  readonly,
+			ReadOnly:  true,
 		},
 	)
 }
@@ -142,7 +142,7 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) error {
 	return nil
 }
 
-func addOCIBinVolume(pod *corev1.Pod, imageName string) {
+func addOCIBinVolume(pod *corev1.Pod, imageName string, pullPolicy corev1.PullPolicy) {
 	if k8svolume.Contains(pod.Spec.Volumes, BinVolumeName) {
 		return
 	}
@@ -150,7 +150,7 @@ func addOCIBinVolume(pod *corev1.Pod, imageName string) {
 	volumeSource := corev1.VolumeSource{
 		Image: &corev1.ImageVolumeSource{
 			Reference:  imageName,
-			PullPolicy: corev1.PullIfNotPresent,
+			PullPolicy: pullPolicy,
 		},
 	}
 

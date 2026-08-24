@@ -1179,6 +1179,72 @@ func TestInvalidOneAgentArguments(t *testing.T) {
 	}, errorInvalidOneAgentArgument)
 }
 
+func TestConflictingImageMode(t *testing.T) {
+	baseDK := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+					AppInjectionSpec: oneagent.AppInjectionSpec{
+						CodeModulesImage: "test-image",
+					},
+				},
+			},
+		},
+	}
+
+	testcases := []struct {
+		name        string
+		annotations map[string]string
+		isValid     bool
+	}{
+		{
+			name: "both node-image-pull and image-volume set => conflict",
+			annotations: map[string]string{
+				exp.OANodeImagePullKey: "true",
+				exp.OAImageVolumeKey:   "true",
+			},
+			isValid: false,
+		},
+		{
+			name: "only node-image-pull => no conflict",
+			annotations: map[string]string{
+				exp.OANodeImagePullKey: "true",
+			},
+			isValid: true,
+		},
+		{
+			name: "only image-volume => no conflict",
+			annotations: map[string]string{
+				exp.OAImageVolumeKey: "true",
+			},
+			isValid: true,
+		},
+		{
+			name:        "neither set => no conflict",
+			annotations: map[string]string{},
+			isValid:     true,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := baseDK.DeepCopy()
+			dk.Annotations = tc.annotations
+
+			if tc.isValid {
+				assertAllowedWithoutWarnings(t, dk)
+			} else {
+				assertDenied(t, []string{"node-image-pull and OCI image volume are mutually exclusive"}, dk)
+			}
+		})
+	}
+}
+
 func TestMissingCodeModulesImage(t *testing.T) {
 	baseDK := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1255,6 +1321,57 @@ func TestMissingCodeModulesImage(t *testing.T) {
 			map[string]string{
 				exp.OANodeImagePullKey:   "true",
 				exp.UsePublicRegistryKey: "true",
+			},
+			true,
+		},
+		{
+			"image-volume + application monitoring",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
+			map[string]string{
+				exp.OAImageVolumeKey: "true",
+			},
+			false,
+		},
+		{
+			"image-volume + application monitoring + codemodules image",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{
+					CodeModulesImage: "test-image",
+				},
+			}},
+			map[string]string{
+				exp.OAImageVolumeKey: "true",
+			},
+			true,
+		},
+		{
+			"image-volume + application monitoring + public registry",
+			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{},
+			}},
+			map[string]string{
+				exp.OAImageVolumeKey:     "true",
+				exp.UsePublicRegistryKey: "true",
+			},
+			true,
+		},
+		{
+			"image-volume + cloud native full stack",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
+			map[string]string{
+				exp.OAImageVolumeKey: "true",
+			},
+			false,
+		},
+		{
+			"image-volume + cloud native full stack + codemodules image",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+				AppInjectionSpec: oneagent.AppInjectionSpec{
+					CodeModulesImage: "test-image",
+				},
+			}},
+			map[string]string{
+				exp.OAImageVolumeKey: "true",
 			},
 			true,
 		},
