@@ -227,6 +227,7 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 		helm.WithNamespace("dynatrace"),
 		helm.WithArgs("--create-namespace"),
 		helm.WithArgs("--install"),
+		helm.WithArgs("--wait"),
 		helm.WithArgs("--set", fmt.Sprintf("platform=%s", platform)),
 		helm.WithArgs("--set", "installCRD=true"),
 		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCSI)),

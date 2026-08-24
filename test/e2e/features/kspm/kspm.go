@@ -57,7 +57,6 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 		false,
 		helm.WithArgs("--reuse-values"),
 		helm.WithArgs("--set", "experimental.enableKubemonOperand=true"),
-		helm.WithArgs("--wait"),
 	), true))
 
 	options := []componentDynakube.Option{
@@ -79,7 +78,6 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 		false,
 		helm.WithArgs("--reuse-values"),
 		helm.WithArgs("--set", "experimental.enableKubemonOperand=false"),
-		helm.WithArgs("--wait"),
 	), false))
 
 	return builder.Feature()
