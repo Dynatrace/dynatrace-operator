@@ -67,7 +67,7 @@
 /pkg/controllers/dynakube/kspm/                            @Dynatrace/kubernetes-operator
 /test/e2e/features/kspm/                                   @Dynatrace/kubernetes-operator
 
-# ── EEC (Extensions) operand ─────────────────────────────────────────────────
+# ── Extensions operands (EEC, SQL executor) ───────────────────────────────────────
 /pkg/api/latest/dynakube/extensions/                       @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/eec*                          @Dynatrace/kubernetes-operator
 /pkg/api/validation/dynakube/databases*                    @Dynatrace/kubernetes-operator
