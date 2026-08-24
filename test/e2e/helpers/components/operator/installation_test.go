@@ -36,7 +36,7 @@ func TestGetHelmOptions(t *testing.T) {
 			Args: []string{
 				"--create-namespace",
 				"--install",
-				"--wait",
+				"--rollback-on-failure",
 				"--set", "platform=test",
 				"--set", "installCRD=true",
 				"--set", "csidriver.enabled=true",
@@ -57,7 +57,7 @@ func TestGetHelmOptions(t *testing.T) {
 			Args: []string{
 				"--create-namespace",
 				"--install",
-				"--wait",
+				"--rollback-on-failure",
 				"--set", "platform=test",
 				"--set", "installCRD=true",
 				"--set", "csidriver.enabled=true",
@@ -79,7 +79,7 @@ func TestGetHelmOptions(t *testing.T) {
 			Args: []string{
 				"--create-namespace",
 				"--install",
-				"--wait",
+				"--rollback-on-failure",
 				"--set", "platform=test",
 				"--set", "installCRD=true",
 				"--set", "csidriver.enabled=true",
@@ -108,7 +108,7 @@ func TestGetHelmOptions(t *testing.T) {
 			Args: []string{
 				"--create-namespace",
 				"--install",
-				"--wait",
+				"--rollback-on-failure",
 				"--set", "platform=test",
 				"--set", "installCRD=true",
 				"--set", "csidriver.enabled=false",
@@ -131,7 +131,7 @@ func TestGetHelmOptions(t *testing.T) {
 			Args: []string{
 				"--create-namespace",
 				"--install",
-				"--wait",
+				"--rollback-on-failure",
 				"--set", "platform=test",
 				"--set", "installCRD=true",
 				"--set", "csidriver.enabled=false",
