@@ -35,6 +35,13 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 		}
 		assertAllowed(t, dk)
 	})
+
+	t.Run("warning if standalone logMonitoring has no cluster registration", func(t *testing.T) {
+		dk := createStandaloneLogMonitoringDynakube(testDynakubeName, testAPIURL, "")
+		dk.Spec.ActiveGate.Capabilities = nil
+
+		assertAllowedWithWarnings(t, 1, dk)
+	})
 }
 
 func TestIgnoredLogMonitoringTemplate(t *testing.T) {
@@ -163,7 +170,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 	})
 
 	t.Run("image not required when public registry is enabled", func(t *testing.T) {
-		assertAllowedWithoutWarnings(t,
+		assertAllowedWithWarnings(t, 1,
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        testName,
@@ -178,7 +185,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 	})
 
 	t.Run("image not required when platform token is present", func(t *testing.T) {
-		assertAllowedWithoutWarnings(t,
+		assertAllowedWithWarnings(t, 1,
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,

@@ -82,6 +82,8 @@ var (
 		invalidOneAgentArguments,
 		invalidLogmonArguments,
 		missingCodeModulesImage,
+		mutualExclusiveKubernetesMonitoring,
+		kubemonMutualExclusiveCustomPropertiesValue,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -109,6 +111,7 @@ var (
 		warnGlobalResourceAttributesSanitization,
 		warnOneAgentResourceAttributesSanitization,
 		warnOTLPResourceAttributesSanitization,
+		logMonitoringWithoutK8SMonitoring,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

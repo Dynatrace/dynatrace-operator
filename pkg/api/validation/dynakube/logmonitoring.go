@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	warningLogMonitoringIgnoredTemplate = "The Dynakube's `spec.templates.logMonitoring` section is skipped as the `spec.oneagent` section is also configured."
-	errorLogMonitoringMissingImage      = `The Dynakube's specification specifies standalone Log monitoring, but no image repository/tag is configured.`
-	errorInvalidLogmonArgument          = "The DynaKube' spec.templates.logMonitoring.args contains invalid arguments. Make sure to remove forbidden characters (newline, tab, carriage return, null) from the value in your custom resource."
+	warningLogMonitoringIgnoredTemplate      = "The Dynakube's `spec.templates.logMonitoring` section is skipped as the `spec.oneagent` section is also configured."
+	errorLogMonitoringMissingImage           = `The Dynakube's specification specifies standalone Log monitoring, but no image repository/tag is configured.`
+	errorInvalidLogmonArgument               = "The DynaKube' spec.templates.logMonitoring.args contains invalid arguments. Make sure to remove forbidden characters (newline, tab, carriage return, null) from the value in your custom resource."
+	warningLogMonitoringWithoutK8SMonitoring = "The DynaKube configures standalone Log Monitoring, which requires Kubernetes Monitoring with cluster registration. Configure `spec.kubernetesMonitoring` and add its `registration` section, or configure an ActiveGate with the `kubernetes-monitoring` capability and enable the `automatic-kubernetes-api-monitoring` feature flag."
 )
 
 func ignoredLogMonitoringTemplate(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
@@ -51,6 +52,14 @@ func invalidLogmonArguments(_ context.Context, _ *Validator, dk *dynakube.DynaKu
 		if strings.ContainsAny(arg, sanitize.InvalidCommandLineCharset) {
 			return errorInvalidLogmonArgument
 		}
+	}
+
+	return ""
+}
+
+func logMonitoringWithoutK8SMonitoring(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.LogMonitoring().IsStandalone() && !dk.IsKubernetesMonitoringRegistrationEnabled() {
+		return warningLogMonitoringWithoutK8SMonitoring
 	}
 
 	return ""
