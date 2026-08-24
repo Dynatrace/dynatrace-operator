@@ -56,12 +56,11 @@ type lifecycleDeps struct {
 // TestReconcileLifecycle walks the phases in order: provision → stabilize → rotate → disable → re-enable.
 func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
-	ctx := t.Context()
 	// Seed from the wall clock so it shares an epoch with the apiserver-stamped creationTimestamp.
 	fakeClock := clocktesting.NewFakePassiveClock(time.Now())
 	reconciler := authtoken.NewReconciler(clt, fakeClock)
 
-	integrationtests.CreateNamespace(t, ctx, clt, integrationNamespace)
+	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -73,7 +72,7 @@ func TestReconcileLifecycle(t *testing.T) {
 			KubernetesMonitoring: &kubemonapi.Spec{},
 		},
 	}
-	integrationtests.CreateDynakube(t, ctx, clt, dk)
+	integrationtests.CreateDynakube(t, clt, dk)
 
 	deps := lifecycleDeps{
 		clt:        clt,

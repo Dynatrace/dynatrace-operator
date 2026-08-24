@@ -180,7 +180,7 @@ func TestSetupWithManager(t *testing.T) {
 		assertReconcileTriggered(t, key, func() {
 			// Create leaves Status empty; UpdateStatus then performs the phase-changing
 			// Update event that the watch predicate looks for.
-			integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+			integrationtests.CreateDynakube(t, clt, dk)
 		})
 	})
 
@@ -193,7 +193,7 @@ func TestSetupWithManager(t *testing.T) {
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}
 		assertReconcileTriggered(t, key, func() {
-			integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+			integrationtests.CreateDynakube(t, clt, dk)
 		})
 
 		assertReconcileNotTriggered(t, key, func() {
@@ -212,7 +212,7 @@ func TestSetupWithManager(t *testing.T) {
 		}
 
 		assertReconcileNotTriggered(t, key, func() {
-			integrationtests.CreateDynakube(t, t.Context(), clt, unreferencedDK)
+			integrationtests.CreateDynakube(t, clt, unreferencedDK)
 		})
 	})
 
@@ -225,7 +225,7 @@ func TestSetupWithManager(t *testing.T) {
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}
 
-		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			require.NoError(t, clt.Delete(t.Context(), dk))

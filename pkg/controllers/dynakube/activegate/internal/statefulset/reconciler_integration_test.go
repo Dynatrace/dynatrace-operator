@@ -49,9 +49,9 @@ func TestStatefulSet(t *testing.T) {
 		}
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
-		integrationtests.CreateNamespace(t, ctx, clt, ns)
-		integrationtests.CreateDynakube(t, ctx, clt, &dk)
-		integrationtests.CreateKubernetesObject(t, ctx, clt, &corev1.Secret{
+		integrationtests.CreateNamespace(t, clt, ns)
+		integrationtests.CreateDynakube(t, clt, &dk)
+		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
 				Namespace: ns,
@@ -101,9 +101,9 @@ func TestStatefulSet(t *testing.T) {
 		dk.Spec.ActiveGate.Volumes = []corev1.Volume{userVolume}
 		dk.Spec.ActiveGate.VolumeMounts = []corev1.VolumeMount{userVolumeMount}
 
-		integrationtests.CreateNamespace(t, ctx, clt, ns)
-		integrationtests.CreateDynakube(t, ctx, clt, &dk)
-		integrationtests.CreateKubernetesObject(t, ctx, clt, &corev1.Secret{
+		integrationtests.CreateNamespace(t, clt, ns)
+		integrationtests.CreateDynakube(t, clt, &dk)
+		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
 				Namespace: ns,
@@ -153,9 +153,9 @@ func TestStatefulSet(t *testing.T) {
 		dk.Spec.ActiveGate.Volumes = []corev1.Volume{userVolume}
 		dk.Spec.ActiveGate.VolumeMounts = []corev1.VolumeMount{userVolumeMount}
 
-		integrationtests.CreateNamespace(t, ctx, clt, ns)
-		integrationtests.CreateDynakube(t, ctx, clt, &dk)
-		integrationtests.CreateKubernetesObject(t, ctx, clt, &corev1.Secret{
+		integrationtests.CreateNamespace(t, clt, ns)
+		integrationtests.CreateDynakube(t, clt, &dk)
+		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
 				Namespace: ns,

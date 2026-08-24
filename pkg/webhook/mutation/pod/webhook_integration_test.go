@@ -4,7 +4,6 @@
 package pod_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -20,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -48,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
@@ -106,7 +107,8 @@ func buildArgument(attr string, value string) string {
 }
 
 func TestWebhook(t *testing.T) {
-	clt := integrationtests.SetupWebhookTestEnvironment(t,
+	clt := integrationtests.SetupWebhookTestEnvironment(
+		t,
 		getWebhookInstallOptions(),
 
 		func(mgr ctrl.Manager) error {
@@ -126,10 +128,10 @@ func TestWebhook(t *testing.T) {
 
 	// shared between test cases
 	bootstrapperSecret := getBoostrapperSecret(testNamespace)
-	createObject(t, clt, bootstrapperSecret)
+	integrationtests.CreateKubernetesObject(t, clt, bootstrapperSecret)
 
 	otlpExporterSecret := getOTLPExporterSecret(testNamespace)
-	createObject(t, clt, otlpExporterSecret)
+	integrationtests.CreateKubernetesObject(t, clt, otlpExporterSecret)
 
 	t.Run("success incl. enrichment rules, custom metadata and metadata annotation propagation", func(t *testing.T) {
 		t.Run("with deprecated annotations", func(t *testing.T) {
@@ -174,7 +176,7 @@ func TestWebhook(t *testing.T) {
 				},
 			},
 		}
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		overrideNamespace := getNamespace(overrideNamespaceName)
 		overrideNamespace.Name = overrideNamespaceName
@@ -183,9 +185,9 @@ func TestWebhook(t *testing.T) {
 			"metadata.dynatrace.com/k8s.cluster.name":             "override-cluster-name",
 		}
 
-		createObject(t, clt, overrideNamespace)
-		createObject(t, clt, getBoostrapperSecret(overrideNamespaceName))
-		createObject(t, clt, getOTLPExporterSecret(overrideNamespaceName))
+		integrationtests.CreateKubernetesObject(t, clt, overrideNamespace)
+		integrationtests.CreateKubernetesObject(t, clt, getBoostrapperSecret(overrideNamespaceName))
+		integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(overrideNamespaceName))
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Namespace = overrideNamespaceName
@@ -225,7 +227,7 @@ func TestWebhook(t *testing.T) {
 				},
 			},
 		}
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Annotations[oneagentmutator.AnnotationInject] = "true"
@@ -251,7 +253,7 @@ func TestWebhook(t *testing.T) {
 				},
 			},
 		}
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Annotations[oneagentmutator.AnnotationInject] = "true"
@@ -273,7 +275,7 @@ func TestWebhook(t *testing.T) {
 				},
 			},
 		}
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Annotations[metadatamutator.AnnotationInject] = "true"
@@ -332,13 +334,13 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 		dk.Annotations[exp.EnrichmentEnableAttributesDTKubernetes] = "false"
 	}
 
-	createDynaKube(t, clt, dk)
+	integrationtests.CreateDynakube(t, clt, dk)
 
-	dummyOwner, ownerReference := getDummyOwnerDeployment()
-	createObject(t, clt, dummyOwner)
+	dummyOwner := getDummyOwnerDeployment()
+	integrationtests.CreateKubernetesObject(t, clt, dummyOwner)
 	pod := createPod(t, clt, func(pod *corev1.Pod) {
 		pod.Annotations = podMetadataAnnotations
-		pod.OwnerReferences = ownerReference
+		require.NoError(t, controllerutil.SetControllerReference(dummyOwner, pod, scheme.Scheme))
 	})
 
 	require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
@@ -385,7 +387,8 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 // operator-managed volumes with a source that conflicts with the one the mutators would add, and that the
 // corresponding not-injected reason is exposed on the pod. See ICP-6182.
 func TestConflictingVolumeType(t *testing.T) {
-	clt := integrationtests.SetupWebhookTestEnvironment(t,
+	clt := integrationtests.SetupWebhookTestEnvironment(
+		t,
 		getWebhookInstallOptions(),
 
 		func(mgr ctrl.Manager) error {
@@ -401,9 +404,9 @@ func TestConflictingVolumeType(t *testing.T) {
 	)
 
 	// shared between test cases
-	createObject(t, clt, getBoostrapperSecret(testNamespace))
-	createObject(t, clt, getOTLPExporterSecret(testNamespace))
-	createObject(t, clt, getOTLPExporterCertsSecret(testNamespace))
+	integrationtests.CreateKubernetesObject(t, clt, getBoostrapperSecret(testNamespace))
+	integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
+	integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterCertsSecret(testNamespace))
 
 	// a volume with a source the mutators would never produce
 	hostPathVolume := func(name string) corev1.Volume {
@@ -444,7 +447,7 @@ func TestConflictingVolumeType(t *testing.T) {
 	}
 
 	t.Run("config volume", func(t *testing.T) {
-		createDynaKube(t, clt, oneAgentDynaKube())
+		integrationtests.CreateDynakube(t, clt, oneAgentDynaKube())
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.ConfigVolumeName))
@@ -454,7 +457,7 @@ func TestConflictingVolumeType(t *testing.T) {
 	})
 
 	t.Run("input volume", func(t *testing.T) {
-		createDynaKube(t, clt, oneAgentDynaKube())
+		integrationtests.CreateDynakube(t, clt, oneAgentDynaKube())
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.InputVolumeName))
@@ -467,7 +470,7 @@ func TestConflictingVolumeType(t *testing.T) {
 		dk := oneAgentDynaKube()
 		// a code modules image lets the pod-level volume-type annotation force the emptyDir bin volume path
 		dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.EphemeralVolumeType
@@ -481,7 +484,7 @@ func TestConflictingVolumeType(t *testing.T) {
 		dk := oneAgentDynaKube()
 		// a code modules image lets the pod-level volume-type annotation force the CSI bin volume path
 		dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.CSIVolumeType
@@ -528,7 +531,7 @@ func TestConflictingVolumeType(t *testing.T) {
 				},
 			},
 		}
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(exporter.ActiveGateTrustedCertVolumeName))
@@ -539,7 +542,8 @@ func TestConflictingVolumeType(t *testing.T) {
 }
 
 func TestOTLPWebhook(t *testing.T) { //nolint:revive
-	clt := integrationtests.SetupWebhookTestEnvironment(t,
+	clt := integrationtests.SetupWebhookTestEnvironment(
+		t,
 		getWebhookInstallOptions(),
 
 		func(mgr ctrl.Manager) error {
@@ -618,15 +622,15 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				}
 
 				apiTokenSecret := getOTLPExporterSecret(testNamespace)
-				createObject(t, clt, apiTokenSecret)
+				integrationtests.CreateKubernetesObject(t, clt, apiTokenSecret)
 
-				createDynaKube(t, clt, dk)
+				integrationtests.CreateDynakube(t, clt, dk)
 
-				dummyOwner, ownerReference := getDummyOwnerDeployment()
-				createObject(t, clt, dummyOwner)
+				dummyOwner := getDummyOwnerDeployment()
+				integrationtests.CreateKubernetesObject(t, clt, dummyOwner)
 				pod := createPod(t, clt, func(pod *corev1.Pod) {
 					pod.Annotations = podMetadataAnnotations
-					pod.OwnerReferences = ownerReference
+					require.NoError(t, controllerutil.SetControllerReference(dummyOwner, pod, scheme.Scheme))
 				})
 
 				// verify mutation occurred by presence of OTLP env vars (annotation may not be set when no OneAgent injection)
@@ -757,17 +761,17 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			},
 		}
 
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		overrideNamespace := getNamespace(overrideNamespaceName)
 		overrideNamespace.Annotations = map[string]string{
 			"metadata.dynatrace.com/dt.entity.kubernetes_cluster": "ns-meid",
 			"metadata.dynatrace.com/k8s.cluster.name":             "override-cluster-name",
 		}
-		createObject(t, clt, overrideNamespace)
+		integrationtests.CreateKubernetesObject(t, clt, overrideNamespace)
 
 		apiTokenSecret := getOTLPExporterSecret(overrideNamespaceName)
-		createObject(t, clt, apiTokenSecret)
+		integrationtests.CreateKubernetesObject(t, clt, apiTokenSecret)
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Namespace = overrideNamespaceName
@@ -823,8 +827,8 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		}
 		// label picked up by the enrichment rule below; dynakube layer must win over the rule result
 		raNS.Labels["conflict-rule-label"] = "from-rule"
-		createObject(t, clt, raNS)
-		createObject(t, clt, getOTLPExporterSecret(raPrecedenceNs))
+		integrationtests.CreateKubernetesObject(t, clt, raNS)
+		integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(raPrecedenceNs))
 
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -873,7 +877,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				},
 			},
 		}
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Namespace = raPrecedenceNs
@@ -959,7 +963,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			},
 		}
 
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, nil)
 
@@ -1021,7 +1025,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				token.DataIngestKey: []byte(dataIngestToken),
 			},
 		}
-		createObject(t, clt, apiTokenSecret)
+		integrationtests.CreateKubernetesObject(t, clt, apiTokenSecret)
 
 		agCertSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -1032,9 +1036,9 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				dynakube.TLSCertKey: []byte(agCertData),
 			},
 		}
-		createObject(t, clt, agCertSecret)
+		integrationtests.CreateKubernetesObject(t, clt, agCertSecret)
 
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, nil)
 		appContainer := pod.Spec.Containers[0]
@@ -1112,9 +1116,9 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				token.DataIngestKey: []byte(dataIngestToken),
 			},
 		}
-		createObject(t, clt, apiTokenSecret)
+		integrationtests.CreateKubernetesObject(t, clt, apiTokenSecret)
 
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		pod := createPod(t, clt, nil)
 
@@ -1176,7 +1180,8 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 func setupOTLPWebhookEnv(t *testing.T) client.Client {
 	t.Helper()
 
-	return integrationtests.SetupWebhookTestEnvironment(t,
+	return integrationtests.SetupWebhookTestEnvironment(
+		t,
 		getWebhookInstallOptions(),
 
 		func(mgr ctrl.Manager) error {
@@ -1231,10 +1236,11 @@ func TestOTLPExporterSkipWhenGeneralOTELPreset(t *testing.T) {
 		},
 	}
 
-	createDynaKube(t, clt, dk)
+	integrationtests.CreateDynakube(t, clt, dk)
 
 	pod := createPod(t, clt, func(p *corev1.Pod) {
-		p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env,
+		p.Spec.Containers[0].Env = append(
+			p.Spec.Containers[0].Env,
 			corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"},
 			corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"},
 		)
@@ -1283,12 +1289,13 @@ func TestOTLPExporterInjectWhenInvalidGeneralEnvPreset(t *testing.T) {
 	}
 
 	apiTokenSecret := getOTLPExporterSecret(testNamespace)
-	createObject(t, clt, apiTokenSecret)
+	integrationtests.CreateKubernetesObject(t, clt, apiTokenSecret)
 
-	createDynaKube(t, clt, dk)
+	integrationtests.CreateDynakube(t, clt, dk)
 
 	pod := createPod(t, clt, func(p *corev1.Pod) {
-		p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env,
+		p.Spec.Containers[0].Env = append(
+			p.Spec.Containers[0].Env,
 			corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_ENDPOINT", Value: "https://my-collector.example.com/otlp"},
 			corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
 		)
@@ -1334,29 +1341,11 @@ func createPod(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *cor
 		mutateFn(pod)
 	}
 
-	createObject(t, clt, pod)
+	integrationtests.CreateKubernetesObject(t, clt, pod)
 
 	return pod
 }
 
-func createObject(t *testing.T, clt client.Client, obj client.Object) {
-	t.Helper()
-	err := clt.Create(t.Context(), obj)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		// t.Context is no longer valid during cleanup
-		assert.NoError(t, clt.Delete(context.Background(), obj))
-	})
-}
-
-func createDynaKube(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
-	t.Helper()
-
-	status := dk.Status
-	createObject(t, clt, dk)
-	dk.Status = status
-	require.NoError(t, dk.UpdateStatus(t.Context(), clt))
-}
 func getDummyWebhookPod() *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1373,12 +1362,9 @@ func getDummyWebhookPod() *corev1.Pod {
 		},
 	}
 }
-func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
-	deploy := &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
-			APIVersion: "apps/v1",
-		},
+
+func getDummyOwnerDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-deployment",
 			Namespace: testNamespace,
@@ -1403,17 +1389,6 @@ func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
 		},
 		Status: appsv1.DeploymentStatus{},
 	}
-	ownerReference := []metav1.OwnerReference{
-		{
-			Name:       deploy.Name,
-			APIVersion: deploy.APIVersion,
-			Kind:       deploy.Kind,
-			Controller: new(true),
-			UID:        types.UID(uuid.NewString()),
-		},
-	}
-
-	return deploy, ownerReference
 }
 
 func getNamespace(name string) *corev1.Namespace {
