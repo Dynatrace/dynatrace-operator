@@ -63,7 +63,7 @@ type lifecycleDeps struct {
 func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 
-	integrationtests.CreateNamespace(t, t.Context(), clt, integrationNamespace)
+	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	reconciler := statefulset.NewReconciler(clt)
 
@@ -84,7 +84,7 @@ func TestReconcileLifecycle(t *testing.T) {
 			KubeSystemUUID: integrationKubeSystemUUID,
 		},
 	}
-	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+	integrationtests.CreateDynakube(t, clt, dk)
 
 	tenantTokenSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -95,7 +95,7 @@ func TestReconcileLifecycle(t *testing.T) {
 			connectioninfo.TenantTokenKey: []byte(integrationTenantToken),
 		},
 	}
-	integrationtests.CreateKubernetesObject(t, t.Context(), clt, tenantTokenSecret)
+	integrationtests.CreateKubernetesObject(t, clt, tenantTokenSecret)
 
 	authTokenSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -106,7 +106,7 @@ func TestReconcileLifecycle(t *testing.T) {
 			kubemonauthtoken.SecretKey: []byte(integrationAuthToken),
 		},
 	}
-	integrationtests.CreateKubernetesObject(t, t.Context(), clt, authTokenSecret)
+	integrationtests.CreateKubernetesObject(t, clt, authTokenSecret)
 
 	// The subtests below share dk and run in order: each builds on the state left by the previous one.
 	// All phases use a custom image, so neither client is invoked; mocks with no expectations verify that.
@@ -206,7 +206,7 @@ func runReEnablePhase(t *testing.T, deps *lifecycleDeps) {
 //     StatefulSet is updated with the URI returned by that client.
 func TestReconcileLifecycleAutoImage(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
-	integrationtests.CreateNamespace(t, t.Context(), clt, integrationNamespace)
+	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	const (
 		activeGateVersion = "1.2.3.4"
@@ -226,7 +226,7 @@ func TestReconcileLifecycleAutoImage(t *testing.T) {
 			KubeSystemUUID: integrationKubeSystemUUID,
 		},
 	}
-	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+	integrationtests.CreateDynakube(t, clt, dk)
 
 	tenantSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -237,7 +237,7 @@ func TestReconcileLifecycleAutoImage(t *testing.T) {
 			connectioninfo.TenantTokenKey: []byte("test-tenant-token"),
 		},
 	}
-	integrationtests.CreateKubernetesObject(t, t.Context(), clt, tenantSecret)
+	integrationtests.CreateKubernetesObject(t, clt, tenantSecret)
 
 	authTokenSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -248,7 +248,7 @@ func TestReconcileLifecycleAutoImage(t *testing.T) {
 			kubemonauthtoken.SecretKey: []byte(integrationAuthToken),
 		},
 	}
-	integrationtests.CreateKubernetesObject(t, t.Context(), clt, authTokenSecret)
+	integrationtests.CreateKubernetesObject(t, clt, authTokenSecret)
 
 	verClient := versionclientmock.NewClient(t)
 	verClient.EXPECT().
