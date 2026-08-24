@@ -58,7 +58,6 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`databases`||-|array|
-|`prometheus`||-|object|
 
 ### .spec.logMonitoring
 
