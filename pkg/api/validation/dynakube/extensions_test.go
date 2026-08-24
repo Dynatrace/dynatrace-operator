@@ -67,19 +67,6 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 	)
 }
 
-func TestExtensionsWithoutOTelCollectorImage(t *testing.T) {
-	t.Run("error when image is not specified", func(t *testing.T) {
-		assertDenied(t, []string{errorOTelCollectorMissingImage},
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-				},
-			})
-	})
-}
-
 func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -126,9 +113,7 @@ func runExtensionTestCases(t *testing.T, cases ...extensionTestCase) {
 		name string
 		spec *extensions.Spec
 	}{
-		{"prometheus extension enabled: ", &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}},
 		{"databases extension enabled:", &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}}},
-		{"all extensions enabled:", &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}, Databases: []extensions.DatabaseSpec{{ID: "test"}}}},
 	}
 
 	for _, tt := range matrix {

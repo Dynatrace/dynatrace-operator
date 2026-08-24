@@ -51,21 +51,12 @@ func TestProbes(t *testing.T) {
 		assert.NotNil(t, container.ReadinessProbe)
 	})
 
-	t.Run("disable with EEC prometheus", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+	t.Run("disabled without telemetryIngest", func(t *testing.T) {
+		dk := getTestDynakube()
 
 		container := getContainer(dk, 1)
 		assert.Nil(t, container.LivenessProbe)
 		assert.Nil(t, container.ReadinessProbe)
-	})
-
-	t.Run("enabled with EEC prometheus and telemetryingest", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-
-		container := getContainer(dk, 1)
-		assert.NotNil(t, container.LivenessProbe)
-		assert.NotNil(t, container.ReadinessProbe)
 	})
 }
 
@@ -75,28 +66,5 @@ func TestContainer(t *testing.T) {
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
 		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs(dk))
-	})
-
-	t.Run("only EEC enabled", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		assert.Equal(
-			t,
-			[]string{"--config=eec://dynakube-extension-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/datasource.token"},
-			buildArgs(dk),
-		)
-	})
-
-	t.Run("TelemetryIngest and EEC enabled", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-
-		assert.Equal(
-			t,
-			[]string{
-				"--config=eec://dynakube-extension-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/datasource.token",
-				"--config=file:///config/telemetry.yaml",
-			},
-			buildArgs(dk),
-		)
 	})
 }

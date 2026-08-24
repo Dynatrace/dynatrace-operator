@@ -4602,8 +4602,6 @@ spec:
                     x-kubernetes-list-map-keys:
                     - id
                     x-kubernetes-list-type: map
-                  prometheus:
-                    type: object
                 type: object
               kspm:
                 properties:

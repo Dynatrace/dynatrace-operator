@@ -6,9 +6,7 @@ package statefulset
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
@@ -47,10 +45,16 @@ func TestReconcile(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 
 		mockK8sClient := fake.NewClient()
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+		require.NoError(t, mockK8sClient.Create(ctx, &tokenSecret))
+
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		require.NoError(t, mockK8sClient.Create(ctx, &configMap))
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
 		err := reconciler.Reconcile(ctx, dk)
@@ -76,8 +80,7 @@ func TestReconcile(t *testing.T) {
 		assert.Contains(t, sts.Annotations, hasher.AnnotationHash)
 	})
 	t.Run("Only runs when required, and cleans up condition + statefulset", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Extensions = nil
+		dk := getTestDynakube()
 
 		previousSts := appsv1.StatefulSet{}
 		previousSts.Name = dk.OTelCollectorStatefulsetName()
@@ -99,57 +102,6 @@ func TestReconcile(t *testing.T) {
 			Namespace: dk.Namespace,
 		}, &sts)
 		require.True(t, k8serrors.IsNotFound(err))
-	})
-}
-
-func TestSecretHashAnnotation(t *testing.T) {
-	t.Run("annotation is set with self-signed tls secret", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = ""
-		statefulSet := getStatefulset(t, dk)
-
-		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
-	})
-	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "dummy-secret"
-		statefulSet := getStatefulset(t, dk)
-
-		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
-	})
-	t.Run("annotation is updated when TLS Secret gets updated", func(t *testing.T) {
-		statefulSet := &appsv1.StatefulSet{}
-		dk := getTestDynakubeWithExtensions()
-
-		// first reconcile a basic setup - TLS Secret gets created
-		mockK8sClient := fake.NewClient(dk)
-		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
-
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(t.Context(), dk)
-		require.NoError(t, err)
-
-		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
-		require.NoError(t, err)
-
-		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
-
-		// then update the TLS Secret and call reconcile again
-		updatedTLSSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
-		err = mockK8sClient.Update(t.Context(), &updatedTLSSecret)
-		require.NoError(t, err)
-
-		err = reconciler.Reconcile(t.Context(), dk)
-		require.NoError(t, err)
-		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
-		require.NoError(t, err)
-
-		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
-
-		// original hash and resulting hash should be different, value got updated on reconcile
-		assert.NotEqual(t, originalSecretHash, resultingSecretHash)
 	})
 }
 
@@ -208,13 +160,13 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 
 func TestStatefulsetBase(t *testing.T) {
 	t.Run("replicas", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())
 
 		assert.Equal(t, int32(1), *statefulSet.Spec.Replicas)
 	})
 
 	t.Run("pod management policy", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())
 
 		assert.Equal(t, appsv1.ParallelPodManagement, statefulSet.Spec.PodManagementPolicy)
 	})
@@ -222,7 +174,7 @@ func TestStatefulsetBase(t *testing.T) {
 
 func TestServiceAccountName(t *testing.T) {
 	t.Run("serviceAccountName is set", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())
 
 		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.ServiceAccountName)
 		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.DeprecatedServiceAccount)
@@ -231,14 +183,14 @@ func TestServiceAccountName(t *testing.T) {
 
 func TestTopologySpreadConstraints(t *testing.T) {
 	t.Run("the default TopologySpreadConstraints", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		statefulSet := getStatefulset(t, dk)
+		dk := getTestDynakubeWithTelemetryIngest()
+		statefulSet := getWorkload(t, dk)
 		appLabels := buildAppLabels(dk.Name)
 		assert.Equal(t, k8stopology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 
 		customTopologySpreadConstraints := []corev1.TopologySpreadConstraint{
 			{
@@ -255,7 +207,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 
 		dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints = customTopologySpreadConstraints
 
-		statefulSet := getStatefulset(t, dk)
+		statefulSet := getWorkload(t, dk)
 
 		assert.Equal(t, customTopologySpreadConstraints, statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
@@ -263,8 +215,8 @@ func TestTopologySpreadConstraints(t *testing.T) {
 
 func TestAffinity(t *testing.T) {
 	t.Run("affinity", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		statefulSet := getStatefulset(t, dk)
+		dk := getTestDynakubeWithTelemetryIngest()
+		statefulSet := getWorkload(t, dk)
 
 		expectedAffinity := k8saffinity.NewMultiArchNodeAffinity()
 
@@ -276,27 +228,27 @@ func TestImagePullSecrets(t *testing.T) {
 	t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
 
 	t.Run("no pull secrets when only tenant registry pull secret exists", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())
 
 		// OTel Collector does not pull from the tenant registry, so the operator-generated pull secret must not be mounted
 		assert.Empty(t, statefulSet.Spec.Template.Spec.ImagePullSecrets)
 	})
 
 	t.Run("custom pull secret", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 		dk.Spec.CustomPullSecret = testOTelPullSecret
 
-		statefulSet := getStatefulset(t, dk)
+		statefulSet := getWorkload(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 1)
 		assert.Equal(t, dk.Spec.CustomPullSecret, statefulSet.Spec.Template.Spec.ImagePullSecrets[0].Name)
 	})
 
 	t.Run("does not include tenant registry pull secret even when custom pull secret is set", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 		dk.Spec.CustomPullSecret = testOTelPullSecret
 
-		statefulSet := getStatefulset(t, dk)
+		statefulSet := getWorkload(t, dk)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
 	})
@@ -304,21 +256,21 @@ func TestImagePullSecrets(t *testing.T) {
 
 func TestResources(t *testing.T) {
 	t.Run("no resources", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		statefulSet := getStatefulset(t, dk)
+		dk := getTestDynakubeWithTelemetryIngest()
+		statefulSet := getWorkload(t, dk)
 
 		assert.Empty(t, statefulSet.Spec.Template.Spec.Containers[0].Resources)
 	})
 
 	t.Run("custom resources", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 		dk.Spec.Templates.ExtensionExecutionController.Resources = corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("1Gi"),
 			},
 		}
 
-		statefulSet := getStatefulset(t, dk)
+		statefulSet := getWorkload(t, dk)
 
 		assert.Equal(t, dk.Spec.Templates.OpenTelemetryCollector.Resources, statefulSet.Spec.Template.Spec.Containers[0].Resources)
 	})
@@ -326,9 +278,9 @@ func TestResources(t *testing.T) {
 
 func TestLabels(t *testing.T) {
 	t.Run("the default labels", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 
-		statefulSet := getStatefulset(t, dk)
+		statefulSet := getWorkload(t, dk)
 
 		appLabels := buildAppLabels(dk.Name)
 
@@ -338,13 +290,13 @@ func TestLabels(t *testing.T) {
 	})
 
 	t.Run("custom labels", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 		customLabels := map[string]string{
 			"a": "b",
 		}
 		dk.Spec.Templates.OpenTelemetryCollector.Labels = customLabels
 
-		statefulSet := getStatefulset(t, dk)
+		statefulSet := getWorkload(t, dk)
 
 		appLabels := buildAppLabels(dk.Name)
 		podLabels := maputils.MergeMap(customLabels, appLabels.BuildLabels())
@@ -357,39 +309,39 @@ func TestLabels(t *testing.T) {
 
 func TestAnnotations(t *testing.T) {
 	t.Run("the default annotations", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())
 
 		assert.Len(t, statefulSet.Annotations, 1)
-		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
+		require.Len(t, statefulSet.Spec.Template.Annotations, 2)
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[annotationDataIngestTokenSecretHash])
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 		customAnnotations := map[string]string{
 			"a": "b",
 		}
 		dk.Spec.Templates.OpenTelemetryCollector.Annotations = customAnnotations
 
-		statefulSet := getStatefulset(t, dk)
+		statefulSet := getWorkload(t, dk)
 
 		require.Len(t, statefulSet.Annotations, 1)
 		assert.Empty(t, statefulSet.Annotations["a"])
-		require.Len(t, statefulSet.Spec.Template.Annotations, 2)
+		require.Len(t, statefulSet.Spec.Template.Annotations, 3)
 		assert.Equal(t, "b", statefulSet.Spec.Template.Annotations["a"])
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[annotationDataIngestTokenSecretHash])
 	})
 }
 
 func TestTolerations(t *testing.T) {
 	t.Run("the default tolerations", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())
 
 		assert.Empty(t, statefulSet.Spec.Template.Spec.Tolerations)
 	})
 
 	t.Run("custom tolerations", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 
 		customTolerations := []corev1.Toleration{
 			{
@@ -401,7 +353,7 @@ func TestTolerations(t *testing.T) {
 		}
 		dk.Spec.Templates.OpenTelemetryCollector.Tolerations = customTolerations
 
-		statefulSet := getStatefulset(t, dk)
+		statefulSet := getWorkload(t, dk)
 
 		assert.Equal(t, customTolerations, statefulSet.Spec.Template.Spec.Tolerations)
 	})
@@ -409,13 +361,13 @@ func TestTolerations(t *testing.T) {
 
 func TestNodeSelector(t *testing.T) {
 	t.Run("the default nodeSelector is empty", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())
 
 		assert.Empty(t, statefulSet.Spec.Template.Spec.NodeSelector)
 	})
 
 	t.Run("custom nodeSelector is propagated to the pod spec", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
+		dk := getTestDynakubeWithTelemetryIngest()
 
 		customNodeSelector := map[string]string{
 			"foo":                     "bar",
@@ -424,7 +376,7 @@ func TestNodeSelector(t *testing.T) {
 		}
 		dk.Spec.Templates.OpenTelemetryCollector.NodeSelector = customNodeSelector
 
-		statefulSet := getStatefulset(t, dk)
+		statefulSet := getWorkload(t, dk)
 
 		assert.Equal(t, customNodeSelector, statefulSet.Spec.Template.Spec.NodeSelector)
 	})
@@ -432,7 +384,7 @@ func TestNodeSelector(t *testing.T) {
 
 func TestSecurityContext(t *testing.T) {
 	t.Run("the default securityContext is set", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())
 
 		assert.NotNil(t, statefulSet.Spec.Template.Spec.SecurityContext)
 		assert.NotNil(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext)
@@ -441,7 +393,7 @@ func TestSecurityContext(t *testing.T) {
 
 func TestUpdateStrategy(t *testing.T) {
 	t.Run("the default update strategy is set", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
+		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())
 
 		assert.NotNil(t, statefulSet.Spec.UpdateStrategy.RollingUpdate.Partition)
 		assert.NotEmpty(t, statefulSet.Spec.UpdateStrategy.Type)
@@ -477,10 +429,13 @@ func TestReconcileReplicas(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			dk := getTestDynakubeWithExtensions()
+			dk := getTestDynakubeWithTelemetryIngest()
 			dk.Spec.Templates.OpenTelemetryCollector.Replicas = tc.specReplicas
 
-			var objs []client.Object
+			tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+			configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+
+			objs := []client.Object{&tokenSecret, &configMap}
 			if tc.existingReplicas != nil {
 				objs = append(objs, &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
@@ -504,23 +459,6 @@ func TestReconcileReplicas(t *testing.T) {
 func TestAppArmorAnnotationHandling(t *testing.T) {
 	const appArmorAnnotationKey = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + containerName
 
-	getStatefulSetWithExtensions := func(t *testing.T) *appsv1.StatefulSet {
-		t.Helper()
-
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Templates.OpenTelemetryCollector.Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
-		clt := fake.NewClient(dk)
-
-		tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
-		require.NoError(t, clt.Create(t.Context(), &tlsSecret))
-
-		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
-		sts := &appsv1.StatefulSet{}
-		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
-
-		return sts
-	}
-
 	getStatefulSetWithTelemetryIngest := func(t *testing.T) *appsv1.StatefulSet {
 		t.Helper()
 
@@ -540,28 +478,6 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 
 		return sts
 	}
-
-	t.Run("with extensions", func(t *testing.T) {
-		t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
-			t.Cleanup(version.DisableCacheForTest(30))
-
-			sts := getStatefulSetWithExtensions(t)
-			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
-			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
-			assert.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
-			assert.Contains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
-		})
-
-		t.Run("apparmor annotation absent in 1.31", func(t *testing.T) {
-			t.Cleanup(version.DisableCacheForTest(31))
-
-			sts := getStatefulSetWithExtensions(t)
-			require.Len(t, sts.Spec.Template.Spec.Containers, 1)
-			require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
-			assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
-			assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
-		})
-	})
 
 	t.Run("with telemetry ingest only", func(t *testing.T) {
 		t.Run("apparmor annotation present in 1.30", func(t *testing.T) {
@@ -584,25 +500,6 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 			assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
 		})
 	})
-}
-
-func getTestDynakubeWithExtensions() *dynakube.DynaKube {
-	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
-		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
-		},
-		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID:        testKubeSystemUUID,
-			KubernetesClusterMEID: testKubernetesClusterMEID,
-			KubernetesClusterName: testKubernetesClusterName,
-		},
-	}
 }
 
 func getTestDynakube() *dynakube.DynaKube {

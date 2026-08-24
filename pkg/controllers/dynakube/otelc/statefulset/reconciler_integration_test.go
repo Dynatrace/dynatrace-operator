@@ -18,17 +18,23 @@ func TestStatefulSet(t *testing.T) {
 
 	ctx := t.Context()
 
-	dk := getTestDynakubeWithExtensions()
+	dk := getTestDynakubeWithTelemetryIngest()
 
 	integrationtests.CreateNamespace(t, ctx, clt, testNamespaceName)
 	integrationtests.CreateDynakube(t, ctx, clt, dk)
 	mockTLSSecret(t, clt, dk)
 
+	tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+	require.NoError(t, clt.Create(ctx, &tokenSecret))
+
+	configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+	require.NoError(t, clt.Create(ctx, &configMap))
+
 	reconciler := NewReconciler(clt, clt)
 	err := reconciler.Reconcile(ctx, dk)
 	require.NoError(t, err)
 
-	// enable telemetryIngest
+	// reconcile again to exercise the update path
 	dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 	err = reconciler.Reconcile(ctx, dk)
 	require.NoError(t, err)

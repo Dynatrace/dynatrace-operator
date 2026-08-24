@@ -60,8 +60,7 @@ spec:
   customPullSecret: pull-secret
   dynatraceApiRequestThreshold: 42
   enableIstio: false
-  extensions:
-    prometheus: {}
+  extensions: {}
   logMonitoring:
     ingestRuleMatchers:
     - attribute: attribute1

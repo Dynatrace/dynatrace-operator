@@ -81,9 +81,7 @@ func (src *DynaKube) toKSPMSpec(dst *dynakubelatest.DynaKube) {
 
 func (src *DynaKube) toExtensionsSpec(dst *dynakubelatest.DynaKube) {
 	if src.Spec.Extensions != nil {
-		dst.Spec.Extensions = &extensionslatest.Spec{
-			Prometheus: &extensionslatest.PrometheusSpec{},
-		}
+		dst.Spec.Extensions = &extensionslatest.Spec{}
 	}
 }
 
@@ -163,7 +161,7 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
 
-	if !dst.ImageRef.HasImage() && (dk.TelemetryIngest().IsEnabled() || dk.Extensions().IsPrometheusEnabled()) {
+	if !dst.ImageRef.HasImage() && dk.TelemetryIngest().IsEnabled() {
 		dst.ImageRef.Repository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 		dst.ImageRef.Tag = "latest"
 

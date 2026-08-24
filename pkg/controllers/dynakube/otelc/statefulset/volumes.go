@@ -18,7 +18,6 @@ const (
 	agCertVolumeName  = "agcert"
 
 	customTLSCertVolumeName            = "telemetry-ingest-custom-tls"
-	extensionControllerTLSVolumeName   = "extension-controller-tls"
 	telemetryCollectorConfigVolumeName = "telemetry-collector-config"
 	telemetryCollectorConfigPath       = "/config"
 )
@@ -27,42 +26,6 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	var volumes []corev1.Volume
 
 	mode := new(int32(0o640))
-
-	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
-		volumes = append(
-			volumes,
-			corev1.Volume{
-				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: ext.GetTokenSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.DatasourceTokenSecretKey,
-								Path: consts.DatasourceTokenSecretKey,
-							},
-						},
-						DefaultMode: mode,
-					},
-				},
-			},
-			corev1.Volume{
-				Name: extensionControllerTLSVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSCrtDataName,
-								Path: consts.TLSCrtDataName,
-							},
-						},
-						DefaultMode: mode,
-					},
-				},
-			},
-		)
-	}
 
 	if isTrustedCAsVolumeNeeded(dk) {
 		volumes = append(volumes, corev1.Volume{
@@ -144,20 +107,6 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	var vm []corev1.VolumeMount
 
-	if dk.Extensions().IsPrometheusEnabled() {
-		vm = append(
-			vm,
-			corev1.VolumeMount{
-				Name: consts.ExtensionsTokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath,
-			},
-			corev1.VolumeMount{
-				Name:      extensionControllerTLSVolumeName,
-				MountPath: customEECTLSCertificatePath,
-				ReadOnly:  true,
-			},
-		)
-	}
-
 	if isTrustedCAsVolumeNeeded(dk) {
 		vm = append(vm, corev1.VolumeMount{
 			Name:      caCertsVolumeName,
@@ -194,5 +143,5 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 }
 
 func isTrustedCAsVolumeNeeded(dk *dynakube.DynaKube) bool {
-	return dk.Extensions().IsPrometheusEnabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
+	return dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
 }
