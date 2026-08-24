@@ -81,6 +81,10 @@ spec:
             - name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
               value: "true"
             {{- end }}
+            {{- if (.Values.experimental).enablePrometheus }}
+            - name: EXPERIMENTAL_ENABLE_PROMETHEUS
+              value: "true"
+            {{- end }}
             {{ include "dynatrace-webhook.metadata-size-limit-env" . | nindent 12 }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
           readinessProbe:
