@@ -9,38 +9,70 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
-	t.Run("no error if logMonitoring is enabled with activegate with k8s-monitoring", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-				},
-				APIURL:        testAPIURL,
-				LogMonitoring: &logmonitoring.Spec{},
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
-					},
-				},
+func TestLogMonitoringWithoutKubernetesMonitoringRegistration(t *testing.T) {
+	t.Run("no warning if log monitoring is provided by activegate with automatic registration", func(t *testing.T) {
+		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{
+				activegate.KubeMonCapability.DisplayName,
 			},
 		}
-		assertAllowed(t, dk)
+
+		warnings, _ := assertAllowed(t, dk)
+		assert.NotContains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
 	})
 
-	t.Run("warning if standalone logMonitoring has no cluster registration", func(t *testing.T) {
-		dk := createStandaloneLogMonitoringDynakube(testDynakubeName, testAPIURL, "")
-		dk.Spec.ActiveGate.Capabilities = nil
+	t.Run("warning if activegate kubernetes monitoring has no automatic registration", func(t *testing.T) {
+		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
+		dk.Annotations = map[string]string{
+			exp.AGAutomaticK8sAPIMonitoringKey: "false",
+		}
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{
+				activegate.KubeMonCapability.DisplayName,
+			},
+		}
 
-		assertAllowedWithWarnings(t, 1, dk)
+		warnings, _ := assertAllowed(t, dk)
+		assert.Contains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
+	})
+
+	t.Run("no warning if kubernetes monitoring is provided by kubernetesMonitoring with registration", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{
+			Registration: &kubemon.Registration{},
+		}
+
+		warnings, _ := assertAllowed(t, dk)
+		assert.NotContains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
+	})
+
+	t.Run("warning if kubernetesMonitoring has no registration", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+
+		warnings, _ := assertAllowed(t, dk)
+		assert.Contains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
+	})
+
+	t.Run("warning if kubernetes monitoring is not configured", func(t *testing.T) {
+		dk := createStandaloneLogMonitoringDynakube(testDynakubeName, testAPIURL, "")
+
+		warnings, _ := assertAllowed(t, dk)
+		assert.Contains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
 	})
 }
 
@@ -49,12 +81,12 @@ func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dk.Spec.Templates.LogMonitoring = nil
-		assertAllowedWithWarnings(t, 1, dk)
+		assertAllowedWithoutWarnings(t, dk)
 	})
 	t.Run("warning if logMonitoring template section is not empty", func(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "something")
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		assertAllowedWithWarnings(t, 2, dk)
+		assertAllowedWithWarnings(t, 1, dk)
 	})
 }
 
@@ -67,11 +99,6 @@ func createStandaloneLogMonitoringDynakube(name, apiURL, nodeSelector string) *d
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:        apiURL,
 			LogMonitoring: &logmonitoring.Spec{},
-			ActiveGate: activegate.Spec{
-				Capabilities: []activegate.CapabilityDisplayName{
-					activegate.KubeMonCapability.DisplayName,
-				},
-			},
 			Templates: dynakube.TemplatesSpec{
 				LogMonitoring: &logmonitoring.TemplateSpec{
 					ImageRef: image.Ref{

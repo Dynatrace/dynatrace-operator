@@ -10,14 +10,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const testDynakubeName = "dynakube"
 
-func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
-	t.Run("no error if activegate with k8s-monitoring", func(t *testing.T) {
+func TestExtensionsWithoutKubernetesMonitoringRegistration(t *testing.T) {
+	t.Run("no warning if kubernetes monitoring with activegate", func(t *testing.T) {
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
 		dk.Spec.ActiveGate = activegate.Spec{
 			Capabilities: []activegate.CapabilityDisplayName{
@@ -27,11 +30,32 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 		assertAllowed(t, withDatabasesExtension(dk))
 	})
 
-	t.Run("error if no activegate with k8s-monitoring", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 3, withDatabasesExtension(createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)))
+	t.Run("no warning if kubernetes monitoring with kubernetesMonitoring with registration", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{
+			Registration: &kubemon.Registration{},
+		}
+
+		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
+		assert.NotContains(t, warnings, warningExtensionsWithoutK8SMonitoring)
 	})
 
-	t.Run("error if activegate with k8s-monitoring but automatic Kuberenetes API monitoring is disabled", func(t *testing.T) {
+	t.Run("warning if kubernetesMonitoring has no registration", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+
+		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
+		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoring)
+	})
+
+	t.Run("warning if kubernetes monitoring is not configured", func(t *testing.T) {
+		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
+		assertAllowedWithWarnings(t, 3, withDatabasesExtension(dk))
+	})
+
+	t.Run("warning if activegate kubernetes monitoring has no automatic cluster registration", func(t *testing.T) {
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
 		dk.Annotations = map[string]string{
 			exp.AGAutomaticK8sAPIMonitoringKey: "false",
@@ -44,12 +68,25 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 		assertAllowedWithWarnings(t, 3, withDatabasesExtension(dk))
 	})
 
-	t.Run("error if automatic Kuberenetes API monitoring is disabled and without activgate k8s-monitoring", func(t *testing.T) {
+	t.Run("warning if kubernetes monitoring is not configured or registered", func(t *testing.T) {
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
 		dk.Annotations = map[string]string{
 			exp.AGAutomaticK8sAPIMonitoringKey: "false",
 		}
 		assertAllowedWithWarnings(t, 3, withDatabasesExtension(dk))
+	})
+}
+
+func TestExtensionsWithoutOTelCollectorImage(t *testing.T) {
+	t.Run("error when image is not specified", func(t *testing.T) {
+		assertDenied(t, []string{errorOTelCollectorMissingImage},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:     testAPIURL,
+					Extensions: &extensions.Spec{},
+				},
+			})
 	})
 }
 
