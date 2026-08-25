@@ -18,6 +18,26 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
+	t.Run("no error if logMonitoring is enabled with activegate with k8s-monitoring", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+				APIURL:        testAPIURL,
+				LogMonitoring: &logmonitoring.Spec{},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+			},
+		}
+		assertAllowed(t, dk)
+	})
+}
+
 func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 	t.Run("no warning if logMonitoring template section is empty", func(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
@@ -153,7 +173,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 	})
 
 	t.Run("image not required when public registry is enabled", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 0,
+		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        testName,
@@ -168,7 +188,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 	})
 
 	t.Run("image not required when platform token is present", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 0,
+		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
