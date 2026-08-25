@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"maps"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -23,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -364,7 +364,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	dk := s.DynaKube
 
-	envs := []corev1.EnvVar{
+	envs := k8senv.AppendGoMemoryLimit([]corev1.EnvVar{
 		{
 			Name: "MY_POD_IP",
 			ValueFrom: &corev1.EnvVarSource{
@@ -377,14 +377,11 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 			LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
 			Key:                  token.APIKey,
 		}}},
-	}
-
-	if memLimitEnv, ok := goMemLimitEnv(s.Spec.Resources); ok {
-		envs = append(envs, memLimitEnv)
-	}
+	}, s.Spec.Resources)
 
 	if dk.HasProxy() {
-		envs = append(envs,
+		envs = append(
+			envs,
 			proxyEnv("HTTPS_PROXY", dk.Spec.Proxy),
 			proxyEnv("HTTP_PROXY", dk.Spec.Proxy),
 			corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue(dk)},
@@ -392,18 +389,6 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	}
 
 	return envs
-}
-
-// goMemLimitEnv sets GOMEMLIMIT to 90% of the memory limit; omitted when no limit is set.
-func goMemLimitEnv(resources corev1.ResourceRequirements) (corev1.EnvVar, bool) {
-	limit, ok := resources.Limits[corev1.ResourceMemory]
-	if !ok {
-		return corev1.EnvVar{}, false
-	}
-
-	bytes := int64(float64(limit.Value()) * 0.9)
-
-	return corev1.EnvVar{Name: "GOMEMLIMIT", Value: strconv.FormatInt(bytes, 10)}, true
 }
 
 func proxyEnv(name string, src *value.Source) corev1.EnvVar {
