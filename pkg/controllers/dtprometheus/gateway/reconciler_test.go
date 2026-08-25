@@ -107,6 +107,27 @@ func TestReconcileCondition(t *testing.T) {
 	}
 }
 
+func TestBuildGatewayConfigData(t *testing.T) {
+	t.Run("resource attributes are read from the DynaKube", func(t *testing.T) {
+		dk := &dynakube.DynaKube{}
+		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
+		dk.Spec.ResourceAttributes = map[string]string{"region": "us-east"}
+
+		data := buildGatewayConfigData(dk)
+
+		assert.Equal(t, map[string]string{"region": "us-east"}, data.ResourceAttributes)
+	})
+
+	t.Run("no resource attributes set on the DynaKube", func(t *testing.T) {
+		dk := &dynakube.DynaKube{}
+		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
+
+		data := buildGatewayConfigData(dk)
+
+		assert.Empty(t, data.ResourceAttributes)
+	})
+}
+
 func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
@@ -125,6 +146,39 @@ func TestReconcileConfigMap(t *testing.T) {
 
 		sum := sha256.Sum256([]byte(cm.Data[gatewayConfigKey]))
 		assert.Equal(t, hex.EncodeToString(sum[:]), s.ConfigMapHash)
+	})
+
+	t.Run("resource attributes are rendered into the configmap", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dk := &dynakube.DynaKube{}
+		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
+		dk.Spec.ResourceAttributes = map[string]string{"region": "us-east"}
+		s := newTestScopeWithDynaKube(dtp, dk)
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+
+		cm := &corev1.ConfigMap{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, cm))
+		assert.Contains(t, cm.Data[gatewayConfigKey], `set(attributes["region"], "us-east") where attributes["region"] == nil`)
+	})
+
+	t.Run("changing resource attributes changes the config hash, triggering a rollout", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dk := &dynakube.DynaKube{}
+		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
+		s := newTestScopeWithDynaKube(dtp, dk)
+		r := &Reconciler{Client: fake.NewClient()}
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+		hashBefore := s.ConfigMapHash
+
+		dk.Spec.ResourceAttributes = map[string]string{"region": "us-east"}
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+		hashAfter := s.ConfigMapHash
+
+		assert.NotEqual(t, hashBefore, hashAfter)
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
