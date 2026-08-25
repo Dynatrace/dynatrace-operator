@@ -163,30 +163,6 @@ func mergeAppLabels(obj client.Object, appLabels *k8slabel.Labels) {
 	obj.SetLabels(labels)
 }
 
-func (r *Reconciler) createOrUpdate(ctx context.Context, owner metav1.Object, obj client.Object, kind string, mutate func() error) error {
-	log := logd.FromContext(ctx)
-
-	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, obj, func() error {
-		if err := mutate(); err != nil {
-			return err
-		}
-
-		return controllerutil.SetControllerReference(owner, obj, r.Scheme())
-	})
-	if err != nil {
-		return fmt.Errorf("reconcile %s: %w", kind, err)
-	}
-
-	switch result {
-	case controllerutil.OperationResultCreated:
-		log.Info("created " + kind)
-	case controllerutil.OperationResultUpdated:
-		log.Info("updated " + kind)
-	}
-
-	return nil
-}
-
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
 	name := s.Spec.GetStatefulSetName()
 
@@ -197,11 +173,11 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 
 	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: s.Owner.Namespace}}
 
-	err = r.createOrUpdate(ctx, s.Owner, cm, "configmap", func() error {
+	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
 		mergeAppLabels(cm, s.AppLabels)
 		cm.Data = map[string]string{gatewayConfigKey: rendered}
 
-		return nil
+		return controllerutil.SetControllerReference(s.Owner, cm, r.Scheme())
 	})
 	if err != nil {
 		return err
@@ -242,10 +218,10 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 
 	sts := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}}
 
-	err := r.createOrUpdate(ctx, s.Owner, sts, "statefulset", func() error {
+	err := k8sobject.RetryCreateOrUpdate(ctx, r, sts, func() error {
 		mutateStatefulSet(sts, s)
 
-		return nil
+		return controllerutil.SetControllerReference(s.Owner, sts, r.Scheme())
 	})
 	if err != nil {
 		return err
@@ -471,7 +447,7 @@ func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) error {
 	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}}
 
-	return r.createOrUpdate(ctx, s.Owner, svc, "service", func() error {
+	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
 		mergeAppLabels(svc, s.AppLabels)
 
 		svc.Spec.Selector = s.AppLabels.AsSelector()
@@ -485,6 +461,6 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 			},
 		}
 
-		return nil
+		return controllerutil.SetControllerReference(s.Owner, svc, r.Scheme())
 	})
 }

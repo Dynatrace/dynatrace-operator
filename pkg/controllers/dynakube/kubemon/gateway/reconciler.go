@@ -51,7 +51,7 @@ func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) e
 		},
 	}
 
-	_, err := k8sobject.RetryCreateOrUpdate(ctx, r.client, svc, func() error {
+	return k8sobject.RetryCreateOrUpdate(ctx, r.client, svc, func() error {
 		svc.Labels = desired.Labels
 		svc.Spec.Type = desired.Spec.Type
 		svc.Spec.Selector = desired.Spec.Selector
@@ -59,8 +59,6 @@ func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) e
 
 		return controllerutil.SetControllerReference(dk, svc, r.client.Scheme())
 	})
-
-	return err
 }
 
 func ServiceName(dynakubeName string) string {
