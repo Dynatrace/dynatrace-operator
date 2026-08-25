@@ -9,72 +9,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-func TestLogMonitoringWithoutKubernetesMonitoringRegistration(t *testing.T) {
-	t.Run("no warning if log monitoring is provided by activegate with automatic registration", func(t *testing.T) {
-		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
-		dk.Spec.ActiveGate = activegate.Spec{
-			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.KubeMonCapability.DisplayName,
-			},
-		}
-
-		warnings, _ := assertAllowed(t, dk)
-		assert.NotContains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
-	})
-
-	t.Run("warning if activegate kubernetes monitoring has no automatic registration", func(t *testing.T) {
-		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
-		dk.Annotations = map[string]string{
-			exp.AGAutomaticK8sAPIMonitoringKey: "false",
-		}
-		dk.Spec.ActiveGate = activegate.Spec{
-			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.KubeMonCapability.DisplayName,
-			},
-		}
-
-		warnings, _ := assertAllowed(t, dk)
-		assert.Contains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
-	})
-
-	t.Run("no warning if kubernetes monitoring is provided by kubernetesMonitoring with registration", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
-		dk.Spec.KubernetesMonitoring = &kubemon.Spec{
-			Registration: &kubemon.Registration{},
-		}
-
-		warnings, _ := assertAllowed(t, dk)
-		assert.NotContains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
-	})
-
-	t.Run("warning if kubernetesMonitoring has no registration", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
-		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
-
-		warnings, _ := assertAllowed(t, dk)
-		assert.Contains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
-	})
-
-	t.Run("warning if kubernetes monitoring is not configured", func(t *testing.T) {
-		dk := createStandaloneLogMonitoringDynakube(testDynakubeName, testAPIURL, "")
-
-		warnings, _ := assertAllowed(t, dk)
-		assert.Contains(t, warnings, warningLogMonitoringWithoutK8SMonitoring)
-	})
-}
 
 func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 	t.Run("no warning if logMonitoring template section is empty", func(t *testing.T) {
@@ -211,7 +153,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 	})
 
 	t.Run("image not required when public registry is enabled", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 1,
+		assertAllowedWithWarnings(t, 0,
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        testName,
@@ -226,7 +168,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 	})
 
 	t.Run("image not required when platform token is present", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 1,
+		assertAllowedWithWarnings(t, 0,
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
