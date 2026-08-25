@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"maps"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -23,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
@@ -163,30 +163,6 @@ func mergeAppLabels(obj client.Object, appLabels *k8slabel.Labels) {
 	obj.SetLabels(labels)
 }
 
-func (r *Reconciler) createOrUpdate(ctx context.Context, owner metav1.Object, obj client.Object, kind string, mutate func() error) error {
-	log := logd.FromContext(ctx)
-
-	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, obj, func() error {
-		if err := mutate(); err != nil {
-			return err
-		}
-
-		return controllerutil.SetControllerReference(owner, obj, r.Scheme())
-	})
-	if err != nil {
-		return fmt.Errorf("reconcile %s: %w", kind, err)
-	}
-
-	switch result {
-	case controllerutil.OperationResultCreated:
-		log.Info("created " + kind)
-	case controllerutil.OperationResultUpdated:
-		log.Info("updated " + kind)
-	}
-
-	return nil
-}
-
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
 	name := s.Spec.GetStatefulSetName()
 
@@ -197,11 +173,11 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 
 	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: s.Owner.Namespace}}
 
-	err = r.createOrUpdate(ctx, s.Owner, cm, "configmap", func() error {
+	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
 		mergeAppLabels(cm, s.AppLabels)
 		cm.Data = map[string]string{gatewayConfigKey: rendered}
 
-		return nil
+		return controllerutil.SetControllerReference(s.Owner, cm, r.Scheme())
 	})
 	if err != nil {
 		return err
@@ -242,10 +218,10 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 
 	sts := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}}
 
-	err := r.createOrUpdate(ctx, s.Owner, sts, "statefulset", func() error {
+	err := k8sobject.RetryCreateOrUpdate(ctx, r, sts, func() error {
 		mutateStatefulSet(sts, s)
 
-		return nil
+		return controllerutil.SetControllerReference(s.Owner, sts, r.Scheme())
 	})
 	if err != nil {
 		return err
@@ -364,7 +340,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	dk := s.DynaKube
 
-	envs := []corev1.EnvVar{
+	envs := k8senv.AppendGoMemoryLimit([]corev1.EnvVar{
 		{
 			Name: "MY_POD_IP",
 			ValueFrom: &corev1.EnvVarSource{
@@ -377,14 +353,11 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 			LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
 			Key:                  token.APIKey,
 		}}},
-	}
-
-	if memLimitEnv, ok := goMemLimitEnv(s.Spec.Resources); ok {
-		envs = append(envs, memLimitEnv)
-	}
+	}, s.Spec.Resources)
 
 	if dk.HasProxy() {
-		envs = append(envs,
+		envs = append(
+			envs,
 			proxyEnv("HTTPS_PROXY", dk.Spec.Proxy),
 			proxyEnv("HTTP_PROXY", dk.Spec.Proxy),
 			corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue(dk)},
@@ -392,18 +365,6 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	}
 
 	return envs
-}
-
-// goMemLimitEnv sets GOMEMLIMIT to 90% of the memory limit; omitted when no limit is set.
-func goMemLimitEnv(resources corev1.ResourceRequirements) (corev1.EnvVar, bool) {
-	limit, ok := resources.Limits[corev1.ResourceMemory]
-	if !ok {
-		return corev1.EnvVar{}, false
-	}
-
-	bytes := int64(float64(limit.Value()) * 0.9)
-
-	return corev1.EnvVar{Name: "GOMEMLIMIT", Value: strconv.FormatInt(bytes, 10)}, true
 }
 
 func proxyEnv(name string, src *value.Source) corev1.EnvVar {
@@ -486,7 +447,7 @@ func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) error {
 	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}}
 
-	return r.createOrUpdate(ctx, s.Owner, svc, "service", func() error {
+	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
 		mergeAppLabels(svc, s.AppLabels)
 
 		svc.Spec.Selector = s.AppLabels.AsSelector()
@@ -500,6 +461,6 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 			},
 		}
 
-		return nil
+		return controllerutil.SetControllerReference(s.Owner, svc, r.Scheme())
 	})
 }
