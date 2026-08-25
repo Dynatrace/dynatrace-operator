@@ -9,6 +9,8 @@ import appsv1 "k8s.io/api/apps/v1"
 // name of the gateway's Kubernetes resources.
 const GatewayNameSuffix = "-gateway"
 
+const GatewayAvailable = "GatewayAvailable"
+
 // +kubebuilder:object:generate=false
 
 // Gateway wraps the gateway Spec together with the owning DTPrometheus name so
@@ -26,8 +28,9 @@ type GatewaySpec struct {
 
 	// StatefulSet update strategy for the gateway pool. partition: N means only
 	// pods with ordinal >= N are updated; set a non-zero value for canary rollouts.
+	// +kubebuilder:default={type: "RollingUpdate"}
 	// +kubebuilder:validation:Optional
-	UpdateStrategy appsv1.StatefulSetUpdateStrategy `json:"updateStrategy,omitzero"`
+	UpdateStrategy appsv1.StatefulSetUpdateStrategy `json:"updateStrategy"`
 }
 
 // NewGateway wraps the given Spec together with the owning DTPrometheus name.

@@ -121,6 +121,8 @@ func TestReconcile(t *testing.T) {
 		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, StringData: map[string]string{token.APIKey: "api-token"}}
 
 		expectErr := errors.New("boom")
+		gm := newMockGatewayReconciler(t)
+		gm.EXPECT().Reconcile(t.Context(), dtp, dk, image.Client(nil)).Return(nil).Once()
 		m := newMockTargetAllocatorReconciler(t)
 		m.EXPECT().Reconcile(t.Context(), dtp, dk, image.Client(nil)).Return(expectErr).Once()
 		c := fake.NewClient(dtp, dk, secret)
@@ -128,6 +130,7 @@ func TestReconcile(t *testing.T) {
 		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
 			return &dynatrace.Client{}, nil
 		}
+		r.gateway = gm
 		r.targetAllocator = m
 
 		_, err := r.Reconcile(t.Context(), req)
