@@ -585,7 +585,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 
 func getNewHostInjectSpec() oneagentlatest.HostInjectSpec {
 	return oneagentlatest.HostInjectSpec{
-		Version: "host-inject-version",
+		Version: "host-inject-version", //nolint:staticcheck
 		Image:   "host-inject-image",
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
@@ -646,7 +646,7 @@ func getNewCloudNativeSpec() oneagentlatest.CloudNativeFullStackSpec {
 func getNewApplicationMonitoringSpec() oneagentlatest.ApplicationMonitoringSpec {
 	return oneagentlatest.ApplicationMonitoringSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
-		Version:          "app-monitoring-version",
+		Version:          "app-monitoring-version", //nolint:staticcheck
 	}
 }
 
