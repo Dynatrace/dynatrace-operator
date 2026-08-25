@@ -42,7 +42,7 @@ func TestProbes(t *testing.T) {
 		assert.EqualValues(t, 1, probe.SuccessThreshold)
 	})
 
-	t.Run("enable with telemetryIngest", func(t *testing.T) {
+	t.Run("probes are always set", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
@@ -50,21 +50,10 @@ func TestProbes(t *testing.T) {
 		assert.NotNil(t, container.LivenessProbe)
 		assert.NotNil(t, container.ReadinessProbe)
 	})
-
-	t.Run("disabled without telemetryIngest", func(t *testing.T) {
-		dk := getTestDynakube()
-
-		container := getContainer(dk, 1)
-		assert.Nil(t, container.LivenessProbe)
-		assert.Nil(t, container.ReadinessProbe)
-	})
 }
 
 func TestContainer(t *testing.T) {
-	t.Run("only TelemetryIngest enabled", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-
-		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs(dk))
+	t.Run("builds the telemetry config arg", func(t *testing.T) {
+		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs())
 	})
 }

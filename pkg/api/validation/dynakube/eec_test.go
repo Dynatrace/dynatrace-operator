@@ -135,7 +135,6 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				},
 			}))
 	})
-
 }
 
 func TestExtensionControllerImageNotRequired(t *testing.T) {
@@ -279,7 +278,6 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				},
 			}))
 	})
-
 }
 
 func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
@@ -396,5 +394,4 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 		}
 		assertAllowedWithWarnings(t, 1, withDatabasesExtension(dk1), dk2)
 	})
-
 }

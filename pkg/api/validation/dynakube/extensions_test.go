@@ -51,7 +51,6 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 		}
 		assertAllowedWithWarnings(t, 3, withDatabasesExtension(dk))
 	})
-
 }
 
 func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube {

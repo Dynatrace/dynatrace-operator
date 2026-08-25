@@ -22,14 +22,10 @@ func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 		SecurityContext: buildSecurityContext(dk),
 		Env:             getEnvs(dk, replicas),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            buildArgs(dk),
+		Args:            buildArgs(),
 		VolumeMounts:    buildContainerVolumeMounts(dk),
-	}
-
-	// Only enable the probes when we control the configuration.
-	if dk.TelemetryIngest().IsEnabled() {
-		container.LivenessProbe = buildLivenessProbe()
-		container.ReadinessProbe = buildReadinessProbe()
+		LivenessProbe:   buildLivenessProbe(),
+		ReadinessProbe:  buildReadinessProbe(),
 	}
 
 	return container
@@ -67,12 +63,6 @@ func buildReadinessProbe() *corev1.Probe {
 	}
 }
 
-func buildArgs(dk *dynakube.DynaKube) []string {
-	args := []string{}
-
-	if dk.TelemetryIngest().IsEnabled() {
-		args = append(args, "--config=file:///config/telemetry.yaml")
-	}
-
-	return args
+func buildArgs() []string {
+	return []string{"--config=file:///config/telemetry.yaml"}
 }

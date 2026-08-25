@@ -133,7 +133,10 @@ func TestConvertTo(t *testing.T) {
 		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
 
-	t.Run("migrate extensions from v1beta5 to latest", func(t *testing.T) {
+	t.Run("v1beta5 extensions are dropped during conversion to latest", func(t *testing.T) {
+		// In v1beta5 an (empty) extensions block only ever enabled the removed
+		// prometheus feature, so it carries no meaningful configuration and must
+		// not be propagated to the latest version.
 		from := getOldDynakubeBase()
 		from.Spec.Extensions = &extensions.Spec{}
 		to := dynakubelatest.DynaKube{}
@@ -141,7 +144,7 @@ func TestConvertTo(t *testing.T) {
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
 
-		assert.NotNil(t, to.Spec.Extensions)
+		assert.Nil(t, to.Spec.Extensions)
 		compareBase(t, from, to)
 	})
 
@@ -309,6 +312,25 @@ func TestConvertTo(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef)
+
+		compareBase(t, from, to)
+	})
+
+	t.Run("stale default otelc image marker is dropped when image is user-set and telemetry disabled", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Spec.TelemetryIngest = nil
+		from.Spec.Templates.OpenTelemetryCollector.ImageRef = image.Ref{Repository: "user-supplied-repo", Tag: "user-tag"}
+		// Simulate a stale marker left behind by a previous conversion (e.g. from the removed prometheus path).
+		from.Annotations[conversion.DefaultOTelColImageKey] = "true"
+
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.Equal(t, "user-supplied-repo", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
+		assert.Equal(t, "user-tag", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
+		assert.NotContains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})

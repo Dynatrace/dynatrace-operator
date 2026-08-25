@@ -46,58 +46,56 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		})
 	}
 
-	if dk.TelemetryIngest().IsEnabled() {
-		if dk.IsAGCertificateNeeded() {
-			volumes = append(volumes, corev1.Volume{
-				Name: agCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.ActiveGate().GetTLSSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  dynakube.ServerCertKey,
-								Path: otelcconsts.ActiveGateCertFile,
-							},
-						},
-						DefaultMode: mode,
-					},
-				},
-			})
-		}
-
-		if dk.TelemetryIngest().TLSRefName != "" {
-			volumes = append(volumes, corev1.Volume{
-				Name: customTLSCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.TelemetryIngest().TLSRefName,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSCrtDataName,
-								Path: consts.TLSCrtDataName,
-							},
-							{
-								Key:  consts.TLSKeyDataName,
-								Path: consts.TLSKeyDataName,
-							},
-						},
-						DefaultMode: mode,
-					},
-				},
-			})
-		}
-
+	if dk.IsAGCertificateNeeded() {
 		volumes = append(volumes, corev1.Volume{
-			Name: telemetryCollectorConfigVolumeName,
+			Name: agCertVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: configuration.GetConfigMapName(dk.Name),
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  dynakube.ServerCertKey,
+							Path: otelcconsts.ActiveGateCertFile,
+						},
 					},
+					DefaultMode: mode,
 				},
 			},
 		})
 	}
+
+	if dk.TelemetryIngest().TLSRefName != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: customTLSCertVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dk.TelemetryIngest().TLSRefName,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSCrtDataName,
+							Path: consts.TLSCrtDataName,
+						},
+						{
+							Key:  consts.TLSKeyDataName,
+							Path: consts.TLSKeyDataName,
+						},
+					},
+					DefaultMode: mode,
+				},
+			},
+		})
+	}
+
+	volumes = append(volumes, corev1.Volume{
+		Name: telemetryCollectorConfigVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: configuration.GetConfigMapName(dk.Name),
+				},
+			},
+		},
+	})
 
 	return func(o *appsv1.StatefulSet) {
 		o.Spec.Template.Spec.Volumes = volumes
@@ -115,33 +113,31 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		})
 	}
 
-	if dk.TelemetryIngest().IsEnabled() {
-		if dk.IsAGCertificateNeeded() {
-			vm = append(vm, corev1.VolumeMount{
-				Name:      agCertVolumeName,
-				MountPath: otelcconsts.ActiveGateTLSCertCAVolumeMountPath,
-				ReadOnly:  true,
-			})
-		}
-
-		if dk.TelemetryIngest().TLSRefName != "" {
-			vm = append(vm, corev1.VolumeMount{
-				Name:      customTLSCertVolumeName,
-				MountPath: otelcconsts.CustomTLSCertMountPath,
-				ReadOnly:  true,
-			})
-		}
-
+	if dk.IsAGCertificateNeeded() {
 		vm = append(vm, corev1.VolumeMount{
-			Name:      telemetryCollectorConfigVolumeName,
-			MountPath: telemetryCollectorConfigPath,
+			Name:      agCertVolumeName,
+			MountPath: otelcconsts.ActiveGateTLSCertCAVolumeMountPath,
 			ReadOnly:  true,
 		})
 	}
+
+	if dk.TelemetryIngest().TLSRefName != "" {
+		vm = append(vm, corev1.VolumeMount{
+			Name:      customTLSCertVolumeName,
+			MountPath: otelcconsts.CustomTLSCertMountPath,
+			ReadOnly:  true,
+		})
+	}
+
+	vm = append(vm, corev1.VolumeMount{
+		Name:      telemetryCollectorConfigVolumeName,
+		MountPath: telemetryCollectorConfigPath,
+		ReadOnly:  true,
+	})
 
 	return vm
 }
 
 func isTrustedCAsVolumeNeeded(dk *dynakube.DynaKube) bool {
-	return dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
+	return dk.IsCACertificateNeeded()
 }
