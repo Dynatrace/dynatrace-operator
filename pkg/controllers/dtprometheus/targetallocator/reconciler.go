@@ -8,7 +8,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -39,6 +38,8 @@ const (
 	configFile   = "targetallocator.yaml"
 
 	serviceAccount = "dynatrace-target-allocator"
+
+	configHashAnnotation = "internal.operator.dynatrace.com/allocator-config-hash"
 )
 
 type Reconciler struct {
@@ -180,7 +181,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 
 	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
-	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
+	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
 		if cm.Labels == nil {
 			cm.Labels = make(map[string]string)
 		}
@@ -192,18 +193,11 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 		return controllerutil.SetControllerReference(s.Owner, cm, r.Scheme())
 	})
 	if err != nil {
-		return fmt.Errorf("reconcile configmap: %w", err)
+		return err
 	}
 
 	checksum := sha256.Sum256(data)
 	s.ConfigMapHash = hex.EncodeToString(checksum[:])
-
-	switch result {
-	case controllerutil.OperationResultCreated:
-		log.Info("created configmap")
-	case controllerutil.OperationResultUpdated:
-		log.Info("updated configmap")
-	}
 
 	return nil
 }
@@ -220,20 +214,13 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 
 	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
-	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
+	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
 		mutateDeployment(deploy, s)
 
 		return controllerutil.SetControllerReference(s.Owner, deploy, r.Scheme())
 	})
 	if err != nil {
-		return fmt.Errorf("reconcile deployment: %w", err)
-	}
-
-	switch result {
-	case controllerutil.OperationResultCreated:
-		log.Info("created deployment")
-	case controllerutil.OperationResultUpdated:
-		log.Info("updated deployment")
+		return err
 	}
 
 	s.Deployment = deploy
@@ -247,7 +234,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 
 	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
-	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
+	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
 		if svc.Labels == nil {
 			svc.Labels = make(map[string]string)
 		}
@@ -272,18 +259,6 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 
 		return controllerutil.SetControllerReference(s.Owner, svc, r.Scheme())
 	})
-	if err != nil {
-		return fmt.Errorf("reconcile service: %w", err)
-	}
-
-	switch result {
-	case controllerutil.OperationResultCreated:
-		log.Info("created service")
-	case controllerutil.OperationResultUpdated:
-		log.Info("updated service")
-	}
-
-	return nil
 }
 
 func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
@@ -305,7 +280,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 		deploy.Spec.Template.Annotations = make(map[string]string)
 	}
 
-	deploy.Spec.Template.Annotations["config/checksum"] = s.ConfigMapHash
+	deploy.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
 
 	if s.Spec.Replicas != nil {
 		deploy.Spec.Replicas = s.Spec.Replicas
