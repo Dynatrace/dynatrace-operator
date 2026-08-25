@@ -39,6 +39,8 @@ const (
 	configFile   = "targetallocator.yaml"
 
 	serviceAccount = "dynatrace-target-allocator"
+
+	configHashAnnotation = "internal.operator.dynatrace.com/allocator-config-hash"
 )
 
 type Reconciler struct {
@@ -305,7 +307,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 		deploy.Spec.Template.Annotations = make(map[string]string)
 	}
 
-	deploy.Spec.Template.Annotations["config/checksum"] = s.ConfigMapHash
+	deploy.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
 
 	if s.Spec.Replicas != nil {
 		deploy.Spec.Replicas = s.Spec.Replicas

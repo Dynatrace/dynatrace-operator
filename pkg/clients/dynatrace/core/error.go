@@ -72,18 +72,11 @@ func IsNotFound(err error) bool {
 	return HasStatusCode(err, http.StatusNotFound)
 }
 
-// IsTooManyRequests checks if the given error represents an HTTP 429 Too Many Requests error
-func IsTooManyRequests(err error) bool {
-	return HasStatusCode(err, http.StatusTooManyRequests)
-}
-
-// IsServiceUnavailable checks if the given error represents an HTTP 503 Service Unavailable error
-func IsServiceUnavailable(err error) bool {
-	return HasStatusCode(err, http.StatusServiceUnavailable)
-}
-
+// IsUnreachable checks if the given error indicates a transient server outage. Clients should retry after some grace period.
 func IsUnreachable(err error) bool {
-	return IsTooManyRequests(err) || IsServiceUnavailable(err)
+	code := StatusCode(err)
+
+	return code == http.StatusTooManyRequests || code == http.StatusInternalServerError || code == http.StatusServiceUnavailable
 }
 
 // StatusCode extracts the status code from an HTTPError. Returns 0 if error type doesn't match.
