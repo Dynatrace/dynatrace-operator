@@ -42,6 +42,7 @@ RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
       util-linux-core \
+      ca-certificates \
       --releasever 10 \
       --setopt install_weak_deps=false \
       --nodocs -y \
