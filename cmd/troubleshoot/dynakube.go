@@ -45,7 +45,7 @@ func checkDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Re
 		return err
 	}
 
-	pullSecrets, err := checkPullSecretExists(ctx, baseLog, apiReader, dk)
+	pullSecrets, err := checkPullSecretsExist(ctx, baseLog, apiReader, dk)
 	if err != nil {
 		return err
 	}
@@ -181,12 +181,12 @@ func checkAPIURLForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 	return nil
 }
 
-func checkPullSecretExists(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) ([]corev1.Secret, error) {
+func checkPullSecretsExist(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) ([]*corev1.Secret, error) {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	query := k8ssecret.Query(nil, apiReader)
 
-	var secrets []corev1.Secret
+	var secrets []*corev1.Secret
 
 	for _, name := range dk.PullSecretNames() {
 		pullSecret, err := query.Get(ctx, types.NamespacedName{Namespace: dk.Namespace, Name: name})
@@ -196,16 +196,16 @@ func checkPullSecretExists(ctx context.Context, baseLog logd.Logger, apiReader c
 
 		logInfof(log, "pull secret '%s:%s' exists", dk.Namespace, name)
 
-		secrets = append(secrets, *pullSecret)
+		secrets = append(secrets, pullSecret)
 	}
 
 	return secrets, nil
 }
 
-func checkPullSecretHasRequiredTokens(baseLog logd.Logger, pullSecret corev1.Secret) error {
+func checkPullSecretHasRequiredTokens(baseLog logd.Logger, pullSecret *corev1.Secret) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	if _, err := k8ssecret.ExtractToken(&pullSecret, dtpullsecret.DockerConfigJSON); err != nil {
+	if _, err := k8ssecret.ExtractToken(pullSecret, dtpullsecret.DockerConfigJSON); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", pullSecret.Namespace, pullSecret.Name)
 	}
 
