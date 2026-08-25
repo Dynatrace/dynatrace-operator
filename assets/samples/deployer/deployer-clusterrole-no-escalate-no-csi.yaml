@@ -28,9 +28,9 @@ rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["create", "get", "update", "patch", "delete", "list", "watch"]
-  # --- DynaKube / EdgeConnect / DtPrometheus custom resources (namespace-scoped) ---
+  # --- DynaKube / EdgeConnect custom resources (namespace-scoped) ---
   - apiGroups: ["dynatrace.com"]
-    resources: ["dynakubes", "dtprometheuses", "edgeconnects"]
+    resources: ["dynakubes", "edgeconnects"]
     verbs: ["create", "get", "update", "patch", "delete", "list"]
   # --- Platform-specific (only needed if the API exists on the cluster) ---
   - apiGroups: ["auto.gke.io"]
@@ -92,14 +92,11 @@ rules:
     resources: ["endpointslices"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["dynatrace.com"]
-    resources: ["dynakubes", "dtprometheuses", "edgeconnects"]
+    resources: ["dynakubes", "edgeconnects"]
     verbs: ["get", "list", "update", "watch"]
   - apiGroups: ["dynatrace.com"]
-    resources: ["dynakubes/finalizers", "dynakubes/status", "dtprometheuses/finalizers", "edgeconnects/finalizers", "edgeconnects/status"]
+    resources: ["dynakubes/finalizers", "dynakubes/status", "edgeconnects/finalizers", "edgeconnects/status"]
     verbs: ["update"]
-  - apiGroups: ["dynatrace.com"]
-    resources: ["dtprometheuses/status"]
-    verbs: ["patch"]
   - apiGroups: ["events.k8s.io"]
     resources: ["events"]
     verbs: ["create", "get", "list", "patch"]
