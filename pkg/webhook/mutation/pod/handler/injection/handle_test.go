@@ -64,7 +64,10 @@ func TestHandleImpl(t *testing.T) {
 	})
 
 	t.Run("no init secret + no init secret source => no injection + only annotation", func(t *testing.T) {
-		h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
+		oaMutator := webhookmock.NewMutator(t)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+
+		h := createTestHandler(oaMutator, webhookmock.NewMutator(t))
 
 		request := createTestMutationRequest(t, getTestDynakube())
 
@@ -103,7 +106,6 @@ func TestHandleImpl(t *testing.T) {
 		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
@@ -153,7 +155,6 @@ func TestHandleImpl(t *testing.T) {
 		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
@@ -186,7 +187,6 @@ func TestHandleImpl(t *testing.T) {
 		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
@@ -247,20 +247,6 @@ func TestHandleImpl(t *testing.T) {
 
 		err := h.Handle(request)
 		require.NoError(t, err)
-	})
-}
-
-func TestIsInjected(t *testing.T) {
-	t.Run("init-container present == injected", func(t *testing.T) {
-		h := createTestHandler(nil, nil)
-
-		assert.True(t, h.isInjected(createTestMutationRequestWithInjectedPod(t, getTestDynakube())))
-	})
-
-	t.Run("init-container NOT present != injected", func(t *testing.T) {
-		h := createTestHandler(nil, nil)
-
-		assert.False(t, h.isInjected(createTestMutationRequest(t, getTestDynakube())))
 	})
 }
 
