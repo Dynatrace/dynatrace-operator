@@ -42,11 +42,6 @@ func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 	t.Run("no warning if logMonitoring template section is empty", func(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		dk.Spec.ActiveGate = activegate.Spec{
-			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.KubeMonCapability.DisplayName,
-			},
-		}
 		dk.Spec.Templates.LogMonitoring = nil
 
 		warnings, _ := assertAllowed(t, dk)
@@ -55,11 +50,6 @@ func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 	t.Run("warning if logMonitoring template section is not empty", func(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "something")
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		dk.Spec.ActiveGate = activegate.Spec{
-			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.KubeMonCapability.DisplayName,
-			},
-		}
 
 		warnings, _ := assertAllowed(t, dk)
 		assert.Contains(t, warnings, warningLogMonitoringIgnoredTemplate)
@@ -75,6 +65,11 @@ func createStandaloneLogMonitoringDynakube(name, apiURL, nodeSelector string) *d
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:        apiURL,
 			LogMonitoring: &logmonitoring.Spec{},
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.KubeMonCapability.DisplayName,
+				},
+			},
 			Templates: dynakube.TemplatesSpec{
 				LogMonitoring: &logmonitoring.TemplateSpec{
 					ImageRef: image.Ref{
