@@ -20,135 +20,122 @@ import (
 )
 
 func TestExtensionExecutionControllerImage(t *testing.T) {
-	runExtensionTestCases(t,
-		extensionTestCase{
-			"the image specified",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				assertAllowed(t, setExtensions(&dynakube.DynaKube{
-					ObjectMeta: defaultDynakubeObjectMeta,
-					Spec: dynakube.DynaKubeSpec{
-						APIURL: testAPIURL,
-						ActiveGate: activegate.Spec{
-							Capabilities: []activegate.CapabilityDisplayName{
-								activegate.KubeMonCapability.DisplayName,
+	t.Run("the image specified", func(t *testing.T) {
+		assertAllowed(t, withDatabasesExtension(&dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+				Templates: dynakube.TemplatesSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
+						ImageRef: image.Ref{
+							Repository: "a",
+							Tag:        "b",
+						},
+					},
+					OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+						ImageRef: image.Ref{
+							Repository: "a",
+							Tag:        "b",
+						},
+					},
+					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+						ImageRef: image.Ref{
+							Repository: "a",
+							Tag:        "b",
+						},
+					},
+				},
+			},
+		}))
+	})
+
+	t.Run("missing tag", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorExtensionExecutionControllerImageNotSpecified},
+			withDatabasesExtension(&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+					Templates: dynakube.TemplatesSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
+							ImageRef: image.Ref{
+								Repository: "a",
 							},
 						},
-						Templates: dynakube.TemplatesSpec{
-							ExtensionExecutionController: extensions.ExecutionControllerSpec{
-								ImageRef: image.Ref{
-									Repository: "a",
-									Tag:        "b",
-								},
-							},
-							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-								ImageRef: image.Ref{
-									Repository: "a",
-									Tag:        "b",
-								},
-							},
-							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-								ImageRef: image.Ref{
-									Repository: "a",
-									Tag:        "b",
-								},
+						SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+							ImageRef: image.Ref{
+								Repository: "a",
+								Tag:        "b",
 							},
 						},
 					},
-				}))
-			},
-		},
+				},
+			}))
+	})
 
-		extensionTestCase{
-			"missing tag",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				assertDenied(t,
-					[]string{errorExtensionExecutionControllerImageNotSpecified},
-					setExtensions(&dynakube.DynaKube{
-						ObjectMeta: defaultDynakubeObjectMeta,
-						Spec: dynakube.DynaKubeSpec{
-							APIURL: testAPIURL,
-							ActiveGate: activegate.Spec{
-								Capabilities: []activegate.CapabilityDisplayName{
-									activegate.KubeMonCapability.DisplayName,
-								},
-							},
-							Templates: dynakube.TemplatesSpec{
-								ExtensionExecutionController: extensions.ExecutionControllerSpec{
-									ImageRef: image.Ref{
-										Repository: "a",
-									},
-								},
-								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-									ImageRef: image.Ref{
-										Repository: "a",
-										Tag:        "b",
-									},
-								},
+	t.Run("missing repository", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorExtensionExecutionControllerImageNotSpecified},
+			withDatabasesExtension(&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+					Templates: dynakube.TemplatesSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
+							ImageRef: image.Ref{
+								Tag: "b",
 							},
 						},
-					}))
-			},
-		},
-
-		extensionTestCase{
-			"missing repository",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				assertDenied(t,
-					[]string{errorExtensionExecutionControllerImageNotSpecified},
-					setExtensions(&dynakube.DynaKube{
-						ObjectMeta: defaultDynakubeObjectMeta,
-						Spec: dynakube.DynaKubeSpec{
-							APIURL: testAPIURL,
-							ActiveGate: activegate.Spec{
-								Capabilities: []activegate.CapabilityDisplayName{
-									activegate.KubeMonCapability.DisplayName,
-								},
-							},
-							Templates: dynakube.TemplatesSpec{
-								ExtensionExecutionController: extensions.ExecutionControllerSpec{
-									ImageRef: image.Ref{
-										Tag: "b",
-									},
-								},
-								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-									ImageRef: image.Ref{
-										Repository: "a",
-										Tag:        "b",
-									},
-								},
+						SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+							ImageRef: image.Ref{
+								Repository: "a",
+								Tag:        "b",
 							},
 						},
-					}))
-			},
-		},
+					},
+				},
+			}))
+	})
 
-		extensionTestCase{
-			"image not specified",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				assertDenied(t,
-					[]string{errorExtensionExecutionControllerImageNotSpecified},
-					setExtensions(&dynakube.DynaKube{
-						ObjectMeta: defaultDynakubeObjectMeta,
-						Spec: dynakube.DynaKubeSpec{
-							APIURL: testAPIURL,
-							ActiveGate: activegate.Spec{
-								Capabilities: []activegate.CapabilityDisplayName{
-									activegate.KubeMonCapability.DisplayName,
-								},
-							},
-							Templates: dynakube.TemplatesSpec{
-								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-									ImageRef: image.Ref{
-										Repository: "a",
-										Tag:        "b",
-									},
-								},
+	t.Run("image not specified", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorExtensionExecutionControllerImageNotSpecified},
+			withDatabasesExtension(&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+					Templates: dynakube.TemplatesSpec{
+						SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+							ImageRef: image.Ref{
+								Repository: "a",
+								Tag:        "b",
 							},
 						},
-					}))
-			},
-		},
-	)
+					},
+				},
+			}))
+	})
+
 }
 
 func TestExtensionControllerImageNotRequired(t *testing.T) {
@@ -190,119 +177,109 @@ func TestExtensionControllerImageNotRequired(t *testing.T) {
 }
 
 func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
-	runExtensionTestCases(t,
-		extensionTestCase{
-			"EphemeralVolume disabled and PVC specified",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				assertAllowed(t, setExtensions(&dynakube.DynaKube{
-					ObjectMeta: defaultDynakubeObjectMeta,
-					Spec: dynakube.DynaKubeSpec{
-						APIURL: testAPIURL,
-						ActiveGate: activegate.Spec{
-							Capabilities: []activegate.CapabilityDisplayName{
-								activegate.KubeMonCapability.DisplayName,
-							},
+	t.Run("EphemeralVolume disabled and PVC specified", func(t *testing.T) {
+		assertAllowed(t, withDatabasesExtension(&dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+				Templates: dynakube.TemplatesSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
+						ImageRef: image.Ref{
+							Repository: "a",
+							Tag:        "b",
 						},
-						Templates: dynakube.TemplatesSpec{
-							ExtensionExecutionController: extensions.ExecutionControllerSpec{
-								ImageRef: image.Ref{
-									Repository: "a",
-									Tag:        "b",
-								},
-								UseEphemeralVolume:    new(false),
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
+						UseEphemeralVolume:    new(false),
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
+					},
+					OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+						ImageRef: image.Ref{
+							Repository: "a",
+							Tag:        "b",
+						},
+					},
+					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+						ImageRef: image.Ref{
+							Repository: "repo",
+							Tag:        "tag",
+						},
+					},
+				},
+			},
+		}))
+	})
+
+	t.Run("EphemeralVolume enabled and no PVC specified", func(t *testing.T) {
+		assertAllowed(t, withDatabasesExtension(&dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+				Templates: dynakube.TemplatesSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
+						ImageRef: image.Ref{
+							Repository: "a",
+							Tag:        "b",
+						},
+						UseEphemeralVolume: new(true),
+					},
+					OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+						ImageRef: image.Ref{
+							Repository: "a",
+							Tag:        "b",
+						},
+					},
+					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+						ImageRef: image.Ref{
+							Repository: "repo",
+							Tag:        "tag",
+						},
+					},
+				},
+			},
+		}))
+	})
+
+	t.Run("EphemeralVolume enabled and PVC specified", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorExtensionExecutionControllerInvalidPVCConfiguration},
+			withDatabasesExtension(&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+					Templates: dynakube.TemplatesSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
+							ImageRef: image.Ref{
+								Repository: "a",
+								Tag:        "b",
 							},
-							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-								ImageRef: image.Ref{
-									Repository: "a",
-									Tag:        "b",
-								},
-							},
-							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-								ImageRef: image.Ref{
-									Repository: "repo",
-									Tag:        "tag",
-								},
+							UseEphemeralVolume:    new(true),
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
+						},
+						SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+							ImageRef: image.Ref{
+								Repository: "repo",
+								Tag:        "tag",
 							},
 						},
 					},
-				}))
-			},
-		},
+				},
+			}))
+	})
 
-		extensionTestCase{
-			"EphemeralVolume enabled and no PVC specified",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				assertAllowed(t, setExtensions(&dynakube.DynaKube{
-					ObjectMeta: defaultDynakubeObjectMeta,
-					Spec: dynakube.DynaKubeSpec{
-						APIURL: testAPIURL,
-						ActiveGate: activegate.Spec{
-							Capabilities: []activegate.CapabilityDisplayName{
-								activegate.KubeMonCapability.DisplayName,
-							},
-						},
-						Templates: dynakube.TemplatesSpec{
-							ExtensionExecutionController: extensions.ExecutionControllerSpec{
-								ImageRef: image.Ref{
-									Repository: "a",
-									Tag:        "b",
-								},
-								UseEphemeralVolume: new(true),
-							},
-							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-								ImageRef: image.Ref{
-									Repository: "a",
-									Tag:        "b",
-								},
-							},
-							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-								ImageRef: image.Ref{
-									Repository: "repo",
-									Tag:        "tag",
-								},
-							},
-						},
-					},
-				}))
-			},
-		},
-
-		extensionTestCase{
-			"EphemeralVolume enabled and PVC specified",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				assertDenied(t,
-					[]string{errorExtensionExecutionControllerInvalidPVCConfiguration},
-					setExtensions(&dynakube.DynaKube{
-						ObjectMeta: defaultDynakubeObjectMeta,
-						Spec: dynakube.DynaKubeSpec{
-							APIURL: testAPIURL,
-							ActiveGate: activegate.Spec{
-								Capabilities: []activegate.CapabilityDisplayName{
-									activegate.KubeMonCapability.DisplayName,
-								},
-							},
-							Templates: dynakube.TemplatesSpec{
-								ExtensionExecutionController: extensions.ExecutionControllerSpec{
-									ImageRef: image.Ref{
-										Repository: "a",
-										Tag:        "b",
-									},
-									UseEphemeralVolume:    new(true),
-									PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
-								},
-								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-									ImageRef: image.Ref{
-										Repository: "repo",
-										Tag:        "tag",
-									},
-								},
-							},
-						},
-					}))
-			},
-		},
-	)
 }
 
 func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
@@ -348,86 +325,76 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 		},
 	}
 
-	runExtensionTestCases(t,
-		extensionTestCase{
-			"no warning different ApiUrls",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				dk2 := &dynakube.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      testName + "second",
-						Namespace: testNamespace,
-					},
-					Spec: dynakube.DynaKubeSpec{
-						APIURL: "https://f.q.d.n/123",
-						Templates: dynakube.TemplatesSpec{
-							ExtensionExecutionController: extensions.ExecutionControllerSpec{
-								ImageRef: imgRef,
-							},
-							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-								ImageRef: imgRef,
-							},
-						},
-						ActiveGate: agSpec,
-					},
-				}
-				assertAllowedWithWarnings(t, 1, setExtensions(dk1), setExtensions(dk2))
+	t.Run("no warning different ApiUrls", func(t *testing.T) {
+		dk2 := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName + "second",
+				Namespace: testNamespace,
 			},
-		},
-
-		extensionTestCase{
-			"warning same ApiUrls",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				dk2 := &dynakube.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      testName + "second",
-						Namespace: testNamespace,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: "https://f.q.d.n/123",
+				Templates: dynakube.TemplatesSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
+						ImageRef: imgRef,
 					},
-					Spec: dynakube.DynaKubeSpec{
-						APIURL: testAPIURL,
-						Templates: dynakube.TemplatesSpec{
-							ExtensionExecutionController: extensions.ExecutionControllerSpec{
-								ImageRef: imgRef,
-							},
-							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-								ImageRef: imgRef,
-							},
-						},
-						ActiveGate: agSpec,
+					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+						ImageRef: imgRef,
 					},
-				}
-				warnings, err := assertAllowed(t, setExtensions(dk1), setExtensions(dk2))
-				require.NoError(t, err)
-				require.Len(t, warnings, 2)
-
-				expected := fmt.Sprintf(warningConflictingAPIURLForExtensions, dk2.Name)
-				assert.Contains(t, warnings, expected)
+				},
+				ActiveGate: agSpec,
 			},
-		},
+		}
+		assertAllowedWithWarnings(t, 1, withDatabasesExtension(dk1), withDatabasesExtension(dk2))
+	})
 
-		extensionTestCase{
-			"no warning same ApiUrls and for second dk: extensions feature is disabled",
-			func(t *testing.T, setExtensions dkMutatorFunc) {
-				dk2 := &dynakube.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      testName + "second",
-						Namespace: testNamespace,
-					},
-					Spec: dynakube.DynaKubeSpec{
-						APIURL:     testAPIURL,
-						Extensions: nil,
-						Templates: dynakube.TemplatesSpec{
-							ExtensionExecutionController: extensions.ExecutionControllerSpec{
-								ImageRef: imgRef,
-							},
-							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-								ImageRef: imgRef,
-							},
-						},
-						ActiveGate: agSpec,
-					},
-				}
-				assertAllowedWithWarnings(t, 1, setExtensions(dk1), dk2)
+	t.Run("warning same ApiUrls", func(t *testing.T) {
+		dk2 := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName + "second",
+				Namespace: testNamespace,
 			},
-		},
-	)
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				Templates: dynakube.TemplatesSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
+						ImageRef: imgRef,
+					},
+					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+						ImageRef: imgRef,
+					},
+				},
+				ActiveGate: agSpec,
+			},
+		}
+		warnings, err := assertAllowed(t, withDatabasesExtension(dk1), withDatabasesExtension(dk2))
+		require.NoError(t, err)
+		require.Len(t, warnings, 2)
+
+		expected := fmt.Sprintf(warningConflictingAPIURLForExtensions, dk2.Name)
+		assert.Contains(t, warnings, expected)
+	})
+
+	t.Run("no warning same ApiUrls and for second dk: extensions feature is disabled", func(t *testing.T) {
+		dk2 := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName + "second",
+				Namespace: testNamespace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:     testAPIURL,
+				Extensions: nil,
+				Templates: dynakube.TemplatesSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
+						ImageRef: imgRef,
+					},
+					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+						ImageRef: imgRef,
+					},
+				},
+				ActiveGate: agSpec,
+			},
+		}
+		assertAllowedWithWarnings(t, 1, withDatabasesExtension(dk1), dk2)
+	})
+
 }
