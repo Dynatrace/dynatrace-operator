@@ -111,6 +111,10 @@ func TestUnknownFeatureFlag(t *testing.T) {
 		dk := getDK()
 		dk.Annotations = annotations
 		assertAllowedWithoutWarnings(t, dk)
+
+		// Test the mutually exclusive flag separately
+		dk.Annotations = map[string]string{exp.OAImageVolumeKey: "true"}
+		assertAllowedWithoutWarnings(t, dk)
 	})
 
 	t.Run("non-feature annotation => no warning", func(t *testing.T) {

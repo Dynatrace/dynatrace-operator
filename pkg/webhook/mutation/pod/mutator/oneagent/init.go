@@ -115,11 +115,9 @@ func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 }
 
 func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string, log logd.Logger) error {
-	targetFolder := arg.Arg{Name: k8sinit.TargetFolderFlag, Value: consts.AgentInitBinDirMount}
-
 	args := []arg.Arg{
 		{Name: k8sinit.SourceFolderFlag, Value: AgentCodeModuleSource},
-		targetFolder,
+		{Name: k8sinit.TargetFolderFlag, Value: consts.AgentInitBinDirMount},
 		{Name: configure.InstallPathFlag, Value: installPath},
 	}
 
