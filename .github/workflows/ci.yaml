@@ -93,6 +93,8 @@ jobs:
         with:
           files: |
             config/**
+            # we need to check the deployer samples we use them in e2e tests
+            assets/samples/deployer/*
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect prerequisites.mk changes
         if: ${{ !github.event.created }}
