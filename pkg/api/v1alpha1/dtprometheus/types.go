@@ -19,14 +19,6 @@ type DTPrometheusSpec struct { //nolint:revive
 	// +kubebuilder:validation:MinLength=1
 	DynaKubeName string `json:"dynaKubeName"`
 
-	// When enabled, the operator creates a built-in ScrapeConfig that discovers
-	// pods annotated with metrics.dynatrace.com/scrape: "true" and reads the
-	// port, path, and secure annotations to construct scrape targets.
-	// This provides backwards compatibility with the ActiveGate Kubernetes
-	// module annotation-based discovery workflow.
-	// +kubebuilder:validation:Optional
-	DynatracePreset *DynatracePresetSpec `json:"dynatracePreset,omitzero"`
-
 	// Configures the Target Allocator, which holds all Prometheus service
 	// discovery metadata and distributes scrape targets across the scraper pool.
 	// +kubebuilder:validation:Optional
@@ -49,9 +41,6 @@ type DTPrometheusSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	PublicRegistryOverride string `json:"publicRegistryOverride,omitempty"`
 }
-
-// DynatracePresetSpec toggles the operator-managed annotation-based ScrapeConfig.
-type DynatracePresetSpec struct{}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
