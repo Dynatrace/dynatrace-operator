@@ -123,15 +123,6 @@ func (ag *ActiveGate) GetTLSSecretName() string {
 }
 
 // GetAutoTLSSecretName returns the name of the automatically created AG TLS secret.
-func (ag *ActiveGate) GetCustomTLSSecretName() string {
-	if ag.TLSSecretName != "" {
-		return ag.TLSSecretName
-	}
-
-	return ""
-}
-
-// GetAutoTLSSecretName returns the name of the automatically created AG TLS secret.
 func (ag *ActiveGate) GetAutoTLSSecretName() string {
 	return ag.name + TLSSecretSuffix
 }
