@@ -12,6 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8smeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,7 +24,6 @@ import (
 const (
 	k8sResourceCollectorName = "k8sResourceCollector"
 	webhookValidatorName     = "dynatrace-webhook"
-	crdNameSuffix            = "dynatrace.com"
 )
 
 type k8sResourceCollector struct {
@@ -54,7 +55,14 @@ func (collector k8sResourceCollector) Do() error {
 	for _, query := range getQueries(collector.namespace, collector.appName) {
 		resourceList, err := collector.readObjectsList(query.groupVersionKind, query.filters)
 		if err != nil {
-			logErrorf(collector.log, err, "could not get manifest for %s", query.groupVersionKind.String())
+			switch {
+			case k8serrors.IsForbidden(err):
+				logInfof(collector.log, "no permission to list %s, skipping", query.groupVersionKind.String())
+			case k8smeta.IsNoMatchError(err):
+				logInfof(collector.log, "CRD not installed, skipping %s", query.groupVersionKind.String())
+			default:
+				logErrorf(collector.log, err, "could not get manifest for %s", query.groupVersionKind.String())
+			}
 
 			continue
 		}
@@ -139,17 +147,23 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 	resourceList := &unstructured.UnstructuredList{}
 	resourceList.SetGroupVersionKind(toGroupVersionKind(apiextensionsv1.SchemeGroupVersion, apiextensionsv1.CustomResourceDefinition{}))
 
-	var dynaKube apiextensionsv1.CustomResourceDefinition
-	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "dynakubes.dynatrace.com"}, &dynaKube); err != nil {
-		return nil, err
-	}
+	for _, spec := range customResourceSpecs {
+		var crd apiextensionsv1.CustomResourceDefinition
+		if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: spec.crdName}, &crd); err != nil {
+			switch {
+			case k8serrors.IsForbidden(err):
+				logInfof(collector.log, "no permission to get CRD %s, skipping", spec.crdName)
+			case k8serrors.IsNotFound(err):
+				logInfof(collector.log, "CRD %s not installed, skipping", spec.crdName)
+			default:
+				return nil, err
+			}
 
-	var edgeConnect apiextensionsv1.CustomResourceDefinition
-	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "edgeconnects.dynatrace.com"}, &edgeConnect); err != nil {
-		return nil, err
-	}
+			continue
+		}
 
-	resourceList.Items = append(resourceList.Items, collector.getCRD(dynaKube), collector.getCRD(edgeConnect))
+		resourceList.Items = append(resourceList.Items, collector.getCRD(crd))
+	}
 
 	return resourceList, nil
 }

@@ -9,6 +9,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -32,6 +34,17 @@ type resourceQueryGroup struct {
 type resourceQuery struct {
 	groupVersionKind schema.GroupVersionKind
 	filters          []client.ListOption
+}
+
+type customResourceSpec struct {
+	crdName          string
+	groupVersionKind schema.GroupVersionKind
+}
+
+var customResourceSpecs = []customResourceSpec{
+	{"dynakubes.dynatrace.com", toGroupVersionKind(latest.GroupVersion, dynakube.DynaKube{})},
+	{"edgeconnects.dynatrace.com", toGroupVersionKind(v1alpha2.GroupVersion, edgeconnect.EdgeConnect{})},
+	{"dtprometheuses.dynatrace.com", toGroupVersionKind(v1alpha1.GroupVersion, dtprometheus.DTPrometheus{})},
 }
 
 func getQueries(namespace string, appName string) []resourceQuery {
@@ -93,11 +106,13 @@ func getComponentsQueryGroup(namespace string, appName string, labelKey string) 
 }
 
 func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
+	gvks := make([]schema.GroupVersionKind, 0, len(customResourceSpecs))
+	for _, spec := range customResourceSpecs {
+		gvks = append(gvks, spec.groupVersionKind)
+	}
+
 	return resourceQueryGroup{
-		resources: []schema.GroupVersionKind{
-			toGroupVersionKind(latest.GroupVersion, dynakube.DynaKube{}),
-			toGroupVersionKind(v1alpha2.GroupVersion, edgeconnect.EdgeConnect{}),
-		},
+		resources: gvks,
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
 		},
