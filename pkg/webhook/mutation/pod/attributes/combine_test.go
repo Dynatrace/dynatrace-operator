@@ -14,6 +14,7 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -30,7 +31,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	}
 
 	t.Run("dynakube overrides rules for shared key", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.rules["shared.key"] = "from-rules"
 		attrs.dynakube["shared.key"] = "from-dynakube"
 		pod := &corev1.Pod{}
@@ -41,7 +42,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	})
 
 	t.Run("namespaceAnnotations override dynakube for shared key", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.dynakube["shared.key"] = "from-dynakube"
 		attrs.namespaceAnnotations["shared.key"] = "from-ns"
 		pod := &corev1.Pod{}
@@ -52,7 +53,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	})
 
 	t.Run("namespaceAnnotations override rules for shared key", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.namespaceAnnotations["shared.key"] = "from-ns"
 		attrs.rules["shared.key"] = "from-rules"
 		pod := &corev1.Pod{}
@@ -63,7 +64,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	})
 
 	t.Run("podAnnotations overrides rules for shared key", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.rules["shared.key"] = "from-rules"
 		attrs.podAnnotations["shared.key"] = "from-pod"
 		pod := &corev1.Pod{}
@@ -73,13 +74,37 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 		assert.Equal(t, "from-pod", parseJSON(t, pod)["shared.key"])
 	})
 
+	t.Run("workloadAnnotations override namespaceAnnotations for shared key", func(t *testing.T) {
+		attrs := newPodAttrs()
+		attrs.namespaceAnnotations["shared.key"] = "from-ns"
+		attrs.workloadAnnotations["shared.key"] = "from-workload"
+		pod := &corev1.Pod{}
+
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
+
+		assert.Equal(t, "from-workload", parseJSON(t, pod)["shared.key"])
+	})
+
+	t.Run("podAnnotations override workloadAnnotations for shared key", func(t *testing.T) {
+		attrs := newPodAttrs()
+		attrs.workloadAnnotations["shared.key"] = "from-workload"
+		attrs.podAnnotations["shared.key"] = "from-pod"
+		pod := &corev1.Pod{}
+
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
+
+		assert.Equal(t, "from-pod", parseJSON(t, pod)["shared.key"])
+	})
+
 	t.Run("all sources merged with correct precedence", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.namespaceAnnotations["ns-only"] = "ns-val"
 		attrs.namespaceAnnotations["shared.key"] = "from-ns"
 		attrs.rules["rules-only"] = "rules-val"
 		attrs.rules["rules-extra"] = "rules-extra-val"
 		attrs.rules["shared.key"] = "from-rules"
+		attrs.workloadAnnotations["workload-only"] = "workload-val"
+		attrs.workloadAnnotations["shared.key"] = "from-workload"
 		attrs.podAnnotations["pod-only"] = "pod-val"
 		attrs.podAnnotations["shared.key"] = "from-pod"
 		pod := &corev1.Pod{}
@@ -91,6 +116,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 		assert.Equal(t, "ns-val", parsed["ns-only"])
 		assert.Equal(t, "rules-val", parsed["rules-only"])
 		assert.Equal(t, "rules-extra-val", parsed["rules-extra"])
+		assert.Equal(t, "workload-val", parsed["workload-only"])
 		assert.Equal(t, "pod-val", parsed["pod-only"])
 	})
 
@@ -101,7 +127,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 				Annotations: map[string]string{metadataenrichment.Annotation: existingJSON},
 			},
 		}
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.rules["custom-annotation1"] = "foobar"
 
 		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
@@ -110,7 +136,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	})
 
 	t.Run("namespace annotations appear in JSON block", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.namespaceAnnotations["ns-attr"] = "from-ns"
 		pod := &corev1.Pod{}
 
@@ -120,7 +146,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	})
 
 	t.Run("enrichment-rule results appear in JSON block", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.rules["rule-attr"] = "from-rule"
 		pod := &corev1.Pod{}
 
@@ -130,7 +156,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	})
 
 	t.Run("workload kind and name appear in JSON block", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.workloadInfo[K8sWorkloadKindAttr] = "deployment"
 		attrs.workloadInfo[K8sWorkloadNameAttr] = "my-deploy"
 		pod := &corev1.Pod{}
@@ -143,7 +169,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	})
 
 	t.Run("namespaceAnnotations overrides workloadInfo in the JSON annotation", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.workloadInfo["shared.key"] = "from-workload"
 		attrs.namespaceAnnotations["shared.key"] = "from-ns"
 		pod := &corev1.Pod{}
@@ -154,7 +180,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	})
 
 	t.Run("namespace annotation is not written as individual pod annotation", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.namespaceAnnotations["ns-attr"] = "from-ns"
 		pod := &corev1.Pod{}
 
@@ -163,8 +189,28 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 		assert.NotContains(t, pod.Annotations, metadataenrichment.Prefix+"ns-attr")
 	})
 
+	t.Run("workload annotation appears in JSON block", func(t *testing.T) {
+		attrs := newPodAttrs()
+		attrs.workloadAnnotations["workload-attr"] = "from-workload"
+		pod := &corev1.Pod{}
+
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
+
+		assert.Equal(t, "from-workload", parseJSON(t, pod)["workload-attr"])
+	})
+
+	t.Run("workload annotation is not written as individual pod annotation", func(t *testing.T) {
+		attrs := newPodAttrs()
+		attrs.workloadAnnotations["workload-attr"] = "from-workload"
+		pod := &corev1.Pod{}
+
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(pod))
+
+		assert.NotContains(t, pod.Annotations, metadataenrichment.Prefix+"workload-attr")
+	})
+
 	t.Run("enrichment-rule result is not written as individual pod annotation", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.rules["rule-attr"] = "from-rule"
 		pod := &corev1.Pod{}
 
@@ -174,7 +220,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	})
 
 	t.Run("workload kind and name are not written as individual pod annotations", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.workloadInfo[K8sWorkloadKindAttr] = "deployment"
 		attrs.workloadInfo[K8sWorkloadNameAttr] = "my-deploy"
 		pod := &corev1.Pod{}
@@ -187,7 +233,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 }
 
 func TestCombine_WorkloadInfoWinsOverDeprecated(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.useDeprecated = true
 	attrs.deprecated["shared.key"] = "from-deprecated"
 	attrs.workloadInfo["shared.key"] = "from-workload"
@@ -198,7 +244,7 @@ func TestCombine_WorkloadInfoWinsOverDeprecated(t *testing.T) {
 }
 
 func TestCombine_PodInfoWinsOverWorkloadInfo(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.workloadInfo["shared.key"] = "from-workload"
 	attrs.podInfo["shared.key"] = "from-pod-info"
 
@@ -208,7 +254,7 @@ func TestCombine_PodInfoWinsOverWorkloadInfo(t *testing.T) {
 }
 
 func TestCombine_ClusterInfoWinsOverPodInfo(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.podInfo["shared.key"] = "from-pod-info"
 	attrs.clusterInfo["shared.key"] = "from-cluster"
 
@@ -218,7 +264,7 @@ func TestCombine_ClusterInfoWinsOverPodInfo(t *testing.T) {
 }
 
 func TestCombine_ContainerWinsOverClusterInfo(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.clusterInfo[K8sContainerNameAttr] = "from-cluster"
 	container := Container{ContainerName: "from-container"}
 
@@ -228,7 +274,7 @@ func TestCombine_ContainerWinsOverClusterInfo(t *testing.T) {
 }
 
 func TestCombine_DynakubeWinsOverContainer(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	container := Container{ContainerName: "from-container"}
 	attrs.dynakube[K8sContainerNameAttr] = "from-dynakube"
 	result := attrs.combineAll(container)
@@ -236,7 +282,7 @@ func TestCombine_DynakubeWinsOverContainer(t *testing.T) {
 }
 
 func TestCombine_RulesWinsOverContainer(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.rules[K8sContainerNameAttr] = "from-rules"
 	container := Container{ContainerName: "from-container"}
 
@@ -246,7 +292,7 @@ func TestCombine_RulesWinsOverContainer(t *testing.T) {
 }
 
 func TestCombine_DynakubeWinsOverRules(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.rules["shared.key"] = "from-rules"
 	attrs.dynakube["shared.key"] = "from-dynakube"
 
@@ -256,7 +302,7 @@ func TestCombine_DynakubeWinsOverRules(t *testing.T) {
 }
 
 func TestCombine_NamespaceAnnotationWinsOverDynakube(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.dynakube["shared.key"] = "from-dynakube"
 	attrs.namespaceAnnotations["shared.key"] = "from-namespace"
 
@@ -266,7 +312,7 @@ func TestCombine_NamespaceAnnotationWinsOverDynakube(t *testing.T) {
 }
 
 func TestCombine_NamespaceAnnotationWinsOverRules(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.rules["shared.key"] = "from-rules"
 	attrs.namespaceAnnotations["shared.key"] = "from-namespace"
 
@@ -276,7 +322,7 @@ func TestCombine_NamespaceAnnotationWinsOverRules(t *testing.T) {
 }
 
 func TestCombine_PodAnnotationWinsOverNamespaceAnnotation(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.namespaceAnnotations["shared.key"] = "from-namespace"
 	attrs.podAnnotations["shared.key"] = "from-pod"
 
@@ -285,8 +331,38 @@ func TestCombine_PodAnnotationWinsOverNamespaceAnnotation(t *testing.T) {
 	assert.Equal(t, "from-pod", result["shared.key"])
 }
 
+func TestCombine_WorkloadAnnotationWinsOverNamespaceAnnotation(t *testing.T) {
+	attrs := newPodAttrs()
+	attrs.namespaceAnnotations["shared.key"] = "from-namespace"
+	attrs.workloadAnnotations["shared.key"] = "from-workload"
+
+	result := attrs.combineAll()
+
+	assert.Equal(t, "from-workload", result["shared.key"])
+}
+
+func TestCombine_PodAnnotationWinsOverWorkloadAnnotation(t *testing.T) {
+	attrs := newPodAttrs()
+	attrs.workloadAnnotations["shared.key"] = "from-workload"
+	attrs.podAnnotations["shared.key"] = "from-pod"
+
+	result := attrs.combineAll()
+
+	assert.Equal(t, "from-pod", result["shared.key"])
+}
+
+func TestCombine_WorkloadAnnotationWinsOverRules(t *testing.T) {
+	attrs := newPodAttrs()
+	attrs.rules["shared.key"] = "from-rules"
+	attrs.workloadAnnotations["shared.key"] = "from-workload"
+
+	result := attrs.combineAll()
+
+	assert.Equal(t, "from-workload", result["shared.key"])
+}
+
 func TestCombine_CustomWinsOverPodAnnotation(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.podAnnotations["shared.key"] = "from-pod"
 	attrs.custom["shared.key"] = "from-custom"
 
@@ -296,7 +372,7 @@ func TestCombine_CustomWinsOverPodAnnotation(t *testing.T) {
 }
 
 func TestCombine_DeprecatedExcludedWhenDisabled(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.useDeprecated = false
 	attrs.deprecated[DeprecatedWorkloadKindKey] = "some-kind"
 
@@ -306,7 +382,7 @@ func TestCombine_DeprecatedExcludedWhenDisabled(t *testing.T) {
 }
 
 func TestCombine_DeprecatedIncludedAndOverriddenWhenEnabled(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.useDeprecated = true
 	attrs.deprecated[DeprecatedWorkloadKindKey] = "from-deprecated"
 	attrs.workloadInfo[DeprecatedWorkloadKindKey] = "from-workload"
@@ -318,7 +394,7 @@ func TestCombine_DeprecatedIncludedAndOverriddenWhenEnabled(t *testing.T) {
 }
 
 func TestCombine_UniqueKeysFromAllSourcesMerged(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	attrs.useDeprecated = true
 	attrs.deprecated["dep.key"] = "dep-val"
 	attrs.workloadInfo["workload.key"] = "workload-val"
@@ -327,6 +403,7 @@ func TestCombine_UniqueKeysFromAllSourcesMerged(t *testing.T) {
 	attrs.rules["rules.key"] = "rules-val"
 	attrs.rules["rules-extra.key"] = "rules-extra-val"
 	attrs.namespaceAnnotations["ns.key"] = "ns-val"
+	attrs.workloadAnnotations["workload-anno.key"] = "workload-anno-val"
 	attrs.podAnnotations["pod-anno.key"] = "pod-anno-val"
 	attrs.custom["custom.key"] = "custom-val"
 	container := Container{ContainerName: "my-container"}
@@ -341,12 +418,13 @@ func TestCombine_UniqueKeysFromAllSourcesMerged(t *testing.T) {
 	assert.Equal(t, "rules-val", result["rules.key"])
 	assert.Equal(t, "rules-extra-val", result["rules-extra.key"])
 	assert.Equal(t, "ns-val", result["ns.key"])
+	assert.Equal(t, "workload-anno-val", result["workload-anno.key"])
 	assert.Equal(t, "pod-anno-val", result["pod-anno.key"])
 	assert.Equal(t, "custom-val", result["custom.key"])
 }
 
 func TestCombine_MultipleContainerAttrs_LaterOneWins(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 	first := Container{ContainerName: "first-container"}
 	second := Container{ContainerName: "second-container"}
 
@@ -356,7 +434,7 @@ func TestCombine_MultipleContainerAttrs_LaterOneWins(t *testing.T) {
 }
 
 func TestCombine_EmptyAttributes(t *testing.T) {
-	attrs := newTestPodAttributes()
+	attrs := newPodAttrs()
 
 	result := attrs.combineAll()
 
@@ -445,7 +523,7 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 		container := *NewContainerAttributes(corev1.Container{Name: "my-container"})
 		result := toResultMap(attrs.Convert(simpleConvertFunc, container))
 
-		// pod annotation (precedence 9) beats podInfo (precedence 3)
+		// pod annotation (precedence 10) beats podInfo (precedence 3)
 		assert.Equal(t, "overridden-pod-name", result[K8sPodNameAttr])
 	})
 
@@ -471,7 +549,7 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 
 		result := toResultMap(attrs.Convert(simpleConvertFunc))
 
-		// pod annotation (9) beats namespace annotation (8) beats clusterInfo (4)
+		// pod annotation (10) beats namespace annotation (8) beats clusterInfo (4)
 		assert.Equal(t, "uid-from-pod", result[K8sClusterUIDAttr])
 	})
 
@@ -491,7 +569,7 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 
 		result := toResultMap(attrs.Convert(simpleConvertFunc))
 
-		// custom (10) beats pod annotation (9)
+		// custom (11) beats pod annotation (10)
 		assert.Equal(t, "uid-from-custom", result[K8sClusterUIDAttr])
 	})
 
@@ -517,6 +595,139 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 		// workload kind is "pod" because the pod has no owner references
 		assert.Equal(t, "pod", result[K8sWorkloadKindAttr])
 		assert.Equal(t, podName, result[K8sWorkloadNameAttr])
+	})
+}
+
+// Verifies end-to-end, through the real constructor, that a metadata.dynatrace.com/<key> annotation
+// set on the workload owning the pod is resolved into the metadata set, and how it ranks against the
+// namespace and pod annotation layers.
+func TestCombine_ViaConstructors_WorkloadAnnotations(t *testing.T) {
+	const (
+		namespaceName  = "my-ns"
+		deploymentName = "my-deploy"
+		sharedKey      = "shared.key"
+	)
+
+	newDeployment := func(annotations map[string]string) *appsv1.Deployment {
+		return &appsv1.Deployment{
+			TypeMeta: metav1.TypeMeta{Kind: "Deployment", APIVersion: "apps/v1"},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        deploymentName,
+				Namespace:   namespaceName,
+				Annotations: annotations,
+			},
+		}
+	}
+
+	newRequest := func(namespaceAnnotations, podAnnotations map[string]string) dtwebhook.BaseRequest {
+		return dtwebhook.BaseRequest{
+			Pod: &corev1.Pod{
+				TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "my-pod",
+					Namespace:   namespaceName,
+					Annotations: podAnnotations,
+					OwnerReferences: []metav1.OwnerReference{
+						{APIVersion: "apps/v1", Kind: "Deployment", Name: deploymentName, Controller: new(true)},
+					},
+				},
+			},
+			Namespace: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: namespaceName, Annotations: namespaceAnnotations},
+			},
+		}
+	}
+
+	t.Run("workload annotation reaches the resolved attributes", func(t *testing.T) {
+		deployment := newDeployment(map[string]string{
+			metadataenrichment.Prefix + "my.attr": "from-workload",
+			"unrelated/annotation":                "ignored",
+		})
+		request := newRequest(nil, nil)
+
+		attrs, err := NewPodAttributes(t.Context(), request, fake.NewClient(deployment))
+		require.NoError(t, err)
+
+		result := toResultMap(attrs.Convert(simpleConvertFunc))
+
+		assert.Equal(t, "from-workload", result["my.attr"])
+		assert.NotContains(t, result, "unrelated/annotation")
+		assert.Equal(t, "deployment", result[K8sWorkloadKindAttr])
+	})
+
+	t.Run("workload annotation is folded into the JSON annotation, not copied literally", func(t *testing.T) {
+		deployment := newDeployment(map[string]string{metadataenrichment.Prefix + "my.attr": "from-workload"})
+		request := newRequest(nil, nil)
+
+		attrs, err := NewPodAttributes(t.Context(), request, fake.NewClient(deployment))
+		require.NoError(t, err)
+		require.NoError(t, attrs.ApplyJSONAnnotationToPod(request.Pod))
+
+		var parsed map[string]string
+		require.NoError(t, json.Unmarshal([]byte(request.Pod.Annotations[metadataenrichment.Annotation]), &parsed))
+
+		assert.Equal(t, "from-workload", parsed["my.attr"])
+		assert.NotContains(t, request.Pod.Annotations, metadataenrichment.Prefix+"my.attr")
+	})
+
+	t.Run("workload annotation beats namespace annotation", func(t *testing.T) {
+		deployment := newDeployment(map[string]string{metadataenrichment.Prefix + sharedKey: "from-workload"})
+		request := newRequest(map[string]string{metadataenrichment.Prefix + sharedKey: "from-namespace"}, nil)
+
+		attrs, err := NewPodAttributes(t.Context(), request, fake.NewClient(deployment))
+		require.NoError(t, err)
+
+		result := toResultMap(attrs.Convert(simpleConvertFunc))
+
+		assert.Equal(t, "from-workload", result[sharedKey])
+	})
+
+	t.Run("pod annotation beats workload annotation", func(t *testing.T) {
+		deployment := newDeployment(map[string]string{metadataenrichment.Prefix + sharedKey: "from-workload"})
+		request := newRequest(
+			map[string]string{metadataenrichment.Prefix + sharedKey: "from-namespace"},
+			map[string]string{metadataenrichment.Prefix + sharedKey: "from-pod"},
+		)
+
+		attrs, err := NewPodAttributes(t.Context(), request, fake.NewClient(deployment))
+		require.NoError(t, err)
+
+		result := toResultMap(attrs.Convert(simpleConvertFunc))
+
+		assert.Equal(t, "from-pod", result[sharedKey])
+	})
+
+	t.Run("workload annotation beats an enrichment rule targeting the same key", func(t *testing.T) {
+		deployment := newDeployment(map[string]string{metadataenrichment.Prefix + sharedKey: "from-workload"})
+		request := newRequest(nil, nil)
+		request.DynaKube.Status.MetadataEnrichment.Rules = []metadataenrichment.Rule{
+			{Type: metadataenrichment.CustomRule, Source: "from-rule", Target: sharedKey},
+		}
+
+		attrs, err := NewPodAttributes(t.Context(), request, fake.NewClient(deployment))
+		require.NoError(t, err)
+
+		result := toResultMap(attrs.Convert(simpleConvertFunc))
+
+		assert.Equal(t, "from-workload", result[sharedKey])
+	})
+
+	t.Run("workload label and annotation rules resolve against the owning workload", func(t *testing.T) {
+		deployment := newDeployment(map[string]string{"team": "backend"})
+		deployment.Labels = map[string]string{"env": "production"}
+		request := newRequest(nil, nil)
+		request.DynaKube.Status.MetadataEnrichment.Rules = []metadataenrichment.Rule{
+			{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "env", Target: "custom.env"},
+			{Type: metadataenrichment.K8sWorkloadAnnotationRule, Source: "team", Target: "team.name"},
+		}
+
+		attrs, err := NewPodAttributes(t.Context(), request, fake.NewClient(deployment))
+		require.NoError(t, err)
+
+		result := toResultMap(attrs.Convert(simpleConvertFunc))
+
+		assert.Equal(t, "production", result["custom.env"])
+		assert.Equal(t, "backend", result["team.name"])
 	})
 }
 
@@ -564,7 +775,7 @@ func TestMetadataValueSizeLimit(t *testing.T) {
 				t.Setenv("DT_METADATA_SIZE_LIMIT", testCase.envValue)
 			}
 
-			attrs := newTestPodAttributes()
+			attrs := newPodAttrs()
 			attrs.dynakube["key"] = strings.Repeat("x", testCase.attrSize)
 			pod := &corev1.Pod{}
 

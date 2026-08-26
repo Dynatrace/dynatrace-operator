@@ -15,18 +15,10 @@ import (
 )
 
 type Info struct {
-	Name string
-	Kind string
-}
-
-func NewInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *Info {
-	return &Info{
-		Name: partialObjectMetadata.Name,
-
-		// workload kind in lower case according to dt semantic-dictionary
-		// https://docs.dynatrace.com/docs/discover-dynatrace/references/semantic-dictionary/fields#kubernetes
-		Kind: strings.ToLower(partialObjectMetadata.Kind),
-	}
+	Name        string
+	Kind        string
+	Labels      map[string]string
+	Annotations map[string]string
 }
 
 func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhook.BaseRequest) (*Info, error) {
@@ -48,7 +40,14 @@ func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhoo
 		return nil, err
 	}
 
-	return NewInfo(rootOwner), nil
+	return &Info{
+		Name: rootOwner.Name,
+		// workload kind in lower case according to dt semantic-dictionary
+		// https://docs.dynatrace.com/docs/discover-dynatrace/references/semantic-dictionary/fields#kubernetes
+		Kind:        strings.ToLower(rootOwner.Kind),
+		Labels:      rootOwner.Labels,
+		Annotations: rootOwner.Annotations,
+	}, nil
 }
 
 func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
@@ -70,7 +69,8 @@ func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *
 
 			err = clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: objectMetadata.Namespace}, parentObjectMetadata)
 			if err != nil {
-				log.Error(err, "failed to query the object",
+				log.Error(
+					err, "failed to query the object",
 					"apiVersion", owner.APIVersion,
 					"kind", owner.Kind,
 					"name", owner.Name,
