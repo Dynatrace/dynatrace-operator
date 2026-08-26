@@ -335,7 +335,7 @@ jobs:
 
   build-push:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.helm_changed || contains(github.event.pull_request_comment.comment, '/build-image'))
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.helm_changed)
     name: Build images
     runs-on: ubuntu-24.04
     permissions:
