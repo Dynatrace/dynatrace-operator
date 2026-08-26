@@ -25,6 +25,7 @@ func createOrUpdateHandler(r *resources.Resources) decoder.HandlerFunc {
 				return r.Update(ctx, obj)
 			}
 		}
+
 		return err
 	}
 }
