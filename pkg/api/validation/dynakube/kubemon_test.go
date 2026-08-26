@@ -64,6 +64,8 @@ func TestKubemonMutualExclusiveCustomPropertiesValue(t *testing.T) {
 }
 
 func TestMutualExclusiveKubernetesMonitoring(t *testing.T) {
+	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+
 	t.Run("only kubernetesMonitoring", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -74,7 +76,6 @@ func TestMutualExclusiveKubernetesMonitoring(t *testing.T) {
 	})
 
 	t.Run("kubernetesMonitoring and activeGate capability", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertDenied(t, []string{errorMutualExclusiveKubernetesMonitoring}, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
