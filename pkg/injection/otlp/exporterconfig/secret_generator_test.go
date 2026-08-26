@@ -110,7 +110,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 					Signals: otlp.SignalConfiguration{},
 				},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					TLSSecretName: tlsSecretName,
 					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
 				},
@@ -176,7 +176,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 					Signals: otlp.SignalConfiguration{},
 				},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					TLSSecretName: tlsSecretName,
 					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
 				},
@@ -276,7 +276,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					TLSSecretName: tlsSecretName,
 					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
 				},
@@ -341,7 +341,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					TLSSecretName: tlsSecretName,
 					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
 				},
@@ -378,7 +378,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					TLSSecretName: tlsSecretName,
 					Capabilities:  []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
@@ -410,7 +410,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					TLSSecretName: tlsSecretName,
 					Capabilities:  []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},

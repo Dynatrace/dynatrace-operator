@@ -35,7 +35,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 						Image: "BOOM",
 					},
 				},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					CapabilityProperties: activegate.CapabilityProperties{
 						Image: "BOOM",
 					},
@@ -57,7 +57,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 						Image: testRegistryURL + "/linux/oneagent:latest",
 					},
 				},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					CapabilityProperties: activegate.CapabilityProperties{
 						Image: testRegistryURL + "/linux/activegate:latest",
 					},

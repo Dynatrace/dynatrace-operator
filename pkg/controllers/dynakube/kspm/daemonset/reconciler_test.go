@@ -308,7 +308,7 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "test-url",
 			KSPM:   kspmSpec,
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,
 				},

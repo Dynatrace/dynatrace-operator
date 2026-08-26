@@ -584,7 +584,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "url",
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.RoutingCapability.DisplayName,
 				},
@@ -667,7 +667,7 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "url",
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.RoutingCapability.DisplayName,
 				},

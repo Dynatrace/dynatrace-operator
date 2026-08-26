@@ -21,22 +21,22 @@ const (
 	DefaultImageRegistrySubPath         = "/linux/activegate"
 )
 
-func (ag *Spec) SetAPIURL(apiURL string) {
+func (ag *ActiveGate) SetAPIURL(apiURL string) {
 	ag.apiURL = apiURL
 }
 
-func (ag *Spec) SetName(name string) {
+func (ag *ActiveGate) SetName(name string) {
 	ag.name = name
 }
 
-func (ag *Spec) SetAutomaticTLSCertificate(enabled bool) {
+func (ag *ActiveGate) SetAutomaticTLSCertificate(enabled bool) {
 	ag.automaticTLSCertificateEnabled = enabled
 }
-func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
+func (ag *ActiveGate) SetExtensionsDependency(isEnabled bool) {
 	ag.enabledDependencies.extensions = isEnabled
 }
 
-func (ag *Spec) apiURLHost() string {
+func (ag *ActiveGate) apiURLHost() string {
 	parsedURL, err := url.Parse(ag.apiURL)
 	if err != nil {
 		return ""
@@ -46,15 +46,15 @@ func (ag *Spec) apiURLHost() string {
 }
 
 // IsEnabled returns true when a feature requires ActiveGate instances.
-func (ag *Spec) IsEnabled() bool {
+func (ag *ActiveGate) IsEnabled() bool {
 	return len(ag.Capabilities) > 0 || ag.enabledDependencies.Any()
 }
 
-func (ag *Spec) IsMode(mode CapabilityDisplayName) bool {
+func (ag *ActiveGate) IsMode(mode CapabilityDisplayName) bool {
 	return slices.Contains(ag.Capabilities, mode)
 }
 
-func (ag *Spec) GetServiceAccountOwner() string {
+func (ag *ActiveGate) GetServiceAccountOwner() string {
 	if ag.IsKubernetesMonitoringEnabled() {
 		return string(KubeMonCapability.DisplayName)
 	} else {
@@ -62,7 +62,7 @@ func (ag *Spec) GetServiceAccountOwner() string {
 	}
 }
 
-func (ag *Spec) GetReplicas() int32 {
+func (ag *ActiveGate) GetReplicas() int32 {
 	var defaultReplicas int32 = 1
 	if ag.Replicas == nil {
 		return defaultReplicas
@@ -71,46 +71,46 @@ func (ag *Spec) GetReplicas() int32 {
 	return *ag.Replicas
 }
 
-func (ag *Spec) GetServiceAccountName() string {
+func (ag *ActiveGate) GetServiceAccountName() string {
 	return "dynatrace-activegate"
 }
 
-func (ag *Spec) IsKubernetesMonitoringEnabled() bool {
+func (ag *ActiveGate) IsKubernetesMonitoringEnabled() bool {
 	return ag.IsMode(KubeMonCapability.DisplayName)
 }
 
-func (ag *Spec) IsRoutingEnabled() bool {
+func (ag *ActiveGate) IsRoutingEnabled() bool {
 	return ag.IsMode(RoutingCapability.DisplayName)
 }
 
-func (ag *Spec) IsAPIEnabled() bool {
+func (ag *ActiveGate) IsAPIEnabled() bool {
 	return ag.IsMode(DynatraceAPICapability.DisplayName)
 }
 
-func (ag *Spec) IsMetricsIngestEnabled() bool {
+func (ag *ActiveGate) IsMetricsIngestEnabled() bool {
 	return ag.IsMode(MetricsIngestCapability.DisplayName)
 }
 
-func (ag *Spec) IsAutomaticTLSSecretEnabled() bool {
+func (ag *ActiveGate) IsAutomaticTLSSecretEnabled() bool {
 	return ag.automaticTLSCertificateEnabled
 }
 
-func (ag *Spec) HasCaCert() bool {
-	return ag.IsEnabled() && (ag.TLSSecretName != "" || ag.IsAutomaticTLSSecretEnabled())
+func (ag *ActiveGate) HasCaCert() bool {
+	return ag.IsEnabled() && (ag.IsAutomaticTLSSecretEnabled() || ag.TLSSecretName != "")
 }
 
 // GetTenantSecretName returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
-func (ag *Spec) GetTenantSecretName() string {
+func (ag *ActiveGate) GetTenantSecretName() string {
 	return ag.name + TenantSecretSuffix
 }
 
 // GetAuthTokenSecretName returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs.
-func (ag *Spec) GetAuthTokenSecretName() string {
+func (ag *ActiveGate) GetAuthTokenSecretName() string {
 	return ag.name + AuthTokenSecretSuffix
 }
 
 // GetTLSSecretName returns the name of the AG TLS secret.
-func (ag *Spec) GetTLSSecretName() string {
+func (ag *ActiveGate) GetTLSSecretName() string {
 	if ag.TLSSecretName != "" {
 		return ag.TLSSecretName
 	}
@@ -123,21 +123,30 @@ func (ag *Spec) GetTLSSecretName() string {
 }
 
 // GetAutoTLSSecretName returns the name of the automatically created AG TLS secret.
-func (ag *Spec) GetAutoTLSSecretName() string {
+func (ag *ActiveGate) GetCustomTLSSecretName() string {
+	if ag.TLSSecretName != "" {
+		return ag.TLSSecretName
+	}
+
+	return ""
+}
+
+// GetAutoTLSSecretName returns the name of the automatically created AG TLS secret.
+func (ag *ActiveGate) GetAutoTLSSecretName() string {
 	return ag.name + TLSSecretSuffix
 }
 
-func (ag *Spec) GetConnectionInfoConfigMapName() string {
+func (ag *ActiveGate) GetConnectionInfoConfigMapName() string {
 	return ag.name + ConnectionInfoConfigMapSuffix
 }
 
-func (ag *Spec) GetDeploymentPropertiesConfigMapName() string {
+func (ag *ActiveGate) GetDeploymentPropertiesConfigMapName() string {
 	return ag.name + DeploymentPropertiesConfigMapSuffix
 }
 
 // GetDefaultImage provides the image reference for the ActiveGate from tenant registry.
 // Format: repo:tag.
-func (ag *Spec) GetDefaultImage(version string) string {
+func (ag *ActiveGate) GetDefaultImage(version string) string {
 	apiURLHost := ag.apiURLHost()
 	if apiURLHost == "" {
 		return ""
@@ -154,9 +163,11 @@ func (ag *Spec) GetDefaultImage(version string) string {
 }
 
 // GetCustomImage provides the image reference for the ActiveGate provided in the Spec.
-func (ag *Spec) GetCustomImage() string {
+func (ag *ActiveGate) GetCustomImage() string {
 	return ag.Image
 }
 
 // GetTerminationGracePeriodSeconds provides the configured value for the terminatGracePeriodSeconds parameter of the pod.
-func (ag *Spec) GetTerminationGracePeriodSeconds() *int64 { return ag.TerminationGracePeriodSeconds }
+func (ag *ActiveGate) GetTerminationGracePeriodSeconds() *int64 {
+	return ag.TerminationGracePeriodSeconds
+}

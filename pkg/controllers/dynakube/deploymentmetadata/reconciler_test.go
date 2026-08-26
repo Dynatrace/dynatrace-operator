@@ -96,7 +96,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("create configmap with 1 key, if only activegate is needed", func(t *testing.T) {
 		dk := createTestDynakube(
 			&dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -120,7 +120,7 @@ func TestReconcile(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},

@@ -159,7 +159,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.RoutingCapability.DisplayName,
 				},

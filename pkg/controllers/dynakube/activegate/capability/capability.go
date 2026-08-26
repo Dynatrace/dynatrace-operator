@@ -62,11 +62,11 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 		return &mc
 	}
 
-	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
-
 	capabilityArgs := []string{}
 
-	for _, capName := range dk.Spec.ActiveGate.Capabilities {
+	mc.properties = &dk.ActiveGate().CapabilityProperties
+
+	for _, capName := range dk.ActiveGate().Capabilities {
 		argName, ok := activeGateCapabilities[capName]
 		if !ok {
 			continue

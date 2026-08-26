@@ -505,7 +505,7 @@ func TestConflictingVolumeType(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://example.live.dynatrace.com",
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.RoutingCapability.DisplayName,
 					},
@@ -988,7 +988,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: apiURL,
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.RoutingCapability.DisplayName,
 					},
@@ -1079,7 +1079,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: apiURL,
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.RoutingCapability.DisplayName,
 					},

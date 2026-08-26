@@ -237,7 +237,7 @@ func TestReconcile_StaleNetworkZoneEndpoints(t *testing.T) {
 	t.Run("blocks deployment and does not overwrite endpoints when cluster returns stale endpoints", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.NetworkZone = "restricted-zone"
-		dk.Spec.ActiveGate = activegate.Spec{
+		dk.Spec.ActiveGate = &activegate.Spec{
 			Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 		}
 		dk.Status.ActiveGate.ServiceIPs = []string{currentServiceIP}

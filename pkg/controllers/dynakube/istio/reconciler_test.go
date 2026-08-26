@@ -472,7 +472,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
-		dk.Spec.ActiveGate = activegate.Spec{}
+		dk.Spec.ActiveGate = &activegate.Spec{}
 
 		err = reconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
@@ -490,7 +490,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		ctx := t.Context()
 		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := createTestDynaKube()
-		dk.Spec.ActiveGate = activegate.Spec{}
+		dk.Spec.ActiveGate = &activegate.Spec{}
 		dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 		dk.Status.ActiveGate.ConnectionInfo.Endpoints = ""
 		dk.Status.KubernetesMonitoring = kubemonapi.Status{
@@ -562,7 +562,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://test.dev.dynatracelabs.com/api",
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.RoutingCapability.DisplayName,
 				},

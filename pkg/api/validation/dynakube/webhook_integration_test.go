@@ -124,7 +124,7 @@ func TestWebhook(t *testing.T) {
 			name: "duplicate activegate capabilities",
 			spec: dynakube.DynaKubeSpec{
 				APIURL: "https://test.localhost/api",
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						"routing",
 						"routing",

@@ -54,7 +54,7 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: capabilities,
 			},
 			Extensions:      extensionsSpec,
@@ -204,7 +204,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
 						},
@@ -227,7 +227,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
 						},
@@ -250,7 +250,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
 						},
@@ -273,7 +273,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
@@ -296,7 +296,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 							activegate.RoutingCapability.DisplayName,
@@ -320,7 +320,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: capabilities,
 					},
 				},

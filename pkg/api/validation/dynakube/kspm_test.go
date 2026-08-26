@@ -26,7 +26,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					KSPM:   &kspm.Spec{},
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
@@ -73,7 +73,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 					APIURL:               testAPIURL,
 					KSPM:                 &kspm.Spec{},
 					KubernetesMonitoring: &kubemon.Spec{Registration: &kubemon.Registration{}},
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
 						},
@@ -94,7 +94,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 	})
 
 	t.Run("activegate with more than 1 replica and kspm enabled", func(t *testing.T) {
-		activeGate := activegate.Spec{
+		activeGate := &activegate.Spec{
 			Capabilities: []activegate.CapabilityDisplayName{
 				activegate.KubeMonCapability.DisplayName,
 			},
@@ -174,7 +174,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				KSPM:   &kspm.Spec{},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
 				},
 				Templates: dynakube.TemplatesSpec{
@@ -243,7 +243,7 @@ func TestKSPMWithoutKubernetesMonitoringRegistration(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				KSPM:   &kspm.Spec{},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
 				},
 				Templates: dynakube.TemplatesSpec{
@@ -273,7 +273,7 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				KSPM:   &kspm.Spec{},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
 				},
 				Templates: dynakube.TemplatesSpec{
@@ -297,7 +297,7 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				KSPM:   &kspm.Spec{},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
 				},
 				Templates: dynakube.TemplatesSpec{
@@ -343,7 +343,7 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
 				},
 			},
@@ -359,7 +359,7 @@ func TestMissingKSPMImage(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					KSPM:   &kspm.Spec{},
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
@@ -384,7 +384,7 @@ func TestMissingKSPMImage(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					KSPM:   &kspm.Spec{},
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
@@ -401,7 +401,7 @@ func TestMissingKSPMImage(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					KSPM:   &kspm.Spec{},
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
@@ -425,7 +425,7 @@ func TestMissingKSPMImage(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					KSPM:   &kspm.Spec{},
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
@@ -452,7 +452,7 @@ func TestMappedHostPath(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				KSPM:   &kspm.Spec{},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},

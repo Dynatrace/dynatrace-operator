@@ -147,6 +147,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 	t.Run("AG enabled: istio reconciliation skipped (handled by AG reconciler)", func(t *testing.T) {
 		mocks := newMocks(t)
 		dk := newTestDynaKube()
+		dk.Spec.ActiveGate = &activegate.Spec{}
 		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
 
 		mocks.connInfo.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()

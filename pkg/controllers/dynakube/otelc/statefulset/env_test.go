@@ -160,7 +160,7 @@ func TestProxyEnvsNoProxy(t *testing.T) {
 			dk.Spec.Proxy = nil
 
 			if tt.activeGate != nil {
-				dk.Spec.ActiveGate = *tt.activeGate
+				dk.Spec.ActiveGate = tt.activeGate
 			}
 
 			statefulSet := getWorkload(t, dk)
@@ -233,7 +233,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			dk.Spec.Proxy = tt.proxy
 
 			if tt.activeGate != nil {
-				dk.Spec.ActiveGate = *tt.activeGate
+				dk.Spec.ActiveGate = tt.activeGate
 			}
 
 			statefulSet := getWorkload(t, dk)
@@ -322,7 +322,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			dk.Spec.Proxy = tt.proxy
 
 			if tt.activeGate != nil {
-				dk.Spec.ActiveGate = *tt.activeGate
+				dk.Spec.ActiveGate = tt.activeGate
 			}
 
 			statefulSet := getWorkload(t, dk)
@@ -350,7 +350,7 @@ func TestCustomNoProxy(t *testing.T) {
 				Annotations: map[string]string{},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -371,7 +371,7 @@ func TestCustomNoProxy(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},

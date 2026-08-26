@@ -1843,6 +1843,7 @@ func TestActiveGateVolumes(t *testing.T) {
 	t.Run("volumes with custom ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
 		disableLegacyVolumeMounts(dk)
+		dk.Spec.ActiveGate = &activegate.Spec{}
 		dk.Spec.ActiveGate.TLSSecretName = tlsSecretName
 		statefulSet := getStatefulset(t, dk)
 

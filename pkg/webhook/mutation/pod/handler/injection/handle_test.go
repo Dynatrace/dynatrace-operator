@@ -267,7 +267,7 @@ func TestIsInjected(t *testing.T) {
 func getTestDynakubeWithAGCerts() *dynakube.DynaKube {
 	dk := getTestDynakube()
 	dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-	dk.Spec.ActiveGate = activegate.Spec{
+	dk.Spec.ActiveGate = &activegate.Spec{
 		Capabilities: []activegate.CapabilityDisplayName{
 			activegate.DynatraceAPICapability.DisplayName,
 		},

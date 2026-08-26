@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	agspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -43,6 +44,10 @@ type Builder struct {
 }
 
 func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dk dynakube.DynaKube, capability capability.Capability) Builder {
+	if dk.Spec.ActiveGate == nil {
+		dk.Spec.ActiveGate = &agspec.Spec{}
+	}
+
 	return Builder{
 		kubeUID:    kubeUID,
 		configHash: configHash,
@@ -279,7 +284,7 @@ func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 }
 
 func isDefaultPVCNeeded(dk dynakube.DynaKube) bool {
-	return dk.TelemetryIngest().IsEnabled() && !ptr.Deref(dk.Spec.ActiveGate.UseEphemeralVolume, false)
+	return dk.TelemetryIngest().IsEnabled() && !ptr.Deref(dk.ActiveGate().UseEphemeralVolume, false)
 }
 
 func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {

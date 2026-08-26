@@ -76,7 +76,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 						},
 					},
 				},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.RoutingCapability.DisplayName,
 						activegate.KubeMonCapability.DisplayName,
@@ -131,7 +131,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 							},
 						},
 					},
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 							"me dumb",

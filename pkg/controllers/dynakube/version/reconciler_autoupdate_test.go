@@ -232,7 +232,7 @@ func newActiveGateDynaKube() *dynakube.DynaKube {
 		ObjectMeta: metav1.ObjectMeta{Name: "test-dk", Namespace: testNamespace},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
 			},
 		},

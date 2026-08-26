@@ -26,7 +26,7 @@ func TestInvalidActiveGateCapabilities(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							"invalid-capability",
 						},
@@ -43,7 +43,7 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
 						},
@@ -60,7 +60,7 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
 						},
@@ -84,7 +84,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						UseEphemeralVolume:  new(false),
 						VolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{},
 					},
@@ -97,7 +97,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						UseEphemeralVolume: new(true),
 					},
 				},
@@ -111,7 +111,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
 					Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						UseEphemeralVolume:  new(true),
 						VolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{},
 					},
@@ -126,7 +126,7 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					CapabilityProperties: activegate.CapabilityProperties{
 						Volumes: []corev1.Volume{
 							{Name: "my-custom-volume", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
@@ -147,7 +147,7 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						CapabilityProperties: activegate.CapabilityProperties{
 							Volumes: []corev1.Volume{
 								{Name: agconsts.AuthTokenSecretVolumeName},
@@ -165,7 +165,7 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						CapabilityProperties: activegate.CapabilityProperties{
 							VolumeMounts: []corev1.VolumeMount{
 								{MountPath: agconsts.GatewayConfigMountPath},
@@ -186,7 +186,7 @@ func TestActiveGateRollingUpdateWithGivenK8sVersion(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					CapabilityProperties: activegate.CapabilityProperties{
 						RollingUpdate: rollingUpdate,
 					},

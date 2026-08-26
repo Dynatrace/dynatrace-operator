@@ -275,6 +275,9 @@ func (builder *testDynaKubeBuilder) withProxySecret(secretName string) *testDyna
 }
 
 func (builder *testDynaKubeBuilder) withActiveGateCapability(capability activegate.CapabilityDisplayName) *testDynaKubeBuilder {
+	if builder.dynakube.Spec.ActiveGate == nil {
+		builder.dynakube.Spec.ActiveGate = &activegate.Spec{}
+	}
 	if builder.dynakube.Spec.ActiveGate.Capabilities == nil {
 		builder.dynakube.Spec.ActiveGate.Capabilities = make([]activegate.CapabilityDisplayName, 0)
 	}
@@ -286,6 +289,9 @@ func (builder *testDynaKubeBuilder) withActiveGateCapability(capability activega
 }
 
 func (builder *testDynaKubeBuilder) withActiveGateCustomImage(image string) *testDynaKubeBuilder {
+	if builder.dynakube.Spec.ActiveGate == nil {
+		builder.dynakube.Spec.ActiveGate = &activegate.Spec{}
+	}
 	builder.dynakube.Spec.ActiveGate.Image = image
 	builder.dynakube.Status.ActiveGate.ImageID = image
 

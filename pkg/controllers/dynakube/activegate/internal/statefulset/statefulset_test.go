@@ -50,7 +50,7 @@ func getTestDynakube() dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.RoutingCapability.DisplayName,
 				},
@@ -777,7 +777,7 @@ func TestTerminationGracePeriodSeconds(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			dk := getTestDynakube()
-			dk.ActiveGate().TerminationGracePeriodSeconds = test.gracePeriodSeconds
+			dk.Spec.ActiveGate.TerminationGracePeriodSeconds = test.gracePeriodSeconds
 			assert.Equal(t, *test.gracePeriodSeconds, *dk.ActiveGate().GetTerminationGracePeriodSeconds())
 		})
 	}

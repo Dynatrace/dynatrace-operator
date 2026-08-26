@@ -197,6 +197,7 @@ func toExtensionControllerTemplate(src extensions.ExecutionControllerSpec) exten
 }
 
 func (src *DynaKube) toActiveGateSpec(dst *dynakubelatest.DynaKube) { //nolint:dupl
+	dst.Spec.ActiveGate = &activegatelatest.Spec{}
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
 	dst.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TLSSecretName
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy

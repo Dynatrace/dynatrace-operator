@@ -119,7 +119,6 @@ func (in *Spec) DeepCopyInto(out *Spec) {
 		*out = make([]CapabilityDisplayName, len(*in))
 		copy(*out, *in)
 	}
-	out.enabledDependencies = in.enabledDependencies
 	if in.UseEphemeralVolume != nil {
 		in, out := &in.UseEphemeralVolume, &out.UseEphemeralVolume
 		*out = new(bool)

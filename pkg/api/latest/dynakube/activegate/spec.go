@@ -55,8 +55,13 @@ var CapabilityDisplayNames = map[CapabilityDisplayName]struct{}{
 }
 
 type ActiveGate struct {
-	*Spec
+	Spec
 	*Status
+
+	name                           string
+	apiURL                         string
+	enabledDependencies            dependencies
+	automaticTLSCertificateEnabled bool
 }
 
 // dependencies is a collection of possible other feature/components that need an ActiveGate, but is not directly configured in the ActiveGate section.
@@ -85,9 +90,6 @@ type Spec struct {
 	// +kubebuild:validation:Optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 
-	name   string
-	apiURL string
-
 	// The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
 	// server.p12: certificate+key pair in pkcs12 format
 	// password: passphrase to read server.p12
@@ -111,10 +113,6 @@ type Spec struct {
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
 	// +listType=set
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
-
-	enabledDependencies dependencies
-
-	automaticTLSCertificateEnabled bool
 
 	// UseEphemeralVolume
 	UseEphemeralVolume *bool `json:"useEphemeralVolume,omitempty"`

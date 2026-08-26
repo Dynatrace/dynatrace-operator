@@ -61,7 +61,7 @@ func trustedCAsTester(t *testing.T) {
 func activeGateTLSNoCertificateTester(t *testing.T) {
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities:  []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
 				TLSSecretName: testSecretName,
 			},
@@ -90,7 +90,7 @@ func activeGateTLSCertificate(t *testing.T) {
 
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities:  []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
 					TLSSecretName: testSecretName,
 				},

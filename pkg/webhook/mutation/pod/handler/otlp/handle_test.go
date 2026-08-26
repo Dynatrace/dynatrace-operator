@@ -118,8 +118,8 @@ func TestHandler_Handle(t *testing.T) {
 
 		dk := getTestDynakube()
 
-		dk.ActiveGate().TLSSecretName = ""
-		dk.ActiveGate().Capabilities = []activegate.CapabilityDisplayName{}
+		dk.Spec.ActiveGate.TLSSecretName = ""
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{}
 
 		request := createTestMutationRequest(t, dk)
 
@@ -356,7 +356,7 @@ func getTestDynakube() *dynakube.DynaKube {
 					Logs:    &otlp.LogsSignal{},
 				},
 			},
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				TLSSecretName: "tls-secret",
 				Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
 			},

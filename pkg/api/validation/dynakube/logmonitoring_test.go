@@ -26,7 +26,7 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 				},
 				APIURL:        testAPIURL,
 				LogMonitoring: &logmonitoring.Spec{},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -60,7 +60,7 @@ func createStandaloneLogMonitoringDynakube(name, apiURL, nodeSelector string) *d
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:        apiURL,
 			LogMonitoring: &logmonitoring.Spec{},
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,
 				},
@@ -95,7 +95,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:        testAPIURL,
 					LogMonitoring: &logmonitoring.Spec{},
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},

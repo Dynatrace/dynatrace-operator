@@ -54,7 +54,7 @@ func TestMissingDatabaseExecutorImage(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
@@ -82,7 +82,7 @@ func TestMissingDatabaseExecutorImage(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},

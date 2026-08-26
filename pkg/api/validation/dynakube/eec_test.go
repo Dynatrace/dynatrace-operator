@@ -28,7 +28,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					ObjectMeta: defaultDynakubeObjectMeta,
 					Spec: dynakube.DynaKubeSpec{
 						APIURL: testAPIURL,
-						ActiveGate: activegate.Spec{
+						ActiveGate: &activegate.Spec{
 							Capabilities: []activegate.CapabilityDisplayName{
 								activegate.KubeMonCapability.DisplayName,
 							},
@@ -67,7 +67,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 						ObjectMeta: defaultDynakubeObjectMeta,
 						Spec: dynakube.DynaKubeSpec{
 							APIURL: testAPIURL,
-							ActiveGate: activegate.Spec{
+							ActiveGate: &activegate.Spec{
 								Capabilities: []activegate.CapabilityDisplayName{
 									activegate.KubeMonCapability.DisplayName,
 								},
@@ -99,7 +99,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 						ObjectMeta: defaultDynakubeObjectMeta,
 						Spec: dynakube.DynaKubeSpec{
 							APIURL: testAPIURL,
-							ActiveGate: activegate.Spec{
+							ActiveGate: &activegate.Spec{
 								Capabilities: []activegate.CapabilityDisplayName{
 									activegate.KubeMonCapability.DisplayName,
 								},
@@ -131,7 +131,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 						ObjectMeta: defaultDynakubeObjectMeta,
 						Spec: dynakube.DynaKubeSpec{
 							APIURL: testAPIURL,
-							ActiveGate: activegate.Spec{
+							ActiveGate: &activegate.Spec{
 								Capabilities: []activegate.CapabilityDisplayName{
 									activegate.KubeMonCapability.DisplayName,
 								},
@@ -160,7 +160,7 @@ func TestExtensionControllerImageNotRequired(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -198,7 +198,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 					ObjectMeta: defaultDynakubeObjectMeta,
 					Spec: dynakube.DynaKubeSpec{
 						APIURL: testAPIURL,
-						ActiveGate: activegate.Spec{
+						ActiveGate: &activegate.Spec{
 							Capabilities: []activegate.CapabilityDisplayName{
 								activegate.KubeMonCapability.DisplayName,
 							},
@@ -237,7 +237,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 					ObjectMeta: defaultDynakubeObjectMeta,
 					Spec: dynakube.DynaKubeSpec{
 						APIURL: testAPIURL,
-						ActiveGate: activegate.Spec{
+						ActiveGate: &activegate.Spec{
 							Capabilities: []activegate.CapabilityDisplayName{
 								activegate.KubeMonCapability.DisplayName,
 							},
@@ -277,7 +277,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 						ObjectMeta: defaultDynakubeObjectMeta,
 						Spec: dynakube.DynaKubeSpec{
 							APIURL: testAPIURL,
-							ActiveGate: activegate.Spec{
+							ActiveGate: &activegate.Spec{
 								Capabilities: []activegate.CapabilityDisplayName{
 									activegate.KubeMonCapability.DisplayName,
 								},
@@ -311,7 +311,7 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 		Tag:        "b",
 	}
 	// we want to exclude AG resources warning.
-	agSpec := activegate.Spec{
+	agSpec := &activegate.Spec{
 		Capabilities: []activegate.CapabilityDisplayName{
 			activegate.KubeMonCapability.DisplayName,
 		},

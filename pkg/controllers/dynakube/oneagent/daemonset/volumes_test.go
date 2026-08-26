@@ -64,7 +64,7 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -84,7 +84,7 @@ func TestPrepareVolumes(t *testing.T) {
 				Name: "dynakube",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -138,7 +138,7 @@ func TestPrepareVolumes(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -219,7 +219,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -244,7 +244,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 				TrustedCAs: testName,
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -300,7 +300,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},

@@ -44,7 +44,7 @@ func newDynaKube() *dynakube.DynaKube {
 }
 
 func enableAGKubeMonCapability(dk *dynakube.DynaKube) {
-	dk.Spec.ActiveGate = activegate.Spec{
+	dk.Spec.ActiveGate = &activegate.Spec{
 		Capabilities: []activegate.CapabilityDisplayName{
 			activegate.KubeMonCapability.DisplayName,
 		},

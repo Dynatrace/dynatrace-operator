@@ -22,13 +22,13 @@ func TestReconcileActiveGate(t *testing.T) {
 			Namespace: "dynatrace",
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+			ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 		},
 	}
 
 	t.Run("no active-gate configured => nothing happens (only call active-gate reconciler)", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
-		dk.Spec.ActiveGate = activegate.Spec{}
+		dk.Spec.ActiveGate = &activegate.Spec{}
 
 		fakeClient := fake.NewClientWithIndex(dk)
 
@@ -46,7 +46,7 @@ func TestReconcileActiveGate(t *testing.T) {
 	})
 	t.Run("active-gate reconcile returns error => returns error", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
-		dk.Spec.ActiveGate = activegate.Spec{}
+		dk.Spec.ActiveGate = &activegate.Spec{}
 
 		fakeClient := fake.NewClientWithIndex(dk)
 

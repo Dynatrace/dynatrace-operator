@@ -110,7 +110,7 @@ func WithAPIURL(apiURL string) Option {
 
 func WithActiveGate() Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.ActiveGate = activegate.Spec{
+		dk.Spec.ActiveGate = &activegate.Spec{
 			Capabilities: []activegate.CapabilityDisplayName{
 				activegate.KubeMonCapability.DisplayName,
 				activegate.DynatraceAPICapability.DisplayName,
@@ -124,7 +124,7 @@ func WithActiveGate() Option {
 
 func WithActiveGateModules(capabilities ...activegate.CapabilityDisplayName) Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.ActiveGate = activegate.Spec{
+		dk.Spec.ActiveGate = &activegate.Spec{
 			Capabilities: []activegate.CapabilityDisplayName{},
 		}
 		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, capabilities...)
@@ -133,12 +133,18 @@ func WithActiveGateModules(capabilities ...activegate.CapabilityDisplayName) Opt
 
 func WithActiveGateTLSSecret(tlsSecretName string) Option {
 	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.ActiveGate == nil {
+			dk.Spec.ActiveGate = &activegate.Spec{}
+		}
 		dk.Spec.ActiveGate.TLSSecretName = tlsSecretName
 	}
 }
 
 func WithCustomActiveGateImage(imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.ActiveGate == nil {
+			dk.Spec.ActiveGate = &activegate.Spec{}
+		}
 		dk.Spec.ActiveGate.Image = imageURI
 	}
 }
@@ -169,6 +175,9 @@ func WithCodeModulesImage(imageURI string) Option {
 
 func WithActiveGateReplicas(replicas *int32) Option {
 	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.ActiveGate == nil {
+			dk.Spec.ActiveGate = &activegate.Spec{}
+		}
 		dk.Spec.ActiveGate.Replicas = replicas
 	}
 }

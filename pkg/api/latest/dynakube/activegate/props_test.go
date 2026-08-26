@@ -23,14 +23,14 @@ func TestSpec_IsMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ag := &Spec{Capabilities: tt.capabilities}
+			ag := &ActiveGate{Spec: Spec{Capabilities: tt.capabilities}}
 			assert.Equal(t, tt.expect, ag.IsMode(tt.mode))
 		})
 	}
 }
 
 func TestSpec_IsModeHelpers(t *testing.T) {
-	ag := &Spec{}
+	ag := &ActiveGate{Spec: Spec{}}
 
 	tests := []struct {
 		name         string

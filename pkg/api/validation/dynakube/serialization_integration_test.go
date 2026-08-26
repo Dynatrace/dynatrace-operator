@@ -100,7 +100,7 @@ func TestSerialization(t *testing.T) {
 			name: "ephemeral-volumes",
 			spec: dynakube.DynaKubeSpec{
 				APIURL: "https://ephemeral-volumes.dev.dynatracelabs.com/api",
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					UseEphemeralVolume: new(false),
 				},
 				Templates: dynakube.TemplatesSpec{

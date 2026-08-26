@@ -104,7 +104,7 @@ func createDynaKube(activeGateEnabled bool) dynakube.DynaKube {
 	}
 
 	if activeGateEnabled {
-		dk.Spec.ActiveGate = activegate.Spec{
+		dk.Spec.ActiveGate = &activegate.Spec{
 			Capabilities: []activegate.CapabilityDisplayName{
 				activegate.RoutingCapability.DisplayName,
 			},

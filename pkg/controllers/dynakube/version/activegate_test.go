@@ -35,7 +35,7 @@ func TestActiveGateUpdater(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName},
 					CapabilityProperties: activegate.CapabilityProperties{
 						Image: testImage,
@@ -61,7 +61,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					CapabilityProperties: activegate.CapabilityProperties{},
 				},
 			},
@@ -123,7 +123,7 @@ func TestActiveGateLatestImageInfo(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName},
 				},
 				PublicRegistryOverride: registry,

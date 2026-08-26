@@ -38,14 +38,12 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 func invalidActiveGateCapabilities(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	log := logd.FromContext(ctx)
 
-	if dk.ActiveGate().IsEnabled() {
-		capabilities := dk.Spec.ActiveGate.Capabilities
-		for _, capability := range capabilities {
-			if _, ok := activegate.CapabilityDisplayNames[capability]; !ok {
-				log.Info("requested dynakube has invalid active gate capability")
+	capabilities := dk.ActiveGate().Capabilities
+	for _, capability := range capabilities {
+		if _, ok := activegate.CapabilityDisplayNames[capability]; !ok {
+			log.Info("requested dynakube has invalid active gate capability")
 
-				return fmt.Sprintf(errorInvalidActiveGateCapability, capability)
-			}
+			return fmt.Sprintf(errorInvalidActiveGateCapability, capability)
 		}
 	}
 
@@ -54,7 +52,7 @@ func invalidActiveGateCapabilities(ctx context.Context, _ *Validator, dk *dynaku
 
 func missingActiveGateMemoryLimit(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.ActiveGate().IsEnabled() &&
-		!memoryLimitSet(dk.Spec.ActiveGate.Resources) {
+		!memoryLimitSet(dk.ActiveGate().Resources) {
 		return warningMissingActiveGateMemoryLimit
 	}
 
@@ -66,7 +64,7 @@ func memoryLimitSet(resources corev1.ResourceRequirements) bool {
 }
 
 func activeGateMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
-	return ptr.Deref(dk.Spec.ActiveGate.UseEphemeralVolume, false) && dk.Spec.ActiveGate.VolumeClaimTemplate != nil
+	return ptr.Deref(dk.ActiveGate().UseEphemeralVolume, false) && dk.ActiveGate().VolumeClaimTemplate != nil
 }
 
 func mutuallyExclusiveActiveGatePVsettings(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -82,7 +80,7 @@ func mutuallyExclusiveActiveGatePVsettings(ctx context.Context, _ *Validator, dk
 }
 
 func activeGateRollingUpdateWithOldK8sVersion(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.Spec.ActiveGate.RollingUpdate == nil {
+	if dk.ActiveGate().RollingUpdate == nil {
 		return ""
 	}
 
@@ -96,7 +94,9 @@ func activeGateRollingUpdateWithOldK8sVersion(_ context.Context, _ *Validator, d
 func activeGateHasConflictingVolumes(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	log := logd.FromContext(ctx)
 
-	for _, volume := range dk.Spec.ActiveGate.Volumes {
+	ag := dk.ActiveGate()
+
+	for _, volume := range ag.Volumes {
 		if slices.Contains(agconsts.VolumeNames, volume.Name) {
 			log.Info("conflicting ActiveGate volume name detected", "volume", volume.Name)
 
@@ -104,7 +104,7 @@ func activeGateHasConflictingVolumes(ctx context.Context, _ *Validator, dk *dyna
 		}
 	}
 
-	for _, volumeMount := range dk.Spec.ActiveGate.VolumeMounts {
+	for _, volumeMount := range ag.VolumeMounts {
 		if slices.Contains(agconsts.MainVolumeMountPaths, volumeMount.MountPath) {
 			log.Info("conflicting ActiveGate volume mount path detected", "path", volumeMount.MountPath)
 
@@ -130,6 +130,10 @@ var allowedActiveGateVolumeSources = []func(corev1.VolumeSource) bool{
 
 func activeGateHasDisallowedVolumeType(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	log := logd.FromContext(ctx)
+
+	if dk.Spec.ActiveGate == nil {
+		return ""
+	}
 
 	for _, volume := range dk.Spec.ActiveGate.Volumes {
 		if !slices.ContainsFunc(allowedActiveGateVolumeSources, func(isAllowed func(corev1.VolumeSource) bool) bool {

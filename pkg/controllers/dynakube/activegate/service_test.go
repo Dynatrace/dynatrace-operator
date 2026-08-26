@@ -91,6 +91,7 @@ func TestCreateService(t *testing.T) {
 
 func TestCreateOrUpdateService(t *testing.T) {
 	dk := createTestDynaKube()
+	dk.Spec.ActiveGate = &activegate.Spec{}
 	dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
 		activegate.RoutingCapability.DisplayName,
 		activegate.KubeMonCapability.DisplayName,
@@ -167,7 +168,7 @@ func TestSetAGServiceIPs(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
 			}}

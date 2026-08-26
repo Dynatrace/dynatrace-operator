@@ -8,6 +8,7 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
@@ -173,7 +174,11 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
 	in.Templates.DeepCopyInto(&out.Templates)
-	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
+	if in.ActiveGate != nil {
+		in, out := &in.ActiveGate, &out.ActiveGate
+		*out = new(activegate.Spec)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.KubernetesMonitoring != nil {
 		in, out := &in.KubernetesMonitoring, &out.KubernetesMonitoring
 		*out = new(kubemon.Spec)

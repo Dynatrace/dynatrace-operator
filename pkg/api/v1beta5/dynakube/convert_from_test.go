@@ -400,7 +400,7 @@ func compareApplicationMonitoringSpec(t *testing.T, oldSpec oneagent.Application
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 }
 
-func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec activegatelatest.Spec) {
+func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec *activegatelatest.Spec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.TLSSecretName, newSpec.TLSSecretName)
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
@@ -650,8 +650,8 @@ func getNewApplicationMonitoringSpec() oneagentlatest.ApplicationMonitoringSpec 
 	}
 }
 
-func getNewActiveGateSpec() activegatelatest.Spec {
-	return activegatelatest.Spec{
+func getNewActiveGateSpec() *activegatelatest.Spec {
+	return &activegatelatest.Spec{
 		DNSPolicy: corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",

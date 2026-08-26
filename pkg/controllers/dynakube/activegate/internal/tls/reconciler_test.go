@@ -54,7 +54,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testDynakubeName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.RoutingCapability.DisplayName,
 					},
@@ -86,7 +86,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.RoutingCapability.DisplayName,
 					},
@@ -114,7 +114,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testDynakubeName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.RoutingCapability.DisplayName,
 					},
@@ -146,7 +146,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testDynakubeName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.RoutingCapability.DisplayName,
 					},

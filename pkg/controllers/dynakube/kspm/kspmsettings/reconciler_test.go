@@ -31,7 +31,7 @@ func TestReconcile(t *testing.T) {
 	const meID = "meid"
 	getDK := func(withKSPM bool) *dynakube.DynaKube {
 		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,
 				},
@@ -201,7 +201,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 	const meID = "meid"
 	getDK := func(withKSPM bool, meID string) *dynakube.DynaKube {
 		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,
 				},

@@ -216,7 +216,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 
 		dk := getTestDynakube()
 
-		dk.Spec.ActiveGate = activegate.Spec{
+		dk.Spec.ActiveGate = &activegate.Spec{
 			Capabilities: []activegate.CapabilityDisplayName{
 				activegate.MetricsIngestCapability.DisplayName,
 			},
@@ -739,7 +739,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 		dk := getTestDynakube()
 		dk.Spec.APIURL = "http://my-cluster/api"
 		// Enable ActiveGate capability + TLS secret so HasCaCert() is true
-		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
+		dk.Spec.ActiveGate = &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
 		dk.Status.OneAgent.ConnectionInfo.TenantUUID = "dummy-uuid"
 		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = new(true)
 
@@ -803,7 +803,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 
 		dk := getTestDynakube()
 		dk.Spec.APIURL = "http://my-cluster/api"
-		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
+		dk.Spec.ActiveGate = &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
 		dk.Status.OneAgent.ConnectionInfo.TenantUUID = "dummy-uuid"
 		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = new(true)
 
@@ -823,7 +823,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 
 		dk := getTestDynakube()
 		dk.Spec.APIURL = "http://my-cluster/api"
-		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
+		dk.Spec.ActiveGate = &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
 		dk.Status.OneAgent.ConnectionInfo.TenantUUID = "dummy-uuid"
 		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = new(true)
 
@@ -911,7 +911,7 @@ func Test_addActiveGateCertVolume(t *testing.T) {
 
 	t.Run("activegate with cert secret -> volume added once", func(t *testing.T) {
 		dk := baseDK()
-		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName}, TLSSecretName: "custom-tls"}
+		dk.Spec.ActiveGate = &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName}, TLSSecretName: "custom-tls"}
 		pod := newPod()
 		addActiveGateCertVolume(dk, pod)
 		require.Len(t, pod.Spec.Volumes, 1)

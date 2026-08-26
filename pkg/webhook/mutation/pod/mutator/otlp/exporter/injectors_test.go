@@ -219,7 +219,7 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 		}
 
 		if activeGateEnabled {
-			dk.Spec.ActiveGate = activegate.Spec{
+			dk.Spec.ActiveGate = &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.MetricsIngestCapability.DisplayName,
 				},

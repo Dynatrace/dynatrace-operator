@@ -17,18 +17,24 @@ import (
 )
 
 func (dk *DynaKube) ActiveGate() *activegate.ActiveGate {
+	spec := activegate.Spec{}
+	if dk.Spec.ActiveGate != nil {
+		spec = *dk.Spec.ActiveGate
+	}
+
+	ag := &activegate.ActiveGate{
+		Spec:   spec,
+		Status: &dk.Status.ActiveGate,
+	}
 	// The stored API URL is only used to derive the tenant image registry host, which is only
 	// available on 2nd gen URLs. Pass the raw value so a 3rd gen URL yields a non-functional
 	// registry host on purpose (see DynaKube.APIURLHost).
-	dk.Spec.ActiveGate.SetAPIURL(dk.Spec.APIURL)
-	dk.Spec.ActiveGate.SetName(dk.Name)
-	dk.Spec.ActiveGate.SetAutomaticTLSCertificate(dk.FF().IsActiveGateAutomaticTLSCertificate())
-	dk.Spec.ActiveGate.SetExtensionsDependency(dk.Extensions().IsAnyEnabled())
+	ag.SetAPIURL(dk.Spec.APIURL)
+	ag.SetName(dk.Name)
+	ag.SetAutomaticTLSCertificate(dk.FF().IsActiveGateAutomaticTLSCertificate())
+	ag.SetExtensionsDependency(dk.Extensions().IsAnyEnabled())
 
-	return &activegate.ActiveGate{
-		Spec:   &dk.Spec.ActiveGate,
-		Status: &dk.Status.ActiveGate,
-	}
+	return ag
 }
 
 func (dk *DynaKube) Extensions() *extensions.Extensions {
@@ -74,12 +80,12 @@ func (dk *DynaKube) IsKubemonEnabled() bool {
 }
 
 func (dk *DynaKube) IsKubernetesMonitoringEnabled() bool {
-	return dk.IsKubemonEnabled() || dk.Spec.ActiveGate.IsKubernetesMonitoringEnabled()
+	return dk.IsKubemonEnabled() || dk.ActiveGate().IsKubernetesMonitoringEnabled()
 }
 
 func (dk *DynaKube) IsKubernetesMonitoringRegistrationEnabled() bool {
 	kubemonRegistrationEnabled := dk.IsKubemonEnabled() && dk.KubernetesMonitoring().IsRegistrationEnabled()
-	activeGateRegistrationEnabled := dk.Spec.ActiveGate.IsKubernetesMonitoringEnabled() && dk.FF().IsAutomaticK8sAPIMonitoring()
+	activeGateRegistrationEnabled := dk.ActiveGate().IsKubernetesMonitoringEnabled() && dk.FF().IsAutomaticK8sAPIMonitoring()
 
 	return kubemonRegistrationEnabled || activeGateRegistrationEnabled
 }

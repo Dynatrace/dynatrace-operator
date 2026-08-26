@@ -92,7 +92,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
-	if err = k8sstatefulset.ResolveAndSetReplicas(ctx, r.apiReader, desiredSts, dk.Spec.ActiveGate.Replicas); err != nil {
+	if err = k8sstatefulset.ResolveAndSetReplicas(ctx, r.apiReader, desiredSts, dk.ActiveGate().Replicas); err != nil {
 		return nil, err
 	}
 

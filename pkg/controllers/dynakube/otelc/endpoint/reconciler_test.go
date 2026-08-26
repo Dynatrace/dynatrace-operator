@@ -125,7 +125,7 @@ func Test_generateData(t *testing.T) {
 			dk.Spec.APIURL = tt.apiURL
 
 			if tt.inClusterAg {
-				dk.Spec.ActiveGate = activegate.Spec{
+				dk.Spec.ActiveGate = &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{"dynatrace-api"},
 				}
 			}

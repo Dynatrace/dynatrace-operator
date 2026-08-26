@@ -62,7 +62,7 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, client.WithWatch, *dyna
 		Build()
 	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.RoutingCapability.DisplayName,
 				}},
@@ -152,11 +152,13 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.NotEmpty(t, hash)
 
 	dk.Spec.ActiveGate.CustomProperties = &value.Source{Value: testValue}
+	agCapability = capability.NewMultiCapability(dk)
 	hash, err = r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
 	dk.Spec.ActiveGate.CustomProperties = &value.Source{ValueFrom: testName}
+	agCapability = capability.NewMultiCapability(dk)
 	hash, err = r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 	require.Error(t, err)
 	assert.Empty(t, hash)
@@ -316,7 +318,7 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 		Build()
 	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.RoutingCapability.DisplayName,
 				}},

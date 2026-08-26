@@ -72,6 +72,9 @@ func getBaseDynakube() dynakube.DynaKube {
 }
 
 func enableKubeMonCapability(dk *dynakube.DynaKube) {
+	if dk.Spec.ActiveGate == nil {
+		dk.Spec.ActiveGate = &activegate.Spec{}
+	}
 	dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.KubeMonCapability.DisplayName)
 }
 

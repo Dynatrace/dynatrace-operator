@@ -63,7 +63,7 @@ func TestIsKubernetesMonitoringEnabled(t *testing.T) {
 				dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
 			}
 			if tt.activeGate {
-				dk.Spec.ActiveGate = activegate.Spec{
+				dk.Spec.ActiveGate = &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -100,7 +100,7 @@ func TestIsKubernetesMonitoringRegistrationEnabled(t *testing.T) {
 				dk.Annotations[exp.AGAutomaticK8sAPIMonitoringKey] = strconv.FormatBool(*tt.ff)
 			}
 			if tt.agKubemonCap {
-				dk.Spec.ActiveGate = activegate.Spec{
+				dk.Spec.ActiveGate = &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},

@@ -332,7 +332,7 @@ func TestReconcileComponents(t *testing.T) {
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:     "this-is-an-api-url",
 			OneAgent:   oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
-			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+			ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 		},
 	}
 
@@ -1254,7 +1254,7 @@ func createDynakubeWithK8SMonitoring() *dynakube.DynaKube {
 			},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{
+			ActiveGate: &activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,
 				},

@@ -68,7 +68,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
 			}}
@@ -170,7 +170,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
 			}}
@@ -202,7 +202,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
-				ActiveGate:  activegate.Spec{},
+				ActiveGate:  &activegate.Spec{},
 			},
 			Status: dynakube.DynaKubeStatus{
 				Conditions: []metav1.Condition{
@@ -238,7 +238,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
 			},
@@ -263,7 +263,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		// remove AG from spec
-		dk.Spec.ActiveGate = activegate.Spec{}
+		dk.Spec.ActiveGate = &activegate.Spec{}
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
@@ -285,7 +285,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				Proxy:      &value.Source{Value: testProxyName},
-				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
 		}
 		dkNoProxy := &dynakube.DynaKube{
@@ -294,7 +294,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      "noProxyDk",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
 		}
 		fakeClient := fake.NewClient()
@@ -340,7 +340,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "test-api-url",
-				ActiveGate: activegate.Spec{
+				ActiveGate: &activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
@@ -377,7 +377,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
+				ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
 				Extensions: nil,
 			},
 		}
@@ -435,7 +435,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
+				ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
 				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			},
 		}
@@ -467,7 +467,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			},
 		}
@@ -499,7 +499,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			},
 		}
@@ -525,7 +525,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		// remove AG from spec
-		instance.Spec.ActiveGate = activegate.Spec{}
+		instance.Spec.ActiveGate = &activegate.Spec{}
 		r.connectionReconciler = mockConnectionReconcileOnce(t)
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
@@ -590,7 +590,7 @@ func TestServiceCreation(t *testing.T) {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{},
+			ActiveGate: &activegate.Spec{},
 		},
 	}
 
@@ -658,7 +658,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+			ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 		},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
@@ -723,7 +723,7 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				ActiveGate: &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
 		}
 		fakeClient := fake.NewClient()
@@ -746,7 +746,7 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate:         activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				ActiveGate:         &activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 				ResourceAttributes: map[string]string{"key": "value"},
 			},
 		}

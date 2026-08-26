@@ -98,6 +98,9 @@ func TestTokens(t *testing.T) {
 	}
 
 	enableKubernetesMonitoringAndMetricsIngest := func(dk *dynakube.DynaKube) *dynakube.DynaKube {
+		if dk.Spec.ActiveGate == nil {
+			dk.Spec.ActiveGate = &activegate.Spec{}
+		}
 		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
 			activegate.KubeMonCapability.DisplayName,
 			activegate.MetricsIngestCapability.DisplayName,
@@ -147,6 +150,7 @@ func TestTokens(t *testing.T) {
 	})
 	t.Run("activegate enabled dynakube, no permissions in api token => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
+		dk.Spec.ActiveGate = &activegate.Spec{}
 		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
 			activegate.KubeMonCapability.DisplayName,
 		}
@@ -265,7 +269,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					},
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
@@ -294,7 +298,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					},
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
@@ -322,7 +326,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 					},
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: activegate.Spec{
+					ActiveGate: &activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},

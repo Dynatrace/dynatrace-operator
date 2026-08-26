@@ -93,6 +93,9 @@ func TestNameTooLong(t *testing.T) {
 				dk.Spec.Templates.KSPMNodeConfigurationCollector = kspm.NodeConfigurationCollectorSpec{
 					ImageRef: image.Ref{Repository: "otelc/image", Tag: "latest"},
 				}
+				if dk.Spec.ActiveGate == nil {
+					dk.Spec.ActiveGate = &activegate.Spec{}
+				}
 				dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,
 				}

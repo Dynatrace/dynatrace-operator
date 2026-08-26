@@ -168,7 +168,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// General configuration about ActiveGate instances.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	ActiveGate activegate.Spec `json:"activeGate,omitzero"`
+	ActiveGate *activegate.Spec `json:"activeGate,omitempty"`
 
 	// Configuration for the KubernetesMonitoring operand (split-AG mode).
 	// When set, a dedicated KubernetesMonitoring StatefulSet is created independently of the ActiveGate.
