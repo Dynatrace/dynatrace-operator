@@ -74,7 +74,7 @@ func TestSerialization(t *testing.T) {
 				APIURL:             "https://partial.dev.dynatracelabs.com/api",
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 				OneAgent: oneagent.Spec{
-					HostMonitoring: &oneagent.HostInjectSpec{Version: "1.0.0.20240101-000000"},
+					HostMonitoring: &oneagent.HostInjectSpec{Version: "1.0.0.20240101-000000"}, //nolint:staticcheck
 				},
 			},
 		},
