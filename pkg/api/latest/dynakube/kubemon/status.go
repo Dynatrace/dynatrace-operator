@@ -17,4 +17,8 @@ type Status struct {
 	// Information about KubernetesMonitoring's connections.
 	// +kubebuilder:validation:Optional
 	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitzero"`
+
+	// TLSSecretHash contains the hash of the TLS certificate and key that is passed to both the Kubeernetes Monitoring ActiveGate and Node-Configuration-Collector.
+	// Meant to keep the two in sync.
+	TLSSecretHash string `json:"tlsSecretHash,omitempty"`
 }

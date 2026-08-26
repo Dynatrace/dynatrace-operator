@@ -15,11 +15,16 @@ const (
 )
 
 func getCertVolume(dk dynakube.DynaKube) corev1.Volume {
+	secretName := dk.ActiveGate().GetTLSSecretName()
+	if dk.IsKubemonEnabled() {
+		secretName = dk.KubernetesMonitoring().GetTLSSecretName()
+	}
+
 	return corev1.Volume{
 		Name: certVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName:  dk.ActiveGate().GetTLSSecretName(),
+				SecretName:  secretName,
 				DefaultMode: new(int32(0o640)),
 			},
 		},

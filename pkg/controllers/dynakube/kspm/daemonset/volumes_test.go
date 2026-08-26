@@ -121,6 +121,34 @@ func TestGetMounts(t *testing.T) {
 			assert.NotEmpty(t, mount.MountPath)
 		}
 	})
+
+	t.Run("get cert mount with custom KubeMon cert", func(t *testing.T) {
+		dk := getDynaKubeWithKubemonCerts(t)
+		dk.Spec.KSPM = &kspm.Spec{}
+		mounts := getMounts(dk)
+
+		require.NotEmpty(t, mounts)
+		assert.Len(t, mounts, expectedMountLen+1)
+
+		for _, mount := range mounts {
+			assert.NotEmpty(t, mount.Name)
+			assert.NotEmpty(t, mount.MountPath)
+		}
+	})
+
+	t.Run("get cert mount with automatic KubeMon cert", func(t *testing.T) {
+		dk := getDynaKubeWithKubemonAutomaticCerts(t)
+		dk.Spec.KSPM = &kspm.Spec{}
+		mounts := getMounts(dk)
+
+		require.NotEmpty(t, mounts)
+		assert.Len(t, mounts, expectedMountLen+1)
+
+		for _, mount := range mounts {
+			assert.NotEmpty(t, mount.Name)
+			assert.NotEmpty(t, mount.MountPath)
+		}
+	})
 }
 
 func TestGetVolumes(t *testing.T) {
@@ -203,7 +231,9 @@ func TestGetVolumes(t *testing.T) {
 
 		testMappedVolumes(volumes)
 	})
+}
 
+func TestGetVolumesForCerts(t *testing.T) {
 	t.Run("add cert volume", func(t *testing.T) {
 		dk := getDynaKubeWithCerts(t)
 		dk.Spec.KSPM = &kspm.Spec{}
@@ -224,6 +254,42 @@ func TestGetVolumes(t *testing.T) {
 
 	t.Run("add cert volume with automatic AG cert", func(t *testing.T) {
 		dk := getDynaKubeWithAutomaticCerts(t)
+		dk.Spec.KSPM = &kspm.Spec{}
+		volumes := getVolumes(dk)
+
+		require.NotEmpty(t, volumes)
+		assert.Len(t, volumes, expectedMountLen+1)
+
+		for _, volume := range volumes {
+			assert.NotEmpty(t, volume.Name)
+			require.NotEmpty(t, volume.VolumeSource)
+
+			if volume.Name == certVolumeName {
+				assert.NotEmpty(t, volume.Secret.SecretName)
+			}
+		}
+	})
+
+	t.Run("add cert volume with KubeMon cert", func(t *testing.T) {
+		dk := getDynaKubeWithCerts(t)
+		dk.Spec.KSPM = &kspm.Spec{}
+		volumes := getVolumes(dk)
+
+		require.NotEmpty(t, volumes)
+		assert.Len(t, volumes, expectedMountLen+1)
+
+		for _, volume := range volumes {
+			assert.NotEmpty(t, volume.Name)
+			require.NotEmpty(t, volume.VolumeSource)
+
+			if volume.Name == certVolumeName {
+				assert.NotEmpty(t, volume.Secret.SecretName)
+			}
+		}
+	})
+
+	t.Run("add cert volume with automatic KubeMon cert", func(t *testing.T) {
+		dk := getDynaKubeWithKubemonAutomaticCerts(t)
 		dk.Spec.KSPM = &kspm.Spec{}
 		volumes := getVolumes(dk)
 

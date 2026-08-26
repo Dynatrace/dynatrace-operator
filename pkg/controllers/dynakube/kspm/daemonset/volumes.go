@@ -18,6 +18,7 @@ const (
 	tokenVolumeName           = "kspm-token"
 	tokenMountPath            = consts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
 	tokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
+	tlsSecretHashAnnotation   = api.InternalFlagPrefix + "kubemon-tls-secret-hash"
 
 	nodeRootMountPath = "/node_root"
 )
@@ -28,7 +29,7 @@ func getVolumes(dk dynakube.DynaKube) []corev1.Volume {
 	volumes = append(volumes, getNodeVolumes(dk.KSPM().GetUniqueMappedHostPaths())...)
 	volumes = append(volumes, getTokenVolume(dk))
 
-	if dk.ActiveGate().HasCaCert() {
+	if dk.IsKubemonEnabled() || dk.ActiveGate().HasCaCert() {
 		volumes = append(volumes, getCertVolume(dk))
 	}
 
@@ -41,7 +42,7 @@ func getMounts(dk dynakube.DynaKube) []corev1.VolumeMount {
 	mounts = append(mounts, getNodeVolumeMounts(dk.KSPM().GetUniqueMappedHostPaths())...)
 	mounts = append(mounts, getTokenVolumeMount())
 
-	if dk.ActiveGate().HasCaCert() {
+	if dk.IsKubemonEnabled() || dk.ActiveGate().HasCaCert() {
 		mounts = append(mounts, getCertMount())
 	}
 
