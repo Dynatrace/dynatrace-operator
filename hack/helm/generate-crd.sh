@@ -3,6 +3,14 @@
 KUSTOMIZE="$1"
 HELM_CRD_DIR="$2"
 MAINFEST_DIR="$3"
+KUSTOMIZE_DIR="$4"
+OUTPUT_FILENAME="$5"
+EXPERIMENTAL_FLAG="$6"
+
+HELM_HEADER='{{ if .Values.installCRD }}'
+if [ -n "${EXPERIMENTAL_FLAG}" ]; then
+  HELM_HEADER="{{ if and .Values.installCRD (.Values.experimental).${EXPERIMENTAL_FLAG} }}"
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BOILERPLATE="${SCRIPT_DIR}/../boilerplate.go.txt"
@@ -14,12 +22,11 @@ yaml_license_header() {
 }
 
 # Create the crd with the conversion webhook patch
-DYNATRACE_OPERATOR_CRD_YAML="dynatrace-operator-crd.yaml"
 SOURCE_CRD_DIR="${MAINFEST_DIR}/kubernetes"
-SOURCE_CRD_FILE="${SOURCE_CRD_DIR}/${DYNATRACE_OPERATOR_CRD_YAML}"
+SOURCE_CRD_FILE="${SOURCE_CRD_DIR}/${OUTPUT_FILENAME}"
 
 mkdir -p "${HELM_CRD_DIR}"
-"${KUSTOMIZE}" build config/crd >"${SOURCE_CRD_FILE}"
+"${KUSTOMIZE}" build "${KUSTOMIZE_DIR}" >"${SOURCE_CRD_FILE}"
 
 # Replace the the namespace specified in the webhook service to the helm-chart template string
 # does not use sed -i, because it's not supported by default in MacOS
@@ -38,8 +45,6 @@ mv "${SOURCE_CRD_DIR}/tmp_crd" "${SOURCE_CRD_FILE}"
 awk 'BEGIN{inserted=0} /name: dtprometheuses.dynatrace.com/ && !inserted {print "  labels:"; print "    {{- include \"dynatrace-operator.commonLabels\" . | nindent 4 }}"; inserted=1} {print}' "${SOURCE_CRD_FILE}" > "${SOURCE_CRD_DIR}/tmp_crd"
 mv "${SOURCE_CRD_DIR}/tmp_crd" "${SOURCE_CRD_FILE}"
 
-# Define the header for the helm yaml file
-HELM_HEADER="{{ if .Values.installCRD }}"
 
 # Get the previously patched crd content
 CRD_CONTENT="$(cat "${SOURCE_CRD_FILE}")"
@@ -53,6 +58,6 @@ HELM_FOOTER="{{- end -}}"
 	yaml_license_header
 	echo "$CRD_CONTENT"
 	echo "$HELM_FOOTER"
-} >"${HELM_CRD_DIR}/${DYNATRACE_OPERATOR_CRD_YAML}"
+} >"${HELM_CRD_DIR}/${OUTPUT_FILENAME}"
 
 rm "${SOURCE_CRD_FILE}"
