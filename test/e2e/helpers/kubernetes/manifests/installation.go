@@ -11,9 +11,22 @@ import (
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/klient/decoder"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
+
+func createOrUpdateHandler(r *resources.Resources) decoder.HandlerFunc {
+	return func(ctx context.Context, obj k8s.Object) error {
+		err := r.Create(ctx, obj)
+		if k8serrors.IsAlreadyExists(err) {
+			return r.Update(ctx, obj)
+		}
+
+		return err
+	}
+}
 
 func InstallFromFile(path string, options ...decoder.DecodeOption) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
@@ -25,7 +38,7 @@ func InstallFromFile(path string, options ...decoder.DecodeOption) env.Func {
 
 		resources := envConfig.Client().Resources()
 
-		return ctx, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists), options...)
+		return ctx, decoder.DecodeEach(ctx, kubernetesManifest, createOrUpdateHandler(resources), options...)
 	}
 }
 
