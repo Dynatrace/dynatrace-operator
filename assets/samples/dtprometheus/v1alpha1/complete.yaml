@@ -43,7 +43,7 @@ spec:
     # Overrides the default Target Allocator image (full reference including tag or digest).
     # When omitted the operator uses the image configured in the tenant.
     image: docker.io/dynatrace/otel-target-allocator:latest
-    pullPolicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
 
     # Extra command-line flags for the Target Allocator.
     # The operator owns the config file mounted at /conf/targetallocator.yaml, and
@@ -128,7 +128,7 @@ spec:
     # Overrides the default scraper (OTel Collector) image (full reference including tag or digest).
     # When omitted the operator uses the image provided via the image endpoint.
     image: docker.io/dynatrace/dynatrace-otel-collector:latest
-    pullPolicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
 
     # Extra command-line flags for the collector.
     # The only flags accepted are --config, --set and --feature-gates.
@@ -209,7 +209,7 @@ spec:
     # Overrides the default gateway (OTel Collector) image (full reference including tag or digest).
     # When omitted the operator uses the image provided via the image endpoint.
     image: docker.io/dynatrace/dynatrace-otel-collector:latest
-    pullPolicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
 
     # Extra command-line flags for the collector.
     # The only flags accepted are --config, --set and --feature-gates.
