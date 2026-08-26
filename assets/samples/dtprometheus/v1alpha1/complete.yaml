@@ -12,16 +12,6 @@ spec:
   # Overrides the default registry from which Dynatrace images are pulled.
   # publicRegistryOverride: my.custom.registry.com
 
-  # Dynatrace preset
-  # When enabled, the operator creates a built-in ScrapeConfig that discovers
-  # pods annotated with metrics.dynatrace.com/scrape: "true" and reads the
-  # port, path, and secure annotations to construct scrape targets.
-  # This provides backwards compatibility with the ActiveGate Kubernetes
-  # module annotation-based discovery workflow.
-  # The ScrapeConfig is labeled `prometheus.dynatrace.com: "true"` so it is
-  # automatically picked up by the Target Allocator without any extra config.
-  dynatracePreset: {}
-
   # Target Allocator
   # The TA holds all Prometheus service discovery metadata in memory and
   # distributes targets across the scraper pool via consistent hashing.
