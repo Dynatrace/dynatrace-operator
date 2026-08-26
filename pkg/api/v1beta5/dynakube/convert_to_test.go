@@ -133,21 +133,6 @@ func TestConvertTo(t *testing.T) {
 		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
 
-	t.Run("v1beta5 extensions are dropped during conversion to latest", func(t *testing.T) {
-		// In v1beta5 an (empty) extensions block only ever enabled the removed
-		// prometheus feature, so it carries no meaningful configuration and must
-		// not be propagated to the latest version.
-		from := getOldDynakubeBase()
-		from.Spec.Extensions = &extensions.Spec{}
-		to := dynakubelatest.DynaKube{}
-
-		err := from.ConvertTo(&to)
-		require.NoError(t, err)
-
-		assert.Nil(t, to.Spec.Extensions)
-		compareBase(t, from, to)
-	})
-
 	t.Run("migrate log-monitoring from v1beta5 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.LogMonitoring = getOldLogMonitoringSpec()

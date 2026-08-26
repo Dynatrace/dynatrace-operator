@@ -374,8 +374,6 @@ spec:
                 type: integer
               enableIstio:
                 type: boolean
-              extensions:
-                type: object
               kspm:
                 properties:
                   mappedHostPaths:

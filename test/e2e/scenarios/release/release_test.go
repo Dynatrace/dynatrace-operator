@@ -9,7 +9,6 @@ import (
 	"context"
 	"testing"
 
-	extensionsupgrade "github.com/Dynatrace/dynatrace-operator/test/e2e/features/extensions/upgrade"
 	tokenupgrade "github.com/Dynatrace/dynatrace-operator/test/e2e/features/token/upgrade"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/upgrade"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
@@ -17,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/logs"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -41,11 +39,6 @@ func TestMain(m *testing.M) {
 	testEnv.Setup(helpers.SetScheme)
 
 	testEnv.BeforeEachTest(func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
-		// TODO Remove this after 1.10 release
-		if tenant.UsePlatformToken() {
-			t.Skip("skip test from platform token")
-		}
-
 		return ctx, nil
 	})
 
@@ -84,10 +77,6 @@ func TestRelease_operator_upgrade_17(t *testing.T) {
 
 func TestRelease_operator_upgrade_16(t *testing.T) {
 	testEnv.Test(t, upgrade.Feature(t, releaseTag16))
-}
-
-func TestRelease_extensions_upgrade(t *testing.T) {
-	testEnv.Test(t, extensionsupgrade.Feature(t, releaseTag19))
 }
 
 func TestRelease_platform_token_upgrade(t *testing.T) {

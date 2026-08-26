@@ -72,7 +72,6 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
 		dynakubeComponents.WithOTelCollectorImageRef(t, dynakubeComponents.GetLatestOTelCollectorImageTagURI(t)),
-		dynakubeComponents.WithExtensionsEECImageRef(t, dynakubeComponents.GetLatestEECImageTagURI(t)),
 	)
 
 	testECname := uuid.NewString()
@@ -114,7 +113,6 @@ func Feature(t *testing.T) features.Feature {
 
 	// check if components are running
 	builder.Assess("active gate pod is running", k8sstatefulset.IsReady(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
-	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))
