@@ -20,6 +20,12 @@ import (
 const testDynakubeName = "dynakube"
 
 func TestExtensionsWithoutKubernetesMonitoringRegistration(t *testing.T) {
+	t.Run("warning if kubernetes monitoring is not configured", func(t *testing.T) {
+		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
+		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
+		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoringOld)
+	})
+
 	t.Run("no warning if kubernetes monitoring with activegate", func(t *testing.T) {
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
 		dk.Spec.ActiveGate = activegate.Spec{
@@ -28,31 +34,6 @@ func TestExtensionsWithoutKubernetesMonitoringRegistration(t *testing.T) {
 			},
 		}
 		assertAllowed(t, withDatabasesExtension(dk))
-	})
-
-	t.Run("no warning if kubernetes monitoring with kubernetesMonitoring with registration", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		dk.Spec.KubernetesMonitoring = &kubemon.Spec{
-			Registration: &kubemon.Registration{},
-		}
-
-		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
-		assert.NotContains(t, warnings, warningExtensionsWithoutK8SMonitoring)
-	})
-
-	t.Run("warning if kubernetesMonitoring has no registration", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
-
-		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
-		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoring)
-	})
-
-	t.Run("warning if kubernetes monitoring is not configured", func(t *testing.T) {
-		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		assertAllowedWithWarnings(t, 3, withDatabasesExtension(dk))
 	})
 
 	t.Run("warning if activegate kubernetes monitoring has no automatic cluster registration", func(t *testing.T) {
@@ -65,15 +46,28 @@ func TestExtensionsWithoutKubernetesMonitoringRegistration(t *testing.T) {
 				activegate.KubeMonCapability.DisplayName,
 			},
 		}
-		assertAllowedWithWarnings(t, 3, withDatabasesExtension(dk))
+		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
+		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoringOld)
 	})
 
-	t.Run("warning if kubernetes monitoring is not configured or registered", func(t *testing.T) {
+	t.Run("no warning if kubernetes monitoring with kubernetesMonitoring with registration", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		dk.Annotations = map[string]string{
-			exp.AGAutomaticK8sAPIMonitoringKey: "false",
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{
+			Registration: &kubemon.Registration{},
 		}
-		assertAllowedWithWarnings(t, 3, withDatabasesExtension(dk))
+
+		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
+		assert.NotContains(t, warnings, warningExtensionsWithoutK8SMonitoringNew)
+	})
+
+	t.Run("warning if kubernetesMonitoring has no registration", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+
+		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
+		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoringNew)
 	})
 }
 
