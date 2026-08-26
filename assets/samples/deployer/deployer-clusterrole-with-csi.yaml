@@ -35,7 +35,7 @@ rules:
     verbs: ["create", "get", "update", "patch", "delete", "list", "watch"]
   # --- DynaKube / EdgeConnect custom resources (namespace-scoped) ---
   - apiGroups: ["dynatrace.com"]
-    resources: ["dynakubes", "dtprometheuses", "edgeconnects", "dtprometheuses"]
+    resources: ["dynakubes", "edgeconnects"]
     verbs: ["create", "get", "update", "patch", "delete", "list"]
   # --- Platform-specific (only needed if the API exists on the cluster) ---
   - apiGroups: ["auto.gke.io"]
