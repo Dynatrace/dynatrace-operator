@@ -109,6 +109,7 @@ var (
 		warnGlobalResourceAttributesSanitization,
 		warnOneAgentResourceAttributesSanitization,
 		warnOTLPResourceAttributesSanitization,
+		deprecatedImplicitActiveGate,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

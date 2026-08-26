@@ -305,6 +305,59 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 	)
 }
 
+func TestDeprecatedImplicitActiveGate(t *testing.T) {
+	t.Run("warning when extensions are enabled without explicit active gate", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				Extensions: &extensions.Spec{
+					Databases: []extensions.DatabaseSpec{{ID: "test"}},
+				},
+			},
+		}
+		warnings, _ := assertAllowed(t, dk, platformTokenSecret())
+		assert.Contains(t, warnings, warningDeprecatedImplicitActiveGate)
+	})
+
+	t.Run("no warning when extensions are enabled with explicit active gate", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				Extensions: &extensions.Spec{
+					Databases: []extensions.DatabaseSpec{{ID: "test"}},
+				},
+				ActiveGate: &activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+					CapabilityProperties: activegate.CapabilityProperties{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("256Mi"),
+							},
+						},
+					},
+				},
+			},
+		}
+		warnings, _ := assertAllowed(t, dk, platformTokenSecret())
+		assert.NotContains(t, warnings, warningDeprecatedImplicitActiveGate)
+	})
+
+	t.Run("no warning when extensions are not enabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+			},
+		}
+		warnings, _ := assertAllowed(t, dk, platformTokenSecret())
+		assert.NotContains(t, warnings, warningDeprecatedImplicitActiveGate)
+	})
+}
+
 func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 	imgRef := image.Ref{
 		Repository: "a",

@@ -158,7 +158,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
-		assertAllowedWithWarnings(t, 2, dk)
+		assertAllowedWithWarnings(t, 3, dk)
 	})
 
 	t.Run("default volume mount used => conflicts => fail", func(t *testing.T) {
@@ -265,7 +265,7 @@ func TestUnusedVolumes(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
-		assertAllowedWithWarnings(t, 2, dk)
+		assertAllowedWithWarnings(t, 3, dk)
 	})
 }
 
@@ -320,6 +320,6 @@ func TestHostPathDatabaseVolume(t *testing.T) {
 			},
 		}
 
-		assertAllowedWithWarnings(t, 3, dk)
+		assertAllowedWithWarnings(t, 4, dk)
 	})
 }

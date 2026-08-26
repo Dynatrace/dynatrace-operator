@@ -34,7 +34,7 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 		extensionTestCase{
 			"error if no activegate with k8s-monitoring",
 			func(t *testing.T, setExtensions dkMutatorFunc) {
-				assertAllowedWithWarnings(t, 3, setExtensions(createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)))
+				assertAllowedWithWarnings(t, 4, setExtensions(createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)))
 			},
 		},
 
@@ -61,7 +61,7 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 				dk.Annotations = map[string]string{
 					exp.AGAutomaticK8sAPIMonitoringKey: "false",
 				}
-				assertAllowedWithWarnings(t, 3, setExtensions(dk))
+				assertAllowedWithWarnings(t, 4, setExtensions(dk))
 			},
 		},
 	)

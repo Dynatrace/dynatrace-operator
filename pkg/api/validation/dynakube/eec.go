@@ -17,6 +17,7 @@ const (
 	errorExtensionExecutionControllerImageNotSpecified       = `DynaKube's specification enables extensions, make sure you correctly specify the ExtensionExecutionController image.`
 	errorExtensionExecutionControllerInvalidPVCConfiguration = `DynaKube specifies a PVC for the extension controller while ephemeral volume is also enabled. These settings are mutually exclusive, please choose only one.`
 	warningConflictingAPIURLForExtensions                    = `You are already using a Dynakube ('%s') that enables extensions. Having multiple Dynakubes with same '.spec.apiUrl' and '.spec.extensions' enabled can have severe side-effects on “sum” and “count” metrics and cause double-billing.`
+	warningDeprecatedImplicitActiveGate                      = `DynaKube's specification enables extensions without an ActiveGate explicitly set. Extensions requires an ActiveGate, and the Operator will implicitly create one, but this behavior has been deprecetad.`
 )
 
 func extensionControllerImage(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
@@ -84,4 +85,16 @@ func extensionControllerPVCStorageDevice(ctx context.Context, _ *Validator, dk *
 
 func extensionControllerMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
 	return ptr.Deref(dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume, false) && dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim != nil
+}
+
+func deprecatedImplicitActiveGate(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	log := logd.FromContext(ctx)
+
+	if dk.Extensions().IsAnyEnabled() && dk.Spec.ActiveGate == nil {
+		log.Info("requested dynakube configures extensions without an explicit activeGate section.")
+
+		return warningDeprecatedImplicitActiveGate
+	}
+
+	return ""
 }

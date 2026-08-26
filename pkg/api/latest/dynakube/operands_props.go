@@ -17,6 +17,10 @@ import (
 )
 
 func (dk *DynaKube) ActiveGate() *activegate.ActiveGate {
+	// This is a not so pretty workaround to limit the likelihood of getting an unhandled nil exception.
+	// This is to make an easy nil-safe way to access fields inside spec.activeGate via dk.ActiveGate().
+	// Without it you would need to litter the code with nil checks,
+	// which get complicated due to the implicit enablement of this whole section incase extensions are enabled.
 	spec := activegate.Spec{}
 	if dk.Spec.ActiveGate != nil {
 		spec = *dk.Spec.ActiveGate
