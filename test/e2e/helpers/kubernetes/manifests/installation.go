@@ -20,10 +20,8 @@ import (
 func createOrUpdateHandler(r *resources.Resources) decoder.HandlerFunc {
 	return func(ctx context.Context, obj k8s.Object) error {
 		err := r.Create(ctx, obj)
-		if err != nil {
-			if k8serrors.IsAlreadyExists(err) {
-				return r.Update(ctx, obj)
-			}
+		if k8serrors.IsAlreadyExists(err) {
+			return r.Update(ctx, obj)
 		}
 
 		return err
