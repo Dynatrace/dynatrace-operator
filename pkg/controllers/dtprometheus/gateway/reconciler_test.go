@@ -8,7 +8,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,7 +20,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,43 +66,47 @@ func newTestScopeWithDynaKube(dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaK
 	}
 }
 
+// The condition branch logic is covered by the condition package. What matters here is
+// that the gateway wires itself to the right condition type, component name and rollout check.
 func TestReconcileCondition(t *testing.T) {
-	boom := fmt.Errorf("wrap: %w", errors.New("boom"))
+	t.Run("freshly created statefulset with no ready replicas -> pending", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
+		dtp.Spec.Gateway.Replicas = new(int32(2))
 
-	completeStatefulSet := &appsv1.StatefulSet{
-		Spec:   appsv1.StatefulSetSpec{Replicas: new(int32(2))},
-		Status: appsv1.StatefulSetStatus{ReadyReplicas: 2},
-	}
+		dk := &dynakube.DynaKube{}
+		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
 
-	tests := []struct {
-		name        string
-		err         error
-		statefulSet *appsv1.StatefulSet
-		wantStatus  metav1.ConditionStatus
-		wantReason  string
-		wantMessage string
-	}{
-		{"statefulset not rolled out -> reconciling", nil, nil, metav1.ConditionFalse, status.ReasonReconciling, "gateway is pending"},
-		{"rollout complete -> available", nil, completeStatefulSet, metav1.ConditionTrue, status.ReasonAvailable, "gateway is ready"},
-		{"error -> error", boom, nil, metav1.ConditionFalse, status.ReasonError, "boom"},
-		{"error takes precedence over complete rollout", boom, completeStatefulSet, metav1.ConditionFalse, status.ReasonError, "boom"},
-	}
+		r := &Reconciler{Client: fake.NewClient()}
+		require.NoError(t, r.Reconcile(t.Context(), dtp, dk, nil))
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			dtp := newTestDTP("dtp", "dynatrace")
-			s := &reconcileScope{Owner: dtp, StatefulSet: test.statefulSet}
-			r := &Reconciler{}
+		condition := meta.FindStatusCondition(dtp.Status.Conditions, dtprometheus.GatewayAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, status.ReasonReconciling, condition.Reason)
+		assert.Equal(t, "gateway is pending", condition.Message)
+	})
 
-			r.reconcileCondition(s, test.err)
+	t.Run("reconcile error -> error, with unwrapped message", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
 
-			condition := meta.FindStatusCondition(dtp.Status.Conditions, dtprometheus.GatewayAvailable)
-			require.NotNil(t, condition)
-			assert.Equal(t, test.wantStatus, condition.Status)
-			assert.Equal(t, test.wantReason, condition.Reason)
-			assert.Equal(t, test.wantMessage, condition.Message)
+		boom := errors.New("boom")
+		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Create: func(context.Context, client.WithWatch, client.Object, ...client.CreateOption) error {
+				return boom
+			},
 		})
-	}
+
+		r := &Reconciler{Client: clt}
+		require.Error(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
+
+		condition := meta.FindStatusCondition(dtp.Status.Conditions, dtprometheus.GatewayAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, status.ReasonError, condition.Reason)
+		assert.Equal(t, boom.Error(), condition.Message)
+	})
 }
 
 func TestReconcileConfigMap(t *testing.T) {
