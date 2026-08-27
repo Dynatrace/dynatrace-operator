@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -72,8 +73,9 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
 		dynakubeComponents.WithOTelCollectorImageRef(t, dynakubeComponents.GetLatestOTelCollectorImageTagURI(t)),
-		dynakubeComponents.WithExtensionsPrometheusEnabledSpec(true),
 		dynakubeComponents.WithExtensionsEECImageRef(t, dynakubeComponents.GetLatestEECImageTagURI(t)),
+		dynakubeComponents.WithExtensionsDatabases(extensions.DatabaseSpec{ID: "test"}),
+		dynakubeComponents.WithExtensionsDBExecutorImageRef(t, dynakubeComponents.GetLatestDBExecutorImageTagURI(t)),
 	)
 
 	testECname := uuid.NewString()
@@ -116,7 +118,6 @@ func Feature(t *testing.T) features.Feature {
 	// check if components are running
 	builder.Assess("active gate pod is running", k8sstatefulset.IsReady(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
 	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
-	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))

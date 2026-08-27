@@ -87,15 +87,6 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			},
 		},
 		{
-			Name: "PrometheusExtensions",
-			OptionalScopes: []string{
-				tokenclient.ScopeSettingsRead,
-			},
-			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.Extensions().IsPrometheusEnabled()
-			},
-		},
-		{
 			Name:           "Automatic ActiveGate Token Creation",
 			RequiredScopes: []string{tokenclient.ScopeActiveGateTokenCreate},
 			IsEnabled: func(dk dynakube.DynaKube) bool {

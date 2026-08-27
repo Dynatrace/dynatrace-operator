@@ -93,11 +93,6 @@ type DynaKubeSpec struct { //nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	DynatraceAPIRequestThreshold *uint16 `json:"dynatraceApiRequestThreshold,omitempty"`
 
-	// When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)
-	// are deployed by the operator.
-	// +kubebuilder:validation:Optional
-	Extensions *extensions.Spec `json:"extensions,omitempty"`
-
 	// When a TelemetryIngestSpec is provided, the OTEL collector is deployed by the operator.
 	// +kubebuilder:validation:Optional
 	TelemetryIngest *telemetryingest.Spec `json:"telemetryIngest,omitempty"`
