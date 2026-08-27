@@ -1,9 +1,14 @@
----
+{{ if and .Values.installCRD (.Values.experimental).enablePrometheus }}
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
+  labels:
+    {{- include "dynatrace-operator.commonLabels" . | nindent 4 }}
   name: dtprometheuses.dynatrace.com
 spec:
   group: dynatrace.com
@@ -4131,3 +4136,4 @@ spec:
     storage: true
     subresources:
       status: {}
+{{- end -}}

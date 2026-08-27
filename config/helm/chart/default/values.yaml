@@ -304,3 +304,4 @@ rbac:
 
 experimental:
   enableKubemonOperand: false # temporary gate; set to true to enable kubemon in dev/test. Remove when kubemon is complete.
+  enablePrometheus: false # temporary gate; set to true to enable prometheus integration in dev/test. Remove when prometheus integration is complete.

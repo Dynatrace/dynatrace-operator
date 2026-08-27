@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for running operator locally
 	"k8s.io/client-go/rest"
@@ -33,7 +34,10 @@ func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 	funcs := []controllerSetupFunc{
 		dynakube.Add,
 		edgeconnect.Add,
-		dtprometheus.Add,
+	}
+
+	if k8senv.IsPrometheusEnabled() {
+		funcs = append(funcs, dtprometheus.Add)
 	}
 
 	if envvars.GetBool(consts.HostAvailabilityDetectionEnvVar, true) {
