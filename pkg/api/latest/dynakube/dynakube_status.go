@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
@@ -46,6 +47,10 @@ type DynaKubeStatus struct { //nolint:revive
 	// Observed state of KSPM
 	// +kubebuilder:validation:Optional
 	KSPM kspm.Status `json:"kspm,omitzero"`
+
+	// Observed state of the OpenTelemetry Collector
+	// +kubebuilder:validation:Optional
+	OtelCollector otlp.Status `json:"otelCollector,omitzero"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
