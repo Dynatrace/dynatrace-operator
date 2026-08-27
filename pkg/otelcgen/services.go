@@ -51,7 +51,7 @@ func (c *Config) buildServices() ServiceConfig {
 	if len(tracesReceivers) != 0 {
 		pipelinesCfg[traces] = &pipelines.PipelineConfig{
 			Receivers:  tracesReceivers,
-			Processors: append(buildProcessors(), batchTraces),
+			Processors: append(c.buildPipelineProcessors(), batchTraces),
 			Exporters:  buildExporters(),
 		}
 	}
@@ -61,7 +61,7 @@ func (c *Config) buildServices() ServiceConfig {
 	if len(metricsReceivers) != 0 {
 		pipelinesCfg[metrics] = &pipelines.PipelineConfig{
 			Receivers:  metricsReceivers,
-			Processors: append(buildProcessors(), cumulativeToDelta, batchMetrics),
+			Processors: append(c.buildPipelineProcessors(), cumulativeToDelta, batchMetrics),
 			Exporters:  buildExporters(),
 		}
 	}
@@ -71,7 +71,7 @@ func (c *Config) buildServices() ServiceConfig {
 	if len(logsReceivers) != 0 {
 		pipelinesCfg[logs] = &pipelines.PipelineConfig{
 			Receivers:  logsReceivers,
-			Processors: append(buildProcessors(), batchLogs),
+			Processors: append(c.buildPipelineProcessors(), batchLogs),
 			Exporters:  buildExporters(),
 		}
 	}
@@ -94,10 +94,17 @@ func buildExporters() []component.ID {
 	}
 }
 
-func buildProcessors() []component.ID {
-	return []component.ID{
-		memoryLimiter, transformPodIP, k8sattributes, transform,
+func (c *Config) buildPipelineProcessors() []component.ID {
+	// resource/staticAttrs must run after k8sattributes and transform: those processors only
+	// set an attribute when it is not already present, so if the static default were applied
+	// first it would always win and per-pod/per-workload values could never override it.
+	processors := []component.ID{memoryLimiter, transformPodIP, k8sattributes, transform}
+
+	if len(c.resourceAttributes) > 0 {
+		processors = append(processors, staticResourceAttrs)
 	}
+
+	return processors
 }
 
 func filter(componentIDs []component.ID, f func(component.ID) bool) []component.ID {

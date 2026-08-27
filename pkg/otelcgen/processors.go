@@ -4,6 +4,8 @@
 package otelcgen
 
 import (
+	"slices"
+
 	"go.opentelemetry.io/collector/component"
 )
 
@@ -28,15 +30,16 @@ type MemoryLimiter struct {
 // More details, about how to configure `processors,` can be found
 // https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md
 var (
-	k8sattributes     = component.MustNewID("k8sattributes")
-	transform         = component.MustNewID("transform")
-	transformPodIP    = component.MustNewIDWithName("transform", "add-pod-ip")
-	batch             = component.MustNewType("batch")
-	batchTraces       = component.NewIDWithName(batch, "traces")
-	batchMetrics      = component.NewIDWithName(batch, "metrics")
-	batchLogs         = component.NewIDWithName(batch, "logs")
-	memoryLimiter     = component.MustNewID("memory_limiter")
-	cumulativeToDelta = component.MustNewID("cumulativetodelta")
+	k8sattributes       = component.MustNewID("k8sattributes")
+	transform           = component.MustNewID("transform")
+	transformPodIP      = component.MustNewIDWithName("transform", "add-pod-ip")
+	staticResourceAttrs = component.MustNewIDWithName("resource", "staticAttrs")
+	batch               = component.MustNewType("batch")
+	batchTraces         = component.NewIDWithName(batch, "traces")
+	batchMetrics        = component.NewIDWithName(batch, "metrics")
+	batchLogs           = component.NewIDWithName(batch, "logs")
+	memoryLimiter       = component.MustNewID("memory_limiter")
+	cumulativeToDelta   = component.MustNewID("cumulativetodelta")
 
 	defaultK8Sattributes = []string{
 		"k8s.cluster.uid",
@@ -55,7 +58,7 @@ var (
 )
 
 func (c *Config) buildProcessors() map[component.ID]component.Config {
-	return map[component.ID]component.Config{
+	processors := map[component.ID]component.Config{
 		cumulativeToDelta: map[string]any{},
 		k8sattributes: map[string]any{
 			"extract": map[string]any{
@@ -119,6 +122,40 @@ func (c *Config) buildProcessors() map[component.ID]component.Config {
 			MemoryLimitPercentage: 70,
 			MemorySpikePercentage: 30,
 		},
+	}
+
+	if staticAttrs := c.buildStaticResourceAttributes(); staticAttrs != nil {
+		processors[staticResourceAttrs] = staticAttrs
+	}
+
+	return processors
+}
+
+// buildStaticResourceAttributes builds the resource/staticAttrs processor config, using
+// action "insert" so per-pod/per-workload values always take precedence.
+func (c *Config) buildStaticResourceAttributes() map[string]any {
+	if len(c.resourceAttributes) == 0 {
+		return nil
+	}
+
+	keys := make([]string, 0, len(c.resourceAttributes))
+	for k := range c.resourceAttributes {
+		keys = append(keys, k)
+	}
+
+	slices.Sort(keys)
+
+	attributes := make([]map[string]any, 0, len(keys))
+	for _, k := range keys {
+		attributes = append(attributes, map[string]any{
+			"key":    k,
+			"value":  c.resourceAttributes[k],
+			"action": "insert",
+		})
+	}
+
+	return map[string]any{
+		"attributes": attributes,
 	}
 }
 

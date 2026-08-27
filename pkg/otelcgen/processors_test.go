@@ -28,6 +28,30 @@ func TestNewConfigWithProcessors(t *testing.T) {
 	assert.YAMLEq(t, string(expectedOutput), string(c))
 }
 
+func TestBuildProcessors_WithResourceAttributes(t *testing.T) {
+	t.Run("no static resource attrs processor when empty", func(t *testing.T) {
+		cfg := &Config{}
+		processors := cfg.buildProcessors()
+
+		assert.NotContains(t, processors, staticResourceAttrs)
+	})
+
+	t.Run("static resource attrs processor added, sorted, insert action", func(t *testing.T) {
+		cfg := &Config{resourceAttributes: map[string]string{"team": "shopping-cart", "env": "prod"}}
+		processors := cfg.buildProcessors()
+
+		staticAttrs, ok := processors[staticResourceAttrs].(map[string]any)
+		require.True(t, ok)
+
+		attributes, ok := staticAttrs["attributes"].([]map[string]any)
+		require.True(t, ok)
+		require.Len(t, attributes, 2)
+
+		assert.Equal(t, map[string]any{"key": "env", "value": "prod", "action": "insert"}, attributes[0])
+		assert.Equal(t, map[string]any{"key": "team", "value": "shopping-cart", "action": "insert"}, attributes[1])
+	})
+}
+
 func TestK8sAttributesJSONAnnotation(t *testing.T) {
 	cfg := &Config{}
 	processors := cfg.buildProcessors()
