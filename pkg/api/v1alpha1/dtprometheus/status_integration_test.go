@@ -4,12 +4,10 @@
 package dtprometheus_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,11 +82,7 @@ func buildDTPrometheusCondition() metav1.Condition {
 func createDTPrometheus(t *testing.T, clt client.Client, dtp *dtprometheus.DTPrometheus) {
 	t.Helper()
 	status := dtp.Status
-	require.NoError(t, clt.Create(t.Context(), dtp))
-	t.Cleanup(func() {
-		// t.Context is no longer valid during cleanup
-		assert.NoError(t, clt.Delete(context.Background(), dtp))
-	})
+	integrationtests.CreateKubernetesObject(t, clt, dtp)
 	dtp.Status = status
 	require.NoError(t, clt.Status().Update(t.Context(), dtp))
 }

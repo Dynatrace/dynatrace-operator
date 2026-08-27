@@ -7,6 +7,8 @@ templates:
 tests:
   - it: ClusterRole should exist with correct verbs and resourceNames
     documentIndex: 0
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - isKind:
           of: ClusterRole
@@ -31,6 +33,8 @@ tests:
 
   - it: ClusterRoleBinding should exist with correct subjects and roleRef
     documentIndex: 1
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - isKind:
           of: ClusterRoleBinding
@@ -55,6 +59,14 @@ tests:
   - it: shouldn't exist if prometheus rbac is turned off
     set:
       rbac.prometheus.create: false
+      experimental.enablePrometheus: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if experimental.enablePrometheus is off
+    set:
+      experimental.enablePrometheus: false
     asserts:
       - hasDocuments:
           count: 0

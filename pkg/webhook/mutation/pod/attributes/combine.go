@@ -26,6 +26,7 @@ const (
 	withContainerAttrs
 	withDynakube
 	withNamespaceAnnotations
+	withWorkloadAnnotations
 	withRules
 	withPodAnnotations
 	withCustom
@@ -35,10 +36,10 @@ const (
 	// withDeprecated is not included; combineAll adds it conditionally.
 	caseAll = withWorkloadInfo | withPodInfo | withClusterInfo |
 		withContainerAttrs | withDynakube | withNamespaceAnnotations |
-		withRules | withPodAnnotations | withCustom
+		withWorkloadAnnotations | withRules | withPodAnnotations | withCustom
 
 	caseJSONAnnotation = withDynakube | withNamespaceAnnotations |
-		withRules | withPodAnnotations | withWorkloadInfo
+		withWorkloadAnnotations | withRules | withPodAnnotations | withWorkloadInfo
 )
 
 const (
@@ -94,6 +95,7 @@ func (attrs *Pod) combine(c combinationCase, containerAttrs map[string]string) m
 		{withRules, attrs.rules},
 		{withDynakube, attrs.dynakube},
 		{withNamespaceAnnotations, attrs.namespaceAnnotations},
+		{withWorkloadAnnotations, attrs.workloadAnnotations},
 		{withPodAnnotations, attrs.podAnnotations},
 		{withCustom, attrs.custom},
 	}

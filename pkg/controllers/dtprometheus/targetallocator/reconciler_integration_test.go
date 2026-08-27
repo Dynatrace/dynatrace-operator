@@ -43,13 +43,13 @@ type lifecycleDeps struct {
 // TestReconcileLifecycle walks the phases in order: missing image -> provision -> stabilize -> update.
 func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
-	integrationtests.CreateNamespace(t, t.Context(), clt, integrationNamespace)
+	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	dtp := &dtprometheus.DTPrometheus{
 		ObjectMeta: metav1.ObjectMeta{Name: integrationDTPName, Namespace: integrationNamespace},
 		Spec:       dtprometheus.DTPrometheusSpec{DynaKubeName: integrationDynaKubeName},
 	}
-	integrationtests.CreateKubernetesObject(t, t.Context(), clt, dtp)
+	integrationtests.CreateKubernetesObject(t, clt, dtp)
 
 	deps := &lifecycleDeps{
 		clt:        clt,

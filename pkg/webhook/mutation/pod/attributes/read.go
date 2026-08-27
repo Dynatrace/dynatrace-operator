@@ -7,7 +7,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -17,45 +16,56 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (attrs *Pod) readMetadataAnnotations(request mutator.BaseRequest) {
-	attrs.applyEnrichmentRules(request.Namespace, request.DynaKube)
-	attrs.readNamespaceAnnotationAttributes(request.Namespace)
-	attrs.readPodAnnotationAttributes(*request.Pod)
+func (attrs *Pod) readMetadataAnnotations(request mutator.BaseRequest, workloadInfo *workload.Info) {
+	attrs.applyEnrichmentRules(request.DynaKube.Status.MetadataEnrichment.Rules, &request.Namespace, workloadInfo, request.Pod)
+	attrs.readNamespaceAnnotationAttributes(&request.Namespace)
+	attrs.readWorkloadAnnotationAttributes(workloadInfo)
+	attrs.readPodAnnotationAttributes(request.Pod)
 }
 
-// collect attributes from pod and namespace "metadata.dynatrace.com/" annotations
-func (attrs *Pod) readNamespaceAnnotationAttributes(namespace corev1.Namespace) {
-	for key, value := range namespace.Annotations {
+func (attrs *Pod) readNamespaceAnnotationAttributes(namespace *corev1.Namespace) {
+	readPrefixedAnnotations(attrs.namespaceAnnotations, namespace.Annotations)
+}
+
+func (attrs *Pod) readWorkloadAnnotationAttributes(workloadInfo *workload.Info) {
+	readPrefixedAnnotations(attrs.workloadAnnotations, workloadInfo.Annotations)
+}
+
+func (attrs *Pod) readPodAnnotationAttributes(pod *corev1.Pod) {
+	readPrefixedAnnotations(attrs.podAnnotations, pod.Annotations)
+}
+
+// collect attributes from namespace, workload and pod "metadata.dynatrace.com/" annotations
+func readPrefixedAnnotations(attributes, annotations map[string]string) {
+	for key, value := range annotations {
 		if after, ok := strings.CutPrefix(key, metadataenrichment.Prefix); ok {
-			attrs.namespaceAnnotations[after] = value
+			attributes[after] = value
 		}
 	}
 }
 
-// collect attributes from pod and namespace "metadata.dynatrace.com/" annotations
-func (attrs *Pod) readPodAnnotationAttributes(pod corev1.Pod) {
-	// pod annotations take precedence over namespace annotations
-	for key, value := range pod.Annotations {
-		if after, ok := strings.CutPrefix(key, metadataenrichment.Prefix); ok {
-			attrs.podAnnotations[after] = value
-		}
-	}
-}
-
-func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.DynaKube) {
-	for _, rule := range dk.Status.MetadataEnrichment.Rules {
+func (attrs *Pod) applyEnrichmentRules(rules []metadataenrichment.Rule, namespace *corev1.Namespace, workloadInfo *workload.Info, pod *corev1.Pod) {
+	for _, rule := range rules {
 		var (
-			valueFromNamespace string
-			exists             bool
+			value  string
+			exists bool
 		)
 
 		switch rule.Type {
 		case metadataenrichment.LabelRule, metadataenrichment.K8sNamespaceLabelRule:
-			valueFromNamespace, exists = namespace.Labels[rule.Source]
+			value, exists = namespace.Labels[rule.Source]
 		case metadataenrichment.AnnotationRule, metadataenrichment.K8sNamespaceAnnotationRule:
-			valueFromNamespace, exists = namespace.Annotations[rule.Source]
+			value, exists = namespace.Annotations[rule.Source]
+		case metadataenrichment.K8sWorkloadLabelRule:
+			value, exists = workloadInfo.Labels[rule.Source]
+		case metadataenrichment.K8sWorkloadAnnotationRule:
+			value, exists = workloadInfo.Annotations[rule.Source]
+		case metadataenrichment.K8sPodLabelRule:
+			value, exists = pod.Labels[rule.Source]
+		case metadataenrichment.K8sPodAnnotationRule:
+			value, exists = pod.Annotations[rule.Source]
 		case metadataenrichment.CustomRule:
-			valueFromNamespace = rule.Source
+			value = rule.Source
 			exists = true
 		}
 
@@ -63,26 +73,26 @@ func (attrs *Pod) applyEnrichmentRules(namespace corev1.Namespace, dk dynakube.D
 			if rule.Target == "" {
 				// The last rule without a target to resolve to a value wins. This inconsistency is intentional to not introduce a behavior change for users upgrading from <1.10.
 				// Target can only be empty for legacy schema rules.
-				attrs.rules[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
+				attrs.rules[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = value
 			} else if _, ok := attrs.rules[rule.Target]; !ok {
 				// The first rule to resolve to a value wins, regardless of type.
 				// This only is valid if the order of the rules remains unchanged from the API response.
-				attrs.rules[rule.Target] = valueFromNamespace
+				attrs.rules[rule.Target] = value
 			}
 		}
 	}
 }
 
-func (attrs *Pod) readWorkloadInfoAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) error {
+func (attrs *Pod) readWorkloadInfoAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) (*workload.Info, error) {
 	workloadInfo, err := workload.FindRootOwnerOfPod(ctx, client, request)
 	if err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	attrs.workloadInfo[K8sWorkloadKindAttr] = workloadInfo.Kind
 	attrs.workloadInfo[K8sWorkloadNameAttr] = workloadInfo.Name
 
-	return nil
+	return workloadInfo, nil
 }
 
 func (attrs *Pod) readPodAttributes(request mutator.BaseRequest) {
