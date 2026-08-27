@@ -1,0 +1,52 @@
+apiVersion: v1
+data:
+  scraper: |
+    connectors: {}
+    exporters:
+        otlp:
+            endpoint: dtp-gateway.dynatrace.svc.cluster.local:4317
+            tls:
+                insecure: true
+    extensions:
+        health_check:
+            endpoint: ${env:MY_POD_IP}:13133
+    processors:
+        memory_limiter:
+            check_interval: 1s
+            limit_percentage: 95
+            spike_limit_percentage: 5
+    receivers:
+        prometheus:
+            config:
+                scrape_configs: []
+            target_allocator:
+                collector_id: ${env:MY_POD_NAME}
+                endpoint: http://dtp-prometheus-allocator.dynatrace.svc.cluster.local:8080
+                interval: 1m0s
+    service:
+        extensions:
+            - health_check
+        pipelines:
+            metrics:
+                exporters:
+                    - otlp
+                processors:
+                    - memory_limiter
+                receivers:
+                    - prometheus
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: otel-scraper
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-collector
+    internal.dynatrace.com/operator-version: snapshot
+  name: dtp-scraper
+  namespace: dynatrace
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DTPrometheus
+    name: dtp
+    uid: dtp-uid

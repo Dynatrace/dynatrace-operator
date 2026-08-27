@@ -364,4 +364,3 @@ func buildVolumes(spec *dtprometheus.TargetAllocator) []corev1.Volume {
 
 	return volumes
 }
-

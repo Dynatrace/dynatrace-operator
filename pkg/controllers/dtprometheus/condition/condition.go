@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-// Package condition centralises how the DTPrometheus component reconcilers report
+// Package condition centralizes how the DTPrometheus component reconcilers report
 // their availability, so every component surfaces the same condition shape.
 package condition
 

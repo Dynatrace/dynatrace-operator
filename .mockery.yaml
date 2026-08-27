@@ -122,6 +122,7 @@ packages:
     interfaces:
       gatewayReconciler:
       targetAllocatorReconciler:
+      scraperReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
