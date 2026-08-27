@@ -4,12 +4,30 @@
 package gateway
 
 import (
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
+
+// goldenRelay reads a golden ConfigMap fixture and returns its "relay" data key,
+// so config-rendering tests can compare directly against the same fixtures used
+// by the reconciler tests instead of duplicating expected output.
+func goldenRelay(t *testing.T, name string) string {
+	t.Helper()
+
+	b, err := os.ReadFile(filepath.Join("testdata", name))
+	require.NoError(t, err)
+
+	cm := &corev1.ConfigMap{}
+	require.NoError(t, yaml.Unmarshal(b, cm))
+
+	return cm.Data[gatewayConfigKey]
+}
 
 func TestBuildResourceAttributeStatements(t *testing.T) {
 	t.Run("empty attrs", func(t *testing.T) {
@@ -58,38 +76,24 @@ func TestBuildResourceAttributeStatements(t *testing.T) {
 }
 
 func TestRenderGatewayConfig_ResourceAttributes(t *testing.T) {
-	t.Run("empty resource attributes produces no baseline set block", func(t *testing.T) {
-		data := gatewayConfigData{Endpoint: "https://example.com/v2/otlp"}
-		rendered, err := renderGatewayConfig(data)
+	const endpoint = "https://abc12345.live.dynatrace.com/api/v2/otlp"
+
+	t.Run("empty resource attributes matches golden configmap without attributes", func(t *testing.T) {
+		rendered, err := renderGatewayConfig(gatewayConfigData{Endpoint: endpoint})
 		require.NoError(t, err)
-		// "== nil" only appears in the resource-attributes block; none of the static blocks use it.
-		assert.NotContains(t, rendered, "== nil")
+		assert.YAMLEq(t, goldenRelay(t, "configmap.yaml"), rendered)
 	})
 
-	t.Run("resource attributes rendered as sorted baseline set statements", func(t *testing.T) {
+	t.Run("resource attributes rendered as sorted baseline set statements matches golden configmap with attributes", func(t *testing.T) {
 		data := gatewayConfigData{
-			Endpoint: "https://example.com/v2/otlp",
+			Endpoint: endpoint,
 			ResourceAttributes: map[string]string{
-				"region":            "us-east",
-				"dt.k8s.cluster.id": "abc123",
+				"favorite.coffee": "espresso",
+				"deploy.mood":     "yolo",
 			},
 		}
 		rendered, err := renderGatewayConfig(data)
 		require.NoError(t, err)
-		assert.Contains(t, rendered, `set(attributes["dt.k8s.cluster.id"], "abc123") where attributes["dt.k8s.cluster.id"] == nil`)
-		assert.Contains(t, rendered, `set(attributes["region"], "us-east") where attributes["region"] == nil`)
-	})
-
-	t.Run("resource attributes block appears before annotation merge block", func(t *testing.T) {
-		data := gatewayConfigData{
-			Endpoint:           "https://example.com/v2/otlp",
-			ResourceAttributes: map[string]string{"region": "us-east"},
-		}
-		rendered, err := renderGatewayConfig(data)
-		require.NoError(t, err)
-
-		setIdx := strings.Index(rendered, `set(attributes["region"], "us-east")`)
-		mergeIdx := strings.Index(rendered, "merge_maps(")
-		assert.Greater(t, mergeIdx, setIdx, "resource attributes block must precede the annotation merge block")
+		assert.YAMLEq(t, goldenRelay(t, "configmap_with_resource_attributes.yaml"), rendered)
 	})
 }
