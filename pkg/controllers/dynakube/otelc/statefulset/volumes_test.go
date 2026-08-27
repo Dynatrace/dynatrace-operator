@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
+	sharedimage "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/stretchr/testify/assert"
@@ -392,7 +393,14 @@ func getTestDynakubeWithTelemetryIngest() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			TelemetryIngest: &telemetryingest.Spec{},
-			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
+			Templates: dynakube.TemplatesSpec{
+				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+					ImageRef: sharedimage.Ref{
+						Repository: testOTelCImageRepository,
+						Tag:        testOTelCImageTag,
+					},
+				},
+			},
 		},
 	}
 }
@@ -407,7 +415,14 @@ func getTestDynakubeWithExtensionsAndTelemetryIngest() *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			Extensions:      &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			TelemetryIngest: &telemetryingest.Spec{},
-			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
+			Templates: dynakube.TemplatesSpec{
+				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+					ImageRef: sharedimage.Ref{
+						Repository: testOTelCImageRepository,
+						Tag:        testOTelCImageTag,
+					},
+				},
+			},
 		},
 	}
 }

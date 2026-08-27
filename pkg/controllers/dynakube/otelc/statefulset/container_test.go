@@ -46,7 +46,7 @@ func TestProbes(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
-		container := getContainer(dk, 1)
+		container := getContainer(dk, 1, "test-image:latest")
 		assert.NotNil(t, container.LivenessProbe)
 		assert.NotNil(t, container.ReadinessProbe)
 	})
@@ -54,7 +54,7 @@ func TestProbes(t *testing.T) {
 	t.Run("disable with EEC prometheus", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
 
-		container := getContainer(dk, 1)
+		container := getContainer(dk, 1, "test-image:latest")
 		assert.Nil(t, container.LivenessProbe)
 		assert.Nil(t, container.ReadinessProbe)
 	})
@@ -63,7 +63,7 @@ func TestProbes(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
-		container := getContainer(dk, 1)
+		container := getContainer(dk, 1, "test-image:latest")
 		assert.NotNil(t, container.LivenessProbe)
 		assert.NotNil(t, container.ReadinessProbe)
 	})

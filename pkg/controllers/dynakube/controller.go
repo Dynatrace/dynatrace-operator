@@ -146,6 +146,10 @@ type extensionReconciler interface {
 	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
 }
 
+type otelcReconciler interface {
+	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
+}
+
 // dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
 type dtSettingReconciler interface {
 	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
@@ -187,7 +191,7 @@ type Controller struct {
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               kspmReconciler
 	kubemonReconciler            kubemonReconciler
-	otelColReconciler            dynakubeReconciler
+	otelColReconciler            otelcReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
 	istioReconciler              istioReconciler
@@ -427,7 +431,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	log.Info("start reconciling otel-collector")
 
-	if err := controller.otelColReconciler.Reconcile(ctx, dk); err != nil {
+	if err := controller.otelColReconciler.Reconcile(ctx, dtClient.Images, dk); err != nil {
 		log.Info("could not reconcile otelc")
 
 		componentErrors = append(componentErrors, err)

@@ -5,12 +5,15 @@ package statefulset
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
@@ -52,10 +55,35 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube, component dtimage.ComponentType) (string, error) {
+	if ref := dk.Spec.Templates.OpenTelemetryCollector.ImageRef; ref.HasImage() {
+		return ref.String(), nil
+	}
+
+	if !dk.FF().IsPublicRegistry() {
+		return "", fmt.Errorf("image for %q is not set: either set the image or enable the public registry feature flag", component)
+	}
+
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), component)
+	if err != nil {
+		return "", err
+	}
+
+	dk.Status.OtelCollector.ResolvedImage = imageURI
+
+	return imageURI, nil
+}
+
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "statefulset")
+
 	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
-		return r.createOrUpdateStatefulset(ctx, dk)
+		imageURI, err := resolveImage(ctx, imageClient, dk, dtimage.OTelCollector)
+		if err != nil {
+			return err
+		}
+
+		return r.createOrUpdateStatefulset(ctx, dk, imageURI)
 	} else { // do cleanup or
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
 			return nil
@@ -80,7 +108,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	}
 }
 
-func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube, imageURI string) error {
 	log := logd.FromContext(ctx)
 	if dk.TelemetryIngest().IsEnabled() {
 		if !r.checkDataIngestTokenExists(ctx, dk) {
@@ -110,7 +138,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		return err
 	}
 
-	sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), getContainer(dk, replicas),
+	sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), getContainer(dk, replicas, imageURI),
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.OpenTelemetryCollector.Labels),
