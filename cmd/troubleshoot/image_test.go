@@ -172,8 +172,8 @@ func TestImagePullable(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logd.Logger) {
 				ctx := t.Context()
 				clt := fake.NewClient(secret)
-				pullSecret, _ := checkDynakube(ctx, log, clt, test.dk)
-				keychain, _ := dockerkeychain.NewDockerKeychain(t.Context(), fake.NewClient(secret), pullSecret)
+				_ = checkDynakube(ctx, log, clt, test.dk)
+				keychain, _ := dockerkeychain.NewDockerKeychains(t.Context(), fake.NewClient(secret), test.dk.Namespace, test.dk.PullSecretNames())
 
 				transport, _ := createTransport(ctx, clt, test.dk, dockerServer.Client())
 				pullImage := CreateImagePullFunc(ctx, keychain, transport)
@@ -264,8 +264,8 @@ func TestImageNotPullable(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logd.Logger) {
 				ctx := t.Context()
 				clt := fake.NewClient(secret)
-				pullSecret, _ := checkDynakube(ctx, log, clt, test.dk)
-				keychain, _ := dockerkeychain.NewDockerKeychain(t.Context(), fake.NewClient(secret), pullSecret)
+				_ = checkDynakube(ctx, log, clt, test.dk)
+				keychain, _ := dockerkeychain.NewDockerKeychains(t.Context(), fake.NewClient(secret), test.dk.Namespace, test.dk.PullSecretNames())
 
 				transport, _ := createTransport(ctx, clt, test.dk, dockerServer.Client())
 				pullImage := CreateImagePullFunc(ctx, keychain, transport)
@@ -304,8 +304,8 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 		logOutput := runWithTestLogger(func(log logd.Logger) {
 			ctx := t.Context()
 			clt := fake.NewClient(secret)
-			pullSecret, _ := checkDynakube(ctx, log, clt, &dk)
-			keychain, _ := dockerkeychain.NewDockerKeychain(t.Context(), fake.NewClient(secret), pullSecret)
+			_ = checkDynakube(ctx, log, clt, &dk)
+			keychain, _ := dockerkeychain.NewDockerKeychains(t.Context(), fake.NewClient(secret), dk.Namespace, dk.PullSecretNames())
 
 			transport, _ := createTransport(ctx, clt, &dk, dockerServer.Client())
 			pullImage := CreateImagePullFunc(ctx, keychain, transport)
@@ -325,8 +325,8 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 		logOutput := runWithTestLogger(func(log logd.Logger) {
 			ctx := t.Context()
 			clt := fake.NewClient(secret)
-			pullSecret, _ := checkDynakube(ctx, log, clt, &dk)
-			keychain, _ := dockerkeychain.NewDockerKeychain(t.Context(), fake.NewClient(secret), pullSecret)
+			_ = checkDynakube(ctx, log, clt, &dk)
+			keychain, _ := dockerkeychain.NewDockerKeychains(t.Context(), fake.NewClient(secret), dk.Namespace, dk.PullSecretNames())
 			transport, _ := createTransport(ctx, clt, &dk, dockerServer.Client())
 			pullImage := CreateImagePullFunc(ctx, keychain, transport)
 			verifyImageIsAvailable(log, pullImage, &dk, componentCodeModules, false)

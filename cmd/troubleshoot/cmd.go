@@ -121,7 +121,7 @@ func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader cl
 	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", dk.Namespace, dk.Name)
 	logInfof(log, "using '%s:%s' Dynakube", dk.Namespace, dk.Name)
 
-	pullSecret, err := checkDynakube(ctx, baseLog, apiReader, &dk)
+	err := checkDynakube(ctx, baseLog, apiReader, &dk)
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
 			dk.Namespace, dk.Name, dynakubeNotValidMessage())
@@ -129,7 +129,7 @@ func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader cl
 
 	logOkf(log, "'%s:%s' Dynakube is valid", dk.Namespace, dk.Name)
 
-	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, pullSecret)
+	keychain, err := dockerkeychain.NewDockerKeychains(ctx, apiReader, dk.Namespace, dk.PullSecretNames())
 	if err != nil {
 		return err
 	}

@@ -115,7 +115,8 @@ func TestStatusCode(t *testing.T) {
 		{"type mismatch", errors.New("test"), 0},
 		{"from status", &HTTPError{StatusCode: 404}, 404},
 		{"from body", &HTTPError{StatusCode: 404, ServerErrors: []ServerError{{Code: 429}}}, 429},
-		{"pick first", &HTTPError{ServerErrors: []ServerError{{Code: 404}, {Code: 429}}}, 404},
+		{"pick first single", &HTTPError{ServerErrors: []ServerError{{Code: 404}, {Code: 429}}}, 404},
+		{"pick first joined", errors.Join(&HTTPError{StatusCode: 404}, &HTTPError{StatusCode: 429}, &HTTPError{StatusCode: 500}), 404},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

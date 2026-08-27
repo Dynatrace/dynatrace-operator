@@ -16,12 +16,13 @@ import (
 )
 
 type Pod struct {
-
 	// built from customer defined metadata enrichment rules
 	rules map[string]string
 
 	// read from metadata.dynatrace.com annotations on the namespace
 	namespaceAnnotations map[string]string
+	// read from metadata.dynatrace.com annotations on the workload that owns the injected pod
+	workloadAnnotations map[string]string
 	// read from metadata.dynatrace.com annotations on the pod
 	podAnnotations map[string]string
 
@@ -47,9 +48,10 @@ type Pod struct {
 	podEnvVars []corev1.EnvVar
 }
 
-func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) (*Pod, error) {
-	attrs := &Pod{
+func newPodAttrs() *Pod {
+	return &Pod{
 		podAnnotations:       make(map[string]string),
+		workloadAnnotations:  make(map[string]string),
 		namespaceAnnotations: make(map[string]string),
 		rules:                make(map[string]string),
 		workloadInfo:         make(map[string]string),
@@ -58,16 +60,20 @@ func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client c
 		clusterInfo:          make(map[string]string),
 		deprecated:           make(map[string]string),
 		custom:               make(map[string]string),
-
-		useDeprecated: request.DynaKube.FF().EnableAttributesDTKubernetes(),
+		dynakube:             make(map[string]string),
 	}
+}
 
-	err := attrs.readWorkloadInfoAttributes(ctx, request, client)
+func NewPodAttributes(ctx context.Context, request mutator.BaseRequest, client client.Client) (*Pod, error) {
+	attrs := newPodAttrs()
+	attrs.useDeprecated = request.DynaKube.FF().EnableAttributesDTKubernetes()
+
+	workloadInfo, err := attrs.readWorkloadInfoAttributes(ctx, request, client)
 	if err != nil {
 		return nil, err
 	}
 
-	attrs.readMetadataAnnotations(request)
+	attrs.readMetadataAnnotations(request, workloadInfo)
 	attrs.readPodAttributes(request)
 
 	if attrs.useDeprecated {

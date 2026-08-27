@@ -19,11 +19,11 @@ import (
 
 func TestReconciler(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
-	integrationtests.CreateNamespace(t, t.Context(), clt, testNamespaceName)
+	integrationtests.CreateNamespace(t, clt, testNamespaceName)
 
 	t.Run("apply deployments", func(t *testing.T) {
 		dk := getTestDynakube()
-		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		deployment := getReconciledDeployment(t, clt, dk)
 		require.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, conditionType))
@@ -32,11 +32,11 @@ func TestReconciler(t *testing.T) {
 
 	t.Run("delete deployments", func(t *testing.T) {
 		dk := getTestDynakube()
-		integrationtests.CreateKubernetesObject(t, t.Context(), clt, getMatchingDeployment(dk))
+		integrationtests.CreateKubernetesObject(t, clt, getMatchingDeployment(dk))
 
 		dk.Spec.Extensions.Databases = nil
 		k8sconditions.SetDeploymentsApplied(dk, conditionType, []string{"test"})
-		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		deployment := getReconciledDeployment(t, clt, dk)
 		require.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, conditionType))
@@ -46,7 +46,7 @@ func TestReconciler(t *testing.T) {
 	t.Run("don't exceed 63 characters", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Name = rand.String(dynakube.MaxNameLength)
-		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		deployment := getReconciledDeployment(t, clt, dk)
 		require.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, conditionType))
@@ -56,7 +56,7 @@ func TestReconciler(t *testing.T) {
 
 func TestExtensionsDatabases(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
-	integrationtests.CreateNamespace(t, t.Context(), clt, testNamespaceName)
+	integrationtests.CreateNamespace(t, clt, testNamespaceName)
 
 	t.Run("Valid database ID", func(t *testing.T) {
 		err := createDynakubeWithDatabaseID(t, clt, "db")

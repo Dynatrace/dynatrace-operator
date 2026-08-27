@@ -14,29 +14,43 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateNamespace(t *testing.T, ctx context.Context, clt client.Client, namespace string) {
-	ns := corev1.Namespace{
+func CreateNamespace(t *testing.T, clt client.Client, namespace string) {
+	t.Helper()
+
+	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
 		},
 	}
-	err := clt.Create(ctx, &ns)
-	require.NoError(t, err)
+
+	create(t, clt, ns)
 }
 
-func CreateKubernetesObject(t *testing.T, ctx context.Context, clt client.Client, object client.Object) {
-	err := clt.Create(ctx, object)
-	require.NoError(t, err)
+func CreateKubernetesObject(t *testing.T, clt client.Client, object client.Object) {
+	t.Helper()
+
+	create(t, clt, object)
 }
 
-func CreateDynakube(t *testing.T, ctx context.Context, clt client.Client, dk *dynakube.DynaKube) {
+func CreateDynakube(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
+	t.Helper()
+
 	dkStatus := dk.Status
-
-	err := clt.Create(ctx, dk)
-	require.NoError(t, err)
-
+	create(t, clt, dk)
 	dk.Status = dkStatus
 
-	err = dk.UpdateStatus(ctx, clt)
+	err := dk.UpdateStatus(t.Context(), clt)
 	require.NoError(t, err)
+}
+
+func create(t *testing.T, clt client.Client, obj client.Object) {
+	t.Helper()
+
+	err := clt.Create(t.Context(), obj)
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		// t.Context() is no longer valid on cleanup
+		require.NoError(t, client.IgnoreNotFound(clt.Delete(context.Background(), obj)))
+	})
 }

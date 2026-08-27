@@ -62,10 +62,9 @@ type lifecycleDeps struct {
 // TestReconcileLifecycle walks the phases in order: provision → rotate → stabilize → disable → re-enable.
 func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
-	ctx := t.Context()
 	reconciler := connectioninfo.NewReconciler(clt)
 
-	integrationtests.CreateNamespace(t, ctx, clt, integrationNamespace)
+	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -77,7 +76,7 @@ func TestReconcileLifecycle(t *testing.T) {
 			KubernetesMonitoring: &kubemonapi.Spec{},
 		},
 	}
-	integrationtests.CreateDynakube(t, ctx, clt, dk)
+	integrationtests.CreateDynakube(t, clt, dk)
 
 	baselineConnectionInfo := agclient.ConnectionInfo{
 		TenantUUID:  integrationTenantUUID,
@@ -235,10 +234,9 @@ func assertManagedLabels(t *testing.T, labels map[string]string, dk *dynakube.Dy
 // uses a short TTL with a real time.Sleep instead.
 func TestConnectionInfoCache(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
-	ctx := t.Context()
 	reconciler := connectioninfo.NewReconciler(clt)
 
-	integrationtests.CreateNamespace(t, ctx, clt, integrationNamespace)
+	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -250,7 +248,7 @@ func TestConnectionInfoCache(t *testing.T) {
 			KubernetesMonitoring: &kubemonapi.Spec{},
 		},
 	}
-	integrationtests.CreateDynakube(t, ctx, clt, dk)
+	integrationtests.CreateDynakube(t, clt, dk)
 
 	t.Run("uses cached connection info within TTL", func(t *testing.T) {
 		transport := newFakeCITransport(
