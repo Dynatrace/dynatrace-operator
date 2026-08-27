@@ -15,6 +15,8 @@ type DTPrometheusStatus struct { //nolint:revive
 
 	Gateway GatewayStatus `json:"gateway,omitempty"`
 
+	Scraper ScraperStatus `json:"scraper,omitempty"`
+
 	// Conditions includes status about the current state of the instance
 	// +listType=map
 	// +listMapKey=type
@@ -23,6 +25,11 @@ type DTPrometheusStatus struct { //nolint:revive
 
 type GatewayStatus struct {
 	// Image URI of the gateway currently deployed.
+	ResolvedImage string `json:"image,omitempty"`
+}
+
+type ScraperStatus struct {
+	// Image URI of the scraper currently deployed.
 	ResolvedImage string `json:"image,omitempty"`
 }
 
