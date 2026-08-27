@@ -208,6 +208,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
 	if s.Spec.Image != "" {
 		s.resolvedImage = s.Spec.Image
+
 		return nil
 	}
 

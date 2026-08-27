@@ -61,6 +61,7 @@ func newTestDynaKube() *dynakube.DynaKube {
 func newTestDynaKubeWithPublicRegistry() *dynakube.DynaKube {
 	dk := newTestDynaKube()
 	dk.Annotations = map[string]string{"feature.dynatrace.com/use-public-registry": "true"}
+
 	return dk
 }
 
