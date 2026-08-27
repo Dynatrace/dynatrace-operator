@@ -155,6 +155,8 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 }
 
 func (collector k8sResourceCollector) getCRD(customResourceDefinition apiextensionsv1.CustomResourceDefinition) unstructured.Unstructured {
+	customResourceDefinition.ManagedFields = nil
+
 	return unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": apiextensionsv1.GroupName,
@@ -167,6 +169,8 @@ func (collector k8sResourceCollector) getCRD(customResourceDefinition apiextensi
 }
 
 func (collector k8sResourceCollector) getValidatingWebhookConfiguration(validatingWebhookConfig admissionregistrationv1.ValidatingWebhookConfiguration) unstructured.Unstructured {
+	validatingWebhookConfig.ManagedFields = nil
+
 	return unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": admissionregistrationv1.GroupName,
@@ -178,6 +182,8 @@ func (collector k8sResourceCollector) getValidatingWebhookConfiguration(validati
 }
 
 func (collector k8sResourceCollector) getMutatingWebhookConfiguration(mutatingWebhookConfig admissionregistrationv1.MutatingWebhookConfiguration) unstructured.Unstructured {
+	mutatingWebhookConfig.ManagedFields = nil
+
 	return unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": admissionregistrationv1.GroupName,
@@ -189,6 +195,8 @@ func (collector k8sResourceCollector) getMutatingWebhookConfiguration(mutatingWe
 }
 
 func (collector k8sResourceCollector) storeObject(resource *unstructured.Unstructured) {
+	resource.SetManagedFields(nil)
+
 	yamlManifest, err := yaml.Marshal(resource)
 	if err != nil {
 		logErrorf(collector.log, err, "Failed to marshal %s %s/%s", resource.GetKind(), collector.namespace, resource.GetName())
