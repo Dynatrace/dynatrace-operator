@@ -6722,6 +6722,11 @@ spec:
                   version:
                     type: string
                 type: object
+              otelCollector:
+                properties:
+                  image:
+                    type: string
+                type: object
               phase:
                 type: string
               proxyURLHash:
