@@ -152,7 +152,7 @@ func TestImageResolution(t *testing.T) {
 		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
 		require.NoError(t, err)
 		assert.Equal(t, testFleetMgmtImageURI, sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, testFleetMgmtImageURI, dk.Status.OtelCollector.ResolvedImage)
+		assert.Equal(t, testFleetMgmtImageURI, dk.Status.OTelCollector.ResolvedImage)
 	})
 
 	t.Run("no imageRef, public registry enabled with override — image from fleet management (override registry)", func(t *testing.T) {
@@ -177,7 +177,7 @@ func TestImageResolution(t *testing.T) {
 		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
 		require.NoError(t, err)
 		assert.Equal(t, testFleetMgmtImageURI, sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, testFleetMgmtImageURI, dk.Status.OtelCollector.ResolvedImage)
+		assert.Equal(t, testFleetMgmtImageURI, dk.Status.OTelCollector.ResolvedImage)
 	})
 }
 

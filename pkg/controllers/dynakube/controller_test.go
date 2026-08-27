@@ -362,7 +362,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKSPMReconciler := newMockDtSettingReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
-		mockOTelColReconciler := newMockOtelcReconciler(t)
+		mockOTelColReconciler := newMockOTelcReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
 
 		controller := &Controller{
@@ -372,7 +372,7 @@ func TestReconcileComponents(t *testing.T) {
 			logMonitoringReconciler: mockLogMonitoringReconciler,
 			extensionReconciler:     mockExtensionReconciler,
 			istioReconciler:         mockIstioReconciler,
-			otelColReconciler:       mockOTelColReconciler,
+			oTelColReconciler:       mockOTelColReconciler,
 			kspmReconciler:          mockKSPMReconciler,
 			k8sEntityReconciler:     mockK8sEntityReconciler,
 			oneAgentReconciler:      mockOneAgentReconciler,
@@ -405,7 +405,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockActiveGateReconciler := newMockActiveGateReconciler(t)
 		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKubemonReconciler := newMockKubemonReconciler(t)
-		mockOTelColReconciler := newMockOtelcReconciler(t)
+		mockOTelColReconciler := newMockOTelcReconciler(t)
 		k8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
 		mockKSPMReconciler := newMockKspmReconciler(t)
@@ -422,7 +422,7 @@ func TestReconcileComponents(t *testing.T) {
 			kubemonReconciler:       mockKubemonReconciler,
 			logMonitoringReconciler: mockLogMonitoringReconciler,
 			extensionReconciler:     mockExtensionReconciler,
-			otelColReconciler:       mockOTelColReconciler,
+			oTelColReconciler:       mockOTelColReconciler,
 			k8sEntityReconciler:     k8sEntityReconciler,
 			istioReconciler:         mockIstioReconciler,
 			kspmReconciler:          mockKSPMReconciler,
@@ -452,7 +452,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKSPMReconciler := newMockDtSettingReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
-		mockOTelColReconciler := newMockOtelcReconciler(t)
+		mockOTelColReconciler := newMockOTelcReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -460,7 +460,7 @@ func TestReconcileComponents(t *testing.T) {
 
 			logMonitoringReconciler: mockLogMonitoringReconciler,
 			extensionReconciler:     mockExtensionReconciler,
-			otelColReconciler:       mockOTelColReconciler,
+			oTelColReconciler:       mockOTelColReconciler,
 			kspmReconciler:          mockKSPMReconciler,
 			k8sEntityReconciler:     mockK8sEntityReconciler,
 			oneAgentReconciler:      mockOneAgentReconciler,
@@ -499,7 +499,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKSPMReconciler := newMockDtSettingReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
-		mockOTelColReconciler := newMockOtelcReconciler(t)
+		mockOTelColReconciler := newMockOTelcReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -507,7 +507,7 @@ func TestReconcileComponents(t *testing.T) {
 
 			logMonitoringReconciler: mockLogMonitoringReconciler,
 			extensionReconciler:     mockExtensionReconciler,
-			otelColReconciler:       mockOTelColReconciler,
+			oTelColReconciler:       mockOTelColReconciler,
 			kspmReconciler:          mockKSPMReconciler,
 			k8sEntityReconciler:     mockK8sEntityReconciler,
 			oneAgentReconciler:      mockOneAgentReconciler,
@@ -582,7 +582,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockExtensionReconciler := newMockExtensionReconciler(t)
 	mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, anyDynaKube).Return(nil)
 
-	mockOTelColReconciler := newMockOtelcReconciler(t)
+	mockOTelColReconciler := newMockOTelcReconciler(t)
 	mockOTelColReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, anyDynaKube).Return(nil)
 
 	mockIstioReconciler := newMockIstioReconciler(t)
@@ -606,7 +606,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		injectionReconciler:          mockInjectionReconciler,
 		istioReconciler:              mockIstioReconciler,
 		logMonitoringReconciler:      mockLogMonitoringReconciler,
-		otelColReconciler:            mockOTelColReconciler,
+		oTelColReconciler:            mockOTelColReconciler,
 		proxyReconciler:              mockProxyReconciler,
 		kspmReconciler:               mockKSPMReconciler,
 		kubemonReconciler:            mockKubemonReconciler,

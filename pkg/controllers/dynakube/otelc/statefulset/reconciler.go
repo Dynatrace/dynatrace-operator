@@ -69,7 +69,7 @@ func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.
 		return "", err
 	}
 
-	dk.Status.OtelCollector.ResolvedImage = imageURI
+	dk.Status.OTelCollector.ResolvedImage = imageURI
 
 	return imageURI, nil
 }

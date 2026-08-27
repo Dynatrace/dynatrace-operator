@@ -50,7 +50,7 @@ type DynaKubeStatus struct { //nolint:revive
 
 	// Observed state of the OpenTelemetry Collector
 	// +kubebuilder:validation:Optional
-	OtelCollector otlp.Status `json:"otelCollector,omitzero"`
+	OTelCollector otlp.Status `json:"otelCollector,omitzero"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
