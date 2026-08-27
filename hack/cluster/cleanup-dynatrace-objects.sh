@@ -12,7 +12,7 @@
 NAMESPACE="${1:-dynatrace}"
 echo "Using namespace: $NAMESPACE"
 
-echo -e "\nRemoving dyntrace.com custom resources"
+echo -e "\nRemoving dynatrace.com custom resources"
 for crd in $(kubectl api-resources --api-group dynatrace.com -o name); do
     kubectl delete $crd --all -n "$NAMESPACE" || true
 done
