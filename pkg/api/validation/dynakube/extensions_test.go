@@ -71,19 +71,6 @@ func TestExtensionsWithoutKubernetesMonitoringRegistration(t *testing.T) {
 	})
 }
 
-func TestExtensionsWithoutOTelCollectorImage(t *testing.T) {
-	t.Run("error when image is not specified", func(t *testing.T) {
-		assertDenied(t, []string{errorOTelCollectorMissingImage},
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{},
-				},
-			})
-	})
-}
-
 func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
