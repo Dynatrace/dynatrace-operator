@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8smeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -56,8 +55,6 @@ func (collector k8sResourceCollector) Do() error {
 		resourceList, err := collector.readObjectsList(query.groupVersionKind, query.filters)
 		if err != nil {
 			switch {
-			case k8serrors.IsForbidden(err):
-				logInfof(collector.log, "no permission to list %s, skipping", query.groupVersionKind.String())
 			case k8smeta.IsNoMatchError(err):
 				logInfof(collector.log, "CRD not installed, skipping %s", query.groupVersionKind.String())
 			default:
