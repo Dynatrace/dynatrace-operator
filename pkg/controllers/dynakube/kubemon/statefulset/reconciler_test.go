@@ -30,6 +30,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
@@ -253,7 +254,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
 
-		require.Len(t, container.VolumeMounts, 3)
+		require.Len(t, container.VolumeMounts, 9)
 		assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, connectioninfo.TenantTokenMountPoint, container.VolumeMounts[0].MountPath)
 		assert.Equal(t, connectioninfo.TenantTokenKey, container.VolumeMounts[0].SubPath)
@@ -269,7 +270,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
 
-		require.Len(t, container.VolumeMounts, 3)
+		require.Len(t, container.VolumeMounts, 9)
 		assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
 		assert.Equal(t, agconsts.AuthTokenMountPoint, container.VolumeMounts[1].MountPath)
 		assert.Equal(t, kubemonauthtoken.SecretKey, container.VolumeMounts[1].SubPath)
@@ -294,11 +295,11 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 		container := sts.Spec.Template.Spec.Containers[0]
 
-		require.Len(t, container.VolumeMounts, 4)
-		assert.Equal(t, kubemoncustomproperties.VolumeName, container.VolumeMounts[3].Name)
-		assert.Equal(t, kubemoncustomproperties.MountPath, container.VolumeMounts[3].MountPath)
-		assert.Equal(t, kubemoncustomproperties.DataKey, container.VolumeMounts[3].SubPath)
-		assert.True(t, container.VolumeMounts[3].ReadOnly)
+		require.Len(t, container.VolumeMounts, 10)
+		assert.Equal(t, kubemoncustomproperties.VolumeName, container.VolumeMounts[9].Name)
+		assert.Equal(t, kubemoncustomproperties.MountPath, container.VolumeMounts[9].MountPath)
+		assert.Equal(t, kubemoncustomproperties.DataKey, container.VolumeMounts[9].SubPath)
+		assert.True(t, container.VolumeMounts[9].ReadOnly)
 		assert.True(t, hasCustomPropertiesVolume(sts, dk))
 	})
 
@@ -380,7 +381,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		assert.Empty(t, sts.Spec.VolumeClaimTemplates)
-		require.Len(t, sts.Spec.Template.Spec.Volumes, 3)
+		require.Len(t, sts.Spec.Template.Spec.Volumes, 10)
 		assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
 		assert.NotNil(t, sts.Spec.Template.Spec.Volumes[2].EmptyDir)
 	})
@@ -483,6 +484,274 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, certMount.ReadOnly)
 		assert.Equal(t, agconsts.CertsMountPath, certMount.MountPath)
+	})
+
+	t.Run("securityContext present", func(t *testing.T) {
+		dk := newTestDynaKube()
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+		require.NotNil(t, sts.Spec.Template.Spec.SecurityContext)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		require.NotNil(t, sts.Spec.Template.Spec.InitContainers[0].SecurityContext)
+
+		checkSecurityContext := func(t *testing.T, sc *corev1.SecurityContext) {
+			require.NotNil(t, sc.Privileged)
+			assert.False(t, *sc.Privileged)
+
+			require.NotNil(t, sc.AllowPrivilegeEscalation)
+			assert.False(t, *sc.AllowPrivilegeEscalation)
+
+			require.NotNil(t, sc.RunAsNonRoot)
+			assert.True(t, *sc.RunAsNonRoot)
+
+			require.NotNil(t, sc.RunAsUser)
+			assert.Equal(t, agconsts.DockerImageUser, *sc.RunAsUser)
+
+			require.NotNil(t, sc.RunAsGroup)
+			assert.Equal(t, agconsts.DockerImageUser, *sc.RunAsGroup)
+
+			require.NotNil(t, sc.Capabilities)
+			assert.Empty(t, sc.Capabilities.Add)
+			require.Len(t, sc.Capabilities.Drop, 1)
+			assert.Contains(t, sc.Capabilities.Drop, corev1.Capability("ALL"))
+
+			require.NotNil(t, sc.SeccompProfile)
+			assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, sc.SeccompProfile.Type)
+
+			require.NotNil(t, sc.ReadOnlyRootFilesystem)
+			assert.True(t, *sc.ReadOnlyRootFilesystem)
+		}
+
+		checkSecurityContext(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		checkSecurityContext(t, sts.Spec.Template.Spec.InitContainers[0].SecurityContext)
+	})
+
+	t.Run("securityContext.AppArmorProfile is not set on cluster 1.30", func(t *testing.T) {
+		t.Cleanup(k8sversion.DisableCacheForTest(30))
+
+		dk := newTestDynaKube()
+		dk.Spec.KubernetesMonitoring.Annotations = map[string]string{
+			corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + "kubemon": "runtime/default",
+		}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		require.NotNil(t, sts.Spec.Template.Spec.InitContainers[0].SecurityContext)
+		assert.Nil(t, sts.Spec.Template.Spec.InitContainers[0].SecurityContext.AppArmorProfile)
+
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		require.Nil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+
+		assert.Contains(t, sts.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+"kubemon")
+	})
+
+	t.Run("securityContext.AppArmorProfile is set on cluster 1.31 for given container", func(t *testing.T) {
+		t.Cleanup(k8sversion.DisableCacheForTest(31))
+
+		dk := newTestDynaKube()
+		dk.Spec.KubernetesMonitoring.Annotations = map[string]string{
+			corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + statefulset.ContainerName: "runtime/default",
+		}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		require.NotNil(t, sts.Spec.Template.Spec.InitContainers[0].SecurityContext)
+		assert.Nil(t, sts.Spec.Template.Spec.InitContainers[0].SecurityContext.AppArmorProfile)
+
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.Equal(t, corev1.AppArmorProfileTypeRuntimeDefault, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile.Type)
+
+		assert.NotContains(t, sts.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+statefulset.ContainerName)
+	})
+
+	t.Run("securityContext.AppArmorProfile is set on cluster 1.31 for both containers", func(t *testing.T) {
+		t.Cleanup(k8sversion.DisableCacheForTest(31))
+
+		dk := newTestDynaKube()
+		dk.Spec.KubernetesMonitoring.Annotations = map[string]string{
+			corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + statefulset.ContainerName:          "runtime/default",
+			corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + agconsts.InitContainerTemplateName: "unconfined",
+		}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		require.NotNil(t, sts.Spec.Template.Spec.InitContainers[0].SecurityContext)
+		assert.NotNil(t, sts.Spec.Template.Spec.InitContainers[0].SecurityContext.AppArmorProfile)
+		assert.Equal(t, corev1.AppArmorProfileTypeUnconfined, sts.Spec.Template.Spec.InitContainers[0].SecurityContext.AppArmorProfile.Type)
+
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
+		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
+		assert.Equal(t, corev1.AppArmorProfileTypeRuntimeDefault, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile.Type)
+
+		assert.NotContains(t, sts.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+statefulset.ContainerName)
+		assert.NotContains(t, sts.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+agconsts.InitContainerTemplateName)
+	})
+}
+
+func TestReconcileBuildsStatefulSetVolumes(t *testing.T) {
+	t.Run("basic container volume mounts", func(t *testing.T) {
+		dk := newTestDynaKube()
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
+		container := sts.Spec.Template.Spec.Containers[0]
+		require.Len(t, container.VolumeMounts, 9)
+
+		mounts := []corev1.VolumeMount{
+			{
+				Name:      connectioninfo.TenantSecretVolumeName,
+				ReadOnly:  true,
+				MountPath: connectioninfo.TenantTokenMountPoint,
+				SubPath:   connectioninfo.TenantTokenKey,
+			},
+			{
+				Name:      statefulset.AuthTokenVolumeName,
+				ReadOnly:  true,
+				MountPath: agconsts.AuthTokenMountPoint,
+				SubPath:   kubemonauthtoken.SecretKey,
+			},
+			{
+				Name:      statefulset.StorageVolumeName,
+				MountPath: agconsts.GatewayTmpMountPath,
+			},
+			{
+				ReadOnly:  false,
+				Name:      agconsts.GatewaySslVolumeName,
+				MountPath: agconsts.GatewaySslMountPath,
+			},
+			{
+				ReadOnly:  false,
+				Name:      agconsts.GatewayLibTempVolumeName,
+				MountPath: agconsts.GatewayLibTempMountPath,
+			},
+			{
+				ReadOnly:  false,
+				Name:      agconsts.GatewayDataVolumeName,
+				MountPath: agconsts.GatewayDataMountPath,
+			},
+			{
+				ReadOnly:  false,
+				Name:      agconsts.GatewayLogVolumeName,
+				MountPath: agconsts.GatewayLogMountPath,
+			},
+			{
+				ReadOnly:  false,
+				Name:      agconsts.GatewayConfigVolumeName,
+				MountPath: agconsts.GatewayConfigMountPath,
+			},
+			{
+				ReadOnly:  true,
+				Name:      agconsts.TrustStoreVolumeName,
+				MountPath: agconsts.TrustStoreCacertsMountPath,
+				SubPath:   agconsts.K8sCertificateFile,
+			},
+		}
+
+		for _, mount := range mounts {
+			assert.Contains(t, container.VolumeMounts, mount, "valid %s volumeMount not found", mount.Name)
+		}
+	})
+
+	t.Run("initContainer volume mounts", func(t *testing.T) {
+		dk := newTestDynaKube()
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		require.Len(t, sts.Spec.Template.Spec.InitContainers, 1)
+		container := sts.Spec.Template.Spec.InitContainers[0]
+		require.Len(t, container.VolumeMounts, 2)
+
+		mounts := []corev1.VolumeMount{
+			{
+				ReadOnly:  false,
+				Name:      agconsts.TrustStoreVolumeName,
+				MountPath: agconsts.GatewaySslMountPath,
+			},
+			{
+				ReadOnly:  false,
+				Name:      agconsts.InitCertLoaderWorkDirVolumeName,
+				MountPath: agconsts.InitCertLoaderWorkDirMountPath,
+			},
+		}
+
+		for _, mount := range mounts {
+			assert.Contains(t, container.VolumeMounts, mount, "valid %s volumeMount not found", mount.Name)
+		}
+	})
+
+	t.Run("basic volumes", func(t *testing.T) {
+		dk := newTestDynaKube()
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		require.Len(t, sts.Spec.Template.Spec.Volumes, 10)
+
+		km := dk.KubernetesMonitoring()
+		volumes := []corev1.Volume{
+			{
+				Name: connectioninfo.TenantSecretVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  km.GetTenantSecretName(),
+						DefaultMode: new(int32(0o640)),
+						Optional:    new(false),
+					},
+				},
+			},
+			{
+				Name: statefulset.AuthTokenVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  km.GetAuthTokenSecretName(),
+						DefaultMode: new(int32(0o640)),
+						Optional:    new(false),
+					},
+				},
+			},
+			{
+				Name:         statefulset.StorageVolumeName,
+				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			},
+			{
+				Name: agconsts.GatewayLibTempVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: agconsts.GatewayDataVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: agconsts.GatewayLogVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: agconsts.GatewayConfigVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: agconsts.TrustStoreVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: agconsts.GatewaySslVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name:         agconsts.InitCertLoaderWorkDirVolumeName,
+				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			},
+		}
+
+		for _, volume := range volumes {
+			assert.Contains(t, sts.Spec.Template.Spec.Volumes, volume, "valid %s volume not found", volume.Name)
+		}
 	})
 }
 
