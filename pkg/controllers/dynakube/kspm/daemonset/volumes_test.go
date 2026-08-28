@@ -51,8 +51,7 @@ func TestGetMounts(t *testing.T) {
 		}
 		mounts := getMounts(dk)
 
-		require.NotEmpty(t, mounts)
-		assert.Len(t, mounts, expectedMountLen)
+		require.Len(t, mounts, expectedMountLen)
 
 		for _, mount := range mounts {
 			assert.NotEmpty(t, mount.Name)
@@ -99,8 +98,7 @@ func TestGetMounts(t *testing.T) {
 		dk.Spec.KSPM = &kspm.Spec{}
 		mounts := getMounts(dk)
 
-		require.NotEmpty(t, mounts)
-		assert.Len(t, mounts, expectedMountLen+1)
+		require.Len(t, mounts, expectedMountLen+1)
 
 		for _, mount := range mounts {
 			assert.NotEmpty(t, mount.Name)
@@ -113,8 +111,7 @@ func TestGetMounts(t *testing.T) {
 		dk.Spec.KSPM = &kspm.Spec{}
 		mounts := getMounts(dk)
 
-		require.NotEmpty(t, mounts)
-		assert.Len(t, mounts, expectedMountLen+1)
+		require.Len(t, mounts, expectedMountLen+1)
 
 		for _, mount := range mounts {
 			assert.NotEmpty(t, mount.Name)
@@ -127,8 +124,7 @@ func TestGetMounts(t *testing.T) {
 		dk.Spec.KSPM = &kspm.Spec{}
 		mounts := getMounts(dk)
 
-		require.NotEmpty(t, mounts)
-		assert.Len(t, mounts, expectedMountLen+1)
+		require.Len(t, mounts, expectedMountLen+1)
 
 		for _, mount := range mounts {
 			assert.NotEmpty(t, mount.Name)
@@ -141,8 +137,7 @@ func TestGetMounts(t *testing.T) {
 		dk.Spec.KSPM = &kspm.Spec{}
 		mounts := getMounts(dk)
 
-		require.NotEmpty(t, mounts)
-		assert.Len(t, mounts, expectedMountLen+1)
+		require.Len(t, mounts, expectedMountLen+1)
 
 		for _, mount := range mounts {
 			assert.NotEmpty(t, mount.Name)
@@ -189,8 +184,7 @@ func TestGetVolumes(t *testing.T) {
 		}
 		volumes := getVolumes(dk)
 
-		require.NotEmpty(t, volumes)
-		assert.Len(t, volumes, expectedMountLen)
+		require.Len(t, volumes, expectedMountLen)
 
 		for _, volume := range volumes {
 			assert.NotEmpty(t, volume.Name)
@@ -239,8 +233,7 @@ func TestGetVolumesForCerts(t *testing.T) {
 		dk.Spec.KSPM = &kspm.Spec{}
 		volumes := getVolumes(dk)
 
-		require.NotEmpty(t, volumes)
-		assert.Len(t, volumes, expectedMountLen+1)
+		require.Len(t, volumes, expectedMountLen+1)
 
 		for _, volume := range volumes {
 			assert.NotEmpty(t, volume.Name)
@@ -257,8 +250,7 @@ func TestGetVolumesForCerts(t *testing.T) {
 		dk.Spec.KSPM = &kspm.Spec{}
 		volumes := getVolumes(dk)
 
-		require.NotEmpty(t, volumes)
-		assert.Len(t, volumes, expectedMountLen+1)
+		require.Len(t, volumes, expectedMountLen+1)
 
 		for _, volume := range volumes {
 			assert.NotEmpty(t, volume.Name)
@@ -275,8 +267,7 @@ func TestGetVolumesForCerts(t *testing.T) {
 		dk.Spec.KSPM = &kspm.Spec{}
 		volumes := getVolumes(dk)
 
-		require.NotEmpty(t, volumes)
-		assert.Len(t, volumes, expectedMountLen+1)
+		require.Len(t, volumes, expectedMountLen+1)
 
 		for _, volume := range volumes {
 			assert.NotEmpty(t, volume.Name)
@@ -293,8 +284,7 @@ func TestGetVolumesForCerts(t *testing.T) {
 		dk.Spec.KSPM = &kspm.Spec{}
 		volumes := getVolumes(dk)
 
-		require.NotEmpty(t, volumes)
-		assert.Len(t, volumes, expectedMountLen+1)
+		require.Len(t, volumes, expectedMountLen+1)
 
 		for _, volume := range volumes {
 			assert.NotEmpty(t, volume.Name)
