@@ -27,8 +27,7 @@ import (
 )
 
 type Reconciler struct {
-	client       client.Client
-	timeProvider *timeprovider.Provider
+	client client.Client
 }
 
 const (
@@ -37,8 +36,7 @@ const (
 
 func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
-		client:       kubeClient,
-		timeProvider: timeprovider.New(),
+		client: kubeClient,
 	}
 }
 
@@ -162,7 +160,7 @@ func (r *Reconciler) createTLSSecret(ctx context.Context, dk *dynakube.DynaKube)
 }
 
 func (r *Reconciler) tlsCertificateData(dk *dynakube.DynaKube) (map[string][]byte, error) {
-	cert, err := certificates.New(r.timeProvider)
+	cert, err := certificates.New(timeprovider.New())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
