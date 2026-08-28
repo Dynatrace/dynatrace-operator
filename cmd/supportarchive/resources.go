@@ -163,6 +163,7 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 		if !k8serrors.IsForbidden(err) && !k8serrors.IsNotFound(err) {
 			return nil, err
 		}
+
 		logInfof(collector.log, "skipping dtprometheuses.dynatrace.com CRD")
 	} else {
 		resourceList.Items = append(resourceList.Items, collector.getCRD(dtPrometheus))
