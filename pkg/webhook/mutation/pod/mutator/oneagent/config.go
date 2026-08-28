@@ -58,4 +58,6 @@ const (
 	// This should be replaced by the `storage` property in the ruxitagentproc.conf
 	DTStorageEnv  = "DT_STORAGE"
 	DTStoragePath = volumes.ConfigMountPath + "/oneagent"
+
+	PodRuntimeClassEnv = "DT_K8S_POD_RUNTIME_CLASS"
 )

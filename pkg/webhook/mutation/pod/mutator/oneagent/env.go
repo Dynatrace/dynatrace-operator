@@ -88,6 +88,19 @@ func addDTStorageEnv(container *corev1.Container) {
 		})
 }
 
+func addPodRuntimeClassEnv(container *corev1.Container, runtimeClassName string) {
+	if k8senv.Contains(container.Env, PodRuntimeClassEnv) {
+		return
+	}
+
+	container.Env = append(container.Env,
+		corev1.EnvVar{
+			Name:  PodRuntimeClassEnv,
+			Value: runtimeClassName,
+		},
+	)
+}
+
 func concatPreloadPaths(originalPaths, additionalPath string) string {
 	if strings.Contains(originalPaths, " ") {
 		return originalPaths + " " + additionalPath

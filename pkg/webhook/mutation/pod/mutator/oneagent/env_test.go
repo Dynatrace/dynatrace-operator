@@ -133,6 +133,33 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 	})
 }
 
+func TestAddPodRuntimeClassEnv(t *testing.T) {
+	t.Run("adds env with runtime class name", func(t *testing.T) {
+		container := &corev1.Container{}
+		runtimeClassName := "kata-containers"
+
+		addPodRuntimeClassEnv(container, runtimeClassName)
+
+		require.Len(t, container.Env, 1)
+		assert.Equal(t, PodRuntimeClassEnv, container.Env[0].Name)
+		assert.Equal(t, runtimeClassName, container.Env[0].Value)
+	})
+
+	t.Run("does not overwrite existing env", func(t *testing.T) {
+		existingValue := "existing-runtime-class"
+		container := &corev1.Container{
+			Env: []corev1.EnvVar{
+				{Name: PodRuntimeClassEnv, Value: existingValue},
+			},
+		}
+
+		addPodRuntimeClassEnv(container, "other-runtime-class")
+
+		require.Len(t, container.Env, 1)
+		assert.Equal(t, existingValue, container.Env[0].Value)
+	})
+}
+
 func TestAddVersionDetection(t *testing.T) {
 	t.Run("adds defaults", func(t *testing.T) {
 		container := &corev1.Container{}

@@ -482,44 +482,71 @@ func TestReinvoke(t *testing.T) {
 	})
 }
 
-func TestAddOneAgentToContainer(t *testing.T) {
+func TestMutateUserContainers(t *testing.T) {
 	kubeSystemUUID := "my uuid"
 	networkZone := "my zone"
 	installPath := "install/path"
 
-	t.Run("add everything", func(t *testing.T) {
-		container := corev1.Container{}
-		dk := dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent:    oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
-				NetworkZone: networkZone,
+	makeRequest := func(networkZone string, runtimeClassName *string) *dtwebhook.BaseRequest {
+		return &dtwebhook.BaseRequest{
+			Pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers:       []corev1.Container{{Name: "app"}},
+					RuntimeClassName: runtimeClassName,
+				},
 			},
-			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: kubeSystemUUID,
+			DynaKube: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					OneAgent:    oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
+					NetworkZone: networkZone,
+				},
+				Status: dynakube.DynaKubeStatus{KubeSystemUUID: kubeSystemUUID},
 			},
 		}
+	}
 
-		addOneAgentToContainer(dk, &container, corev1.Namespace{}, installPath, logd.Get())
+	t.Run("adds all envs and volume mounts", func(t *testing.T) {
+		request := makeRequest(networkZone, nil)
 
-		assert.Len(t, container.VolumeMounts, 2) // preload,bin
+		mutateUserContainers(request, installPath, logd.Get())
 
-		dtMetaEnv := k8senv.Find(container.Env, DynatraceMetadataEnv)
-		require.NotNil(t, dtMetaEnv)
-		assert.Contains(t, dtMetaEnv.Value, kubeSystemUUID)
+		container := &request.Pod.Spec.Containers[0]
+		assert.Len(t, container.VolumeMounts, 2) // bin + preload
 
-		dtZoneEnv := k8senv.Find(container.Env, NetworkZoneEnv)
-		require.NotNil(t, dtZoneEnv)
-		assert.Equal(t, networkZone, dtZoneEnv.Value)
+		require.NotNil(t, k8senv.Find(container.Env, DynatraceMetadataEnv))
+		assert.Contains(t, k8senv.Find(container.Env, DynatraceMetadataEnv).Value, kubeSystemUUID)
 
-		preload := k8senv.Find(container.Env, PreloadEnv)
-		require.NotNil(t, preload)
-		assert.Contains(t, preload.Value, installPath)
+		require.NotNil(t, k8senv.Find(container.Env, NetworkZoneEnv))
+		assert.Equal(t, networkZone, k8senv.Find(container.Env, NetworkZoneEnv).Value)
 
-		storageEnv := k8senv.Find(container.Env, DTStorageEnv)
-		require.NotNil(t, storageEnv)
-		assert.Contains(t, storageEnv.Value, DTStoragePath)
+		require.NotNil(t, k8senv.Find(container.Env, PreloadEnv))
+		assert.Contains(t, k8senv.Find(container.Env, PreloadEnv).Value, installPath)
 
-		assert.True(t, containerIsInjected(container, nil))
+		require.NotNil(t, k8senv.Find(container.Env, DTStorageEnv))
+		assert.Contains(t, k8senv.Find(container.Env, DTStorageEnv).Value, DTStoragePath)
+
+		assert.True(t, containerIsInjected(*container, nil))
+	})
+
+	t.Run("injects runtime class name when set", func(t *testing.T) {
+		runtimeClass := "kata-containers"
+		request := makeRequest("", &runtimeClass)
+
+		mutateUserContainers(request, installPath, logd.Get())
+
+		container := &request.Pod.Spec.Containers[0]
+		runtimeEnv := k8senv.Find(container.Env, PodRuntimeClassEnv)
+		require.NotNil(t, runtimeEnv)
+		assert.Equal(t, runtimeClass, runtimeEnv.Value)
+	})
+
+	t.Run("skips runtime class env when not set", func(t *testing.T) {
+		request := makeRequest("", nil)
+
+		mutateUserContainers(request, installPath, logd.Get())
+
+		container := &request.Pod.Spec.Containers[0]
+		assert.Nil(t, k8senv.Find(container.Env, PodRuntimeClassEnv))
 	})
 }
 
