@@ -36,17 +36,6 @@ type resourceQuery struct {
 	filters          []client.ListOption
 }
 
-type customResourceSpec struct {
-	crdName          string
-	groupVersionKind schema.GroupVersionKind
-}
-
-var customResourceSpecs = []customResourceSpec{
-	{"dynakubes.dynatrace.com", toGroupVersionKind(latest.GroupVersion, dynakube.DynaKube{})},
-	{"edgeconnects.dynatrace.com", toGroupVersionKind(v1alpha2.GroupVersion, edgeconnect.EdgeConnect{})},
-	{"dtprometheuses.dynatrace.com", toGroupVersionKind(v1alpha1.GroupVersion, dtprometheus.DTPrometheus{})},
-}
-
 func getQueries(namespace string, appName string) []resourceQuery {
 	return slices.Concat(
 		getInjectedNamespaceQueryGroup().getQueries(),
@@ -106,13 +95,12 @@ func getComponentsQueryGroup(namespace string, appName string, labelKey string) 
 }
 
 func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
-	gvks := make([]schema.GroupVersionKind, 0, len(customResourceSpecs))
-	for _, spec := range customResourceSpecs {
-		gvks = append(gvks, spec.groupVersionKind)
-	}
-
 	return resourceQueryGroup{
-		resources: gvks,
+		resources: []schema.GroupVersionKind{
+			toGroupVersionKind(latest.GroupVersion, dynakube.DynaKube{}),
+			toGroupVersionKind(v1alpha2.GroupVersion, edgeconnect.EdgeConnect{}),
+			toGroupVersionKind(v1alpha1.GroupVersion, dtprometheus.DTPrometheus{}),
+		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
 		},

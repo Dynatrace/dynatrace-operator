@@ -147,22 +147,21 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 	resourceList := &unstructured.UnstructuredList{}
 	resourceList.SetGroupVersionKind(toGroupVersionKind(apiextensionsv1.SchemeGroupVersion, apiextensionsv1.CustomResourceDefinition{}))
 
-	for _, spec := range customResourceSpecs {
-		var crd apiextensionsv1.CustomResourceDefinition
-		if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: spec.crdName}, &crd); err != nil {
-			switch {
-			case k8serrors.IsForbidden(err):
-				logInfof(collector.log, "no permission to get CRD %s, skipping", spec.crdName)
-			case k8serrors.IsNotFound(err):
-				logInfof(collector.log, "CRD %s not installed, skipping", spec.crdName)
-			default:
-				return nil, err
-			}
+	var dynaKube apiextensionsv1.CustomResourceDefinition
+	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "dynakubes.dynatrace.com"}, &dynaKube); err != nil {
+		return nil, err
+	}
 
-			continue
-		}
+	var edgeConnect apiextensionsv1.CustomResourceDefinition
+	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "edgeconnects.dynatrace.com"}, &edgeConnect); err != nil {
+		return nil, err
+	}
 
-		resourceList.Items = append(resourceList.Items, collector.getCRD(crd))
+	resourceList.Items = append(resourceList.Items, collector.getCRD(dynaKube), collector.getCRD(edgeConnect))
+
+	var dtPrometheus apiextensionsv1.CustomResourceDefinition
+	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "dtprometheuses.dynatrace.com"}, &dtPrometheus); err == nil {
+		resourceList.Items = append(resourceList.Items, collector.getCRD(dtPrometheus))
 	}
 
 	return resourceList, nil
