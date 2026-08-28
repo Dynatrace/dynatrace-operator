@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8smeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -56,7 +57,8 @@ func (collector k8sResourceCollector) Do() error {
 		if err != nil {
 			switch {
 			case k8smeta.IsNoMatchError(err):
-				logInfof(collector.log, "CRD not installed, skipping %s", query.groupVersionKind.String())
+				// CRD not installed, skip
+				continue
 			default:
 				logErrorf(collector.log, err, "could not get manifest for %s", query.groupVersionKind.String())
 			}
@@ -157,7 +159,12 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 	resourceList.Items = append(resourceList.Items, collector.getCRD(dynaKube), collector.getCRD(edgeConnect))
 
 	var dtPrometheus apiextensionsv1.CustomResourceDefinition
-	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "dtprometheuses.dynatrace.com"}, &dtPrometheus); err == nil {
+	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "dtprometheuses.dynatrace.com"}, &dtPrometheus); err != nil {
+		if !k8serrors.IsForbidden(err) && !k8serrors.IsNotFound(err) {
+			return nil, err
+		}
+		logInfof(collector.log, "skipping dtprometheuses.dynatrace.com CRD: %s", err)
+	} else {
 		resourceList.Items = append(resourceList.Items, collector.getCRD(dtPrometheus))
 	}
 
