@@ -93,6 +93,17 @@ tests:
               - deploymentconfigs
             verbs:
               - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - node.k8s.io
+            resources:
+              - runtimeclasses
+            verbs:
+              - get
+              - list
+              - watch
   - it: ClusterRole should exist with extra permissions for openshift
     documentIndex: 0
     set:

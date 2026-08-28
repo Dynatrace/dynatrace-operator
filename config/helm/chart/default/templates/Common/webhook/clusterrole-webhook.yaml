@@ -36,6 +36,14 @@ rules:
       - list
       - watch
       - update
+  - apiGroups:
+      - node.k8s.io
+    resources:
+      - runtimeclasses
+    verbs:
+      - get
+      - list
+      - watch
   # metadata-enrichment workload owner lookup
   - apiGroups:
       - ""

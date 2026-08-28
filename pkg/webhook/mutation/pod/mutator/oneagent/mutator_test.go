@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -18,7 +19,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	nodev1 "k8s.io/api/node/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestIsEnabled(t *testing.T) {
@@ -321,8 +324,14 @@ func TestValidateInstallPath(t *testing.T) {
 	})
 }
 
+func newTestMutator() *Mutator {
+	return &Mutator{
+		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+	}
+}
+
 func TestMutate(t *testing.T) {
-	mut := NewMutator()
+	mut := newTestMutator()
 
 	t.Run("success", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers(t)
@@ -420,7 +429,7 @@ func TestMutate(t *testing.T) {
 }
 
 func TestReinvoke(t *testing.T) {
-	mut := NewMutator()
+	mut := newTestMutator()
 
 	t.Run("success", func(t *testing.T) {
 		request := createTestMutationRequestWithInjectedContainers(t)
@@ -487,12 +496,11 @@ func TestMutateUserContainers(t *testing.T) {
 	networkZone := "my zone"
 	installPath := "install/path"
 
-	makeRequest := func(networkZone string, runtimeClassName *string) *dtwebhook.BaseRequest {
+	makeRequest := func(networkZone string) *dtwebhook.BaseRequest {
 		return &dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{
 				Spec: corev1.PodSpec{
-					Containers:       []corev1.Container{{Name: "app"}},
-					RuntimeClassName: runtimeClassName,
+					Containers: []corev1.Container{{Name: "app"}},
 				},
 			},
 			DynaKube: dynakube.DynaKube{
@@ -506,9 +514,9 @@ func TestMutateUserContainers(t *testing.T) {
 	}
 
 	t.Run("adds all envs and volume mounts", func(t *testing.T) {
-		request := makeRequest(networkZone, nil)
+		request := makeRequest(networkZone)
 
-		mutateUserContainers(request, installPath, logd.Get())
+		mutateUserContainers(request, installPath, "", logd.Get())
 
 		container := &request.Pod.Spec.Containers[0]
 		assert.Len(t, container.VolumeMounts, 2) // bin + preload
@@ -528,25 +536,67 @@ func TestMutateUserContainers(t *testing.T) {
 		assert.True(t, containerIsInjected(*container, nil))
 	})
 
-	t.Run("injects runtime class name when set", func(t *testing.T) {
-		runtimeClass := "kata-containers"
-		request := makeRequest("", &runtimeClass)
+	t.Run("injects runtime class handler when resolved", func(t *testing.T) {
+		handler := "kata"
+		request := makeRequest("")
 
-		mutateUserContainers(request, installPath, logd.Get())
+		mutateUserContainers(request, installPath, handler, logd.Get())
 
 		container := &request.Pod.Spec.Containers[0]
 		runtimeEnv := k8senv.Find(container.Env, PodRuntimeClassEnv)
 		require.NotNil(t, runtimeEnv)
-		assert.Equal(t, runtimeClass, runtimeEnv.Value)
+		assert.Equal(t, handler, runtimeEnv.Value)
 	})
 
-	t.Run("skips runtime class env when not set", func(t *testing.T) {
-		request := makeRequest("", nil)
+	t.Run("skips runtime class env when handler is empty", func(t *testing.T) {
+		request := makeRequest("")
 
-		mutateUserContainers(request, installPath, logd.Get())
+		mutateUserContainers(request, installPath, "", logd.Get())
 
 		container := &request.Pod.Spec.Containers[0]
 		assert.Nil(t, k8senv.Find(container.Env, PodRuntimeClassEnv))
+	})
+}
+
+func TestResolveRuntimeClassHandler(t *testing.T) {
+	runtimeClassName := "kata-containers"
+	handler := "kata"
+
+	runtimeClass := &nodev1.RuntimeClass{
+		ObjectMeta: metav1.ObjectMeta{Name: runtimeClassName},
+		Handler:    handler,
+	}
+
+	_, log := logd.NewFromContext(t.Context(), "test")
+
+	t.Run("resolves handler from RuntimeClass", func(t *testing.T) {
+		mut := &Mutator{
+			client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(runtimeClass).Build(),
+		}
+
+		result := mut.resolveRuntimeClassHandler(t.Context(), &runtimeClassName, log)
+
+		assert.Equal(t, handler, result)
+	})
+
+	t.Run("returns empty string when RuntimeClass not found", func(t *testing.T) {
+		mut := &Mutator{
+			client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+		}
+
+		result := mut.resolveRuntimeClassHandler(t.Context(), &runtimeClassName, log)
+
+		assert.Empty(t, result)
+	})
+
+	t.Run("returns empty string when runtimeClassName is nil", func(t *testing.T) {
+		mut := &Mutator{
+			client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+		}
+
+		result := mut.resolveRuntimeClassHandler(t.Context(), nil, log)
+
+		assert.Empty(t, result)
 	})
 }
 
@@ -611,7 +661,7 @@ func createTestMutationRequestWithInjectedContainers(t *testing.T) *dtwebhook.Mu
 
 func Test_setInjectedAnnotation(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
-		mut := NewMutator()
+		mut := newTestMutator()
 		request := createTestMutationRequestWithInjectedContainers(t)
 
 		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))
@@ -621,7 +671,7 @@ func Test_setInjectedAnnotation(t *testing.T) {
 	})
 
 	t.Run("should remove reason from map", func(t *testing.T) {
-		mut := NewMutator()
+		mut := newTestMutator()
 		request := createTestMutationRequestWithInjectedContainers(t)
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 
@@ -634,7 +684,7 @@ func Test_setInjectedAnnotation(t *testing.T) {
 
 func Test_setNotInjectedAnnotationFunc(t *testing.T) {
 	t.Run("should add annotations to nil map", func(t *testing.T) {
-		mut := NewMutator()
+		mut := newTestMutator()
 		request := createTestMutationRequestWithoutInjectedContainers(t)
 
 		require.False(t, mut.IsInjected(t.Context(), request.BaseRequest))

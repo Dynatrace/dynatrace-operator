@@ -87,7 +87,7 @@ func newWebhook( //nolint:revive
 			webhookImage,
 			isOpenshift,
 			metadata.NewMutator(metaClient),
-			oneagent.NewMutator(),
+			oneagent.NewMutator(kubeClient),
 		),
 		otlpHandler: otlphandler.New(
 			kubeClient,

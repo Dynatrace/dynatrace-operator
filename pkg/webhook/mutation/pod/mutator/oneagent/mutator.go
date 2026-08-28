@@ -16,8 +16,10 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
+	nodev1 "k8s.io/api/node/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -33,10 +35,12 @@ func (err invalidInstallPathError) Error() string {
 	return fmt.Sprintf("the installPath (%s) must be clean, absolute and without whitespace and separators like ,:", err.InstallPath)
 }
 
-type Mutator struct{}
+type Mutator struct {
+	client client.Client
+}
 
-func NewMutator() dtwebhook.Mutator {
-	return &Mutator{}
+func NewMutator(clt client.Client) dtwebhook.Mutator {
+	return &Mutator{client: clt}
 }
 
 func IsSelfExtractingImage(mutationRequest *dtwebhook.BaseRequest) bool {
@@ -109,9 +113,11 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		return err
 	}
 
+	runtimeClassHandler := mut.resolveRuntimeClassHandler(request.Context, request.Pod.Spec.RuntimeClassName, log)
+
 	// not checking the returned bool, as getting a `false` value shouldn't happen
 	// the caller of mutate already checks if it needs to be mutated
-	_ = mutateUserContainers(request.BaseRequest, installPath, log)
+	_ = mutateUserContainers(request.BaseRequest, installPath, runtimeClassHandler, log)
 	setInjectedAnnotation(request.Pod)
 
 	return nil
@@ -125,14 +131,31 @@ func (mut *Mutator) Reinvoke(ctx context.Context, request *dtwebhook.Reinvocatio
 		return false
 	}
 
-	return mutateUserContainers(request.BaseRequest, installPath, log)
+	runtimeClassHandler := mut.resolveRuntimeClassHandler(ctx, request.Pod.Spec.RuntimeClassName, log)
+
+	return mutateUserContainers(request.BaseRequest, installPath, runtimeClassHandler, log)
+}
+
+func (mut *Mutator) resolveRuntimeClassHandler(ctx context.Context, runtimeClassName *string, log logd.Logger) string {
+	if runtimeClassName == nil {
+		return ""
+	}
+
+	var runtimeClass nodev1.RuntimeClass
+	if err := mut.client.Get(ctx, client.ObjectKey{Name: *runtimeClassName}, &runtimeClass); err != nil {
+		log.Error(err, "failed to get RuntimeClass, skipping env injection", "name", *runtimeClassName)
+
+		return ""
+	}
+
+	return runtimeClass.Handler
 }
 
 func containerIsInjected(container corev1.Container, _ *dtwebhook.BaseRequest) bool {
 	return k8smount.Contains(container.VolumeMounts, BinVolumeName)
 }
 
-func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, log logd.Logger) bool {
+func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, runtimeClassHandler string, log logd.Logger) bool {
 	newContainers := request.NewContainers(containerIsInjected)
 
 	for _, container := range newContainers {
@@ -151,8 +174,8 @@ func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, lo
 			addVersionDetectionEnvs(container, request.Namespace)
 		}
 
-		if request.Pod.Spec.RuntimeClassName != nil {
-			addPodRuntimeClassEnv(container, *request.Pod.Spec.RuntimeClassName)
+		if runtimeClassHandler != "" {
+			addPodRuntimeClassEnv(container, runtimeClassHandler)
 		}
 	}
 
