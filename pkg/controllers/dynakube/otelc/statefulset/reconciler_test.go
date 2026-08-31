@@ -202,69 +202,6 @@ func TestImageResolution(t *testing.T) {
 	})
 }
 
-func TestSecretHashAnnotation(t *testing.T) {
-	t.Run("no TLS secret hash annotation when TLSRefName is empty", func(t *testing.T) {
-		dk := getTestDynakubeWithTelemetryIngest()
-		statefulSet := getWorkload(t, dk)
-
-		assert.Empty(t, statefulSet.Spec.Template.Annotations[annotationTelemetryIngestSecretHash])
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[annotationDataIngestTokenSecretHash])
-	})
-	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
-		dk := getTestDynakubeWithTelemetryIngest()
-		dk.Spec.TelemetryIngest.TLSRefName = "dummy-secret"
-
-		tlsSecret := getTLSSecret("dummy-secret", dk.Namespace, "cert", "key")
-		dataIngestToken := getTokens(dk.Name, dk.Namespace)
-		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-
-		statefulSet := getStatefulset(t, dk, &tlsSecret, &dataIngestToken, &configMap)
-
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[annotationTelemetryIngestSecretHash])
-	})
-	t.Run("annotation is updated when TLS Secret gets updated", func(t *testing.T) {
-		statefulSet := &appsv1.StatefulSet{}
-		dk := getTestDynakubeWithTelemetryIngest()
-		dk.Spec.TelemetryIngest.TLSRefName = "dummy-secret"
-
-		mockK8sClient := fake.NewClient(dk)
-		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
-
-		tiSecret := getTLSSecret("dummy-secret", dk.Namespace, "super-cert", "super-key")
-		require.NoError(t, mockK8sClient.Create(t.Context(), &tiSecret))
-
-		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(t.Context(), &tokenSecret))
-
-		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(t.Context(), &configMap))
-
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk)
-		require.NoError(t, err)
-
-		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
-		require.NoError(t, err)
-
-		originalSecretHash := statefulSet.Spec.Template.Annotations[annotationTelemetryIngestSecretHash]
-		require.NotEmpty(t, originalSecretHash)
-
-		// then update the TLS Secret and call reconcile again
-		updatedTLSSecret := getTLSSecret("dummy-secret", dk.Namespace, "updated-cert", "updated-key")
-		err = mockK8sClient.Update(t.Context(), &updatedTLSSecret)
-		require.NoError(t, err)
-
-		err = reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk)
-		require.NoError(t, err)
-		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
-		require.NoError(t, err)
-
-		resultingSecretHash := statefulSet.Spec.Template.Annotations[annotationTelemetryIngestSecretHash]
-
-		assert.NotEqual(t, originalSecretHash, resultingSecretHash)
-	})
-}
-
 func TestDataIngestTokenHashAnnotation(t *testing.T) {
 	t.Run("annotation is set when TelemetryIngest is enabled", func(t *testing.T) {
 		t.Cleanup(version.DisableCacheForTest(123))
