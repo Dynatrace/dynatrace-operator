@@ -41,7 +41,7 @@ func TestHasOCIVolumeAnnotation(t *testing.T) {
 			},
 		}
 
-		assert.True(t, hasOCIVolumeAnnotation(req))
+		assert.True(t, hasImageVolumeAnnotation(req))
 	})
 
 	t.Run("image volume type annotation + no codeModulesImage => false", func(t *testing.T) {
@@ -56,7 +56,7 @@ func TestHasOCIVolumeAnnotation(t *testing.T) {
 			DynaKube: dynakube.DynaKube{},
 		}
 
-		assert.False(t, hasOCIVolumeAnnotation(req))
+		assert.False(t, hasImageVolumeAnnotation(req))
 	})
 
 	t.Run("no annotation + codeModulesImage set => false", func(t *testing.T) {
@@ -75,7 +75,7 @@ func TestHasOCIVolumeAnnotation(t *testing.T) {
 			},
 		}
 
-		assert.False(t, hasOCIVolumeAnnotation(req))
+		assert.False(t, hasImageVolumeAnnotation(req))
 	})
 }
 

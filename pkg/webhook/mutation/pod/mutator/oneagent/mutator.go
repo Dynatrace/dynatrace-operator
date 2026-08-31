@@ -53,7 +53,7 @@ func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
 	return defaultVolumeType == CSIVolumeType
 }
 
-func hasOCIVolumeAnnotation(mutationRequest *dtwebhook.BaseRequest) bool {
+func hasImageVolumeAnnotation(mutationRequest *dtwebhook.BaseRequest) bool {
 	if mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != "" {
 		return maputils.GetField(mutationRequest.Pod.Annotations, AnnotationVolumeType, EphemeralVolumeType) == ImageVolumeType
 	}
@@ -62,7 +62,7 @@ func hasOCIVolumeAnnotation(mutationRequest *dtwebhook.BaseRequest) bool {
 }
 
 func isImageVolume(mutationRequest *dtwebhook.BaseRequest) bool {
-	return hasOCIVolumeAnnotation(mutationRequest) || mutationRequest.DynaKube.FF().IsCodeModuleImageVolume()
+	return hasImageVolumeAnnotation(mutationRequest) || mutationRequest.DynaKube.FF().IsCodeModuleImageVolume()
 }
 
 func IsEnabled(request *dtwebhook.BaseRequest) bool {
