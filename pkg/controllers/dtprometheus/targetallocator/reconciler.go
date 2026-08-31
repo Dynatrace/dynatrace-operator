@@ -90,7 +90,6 @@ type reconcileScope struct {
 	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
 	// Computed during reconcile
-	resolvedImage string
 	ConfigMapHash string
 	Deployment    *appsv1.Deployment
 }
@@ -207,7 +206,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 
 func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
 	if s.Spec.Image != "" {
-		s.resolvedImage = s.Spec.Image
+		s.Owner.Status.TargetAllocator.ResolvedImage = s.Spec.Image
 
 		return nil
 	}
@@ -217,7 +216,6 @@ func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error 
 		return err
 	}
 
-	s.resolvedImage = imageURI
 	s.Owner.Status.TargetAllocator.ResolvedImage = imageURI
 
 	return nil
@@ -315,7 +313,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	deploy.Spec.Template.Spec.Volumes = buildVolumes(s.Spec)
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
-		buildContainer(s.Spec, s.resolvedImage, s.Owner.Namespace, getContainer(deploy)),
+		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, getContainer(deploy)),
 	}
 }
 
