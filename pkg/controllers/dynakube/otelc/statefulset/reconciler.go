@@ -81,6 +81,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		if err != nil {
 			return err
 		}
+
 		return r.createOrUpdateStatefulset(ctx, dk, imageURI)
 	} else { // do cleanup or
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
