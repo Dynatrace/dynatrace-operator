@@ -21,6 +21,10 @@ deploy/show-image-ref/fips:
 deploy/no-csi:
 	@make ENABLE_CSI=false $(@D)
 
+## Deploy the operator in CSI migration mode
+deploy/csi-migration:
+	@make ENABLE_CSI=true CSI_MIGRATION_MODE=true $(@D)
+
 deploy/fips:
 	@make IMAGE_URI="$(IMAGE_URI)"-fips $(@D)
 
