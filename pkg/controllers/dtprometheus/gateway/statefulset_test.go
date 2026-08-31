@@ -29,7 +29,7 @@ func newTestDynaKube() *dynakube.DynaKube {
 }
 
 func TestReconcileStatefulSet(t *testing.T) {
-	t.Run("fleet resolve fails when no imageRef set", func(t *testing.T) {
+	t.Run("no imageRef set and fleet resolve fails with missing image", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
 		imageClient := imagemock.NewClient(t)
