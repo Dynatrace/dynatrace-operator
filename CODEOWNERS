@@ -16,7 +16,7 @@
 
 # ── Testing — shared harness and cross-operand feature tests ─────────────────
 /test/                                                     @0sewa0 @andriisoldatenko @avorima
-/.mockery.yaml                                             @0sewa0 @andriisoldatenko @avorima
+/.mockery.yaml
 /.testcoverage.yml                                         @0sewa0 @andriisoldatenko @avorima
 
 # ── Core — CRD API, DT clients, shared libs, and cross-cutting controllers ───
@@ -106,8 +106,8 @@
 /hack/                                                     @Incredible-O @waodim @jokuniew
 /Dockerfile                                                @Incredible-O @waodim @jokuniew
 /Makefile                                                  @Incredible-O @waodim @jokuniew
-/go.mod                                                    @Incredible-O @waodim @jokuniew
-/go.sum                                                    @Incredible-O @waodim @jokuniew
+/go.mod
+/go.sum
 /.golangci.yml                                             @Incredible-O @waodim @jokuniew
 /.markdownlint.json                                        @Incredible-O @waodim @jokuniew
 /.markdownlintignore                                       @Incredible-O @waodim @jokuniew
