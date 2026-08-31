@@ -23,7 +23,7 @@ import (
 const (
 	CSIVolumeType       = "csi"
 	EphemeralVolumeType = "ephemeral"
-	ImageVolumeType     = "oci"
+	ImageVolumeType     = "image"
 )
 
 type invalidInstallPathError struct {

@@ -23,7 +23,7 @@ import (
 func TestHasOCIVolumeAnnotation(t *testing.T) {
 	const testImage = "test-registry/test-image:latest"
 
-	t.Run("OCI annotation + codeModulesImage set => true", func(t *testing.T) {
+	t.Run("image volume type annotation + codeModulesImage set => true", func(t *testing.T) {
 		req := &dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -44,7 +44,7 @@ func TestHasOCIVolumeAnnotation(t *testing.T) {
 		assert.True(t, hasOCIVolumeAnnotation(req))
 	})
 
-	t.Run("OCI annotation + no codeModulesImage => false", func(t *testing.T) {
+	t.Run("image volume type annotation + no codeModulesImage => false", func(t *testing.T) {
 		req := &dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{

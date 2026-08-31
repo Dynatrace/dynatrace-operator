@@ -85,7 +85,7 @@ func TestReconcile(t *testing.T) {
 		assert.False(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("OCI volumes (similar to migration mode case) => cleanup only, no install, long requeue", func(t *testing.T) {
+	t.Run("image volumes (similar to migration mode case) => cleanup only, no install, long requeue", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
 		dk := createDynaKubeWithImage(t)
